@@ -1,0 +1,15 @@
+[project]
+name = "pokemon-tcg-ai-battle-research"
+version = "0.1.0"
+description = "Research and coordination workspace for the Kaggle PTCG AI Battle Simulation competition"
+requires-python = ">=3.11"
+dependencies = [
+  "kaggle>=2.2.3",
+  "kagglehub>=1.0.0",
+  "kagglesdk>=0.1.33,<1.0",
+  "requests",
+  "python-dotenv",
+]
+
+[tool.ruff]
+line-length = 100
