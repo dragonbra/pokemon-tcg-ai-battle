@@ -1,46 +1,59 @@
-# Working agreement
+# 工作约定
 
-## Research vs implementation
+## 研究与实现分离
 
-Research on this Mac should answer:
+本机 Hermes 负责研究：
 
-- What does the official competition actually evaluate?
-- What are the simulator observation/action semantics?
-- Which rules differ from real Pokémon TCG rules?
-- What do high-signal discussions and public notebooks establish?
-- Which baseline and experiments are worth implementing?
+- 比赛事实、规则和 simulator 行为核查；
+- Kaggle 热门 Discussion、公开 Notebook、Replay 的资料整理；
+- 卡组与策略假设；
+- baseline 和实验协议设计；
+- 写给 Claude Code 的中文实现任务书。
 
-Implementation on a GPU machine should answer:
+5080 机器上的 Claude Code 负责实现：
 
-- Does the code run locally against the official SDK?
-- Does it reproduce the stated baseline metrics?
-- Does a change improve performance under a fixed evaluation protocol?
-- Is it packaged in the exact submission format?
+- 安装和验证官方 SDK；
+- 编写 agent、模拟器适配和实验代码；
+- 执行大量本地对局、搜索或训练；
+- 输出日志、指标、Replay 和错误信息。
 
-## Handoff contract
+## Claude Code 交接协议
 
-Every handoff to Claude Code should include:
+每次交给 Claude Code 的任务书必须写明：
 
-- objective;
-- relevant files and URLs;
-- environment assumptions;
-- exact acceptance tests;
-- compute budget;
-- expected artifacts;
-- open questions and known simulator caveats.
+- 目标；
+- 相关文件和 URL；
+- 环境假设；
+- 明确的验收测试；
+- 计算预算；
+- 预期产物；
+- 已知的 simulator 差异和未决问题。
 
-Claude Code should return:
+Claude Code 返回时必须记录：
 
-- changed files or commit/hash;
-- commands actually run;
-- test and benchmark output;
-- unresolved issues;
-- artifacts and their paths.
+- 修改的文件或 commit；
+- 实际执行过的命令；
+- 测试和 benchmark 输出；
+- 尚未解决的问题；
+- 产物的绝对路径。
 
-## Hardware policy
+面向何瑾雨和 Claude Code 的仓库文档统一使用中文。代码中的 API 名称、类名、变量名和官方专有名词可以保留英文。
 
-Do not assume a GPU is required until a stable simulator baseline exists. Start with rule-based/probabilistic baselines and replay analysis. Introduce vectorized simulation, MCTS, self-play, imitation learning, or RL only when an experiment document justifies it.
+## 方法路线
 
-## Submission policy
+不要在没有可靠 baseline 和评估协议之前直接投入大型 RL。推荐顺序：
 
-Downloading, publishing, and submitting are account-visible or competition-sensitive actions. Use dry-run/read-only operations first. Upload only after explicit confirmation in the active conversation.
+1. 规则/启发式 baseline；
+2. 概率化决策或有限深度搜索；
+3. 可选的 MCTS/rollout；
+4. 神经网络策略或价值模型；
+5. 神经网络与有界搜索的组合；
+6. 规模化 self-play 或 offline RL。
+
+## 硬件策略
+
+在 simulator 正确跑通、动作语义明确、baseline 可复现之前，不假设必须使用 GPU。GPU 机器主要用于向量化模拟、大量 self-play、模型训练和大规模 ablation。
+
+## 提交策略
+
+下载、发布和提交属于账号可见或比赛敏感操作。先做只读或 dry-run；提交前必须在当前对话中明确确认比赛、agent 版本、压缩包路径和 submission message。

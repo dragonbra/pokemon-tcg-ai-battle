@@ -1,15 +1,13 @@
-# Discussion digest
+# 研究摘要条目模板
 
-Use one entry per source. Separate observed facts, author claims, and our hypotheses.
+每条资料记录都必须区分事实、作者推断和我们的假设。
 
-Template:
+## YYYY-MM-DD — 标题
 
-## YYYY-MM-DD — title
-
-- URL:
-- Source type: official discussion / public notebook / documentation / other
-- Claim or observation:
-- Evidence:
-- Relevance to baseline:
-- Confidence:
-- Follow-up experiment:
+- URL：
+- 来源类型：官方讨论 / 公开 Notebook / simulator 文档 / Replay / 其他
+- 观察到的事实：
+- 作者的推断：
+- 对 baseline 的意义：
+- 我们的置信度：
+- 后续实验：

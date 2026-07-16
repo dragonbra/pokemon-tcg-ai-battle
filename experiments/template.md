@@ -1,29 +1,29 @@
-# Baseline experiment template
+# 基线实验模板
 
-## Experiment
+## 实验信息
 
-- ID:
-- Date:
-- Hypothesis:
-- Agent version/commit:
-- Deck:
-- Opponent pool:
-- Number of games:
-- Seeds:
-- Compute:
+- 实验编号：
+- 日期：
+- 假设：
+- Agent 版本/commit：
+- 卡组：
+- 对手池：
+- 对局数量：
+- 随机种子：
+- 计算资源：
 
-## Metrics
+## 指标
 
-- win rate:
-- draw rate:
-- loss rate:
-- average turns:
-- failure/error count:
-- action latency:
+- 胜率：
+- 和率：
+- 负率：
+- 平均回合数：
+- 失败/异常数量：
+- 动作延迟：
 
-## Result
+## 结果
 
-- conclusion:
-- failure cases:
-- next change:
-- artifacts:
+- 结论：
+- 失败案例：
+- 下一步改动：
+- 产物路径：
