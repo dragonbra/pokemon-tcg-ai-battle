@@ -173,4 +173,11 @@ https://www.kaggle.com/competitions/pokemon-tcg-ai-battle/code
 5. 决定我们是否需要在 5080 上实现向量化环境；
 6. 最后把神经网络路线拆成 policy/value/search 三个可验证的小实验。
 
-当前最重要的不是立刻训练大模型，而是弄清楚：什么是卡组优势，什么是 agent 决策优势，什么只是 leaderboard 采样和对手池差异造成的表象。
+当前最重要的下一步不是立刻训练大模型，而是弄清楚：什么是卡组优势，什么是 agent 决策优势，什么只是 leaderboard 采样和对手池差异造成的表象。
+
+本轮进一步阅读的 Alakazam Notebook：
+
+- https://www.kaggle.com/code/heiseimikiko/why-alakazam-is-a-good-baseline-for-ai
+- https://www.kaggle.com/code/ryotasueyoshi/rule-based-not-psychic-alakazam-best-5th
+
+联合分析见：`reports/alakazam-baseline-notebook-analysis-zh.md`。
