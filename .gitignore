@@ -11,9 +11,17 @@ venv/
 *.pt
 *.pth
 *.safetensors
+engine/source/
+engine/build/
 data/competition/
 replays/raw/
 logs/
+
+# Official card data and Card ID PDFs are local reference downloads only.
+# Keep the small README tracked, but do not upload the resource files.
+data/official/*
+!data/official/README.md
+
 .DS_Store
 .claude/settings.local.json
 .hermes/
