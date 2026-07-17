@@ -17,10 +17,10 @@
 |---|---|---|
 | C++ 源码 | `engine/source/`（版本化） | 构建和理解引擎，不打包 |
 | 源码构建产物 | `engine/build/`（本地、忽略） | ABI/规则回归，不直接替换提交运行时 |
-| 预编译 `cg` 运行时 | `submission/cg/` | 继续作为提交包中的运行时 |
-| agent 和卡组 | `submission/main.py`、`submission/deck.csv` | 我们维护的提交逻辑 |
+| 预编译 `cg` 运行时 | `submission/<name>/cg/` | 每套提交独立携带的运行时 |
+| agent 和卡组 | `submission/<name>/main.py`、`submission/<name>/deck.csv` | 每套可独立打包的提交逻辑 |
 
-源码的 C ABI 导出包括 `GameInitialize`、`BattleStart`、`AgentStart`、`GetBattleData`、`Select`、`VisualizeData`、`SearchBegin/Step/End/Release`、`AllCard` 和 `AllAttack`。现有 `submission/cg/sim.py` 已经覆盖这些入口；源码的内部 enum 在 JSON API 层会减去 `None` 的偏移，因此与现有 Python `SelectType`/`SelectContext` 数值保持兼容。
+源码的 C ABI 导出包括 `GameInitialize`、`BattleStart`、`AgentStart`、`GetBattleData`、`Select`、`VisualizeData`、`SearchBegin/Step/End/Release`、`AllCard` 和 `AllAttack`。每个提交目录中的 `cg/sim.py` 已经覆盖这些入口；源码的内部 enum 在 JSON API 层会减去 `None` 的偏移，因此与现有 Python `SelectType`/`SelectContext` 数值保持兼容。
 
 ## 官方 discussion 对本次更新的说明
 
@@ -46,9 +46,9 @@ PTCG_CG_LIBRARY="$PWD/engine/build/libcg.so" ./scripts/run_local_battle.sh
 
 macOS 构建产物对应 `engine/build/libcg.dylib`。当前这台 Ubuntu 20.04 环境的 GCC 9.3 不提供 `<ranges>`，且系统 `libstdc++` 最高为 `GLIBCXX_3.4.28`，因此不能在这里直接编译/加载这个快照；这属于本机工具链限制，不是源码或 Python wrapper 的 API 失败。
 
-在用源码构建产物替换 `submission/cg/` 之前，应至少完成：
+在用源码构建产物替换某个提交目录中的 `cg/` 之前，应至少完成：
 
 1. `GameInitialize`、`AllCard` 和 C ABI 符号检查；
-2. 当前 `submission/deck.csv` 的一局 AI vs AI smoke test；
+2. 目标提交目录的 deck 一局 AI vs AI smoke test；
 3. observation/select 字段和 replay 结果的回归比较；
 4. 再决定是否更新提交目录中的预编译运行时。

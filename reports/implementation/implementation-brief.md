@@ -1,14 +1,14 @@
 # Pokémon TCG AI Battle Baseline：实现任务书
 
-状态：第一版资源、baseline 和本地对局验收已完成；下一步进入 observation 回归与卡组策略迭代。
+状态：官方水系完整提交已保留；胡地 V1 完整提交和首轮本地对局验收已完成。
 
 ## 当前实现结果
 
 - 官方资源位于 `data/official/`；实际提交源位于 `submission/`。
 - `python scripts/check_assets.py` 通过。
-- 提交包已生成，archive 顶层包含 `main.py`、`deck.csv` 和 `cg/`。
-- 使用兼容 C++ runtime 完成同卡组 AI vs AI battle：33 步，player 0 胜，无异常。
-- 详细命令和 JSON 输出见 [`baseline-run-zh.md`](baseline-run-zh.md)。
+- 两套提交分别位于 `submission/official_water/` 和 `submission/alakazam_v1/`，每套 archive 顶层都包含 `main.py`、`deck.csv` 和 `cg/`。
+- 胡地 V1 自战 202 步完成；胡地 V1 对官方水系分别以先手/后手完成 45/109 步，均无异常。
+- 详细卡表映射和命令见 [`alakazam-v1-run-zh.md`](alakazam-v1-run-zh.md)。
 
 ## 目标
 
@@ -28,8 +28,8 @@
 ## 必须产出
 
 - 官方 simulator 依赖安装说明；
-- `submission/main.py`，打包后位于 archive 顶层；
-- `submission/deck.csv`，一份合法的 60 张卡组；
+- `submission/<name>/main.py`，打包后位于 archive 顶层；
+- `submission/<name>/deck.csv`，一份合法的 60 张卡组；
 - 能处理初始化和 deck-selection 状态的 agent；
 - 对每一个非空 `select` 返回合法动作；
 - 本地至少完成一局 battle；
@@ -45,7 +45,7 @@
 4. 不因手牌、牌库、后备位或终止状态导致异常。
 5. 至少完成一局本地 battle。
 6. 能输出 replay/debug JSON。
-7. 生成符合比赛要求的 `.tar.gz`，并确认 `main.py`、`deck.csv` 位于顶层。
+7. 选择一套 `submission/<name>/`，生成符合比赛要求的 `.tar.gz`，并确认 `main.py`、`deck.csv` 位于顶层。
 8. 不进行 Kaggle 上传，除非用户在当前对话中单独确认。
 
 ## 方法边界

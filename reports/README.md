@@ -17,6 +17,7 @@
 
 - [`implementation/implementation-brief.md`](implementation/implementation-brief.md)：第一版官方 simulator baseline 的目标、验收标准和运行记录。
 - [`implementation/baseline-run-zh.md`](implementation/baseline-run-zh.md)：已完成的资源整理、smoke test、提交包和本地 battle 结果。
-- 实际代码在 [`../submission/`](../submission/)；官方参考资源在 [`../data/official/`](../data/official/)。
+- 实际提交在 [`../submission/`](../submission/) 下，每个子目录都是一套可独立打包的 agent；官方参考资源在 [`../data/official/`](../data/official/)。
+- [`implementation/alakazam-v1-run-zh.md`](implementation/alakazam-v1-run-zh.md)：胡地 V1 卡表映射、目录结构和本地对局验收。
 
 当前阶段的优先级是：加载官方 simulator → 用合法卡组完成本地 battle → 记录 observation/action/replay → 再扩展卡组与策略。

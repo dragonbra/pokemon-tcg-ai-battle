@@ -6,11 +6,11 @@
 
 资源已经按职责拆开：`data/official/` 保存官方参考数据，`submission/` 保存实际提交源。使用 `submission/` 内的规则型 agent 和官方 `cg` 二进制，已经完成一局本地 AI vs AI battle。
 
-## 当前提交
+## 当时的提交（历史记录）
 
-- 入口：[`../../submission/main.py`](../../submission/main.py)
-- 卡组：[`../../submission/deck.csv`](../../submission/deck.csv)
-- 模拟器 API：[`../../submission/cg/`](../../submission/cg/)
+- 入口：[`../../submission/official_water/main.py`](../../submission/official_water/main.py)
+- 卡组：[`../../submission/official_water/deck.csv`](../../submission/official_water/deck.csv)
+- 模拟器 API：[`../../submission/official_water/cg/`](../../submission/official_water/cg/)
 - 卡牌参考：[`../../data/official/`](../../data/official/)
 
 当前卡组沿用下载的官方 starter deck，包含 60 张合法卡牌；`scripts/check_assets.py` 会检查数量、整数 ID 和英文 Card Data 中的存在性。
@@ -28,14 +28,14 @@ agent 的第一版策略是确定性的：
 
 ```bash
 python3 scripts/check_assets.py
-python3 -m py_compile submission/main.py submission/cg/*.py scripts/*.py
+python3 -m py_compile submission/official_water/main.py submission/official_water/cg/*.py scripts/*.py
 ```
 
 提交包检查：
 
 ```bash
-bash scripts/package_submission.sh
-tar -tzf dist/submission.tar.gz
+bash scripts/package_submission.sh official_water
+tar -tzf dist/official_water.tar.gz
 ```
 
 archive 顶层包含 `main.py`、`deck.csv` 和 `cg/`，不包含卡牌 CSV/PDF。
