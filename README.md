@@ -21,6 +21,7 @@
 |---|---|
 | `data/official/` | 官方下载的卡牌 CSV、Card ID List PDF，只读参考资源，不直接打包提交 |
 | `submission/` | 我们实际维护的 agent、卡组和官方 `cg` 模拟器运行时 |
+| `engine/` | 官方引擎源码的本地缓存与构建边界，不进入提交包 |
 | `scripts/` | 资产校验、提交打包和本地对局 runner |
 | `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
 | `reports/` | 调研结论、卡组分析和实现任务书 |
@@ -51,6 +52,10 @@
 python scripts/check_assets.py
 bash scripts/package_submission.sh
 PTCG_CXX_RUNTIME=/path/to/compatible/runtime ./scripts/run_local_battle.sh
+
+# 可选：从本地官方源码快照构建独立测试运行时
+./scripts/build_official_engine.sh
+PTCG_CG_LIBRARY="$PWD/engine/build/libcg.so" ./scripts/run_local_battle.sh
 ```
 
 如果当前环境已经能直接加载官方 `libcg.so`，可以省略 `PTCG_CXX_RUNTIME`；变量指向的目录应包含 `lib/libstdc++.so.6`。

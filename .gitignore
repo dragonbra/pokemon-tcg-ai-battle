@@ -11,7 +11,6 @@ venv/
 *.pt
 *.pth
 *.safetensors
-engine/source/
 engine/build/
 data/competition/
 replays/raw/

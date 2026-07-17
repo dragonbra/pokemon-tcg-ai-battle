@@ -1,6 +1,44 @@
 import ctypes
 import os
-    
+import platform
+import sys
+
+
+def _library_candidates() -> list[str]:
+    """Return official cg library names for the current platform.
+
+    ``PTCG_CG_LIBRARY`` is intentionally supported for local A/B tests with
+    a source-built engine. Submission packaging still copies the normal
+    platform libraries from this directory.
+    """
+    configured = os.environ.get("PTCG_CG_LIBRARY")
+    if configured:
+        return [configured]
+
+    directory = os.path.dirname(os.path.abspath(__file__))
+    machine = platform.machine().lower()
+    if os.name == "nt":
+        names = ["cg.dll"]
+    elif sys.platform == "darwin":
+        names = ["libcg.dylib", "libcg.so"]
+    elif machine in {"aarch64", "arm64"}:
+        names = ["libcg-arm64.so", "libcg.so"]
+    else:
+        names = ["libcg.so"]
+    return [os.path.join(directory, name) for name in names]
+
+
+def _load_library():
+    errors = []
+    for path in _library_candidates():
+        try:
+            return ctypes.cdll.LoadLibrary(path)
+        except OSError as exc:
+            errors.append(f"{path}: {exc}")
+    attempted = "\n".join(errors) or "no candidate library"
+    raise OSError(f"Unable to load the official cg library. Tried:\n{attempted}")
+
+
 class StartData(ctypes.Structure):
     _fields_ = [
         ("battlePtr", ctypes.c_void_p),
@@ -16,12 +54,10 @@ class SerialData(ctypes.Structure):
         ("selectPlayer", ctypes.c_int)
     ]
 
-if os.name == 'nt':
-    lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cg.dll")
-else:
-    lib_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "libcg.so")
-lib = ctypes.cdll.LoadLibrary(lib_path)
+lib = _load_library()
 
+lib.GameInitialize.restype = None
+lib.GameInitialize.argtypes = []
 lib.GameInitialize()
 
 lib.BattleStart.restype = StartData
