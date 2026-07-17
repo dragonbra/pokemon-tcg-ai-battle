@@ -180,4 +180,4 @@ https://www.kaggle.com/competitions/pokemon-tcg-ai-battle/code
 - https://www.kaggle.com/code/heiseimikiko/why-alakazam-is-a-good-baseline-for-ai
 - https://www.kaggle.com/code/ryotasueyoshi/rule-based-not-psychic-alakazam-best-5th
 
-联合分析见：`reports/alakazam-baseline-notebook-analysis-zh.md`。
+联合分析见：`reports/decks/alakazam-baseline-notebook-analysis-zh.md`。

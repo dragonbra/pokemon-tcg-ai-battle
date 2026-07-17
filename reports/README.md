@@ -1,0 +1,22 @@
+# 研究与实现资料索引
+
+这个目录按“先确认事实，再选择卡组，再实现与评估”的顺序组织。
+
+## 1. 比赛与 simulator 事实
+
+- [`../notes/competition-facts.md`](../notes/competition-facts.md)：官方事实、提交约束和已知规则差异。
+- [`research/community-research-zh.md`](research/community-research-zh.md)：Discussion、公开 Notebook 和社区路线的研究摘要。
+- [`implementation/interactive-battle-brief-zh.md`](implementation/interactive-battle-brief-zh.md)：交互式 battle 调试需求，暂不作为当前第一阶段阻塞项。
+
+## 2. 卡组与策略研究
+
+- [`decks/deck-meta-alakazam-zh.md`](decks/deck-meta-alakazam-zh.md)：排行榜 archetype 与 Alakazam 的 meta 研究。
+- [`decks/alakazam-baseline-notebook-analysis-zh.md`](decks/alakazam-baseline-notebook-analysis-zh.md)：Alakazam 规则策略的拆解。
+
+## 3. 当前实现
+
+- [`implementation/implementation-brief.md`](implementation/implementation-brief.md)：第一版官方 simulator baseline 的目标、验收标准和运行记录。
+- [`implementation/baseline-run-zh.md`](implementation/baseline-run-zh.md)：已完成的资源整理、smoke test、提交包和本地 battle 结果。
+- 实际代码在 [`../submission/`](../submission/)；官方参考资源在 [`../data/official/`](../data/official/)。
+
+当前阶段的优先级是：加载官方 simulator → 用合法卡组完成本地 battle → 记录 observation/action/replay → 再扩展卡组与策略。

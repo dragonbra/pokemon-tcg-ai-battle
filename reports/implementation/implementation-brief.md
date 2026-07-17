@@ -1,6 +1,14 @@
 # Pokémon TCG AI Battle Baseline：实现任务书
 
-状态：等待 simulator/SDK 研究完成，尚未开始实现。
+状态：第一版资源、baseline 和本地对局验收已完成；下一步进入 observation 回归与卡组策略迭代。
+
+## 当前实现结果
+
+- 官方资源位于 `data/official/`；实际提交源位于 `submission/`。
+- `python scripts/check_assets.py` 通过。
+- 提交包已生成，archive 顶层包含 `main.py`、`deck.csv` 和 `cg/`。
+- 使用兼容 C++ runtime 完成同卡组 AI vs AI battle：33 步，player 0 胜，无异常。
+- 详细命令和 JSON 输出见 [`baseline-run-zh.md`](baseline-run-zh.md)。
 
 ## 目标
 
@@ -20,18 +28,18 @@
 ## 必须产出
 
 - 官方 simulator 依赖安装说明；
-- 顶层 `main.py`；
-- 一份合法的 `deck.csv`；
+- `submission/main.py`，打包后位于 archive 顶层；
+- `submission/deck.csv`，一份合法的 60 张卡组；
 - 能处理初始化和 deck-selection 状态的 agent；
 - 对每一个非空 `select` 返回合法动作；
 - 本地至少完成一局 battle；
 - 输出可调试的 JSON battle/replay；
 - 打包脚本并列出 archive 内容；
-- 中文 baseline 报告，记录命令和结果。
+- `scripts/run_local_battle.py` 和中文 baseline 记录，记录命令和结果。
 
 ## 验收标准
 
-1. 在干净环境中可以导入 SDK。
+1. 在兼容环境中可以导入官方 `cg` simulator。
 2. 使用最小合法卡组启动本地 battle。
 3. 所有动作都来自 simulator 提供的合法选项。
 4. 不因手牌、牌库、后备位或终止状态导致异常。
