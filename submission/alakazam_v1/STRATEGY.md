@@ -16,7 +16,17 @@ V1 的目标是先建立一条可以稳定运行、容易解释的 Alakazam game
     -> 准备下一只攻击手
 ```
 
-当前代码采用确定性的 action priority，并且所有动作都必须来自 simulator 的合法选项。
+当前代码采用确定性的 action priority，并且所有动作都必须来自 simulator 的合法选项。V1 已经实现了基础的单回合手牌阈值规划：当当前攻击不能击倒 Active 时，会评估抽牌 Ability、进化、抽牌 Trainer 和 `Enriching Energy` 是否能把伤害推过阈值。
+
+搜索效果也已经按 effect 类型处理：`Dawn` 依次找 Basic、Stage 1、Stage 2，`Hilda` 依次找 Evolution、Energy，`Buddy-Buddy Poffin` 和 `Telepath Psychic Energy` 优先找合适的 Basic Pokémon。
+
+当前版本另外补充了三类资源连续性规则：
+
+- `Dudunsparce` 在抽牌不会跨过击倒阈值、且牌库接近耗尽时降低优先级，避免为了短期手牌而制造牌库风险；
+- `Night Stretcher`、`Lana's Aid`、`Sacred Ash` 和 `Wondrous Patch` 会结合弃牌区是否真的能重建攻击线来决定时机；
+- 伤害目标和 `Boss's Orders` 都优先选择本回合可以击倒、且 Prize value 更高的合法目标。
+
+effect 处理也覆盖了这套卡组中较容易被忽略的路径：`Wondrous Patch` 的弃牌区能量和 Bench 目标、`Enhanced Hammer` 的特殊能量目标，以及攻击效果产生的伤害目标选择。`Psyduck` 的 `Damp` 没有被默认当作抽牌或铺场动作；由于 observation 不暴露对手卡牌的 Ability 文本，V1 只把它作为低优先级的 matchup utility。
 
 ## Hand Alakazam Notes
 
@@ -210,6 +220,8 @@ else:
 - 与上一版本相比的变化。
 
 当前已有的三局 smoke test 只用于验证运行链路，不足以评价策略强弱。
+
+最新阈值策略 smoke test：胡地自战 114 步完成；胡地先手对官方水系 24 步完成但落败；官方水系先手对胡地 45 步完成且胡地获胜，均无异常。这里的结果仍然只是运行回归，不代表稳定胜率。
 
 ## External Reference
 

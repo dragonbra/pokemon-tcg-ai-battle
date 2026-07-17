@@ -58,9 +58,12 @@
 - 优先完成 Kadabra/Alakazam 进化线；
 - Psychic Energy 优先附着到当前或下一只攻击手；
 - 使用 Dawn、Hilda、Buddy-Buddy Poffin、Poké Pad 维持 setup；
+- 根据 `Powerful Hand = 20 * hand_count` 判断当前击倒阈值，必要时先使用抽牌 Ability、进化或抽牌 Trainer；
+- 搜索效果按 `Dawn`、`Hilda`、`Buddy-Buddy Poffin`、`Telepath Psychic Energy` 的目标类别选择卡牌；
+- 根据牌库余量和弃牌区资源控制 `Dudunsparce`、恢复卡与 `Wondrous Patch` 的优先级，并在伤害目标/`Boss's Orders` 中优先选择可击倒目标；
 - 只返回 simulator 当前给出的合法 option，遇到未专门处理的效果时保守回退。
 
-这还不是最终策略：目前尚未完整实现 Powerful Hand 的伤害/手牌规划、Prize race、Boss's Orders 的目标价值评估和精细 recovery 时机。后续策略说明应优先补充到 `STRATEGY.md`，再把其中的规则落实到 `main.py`。
+这还不是最终策略：目前的伤害规划使用公开状态和单回合阈值，Prize race、Boss's Orders 的长期目标价值和精细 recovery 时机仍是近似规则。后续策略说明应优先补充到 `STRATEGY.md`，再继续落实到 `main.py`。
 
 ## Card Data Mapping Notes
 
@@ -81,10 +84,11 @@
 | Matchup | Battles | Completed | Alakazam V1 result | Steps |
 |---|---:|---:|---|---:|
 | Alakazam V1 vs Alakazam V1 | 1 | 1 | Same-policy self-play, player 0 won | 202 |
-| Alakazam V1 vs Official Water | 1 | 1 | V1 won | 45 |
-| Official Water vs Alakazam V1 | 1 | 1 | V1 won | 109 |
+| Current threshold-policy self-play | 1 | 1 | Same-policy self-play, player 0 won | 114 |
+| Current threshold-policy vs Official Water | 1 | 1 | V1 lost | 24 |
+| Official Water vs current threshold-policy | 1 | 1 | V1 won | 45 |
 
-Cross-matchup result is currently **2 wins / 2 battles (100%)**, with only two samples. All three battles completed without an agent error.
+The latest threshold-policy cross-matchup result is **1 win / 2 battles (50%)**. This is a small randomized smoke-test sample, not a strategy strength estimate. All six recorded battles completed without an agent error.
 
 Replay files:
 
