@@ -10,7 +10,15 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parent
+def _submission_root() -> Path:
+    """Resolve the submission directory in both import and Kaggle exec modes."""
+    source_file = globals().get("__file__")
+    if source_file:
+        return Path(source_file).resolve().parent
+    return Path.cwd()
+
+
+ROOT = _submission_root()
 DECK_PATH = ROOT / "deck.csv"
 
 
