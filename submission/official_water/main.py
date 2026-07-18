@@ -11,10 +11,20 @@ from typing import Any
 
 
 def _submission_root() -> Path:
-    """Resolve the submission directory in both import and Kaggle exec modes."""
+    """Resolve the directory where Kaggle unpacked the submission bundle."""
     source_file = globals().get("__file__")
-    if source_file:
-        return Path(source_file).resolve().parent
+    if isinstance(source_file, str):
+        source_root = Path(source_file).resolve().parent
+        if (source_root / "deck.csv").exists():
+            return source_root
+
+    # Kaggle's simulation loader may execute main.py with ``exec`` and omit
+    # __file__. The official FAQ says submission files are then available in
+    # /kaggle_simulations/agent, while cwd remains /kaggle/working.
+    kaggle_root = Path("/kaggle_simulations/agent")
+    if (kaggle_root / "deck.csv").exists():
+        return kaggle_root
+
     return Path.cwd()
 
 

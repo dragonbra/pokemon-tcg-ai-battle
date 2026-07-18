@@ -1,12 +1,13 @@
 # Kaggle CLI 快速开始
 
-仓库已经在独立 `.venv` 中安装 Level 1 客户端工具。
+Kaggle CLI 安装在本机 Homebrew Python 的真实环境中，不需要激活仓库虚拟环境。
 
 ```bash
 cd /Users/hejinyu/Documents/repos/pokemon-tcg-ai-battle
-source .venv/bin/activate
 kaggle --version
 ```
+
+当前验证版本为 `Kaggle CLI 2.2.3`，可执行文件位于 `/opt/homebrew/bin/kaggle`。
 
 Kaggle 登录不会自动执行。准备好后使用官方 OAuth：
 
