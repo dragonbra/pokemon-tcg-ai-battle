@@ -1,8 +1,7 @@
 # Alakazam V3 Strategy Specification
 
-> 这是 V3 的完整策略状态与目标行为说明。当前 V3 的 `main.py` 仍与 V2 相同，
-> 因此本文件中标为“V3 目标”的规则尚未实现；它们来自官方 replay 复盘和
-> `IMPROVEMENT.md` 的讨论结果，待确认后再修改代码。
+> 这是 V3 的完整策略状态与实现说明。V3 的 `main.py` 已在 V2 基础上实现本文件中的主要行动规则；
+> 尚未完成的是独立的官方 replay 结构化指标记录。V3 尚未重新提交 Kaggle。
 
 ## 1. 策略目标与状态边界
 
@@ -132,9 +131,8 @@ V2 已继承的合法选项、确定性和卡组结构保持不变；V3 的目�
 
 - 已实现：V2 的合法选项解析、确定性返回、Alakazam 手牌伤害估算、基础攻击目标和
   基础恢复逻辑。
-- 尚未实现：Telepath 先铺 Abra 的行动顺序、三只 Abra 系列的场面目标、Dunsparce
-  循环线状态、20/10 牌库保护阈值、Hilda/Dudunsparce 组合优先级、Bench Abra 的
-  Kadabra 进化规则、Fezandipiti ex 的伤害缺口计算，以及 Night Stretcher/Lana’s Aid
-  的进化链恢复优先级。
-- 当前 V3 `main.py` 与 V2 相同；本文件是讨论后目标策略，不应被当作已经提交到 Kaggle
-  的行为说明。
+- 已实现：Telepath 先铺 Abra 的行动顺序及无 Abra 时 fallback 到 Dunsparce、场上三只 Abra 系列的数量目标、
+  Dunsparce Trading Places、20/10 牌库保护阈值、Hilda/Dudunsparce 组合优先级、Bench Abra 的 Kadabra
+  进化规则、Fezandipiti ex 的手牌伤害缺口计算，以及 Night Stretcher/Lana’s Aid 的进化链恢复优先级。
+- 尚未实现：独立的官方 replay 结构化指标记录和新一轮 Kaggle 官方对局验证。
+- 当前 V3 尚未重新提交 Kaggle；本文件描述的是本地已实现的策略状态。

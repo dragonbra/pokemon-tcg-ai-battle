@@ -1,8 +1,7 @@
 # Alakazam V3 改进记录与讨论
 
-> 本文分为四层：用户原始观察、Codex 反馈、双方确认的策略约束，以及待批准的改动设计。
-> 用户原文保留在前两部分；“拟采取的策略改动”只代表设计方案，不代表已经修改
-> `main.py`。
+> 本文分为四层：用户原始观察、Codex 反馈、双方确认的策略约束，以及策略改动设计。
+> 用户原文保留在前两部分；A-D 改动已经落地到 V3 `main.py`，E 仍是后续 replay 复盘指标设计。
 
 
 ## 一、用户观察到的问题（原文保留）
@@ -141,12 +140,14 @@ dudunsparce + enriching energy 的组合过牌的。
   可以保留。
 - 不能因为 Retreat 或 Trading Places 选项存在，就默认执行。
 
-## 四、拟采取的策略改动（待批准，尚未实现）
+## 四、策略改动与实现状态
 
 ### A. 把 Telepath 的“铺 Abra”变成行动顺序约束
 
 在主行动排序中增加组合判断：如果手里有 Abra 和 Telepath Energy、场上没有 Psychic 目标，则先打出 Abra，
 下一次行动再把 Telepath 贴给它。只有没有 Abra 可以铺时，才允许把 Telepath 贴给 Dunsparce 作为 fallback。
+
+实现状态：已实现。
 
 ### B. 将“攻击线安全”和“抽牌线安全”分开判断
 
@@ -160,6 +161,8 @@ dudunsparce + enriching energy 的组合过牌的。
 
 这样可以在保住三只 Abra 系列的同时继续铺 Dunsparce，而不是二选一。
 
+实现状态：已实现。场上三只的判定按 Active+Bench 实际数量计算，抽牌保护也已独立加入行动排序。
+
 ### C. 重新定义 Poffin、Hilda 和 Rare Candy 的条件优先级
 
 - Poffin：场上 Abra 系列少于三只时找 Abra，达到三只后找 Dunsparce。
@@ -167,11 +170,16 @@ dudunsparce + enriching energy 的组合过牌的。
 - Rare Candy：优先保留能让前场 Abra 直接成为 Alakazam 并攻击的路线，避免先把前场锁成只能继续进化的
   Kadabra。
 
+实现状态：已实现。Hilda 在攻击线安全时优先 Dudunsparce+Enriching Energy，Night Stretcher/Lana’s Aid
+优先恢复 Abra→Kadabra→Alakazam 进化链。
+
 ### D. 增加显式牌库保护器
 
 把“手牌超过 20”“牌库不超过 10”“当前伤害是否已经足够”放到 Dudunsparce、Kadabra、Alakazam 和训练家
 抽牌动作的共同判断中，而不是只在牌库接近 0 时才阻止 Run Away Draw。Fezandipiti ex 是否落下也要使用同一套
 基于手牌数量和 Alakazam 手牌数 ×20 伤害缺口的计算。
+
+实现状态：已实现。手牌超过 20 张或牌库剩 10 张及以下时，非必要抽牌会被压低；直接形成击倒的抽牌保留。
 
 ### E. 增加恢复与动作指标
 
@@ -183,6 +191,8 @@ dudunsparce + enriching energy 的组合过牌的。
 - 每次抽牌时的手牌数和牌库数；
 - 真正 Retreat 与 Trading Places 的次数和结果；
 - Alakazam 被击倒后是否成功用 Abra 补回攻击线。
+
+实现状态：暂未加入独立 replay 日志；当前策略选择已经记录恢复目标，后续官方对局复盘时再补充结构化指标。
 
 ## 五、Changelog
 
@@ -198,4 +208,5 @@ dudunsparce + enriching energy 的组合过牌的。
   不区分 Active/Bench。
 - 明确 Fezandipiti ex 的使用条件基于当前手牌数量，以及 Alakazam 按发动攻击时手牌数 ×20 计算出的实际伤害缺口。
 - 明确 Night Stretcher 与 Lana’s Aid 都应优先恢复 Abra→Kadabra→Alakazam 进化链。
-- 本次只更新 improvement 文档；V3 的 `main.py` 尚未按上述方案修改。
+- V3 `main.py` 已按上述 A-D 方案实现；本次验证通过资产检查、语法检查、raw `exec` 检查，以及 V3 对 V2/V1
+  的本地对局。
