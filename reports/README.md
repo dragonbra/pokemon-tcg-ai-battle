@@ -21,5 +21,6 @@
 - [`implementation/alakazam-v1-run-zh.md`](implementation/alakazam-v1-run-zh.md)：胡地 V1 卡表映射、目录结构和本地对局验收。
 - [`kaggle/alakazam-v2-episodes-2026-07-18.md`](kaggle/alakazam-v2-episodes-2026-07-18.md)：V2 submission 的 Kaggle 官方 Episode 初步复盘。
 - [`kaggle/alakazam-v3-episodes-2026-07-19.md`](kaggle/alakazam-v3-episodes-2026-07-19.md)：V3 submission 的 Kaggle 官方 Episode 复盘。
-
-当前阶段的优先级是：下载 Kaggle 官方 Episode → 提取 observation/action/replay 指标 → 复盘真实对手与失败原因 → 再扩展策略。
+- [`kaggle/alakazam-public-reference-2026-07-19.md`](kaggle/alakazam-public-reference-2026-07-19.md)：Kaggle 公开 Alakazam agent 调研报告及参考 notebook。
+- [`kaggle/alakazam-public-code-survey-2026-07-19.md`](kaggle/alakazam-public-code-survey-2026-07-19.md)：多份公开 Alakazam code、卡组和实验结果的整合调研。
+- [`kaggle/alakazam-v5-fixed-deck-strategy-research-and-v5-mixed-brief-2026-07-19.md`](kaggle/alakazam-v5-fixed-deck-strategy-research-and-v5-mixed-brief-2026-07-19.md)：固定 V5 卡组、面向 Codex 的 `v5_mixed` 策略研究与实现任务书。当前阶段的优先级是：下载 Kaggle 官方 Episode → 提取 observation/action/replay 指标 → 复盘真实对手与失败原因 → 再扩展策略。
