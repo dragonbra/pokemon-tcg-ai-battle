@@ -19,5 +19,6 @@
 - [`implementation/baseline-run-zh.md`](implementation/baseline-run-zh.md)：已完成的资源整理、smoke test、提交包和本地 battle 结果。
 - 实际提交在 [`../submission/`](../submission/) 下，每个子目录都是一套可独立打包的 agent；官方参考资源在 [`../data/official/`](../data/official/)。
 - [`implementation/alakazam-v1-run-zh.md`](implementation/alakazam-v1-run-zh.md)：胡地 V1 卡表映射、目录结构和本地对局验收。
+- [`kaggle/alakazam-v2-episodes-2026-07-18.md`](kaggle/alakazam-v2-episodes-2026-07-18.md)：V2 submission 的 Kaggle 官方 Episode 初步复盘。
 
-当前阶段的优先级是：加载官方 simulator → 用合法卡组完成本地 battle → 记录 observation/action/replay → 再扩展卡组与策略。
+当前阶段的优先级是：下载 Kaggle 官方 Episode → 提取 observation/action/replay 指标 → 复盘真实对手与失败原因 → 再扩展策略。

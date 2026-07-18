@@ -141,16 +141,9 @@ V2 的第一项明确卡组调整：
 - Ace Spec 能量贴到土龙弟弟的次数；
 - 谢米和可达鸭进入场区的次数。
 
-验证时保留 V2 自对战和 V2 对 V1 的本地 replay。原计划中的 `official_water`
-目录在当前工作区是用户已删除的未提交变更，因此本轮无法重新运行该对手；待目录恢复
-后再补充 V2 对 official_water 的对照回放。
-
-本轮实际回放：
-
-- `replays/alakazam_v2_self_battle.json`: 完成，85 步，`error` 为 `null`；
-- `replays/alakazam_v2_vs_v1.json`: 完成，154 步，`error` 为 `null`；
-- 两局都在共享回合 `2` 开始出现攻击动作，并触发了 Rare Candy 直进 Alakazam；
-- 两局均未使用 Boss's Orders，且 V2 卡组中的 Psyduck 不会进入场区。
+本地 simulator replay 只作为临时调试输出，不再纳入仓库。V2 的真实对局复盘应使用
+`replays/kaggle_<submission-id>/` 下的 Kaggle 官方 Episode，并记录 submission ID、
+episode ID、对手、步数、结果和可用 agent log。
 
 ## 原文（完整保留）
 

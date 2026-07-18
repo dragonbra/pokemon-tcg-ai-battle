@@ -40,28 +40,11 @@ tar -tzf dist/official_water.tar.gz
 
 archive 顶层包含 `main.py`、`deck.csv` 和 `cg/`，不包含卡牌 CSV/PDF。
 
-本机 Ubuntu 20.04 的系统 `libstdc++.so.6` 最高只有 `GLIBCXX_3.4.28`，官方 `libcg.so` 需要 `GLIBCXX_3.4.29`。使用兼容 runtime 后执行：
-
-```bash
-PTCG_CXX_RUNTIME=/tmp/ptcg-runtime ./scripts/run_local_battle.sh \
-  --max-steps 20000 \
-  --output replays/local_battle.json
-```
-
-结果：
-
-```text
-finished=true
-result=0
-steps=33
-error=null
-```
-
-JSON replay/debug 输出：[`../../replays/local_battle.json`](../../replays/local_battle.json)。
+本机 Ubuntu 20.04 的系统 `libstdc++.so.6` 最高只有 `GLIBCXX_3.4.28`，官方 `libcg.so` 需要 `GLIBCXX_3.4.29`。这份本地 replay/debug 输出是历史临时产物，当前不再保存；正式复盘数据统一放在 `replays/kaggle_<submission-id>/` 下的 Kaggle Episode JSON。
 
 ## 当前边界
 
-- 这是 simulator smoke test 和回归 baseline，不代表卡组竞争力。
+- 本地 simulator smoke test 不是卡组竞争力结论，当前不作为主要评测来源。
 - `main.py` 目前不识别具体卡牌效果，主要用于验证合法动作链路。
 - `cg` 是官方预编译二进制；本地运行必须使用兼容的 Python、glibc 和 C++ runtime。
 - 现阶段不执行 Kaggle 上传。

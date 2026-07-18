@@ -47,7 +47,9 @@ observation-path compatibility for local and Kaggle execution.
 python3 scripts/check_assets.py
 python3 -m compileall scripts submission
 python3 scripts/run_local_battle.py --agent0 alakazam_v2 --agent1 alakazam_v2 \
-  --output replays/alakazam_v2_self_battle.json
+  --output /tmp/alakazam_v2_self_battle.json
 python3 scripts/run_local_battle.py --agent0 alakazam_v2 --agent1 official_water \
-  --output replays/alakazam_v2_vs_official_water.json
+  --output /tmp/alakazam_v2_vs_official_water.json
 ```
+
+这些本地 replay 只用于临时调试，不纳入仓库；正式复盘以 Kaggle 官方 Episode 为准。

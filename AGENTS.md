@@ -5,7 +5,7 @@
 - `submission/<name>/` 是可独立打包的 agent，必须包含 `main.py`、60 行 `deck.csv` 和 `cg/` 运行时；策略说明放在同目录的 `README.md` 或 `STRATEGY.md`。
 - `scripts/` 提供资产校验、提交打包、本地对局和官方引擎构建脚本。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
-- `notes/`、`reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 保存可复现的对局 JSON。
+- `notes/`、`reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
 
 ## 构建、测试与本地开发
 
@@ -14,10 +14,11 @@
 ```bash
 python3 scripts/check_assets.py
 bash scripts/package_submission.sh alakazam_v1
-./scripts/run_local_battle.sh --agent0 alakazam_v1 --agent1 official_water
+./scripts/run_local_battle.sh --agent0 alakazam_v1 --agent1 official_water \
+  --output /tmp/ptcg-local-battle.json
 ```
 
-第一条检查卡牌数据、60 张卡组和模拟器文件；第二条生成 `dist/<name>.tar.gz`；第三条运行一局本地 AI 对局并写入 `replays/local_battle.json`。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
+第一条检查卡牌数据、60 张卡组和模拟器文件；第二条生成 `dist/<name>.tar.gz`；本地 battle runner 仅用于临时调试，输出应写到 `/tmp`。官方真实对局以 Kaggle submission/episode/replay 为主要分析依据。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
 
 ## 编码风格与命名约定
 
@@ -25,7 +26,7 @@ Python 使用 4 个空格、类型注解和清晰的小函数；遵守 Ruff 的 
 
 ## 测试指南
 
-仓库当前没有 pytest 测试套件。提交前至少运行 `python3 scripts/check_assets.py`，并让目标 agent 完成一局本地对局；确认输出中的 `finished` 为 `true` 且 `error` 为 `null`。策略或引擎改动应保留 replay，并在说明中记录对手、步数和结果。必要时使用 `python3 -m compileall scripts submission` 检查语法。
+仓库当前没有 pytest 测试套件。提交前至少运行 `python3 scripts/check_assets.py`；本地对局不是当前主要评测来源，如需运行只将输出写到 `/tmp`。策略或引擎改动应优先记录 Kaggle 官方 Episode，并在说明中记录对手、步数和结果。必要时使用 `python3 -m compileall scripts submission` 检查语法。
 
 ## 提交与 Pull Request
 

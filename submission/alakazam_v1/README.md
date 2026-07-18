@@ -90,11 +90,8 @@
 
 The latest threshold-policy cross-matchup result is **1 win / 2 battles (50%)**. This is a small randomized smoke-test sample, not a strategy strength estimate. All six recorded battles completed without an agent error.
 
-Replay files:
-
-- [`alakazam_v1_self_battle.json`](../../replays/alakazam_v1_self_battle.json)
-- [`alakazam_v1_vs_official_water.json`](../../replays/alakazam_v1_vs_official_water.json)
-- [`official_water_vs_alakazam_v1.json`](../../replays/official_water_vs_alakazam_v1.json)
+本地 simulator replay 只作为临时调试输出，不再保存到仓库；正式对局复盘使用
+`replays/kaggle_<submission-id>/` 下从 Kaggle 下载的官方 Episode JSON。
 
 ## Packaging
 

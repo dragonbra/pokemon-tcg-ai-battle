@@ -26,6 +26,7 @@
 | `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
 | `reports/` | 调研结论、卡组分析和实现任务书 |
 | `experiments/` | 后续实验协议与结果模板 |
+| `replays/` | Kaggle 官方 Episode replay 和 agent log；本地临时回放不保存 |
 
 `submission/<name>/` 是一个完整提交源目录。每套提交都独立包含 `main.py`、`deck.csv` 和 `cg/`，由脚本单独打包成顶层包含这三项的 `.tar.gz`。当前有 `official_water` 和 `alakazam_v1` 两套提交。
 
@@ -35,8 +36,8 @@
 
 1. 先确认 simulator 的 observation、action、deck 和规则差异。
 2. 研究热门 Discussion 和公开代码，区分事实、作者推测和我们的假设。
-3. 跑通官方示例或最小规则 baseline。
-4. 建立可重复的卡组和对手池评估协议。
+3. 以 Kaggle 官方 submission/episode/replay 为主要真实对局数据。
+4. 从官方对局提取卡组、对手、回合和行动指标，建立复盘协议。
 5. 再比较规则、搜索、神经网络三类方法。
 6. 最后考虑神经网络、自博弈或“神经网络 + 有界搜索”。
 
@@ -53,12 +54,14 @@ python scripts/check_assets.py
 bash scripts/package_submission.sh alakazam_v1
 bash scripts/package_submission.sh official_water
 PTCG_CXX_RUNTIME=/path/to/compatible/runtime ./scripts/run_local_battle.sh \
-  --agent0 alakazam_v1 --agent1 official_water
+  --agent0 alakazam_v1 --agent1 official_water \
+  --output /tmp/ptcg-local-battle.json
 
 # 可选：从本地官方源码快照构建独立测试运行时
 ./scripts/build_official_engine.sh
 PTCG_CG_LIBRARY="$PWD/engine/build/libcg.so" ./scripts/run_local_battle.sh \
-  --agent0 alakazam_v1 --agent1 official_water
+  --agent0 alakazam_v1 --agent1 official_water \
+  --output /tmp/ptcg-local-battle.json
 ```
 
 如果当前环境已经能直接加载官方 `libcg.so`，可以省略 `PTCG_CXX_RUNTIME`；变量指向的目录应包含 `lib/libstdc++.so.6`。

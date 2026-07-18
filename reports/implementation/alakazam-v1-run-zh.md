@@ -60,12 +60,12 @@ python3 scripts/run_local_battle.py \
   --agent0 alakazam_v1 \
   --agent1 alakazam_v1 \
   --max-steps 20000 \
-  --output replays/alakazam_v1_self_battle.json
+  --output /tmp/alakazam_v1_self_battle.json
 python3 scripts/run_local_battle.py \
   --agent0 alakazam_v1 \
   --agent1 official_water \
   --max-steps 20000 \
-  --output replays/alakazam_v1_vs_official_water.json
+  --output /tmp/alakazam_v1_vs_official_water.json
 ```
 
 结果：胡地自战 202 步完成；胡地 V1 先手对官方水系 45 步完成，官方水系先手对胡地 V1 109 步完成，均无异常。
