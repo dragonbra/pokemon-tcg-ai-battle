@@ -5,7 +5,6 @@ venv/
 .env
 .kaggle/
 *.zip
-*.tar.gz
 *.7z
 *.pkl
 *.pt
