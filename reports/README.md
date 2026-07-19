@@ -22,6 +22,7 @@
 - [`kaggle/alakazam-v2-episodes-2026-07-18.md`](kaggle/alakazam-v2-episodes-2026-07-18.md)：V2 submission 的 Kaggle 官方 Episode 初步复盘。
 - [`kaggle/alakazam-v3-episodes-2026-07-19.md`](kaggle/alakazam-v3-episodes-2026-07-19.md)：V3 submission 的 Kaggle 官方 Episode 复盘。
 - [`kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md`](kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md)：V5 与 V5 Auto Iteration 最新各十场 Kaggle public replay 对照复盘。
+- [`kaggle/alakazam-v6-episodes-2026-07-19/analysis.md`](kaggle/alakazam-v6-episodes-2026-07-19/analysis.md)：V6 最新十场 Kaggle public replay 的逐局时间线、失败原因与 V7 重构建议。
 - [`rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)：官方 Pokémon TCG 规则书学习、simulator 规则映射与 V6 重构硬约束。
 - [`kaggle/alakazam-public-reference-2026-07-19.md`](kaggle/alakazam-public-reference-2026-07-19.md)：Kaggle 公开 Alakazam agent 调研报告及参考 notebook。
 - [`kaggle/alakazam-public-code-survey-2026-07-19.md`](kaggle/alakazam-public-code-survey-2026-07-19.md)：多份公开 Alakazam code、卡组和实验结果的整合调研。
