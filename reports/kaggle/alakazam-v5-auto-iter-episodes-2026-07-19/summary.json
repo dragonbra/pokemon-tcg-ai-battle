@@ -1,0 +1,228 @@
+{
+  "scope": {
+    "selection": "每个 submission 按 Kaggle API 返回的最新优先顺序取 10 场 public replay",
+    "validation_excluded": true,
+    "auto_root": "replays/kaggle_v5_auto_iter_54820051",
+    "v5_root": "replays/kaggle_v5_54820045"
+  },
+  "alakazam_v5_auto_iter": {
+    "games": 10,
+    "results": {
+      "win": 5,
+      "loss": 5
+    },
+    "wins": 5,
+    "losses": 5,
+    "win_rate": 0.5,
+    "first_alakazam": {
+      "n": 9,
+      "mean": 5.56,
+      "median": 5,
+      "min": 4,
+      "max": 9
+    },
+    "first_ready_attacker": {
+      "n": 10,
+      "mean": 3,
+      "median": 2.0,
+      "min": 1,
+      "max": 7
+    },
+    "first_attack": {
+      "n": 10,
+      "mean": 3.4,
+      "median": 3.0,
+      "min": 2,
+      "max": 7
+    },
+    "first_alakazam_attack": {
+      "n": 5,
+      "mean": 7.6,
+      "median": 7,
+      "min": 5,
+      "max": 11
+    },
+    "attack_count": {
+      "n": 10,
+      "mean": 2.8,
+      "median": 2.5,
+      "min": 1,
+      "max": 5
+    },
+    "attack_line_attack_count": {
+      "n": 10,
+      "mean": 2.5,
+      "median": 2.0,
+      "min": 1,
+      "max": 5
+    },
+    "max_ready_attackers": {
+      "n": 10,
+      "mean": 2,
+      "median": 2.0,
+      "min": 1,
+      "max": 3
+    },
+    "final_deck": {
+      "n": 10,
+      "mean": 14.8,
+      "median": 15.0,
+      "min": 0,
+      "max": 30
+    },
+    "final_prizes": {
+      "n": 10,
+      "mean": 3.4,
+      "median": 3.0,
+      "min": 1,
+      "max": 6
+    },
+    "empty_active_games": 8,
+    "no_available_active_games": 0,
+    "failure_reasons": {
+      "deck_exhaustion": 2,
+      "prize_race_loss": 3,
+      "no_alakazam_setup": 1
+    },
+    "played_cards": {
+      "Dunsparce": 11,
+      "Abra": 9,
+      "Rare Candy": 8,
+      "Buddy-Buddy Poffin": 16,
+      "Poké Pad": 20,
+      "Xerosic’s Machinations": 5,
+      "Dawn": 16,
+      "Shaymin": 3,
+      "Enhanced Hammer": 6,
+      "Lana’s Aid": 2,
+      "Hilda": 11,
+      "Battle Cage": 6,
+      "Night Stretcher": 2,
+      "Sacred Ash": 2,
+      "Wondrous Patch": 2,
+      "Fezandipiti ex": 1
+    },
+    "opponents": {
+      "MBOOK": 1,
+      "jam yann": 1,
+      "Gregers Rygg": 1,
+      "PokePoke-777": 1,
+      "treo_hihihi": 1,
+      "hoodrichpirobo": 1,
+      "kunihiro": 1,
+      "David Tan": 1,
+      "madoka1111": 1,
+      "Water Xiao": 1
+    }
+  },
+  "alakazam_v5": {
+    "games": 10,
+    "results": {
+      "loss": 8,
+      "win": 2
+    },
+    "wins": 2,
+    "losses": 8,
+    "win_rate": 0.2,
+    "first_alakazam": {
+      "n": 7,
+      "mean": 5.71,
+      "median": 5,
+      "min": 3,
+      "max": 9
+    },
+    "first_ready_attacker": {
+      "n": 9,
+      "mean": 2.78,
+      "median": 2,
+      "min": 1,
+      "max": 5
+    },
+    "first_attack": {
+      "n": 7,
+      "mean": 6.86,
+      "median": 5,
+      "min": 3,
+      "max": 17
+    },
+    "first_alakazam_attack": {
+      "n": 3,
+      "mean": 10,
+      "median": 8,
+      "min": 5,
+      "max": 17
+    },
+    "attack_count": {
+      "n": 10,
+      "mean": 2.1,
+      "median": 2.5,
+      "min": 0,
+      "max": 4
+    },
+    "attack_line_attack_count": {
+      "n": 10,
+      "mean": 1.9,
+      "median": 2.5,
+      "min": 0,
+      "max": 4
+    },
+    "max_ready_attackers": {
+      "n": 10,
+      "mean": 1.7,
+      "median": 2.0,
+      "min": 0,
+      "max": 3
+    },
+    "final_deck": {
+      "n": 10,
+      "mean": 22.1,
+      "median": 19.0,
+      "min": 0,
+      "max": 44
+    },
+    "final_prizes": {
+      "n": 10,
+      "mean": 4.7,
+      "median": 5.5,
+      "min": 2,
+      "max": 6
+    },
+    "empty_active_games": 9,
+    "no_available_active_games": 0,
+    "failure_reasons": {
+      "prize_race_loss": 6,
+      "no_alakazam_setup": 3,
+      "deck_exhaustion": 1
+    },
+    "played_cards": {
+      "Dunsparce": 12,
+      "Night Stretcher": 2,
+      "Boss’s Orders": 5,
+      "Lana’s Aid": 3,
+      "Fezandipiti ex": 1,
+      "Shaymin": 3,
+      "Abra": 7,
+      "Rare Candy": 5,
+      "Buddy-Buddy Poffin": 14,
+      "Sacred Ash": 3,
+      "Poké Pad": 14,
+      "Xerosic’s Machinations": 4,
+      "Dawn": 19,
+      "Battle Cage": 4,
+      "Hilda": 9,
+      "Enhanced Hammer": 2
+    },
+    "opponents": {
+      "Abhi": 1,
+      "PaShm": 1,
+      "Dino Xie": 1,
+      "Hawk": 1,
+      "中村文彌": 1,
+      "half pizza": 1,
+      "Ben Desprets": 1,
+      "Climber513": 1,
+      "Mingzhengxuan Wu": 1,
+      "what peter": 1
+    }
+  }
+}

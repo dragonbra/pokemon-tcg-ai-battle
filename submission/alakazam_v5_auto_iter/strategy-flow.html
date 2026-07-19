@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alakazam v5_auto_iter · 策略执行流程</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08111f;
+      --surface: #101d31;
+      --surface-2: #142641;
+      --surface-3: #1a3150;
+      --ink: #e9f1ff;
+      --muted: #9cb0ca;
+      --line: #2a4262;
+      --cyan: #65d4ff;
+      --green: #63dfa7;
+      --yellow: #ffd166;
+      --orange: #ff9f68;
+      --red: #ff7184;
+      --violet: #b99aff;
+      --shadow: 0 18px 45px rgba(0, 0, 0, .22);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(101, 212, 255, .12), transparent 34rem),
+        radial-gradient(circle at 90% 12%, rgba(185, 154, 255, .11), transparent 30rem),
+        var(--bg);
+      color: var(--ink);
+      font: 15px/1.6 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button { font: inherit; }
+
+    .page {
+      width: min(1440px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 38px 0 56px;
+    }
+
+    .eyebrow,
+    .section-label,
+    .node-kicker,
+    .detail-kicker,
+    .score {
+      letter-spacing: .11em;
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 28px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow { color: var(--cyan); }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h1 {
+      max-width: 850px;
+      margin-bottom: 10px;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: 1.03;
+      letter-spacing: -.045em;
+    }
+
+    .lede {
+      max-width: 850px;
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .model-badge {
+      flex: 0 0 auto;
+      padding: 12px 15px;
+      border: 1px solid rgba(101, 212, 255, .35);
+      border-radius: 14px;
+      background: rgba(16, 29, 49, .75);
+      color: var(--cyan);
+      box-shadow: var(--shadow);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .intro-grid,
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, .7fr);
+      gap: 18px;
+    }
+
+    .panel {
+      border: 1px solid rgba(156, 176, 202, .16);
+      border-radius: 20px;
+      background: linear-gradient(145deg, rgba(20, 38, 65, .92), rgba(16, 29, 49, .92));
+      box-shadow: var(--shadow);
+    }
+
+    .intro {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 20px;
+    }
+
+    .intro-item {
+      min-height: 110px;
+      padding: 15px;
+      border-radius: 14px;
+      background: rgba(8, 17, 31, .4);
+    }
+
+    .intro-item strong { display: block; margin-bottom: 6px; color: var(--ink); }
+    .intro-item span { color: var(--muted); font-size: 13px; }
+
+    .legend {
+      padding: 20px;
+    }
+
+    .legend h2,
+    .section-heading h2 { margin-bottom: 4px; font-size: 18px; }
+    .legend p,
+    .section-heading p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+
+    .legend-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 17px;
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      box-shadow: 0 0 14px currentColor;
+    }
+
+    .dot-ko { color: var(--green); background: var(--green); }
+    .dot-route { color: var(--cyan); background: var(--cyan); }
+    .dot-setup { color: var(--yellow); background: var(--yellow); }
+    .dot-guard { color: var(--orange); background: var(--orange); }
+    .dot-end { color: var(--red); background: var(--red); }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 20px;
+      margin: 36px 0 13px;
+    }
+
+    .section-label { color: var(--muted); margin-bottom: 5px; }
+
+    .flow-panel { padding: 22px; overflow: hidden; }
+
+    .flow-rail {
+      display: grid;
+      grid-template-columns: minmax(230px, .8fr) 34px minmax(0, 1fr);
+      align-items: center;
+      gap: 14px;
+    }
+
+    .flow-node,
+    .priority-node,
+    .gate-card {
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(8, 17, 31, .45);
+    }
+
+    .flow-node,
+    .priority-node {
+      width: 100%;
+      padding: 15px 16px;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease, background .16s ease;
+    }
+
+    .flow-node:hover,
+    .flow-node:focus-visible,
+    .priority-node:hover,
+    .priority-node:focus-visible {
+      outline: none;
+      transform: translateY(-2px);
+      border-color: var(--cyan);
+      background: rgba(26, 49, 80, .8);
+    }
+
+    .flow-node.is-active,
+    .priority-node.is-active { border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(101, 212, 255, .12); }
+
+    .flow-node h3,
+    .priority-node h3 { margin: 4px 0 3px; font-size: 16px; line-height: 1.25; }
+    .flow-node p,
+    .priority-node p { margin-bottom: 0; color: var(--muted); font-size: 12px; }
+
+    .node-kicker { color: var(--muted); }
+    .node-kicker.cyan { color: var(--cyan); }
+    .node-kicker.green { color: var(--green); }
+    .node-kicker.yellow { color: var(--yellow); }
+    .node-kicker.orange { color: var(--orange); }
+    .node-kicker.violet { color: var(--violet); }
+
+    .arrow {
+      position: relative;
+      height: 2px;
+      background: var(--line);
+    }
+
+    .arrow::after {
+      position: absolute;
+      top: -4px;
+      right: -1px;
+      width: 8px;
+      height: 8px;
+      border-top: 2px solid var(--cyan);
+      border-right: 2px solid var(--cyan);
+      content: "";
+      transform: rotate(45deg);
+    }
+
+    .decision-note {
+      grid-column: 1 / -1;
+      margin: 1px 0 0;
+      padding: 10px 14px;
+      border-left: 3px solid var(--violet);
+      background: rgba(185, 154, 255, .08);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .priority-panel {
+      display: grid;
+      grid-template-columns: minmax(170px, .35fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 17px;
+    }
+
+    .priority-intro {
+      padding: 17px;
+      border: 1px solid rgba(101, 212, 255, .2);
+      border-radius: 15px;
+      background: rgba(101, 212, 255, .06);
+    }
+
+    .priority-intro h3 { margin-bottom: 8px; font-size: 15px; }
+    .priority-intro p { margin-bottom: 0; color: var(--muted); font-size: 13px; }
+
+    .priority-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .priority-node {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      align-items: center;
+      gap: 12px;
+      padding: 11px 13px;
+    }
+
+    .priority-node h3 { margin: 0; font-size: 14px; }
+    .priority-node p { margin-top: 2px; }
+
+    .score {
+      display: inline-block;
+      width: fit-content;
+      padding: 3px 7px;
+      border-radius: 7px;
+      letter-spacing: .05em;
+      font-size: 10px;
+    }
+
+    .score-ko { color: #03150d; background: var(--green); }
+    .score-route { color: #03121a; background: var(--cyan); }
+    .score-setup { color: #191304; background: var(--yellow); }
+    .score-guard { color: #1c0e05; background: var(--orange); }
+    .score-end { color: #21060a; background: var(--red); }
+
+    .branch-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .branch {
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(8, 17, 31, .28);
+    }
+
+    .branch h3 { margin-bottom: 3px; font-size: 15px; }
+    .branch > p { margin-bottom: 10px; color: var(--muted); font-size: 12px; }
+
+    .branch-flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mini-node {
+      padding: 6px 8px;
+      border: 1px solid rgba(156, 176, 202, .2);
+      border-radius: 8px;
+      background: rgba(20, 38, 65, .8);
+      color: var(--ink);
+      font-size: 11px;
+    }
+
+    .mini-arrow { color: var(--cyan); font-size: 14px; }
+
+    .content-grid { align-items: start; margin-top: 18px; }
+
+    .gates-panel { padding: 20px; }
+
+    .gates-list { display: grid; gap: 10px; margin-top: 15px; }
+
+    .gate-card {
+      padding: 13px 14px 13px 16px;
+      border-left: 3px solid var(--yellow);
+    }
+
+    .gate-card:nth-child(2) { border-left-color: var(--green); }
+    .gate-card:nth-child(3) { border-left-color: var(--orange); }
+    .gate-card:nth-child(4) { border-left-color: var(--violet); }
+    .gate-card:nth-child(5) { border-left-color: var(--red); }
+
+    .gate-card h3 { margin-bottom: 4px; font-size: 14px; }
+    .gate-card p { margin-bottom: 0; color: var(--muted); font-size: 12px; }
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, .25);
+      color: #d9e6ff;
+      font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    .detail-panel {
+      position: sticky;
+      top: 18px;
+      padding: 22px;
+    }
+
+    .detail-kicker { color: var(--cyan); }
+    .detail-panel h2 { margin: 5px 0 4px; font-size: 23px; line-height: 1.2; }
+    .detail-meta { margin-bottom: 17px; color: var(--muted); font-size: 12px; }
+
+    .detail-list {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .detail-list li {
+      position: relative;
+      padding-left: 16px;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .detail-list li::before {
+      position: absolute;
+      top: .55em;
+      left: 0;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan);
+      content: "";
+    }
+
+    .detail-code {
+      margin: 18px 0 0;
+      padding: 12px;
+      overflow-x: auto;
+      border: 1px solid rgba(156, 176, 202, .14);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, .22);
+      color: var(--muted);
+      font: 11px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+      white-space: pre-wrap;
+    }
+
+    .footnote {
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    @media (max-width: 900px) {
+      header { align-items: start; flex-direction: column; }
+      .intro-grid, .content-grid { grid-template-columns: 1fr; }
+      .detail-panel { position: static; }
+    }
+
+    @media (max-width: 680px) {
+      .page { width: min(100% - 22px, 600px); padding-top: 24px; }
+      .intro, .branch-grid, .priority-panel { grid-template-columns: 1fr; }
+      .flow-rail { grid-template-columns: 1fr; }
+      .arrow { width: 2px; height: 18px; justify-self: center; }
+      .arrow::after { top: auto; right: -4px; bottom: -1px; transform: rotate(135deg); }
+      .priority-node { grid-template-columns: 68px minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <div class="eyebrow">DETERMINISTIC POLICY · EXECUTION MAP</div>
+        <h1>Alakazam <span style="color: var(--cyan)">v5_auto_iter</span><br>实际执行流程</h1>
+        <p class="lede">这张图把 agent 每次收到 observation 后的真实决策顺序摊开：先识别选择阶段，再对所有合法 option 计算 tuple score，最后选择排序最前的动作或效果目标。</p>
+      </div>
+      <div class="model-badge">合法 option only<br><span style="color: var(--muted); font-weight: 500">score 越低越优先 · 稳定 index 破平</span></div>
+    </header>
+
+    <section class="intro-grid" aria-label="策略摘要">
+      <div class="panel intro">
+        <div class="intro-item">
+          <strong>输入</strong>
+          <span>当前局面、手牌数量、牌库数量、Active/Bench、对手 Active 与本回合合法 option。</span>
+        </div>
+        <div class="intro-item">
+          <strong>核心目标</strong>
+          <span>先兑现可行击倒，再保证下一只 Alakazam 接力；setup 与资源保护服从这个顺序。</span>
+        </div>
+        <div class="intro-item">
+          <strong>确定性</strong>
+          <span>不随机抽样；同一 observation 下按 score tuple 和 option index 稳定选择。</span>
+        </div>
+        <div class="intro-item">
+          <strong>阅读方法</strong>
+          <span>点击任意节点查看它对应的函数、条件、典型分数和可能的策略风险。</span>
+        </div>
+      </div>
+      <aside class="panel legend" aria-label="分数图例">
+        <h2>优先级图例</h2>
+        <p>分数是动态的，下面是主要梯度，不是每局固定的动作清单。</p>
+        <div class="legend-list">
+          <div class="legend-row"><span class="legend-dot dot-ko"></span><span><strong>0</strong> · 立即击倒或关键进攻路线</span></div>
+          <div class="legend-row"><span class="legend-dot dot-route"></span><span><strong>1–8</strong> · 让本回合形成击倒 / 进化 / 交接</span></div>
+          <div class="legend-row"><span class="legend-dot dot-setup"></span><span><strong>9–30</strong> · setup、检索、恢复、准备下一回合</span></div>
+          <div class="legend-row"><span class="legend-dot dot-guard"></span><span><strong>50+</strong> · 被保护的动作、无收益攻击或死动作</span></div>
+          <div class="legend-row"><span class="legend-dot dot-end"></span><span><strong>99</strong> · END；但 Mist 下无效攻击可到 110</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <section aria-labelledby="flow-title">
+      <div class="section-heading">
+        <div>
+          <div class="section-label">01 / ENTRY AND BRANCHING</div>
+          <h2 id="flow-title">从 observation 到一个合法选择</h2>
+          <p>入口先决定当前是在“主行动”还是“效果选择”；两条路径都只返回模拟器提供的合法 index。</p>
+        </div>
+      </div>
+      <div class="panel flow-panel">
+        <div class="flow-rail">
+          <button class="flow-node is-active" data-node="agent" type="button">
+            <div class="node-kicker cyan">入口 · agent(obs)</div>
+            <h3>收到当前 observation</h3>
+            <p>读取 select、局面、合法 option 和效果 serial。</p>
+          </button>
+          <div class="arrow" aria-hidden="true"></div>
+          <button class="flow-node" data-node="reset" type="button">
+            <div class="node-kicker violet">select is None</div>
+            <h3>新局初始化</h3>
+            <p>清除跨局效果进度，返回 60 张 deck。</p>
+          </button>
+
+          <div class="decision-note"><strong>否则：</strong>如果 <code>select.type == 0</code> 且 <code>context == 0</code>，进入主行动评分；任何其他 select 进入效果选择。</div>
+
+          <button class="flow-node" data-node="main-entry" type="button">
+            <div class="node-kicker green">type 0 · context 0</div>
+            <h3>主行动阶段</h3>
+            <p>先计算局面 gate，再给每个 action option 排 score。</p>
+          </button>
+          <div class="arrow" aria-hidden="true"></div>
+          <button class="flow-node" data-node="effect-entry" type="button">
+            <div class="node-kicker yellow">其他 select</div>
+            <h3>效果选择阶段</h3>
+            <p>按 context / select type 选择卡牌、能量、目标、数量或 yes/no。</p>
+          </button>
+        </div>
+
+        <div class="priority-panel">
+          <div class="priority-intro">
+            <div class="node-kicker cyan">主行动排序器</div>
+            <h3>不是 if/else 单链</h3>
+            <p>策略会先为所有合法 option 生成 <code>(priority, tie, index)</code>，再取排序第一项。条件 gate 会改变一个动作的分数。</p>
+          </div>
+          <div class="priority-list" aria-label="主行动优先级阶梯">
+            <button class="priority-node" data-node="ko" type="button">
+              <span class="score score-ko">score 0</span>
+              <span><h3>立即击倒</h3><p>合法攻击能拿 Prize 时，先攻击；除非是有明确收益的 Trading Places 交接。</p></span>
+            </button>
+            <button class="priority-node" data-node="route" type="button">
+              <span class="score score-route">1–4</span>
+              <span><h3>把局面变成击倒</h3><p>抽牌刚好创造 lethal、Rare Candy / 自然进化直通 Alakazam、有效的 Hilda / Dawn。</p></span>
+            </button>
+            <button class="priority-node" data-node="handoff" type="button">
+              <span class="score score-route">score 4</span>
+              <span><h3>Dunsparce Trading Places</h3><p>把已充能的 Alakazam 交接到 Active，优先于普通低伤害攻击。</p></span>
+            </button>
+            <button class="priority-node" data-node="energy" type="button">
+              <span class="score score-ko">0–1</span>
+              <span><h3>给攻击线补一张 Psychic</h3><p>Active 优先，其次 Bench；Abra / Kadabra / Alakazam 通常一只只需要一张。</p></span>
+            </button>
+            <button class="priority-node" data-node="setup" type="button">
+              <span class="score score-setup">4–18</span>
+              <span><h3>建立下一回合的资源</h3><p>Poffin、Dawn、Hilda、Poké Pad、进化和抽牌能力，依赖 setup gate。</p></span>
+            </button>
+            <button class="priority-node" data-node="recovery" type="button">
+              <span class="score score-setup">6–35</span>
+              <span><h3>恢复与条件性干扰</h3><p>Night Stretcher、Lana’s Aid、Sacred Ash、Wondrous Patch、Xerosic、Hammer、Boss。</p></span>
+            </button>
+            <button class="priority-node" data-node="fallback" type="button">
+              <span class="score score-guard">24–110</span>
+              <span><h3>普通攻击、抽牌或放弃动作</h3><p>无击倒时仍保留合理 fallback；Mist Energy 使 Alakazam 攻击估算为 0。</p></span>
+            </button>
+            <button class="priority-node" data-node="end" type="button">
+              <span class="score score-end">score 99</span>
+              <span><h3>END</h3><p>没有更高收益的合法行动时结束回合；死撤退会被压到 100。</p></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="branch-grid">
+          <div class="branch">
+            <h3>主行动的实际循环</h3>
+            <p>每次主行动 observation 都重复这个排序过程。</p>
+            <div class="branch-flow">
+              <span class="mini-node">读局面 gate</span><span class="mini-arrow">→</span>
+              <span class="mini-node">列出合法 option</span><span class="mini-arrow">→</span>
+              <span class="mini-node">score tuple</span><span class="mini-arrow">→</span>
+              <span class="mini-node">取最低分</span>
+            </div>
+          </div>
+          <div class="branch">
+            <h3>效果选择的实际循环</h3>
+            <p>选完一个目标后推进 effect serial，下一步重新判断 context。</p>
+            <div class="branch-flow">
+              <span class="mini-node">识别 context</span><span class="mini-arrow">→</span>
+              <span class="mini-node">选目标/卡牌</span><span class="mini-arrow">→</span>
+              <span class="mini-node">_advance_effect</span><span class="mini-arrow">→</span>
+              <span class="mini-node">返回合法 index</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="gate-title">
+      <div class="section-heading">
+        <div>
+          <div class="section-label">02 / DECISION GATES</div>
+          <h2 id="gate-title">优先级背后的五个 gate</h2>
+          <p>这些 gate 不一定直接返回动作，但会改变 score，决定 setup 是否让位于攻击。</p>
+        </div>
+      </div>
+      <div class="content-grid">
+        <div class="panel gates-panel">
+          <div class="gates-list">
+            <article class="gate-card">
+              <h3>① Setup gate · 先补攻击线</h3>
+              <p>首回合不进化；Poké Pad 优先拿 Dunsparce / Abra。Poffin 在 <code>attack_line_count &lt; 3</code> 或 <code>ready_attack_line_count &lt; 2</code> 时优先 Abra，达到条件后才转 Dunsparce。</p>
+            </article>
+            <article class="gate-card">
+              <h3>② Attack gate · 先问能不能拿 Prize</h3>
+              <p>当前合法击倒为 score 0；有直接 Alakazam 路线时，保留 Active Abra 的 Rare Candy 路线，Bench Abra 才自然进化成 Kadabra。Active Kadabra + Psychic + Alakazam 则自然进化直攻。</p>
+            </article>
+            <article class="gate-card">
+              <h3>③ Draw / deck safety gate · 抽牌不是无条件好事</h3>
+              <p><code>_draw_is_blocked()</code> 只在抽牌会直接创造击倒时放行例外；否则手牌 &gt; 20、牌库 ≤ 10 或已经能击倒都会限制抽牌。当前 auto_iter 对 Dudunsparce 只在牌库 ≤ 1 时额外保护，是明确风险点。</p>
+            </article>
+            <article class="gate-card">
+              <h3>④ Energy gate · 一条线一张能量</h3>
+              <p>Telepath Energy 优先未充能 Abra 线；手里有 Abra 且场上没有攻击线时先放 Abra。已带 Psychic 的 Abra 线不重复贴；Enriching Energy 只在 Active Alakazam 已能攻、没有未充能攻击线且有 Dudunsparce 时换抽牌。</p>
+            </article>
+            <article class="gate-card">
+              <h3>⑤ Prize / interaction gate · 只为具体收益打扰</h3>
+              <p>Alakazam 对手带 Mist Energy 时估伤为 0，优先 Enhanced Hammer。Boss 只在能击倒、提高 Prize 价值或满足 Iono 定向条件时用；Fezandipiti ex 需要上一回合被击倒且不会暴露不必要的两奖目标。</p>
+            </article>
+          </div>
+          <p class="footnote">注意：分数与状态绑定。例如 Hammer 在 Mist 阻断时可以是 0，但没有特殊能量时会退到更低优先级；页面展示的是规则实际使用的典型结果。</p>
+        </div>
+
+        <aside class="panel detail-panel" aria-live="polite">
+          <div id="detail-kicker" class="detail-kicker">点击一个节点查看细节</div>
+          <h2 id="detail-title">v5_auto_iter 的决策器</h2>
+          <div id="detail-meta" class="detail-meta">主行动与效果选择共享同一个确定性入口。</div>
+          <ul id="detail-list" class="detail-list">
+            <li>左侧节点会显示对应的真实函数和策略条件。</li>
+            <li>流程中的“优先”指排序分数更低，而不是执行时强制跳过所有其他合法 option。</li>
+            <li>如果分数相同，使用 option index 保持稳定。</li>
+          </ul>
+          <pre id="detail-code" class="detail-code">agent(obs)
+  ├─ select is None → 清除 _EFFECT_PROGRESS，返回 deck
+  ├─ type == 0 &amp;&amp; context == 0 → _main_action(obs)
+  └─ otherwise → _select_effect(obs)</pre>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const NODE_DETAILS = {
+      agent: {
+        kicker: "入口 · agent(obs)",
+        title: "先识别当前选择阶段",
+        meta: "函数 agent · 每个 observation 返回合法 index 列表",
+        points: [
+          "select 为 None 代表新局：清除 _EFFECT_PROGRESS，返回 read_deck_csv() 的 60 张卡组。",
+          "type == 0 且 context == 0 才是主行动；其他情况全部交给效果选择器。",
+          "策略本身不生成 simulator 没给出的动作，所有选择都从当前 option 中排序。"
+        ],
+        code: "agent(obs)\n  ├─ 初始化\n  ├─ _main_action(obs)\n  └─ _select_effect(obs)"
+      },
+      reset: {
+        kicker: "select is None",
+        title: "新局初始化，而不是一次行动",
+        meta: "函数 agent · effect serial 的跨局保护",
+        points: [
+          "清除 _EFFECT_PROGRESS，防止上一局 Dawn / Hilda / Poffin 的效果步骤泄漏到下一局。",
+          "重新读取 deck.csv，并返回完整 60 张 deck。",
+          "这一步没有对局策略判断，主行动从下一个 observation 才开始。"
+        ],
+        code: "_EFFECT_PROGRESS.clear()\nreturn read_deck_csv()"
+      },
+      "main-entry": {
+        kicker: "type 0 · context 0",
+        title: "主行动：先计算局面快照",
+        meta: "函数 _main_action · options → sorted(score) → index",
+        points: [
+          "计算 own turn、Active、Bench、手牌数、牌库数、攻击线数量和 ready Alakazam 数量。",
+          "预先判断 direct route、natural route、attack_path、attack_is_ko、Mist 阻断和 recovery need。",
+          "对每个 option 返回 (priority, tie_break, index)，排序后只取第一项。"
+        ],
+        code: "ranked = sorted(enumerate(options), key=score)\nreturn [ranked[0][0]]"
+      },
+      "effect-entry": {
+        kicker: "其他 select",
+        title: "效果选择：context 决定目标类型",
+        meta: "函数 _select_effect · 选择后推进 _EFFECT_PROGRESS",
+        points: [
+          "context 37：Rare Candy 选择要进化的 Pokémon；13 / 14 / 15：伤害目标。",
+          "context 22 或 select type 4：选择能量；3 / 4：选择切换目标。",
+          "其余检索、弃牌、数量和 yes/no 选择都使用当前局面与卡牌优先级，并在结束时 _advance_effect。"
+        ],
+        code: "if context == 37: _choose_evolution_target(...)\nelif select_type == 4: _choose_energy_option(...)\nelse: _choose_card_option(...)"
+      },
+      ko: {
+        kicker: "score 0",
+        title: "当前能击倒，就先拿 Prize",
+        meta: "函数 _main_action.score · option_type == 13",
+        points: [
+          "attack_is_ko 为真时，普通攻击返回 (0, 0, index)，成为最高优先级。",
+          "唯一保留的特殊例外是 Dunsparce 的 Trading Places：如果能把 ready Alakazam 交到 Active，会以 score 4 执行交接。",
+          "击倒判断包含 Alakazam 手牌数带来的 Powerful Hand 伤害和对手 Active 的 HP。"
+        ],
+        code: "if attack_is_ko:\n    return (0, 0, index)"
+      },
+      route: {
+        kicker: "score 1–4",
+        title: "让本回合形成真正的进攻路线",
+        meta: "函数 _main_action.score · draw / evolve / supporter branches",
+        points: [
+          "抽牌刚好把 Alakazam 的伤害推过对手 HP 时，抽牌返回约 score 1。",
+          "Active Kadabra + Psychic Energy + 手中 Alakazam 时，自然进化能立即攻击；Active Abra 保留 Rare Candy + Alakazam 的直通路线。",
+          "Dawn / Hilda 在能直接补出进化和攻击条件时优先于盲目 setup。"
+        ],
+        code: "if _draw_changes_knockout(...): return (1, -gain, index)\nif natural_alakazam_route: return (0, 0, index)"
+      },
+      handoff: {
+        kicker: "score 4",
+        title: "Trading Places 是接力，不是普通攻击",
+        meta: "函数 _trading_places_improves_attack · Dunsparce attackId 423",
+        points: [
+          "当 Active 是 Dunsparce 且 Bench 有已经充能的 Alakazam 时，Trading Places 交接被提升到 setup 之前。",
+          "它避免 Dunsparce 的低伤害攻击消耗回合，把已准备好的攻击手送到 Active。",
+          "如果没有可改善的攻击交接，Dunsparce 仍按普通攻击和当前 attack_path 计算。"
+        ],
+        code: "active_id == DUNSPARCE\n  and attackId == TRADING_PLACES_ATTACK\n  and _trading_places_improves_attack(player)"
+      },
+      energy: {
+        kicker: "score 0–1",
+        title: "贴一张能量，完成一条攻击线",
+        meta: "函数 _choose_energy_option / _main_action.score · option_type == 8",
+        points: [
+          "未充能的 Abra / Kadabra / Alakazam 优先，Active 通常比 Bench 再低一个 tie score。",
+          "一只 Abra 线宝可梦通常只需要一张 Psychic Energy；已有 Psychic 的目标被推迟，避免重复贴。",
+          "Telepath Energy 优先未充能 Abra；它不会为了重复搜索给已充能目标再贴。"
+        ],
+        code: "if target_id in ATTACK_LINE and not _has_psychic_energy(target):\n    return (0 if area == 4 else 1, index)"
+      },
+      setup: {
+        kicker: "score 4–18",
+        title: "setup 只在不抢走现成攻击时发生",
+        meta: "函数 _main_action.score + _choose_card_option",
+        points: [
+          "Poffin 的 effect selection：attack_line_count < 3 或 ready_attack_line_count < 2 时优先 Abra，否则才拿 Dunsparce。",
+          "首回合不进化；Poké Pad 在首回合优先搜 Dunsparce / Abra，而不是死的 Kadabra。",
+          "有 Active Abra 的 Rare Candy + Alakazam 路线时，Bench Abra 优先进化 Kadabra，避免损失 Active 直通攻击。"
+        ],
+        code: "wanted = {ABRA} if (attack_line_count < 3\n    or ready_attack_line_count < 2) else {DUNSPARCE}"
+      },
+      recovery: {
+        kicker: "score 6–35",
+        title: "恢复和干扰必须有具体用途",
+        meta: "函数 _main_action.score · conditional resource actions",
+        points: [
+          "Night Stretcher / Lana’s Aid / Sacred Ash 根据攻击线恢复需要排序，避免没有 recovery need 时过早消耗。",
+          "Enhanced Hammer 在对手 Active 的 Mist Energy 阻断 Alakazam 时可到 score 0；其他特殊能量场景才是次级收益。",
+          "Boss 只有能击倒、提高 Prize 价值或满足 Iono 定向条件时才提前，否则保留 Supporter。"
+        ],
+        code: "if mist_blocks_attack: Enhanced_Hammer → score 0\nif _boss_changes_prize_race(...): Boss → score 4"
+      },
+      fallback: {
+        kicker: "score 24–110",
+        title: "无直接收益时的保守 fallback",
+        meta: "函数 _main_action.score · attack / draw / dead-action guard",
+        points: [
+          "普通攻击在有攻击路径时约 score 24–30；setup 尚未完成时仍可能保留进攻 fallback。",
+          "抽牌会经过 _draw_is_blocked；手牌超过 20、牌库 ≤ 10 或已经有击倒时，普通抽牌会被压低。",
+          "Alakazam 对手 Active 带 Mist Energy 时，估算伤害为 0；没有 Hammer 或有效目标时，反复攻击会到 score 110。"
+        ],
+        code: "if mist_blocks_attack:\n    return (110, 0, index)\nif _draw_is_blocked(...):\n    return (6, -damage, index)"
+      },
+      end: {
+        kicker: "score 99",
+        title: "END 是默认的低收益出口",
+        meta: "函数 _main_action.score · option_type == 14",
+        points: [
+          "当没有更高收益的攻击、进化、检索、恢复或干扰时，END 返回 score 99。",
+          "死撤退会返回 score 100，避免稳定 option 顺序让没有攻击收益的撤退被误选。",
+          "因此 END 不是第一选择，而是所有受保护动作之后的显式安全出口。"
+        ],
+        code: "if option_type == 14:\n    return (99, 0, index)\nif dead_retreat:\n    return (100, 0, index)"
+      }
+    };
+
+    function renderDetails(id) {
+      const data = NODE_DETAILS[id] || NODE_DETAILS.agent;
+      document.querySelector("#detail-kicker").textContent = data.kicker;
+      document.querySelector("#detail-title").textContent = data.title;
+      document.querySelector("#detail-meta").textContent = data.meta;
+      const list = document.querySelector("#detail-list");
+      list.replaceChildren();
+      data.points.forEach((point) => {
+        const item = document.createElement("li");
+        item.textContent = point;
+        list.append(item);
+      });
+      document.querySelector("#detail-code").textContent = data.code;
+      document.querySelectorAll("[data-node]").forEach((node) => {
+        node.classList.toggle("is-active", node.dataset.node === id);
+        node.setAttribute("aria-pressed", node.dataset.node === id ? "true" : "false");
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll("[data-node]").forEach((node) => {
+        node.addEventListener("click", () => renderDetails(node.dataset.node));
+        node.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            renderDetails(node.dataset.node);
+          }
+        });
+      });
+      renderDetails("agent");
+    });
+  </script>
+</body>
+</html>
