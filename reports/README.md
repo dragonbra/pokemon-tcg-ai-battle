@@ -22,6 +22,7 @@
 - [`kaggle/alakazam-v2-episodes-2026-07-18.md`](kaggle/alakazam-v2-episodes-2026-07-18.md)：V2 submission 的 Kaggle 官方 Episode 初步复盘。
 - [`kaggle/alakazam-v3-episodes-2026-07-19.md`](kaggle/alakazam-v3-episodes-2026-07-19.md)：V3 submission 的 Kaggle 官方 Episode 复盘。
 - [`kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md`](kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md)：V5 与 V5 Auto Iteration 最新各十场 Kaggle public replay 对照复盘。
+- [`rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)：官方 Pokémon TCG 规则书学习、simulator 规则映射与 V6 重构硬约束。
 - [`kaggle/alakazam-public-reference-2026-07-19.md`](kaggle/alakazam-public-reference-2026-07-19.md)：Kaggle 公开 Alakazam agent 调研报告及参考 notebook。
 - [`kaggle/alakazam-public-code-survey-2026-07-19.md`](kaggle/alakazam-public-code-survey-2026-07-19.md)：多份公开 Alakazam code、卡组和实验结果的整合调研。
 - [`kaggle/alakazam-v5-fixed-deck-strategy-research-and-v5-mixed-brief-2026-07-19.md`](kaggle/alakazam-v5-fixed-deck-strategy-research-and-v5-mixed-brief-2026-07-19.md)：固定 V5 卡组、面向 Codex 的 `v5_mixed` 策略研究与实现任务书。当前阶段的优先级是：下载 Kaggle 官方 Episode → 提取 observation/action/replay 指标 → 复盘真实对手与失败原因 → 再扩展策略。
