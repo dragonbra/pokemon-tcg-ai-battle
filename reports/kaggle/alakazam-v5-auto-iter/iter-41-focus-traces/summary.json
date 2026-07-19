@@ -1,0 +1,228 @@
+{
+  "agent": "/Users/hejinyu/Documents/repos/pokemon-tcg-ai-battle/submission/alakazam_v5_auto_iter/main.py",
+  "label": "alakazam_v5_auto_iter_iter41_trace",
+  "games_per_opponent": 4,
+  "swap": true,
+  "results": [
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 77,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "kiyotah_dragapult",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 167,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "kiyotah_dragapult",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 197,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "kiyotah_dragapult",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 136,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "kiyotah_dragapult",
+      "game": 4
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 51,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "kiyotah_iono",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 192,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "kiyotah_iono",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 181,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "kiyotah_iono",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 222,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "kiyotah_iono",
+      "game": 4
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 35,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "kacchan_anti_wall",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 31,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "kacchan_anti_wall",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 152,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "kacchan_anti_wall",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 119,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "kacchan_anti_wall",
+      "game": 4
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 35,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "nursrijan_lucario",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 148,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "nursrijan_lucario",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 99,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "nursrijan_lucario",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 110,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "nursrijan_lucario",
+      "game": 4
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 119,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "maktha_1084",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 122,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "maktha_1084",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 166,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "maktha_1084",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 122,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "maktha_1084",
+      "game": 4
+    }
+  ]
+}

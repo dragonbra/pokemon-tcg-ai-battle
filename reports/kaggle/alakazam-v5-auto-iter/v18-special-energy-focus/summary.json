@@ -1,0 +1,140 @@
+{
+  "agent": "/Users/hejinyu/Documents/repos/pokemon-tcg-ai-battle/submission/alakazam_v5_auto_iter/main.py",
+  "label": "alakazam_v5_auto_iter_v18_special_energy_focus",
+  "games_per_opponent": 4,
+  "swap": true,
+  "results": [
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 172,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "sue_alakazam",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 125,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "sue_alakazam",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 164,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "sue_alakazam",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 57,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "sue_alakazam",
+      "game": 4
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 24,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "crustle_v1",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 1,
+      "error": "",
+      "steps": 24,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "crustle_v1",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 50,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "crustle_v1",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 59,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "crustle_v1",
+      "game": 4
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 69,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "crustle_wall",
+      "game": 1
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 67,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "crustle_wall",
+      "game": 2
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 36,
+      "swap": false,
+      "alakazamPhysicalIndex": 0,
+      "traceMode": "full",
+      "opponent": "crustle_wall",
+      "game": 3
+    },
+    {
+      "finished": true,
+      "winner": 0,
+      "error": "",
+      "steps": 100,
+      "swap": true,
+      "alakazamPhysicalIndex": 1,
+      "traceMode": "full",
+      "opponent": "crustle_wall",
+      "game": 4
+    }
+  ]
+}
