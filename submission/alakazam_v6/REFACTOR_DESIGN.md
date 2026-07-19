@@ -1,6 +1,6 @@
 # Alakazam V6 完整策略重构设计
 
-> 状态：重构设计讨论中，尚未形成实现规格。
+> 状态：已形成 V6 实验实现；本文仍保留设计推导、假设和待用 replay 校准的参数。
 > 基线：`submission/alakazam_v5_auto_iter/`。
 > 边界：固定 `deck.csv`，只重构策略与策略说明。
 > 原则：先把“我们每一回合到底想最大化什么”讨论清楚，再决定如何修改代码。
@@ -597,15 +597,29 @@ turn_context
 回收组合；牌库 10 张进入保护；Trading Places 禁用；对手策略只根据 observation
 中的事实触发。
 
-实现前仍需要把这些决定落成可执行的统一顺序，主要剩下：
+V6 实验已经把这些决定落成 `main.py` 的统一顺序。主行动使用
+`preparation_is_due()` 作为攻击前硬性 gate，再在准备阶段内做确定性排序；它不是
+完整引擎，而是本卡组规则语义的最小实现。当前仍需要用官方 replay 校准：
 
-1. **动作计划编排**：Boss、Xerosic、Enriching Energy、Dudunsparce Ability、进化、
-   Retreat 和攻击同时可行时，先后顺序如何确定；
-2. **handoff path 细化**：如何用 Pokémon 实例、Retreat Cost、附着能量和进化时间
-   判断下一只攻击者，而不是只看卡牌 ID；
-3. **牌库账本边界**：哪些 observation 能直接揭示 Prize 身份，哪些只能维护已知/未知
-   数量边界；
+1. **动作计划校准**：Boss、Xerosic、Enriching Energy、Dudunsparce Ability、进化、
+   Retreat 和攻击的固定优先级是否在不同对局节奏中稳定；
+2. **handoff path 细化**：当前实现已经使用 Pokémon serial、附着能量和 Retreat
+   可用状态，仍需观察对手击倒后交接是否过于保守；
+3. **牌库账本边界**：当前只把 observation 可见卡牌记入已知区，Prize/隐藏手牌继续
+   保留未知数量，需用 replay 检查交叉核对；
 4. **10 张保护线的 replay 校准**：确认它是否应保持为 10，或根据真实操作调整。
+
+### 5.1 实验实现与设计的对应关系
+
+| 设计约束 | V6 实现入口 |
+| --- | --- |
+| 攻击是终止提交 | `_main_action()` 的 `preparation_is_due()` gate 与攻击分支 |
+| 进化时钟与历史 | `TurnMemory`、`_active_evolution_is_legal()`、`_has_evolvable_abra()` |
+| Supporter/附能/Retreat 预算 | `TurnMemory.record_main_action()` 与 `_main_action()` 的预算 gate |
+| Boss 高 HP 确定 KO | `_boss_ko_targets()`、`_choose_switch_option()` |
+| Xerosic 六张手牌条件 | `_xerosic_is_worth_playing()` |
+| Dudunsparce/Enriching 净牌库变化 | `_dudunsparce_net_deck_change()`、`_v6_draw_is_blocked()`；Enriching 使用抽 4 张的牌库预算 |
+| Trading Places 禁用 | 攻击分支直接将 `TRADING_PLACES_ATTACK` 放到 END 之后 |
 
 ## 6. 讨论纪律与验收标准
 
@@ -617,8 +631,7 @@ turn_context
   deck-out 原因。
 - 评测时尽量固定 deck 顺序，或做同一对手/先后手的 paired replay，避免把抽牌顺序
   与策略代码混为一谈。
-- 在设计确认前，`submission/alakazam_v6/` 只保存讨论材料；设计获批后才复制必要
-  的策略运行文件，且 `deck.csv` 必须与 v5_auto_iter 保持一致。
+- V6 实验目录已经包含必要的策略运行文件；`deck.csv` 仍必须与 v5_auto_iter 保持一致。
 
 ## 7. 参考材料
 
