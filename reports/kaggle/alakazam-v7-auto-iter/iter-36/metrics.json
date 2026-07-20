@@ -1,0 +1,60 @@
+{
+  "iteration": 36,
+  "label": "iter-36-active-attack-guard",
+  "evaluation_scope": "full",
+  "opponents": 17,
+  "games_per_opponent": 10,
+  "games": 170,
+  "deck_changed": false,
+  "trace_policy": "full trace is retained only in the latest external evaluator batch",
+  "promotion": "observe",
+  "comparison_status": "independent_random_batch_not_comparable_as_ab",
+  "reference": {
+    "label": "iter-15-patch-priority-best",
+    "games": 170,
+    "wins": 116,
+    "losses": 52,
+    "draws": 2,
+    "win_rate": 0.682,
+    "meta_weighted_win_rate": 0.704,
+    "second_turn_powerful_hand_rate": 0.271,
+    "post_ko_zero_ready_event_rate": 0.685,
+    "action_errors": 0,
+    "empty_bench_run_away_draws": 0
+  },
+  "candidate": {
+    "label": "iter-36-full-active-attack-guard",
+    "games": 170,
+    "wins": 105,
+    "losses": 64,
+    "draws": 1,
+    "unfinished_opponent_errors": 1,
+    "win_rate": 0.6176470588235294,
+    "meta_weighted_win_rate": 0.6297029702970297,
+    "second_turn_powerful_hand_games": 28,
+    "second_turn_powerful_hand_rate": 0.16470588235294117,
+    "post_ko_count": 193,
+    "post_ko_zero_ready_count": 115,
+    "post_ko_zero_ready_event_rate": 0.5958549222797928,
+    "games_with_post_ko_break": 67,
+    "games_with_post_ko_break_rate": 0.3941176470588235,
+    "empty_bench_run_away_draw_count": 0,
+    "agent_action_errors": 0
+  },
+  "focused_diagnostic": {
+    "games": 50,
+    "wins": 31,
+    "losses": 19,
+    "draws": 0,
+    "win_rate": 0.62,
+    "second_turn_powerful_hand_rate": 0.22
+  },
+  "verification": {
+    "regression_fixture": "passed",
+    "full_unittest": "175 passed",
+    "py_compile": "passed",
+    "asset_check": "passed",
+    "deck_csv_diff": "empty"
+  },
+  "external_report": "/Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7_auto_iter/iter-36-full-active-attack-guard-20260720"
+}

@@ -1,0 +1,30 @@
+{
+  "iteration": 46,
+  "label": "iter-46-discovery-20260720",
+  "deck_fixed": true,
+  "deck_sha256": "208edd2df41ae66d11e81b4394762d1fe1cb8f34452265281e22b6bfe4fb744a",
+  "strategy_changed": false,
+  "analyzer_changed": true,
+  "decision": "observe",
+  "promoted": false,
+  "metrics": {
+    "games": 170,
+    "wins": 109,
+    "losses": 59,
+    "draws": 2,
+    "win_rate": 0.6412,
+    "meta_weighted_win_rate": 0.6485,
+    "second_turn_powerful_hand_rate": 0.2471,
+    "post_ko_no_ready_attacker_rate": 0.5882,
+    "games_with_post_ko_break_rate": 0.3765,
+    "empty_bench_run_away_draw_count": 0,
+    "agent_errors": 0
+  },
+  "diagnostic_cases": {
+    "bench_insurance_pass": 257,
+    "bench_insurance_fail": 0,
+    "post_ko_no_ready_attacker": 110,
+    "second_turn_powerful_hand_unavailable": 128
+  },
+  "sample_note": "170 个独立 trace；第二回合 unavailable 不计为策略漏攻，post-KO 需要回溯 KO 前动作。"
+}

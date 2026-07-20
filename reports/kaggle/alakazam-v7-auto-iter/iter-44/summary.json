@@ -1,0 +1,20 @@
+{
+  "iteration": "iter-44",
+  "parent": "iter-43",
+  "status": "observe",
+  "strategy_changed": true,
+  "best_updated": false,
+  "trace_source": "/Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7_auto_iter/iter-44-terminal-fezandipiti-20260720",
+  "trace_files": 170,
+  "trace_retention": "latest-full-only",
+  "metrics_file": "metrics.json",
+  "advisor_file": "advisor.md",
+  "cases_file": "cases.jsonl",
+  "deck_sha256": "208edd2df41ae66d11e81b4394762d1fe1cb8f34452265281e22b6bfe4fb744a",
+  "notes": [
+    "Terminal Powerful Hand now outranks optional Fezandipiti ex draw when the attack takes the final Prize cards.",
+    "The 170-game batch is independent from iter-43 and is not a paired A/B result.",
+    "Analyzer case counts include pass and diagnostic records; they are not all strategy failures.",
+    "The next actionable case is zoli_dragapult game_004 raw[75]: Telepath Energy should be reserved for Bench Abra when Poké Pad makes Kadabra a visible route."
+  ]
+}

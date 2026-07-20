@@ -1,0 +1,20 @@
+{
+  "iteration": "iter-43",
+  "parent": "iter-42",
+  "status": "observe",
+  "strategy_changed": false,
+  "runtime_parser_fix": true,
+  "best_updated": false,
+  "trace_source": "/Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7_auto_iter/iter-43-control-20260720",
+  "trace_files": 170,
+  "trace_retention": "latest-full-only",
+  "metrics_file": "metrics.json",
+  "advisor_file": "advisor.md",
+  "cases_file": "cases.jsonl",
+  "notes": [
+    "The runtime now falls back from null inPlayIndex to indexInArea for field options.",
+    "This is a legality and observation parsing fix, not a new strategy priority.",
+    "The metrics are from an independent full-trace batch and are not a paired A/B result.",
+    "Representative post-KO and second-turn cases did not prove an actionable strategy miss."
+  ]
+}

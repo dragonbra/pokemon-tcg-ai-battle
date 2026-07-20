@@ -29,9 +29,12 @@ AutoIter 固定本目录的 `deck.csv`，只接受有明确 replay case 假设�
 ```bash
 python3 scripts/alakazam_auto_iter.py analyze \
   --report-dir /path/to/ptcg-agent-kaggle/reports/alakazam_v7 \
-  --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline \
-  --agent-label alakazam_v7
+  --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline
 ```
+
+默认从 trace 中实际出现的 agent `role` 自动识别标签。只有在确认参数与 trace 中的完整
+role（包括日期后缀）完全一致时才传 `--agent-label`；不匹配的旧标签会被 analyzer 回退到
+实际 role，避免把所有我方动作误判成对手动作并生成虚假的 0% 指标。
 
 运行本地 evaluator（不会提交 Kaggle）：
 
@@ -46,6 +49,9 @@ python3 scripts/alakazam_auto_iter.py run \
   --output-dir /tmp/alakazam-v7-auto-iter-focus
 ```
 
+`run` 默认只保存 evaluator summary，不生成数百 MB 的逐局 trace。只有需要复盘的最新一轮才显式追加
+`--save-traces`；旧完整 trace 在关键 case 抽取后移动到 macOS Trash。
+
 比较两份已经生成的报告：
 
 ```bash
@@ -55,11 +61,38 @@ python3 scripts/alakazam_auto_iter.py compare \
   --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-01/comparison
 ```
 
-`metrics.json`、`cases.jsonl` 和 `analysis.md` 只保存精炼结果；完整 trace 留在隔壁
-评测仓库。`empty_bench_run_away_draw_count` 是硬错误，第二回合 `Powerful Hand`、
+`metrics.json`、`cases.jsonl` 和 `analysis.md` 只保存精炼结果；需要保存时，完整 trace 留在隔壁
+评测仓库 `/Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7_auto_iter/`。
+本 repo 正常保留每一轮的轻量文档和指标；外部评测目录只保留最新一轮完整 trace，旧轮次
+在关键 case 已抽取后清理，不把数百 MB 的逐局 JSON 提交进本 repo。`empty_bench_run_away_draw_count` 是硬错误，第二回合 `Powerful Hand`、
 击倒后 ready attacker 和胜率是节奏与结果 guardrail。
 
 每轮的改动、指标和 `accept/observe/reject` 决策持续记录在 [`ITER_PROCESS.md`](ITER_PROCESS.md)。
+
+## Best artifact 与定时提交
+
+只有被接受的 iteration 才能更新 `BEST_STRATEGY.json`。更新时先从当前工作区生成带
+iteration label 的不可变归档：
+
+```bash
+bash scripts/promote_v7_best.sh 20 iter-20-example
+```
+
+该命令会把归档路径和 SHA-256 写入 marker，并同步一份 immutable archive 到
+`~/Library/Application Support/pokemon-tcg-ai-battle/v7-best/`。每天 08:05 的
+LaunchAgent 从这个不受 `~/Documents` 访问限制的目录校验 marker 并提交到 Kaggle，
+不会重新打包正在继续迭代的工作区；因此工作区的后续改动不会改变定时任务实际提交的
+版本。首次安装或修改 LaunchAgent 后运行：
+
+```bash
+bash scripts/install_v7_best_schedule.sh
+```
+
+当前 best 仍为 `iter-15-patch-priority`。
+
+定时 wrapper 在 Kaggle CLI 返回非零时会把带 iteration、label、archive 和 exit code 的
+失败信息写到 `~/Library/Application Support/pokemon-tcg-ai-battle/v7-best/*.failed`，并
+保留完整输出在 LaunchAgent 日志中；因此次日可以确认是提交失败还是尚未触发。
 
 ## 验证
 
@@ -67,7 +100,9 @@ python3 scripts/alakazam_auto_iter.py compare \
 python3 scripts/check_assets.py
 python3 -m unittest -v tests.test_alakazam_v7_strategy tests.test_alakazam_v6_strategy
 python3 -m compileall -q scripts submission
-bash scripts/package_submission.sh alakazam_v7
+bash scripts/package_submission.sh alakazam_v7_auto_iter
+bash scripts/submit_kaggle_v7_best.sh --dry-run
+"$HOME/Library/Application Support/pokemon-tcg-ai-battle/v7-best/submit_v7_best_launchd.sh" --dry-run
 ```
 
 V7 的行为验收样例和 replay case 映射见 [`REFACTOR_DESIGN.md`](REFACTOR_DESIGN.md)。

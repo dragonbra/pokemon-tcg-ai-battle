@@ -9,15 +9,26 @@ from scripts.alakazam_auto_iter import (
     build_replay_command,
     compare_reports,
     decide_promotion,
+    _has_direct_handoff_option,
     write_analysis,
 )
 
 
 LABEL = "alakazam_v7"
 PSYCHIC_ENERGY = 5
+ABRA = 741
 DUDUNSPARCE = 66
+POWERFUL_HAND = 1072
 KADABRA = 742
 ALAKAZAM = 743
+ENRICHING_ENERGY = 13
+BASIC_PSYCHIC = 5
+TELEPATH_ENERGY = 19
+LANAS_AID = 1184
+POFFIN = 1086
+WONDROUS_PATCH = 1146
+NIGHT_STRETCHER = 1097
+POKE_PAD = 1152
 
 
 def _option(option_type, *, card_id=None, attack_id=None):
@@ -131,6 +142,14 @@ def _raw_post_ko_step(*, game, ready_count):
 
 
 class TestTraceMetrics(unittest.TestCase):
+    def test_opponent_side_evaluator_error_is_not_counted_as_agent_error(self):
+        record = _game(steps=[_step(turn=4, role="opponent")])
+        record["error"] = "IndexError"
+
+        result = analyze_records([record])
+
+        self.assertEqual(result.metrics.errors, 0)
+
     def test_counts_powerful_hand_only_on_agent_turn_three_or_four(self):
         result = analyze_records(
             [
@@ -151,6 +170,14 @@ class TestTraceMetrics(unittest.TestCase):
         self.assertEqual(result.metrics.second_turn_powerful_hand_games, 2)
         self.assertEqual(result.metrics.second_turn_powerful_hand_rate, 1.0)
 
+    def test_mismatched_explicit_label_falls_back_to_trace_agent_role(self):
+        result = analyze_records(
+            [_game(steps=[_agent_step(3, attack_id=POWERFUL_HAND)])],
+            agent_label="stale_submission_label",
+        )
+
+        self.assertEqual(result.metrics.second_turn_powerful_hand_games, 1)
+
     def test_does_not_count_powerful_hand_on_later_turn(self):
         result = analyze_records(
             [_game(steps=[_agent_step(5, attack_id=1072)])]
@@ -158,11 +185,34 @@ class TestTraceMetrics(unittest.TestCase):
 
         self.assertEqual(result.metrics.second_turn_powerful_hand_games, 0)
         self.assertEqual(
-            sum(
-                case.failure_class == "second_turn_powerful_hand_missing"
-                for case in result.cases
-            ),
-            1,
+            [case.failure_class for case in result.cases],
+            ["second_turn_powerful_hand_unavailable"],
+        )
+
+    def test_legal_powerful_hand_not_selected_creates_missing_case(self):
+        options = [
+            {"index": 0, "type": 13, "attackId": POWERFUL_HAND},
+            {"index": 1, "type": 14},
+        ]
+        result = analyze_records(
+            [_game(steps=[_step(turn=3, action=[1], options=options)])]
+        )
+
+        self.assertEqual(result.metrics.second_turn_powerful_hand_games, 0)
+        self.assertEqual(
+            [case.failure_class for case in result.cases],
+            ["second_turn_powerful_hand_missing"],
+        )
+
+    def test_second_turn_without_powerful_hand_is_unavailable(self):
+        result = analyze_records(
+            [_game(steps=[_agent_step(3, options=[_option(14)])])]
+        )
+
+        self.assertEqual(result.metrics.second_turn_powerful_hand_games, 0)
+        self.assertEqual(
+            [case.failure_class for case in result.cases],
+            ["second_turn_powerful_hand_unavailable"],
         )
 
     def test_counts_only_selected_attack_option(self):
@@ -179,19 +229,763 @@ class TestTraceMetrics(unittest.TestCase):
 
         self.assertEqual(result.metrics.second_turn_powerful_hand_games, 0)
 
-    def test_second_turn_without_powerful_hand_creates_missing_case(self):
+class TestCaseReports(unittest.TestCase):
+    def test_direct_bench_energy_is_not_a_bench_insurance_miss(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[{"id": ALAKAZAM, "energies": [], "serial": 2}],
+            hand_count=1,
+            prizes=3,
+        )
+        player["hand"] = [{"id": BASIC_PSYCHIC, "serial": 10}]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200, "maxHp": 200})],
+        }
+        options = [
+            {
+                "index": 0,
+                "type": 8,
+                "area": 2,
+                "indexInArea": 0,
+                "inPlayArea": 5,
+                "inPlayIndex": 0,
+            },
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        self.assertTrue(_has_direct_handoff_option(_step(
+            turn=7, action=[0], options=options, observation=observation
+        ), 0))
         result = analyze_records(
-            [_game(steps=[_agent_step(3, options=[_option(14)])])]
+            [_game(steps=[_step(turn=7, action=[0], options=options, observation=observation)])]
         )
 
-        self.assertEqual(result.metrics.second_turn_powerful_hand_games, 0)
+        self.assertNotIn("bench_insurance_missed", {case.failure_class for case in result.cases})
+
+    def test_selected_lanas_aid_counts_as_bench_handoff_progress(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[{"id": ABRA, "energies": [], "serial": 2}],
+            hand_count=2,
+            prizes=3,
+        )
+        player["hand"] = [
+            {"id": LANAS_AID, "serial": 10},
+            {"id": POFFIN, "serial": 11},
+        ]
+        player["discard"] = [
+            {"id": ABRA, "serial": 12},
+            {"id": BASIC_PSYCHIC, "serial": 13},
+        ]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200, "maxHp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "indexInArea": 0},
+            {"index": 1, "type": 7, "indexInArea": 1},
+            {"index": 2, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[0], options=options, observation=observation)])]
+        )
+
+        insurance_cases = [
+            case for case in result.cases if case.failure_class == "bench_insurance_missed"
+        ]
+        self.assertEqual(len(insurance_cases), 1)
+        self.assertEqual(insurance_cases[0].case_status, "pass")
+
+    def test_selected_lanas_aid_recovery_counts_with_only_dudunsparce_on_bench(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[{"id": DUDUNSPARCE, "energies": [], "serial": 2}],
+            hand_count=1,
+            prizes=3,
+        )
+        player["hand"] = [{"id": LANAS_AID, "serial": 10}]
+        player["discard"] = [
+            {"id": ABRA, "serial": 11},
+            {"id": BASIC_PSYCHIC, "serial": 12},
+        ]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200, "maxHp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "cardId": LANAS_AID},
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+        result = analyze_records(
+            [
+                _game(
+                    steps=[
+                        _step(
+                            turn=7,
+                            action=[0],
+                            options=options,
+                            observation=observation,
+                        )
+                    ]
+                )
+            ]
+        )
+
+        insurance_cases = [
+            case for case in result.cases if case.failure_class == "bench_insurance_missed"
+        ]
+        self.assertEqual(len(insurance_cases), 1)
+        self.assertEqual(insurance_cases[0].case_status, "pass")
+
+    def test_selected_wondrous_patch_counts_as_bench_anchor_progress(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[{"id": KADABRA, "energies": [], "serial": 2}],
+            hand_count=1,
+            prizes=3,
+        )
+        player["hand"] = [{"id": WONDROUS_PATCH, "serial": 10}]
+        player["discard"] = [{"id": BASIC_PSYCHIC, "serial": 11}]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200, "maxHp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "indexInArea": 0},
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[0], options=options, observation=observation)])]
+        )
+
+        insurance_cases = [
+            case for case in result.cases if case.failure_class == "bench_insurance_missed"
+        ]
+        self.assertEqual(len(insurance_cases), 1)
+        self.assertEqual(insurance_cases[0].case_status, "pass")
+
+    def test_wondrous_patch_on_unrouted_abra_is_not_bench_anchor_progress(self):
+        """Patch energy alone cannot create a usable Abra-line handoff."""
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[{"id": ABRA, "energies": [], "appearThisTurn": True, "serial": 2}],
+            hand_count=1,
+            prizes=3,
+        )
+        player["hand"] = [{"id": WONDROUS_PATCH, "serial": 10}]
+        player["discard"] = [{"id": BASIC_PSYCHIC, "serial": 11}]
+        current = {
+            "turn": 8,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "indexInArea": 0},
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=8, action=[1], options=options, observation=observation)])]
+        )
+
+        insurance_cases = [
+            case for case in result.cases if case.failure_class == "bench_insurance_missed"
+        ]
+        self.assertEqual(insurance_cases, [])
+
+    def test_selected_enriching_energy_to_bench_dunsparce_is_not_insurance_miss(self):
+        """The agreed Dudunsparce draw route is valid Bench preparation progress."""
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[
+                {"id": ABRA, "energies": [], "serial": 2},
+                {"id": DUDUNSPARCE, "energies": [], "serial": 3},
+            ],
+            hand_count=2,
+            prizes=3,
+        )
+        player["hand"] = [
+            {"id": ENRICHING_ENERGY, "serial": 10},
+            {"id": POFFIN, "serial": 11},
+        ]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200})],
+        }
+        options = [
+            {
+                "index": 0,
+                "type": 8,
+                "area": 2,
+                "indexInArea": 0,
+                "inPlayArea": 5,
+                "inPlayIndex": 1,
+            },
+            {"index": 1, "type": 7, "indexInArea": 1},
+            {"index": 2, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[0], options=options, observation=observation)])]
+        )
+
+        insurance_cases = [
+            case for case in result.cases if case.failure_class == "bench_insurance_missed"
+        ]
+        self.assertEqual(len(insurance_cases), 1)
+        self.assertEqual(insurance_cases[0].case_status, "pass")
+
+    def test_selected_night_stretcher_abra_recovery_is_not_insurance_miss(self):
+        """Night Stretcher followed by Psychic recovery is a valid handoff chain."""
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[],
+            hand_count=3,
+            prizes=3,
+        )
+        player["hand"] = [
+            {"id": NIGHT_STRETCHER, "serial": 10},
+            {"id": TELEPATH_ENERGY, "serial": 11},
+            {"id": 305, "serial": 12},
+        ]
+        player["discard"] = [{"id": ABRA, "serial": 13}]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "indexInArea": 0},
+            {"index": 1, "type": 7, "indexInArea": 2},
+            {"index": 2, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[0], options=options, observation=observation)])]
+        )
+
+        insurance_cases = [
+            case for case in result.cases if case.failure_class == "bench_insurance_missed"
+        ]
+        self.assertEqual(len(insurance_cases), 1)
+        self.assertEqual(insurance_cases[0].case_status, "pass")
+
+    def test_night_stretcher_is_not_insurance_route_when_attack_line_is_on_bench(self):
+        """Night Stretcher should not override an existing Abra-line Bench."""
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[{"id": KADABRA, "energies": [], "serial": 2}],
+            hand_count=3,
+            prizes=3,
+        )
+        player["hand"] = [
+            {"id": NIGHT_STRETCHER, "serial": 10},
+            {"id": TELEPATH_ENERGY, "serial": 11},
+            {"id": 305, "serial": 12},
+        ]
+        player["discard"] = [{"id": ABRA, "serial": 13}]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "indexInArea": 0},
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[1], options=options, observation=observation)])]
+        )
+
+        self.assertNotIn("bench_insurance_missed", {case.failure_class for case in result.cases})
+
+    def test_empty_bench_alakazam_poffin_case_detects_attack_instead(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[],
+            hand_count=3,
+            prizes=3,
+        )
+        player["hand"] = [
+            {"id": POFFIN, "serial": 10},
+            {"id": ABRA, "serial": 11},
+            {"id": 305, "serial": 12},
+        ]
+        current = {
+            "turn": 3,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [
+                player,
+                _state(active={"id": 900, "hp": 40, "maxHp": 40}),
+            ],
+        }
+        options = [
+            {"index": 0, "type": 7},
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [
+                _game(
+                    steps=[
+                        _step(
+                            turn=3,
+                            action=[1],
+                            options=options,
+                            observation=observation,
+                        )
+                    ]
+                )
+            ]
+        )
+
         self.assertEqual(
             [case.failure_class for case in result.cases],
-            ["second_turn_powerful_hand_missing"],
+            ["bench_insurance_missed"],
+        )
+        self.assertEqual(result.cases[0].case_status, "fail")
+
+    def test_bench_continuity_case_does_not_require_basic_in_hand(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[{"id": 305, "energies": [], "serial": 2}],
+            hand_count=3,
+            prizes=3,
+        )
+        player["hand"] = [
+            {"id": POFFIN, "serial": 10},
+            {"id": 900, "serial": 11},
+            {"id": 901, "serial": 12},
+        ]
+        current = {
+            "turn": 3,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [
+                player,
+                _state(active={"id": 900, "hp": 40, "maxHp": 40}),
+            ],
+        }
+        options = [
+            {"index": 0, "type": 7, "cardId": POFFIN},
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [
+                _game(
+                    steps=[
+                        _step(
+                            turn=3,
+                            action=[1],
+                            options=options,
+                            observation=observation,
+                        )
+                    ]
+                )
+            ]
         )
 
+        self.assertEqual(
+            [case.failure_class for case in result.cases],
+            ["bench_insurance_missed"],
+        )
+        self.assertEqual(result.cases[0].case_status, "fail")
 
-class TestCaseReports(unittest.TestCase):
+    def test_existing_abra_line_is_continuity_even_when_unenergized(self):
+        """An established Bench Abra is not the same as an empty Bench."""
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[
+                {
+                    "id": ABRA,
+                    "energies": [],
+                    "serial": 2,
+                    "appearThisTurn": False,
+                }
+            ],
+            hand_count=2,
+            prizes=3,
+        )
+        player["hand"] = [
+            {"id": POFFIN, "serial": 10},
+            {"id": 305, "serial": 11},
+        ]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "indexInArea": 0},
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[1], options=options, observation=observation)])]
+        )
+
+        self.assertNotIn("bench_insurance_missed", {case.failure_class for case in result.cases})
+
+    def test_fresh_abra_on_bench_is_continuity(self):
+        """A newly placed Abra still prevents the empty-Bench failure state."""
+        player = _state(
+            active={"id": KADABRA, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[
+                {"id": DUDUNSPARCE, "energies": [], "serial": 2},
+                {"id": DUDUNSPARCE, "energies": [], "serial": 3},
+                {
+                    "id": ABRA,
+                    "energies": [],
+                    "serial": 4,
+                    "appearThisTurn": True,
+                },
+            ],
+            hand_count=10,
+            prizes=3,
+        )
+        player["hand"] = [{"id": POKE_PAD, "serial": 10}]
+        current = {
+            "turn": 10,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900, "hp": 200})],
+        }
+        options = [
+            {"index": 0, "type": 7, "cardId": POKE_PAD},
+            {"index": 1, "type": 13, "attackId": 1071},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=10, action=[0], options=options, observation=observation)])]
+        )
+
+        self.assertNotIn("bench_insurance_missed", {case.failure_class for case in result.cases})
+
+    def test_later_same_turn_bench_anchor_prevents_insurance_miss(self):
+        """A later Patch in the same turn validates an earlier search action."""
+        def make_player(hand):
+            player = _state(
+                active={"id": KADABRA, "energies": [PSYCHIC_ENERGY], "serial": 1},
+                bench=[
+                    {"id": DUDUNSPARCE, "energies": [], "serial": 2},
+                    {"id": DUDUNSPARCE, "energies": [], "serial": 3},
+                    {
+                        "id": ABRA,
+                        "energies": [],
+                        "serial": 4,
+                        "appearThisTurn": True,
+                    },
+                ],
+                hand_count=10,
+                prizes=3,
+            )
+            player["hand"] = hand
+            player["discard"] = [{"id": BASIC_PSYCHIC, "serial": 20}]
+            return player
+
+        first_player = make_player(
+            [
+                {"id": POKE_PAD, "serial": 10},
+                {"id": WONDROUS_PATCH, "serial": 11},
+            ]
+        )
+        first_options = [
+            {"index": 0, "type": 7, "cardId": POKE_PAD},
+            {"index": 1, "type": 7, "cardId": WONDROUS_PATCH},
+            {"index": 2, "type": 13, "attackId": 1071},
+        ]
+        first_observation = {
+            "current": {
+                "turn": 10,
+                "yourIndex": 0,
+                "firstPlayer": 0,
+                "players": [first_player, _state(active={"id": 900, "hp": 200})],
+            },
+            "select": {"type": 0, "option": first_options},
+            "logs": [],
+        }
+
+        second_player = make_player([{"id": WONDROUS_PATCH, "serial": 11}])
+        second_options = [
+            {"index": 0, "type": 7, "cardId": WONDROUS_PATCH},
+            {"index": 1, "type": 13, "attackId": 1071},
+        ]
+        second_observation = {
+            "current": {
+                "turn": 10,
+                "yourIndex": 0,
+                "firstPlayer": 0,
+                "players": [second_player, _state(active={"id": 900, "hp": 200})],
+            },
+            "select": {"type": 0, "option": second_options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [
+                _game(
+                    steps=[
+                        _step(
+                            turn=10,
+                            action=[0],
+                            options=first_options,
+                            observation=first_observation,
+                        ),
+                        _step(
+                            turn=10,
+                            action=[0],
+                            options=second_options,
+                            observation=second_observation,
+                        ),
+                    ]
+                )
+            ]
+        )
+
+        self.assertFalse(
+            any(
+                case.failure_class == "bench_insurance_missed"
+                and case.case_status == "fail"
+                for case in result.cases
+            )
+        )
+
+    def test_missed_handoff_preparation_creates_a_target_case(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[
+                {"id": KADABRA, "energies": [], "serial": 2, "appearThisTurn": False},
+                {"id": DUDUNSPARCE, "energies": [], "serial": 3},
+            ],
+            hand_count=3,
+        )
+        player["hand"] = [
+            {"id": BASIC_PSYCHIC, "serial": 10},
+            {"id": ENRICHING_ENERGY, "serial": 11},
+        ]
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, _state(active={"id": 900})],
+        }
+        options = [
+            {
+                "index": 0,
+                "type": 8,
+                "area": 2,
+                "indexInArea": 0,
+                "inPlayArea": 5,
+                "inPlayIndex": 0,
+            },
+            {
+                "index": 1,
+                "type": 8,
+                "area": 2,
+                "indexInArea": 1,
+                "inPlayArea": 5,
+                "inPlayIndex": 1,
+            },
+            {"index": 2, "type": 13, "attackId": 1072},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [
+                _game(
+                    steps=[
+                        _agent_step(3, attack_id=1072),
+                        _step(turn=7, action=[1], options=options, observation=observation),
+                    ]
+                )
+            ]
+        )
+
+        self.assertEqual(
+            [case.failure_class for case in result.cases],
+            ["handoff_preparation_missed"],
+        )
+        self.assertEqual(result.cases[0].case_status, "fail")
+
+    def test_terminal_powerful_hand_is_not_a_handoff_failure(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[
+                {"id": KADABRA, "energies": [], "serial": 2, "appearThisTurn": False},
+            ],
+            hand_count=10,
+            prizes=1,
+        )
+        player["hand"] = [{"id": BASIC_PSYCHIC, "serial": 10}]
+        opponent = _state(active={"id": 900, "hp": 180, "maxHp": 180}, prizes=3)
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, opponent],
+        }
+        options = [
+            {
+                "index": 0,
+                "type": 8,
+                "area": 2,
+                "indexInArea": 0,
+                "inPlayArea": 5,
+                "inPlayIndex": 0,
+            },
+            {"index": 1, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[1], options=options, observation=observation)])]
+        )
+
+        self.assertNotIn(
+            "handoff_preparation_missed", {case.failure_class for case in result.cases}
+        )
+
+    def test_enriching_draw_that_closes_prize_is_not_a_handoff_failure(self):
+        player = _state(
+            active={"id": ALAKAZAM, "energies": [PSYCHIC_ENERGY], "serial": 1},
+            bench=[
+                {"id": KADABRA, "energies": [], "serial": 2, "appearThisTurn": False},
+                {"id": DUDUNSPARCE, "energies": [], "serial": 3},
+            ],
+            hand_count=7,
+            prizes=1,
+        )
+        player["hand"] = [
+            {"id": BASIC_PSYCHIC, "serial": 10},
+            {"id": ENRICHING_ENERGY, "serial": 11},
+        ]
+        opponent = _state(active={"id": 900, "hp": 200, "maxHp": 200}, prizes=3)
+        current = {
+            "turn": 7,
+            "yourIndex": 0,
+            "firstPlayer": 0,
+            "players": [player, opponent],
+        }
+        options = [
+            {
+                "index": 0,
+                "type": 8,
+                "area": 2,
+                "indexInArea": 0,
+                "inPlayArea": 5,
+                "inPlayIndex": 0,
+            },
+            {
+                "index": 1,
+                "type": 8,
+                "area": 2,
+                "indexInArea": 1,
+                "inPlayArea": 5,
+                "inPlayIndex": 1,
+            },
+            {"index": 2, "type": 13, "attackId": POWERFUL_HAND},
+        ]
+        observation = {
+            "current": current,
+            "select": {"type": 0, "option": options},
+            "logs": [],
+        }
+
+        result = analyze_records(
+            [_game(steps=[_step(turn=7, action=[1], options=options, observation=observation)])]
+        )
+
+        self.assertNotIn(
+            "handoff_preparation_missed", {case.failure_class for case in result.cases}
+        )
+
     def test_empty_bench_run_away_draw_creates_hard_case(self):
         player = _state(active={"id": DUDUNSPARCE, "energies": []}, bench=[])
         result = analyze_records(
@@ -365,12 +1159,26 @@ class TestComparisonAndRunner(unittest.TestCase):
             games=10,
             output=Path("/tmp/iter-focus"),
             cg_path=Path("submission/alakazam_v7_auto_iter"),
+            save_traces=True,
         )
 
         self.assertIn("--save-traces", command)
         self.assertIn("--games", command)
         self.assertIn("10", command)
         self.assertIn("kiyotah_dragapult", command)
+
+    def test_replay_command_defaults_to_summary_only(self):
+        command = build_replay_command(
+            evaluator_root=Path("/tmp/ptcg-agent-kaggle"),
+            agent=Path("submission/alakazam_v7_auto_iter/main.py"),
+            label="alakazam_v7_auto_iter",
+            opponents=["kiyotah_dragapult"],
+            games=10,
+            output=Path("/tmp/iter-summary-default"),
+            cg_path=Path("submission/alakazam_v7_auto_iter"),
+        )
+
+        self.assertNotIn("--save-traces", command)
 
     def test_replay_command_can_skip_large_full_traces(self):
         command = build_replay_command(

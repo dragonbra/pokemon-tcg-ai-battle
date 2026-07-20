@@ -22,11 +22,54 @@ from typing import Any, Iterable
 ALAKAZAM = 743
 KADABRA = 742
 ABRA = 741
+DUNSPARCE = 305
 DUDUNSPARCE = 66
+FEZANDIPITI_EX = 140
 POWERFUL_HAND = 1072
 PSYCHIC_ENERGY = 5
+POFFIN = 1086
+WONDROUS_PATCH = 1146
+TELEPATH_ENERGY = 19
+ENRICHING_ENERGY = 13
+BASIC_PSYCHIC = 5
+LANAS_AID = 1184
+RARE_CANDY = 1079
+ROCK_FIGHTING_ENERGY = 20
+NIGHT_STRETCHER = 1097
 ATTACK_LINE = {ABRA, KADABRA, ALAKAZAM}
 READY_ATTACKERS = {KADABRA, ALAKAZAM}
+THREE_PRIZE_POKEMON = {678, 723, 756}
+TWO_PRIZE_POKEMON = {
+    30,
+    40,
+    63,
+    75,
+    80,
+    96,
+    108,
+    121,
+    130,
+    140,
+    150,
+    153,
+    154,
+    176,
+    184,
+    190,
+    207,
+    210,
+    269,
+    306,
+    320,
+    337,
+    340,
+    389,
+    481,
+    990,
+    997,
+    1071,
+}
+RULE_BOX_POKEMON = {FEZANDIPITI_EX, 306, 389, 481, 723, 997}
 
 # Keep this in sync with ptcg-agent-kaggle/eval/matchup_test.py. Unknown
 # opponents intentionally use the evaluator's 0.05 fallback weight.
@@ -118,11 +161,23 @@ def _trace_for_record(record: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _infer_agent_label(records: Iterable[dict[str, Any]], explicit: str | None) -> str | None:
-    if explicit:
+    records = list(records)
+    if explicit and any(
+        step.get("role") == explicit
+        for record in records
+        for step in _trace_for_record(record)
+    ):
         return explicit
+    # Evaluator traces store the exact role label on every agent step. If a
+    # stale CLI label is supplied (for example a submission directory name
+    # without the evaluator's date suffix), silently treating all agent steps
+    # as opponent steps produces a plausible but false 0% metric. Fall back
+    # to the observed role instead.
     for record in records:
         label = record.get("label")
-        if isinstance(label, str) and label:
+        if isinstance(label, str) and label and any(
+            step.get("role") == label for step in _trace_for_record(record)
+        ):
             return label
         for step in _trace_for_record(record):
             role = step.get("role")
@@ -171,6 +226,12 @@ def _active(player: dict[str, Any]) -> dict[str, Any] | None:
 
 def _bench(player: dict[str, Any]) -> list[dict[str, Any]]:
     return _cards(player, "bench")
+
+
+def _field_pokemon(player: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the visible Active and Bench Pokémon in trace order."""
+    active = _active(player)
+    return ([active] if active is not None else []) + _bench(player)
 
 
 def _option_list(step: dict[str, Any]) -> list[dict[str, Any]]:
@@ -403,6 +464,501 @@ def _case(
     )
 
 
+def _hand_option_card_id(step: dict[str, Any], option: dict[str, Any], player_index: int) -> int | None:
+    """Resolve a main-action card option from the visible hand snapshot."""
+    option_type = _as_int(option.get("type"))
+    if option_type not in {7, 8}:
+        return None
+    explicit_card_id = _as_int(option.get("cardId"))
+    if explicit_card_id is not None:
+        return explicit_card_id
+    hand_index = _as_int(option.get("indexInArea"))
+    if hand_index is None:
+        observation = _observation(step)
+        raw_options = (observation.get("select") or {}).get("option") or []
+        option_index = _as_int(option.get("index"))
+        if option_index is not None and 0 <= option_index < len(raw_options):
+            hand_index = _as_int(raw_options[option_index].get("index"))
+    if hand_index is None:
+        return None
+    hand = _player_at(step, player_index).get("hand") or []
+    if 0 <= hand_index < len(hand) and isinstance(hand[hand_index], dict):
+        return _as_int(hand[hand_index].get("id"))
+    return None
+
+
+def _field_target_id(step: dict[str, Any], option: dict[str, Any], player_index: int) -> int | None:
+    """Resolve a main-action field target from the compact trace option."""
+    area = _as_int(option.get("inPlayArea"))
+    index = _as_int(option.get("inPlayIndex"))
+    if area not in {4, 5} or index is None:
+        return None
+    player = _player_at(step, player_index)
+    cards = _cards(player, "active" if area == 4 else "bench")
+    if 0 <= index < len(cards):
+        return _as_int(cards[index].get("id"))
+    return None
+
+
+def _powerful_hand_damage(
+    player: dict[str, Any], active: dict[str, Any] | None, extra_hand: int = 0
+) -> int:
+    """Use the evaluator's existing hand-size damage model consistently."""
+    hand_count = _as_int(player.get("handCount"), len(player.get("hand") or [])) or 0
+    hand_count += extra_hand
+    return hand_count * 20 if _as_int((active or {}).get("id")) == ALAKAZAM else 30
+
+
+def _selected_action_closes_prize(step: dict[str, Any], player_index: int) -> bool:
+    """Recognize a selected action that can finish the remaining prize count."""
+    selected = _selected_options(step)
+    selected_attack = _selected_attack_id(step) == POWERFUL_HAND
+    selected_enriching = any(
+        _option_type(option) == 8
+        and _hand_option_card_id(step, option, player_index) == ENRICHING_ENERGY
+        and _field_target_id(step, option, player_index) == DUDUNSPARCE
+        for option in selected
+    )
+    if not selected_attack and not selected_enriching:
+        return False
+
+    player = _player_at(step, player_index)
+    active = _active(player)
+    target = _active(_player_at(step, 1 - player_index))
+    if not active or not target:
+        return False
+    remaining_prizes = len(player.get("prize") or [])
+    target_hp = _as_int(target.get("hp"), 9999) or 9999
+    target_prizes = _prize_value(_as_int(target.get("id")))
+    if remaining_prizes > target_prizes:
+        return False
+
+    # Dudunsparce's selected Enriching Energy route is evaluated after its
+    # documented net hand-size gain, but only when a Powerful Hand option is
+    # still exposed in the same decision state.
+    extra_hand = 3 if selected_enriching and not selected_attack else 0
+    if selected_enriching and not any(
+        _option_type(option) == 13 and _option_attack_id(option) == POWERFUL_HAND
+        for option in _option_list(step)
+    ):
+        return False
+    return _powerful_hand_damage(player, active, extra_hand) >= target_hp
+
+
+def _handoff_preparation_missed(step: dict[str, Any], player_index: int) -> bool:
+    """Detect the visible handoff case that V4 is intended to repair."""
+    player = _player_at(step, player_index)
+    active = _active(player)
+    if not active or _as_int(active.get("id")) != ALAKAZAM:
+        return False
+    if PSYCHIC_ENERGY not in (active.get("energies") or []):
+        return False
+    hand = {
+        _as_int(card.get("id"))
+        for card in player.get("hand") or []
+        if isinstance(card, dict) and _as_int(card.get("id")) is not None
+    }
+    bench_targets = {
+        index
+        for index, card in enumerate(_bench(player))
+        if _as_int(card.get("id")) in {KADABRA, ALAKAZAM}
+        and PSYCHIC_ENERGY not in (card.get("energies") or [])
+        and not card.get("appearThisTurn", False)
+    }
+    if not bench_targets:
+        return False
+
+    options = _option_list(step)
+    has_direct_attachment = any(
+        _option_type(option) == 8
+        and _hand_option_card_id(step, option, player_index)
+        in {BASIC_PSYCHIC, TELEPATH_ENERGY}
+        and _as_int(option.get("inPlayArea")) == 5
+        and _as_int(option.get("inPlayIndex")) in bench_targets
+        for option in options
+    )
+    has_lana_route = any(
+        _option_type(option) == 7
+        and _hand_option_card_id(step, option, player_index) == LANAS_AID
+        and BASIC_PSYCHIC in {
+            _as_int(card.get("id"))
+            for card in player.get("discard") or []
+            if isinstance(card, dict)
+        }
+        for option in options
+    )
+    if not (has_direct_attachment or has_lana_route):
+        return False
+
+    selected = _selected_options(step)
+    selected_handoff = any(
+        _option_type(option) == 8
+        and _hand_option_card_id(step, option, player_index)
+        in {BASIC_PSYCHIC, TELEPATH_ENERGY}
+        and _as_int(option.get("inPlayArea")) == 5
+        and _as_int(option.get("inPlayIndex")) in bench_targets
+        for option in selected
+    ) or any(
+        _option_type(option) == 7
+        and _hand_option_card_id(step, option, player_index) == LANAS_AID
+        for option in selected
+    )
+    if selected_handoff:
+        return False
+
+    selected_enriching_to_draw_engine = any(
+        _option_type(option) == 8
+        and _hand_option_card_id(step, option, player_index) == ENRICHING_ENERGY
+        and _field_target_id(step, option, player_index) == DUDUNSPARCE
+        for option in selected
+    )
+    selected_attack = _selected_attack_id(step) == POWERFUL_HAND
+    if _selected_action_closes_prize(step, player_index):
+        return False
+    return selected_enriching_to_draw_engine or selected_attack
+
+
+def _prize_value(card_id: int | None) -> int:
+    if card_id in THREE_PRIZE_POKEMON:
+        return 3
+    if card_id in TWO_PRIZE_POKEMON or card_id in RULE_BOX_POKEMON:
+        return 2
+    return 1
+
+
+def _has_visible_bench_handoff(step: dict[str, Any], player_index: int) -> bool:
+    player = _player_at(step, player_index)
+    hand_ids = {
+        _as_int(card.get("id"))
+        for card in player.get("hand") or []
+        if isinstance(card, dict) and _as_int(card.get("id")) is not None
+    }
+    for pokemon in _bench(player):
+        pokemon_id = _as_int(pokemon.get("id"))
+        energies = pokemon.get("energies") or []
+        if pokemon_id in {KADABRA, ALAKAZAM} and PSYCHIC_ENERGY in energies:
+            return True
+        if (
+            pokemon_id == ABRA
+            and PSYCHIC_ENERGY in energies
+            and (KADABRA in hand_ids or (ALAKAZAM in hand_ids and RARE_CANDY in hand_ids))
+        ):
+            return True
+    return False
+
+
+def _lanas_aid_successor_route_available(step: dict[str, Any], player_index: int) -> bool:
+    """Recognize Lana's Aid as a complete recovery-to-Bench handoff route."""
+    player = _player_at(step, player_index)
+    bench_space = _as_int(player.get("benchMax"), 5) - len(_bench(player))
+    discard_ids = {
+        _as_int(card.get("id"))
+        for card in player.get("discard") or []
+        if isinstance(card, dict)
+    }
+    return bench_space > 0 and ABRA in discard_ids and BASIC_PSYCHIC in discard_ids
+
+
+def _night_stretcher_handoff_route_available(
+    step: dict[str, Any], player_index: int
+) -> bool:
+    """Recognize a Night Stretcher route that can actually seed the Bench.
+
+    Night Stretcher returns one Pokémon or one basic Energy to hand.  For an
+    empty Bench, the useful immediate route is therefore either a discarded
+    Abra plus a Psychic Energy already in hand, or an Abra already in hand
+    plus a recoverable Psychic Energy.  Merely holding Night Stretcher, or
+    recovering a Stage 1/Stage 2 Pokémon, is not enough to count as Bench
+    insurance.
+    """
+    player = _player_at(step, player_index)
+    bench_space = _as_int(player.get("benchMax"), 5) - len(_bench(player))
+    if bench_space <= 0:
+        return False
+    if any(_as_int(pokemon.get("id")) in ATTACK_LINE for pokemon in _bench(player)):
+        return False
+
+    hand_ids = {
+        _as_int(card.get("id"))
+        for card in player.get("hand") or []
+        if isinstance(card, dict)
+    }
+    discard_ids = {
+        _as_int(card.get("id"))
+        for card in player.get("discard") or []
+        if isinstance(card, dict)
+    }
+    psychic_energy_ids = {BASIC_PSYCHIC, TELEPATH_ENERGY}
+    return (
+        ABRA in discard_ids and bool(hand_ids & psychic_energy_ids)
+    ) or (
+        ABRA in hand_ids and bool(discard_ids & psychic_energy_ids)
+    )
+
+
+def _selected_night_stretcher_handoff(
+    step: dict[str, Any], player_index: int
+) -> bool:
+    return any(
+        _option_type(option) == 7
+        and _hand_option_card_id(step, option, player_index) == NIGHT_STRETCHER
+        and _night_stretcher_handoff_route_available(step, player_index)
+        for option in _selected_options(step)
+    )
+
+
+def _wondrous_patch_handoff_route_available(
+    step: dict[str, Any], player_index: int
+) -> bool:
+    """Require a visible evolution route before treating Patch as handoff work."""
+    player = _player_at(step, player_index)
+    hand_ids = {
+        _as_int(card.get("id"))
+        for card in player.get("hand") or []
+        if isinstance(card, dict)
+    }
+    discard_ids = {
+        _as_int(card.get("id"))
+        for card in player.get("discard") or []
+        if isinstance(card, dict)
+    }
+    if BASIC_PSYCHIC not in discard_ids:
+        return False
+    for pokemon in _bench(player):
+        pokemon_id = _as_int(pokemon.get("id"))
+        if PSYCHIC_ENERGY in (pokemon.get("energies") or []):
+            continue
+        if pokemon_id in {KADABRA, ALAKAZAM}:
+            return True
+        if pokemon_id == ABRA and (
+            KADABRA in hand_ids
+            or (ALAKAZAM in hand_ids and RARE_CANDY in hand_ids)
+        ):
+            return True
+    return False
+
+
+def _selected_bench_anchor(step: dict[str, Any], player_index: int) -> bool:
+    player = _player_at(step, player_index)
+    for option in _selected_options(step):
+        card_id = _hand_option_card_id(step, option, player_index)
+        if _option_type(option) == 7 and card_id in {POFFIN, ABRA, DUNSPARCE}:
+            return True
+        if (
+            _option_type(option) == 7
+            and card_id == WONDROUS_PATCH
+            and _wondrous_patch_handoff_route_available(step, player_index)
+        ):
+            return True
+        if (
+            _option_type(option) == 7
+            and card_id == LANAS_AID
+            and (
+                _lanas_aid_successor_route_available(step, player_index)
+                or (
+                    any(
+                        _as_int(card.get("id")) in ATTACK_LINE
+                        for card in _bench(player)
+                        if PSYCHIC_ENERGY not in (card.get("energies") or [])
+                    )
+                    and BASIC_PSYCHIC in {
+                        _as_int(card.get("id"))
+                        for card in player.get("discard") or []
+                        if isinstance(card, dict)
+                    }
+                )
+            )
+        ):
+            return True
+        if _selected_night_stretcher_handoff(step, player_index):
+            return True
+        if (
+            _option_type(option) == 8
+            and card_id == TELEPATH_ENERGY
+            and _field_target_id(step, option, player_index) in ATTACK_LINE
+        ):
+            return True
+    return False
+
+
+def _selected_draw_engine_progress(step: dict[str, Any], player_index: int) -> bool:
+    """Recognize a valid draw-engine action without calling it a Bench miss.
+
+    The strategy contract explicitly allows Enriching Energy to go to a
+    visible Dunsparce/Dudunsparce route. That action does not itself create a
+    ready Abra-line attacker, but it is still intentional progress when the
+    Bench is non-empty; reporting it as a missed Bench anchor would turn a
+    valid resource choice into a false failure case. An empty Bench remains a
+    hard insurance issue and is deliberately not covered here.
+    """
+    player = _player_at(step, player_index)
+    if not _bench(player):
+        return False
+    for option in _selected_options(step):
+        if _option_type(option) != 8:
+            continue
+        if _hand_option_card_id(step, option, player_index) != ENRICHING_ENERGY:
+            continue
+        if _field_target_id(step, option, player_index) in {DUNSPARCE, DUDUNSPARCE}:
+            return True
+    return False
+
+
+def _has_direct_handoff_option(step: dict[str, Any], player_index: int) -> bool:
+    """Do not call Bench insurance a miss when handoff work is exposed."""
+    player = _player_at(step, player_index)
+    for option in _option_list(step):
+        target = _field_target_id(step, option, player_index)
+        if _option_type(option) == 8:
+            energy_id = _hand_option_card_id(step, option, player_index)
+            if energy_id in {BASIC_PSYCHIC, TELEPATH_ENERGY} and target in ATTACK_LINE:
+                area = _as_int(option.get("inPlayArea"))
+                target_index = _as_int(option.get("inPlayIndex"))
+                if area == 4:
+                    target_card = _active(player)
+                elif area == 5 and target_index is not None:
+                    bench = _bench(player)
+                    target_card = (
+                        bench[target_index]
+                        if 0 <= target_index < len(bench)
+                        else None
+                    )
+                else:
+                    target_card = None
+                if target_card and PSYCHIC_ENERGY not in (target_card.get("energies") or []):
+                    return True
+        if _option_type(option) == 9 and target in {ABRA, KADABRA}:
+            return True
+    return False
+
+
+def _bench_insurance_due(step: dict[str, Any], player_index: int) -> bool:
+    """Detect a non-terminal state without a visible Abra-line handoff."""
+    player = _player_at(step, player_index)
+    active = _active(player)
+    if not active or _as_int(active.get("id")) not in {ALAKAZAM, KADABRA}:
+        return False
+    hand = player.get("hand") or []
+    bench_space = _as_int(player.get("benchMax"), 5) - len(_bench(player))
+    if (
+        bench_space <= 0
+        or _has_visible_bench_handoff(step, player_index)
+        or _has_direct_handoff_option(step, player_index)
+    ):
+        return False
+    bench_attack_line = [
+        pokemon
+        for pokemon in _bench(player)
+        if _as_int(pokemon.get("id")) in ATTACK_LINE
+    ]
+    if bench_attack_line:
+        # A non-empty, already-established Abra-line is still Bench
+        # continuity even when it is not immediately ready to attack.  Only
+        # the narrow fresh-Bench state is a genuine insurance gate: every
+        # visible line piece entered this turn and is still unenergized.
+        freshly_unready = all(
+            pokemon.get("appearThisTurn", False)
+            and PSYCHIC_ENERGY not in (pokemon.get("energies") or [])
+            for pokemon in bench_attack_line
+        )
+        selected_valid_progress = _selected_bench_anchor(step, player_index) or _selected_draw_engine_progress(
+            step, player_index
+        )
+        if not freshly_unready and not selected_valid_progress:
+            return False
+    options = _option_list(step)
+    if not any(_option_type(option) == 13 for option in options):
+        return False
+    has_anchor_option = any(
+        (
+            _option_type(option) == 7
+            and _hand_option_card_id(step, option, player_index)
+            in {POFFIN, ABRA, DUNSPARCE}
+        )
+        or (
+            _option_type(option) == 7
+            and _hand_option_card_id(step, option, player_index) == WONDROUS_PATCH
+            and _wondrous_patch_handoff_route_available(step, player_index)
+        )
+        or (
+            _option_type(option) == 7
+            and _hand_option_card_id(step, option, player_index) == LANAS_AID
+            and _lanas_aid_successor_route_available(step, player_index)
+        )
+        or (
+            _option_type(option) == 7
+            and _hand_option_card_id(step, option, player_index) == NIGHT_STRETCHER
+            and _night_stretcher_handoff_route_available(step, player_index)
+        )
+        or (
+            _option_type(option) == 8
+            and _hand_option_card_id(step, option, player_index) == TELEPATH_ENERGY
+            and _field_target_id(step, option, player_index) in ATTACK_LINE
+        )
+        for option in options
+    )
+    if not has_anchor_option:
+        return False
+
+    target = _active(_player_at(step, 1 - player_index))
+    hand_count = _as_int(player.get("handCount"), len(hand)) or 0
+    damage = hand_count * 20 if _as_int(active.get("id")) == ALAKAZAM else 30
+    remaining_prizes = len(player.get("prize") or [])
+    target_is_final_ko = bool(
+        target
+        and _as_int(target.get("hp"), 9999) <= damage
+        and remaining_prizes <= _prize_value(_as_int(target.get("id")))
+    )
+    return not target_is_final_ko
+
+
+def _future_same_turn_bench_anchor_selected(
+    trace: list[dict[str, Any]],
+    step_index: int,
+    player_index: int,
+    agent_label: str | None,
+) -> bool:
+    """Treat a later same-turn anchor as validation of an earlier search step."""
+    if not (0 <= step_index < len(trace)):
+        return False
+    current_turn = _as_int(
+        trace[step_index].get("turn"), _as_int(_current(trace[step_index]).get("turn"))
+    )
+    if current_turn is None:
+        return False
+    for future_step in trace[step_index + 1 :]:
+        future_turn = _as_int(
+            future_step.get("turn"), _as_int(_current(future_step).get("turn"))
+        )
+        if future_turn != current_turn:
+            break
+        if not _is_agent_step(future_step, agent_label):
+            continue
+        if _selected_bench_anchor(future_step, player_index) or _selected_draw_engine_progress(
+            future_step, player_index
+        ):
+            return True
+        if _selected_attack_id(future_step) is not None or any(
+            _option_type(option) == 14 for option in _selected_options(future_step)
+        ):
+            return False
+    return False
+
+
+def _record_error_is_agent(record: dict[str, Any], agent_label: str | None) -> bool:
+    """Attribute an evaluator error to the last side that acted."""
+    if not record.get("error"):
+        return False
+    for step in reversed(_trace_for_record(record)):
+        role = step.get("role")
+        if role == "finished":
+            continue
+        if role == "opponent":
+            return False
+        return _is_agent_step(step, agent_label)
+    return True
+
+
 def _record_win(record: dict[str, Any]) -> bool:
     return _as_int(record.get("winner"), -1) == 0
 
@@ -432,7 +988,7 @@ def analyze_records(
     wins = sum(_record_win(record) for record in records)
     losses = sum(_as_int(record.get("winner"), -1) == 1 for record in records)
     draws = len(records) - wins - losses
-    errors = sum(bool(record.get("error")) for record in records)
+    errors = sum(_record_error_is_agent(record, label) for record in records)
     powerful_games = 0
     post_ko_count = 0
     post_ko_zero_ready_count = 0
@@ -446,13 +1002,16 @@ def analyze_records(
         target_turn = _agent_turn_target(record)
         second_turn_seen = False
         second_turn_step: dict[str, Any] | None = None
+        powerful_hand_step: dict[str, Any] | None = None
+        powerful_hand_available = False
         seen_knockouts: set[tuple[Any, Any]] = set()
         game_has_break = False
         first_alakazam: int | None = None
         agent_index = _agent_index(record)
         previous_field: dict[int, dict[str, Any]] = {}
+        seen_strategy_cases: set[tuple[str, str]] = set()
 
-        for step in trace:
+        for step_index, step in enumerate(trace):
             player = _player_at(step, agent_index)
             if first_alakazam is None and any(
                 _as_int(card.get("id")) == ALAKAZAM
@@ -467,6 +1026,45 @@ def analyze_records(
                 pass
 
             if _is_agent_step(step, label):
+                if _bench_insurance_due(step, agent_index):
+                    anchor_selected = (
+                        _selected_bench_anchor(step, agent_index)
+                        or _selected_draw_engine_progress(step, agent_index)
+                        or _future_same_turn_bench_anchor_selected(
+                            trace, step_index, agent_index, label
+                        )
+                    )
+                    signature = json.dumps(
+                        _state_summary(player), ensure_ascii=False, sort_keys=True
+                    )
+                    case_key = ("bench_insurance_missed", signature)
+                    if case_key not in seen_strategy_cases:
+                        seen_strategy_cases.add(case_key)
+                        cases.append(
+                            _case(
+                                record,
+                                step,
+                                "bench_insurance_missed",
+                                "当前攻击前没有可验证的 Abra-line handoff；应先用 Poffin、Telepath 或直接放下 Basic 建立 Bench，除非攻击完成最后奖赏闭环",
+                                status="pass" if anchor_selected else "fail",
+                            )
+                        )
+                if _handoff_preparation_missed(step, agent_index):
+                    signature = json.dumps(
+                        _state_summary(player), ensure_ascii=False, sort_keys=True
+                    )
+                    case_key = ("handoff_preparation_missed", signature)
+                    if case_key not in seen_strategy_cases:
+                        seen_strategy_cases.add(case_key)
+                        cases.append(
+                            _case(
+                                record,
+                                step,
+                                "handoff_preparation_missed",
+                                "Active Alakazam 已能攻击，但可见 Bench 接力线有 Psychic 附能或 Lana's Aid 回收路径；不应先走 Enriching Energy 或直接攻击",
+                                status="fail",
+                            )
+                        )
                 selected = _selected_options(step)
                 attack_id = _selected_attack_id(step)
                 is_second_turn = (
@@ -476,6 +1074,14 @@ def analyze_records(
                 )
                 if is_second_turn:
                     second_turn_step = step
+                    if any(
+                        _option_type(option) == 13
+                        and _option_attack_id(option) == POWERFUL_HAND
+                        for option in _option_list(step)
+                    ):
+                        powerful_hand_available = True
+                        if powerful_hand_step is None:
+                            powerful_hand_step = step
                     if attack_id == POWERFUL_HAND and not second_turn_seen:
                         second_turn_seen = True
                         powerful_games += 1
@@ -540,12 +1146,24 @@ def analyze_records(
         if game_has_break:
             games_with_post_ko_break += 1
         if not second_turn_seen:
+            failure_class = (
+                "second_turn_powerful_hand_missing"
+                if powerful_hand_available
+                else "second_turn_powerful_hand_unavailable"
+            )
+            reason = (
+                "第二回合存在合法的 Alakazam Powerful Hand，但实际 action 没有选择它；"
+                "需要结合当时的铺场、进化、过牌和终局判断复盘"
+                if powerful_hand_available
+                else "目标第二回合没有合法的 Alakazam Powerful Hand option；"
+                "这属于资源或规则条件不可用，不计为策略漏攻"
+            )
             cases.append(
                 _case(
                     record,
-                    second_turn_step or (trace[-1] if trace else {}),
-                    "second_turn_powerful_hand_missing",
-                    "本局在目标第二回合没有实际选择 Alakazam 的 Powerful Hand；需要结合 trace 判断是资源不可得还是策略顺序错误",
+                    powerful_hand_step or second_turn_step or (trace[-1] if trace else {}),
+                    failure_class,
+                    reason,
                 )
             )
 
@@ -800,7 +1418,7 @@ def build_replay_command(
     games: int,
     output: Path,
     cg_path: Path,
-    save_traces: bool = True,
+    save_traces: bool = False,
 ) -> list[str]:
     """Build, but do not execute, the external alakazam_replay.py command."""
     command = [
@@ -847,12 +1465,18 @@ def _command_parser() -> argparse.ArgumentParser:
     run.add_argument("--games", type=int, default=10)
     run.add_argument("--output-dir", type=Path, required=True)
     run.add_argument(
+        "--save-traces",
+        dest="save_traces",
+        action="store_true",
+        help="保存完整逐局 trace；仅用于需要复盘的最新评测轮次",
+    )
+    run.add_argument(
         "--no-save-traces",
         dest="save_traces",
         action="store_false",
         help="只保存 evaluator summary，避免完整 trace 占用大量空间",
     )
-    run.set_defaults(save_traces=True)
+    run.set_defaults(save_traces=False)
     return parser
 
 
