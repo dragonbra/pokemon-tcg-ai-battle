@@ -3,7 +3,8 @@
 ## 项目结构与模块组织
 
 - `work/<name>/` 是当前可打包候选，必须包含 `main.py`、60 行 `deck.csv` 和 `cg/` 运行时；策略说明放在 `work/docs/`。`submission/<name>/` 保留历史提交源目录。
-- `scripts/` 提供资产校验、提交打包、本地对局、replay 可视化和官方引擎构建脚本。
+- `scripts/` 提供资产校验、提交打包、本地对局和官方引擎构建脚本。
+- `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
 - `notes/`、`reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
 
@@ -53,7 +54,7 @@ bash scripts/package_submission.sh alakazam_v8_current
 
 ### Replay 可视化工具
 
-- 当用户要求查看、展示、播放或可视化某一局对战时，优先调用统一入口：`python3 scripts/visualize_replay.py <replay.json>`。默认生成临时 HTML launcher 并打开浏览器；无图形环境或只需要路径时使用 `--no-open`。
+- 当用户要求查看、展示、播放或可视化某一局对战时，优先调用统一入口：`python3 -m visualization.replay.cli <replay.json>`。默认生成临时 HTML launcher 并在当前标签页 POST 跳转到 viewer，不创建弹窗；无图形环境或只需要路径时使用 `--no-open`。
 - 统一入口兼容 Kaggle 官方 replay、本地顶层包含 `visualize`/`visualize_frames` 的 replay，以及 Kaggle `steps[*][*].visualize` 帧。外部 viewer 使用 `POST` 的 `json` 字段提交完整帧，默认 endpoint 为 `https://ptcgvis.heroz.jp/Visualizer/Replay/0`；需要替换时使用 `--viewer-url`。
 - 当前只有 observation/action 的旧本地 trace 不包含引擎可视化帧，不能事后伪造卡面回放。遇到这类文件时应明确提示重新运行，并使用 `--visualize-output` 生成可播放文件：
 
@@ -62,11 +63,11 @@ bash scripts/package_submission.sh alakazam_v8_current
     --agent0 alakazam_v7 --agent1 official_water \
     --output /tmp/ptcg-local-battle.json \
     --visualize-output /tmp/ptcg-local-battle-visualize.json
-  python3 scripts/visualize_replay.py /tmp/ptcg-local-battle-visualize.json
+  python3 -m visualization.replay.cli /tmp/ptcg-local-battle-visualize.json
   ```
 
 - `run_local_battle.py` 默认仍只保存轻量 trace；只有显式传入 `--visualize-output` 时才在 `battle_finish()` 前调用 `visualize_data()`。本地临时 replay 写入 `/tmp`，不纳入仓库；Kaggle 官方 replay 仍作为长期分析资料。
-- 如果播放器黑屏，先检查输入是否含非空 `visualize` 帧；如果状态存在但卡面为黑色，再检查外部 viewer 的卡牌资源是否可访问。完整说明见 [`docs/replay-visualization.md`](docs/replay-visualization.md)。
+- 可视化核心实现位于 `visualization/replay/`；如果播放器黑屏，先检查输入是否含非空 `visualize` 帧；如果状态存在但卡面为黑色，再检查外部 viewer 的卡牌资源是否可访问。完整说明见 [`visualization/README.md`](visualization/README.md)。
 
 ## 编码风格与命名约定
 

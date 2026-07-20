@@ -120,7 +120,7 @@ def create_viewer_launcher(
 <html lang="en">
 <head><meta charset="utf-8"><title>PTCG replay launcher</title></head>
 <body>
-<form method="POST" action="{action}" target="_blank">
+<form method="POST" action="{action}" target="_self">
 <input type="hidden" name="json" value="{payload}">
 </form>
 <script>window.addEventListener("load", function () {{ document.forms[0].submit(); }});</script>

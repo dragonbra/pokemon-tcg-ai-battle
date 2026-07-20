@@ -19,14 +19,15 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 
 if __package__:
-    from .replay_visualizer import attach_trace_metadata, extract_visualize_frames
+    from visualization.replay.core import attach_trace_metadata, extract_visualize_frames
     from .submission_paths import (
         historical_submission_dirs,
         resolve_submission,
         work_submission_dirs,
     )
 else:
-    from replay_visualizer import attach_trace_metadata, extract_visualize_frames
+    sys.path.insert(0, str(ROOT))
+    from visualization.replay.core import attach_trace_metadata, extract_visualize_frames
     from submission_paths import (
         historical_submission_dirs,
         resolve_submission,

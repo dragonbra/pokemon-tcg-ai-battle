@@ -24,7 +24,8 @@
 | `submission/<name>/` | 历史版本的完整 agent、卡组和官方 `cg` 模拟器运行时 |
 | `submission/dist/` | 打包生成的 `.tar.gz` 提交产物 |
 | `engine/` | 官方引擎源码的本地缓存与构建边界，不进入提交包 |
-| `scripts/` | 资产校验、提交打包、本地对局 runner 和 replay 可视化入口 |
+| `scripts/` | 资产校验、提交打包和本地对局 runner |
+| `visualization/` | replay 可视化核心、外部 viewer launcher 和使用说明 |
 | `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
 | `reports/` | 调研结论、卡组分析和实现任务书 |
 | `experiments/` | 后续实验协议与结果模板 |
@@ -60,8 +61,8 @@ PTCG_CXX_RUNTIME=/path/to/compatible/runtime ./scripts/run_local_battle.sh \
   --output /tmp/ptcg-local-battle.json
 
 # 查看 Kaggle replay 或本地可视化 replay
-python3 scripts/visualize_replay.py path/to/replay.json
-python3 scripts/visualize_replay.py path/to/replay.json --no-open
+python3 -m visualization.replay.cli path/to/replay.json
+python3 -m visualization.replay.cli path/to/replay.json --no-open
 
 # 本地对局同时保存可播放帧（默认不保存，避免 smoke test 产生大文件）
 ./scripts/run_local_battle.sh \
@@ -80,4 +81,4 @@ PTCG_CG_LIBRARY="$PWD/engine/build/libcg.so" ./scripts/run_local_battle.sh \
 
 Kaggle 登录、接受规则、下载比赛数据和正式提交仍然需要明确的人工操作；仓库不会自动上传 submission。
 
-回放可视化的完整说明见 [`docs/replay-visualization.md`](docs/replay-visualization.md)。
+回放可视化的完整说明见 [`visualization/README.md`](visualization/README.md)。launcher 会在当前标签页完成 POST 跳转，不创建新的浏览器窗口。

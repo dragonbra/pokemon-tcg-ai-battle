@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 
-from scripts.replay_visualizer import (
+from visualization.replay import (
     ReplayFormatError,
     attach_trace_metadata,
     extract_visualize_frames,
@@ -90,7 +90,7 @@ class ReplayAdapterTests(unittest.TestCase):
         self.assertEqual(frames[1]["action"], [[], [2]])
 
     def test_launcher_posts_json_to_viewer(self):
-        from scripts.replay_visualizer import create_viewer_launcher
+        from visualization.replay import create_viewer_launcher
 
         frames = [{"state": "x", "text": "a'b"}]
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -103,6 +103,8 @@ class ReplayAdapterTests(unittest.TestCase):
 
         self.assertIn('action="https://viewer.test/replay"', html)
         self.assertIn('method="POST"', html)
+        self.assertIn('target="_self"', html)
+        self.assertNotIn('target="_blank"', html)
         self.assertIn('name="json"', html)
         self.assertIn(json.dumps(frames, ensure_ascii=False), unescape(html))
 
@@ -112,7 +114,13 @@ class ReplayAdapterTests(unittest.TestCase):
             replay.write_text('{"visualize": [{"state": 1}]}', encoding="utf-8")
 
             result = subprocess.run(
-                [sys.executable, "scripts/visualize_replay.py", str(replay), "--no-open"],
+                [
+                    sys.executable,
+                    "-m",
+                    "visualization.replay.cli",
+                    str(replay),
+                    "--no-open",
+                ],
                 capture_output=True,
                 text=True,
                 check=False,
@@ -128,7 +136,13 @@ class ReplayAdapterTests(unittest.TestCase):
             replay.write_text('{"trace": [{"step": 1}]}', encoding="utf-8")
 
             result = subprocess.run(
-                [sys.executable, "scripts/visualize_replay.py", str(replay), "--no-open"],
+                [
+                    sys.executable,
+                    "-m",
+                    "visualization.replay.cli",
+                    str(replay),
+                    "--no-open",
+                ],
                 capture_output=True,
                 text=True,
                 check=False,
