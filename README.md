@@ -20,7 +20,9 @@
 | 目录 | 用途 |
 |---|---|
 | `data/official/` | 官方下载的卡牌 CSV、Card ID List PDF，只读参考资源，不直接打包提交 |
-| `submission/<name>/` | 一套可独立打包的完整 agent、卡组和官方 `cg` 模拟器运行时 |
+| `work/<name>/` | 当前可打包候选，仅包含 agent、卡组和官方 `cg` 模拟器运行时 |
+| `submission/<name>/` | 历史版本的完整 agent、卡组和官方 `cg` 模拟器运行时 |
+| `submission/dist/` | 打包生成的 `.tar.gz` 提交产物 |
 | `engine/` | 官方引擎源码的本地缓存与构建边界，不进入提交包 |
 | `scripts/` | 资产校验、提交打包、本地对局 runner 和 replay 可视化入口 |
 | `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
@@ -28,7 +30,7 @@
 | `experiments/` | 后续实验协议与结果模板 |
 | `replays/` | Kaggle 官方 Episode replay 和 agent log；本地临时回放不保存 |
 
-`submission/<name>/` 是一个完整提交源目录。每套提交都独立包含 `main.py`、`deck.csv` 和 `cg/`，由脚本单独打包成顶层包含这三项的 `.tar.gz`。当前有 `official_water` 和 `alakazam_v1` 两套提交。
+`work/<name>/` 是当前候选源目录，`submission/<name>/` 保存历史完整提交。每套提交都独立包含 `main.py`、`deck.csv` 和 `cg/`，由脚本单独打包到 `submission/dist/`，归档根部包含这三项。当前候选为 `work/alakazam_v8_current/`。
 
 大规模模拟、向量化环境、MCTS、自博弈和神经网络训练可以在另一台 5080 机器上进行。实现端应读取本仓库的中文任务书，并把代码、命令、指标和失败信息写回仓库。
 
@@ -43,7 +45,7 @@
 
 ## 当前状态
 
-官方卡牌资源和 starter simulator 已经合并。`submission/official_water/` 保存最初的官方水系 starter baseline；`submission/alakazam_v1/` 是依据胡地卡表实现的第一版 card-aware 规则 agent。两者都只从 simulator 给出的合法选项中选择。
+官方卡牌资源和 starter simulator 已经合并。历史目录中的 `submission/official_water/` 和 `submission/alakazam_v1/` 保留最初 baseline；当前候选位于 `work/alakazam_v8_current/`。所有 agent 都只从 simulator 给出的合法选项中选择。
 
 本机能否直接加载提交目录中的 `cg/libcg.so` 取决于动态库版本。官方二进制要求 `GLIBCXX_3.4.29` 或更新的 `libstdc++.so.6`；如果本机旧于此版本，应在兼容的 Linux/Kaggle 环境运行，不要替换官方模拟器二进制。
 

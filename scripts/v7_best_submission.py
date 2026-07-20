@@ -40,11 +40,11 @@ def _artifact_path(value: Any, repo_root: Path) -> Path:
     if relative.is_absolute():
         raise ValueError("artifact must be relative to the repository")
     resolved = (repo_root / relative).resolve()
-    dist_root = (repo_root / "dist").resolve()
+    dist_root = (repo_root / "submission" / "dist").resolve()
     try:
         resolved.relative_to(dist_root)
     except ValueError as exc:
-        raise ValueError("artifact must be inside dist/") from exc
+        raise ValueError("artifact must be inside submission/dist/") from exc
     return resolved
 
 
@@ -171,9 +171,9 @@ def write_best_strategy(
     artifact = artifact.resolve()
     repo_root = repo_root.resolve()
     try:
-        artifact.relative_to(repo_root / "dist")
+        artifact.relative_to(repo_root / "submission" / "dist")
     except ValueError as exc:
-        raise ValueError("artifact must be inside dist/") from exc
+        raise ValueError("artifact must be inside submission/dist/") from exc
     _validate_archive(artifact)
     digest = _sha256(artifact)
 

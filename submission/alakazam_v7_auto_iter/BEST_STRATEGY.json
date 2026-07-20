@@ -4,7 +4,7 @@
   "label": "iter-15-patch-priority",
   "status": "best-known",
   "deck_fixed": true,
-  "artifact": "dist/alakazam_v7_auto_iter_best_iter-15-patch-priority.tar.gz",
+  "artifact": "submission/dist/alakazam_v7_auto_iter_best_iter-15-patch-priority.tar.gz",
   "artifact_sha256": "6ee93ac27471c59a2d19d24f3cc0b04d6325f09c928f5d0a7adc6d8a5dc3d7c7",
   "metrics": {
     "wins": 116,

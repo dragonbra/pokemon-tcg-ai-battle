@@ -10,7 +10,7 @@ from scripts.v7_best_submission import stage_best_for_schedule, validate_best_st
 
 class V7BestSubmissionTests(unittest.TestCase):
     def _write_archive(self, root: Path, *, main: str = "print('best')\n") -> Path:
-        archive = root / "dist" / "alakazam_v7_auto_iter_best_iter-15-test.tar.gz"
+        archive = root / "submission" / "dist" / "alakazam_v7_auto_iter_best_iter-15-test.tar.gz"
         archive.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=root) as temp_name:
             source = Path(temp_name)
@@ -66,7 +66,7 @@ class V7BestSubmissionTests(unittest.TestCase):
     def test_best_marker_rejects_archive_without_submission_runtime(self):
         with tempfile.TemporaryDirectory() as temp_name:
             root = Path(temp_name)
-            archive = root / "dist" / "bad.tar.gz"
+            archive = root / "submission" / "dist" / "bad.tar.gz"
             archive.parent.mkdir(parents=True, exist_ok=True)
             with tarfile.open(archive, "w:gz") as handle:
                 payload = root / "payload.txt"
@@ -75,6 +75,19 @@ class V7BestSubmissionTests(unittest.TestCase):
             marker = self._write_marker(root, archive)
 
             with self.assertRaisesRegex(ValueError, "required archive members"):
+                validate_best_strategy(marker, root)
+
+    def test_best_marker_rejects_root_dist_archive(self):
+        with tempfile.TemporaryDirectory() as temp_name:
+            root = Path(temp_name)
+            archive = self._write_archive(root)
+            root_archive = root / "dist" / archive.name
+            root_archive.parent.mkdir(parents=True, exist_ok=True)
+            archive.rename(root_archive)
+            archive = root_archive
+            marker = self._write_marker(root, archive)
+
+            with self.assertRaisesRegex(ValueError, "inside submission/dist/"):
                 validate_best_strategy(marker, root)
 
     def test_stage_best_for_schedule_copies_archive_and_rewrites_portable_marker(self):

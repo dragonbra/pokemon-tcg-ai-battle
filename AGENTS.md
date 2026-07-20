@@ -2,7 +2,7 @@
 
 ## 项目结构与模块组织
 
-- `submission/<name>/` 是可独立打包的 agent，必须包含 `main.py`、60 行 `deck.csv` 和 `cg/` 运行时；策略说明放在同目录的 `README.md` 或 `STRATEGY.md`。
+- `work/<name>/` 是当前可打包候选，必须包含 `main.py`、60 行 `deck.csv` 和 `cg/` 运行时；策略说明放在 `work/docs/`。`submission/<name>/` 保留历史提交源目录。
 - `scripts/` 提供资产校验、提交打包、本地对局、replay 可视化和官方引擎构建脚本。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
 - `notes/`、`reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
@@ -44,12 +44,12 @@
 
 ```bash
 python3 scripts/check_assets.py
-bash scripts/package_submission.sh alakazam_v1
+bash scripts/package_submission.sh alakazam_v8_current
 ./scripts/run_local_battle.sh --agent0 alakazam_v1 --agent1 official_water \
   --output /tmp/ptcg-local-battle.json
 ```
 
-第一条检查卡牌数据、60 张卡组和模拟器文件；第二条生成 `dist/<name>.tar.gz`；本地 battle runner 仅用于临时调试，输出应写到 `/tmp`。官方真实对局以 Kaggle submission/episode/replay 为主要分析依据。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
+第一条检查卡牌数据、60 张卡组和模拟器文件；第二条优先打包 `work/<name>/`，历史目录回退到 `submission/<name>/`，并生成 `submission/dist/<name>.tar.gz`；本地 battle runner 仅用于临时调试，输出应写到 `/tmp`。官方真实对局以 Kaggle submission/episode/replay 为主要分析依据。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
 
 ### Replay 可视化工具
 

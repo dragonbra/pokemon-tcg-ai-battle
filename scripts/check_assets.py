@@ -4,18 +4,18 @@ from pathlib import Path
 import csv
 from collections import Counter
 
+try:
+    from .submission_paths import historical_submission_dirs, work_submission_dirs
+except ImportError:
+    from submission_paths import historical_submission_dirs, work_submission_dirs
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "official"
-SUBMISSION = ROOT / "submission"
 
 
 def submission_dirs() -> list[Path]:
-    return sorted(
-        path
-        for path in SUBMISSION.iterdir()
-        if path.is_dir() and (path / "main.py").exists() and (path / "deck.csv").exists()
-    )
+    return historical_submission_dirs(ROOT) + work_submission_dirs(ROOT)
 
 
 def check_cards_csv(path: Path) -> None:

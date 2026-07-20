@@ -17,16 +17,25 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SUBMISSION = ROOT / "submission"
 
 if __package__:
     from .replay_visualizer import attach_trace_metadata, extract_visualize_frames
+    from .submission_paths import (
+        historical_submission_dirs,
+        resolve_submission,
+        work_submission_dirs,
+    )
 else:
     from replay_visualizer import attach_trace_metadata, extract_visualize_frames
+    from submission_paths import (
+        historical_submission_dirs,
+        resolve_submission,
+        work_submission_dirs,
+    )
 
 
 def _load_submission(name: str):
-    submission = SUBMISSION / name
+    submission = resolve_submission(name, ROOT)
     main_path = submission / "main.py"
     if not main_path.exists():
         raise ValueError(f"unknown submission directory: {name}")
@@ -41,9 +50,7 @@ def _load_submission(name: str):
 
 def _available_submissions() -> list[str]:
     return sorted(
-        path.name
-        for path in SUBMISSION.iterdir()
-        if path.is_dir() and (path / "main.py").exists() and (path / "deck.csv").exists()
+        {path.name for path in work_submission_dirs(ROOT) + historical_submission_dirs(ROOT)}
     )
 
 
@@ -80,8 +87,9 @@ def run(
     output: Path,
     visualize_output: Path | None = None,
 ) -> dict[str, Any]:
+    agent0_submission = resolve_submission(agent0_name, ROOT)
     try:
-        sys.path.insert(0, str(SUBMISSION / agent0_name))
+        sys.path.insert(0, str(agent0_submission))
         from cg.game import battle_finish, battle_select, battle_start, visualize_data
     except OSError as exc:
         raise RuntimeError(

@@ -21,7 +21,7 @@ label="$2"
 }
 
 base_archive="$(bash "$repo_dir/scripts/package_submission.sh" "$source_submission")"
-artifact="$repo_dir/dist/${source_submission}_best_${label}.tar.gz"
+artifact="$repo_dir/submission/dist/${source_submission}_best_${label}.tar.gz"
 cp "$base_archive" "$artifact"
 
 python3 "$repo_dir/scripts/v7_best_submission.py" write-marker \
