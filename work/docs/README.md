@@ -8,3 +8,4 @@
 - [`STRATEGY.md`](STRATEGY.md)：当前沿用的主行动顺序、Item Lock 边界和 replay 验收约定。
 - [`ANALYSIS.md`](ANALYSIS.md)：V8 与 V7 卡表差异、数据来源和构筑层面的研究假设。
 - [`CURRENT_OBJECTIVES.md`](CURRENT_OBJECTIVES.md)：当前迭代目标和 promotion guardrail。
+- [`REFACTOR_DESIGN.md`](REFACTOR_DESIGN.md)：面向下一轮 Agent 重构的目标策略、回合阶段、资源优先级和验证接口。
