@@ -16,6 +16,6 @@ mkdir -p "$out_dir"
 rm -f "$out_file"
 
 cd "$src_dir"
-tar --exclude='__pycache__' --exclude='*.pyc' -czf "$out_file" main.py deck.csv cg
+COPYFILE_DISABLE=1 tar --exclude='__pycache__' --exclude='*.pyc' -czf "$out_file" main.py deck.csv cg
 
 echo "$out_file"
