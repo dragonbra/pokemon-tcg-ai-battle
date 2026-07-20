@@ -22,7 +22,7 @@
 | `data/official/` | 官方下载的卡牌 CSV、Card ID List PDF，只读参考资源，不直接打包提交 |
 | `submission/<name>/` | 一套可独立打包的完整 agent、卡组和官方 `cg` 模拟器运行时 |
 | `engine/` | 官方引擎源码的本地缓存与构建边界，不进入提交包 |
-| `scripts/` | 资产校验、提交打包和本地对局 runner |
+| `scripts/` | 资产校验、提交打包、本地对局 runner 和 replay 可视化入口 |
 | `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
 | `reports/` | 调研结论、卡组分析和实现任务书 |
 | `experiments/` | 后续实验协议与结果模板 |
@@ -57,6 +57,16 @@ PTCG_CXX_RUNTIME=/path/to/compatible/runtime ./scripts/run_local_battle.sh \
   --agent0 alakazam_v1 --agent1 official_water \
   --output /tmp/ptcg-local-battle.json
 
+# 查看 Kaggle replay 或本地可视化 replay
+python3 scripts/visualize_replay.py path/to/replay.json
+python3 scripts/visualize_replay.py path/to/replay.json --no-open
+
+# 本地对局同时保存可播放帧（默认不保存，避免 smoke test 产生大文件）
+./scripts/run_local_battle.sh \
+  --agent0 alakazam_v1 --agent1 official_water \
+  --output /tmp/ptcg-local-battle.json \
+  --visualize-output /tmp/ptcg-local-battle-visualize.json
+
 # 可选：从本地官方源码快照构建独立测试运行时
 ./scripts/build_official_engine.sh
 PTCG_CG_LIBRARY="$PWD/engine/build/libcg.so" ./scripts/run_local_battle.sh \
@@ -67,3 +77,5 @@ PTCG_CG_LIBRARY="$PWD/engine/build/libcg.so" ./scripts/run_local_battle.sh \
 如果当前环境已经能直接加载官方 `libcg.so`，可以省略 `PTCG_CXX_RUNTIME`；变量指向的目录应包含 `lib/libstdc++.so.6`。
 
 Kaggle 登录、接受规则、下载比赛数据和正式提交仍然需要明确的人工操作；仓库不会自动上传 submission。
+
+回放可视化的完整说明见 [`docs/replay-visualization.md`](docs/replay-visualization.md)。

@@ -19,6 +19,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 SUBMISSION = ROOT / "submission"
 
+if __package__:
+    from .replay_visualizer import attach_trace_metadata, extract_visualize_frames
+else:
+    from replay_visualizer import attach_trace_metadata, extract_visualize_frames
+
 
 def _load_submission(name: str):
     submission = SUBMISSION / name
@@ -57,10 +62,27 @@ def _state_summary(observation: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def run(agent0_name: str, agent1_name: str, max_steps: int, output: Path) -> dict[str, Any]:
+def _build_visual_replay(
+    result: dict[str, Any], frames: list[dict[str, Any]]
+) -> dict[str, Any]:
+    replay = dict(result)
+    visual_frames = [dict(frame) for frame in frames]
+    attach_trace_metadata(visual_frames, replay.get("trace") or [])
+    replay["replay_format"] = "ptcg-local-v1"
+    replay["visualize"] = visual_frames
+    return replay
+
+
+def run(
+    agent0_name: str,
+    agent1_name: str,
+    max_steps: int,
+    output: Path,
+    visualize_output: Path | None = None,
+) -> dict[str, Any]:
     try:
         sys.path.insert(0, str(SUBMISSION / agent0_name))
-        from cg.game import battle_finish, battle_select, battle_start
+        from cg.game import battle_finish, battle_select, battle_start, visualize_data
     except OSError as exc:
         raise RuntimeError(
             "无法加载官方 cg 模拟器。请查看动态库错误；Linux 通常需要"
@@ -81,6 +103,7 @@ def run(agent0_name: str, agent1_name: str, max_steps: int, output: Path) -> dic
     trace: list[dict[str, Any]] = []
     finished = False
     error: str | None = None
+    visualize_frames: list[dict[str, Any]] | None = None
     try:
         for step in range(max_steps):
             summary = _state_summary(observation)
@@ -114,6 +137,14 @@ def run(agent0_name: str, agent1_name: str, max_steps: int, output: Path) -> dic
     except Exception as exc:  # preserve the full trace for debugging
         error = f"{type(exc).__name__}: {exc}"
     finally:
+        if visualize_output is not None:
+            try:
+                visualize_frames = extract_visualize_frames(
+                    {"visualize": json.loads(visualize_data())}
+                )
+            except Exception as exc:  # preserve the battle result and record capture failure
+                if error is None:
+                    error = f"VisualizeError: {type(exc).__name__}: {exc}"
         battle_finish()
 
     final_state = observation.get("current") if observation else None
@@ -130,6 +161,13 @@ def run(agent0_name: str, agent1_name: str, max_steps: int, output: Path) -> dic
     }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    if visualize_output is not None and visualize_frames is not None:
+        visual_replay = _build_visual_replay(result, visualize_frames)
+        visualize_output.parent.mkdir(parents=True, exist_ok=True)
+        visualize_output.write_text(
+            json.dumps(visual_replay, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
     return result
 
 
@@ -144,8 +182,20 @@ def main() -> None:
         type=Path,
         default=ROOT / "replays" / "local_battle.json",
     )
+    parser.add_argument(
+        "--visualize-output",
+        type=Path,
+        default=None,
+        help="可选：保存官方 viewer 所需的完整 visualize replay",
+    )
     args = parser.parse_args()
-    result = run(args.agent0, args.agent1, args.max_steps, args.output)
+    result = run(
+        args.agent0,
+        args.agent1,
+        args.max_steps,
+        args.output,
+        args.visualize_output,
+    )
     print(json.dumps({key: result[key] for key in ("finished", "result", "steps", "error")}, ensure_ascii=False))
     print(args.output.resolve())
     if result["error"] or not result["finished"]:
