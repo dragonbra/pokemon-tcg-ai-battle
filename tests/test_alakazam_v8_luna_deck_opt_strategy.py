@@ -7,7 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 MAIN_PATH = ROOT / "work" / "alakazam_v8_current" / "main.py"
 sys.path.insert(0, str(MAIN_PATH.parent))
-SPEC = importlib.util.spec_from_file_location("v8_luna_deck_opt_main", MAIN_PATH)
+SPEC = importlib.util.spec_from_file_location("alakazam_v8_luna_deck_opt_main", MAIN_PATH)
 if SPEC is None or SPEC.loader is None:
     raise ImportError(f"cannot load {MAIN_PATH}")
 MODULE = importlib.util.module_from_spec(SPEC)

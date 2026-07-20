@@ -5,10 +5,10 @@
 3. 用明确分母记录第二回合攻击、打手接力、牌库安全和结果 guardrail。
 4. 只有 control/candidate 对比达到 promotion 规则时，才把候选晋级为新的基线。
 
-## v8_luna_deck_opt：Deck Notes review 任务
+## alakazam_v8_luna_deck_opt：Deck Notes review 任务
 
 本轮 review 将 `work/docs/DECK_NOTES.md` 中新增的卡牌使用说明转化为
-v8_luna_deck_opt 的可执行任务。目标不是单独提高某张牌的使用次数，而是让每个动作
+alakazam_v8_luna_deck_opt 的可执行任务。目标不是单独提高某张牌的使用次数，而是让每个动作
 都符合以下顺序：先利用本回合仍然合法且有长期价值的资源，再提交攻击；攻击
 提交后本回合立即结束，不能把攻击当成普通的最后一个排序选项。
 
@@ -40,7 +40,7 @@ Dudunsparce 换位路线。这些牌不在 V8 实际卡表中，只作为概念�
 
 | ID | 主题 | 当前审计结论 | 具体任务与 correctness gate |
 |---|---|---|---|
-| V8C-10 | Nighttime Mine | v8_luna_deck_opt 尚未为 Nighttime Mine 建立独立的 Stadium 优先级；通用卡牌排序可能让它落后于攻击或无关动作。 | 只要 Nighttime Mine 在手牌中且当前可以合法打出，就优先打出，用于覆盖对手 Stadium；我方没有 Tera Pokémon，因此不应为我方攻击增加成本。若观察到对手 Tera Pokémon，再验证其攻击费用被增加。 |
+| V8C-10 | Nighttime Mine | alakazam_v8_luna_deck_opt 尚未为 Nighttime Mine 建立独立的 Stadium 优先级；通用卡牌排序可能让它落后于攻击或无关动作。 | 只要 Nighttime Mine 在手牌中且当前可以合法打出，就优先打出，用于覆盖对手 Stadium；我方没有 Tera Pokémon，因此不应为我方攻击增加成本。若观察到对手 Tera Pokémon，再验证其攻击费用被增加。 |
 
 ### 验证与晋级标准
 
@@ -58,5 +58,5 @@ focused evaluation 统一记录以下指标：
 
 候选版本只有在 correctness gate 全部通过、没有新增非法动作或崩溃，并且在固定
 control/candidate 对比中改善目标指标且不违反胜率、终局攻击和牌库安全 guardrail
-时，才能晋级为 v8_luna_deck_opt 新基线。单个本地对局不能作为晋级依据，正式结论优先
+时，才能晋级为 alakazam_v8_luna_deck_opt 新基线。单个本地对局不能作为晋级依据，正式结论优先
 使用 Kaggle Episode/replay 数据。

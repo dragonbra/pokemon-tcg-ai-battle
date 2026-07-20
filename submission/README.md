@@ -15,5 +15,5 @@ bash scripts/package_submission.sh official_water
 当前候选示例：
 
 ```bash
-bash scripts/package_submission.sh v8_luna_deck_opt
+bash scripts/package_submission.sh alakazam_v8_luna_deck_opt
 ```

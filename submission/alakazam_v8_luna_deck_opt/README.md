@@ -1,6 +1,6 @@
 # Alakazam v8_luna_deck_opt
 
-这是 `v8_luna_deck_opt` 的提交归档。可运行内容是同目录下的 `main.py`、`deck.csv` 和
+这是 `alakazam_v8_luna_deck_opt` 的提交归档。可运行内容是同目录下的 `main.py`、`deck.csv` 和
 `cg/`；设计文档保留在本目录中，但不会进入 Kaggle 压缩包。
 
 开发源仍位于 [`work/alakazam_v8_current/`](../../work/alakazam_v8_current/)。
