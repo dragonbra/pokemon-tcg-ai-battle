@@ -1,4 +1,4 @@
-# V8 Current 评测摘要
+# v8_luna_deck_opt 评测摘要
 
 评测日期：2026-07-21
 

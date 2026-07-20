@@ -45,7 +45,7 @@
 
 ```bash
 python3 scripts/check_assets.py
-bash scripts/package_submission.sh alakazam_v8_current
+bash scripts/package_submission.sh v8_luna_deck_opt
 ./scripts/run_local_battle.sh --agent0 alakazam_v1 --agent1 official_water \
   --output /tmp/ptcg-local-battle.json
 ```
