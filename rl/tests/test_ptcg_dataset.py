@@ -105,6 +105,7 @@ class PTCGDatasetTests(unittest.TestCase):
                 "ptcg_features_v2",
                 "ptcg_features_v3",
                 "ptcg_features_v4",
+                "ptcg_features_v5",
             },
         )
 
@@ -129,6 +130,38 @@ class PTCGDatasetTests(unittest.TestCase):
         encoded = encode_observation(observation, config)
         self.assertEqual(len(encoded["state_numeric"]), 40)
         self.assertEqual(encoded["state_numeric"][-1], 2 / 64)
+
+    def test_v5_state_adds_explicit_turn_timing_features(self) -> None:
+        config = feature_config_for_schema("ptcg_features_v5")
+        observation = {
+            "current": {
+                "yourIndex": 0,
+                "turnActionCount": 3,
+                "looking": [{"id": 1}],
+                "players": [
+                    {
+                        "active": [{"id": 741, "appearThisTurn": True}],
+                        "bench": [{"id": 742, "appearThisTurn": False}],
+                    },
+                    {
+                        "active": [{"id": 305, "appearThisTurn": False}],
+                        "bench": [{"id": 66, "appearThisTurn": True}],
+                    },
+                ],
+            },
+            "select": {
+                "type": 0,
+                "context": 0,
+                "minCount": 1,
+                "maxCount": 1,
+                "option": [{"type": 14}],
+            },
+        }
+        encoded = encode_observation(observation, config)
+        self.assertEqual(len(encoded["state_numeric"]), 46)
+        self.assertAlmostEqual(encoded["state_numeric"][-6], 3 / 32)
+        self.assertAlmostEqual(encoded["state_numeric"][-4], 1 / 6)
+        self.assertEqual(encoded["state_numeric"][-2:], [1.0, 0.0])
 
     def test_visible_potential_components_are_stable_and_auditable(self) -> None:
         observation = {

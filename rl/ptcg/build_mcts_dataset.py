@@ -386,6 +386,7 @@ def build_records(
         32: "ptcg_features_v2",
         36: "ptcg_features_v3",
         40: "ptcg_features_v4",
+        46: "ptcg_features_v5",
     }
     feature_schema_version = schema_by_width[policy.feature_config.state_numeric_dim]
     search_begin, search_end, search_step, to_observation_class = _load_cg(cg_root)

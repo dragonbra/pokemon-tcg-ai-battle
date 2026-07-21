@@ -52,7 +52,10 @@ numeric features、40 个 state token，并加入最近 32 个 teacher/main acti
 使用位置 embedding 区分 Active、Bench、手牌和弃牌区域。后续增加特征时应增加 schema
 version；不要静默改变已有字段的语义。checkpoint metadata 会自动恢复对应旧 schema。
 
-第一阶段只学习 main action。卡牌效果中的多选、目标和数量选择继续由规则 handler
+当前 v5 在 v4 的 effect 上下文之外显式编码 `turnActionCount`、双方 Active/Bench 的
+`appearThisTurn` 和新入场计数。这些字段用于学习 V6 已确认的进化时机、攻击终止和
+Post-KO 接力条件，不改变合法 option/action contract。第一阶段只学习 main action。
+卡牌效果中的多选、目标和数量选择继续由规则 handler
 完成；确认主动作模型稳定后，再把 effect selection 加入 candidate dataset。
 
 当前 v4 实验已把 170 局 teacher trace 中的 5,338 条 main 和 3,764 条单选 effect
@@ -61,6 +64,11 @@ accuracy 降低，因此 effect-only checkpoint 与 v3 main checkpoint 分离。
 validation accuracy 为 `76.86%`、legal action rate 为 `1.0`，但在运行时以 confidence
 0.95 接管 effect 后 34 局为 `22/34 = 64.71%`，confidence 0.99 为 `20/34 = 58.82%`，
 均有 error，故 effect 接管保持关闭。
+
+v5 temporal BC 在同一 170 局 teacher trace 上把 validation action accuracy 提高到
+`54.22%`（v4-main 为 `51.41%`），但 34 局真实探索只有 `22/34 = 64.71%`、0 error。
+这说明 `turnActionCount` 与 `appearThisTurn` 对离线分类有帮助，却没有证明策略强度提升，
+因此没有启动 17×10 验收。
 
 ## 4. Reward 版本
 

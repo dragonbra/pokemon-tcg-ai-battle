@@ -247,8 +247,10 @@ transition return 只把最后一个己方决策标记为 terminal reward，并�
 engine error，低于 teacher 的 `124/170 = 72.94%`，因此没有晋级。
 
 `ptcg_features_v4` 在不改变 action contract 的前提下加入 effect id、context card、
-effect sequence step 和候选计数。旧 v1–v3 checkpoint 会按 metadata 继续恢复；effect
-policy 目前使用独立 checkpoint，运行时默认关闭，多选 effect 仍由规则 handler 处理。
+effect sequence step 和候选计数。当前 v5 在此基础上显式加入 `turnActionCount`、
+`appearThisTurn` 和 Active/Bench 新入场计数，帮助模型学习 V6 的进化与攻击时机。旧
+v1–v4 checkpoint 会按 metadata 继续恢复；effect policy 目前使用独立 checkpoint，
+运行时默认关闭，多选 effect 仍由规则 handler 处理。
 
 ### 有限预算 PUCT target smoke
 
