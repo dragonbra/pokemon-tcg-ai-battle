@@ -135,12 +135,24 @@ DAgger 不是 reward 优化，也不能凭训练 loss 判断有效。它必须�
 的搜索预算，收集搜索后的 action/value target，再训练模型。隐藏信息需要多次
 determinization，不能直接照搬 notebook 的固定对手占位卡。
 
-当前已提供 `build_mcts_dataset.py` 作为受控的 one-step/finite-step search target 实验：它从真实
-observation 调用官方 `search_begin/search_step`，对每个合法 main action 做 counterfactual
-展开，并把己方视角的 value head 结果写成可审计 JSONL；也可以用规则 teacher 作为后续
-rollout policy。这个 collector 已通过小规模真实 trace smoke test，但当前 target 仍不能视为有效策略改进；它需要更完整的
-多步 rollout、visit-count policy target 和多次 hidden-card determinization 才能接近
-notebook 的 MCTS 训练方式。任何 target 变体仍须先通过小规模探索，再走 17×10 正式评测。
+当前 `build_mcts_dataset.py` 使用 `ptcg/mcts.py` 的有限预算 PUCT：官方
+`search_begin/search_step` 负责状态转移，policy 输出 prior，value head 评价叶节点，
+并把 root 的 visit count 归一化为 `mcts_policy` target。每次 simulation 只展开一个新
+leaf，预算不会意外变成完整对局 rollout；同时保存 action value、visit count、先验和
+搜索参数，方便审计。多选 effect 的组合数超过预算时只保留模型先验最高的一小组组合，
+所以它仍是受控研究 collector，不是完整的效果层搜索。
+
+当前 smoke 已确认官方 SearchState 可以正常释放、root visit 总数等于预算，且多动作
+节点会产生非塌缩的访问分布。隐藏牌目前每个样本只做一次 determinization，仍需多次
+determinization、self-play 数据和固定评测后，才能把它视为有效策略改进。任何 target
+变体仍须先通过小规模探索，再走 17×10 正式评测。
+
+第一次真实 PUCT target 分支已完成固定 17×10 验收：`alakazam_mcts_puct_soft_v1`
+得到 `115/170 = 67.65%`，teacher `alakazam_v9` 在同一正式协议下为 `124/170 =
+72.94%`，并出现 4 个 engine error，因此不晋级。该分支的 Powerful Hand 和
+Post-KO relay 诊断指标有所上升，但 attack-quality 惩罚项和正确性恶化；这说明当前
+单次 hidden-card determinization、模型 value 叶评估和有限样本 target 仍不足以指导
+策略改进。失败分支的报告仍保存在 `rl/runs/evaluation/`，不得用过程指标替代结果护栏。
 
 ### Phase D：Masked PPO（可选）
 
@@ -153,7 +165,8 @@ checkpoint；真正的 transition-level shaping、GAE 和 MCTS target 仍待后�
 和牌库安全势能，按 `gamma * Phi(next) - Phi(current)` 记录分量。每个分量都可通过
 `shaping_weight` 做消融，不能因为 shaping 曲线上升就替代 17×10 的 outcome 评测。
 
-当前 milestone 只完成 Phase A 的通用实现和 toy 验证，还没有把 checkpoint 接入正式
+当前 milestone 已完成 Phase A 的通用实现、toy 验证和受控 PUCT target collector，但
+MCTS 分支尚未通过正式护栏，还没有把任何 RL checkpoint 晋级为正式策略。当前仍没有把 checkpoint 接入正式
 `work/<name>/main.py`，也没有把 terminal reward 训练误称为已经完成。正式 submission
 需要一个不依赖 PyTorch 的推理封装或可接受的运行时方案，并经过 evaluation 的固定
 opponent 矩阵验收后才能建立新的 `work/<name>/`。

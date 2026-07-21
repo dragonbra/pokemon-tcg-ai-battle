@@ -31,6 +31,27 @@ def masked_cross_entropy_per_sample(
     return F.cross_entropy(masked_logits, target, reduction="none")
 
 
+def masked_soft_cross_entropy_per_sample(
+    logits: Tensor,
+    target_distribution: Tensor,
+    action_mask: Tensor,
+) -> Tensor:
+    """Cross entropy against a probability target over legal candidates."""
+    if target_distribution.shape != logits.shape or action_mask.shape != logits.shape:
+        raise ValueError("soft target, logits, and action_mask must have the same shape")
+    if (target_distribution < 0).any():
+        raise ValueError("soft policy target cannot contain negative probabilities")
+    if (target_distribution.masked_fill(~action_mask, 0.0) != target_distribution).any():
+        raise ValueError("soft policy target contains an illegal action")
+    mass = target_distribution.sum(dim=-1)
+    if not torch.isfinite(mass).all() or (mass <= 0).any():
+        raise ValueError("each soft policy target must have positive finite mass")
+    target = target_distribution / mass.unsqueeze(-1)
+    masked_logits = logits.masked_fill(~action_mask, torch.finfo(logits.dtype).min)
+    log_probabilities = F.log_softmax(masked_logits, dim=-1)
+    return -(target * log_probabilities).sum(dim=-1)
+
+
 def masked_huber_loss(
     prediction: Tensor,
     target: Tensor,

@@ -14,6 +14,7 @@ from rl.core.checkpoint import CheckpointManager
 from rl.core.losses import (
     masked_cross_entropy,
     masked_cross_entropy_per_sample,
+    masked_soft_cross_entropy_per_sample,
     value_huber_loss,
 )
 from rl.core.logging import TrainingLogger
@@ -65,6 +66,17 @@ def _batch(records: list[dict[str, Any]]) -> dict[str, Tensor]:
         [float(record.get("terminal_outcome", 0.0)) for record in records],
         dtype=torch.float32,
     )
+    if all("mcts_policy" in record for record in records):
+        candidate_width = len(records[0]["encoded"]["action_mask"])
+        mcts_targets: list[list[float]] = []
+        for record in records:
+            target = [float(value) for value in record["mcts_policy"]]
+            if len(target) > candidate_width:
+                raise ValueError("mcts_policy is wider than the encoded candidate mask")
+            mcts_targets.append(target + [0.0] * (candidate_width - len(target)))
+        batch["mcts_policy"] = torch.tensor(
+            mcts_targets, dtype=torch.float32
+        )
     return batch
 
 
@@ -135,6 +147,8 @@ def train(
         raise ValueError("validation_fraction must be in [0, 1)")
     if args.outcome_weight < 0 or args.value_loss_weight < 0:
         raise ValueError("outcome_weight and value_loss_weight must not be negative")
+    if not 0.0 <= args.mcts_policy_weight <= 1.0:
+        raise ValueError("mcts_policy_weight must be in [0, 1]")
     torch.manual_seed(seed)
     random.seed(seed)
     storage = assert_storage_safe(storage_path, min_free_gib)
@@ -172,9 +186,23 @@ def train(
                 batch = _move_batch(_batch(batch_records), device)
                 optimizer.zero_grad()
                 value, logits = model(**_model_inputs(batch))
-                per_sample = masked_cross_entropy_per_sample(
+                hard_per_sample = masked_cross_entropy_per_sample(
                     logits, batch["target"], batch["action_mask"]
                 )
+                if args.mcts_policy_weight:
+                    if "mcts_policy" not in batch:
+                        raise ValueError(
+                            "mcts_policy_weight requires records with mcts_policy targets"
+                        )
+                    soft_per_sample = masked_soft_cross_entropy_per_sample(
+                        logits, batch["mcts_policy"], batch["action_mask"]
+                    )
+                    per_sample = (
+                        (1.0 - args.mcts_policy_weight) * hard_per_sample
+                        + args.mcts_policy_weight * soft_per_sample
+                    )
+                else:
+                    per_sample = hard_per_sample
                 weights = (1.0 + args.outcome_weight * batch["terminal_outcome"]).clamp_min(0.1)
                 policy_loss = (per_sample * weights).mean()
                 value_loss = value_huber_loss(value, batch["terminal_outcome"])
@@ -212,6 +240,7 @@ def train(
                 else "none",
                 "outcome_weight": args.outcome_weight,
                 "value_loss_weight": args.value_loss_weight,
+                "mcts_policy_weight": args.mcts_policy_weight,
                 "storage_path": storage.path,
                 "storage_free_gib": round(storage.free_gib, 2),
                 "epoch_metrics": last_metrics,
@@ -266,6 +295,12 @@ def main() -> None:
         type=float,
         default=0.0,
         help="add value-head Huber loss against terminal outcome",
+    )
+    parser.add_argument(
+        "--mcts-policy-weight",
+        type=float,
+        default=0.0,
+        help="blend MCTS visit-count cross entropy with hard target loss",
     )
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)

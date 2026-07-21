@@ -11,7 +11,7 @@ try:
     import torch
 
     from rl.core.batch import collate_encoded
-    from rl.core.losses import masked_cross_entropy
+    from rl.core.losses import masked_cross_entropy, masked_soft_cross_entropy_per_sample
     from rl.core.model import CandidatePolicyValueNet, ModelConfig
 except ImportError:  # pragma: no cover - exercised by environments without torch
     torch = None
@@ -188,6 +188,18 @@ class RLFrameworkTests(unittest.TestCase):
         loss = masked_cross_entropy(logits, torch.tensor([1]), inputs["action_mask"])
         self.assertTrue(torch.isfinite(loss))
         loss.backward()
+
+    @unittest.skipUnless(torch is not None, "PyTorch is an optional RL dependency")
+    def test_soft_policy_loss_uses_only_legal_candidates(self) -> None:
+        logits = torch.tensor([[1.0, 0.0, -10.0]])
+        target = torch.tensor([[0.25, 0.75, 0.0]])
+        mask = torch.tensor([[True, True, False]])
+        loss = masked_soft_cross_entropy_per_sample(logits, target, mask)
+        expected = -(
+            0.25 * torch.log(torch.tensor(0.7310586))
+            + 0.75 * torch.log(torch.tensor(0.2689414))
+        )
+        self.assertAlmostEqual(float(loss.item()), float(expected.item()), places=5)
 
     @unittest.skipUnless(torch is not None, "PyTorch is an optional RL dependency")
     def test_ptcg_inference_bridge_returns_a_legal_option(self) -> None:

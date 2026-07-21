@@ -30,6 +30,7 @@ observation + 当前合法 options
 - `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
 - `ptcg/build_dagger_dataset.py`：把 candidate rollout 状态交给规则 teacher 重新标注。
 - `ptcg/merge_datasets.py`：合并同一 feature schema 的 BC/DAgger 数据集。
+- `ptcg/mcts.py`：与官方 SearchState 解耦的有限预算 PUCT 树和 visit-count target。
 - `ptcg/build_mcts_dataset.py`：调用官方 Search API 生成 counterfactual policy target。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
 - `ptcg/train_ppo.py`：从模型 rollout trace 做 masked PPO-style terminal reward 微调。
@@ -179,6 +180,37 @@ python3.11 -m rl.ptcg.train_ppo \
 
 dataset 会保留 `potential_shaping` 分量，便于在 TensorBoard 和 evaluation report 中做
 reward ablation；这些势能是辅助信号，终局胜负仍是主目标。
+
+MCTS JSONL 同时包含 root visit-count 分布时，可以用 soft policy loss 保留搜索的不确定性：
+
+```bash
+python3.11 -m rl.ptcg.train_behavior_cloning \
+  rl/runs/datasets/mcts_puct_targets.jsonl \
+  --output rl/runs/training/mcts_puct_soft \
+  --mcts-policy-weight 1.0 --device cuda
+```
+
+该参数只对含 `mcts_policy` 的记录生效；普通 BC 数据默认仍使用 hard target。硬 target
+accuracy 和 soft loss 都会保留在训练日志中，不能仅凭 loss 判断策略是否晋级。
+
+### 有限预算 PUCT target smoke
+
+使用真实 evaluation trace 生成搜索 target 时，`--cg-root` 应指向包含 `cg/` 的 package
+根目录，例如 `work/alakazam_v9`；搜索预算由 `--simulations` 控制：
+
+```bash
+python3.11 -m rl.ptcg.build_mcts_dataset \
+  rl/runs/evaluation/teacher_collection_v1/run-.../traces/example.json \
+  --checkpoint rl/runs/training/alakazam_mcts_bc_v1/checkpoints/best_validation.pt \
+  --deck work/alakazam_v9/deck.csv \
+  --cg-root work/alakazam_v9 \
+  --output rl/runs/datasets/mcts_puct_smoke.jsonl \
+  --max-records 32 --simulations 32 --cpuct 1.25
+```
+
+JSONL 中的 `mcts_policy` 是 root visit-count target，`mcts_visit_counts` 应在每条记录
+上加总为 `mcts_simulations`。这个阶段只验证搜索和 target contract；单次 hidden-card
+determinization 的结果不能直接作为晋级或正式 evaluation 结论。
 
 ### DAgger 分布偏移实验
 

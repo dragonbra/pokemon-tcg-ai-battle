@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import itertools
+import math
 import random
 import sys
 from dataclasses import asdict
@@ -17,10 +19,15 @@ from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_s
 from .dataset import DATASET_VERSION
 from .features import encode_observation
 from .inference import PTCGCandidatePolicy
+from .mcts import PUCTSearch, Selection
 
 
 def _load_deck(path: Path) -> list[int]:
-    values = [int(line.strip()) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    values = [
+        int(line.strip())
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     if len(values) != 60:
         raise ValueError(f"deck must contain 60 card IDs: {path}")
     return values
@@ -73,20 +80,157 @@ def _leaf_value(
     state = getattr(observation, "current", None)
     if state is None:
         return 0.0
-    result = int(getattr(state, "result", -1))
-    if result >= 0:
+    result = getattr(state, "result", None)
+    if isinstance(result, int) and result >= 0:
+        if result == 2:
+            return 0.0
         return 1.0 if result == player_index else -1.0
     observation_dict = _perspective_observation(observation, player_index)
     try:
-        _, value = policy.select(observation_dict)
+        value, _probabilities = policy.score_candidates(observation_dict)
         return float(value)
     except Exception:
         return 0.0
 
 
-def _search_action_value(
+def _current_player(observation: object) -> int:
+    state = getattr(observation, "current", None)
+    value = getattr(state, "yourIndex", -1) if state is not None else -1
+    return int(value)
+
+
+def _teacher_selection(
+    observation: object,
+    teacher: ModuleType | None,
+) -> Selection | None:
+    if teacher is None:
+        return None
+    payload = asdict(observation)
+    select = payload.get("select") or {}
+    options = select.get("option") or []
+    minimum = int(select.get("minCount", 1) or 0)
+    maximum = int(select.get("maxCount", 1) or 1)
+    try:
+        proposed = teacher.agent(payload)
+    except Exception:
+        return None
+    if not isinstance(proposed, list):
+        return None
+    try:
+        selection = tuple(int(index) for index in proposed)
+    except (TypeError, ValueError):
+        return None
+    if not minimum <= len(selection) <= maximum:
+        return None
+    if len(set(selection)) != len(selection) or any(
+        index < 0 or index >= len(options) for index in selection
+    ):
+        return None
+    return selection
+
+
+def _selection_candidates(
+    observation: object,
+    policy: PTCGCandidatePolicy,
+    *,
+    max_children: int,
+    rollout_teacher: ModuleType | None,
+) -> list[tuple[Selection, float]]:
+    """Return bounded legal selections and model priors for one SearchState."""
+    payload = asdict(observation)
+    select = payload.get("select") or {}
+    options = select.get("option") or []
+    if not options:
+        return []
+    minimum = int(select.get("minCount", 1) or 0)
+    maximum = int(select.get("maxCount", 1) or 1)
+    minimum = max(0, minimum)
+    maximum = min(maximum, len(options))
+    if minimum > maximum:
+        return []
+
+    actor_index = _current_player(observation)
+    policy_failed = False
+    try:
+        _value, probabilities = policy.score_candidates(
+            _perspective_observation(observation, actor_index)
+        )
+    except Exception:
+        policy_failed = True
+        probabilities = [1.0 / len(options)] * len(options)
+
+    if policy_failed:
+        teacher_selection = _teacher_selection(observation, rollout_teacher)
+        if teacher_selection is not None:
+            return [(teacher_selection, 1.0)]
+
+    def prior(selection: Selection) -> float:
+        if not selection:
+            return 1.0
+        return math.prod(
+            max(1e-8, float(probabilities[index]))
+            if index < len(probabilities)
+            else 1.0
+            for index in selection
+        )
+
+    if minimum == maximum == 1:
+        return [((index,), prior((index,))) for index in range(len(options))]
+
+    counts = sum(math.comb(len(options), count) for count in range(minimum, maximum + 1))
+    candidate_indices = list(range(len(options)))
+    if counts > max_children:
+        candidate_indices = sorted(
+            candidate_indices,
+            key=lambda index: float(probabilities[index]) if index < len(probabilities) else 0.0,
+            reverse=True,
+        )[: max(max_children, maximum)]
+
+    selections: list[Selection] = []
+    for count in range(minimum, maximum + 1):
+        for combination in itertools.combinations(candidate_indices, count):
+            selections.append(tuple(combination))
+            if len(selections) >= max_children:
+                break
+        if len(selections) >= max_children:
+            break
+    if not selections:
+        return []
+    return [(selection, prior(selection)) for selection in selections]
+
+
+def _start_search(
     observation: dict[str, Any],
-    action_index: int,
+    *,
+    player_index: int,
+    deck: list[int],
+    rng: random.Random,
+    search_begin: Any,
+    to_observation_class: Any,
+) -> Any:
+    current = observation.get("current") or {}
+    players = current.get("players") or []
+    if len(players) != 2:
+        raise ValueError("search observation must contain two players")
+    own = players[player_index]
+    opponent = players[1 - player_index]
+    active = opponent.get("active") or []
+    deck_count = int(own.get("deckCount", 0) or 0)
+    prize_count = len(own.get("prize") or [])
+    return search_begin(
+        to_observation_class(observation),
+        your_deck=rng.sample(deck, min(deck_count, len(deck))),
+        your_prize=rng.sample(deck, min(prize_count, len(deck))),
+        opponent_deck=[1072] * int(opponent.get("deckCount", 0) or 0),
+        opponent_prize=[1] * len(opponent.get("prize") or []),
+        opponent_hand=[1] * int(opponent.get("handCount", 0) or 0),
+        opponent_active=[1072] if active and active[0] is None else [],
+    )
+
+
+def _run_search(
+    observation: dict[str, Any],
+    *,
     player_index: int,
     deck: list[int],
     policy: PTCGCandidatePolicy,
@@ -95,74 +239,61 @@ def _search_action_value(
     search_step: Any,
     to_observation_class: Any,
     rng: random.Random,
-    rollout_steps: int,
+    simulations: int,
+    cpuct: float,
     rollout_teacher: ModuleType | None,
-) -> float | None:
-    current = observation.get("current") or {}
-    players = current.get("players") or []
-    if len(players) != 2:
-        return None
-    own = players[player_index]
-    opponent = players[1 - player_index]
-    active = opponent.get("active") or []
+) -> tuple[list[float | None], list[int], list[float], list[float]]:
+    root_state = _start_search(
+        observation,
+        player_index=player_index,
+        deck=deck,
+        rng=rng,
+        search_begin=search_begin,
+        to_observation_class=to_observation_class,
+    )
     try:
-        root = search_begin(
-            to_observation_class(observation),
-            your_deck=rng.sample(deck, min(int(own.get("deckCount", 0) or 0), len(deck))),
-            your_prize=rng.sample(deck, min(len(own.get("prize") or []), len(deck))),
-            opponent_deck=[1072] * int(opponent.get("deckCount", 0) or 0),
-            opponent_prize=[1] * len(opponent.get("prize") or []),
-            opponent_hand=[1] * int(opponent.get("handCount", 0) or 0),
-            opponent_active=[1072] if active and active[0] is None else [],
+        search = PUCTSearch(
+            root_player=player_index,
+            simulations=simulations,
+            cpuct=cpuct,
+            step=lambda state, selection: search_step(state.searchId, selection),
+            observation=lambda state: state.observation,
+            player_index=_current_player,
+            evaluate=lambda state_observation: _leaf_value(
+                state_observation, player_index, policy
+            ),
+            expand=lambda state_observation: _selection_candidates(
+                state_observation,
+                policy,
+                max_children=64,
+                rollout_teacher=rollout_teacher,
+            ),
+            rng=rng,
         )
-        search_id = root.searchId
-        leaf = search_step(search_id, [action_index]).observation
-        if rollout_teacher is not None:
-            rollout_teacher.agent({"select": None})
-        for _ in range(rollout_steps):
-            state = getattr(leaf, "current", None)
-            if state is None or int(getattr(state, "result", -1)) >= 0:
-                break
-            leaf_dict = asdict(leaf)
-            next_select = leaf_dict.get("select") or {}
-            options = next_select.get("option") or []
-            if not options:
-                break
-            minimum = int(next_select.get("minCount", 1) or 0)
-            maximum = int(next_select.get("maxCount", 1) or 1)
-            if rollout_teacher is not None:
-                try:
-                    proposed = rollout_teacher.agent(leaf_dict)
-                    if (
-                        isinstance(proposed, list)
-                        and minimum <= len(proposed) <= maximum
-                        and len(set(int(index) for index in proposed)) == len(proposed)
-                        and all(0 <= int(index) < len(options) for index in proposed)
-                    ):
-                        selection = [int(index) for index in proposed]
-                    else:
-                        raise ValueError("teacher returned an invalid search selection")
-                except Exception:
-                    count = min(max(1, minimum), maximum, len(options))
-                    selection = list(range(count))
-            elif minimum == maximum == 1 and int(getattr(state, "yourIndex", -1)) == player_index:
-                try:
-                    next_index, _value = policy.select(leaf_dict)
-                    selection = [next_index]
-                except Exception:
-                    selection = [0]
-            else:
-                count = min(max(1, minimum), maximum, len(options))
-                selection = list(range(count))
-            leaf = search_step(search_id, selection).observation
-        return _leaf_value(leaf, player_index, policy)
-    except Exception:
-        return None
+        root = search.run(root_state)
+        values_by_index: list[float | None] = [None] * len(observation["select"]["option"])
+        visits_by_index = [0] * len(values_by_index)
+        policy_by_index = [0.0] * len(values_by_index)
+        root_values = search.root_values(root)
+        root_policy = search.root_policy(root)
+        root_values_by_index: list[float | None] = [None] * len(values_by_index)
+        for child, value, visits, target_probability in zip(
+            root.children,
+            root_values,
+            [child.node.visits if child.node is not None else 0 for child in root.children],
+            root_policy,
+        ):
+            if len(child.selection) != 1:
+                continue
+            index = child.selection[0]
+            if 0 <= index < len(values_by_index):
+                values_by_index[index] = float(value)
+                root_values_by_index[index] = float(value)
+                visits_by_index[index] = int(visits)
+                policy_by_index[index] = float(target_probability)
+        return values_by_index, visits_by_index, policy_by_index, root_values_by_index
     finally:
-        try:
-            search_end()
-        except Exception:
-            pass
+        search_end()
 
 
 def build_records(
@@ -173,9 +304,15 @@ def build_records(
     cg_root: Path,
     max_records: int,
     seed: int,
-    rollout_steps: int,
-    rollout_teacher: ModuleType | None,
+    rollout_steps: int = 0,
+    rollout_teacher: ModuleType | None = None,
+    simulations: int = 32,
+    cpuct: float = 1.25,
 ) -> list[dict[str, Any]]:
+    if rollout_steps < 0:
+        raise ValueError("rollout_steps cannot be negative")
+    if simulations < 1:
+        raise ValueError("simulations must be positive")
     policy = PTCGCandidatePolicy.from_checkpoint(str(checkpoint), map_location="cpu")
     schema_by_width = {24: "ptcg_features_v1", 32: "ptcg_features_v2", 36: "ptcg_features_v3"}
     feature_schema_version = schema_by_width[policy.feature_config.state_numeric_dim]
@@ -207,28 +344,27 @@ def build_records(
             if not select.get("option"):
                 continue
             encoded = encode_observation(observation, policy.feature_config)
-            values: list[float | None] = []
-            for index, _option in enumerate(select.get("option") or []):
-                values.append(
-                    _search_action_value(
-                        observation,
-                        index,
-                        player_index,
-                        deck,
-                        policy,
-                        search_begin,
-                        search_end,
-                        search_step,
-                        to_observation_class,
-                        rng,
-                        rollout_steps,
-                        rollout_teacher,
-                    )
-                )
+            values, visit_counts, mcts_policy, root_values = _run_search(
+                observation,
+                player_index=player_index,
+                deck=deck,
+                policy=policy,
+                search_begin=search_begin,
+                search_end=search_end,
+                search_step=search_step,
+                to_observation_class=to_observation_class,
+                rng=rng,
+                simulations=simulations,
+                cpuct=cpuct,
+                rollout_teacher=rollout_teacher,
+            )
             valid = [index for index, value in enumerate(values) if value is not None]
             if not valid:
                 continue
-            target = max(valid, key=lambda index: float(values[index]))
+            target = max(
+                valid,
+                key=lambda index: (float(mcts_policy[index]), -index),
+            )
             if not encoded["action_mask"][target]:
                 continue
             records.append(
@@ -244,6 +380,11 @@ def build_records(
                     "target": target,
                     "terminal_outcome": outcome,
                     "mcts_action_values": values,
+                    "mcts_visit_counts": visit_counts,
+                    "mcts_policy": mcts_policy,
+                    "mcts_root_values": root_values,
+                    "mcts_simulations": simulations,
+                    "mcts_cpuct": cpuct,
                     "teacher_or_rollout_action": entry.get("action"),
                     "encoded": encoded,
                 }
@@ -260,6 +401,10 @@ def main() -> None:
     parser.add_argument("--rollout-teacher", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-records", type=int, default=128)
+    parser.add_argument("--simulations", type=int, default=32)
+    parser.add_argument("--cpuct", type=float, default=1.25)
+    # Kept for command-line compatibility with the pre-PUCT collector. The
+    # search budget is now controlled by --simulations.
     parser.add_argument("--rollout-steps", type=int, default=0)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
@@ -267,6 +412,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.max_records < 1 or args.rollout_steps < 0:
         raise ValueError("max-records must be positive and rollout-steps cannot be negative")
+    if args.simulations < 1 or args.cpuct <= 0:
+        raise ValueError("simulations must be positive and cpuct must be positive")
     storage = assert_storage_safe(args.storage_path, args.min_free_gib)
     rollout_teacher = _load_teacher(args.rollout_teacher) if args.rollout_teacher else None
     records = build_records(
@@ -278,6 +425,8 @@ def main() -> None:
         seed=args.seed,
         rollout_steps=args.rollout_steps,
         rollout_teacher=rollout_teacher,
+        simulations=args.simulations,
+        cpuct=args.cpuct,
     )
     if not records:
         raise ValueError("MCTS target collection produced no records")
