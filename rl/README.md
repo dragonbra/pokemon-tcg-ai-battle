@@ -30,6 +30,7 @@ observation + 当前合法 options
 - `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
 - `ptcg/build_dagger_dataset.py`：把 candidate rollout 状态交给规则 teacher 重新标注。
 - `ptcg/merge_datasets.py`：合并同一 feature schema 的 BC/DAgger 数据集。
+- `ptcg/build_mcts_dataset.py`：调用官方 Search API 生成 counterfactual policy target。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
 - `ptcg/train_ppo.py`：从模型 rollout trace 做 masked PPO-style terminal reward 微调。
 - `ptcg/rewards.py`：只使用可见 observation 的 Prize、攻击准备度和牌库势能。

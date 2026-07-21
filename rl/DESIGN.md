@@ -135,6 +135,13 @@ DAgger 不是 reward 优化，也不能凭训练 loss 判断有效。它必须�
 的搜索预算，收集搜索后的 action/value target，再训练模型。隐藏信息需要多次
 determinization，不能直接照搬 notebook 的固定对手占位卡。
 
+当前已提供 `build_mcts_dataset.py` 作为受控的 one-step search target 实验：它从真实
+observation 调用官方 `search_begin/search_step`，对每个合法 main action 做 counterfactual
+展开，并把己方视角的 value head 结果写成可审计 JSONL。这个 collector 已通过小规模
+真实 trace smoke test，但 one-step target 目前不能视为有效策略改进；它需要更完整的
+多步 rollout、visit-count policy target 和多次 hidden-card determinization 才能接近
+notebook 的 MCTS 训练方式。任何 target 变体仍须先通过小规模探索，再走 17×10 正式评测。
+
 ### Phase D：Masked PPO（可选）
 
 `rl/ptcg/train_ppo.py` 已提供第一版 masked PPO-style terminal reward 微调器。它从
