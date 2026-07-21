@@ -38,6 +38,16 @@ CONFIDENCE_THRESHOLD = float(os.environ.get("PTCG_RL_CONFIDENCE_THRESHOLD", "1.1
 DECK = _TEACHER.read_deck_csv()
 
 
+def _record_model_main_action(obs_dict: dict, option_index: int) -> None:
+    """Keep the stateful rule effect handler aligned with a model action."""
+    current, player = _TEACHER._your_state(obs_dict)
+    select = obs_dict["select"]
+    options = select.get("option") or []
+    _TEACHER._TURN_MEMORY.sync(current, player, logs=obs_dict.get("logs") or [])
+    _TEACHER._TURN_MEMORY.last_main_options = list(options)
+    _TEACHER._TURN_MEMORY.record_main_action(options[option_index], current, player)
+
+
 def agent(obs_dict: dict):
     if obs_dict.get("select") is None:
         return DECK
@@ -45,6 +55,7 @@ def agent(obs_dict: dict):
     if int(select.get("type", 0)) == 0 and int(select.get("context", 0)) == 0:
         option_index, _value, confidence = _POLICY.select_with_confidence(obs_dict)
         if confidence >= CONFIDENCE_THRESHOLD:
+            _record_model_main_action(obs_dict, option_index)
             return [option_index]
     return _TEACHER.agent(obs_dict)
 '''
