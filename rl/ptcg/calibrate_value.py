@@ -38,6 +38,13 @@ def _batch(records: list[dict[str, Any]]) -> dict[str, Tensor]:
         [float(record.get("terminal_outcome", 0.0)) for record in records],
         dtype=torch.float32,
     )
+    batch["transition_return"] = torch.tensor(
+        [
+            float(record.get("transition_return", record.get("terminal_outcome", 0.0)))
+            for record in records
+        ],
+        dtype=torch.float32,
+    )
     return batch
 
 
@@ -85,6 +92,7 @@ def _evaluate(
     model: CandidatePolicyValueNet,
     records: list[dict[str, Any]],
     device: torch.device,
+    target_key: str,
 ) -> dict[str, float]:
     model.eval()
     predictions: list[Tensor] = []
@@ -93,7 +101,7 @@ def _evaluate(
         batch = _move(_batch(records[start : start + 512]), device)
         value, _logits = model(**_inputs(batch))
         predictions.append(value.detach().cpu())
-        targets.append(batch["terminal_outcome"].detach().cpu())
+        targets.append(batch[target_key].detach().cpu())
     predicted = torch.cat(predictions)
     target = torch.cat(targets)
     error = predicted - target
@@ -101,22 +109,41 @@ def _evaluate(
         correlation = float(torch.corrcoef(torch.stack([predicted, target]))[0, 1].item())
     else:
         correlation = 0.0
-    win_mask = target > 0.5
-    loss_mask = target < -0.5
-    draw_mask = ~(win_mask | loss_mask)
+    positive_mask = target > 0.5
+    negative_mask = target < -0.5
+    neutral_mask = ~(positive_mask | negative_mask)
     return {
         "value_mae": float(error.abs().mean().item()),
         "value_mse": float(error.square().mean().item()),
         "value_correlation": correlation,
         "value_mean": float(predicted.mean().item()),
-        "value_win_mean": float(predicted[win_mask].mean().item()) if win_mask.any() else 0.0,
-        "value_loss_mean": float(predicted[loss_mask].mean().item())
-        if loss_mask.any()
+        "value_positive_mean": float(predicted[positive_mask].mean().item())
+        if positive_mask.any()
         else 0.0,
-        "value_draw_mean": float(predicted[draw_mask].mean().item())
-        if draw_mask.any()
+        "value_negative_mean": float(predicted[negative_mask].mean().item())
+        if negative_mask.any()
+        else 0.0,
+        "value_neutral_mean": float(predicted[neutral_mask].mean().item())
+        if neutral_mask.any()
         else 0.0,
     }
+
+
+def _select_records(records: list[dict[str, Any]], scope: str) -> list[dict[str, Any]]:
+    if scope not in {"all", "main", "effect"}:
+        raise ValueError("selection_scope must be all, main, or effect")
+    if scope == "all":
+        return records
+    def is_main(record: dict[str, Any]) -> bool:
+        return (
+            int(record.get("selection_type", -1)) == 0
+            and int(record.get("selection_context", -1)) == 0
+        )
+
+    main = [record for record in records if is_main(record)]
+    if scope == "main":
+        return main
+    return [record for record in records if not is_main(record)]
 
 
 def train(
@@ -132,6 +159,8 @@ def train(
     device_name: str = "auto",
     storage_path: Path = DEFAULT_STORAGE_PATH,
     min_free_gib: float = DEFAULT_MIN_FREE_GIB,
+    value_target: str = "terminal_outcome",
+    selection_scope: str = "all",
 ) -> dict[str, float | int | str]:
     if epochs < 1 or batch_size < 1:
         raise ValueError("epochs and batch_size must be positive")
@@ -139,11 +168,19 @@ def train(
         raise ValueError("validation_fraction must be in [0, 1)")
     if learning_rate <= 0:
         raise ValueError("learning_rate must be positive")
+    if value_target not in {"terminal_outcome", "transition_return"}:
+        raise ValueError("value_target must be terminal_outcome or transition_return")
     storage = assert_storage_safe(storage_path, min_free_gib)
     torch.manual_seed(seed)
     random.seed(seed)
     device = _resolve_device(device_name)
-    records = load_behavior_cloning_dataset(dataset_path)
+    records = _select_records(load_behavior_cloning_dataset(dataset_path), selection_scope)
+    if not records:
+        raise ValueError(f"selection scope contains no records: {selection_scope}")
+    if value_target == "transition_return" and any(
+        "transition_return" not in record for record in records
+    ):
+        raise ValueError("transition_return target requires an annotated dataset")
     model = _load_model(checkpoint, device)
     _validate_shapes(model, records)
 
@@ -179,14 +216,16 @@ def train(
                 )
                 optimizer.zero_grad()
                 value, _logits = model(**_inputs(batch))
-                loss = value_huber_loss(value, batch["terminal_outcome"])
+                loss = value_huber_loss(value, batch[value_target])
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.value_head.parameters(), 1.0)
                 optimizer.step()
                 losses.append(float(loss.item()))
 
-            train_metrics = _evaluate(model, training, device)
-            validation_metrics = _evaluate(model, validation or training, device)
+            train_metrics = _evaluate(model, training, device, value_target)
+            validation_metrics = _evaluate(
+                model, validation or training, device, value_target
+            )
             last_metrics = {
                 "train/value_loss": sum(losses) / max(1, len(losses)),
                 **{f"train/{key}": value for key, value in train_metrics.items()},
@@ -206,6 +245,8 @@ def train(
                 "freeze_policy": True,
                 "trainable_parameter_prefix": "value_head.",
                 "learning_rate": learning_rate,
+                "value_target": value_target,
+                "selection_scope": selection_scope,
                 "storage_path": storage.path,
                 "storage_free_gib": round(storage.free_gib, 2),
                 "epoch_metrics": last_metrics,
@@ -244,6 +285,16 @@ def main() -> None:
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--validation-fraction", type=float, default=0.1)
+    parser.add_argument(
+        "--value-target",
+        choices=("terminal_outcome", "transition_return"),
+        default="terminal_outcome",
+    )
+    parser.add_argument(
+        "--selection-scope",
+        choices=("all", "main", "effect"),
+        default="all",
+    )
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
@@ -259,6 +310,8 @@ def main() -> None:
                 batch_size=args.batch_size,
                 learning_rate=args.learning_rate,
                 validation_fraction=args.validation_fraction,
+                value_target=args.value_target,
+                selection_scope=args.selection_scope,
                 seed=args.seed,
                 device_name=args.device,
                 storage_path=args.storage_path,

@@ -126,6 +126,19 @@ schema version。
 相关性达到 `0.9693`，且 39 组模型参数中只有 6 组 value-head 参数变化。这个 checkpoint
 适合作为 PUCT 的叶评估器，但不等于 policy 已经变强。
 
+`ptcg/annotate_transition_returns.py` 还提供 transition-level value target：每局最后一个
+己方决策得到 terminal reward，中间决策使用同一 player 视角的可见势能差，并按
+`G_t = r_t + gamma * G_(t+1)` 反向累计。数据构建器不能直接拿下一条 raw trace entry
+计算势能，因为那一条可能属于 opponent；它会寻找下一条同一 player 的有效决策。由于
+model value 合同是 `[-1, 1]`，默认将 shaping 缩放为 `0.1` 后再裁剪 return，并把原始
+delta、gamma 和 scale 写入记录供审计。
+
+冻结 `alakazam_bc_v7_main_v4` policy 的 transition-return value 校准在 validation 上
+达到 correlation `0.9660`、MAE `0.1209`，且仅 6 个 `value_head.*` 参数变化。把该 value
+接入当前有限搜索后 34 局为 `20/34` 且有 1 个 error；单独的 transition-return policy
+重加权在探索中为 `26/34`、0 error，但完整 17×10 验收只有 `118/170 = 69.41%`、3 个
+engine error，低于 teacher 的 `124/170 = 72.94%`，因此两者都不晋级。
+
 当前已提供一个离线过渡实验：dataset 记录终局胜负，`--outcome-weight` 对 policy loss
 做胜负重加权，`--value-loss-weight` 训练 value head。它只用于验证 reward 信号和日志
 是否有效，不等同于在线 PPO；整局胜负复制给每个动作的粗粒度方案若不能通过冻结评测，

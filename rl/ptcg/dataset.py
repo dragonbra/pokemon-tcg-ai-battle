@@ -30,6 +30,44 @@ def _read_trace(path: str | Path) -> dict[str, Any]:
     return payload
 
 
+def _next_decision_observation(
+    trace_entries: list[Any],
+    start_index: int,
+    player_index: int,
+    *,
+    include_effect_selections: bool,
+) -> dict[str, Any] | None:
+    """Find the next same-player decision used by transition shaping.
+
+    The raw trace alternates candidate and opponent decisions and may contain
+    several effect selections after one main action. Comparing a candidate
+    state with the immediately following entry can therefore silently switch
+    perspective. Restricting the successor to the next candidate decision
+    keeps the potential difference in one player's frame.
+    """
+    for future in trace_entries[start_index + 1 :]:
+        if not isinstance(future, dict):
+            continue
+        observation = future.get("observation")
+        if not isinstance(observation, dict):
+            continue
+        current = observation.get("current") or {}
+        if int(current.get("yourIndex", -1)) != player_index:
+            continue
+        select = observation.get("select") or {}
+        is_main = (
+            int(select.get("type", -1)) == MAIN_SELECT_TYPE
+            and int(select.get("context", -1)) == MAIN_SELECT_CONTEXT
+        )
+        if not is_main and not include_effect_selections:
+            continue
+        action = future.get("action")
+        if not isinstance(action, list) or len(action) != 1:
+            continue
+        return observation
+    return None
+
+
 def iter_behavior_cloning_records(
     path: str | Path,
     *,
@@ -138,11 +176,11 @@ def iter_behavior_cloning_records(
             "terminal_outcome": terminal_outcome,
             "potential_shaping": potential_shaping(
                 observation,
-                (
-                    trace_entries[entry_index + 1].get("observation")
-                    if entry_index + 1 < len(trace_entries)
-                    and isinstance(trace_entries[entry_index + 1], dict)
-                    else None
+                _next_decision_observation(
+                    trace_entries,
+                    entry_index,
+                    actual_teacher_index,
+                    include_effect_selections=include_effect_selections,
                 ),
             ),
             "encoded": encoded,

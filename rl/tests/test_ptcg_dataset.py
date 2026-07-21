@@ -9,15 +9,76 @@ from types import ModuleType
 from rl.ptcg.dataset import (
     DATASET_VERSION,
     SUPPORTED_FEATURE_SCHEMA_VERSIONS,
+    iter_behavior_cloning_records,
     load_behavior_cloning_dataset,
 )
 from rl.ptcg.features import PTCGFeatureConfig, encode_observation, feature_config_for_schema
 from rl.ptcg.build_dagger_dataset import iter_dagger_records
+from rl.ptcg.annotate_transition_returns import annotate_records
 from rl.ptcg.rewards import observation_potential, potential_shaping
 from rl.ptcg.build_mcts_dataset import _aggregate_search_results, _blend_teacher_policy
 
 
 class PTCGDatasetTests(unittest.TestCase):
+    def test_transition_returns_are_discounted_per_source_game(self) -> None:
+        records = [
+            {
+                "source": "game-a",
+                "step": 1,
+                "terminal_outcome": 1.0,
+                "potential_shaping": {"total": 0.1},
+            },
+            {
+                "source": "game-a",
+                "step": 2,
+                "terminal_outcome": 1.0,
+                "potential_shaping": {"total": 0.0},
+            },
+            {
+                "source": "game-a",
+                "step": 3,
+                "terminal_outcome": 1.0,
+                "potential_shaping": {"total": -0.2},
+            },
+        ]
+        annotated = annotate_records(records, gamma=0.9, shaping_scale=1.0)
+        self.assertAlmostEqual(annotated[2]["terminal_reward"], 1.0)
+        self.assertAlmostEqual(annotated[2]["transition_return"], 0.8)
+        self.assertAlmostEqual(annotated[1]["transition_return"], 0.72)
+        self.assertAlmostEqual(annotated[0]["transition_return"], 0.748)
+        self.assertEqual(annotated[0]["reward_target_version"], "transition_return_v1")
+
+    def test_dataset_shaping_keeps_same_player_perspective(self) -> None:
+        def observation(your_index: int, own_prize: int) -> dict:
+            return {
+                "current": {
+                    "yourIndex": your_index,
+                    "players": [
+                        {"prizeCount": own_prize, "active": [], "bench": []},
+                        {"prizeCount": 6, "active": [], "bench": []},
+                    ],
+                },
+                "select": {
+                    "type": 0,
+                    "context": 0,
+                    "minCount": 1,
+                    "maxCount": 1,
+                    "option": [{"type": 14}],
+                },
+            }
+
+        trace = [
+            {"step": 1, "observation": observation(0, 6), "action": [0]},
+            {"step": 2, "observation": observation(1, 1), "action": [0]},
+            {"step": 3, "observation": observation(0, 5), "action": [0]},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "perspective.json"
+            path.write_text(json.dumps({"trace": trace}), encoding="utf-8")
+            records = list(iter_behavior_cloning_records(path, feature_config=PTCGFeatureConfig()))
+        self.assertEqual(len(records), 2)
+        self.assertAlmostEqual(records[0]["potential_shaping"]["prize_race"], 0.99 / 6.0)
+
     def test_mcts_determinizations_aggregate_visit_counts(self) -> None:
         results = [
             ([0.2, 0.8], [3, 1], [0.75, 0.25], [0.2, 0.8]),

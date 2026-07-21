@@ -33,7 +33,8 @@ observation + 当前合法 options
 - `ptcg/mcts.py`：与官方 SearchState 解耦的有限预算 PUCT 树和 visit-count target。
 - `ptcg/build_mcts_dataset.py`：调用官方 Search API 生成 counterfactual policy target。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
-- `ptcg/calibrate_value.py`：冻结 policy、仅用终局结果校准 value head。
+- `ptcg/calibrate_value.py`：冻结 policy、用终局或 transition return 校准 value head。
+- `ptcg/annotate_transition_returns.py`：从每局可见势能差和终局奖励生成折扣 transition return。
 - `ptcg/train_ppo.py`：从模型 rollout trace 做 masked PPO-style terminal reward 微调。
 - `ptcg/rewards.py`：只使用可见 observation 的 Prize、攻击准备度和牌库势能。
 - `ptcg/build_research_candidate.py`：生成“模型主动作 + 规则效果 handler”的本地评测 candidate。
@@ -218,6 +219,27 @@ python3.11 -m rl.ptcg.calibrate_value \
 
 该流程只更新 `value_head.*`，不会改变 policy logits；校准后的 checkpoint 仍必须经过
 完整 17×10 evaluation，不能因为 value MAE 下降就直接替换 teacher。
+
+如果要验证 transition-level value target，先从同一批 trace 数据生成 return：
+
+```bash
+python3.11 -m rl.ptcg.annotate_transition_returns \
+  rl/runs/datasets/teacher_main_effect.jsonl \
+  --output rl/runs/datasets/teacher_main_effect_transition_return.jsonl \
+  --gamma 0.99 --shaping-scale 0.1
+
+python3.11 -m rl.ptcg.calibrate_value \
+  rl/runs/datasets/teacher_main_effect_transition_return.jsonl \
+  --checkpoint rl/runs/training/current/checkpoints/best_validation.pt \
+  --output rl/runs/training/current_value_transition \
+  --value-target transition_return --selection-scope main --device cuda
+```
+
+transition return 只把最后一个己方决策标记为 terminal reward，并将可见势能差以
+`shaping_scale` 缩小后反向折扣累计；数据构建器会跳过 opponent entry，保持同一 player
+视角。该 value-only 实验保持 policy 权重不变，但仍须经过完整 17×10 evaluation。
+本轮 v4 transition-return policy 消融在 170 局中为 `118/170 = 69.41%`，并有 3 个
+engine error，低于 teacher 的 `124/170 = 72.94%`，因此没有晋级。
 
 `ptcg_features_v4` 在不改变 action contract 的前提下加入 effect id、context card、
 effect sequence step 和候选计数。旧 v1–v3 checkpoint 会按 metadata 继续恢复；effect
