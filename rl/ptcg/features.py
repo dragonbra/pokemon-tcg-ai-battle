@@ -5,6 +5,9 @@ from typing import Any
 
 
 FEATURE_SCHEMA_VERSION = "ptcg_features_v3"
+KNOWN_FEATURE_SCHEMA_VERSIONS = frozenset(
+    {"ptcg_features_v1", "ptcg_features_v2", FEATURE_SCHEMA_VERSION}
+)
 
 
 @dataclass(frozen=True)
@@ -17,6 +20,17 @@ class PTCGFeatureConfig:
     max_candidates: int = 64
     card_vocab_size: int = 4096
     action_type_vocab_size: int = 32
+
+
+def feature_config_for_schema(schema_version: str) -> PTCGFeatureConfig:
+    """Return the immutable input contract for a known feature schema."""
+    if schema_version == "ptcg_features_v1":
+        return PTCGFeatureConfig(state_numeric_dim=24, state_token_count=24)
+    if schema_version == "ptcg_features_v2":
+        return PTCGFeatureConfig(state_numeric_dim=32, state_token_count=40)
+    if schema_version == FEATURE_SCHEMA_VERSION:
+        return PTCGFeatureConfig()
+    raise ValueError(f"unsupported feature schema version: {schema_version}")
 
 
 def _card_id(card: Any) -> int | None:

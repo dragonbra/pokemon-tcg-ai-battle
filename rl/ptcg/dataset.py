@@ -6,14 +6,17 @@ from typing import Any, Iterable, Iterator
 
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 
-from .features import FEATURE_SCHEMA_VERSION, PTCGFeatureConfig, encode_observation
+from .features import (
+    FEATURE_SCHEMA_VERSION,
+    KNOWN_FEATURE_SCHEMA_VERSIONS,
+    PTCGFeatureConfig,
+    encode_observation,
+)
 from .rewards import potential_shaping
 
 
 DATASET_VERSION = "ptcg_bc_v1"
-SUPPORTED_FEATURE_SCHEMA_VERSIONS = frozenset(
-    {"ptcg_features_v1", "ptcg_features_v2", FEATURE_SCHEMA_VERSION}
-)
+SUPPORTED_FEATURE_SCHEMA_VERSIONS = KNOWN_FEATURE_SCHEMA_VERSIONS
 MAIN_SELECT_TYPE = 0
 MAIN_SELECT_CONTEXT = 0
 

@@ -21,7 +21,11 @@ from rl.core.model import CandidatePolicyValueNet, ModelConfig
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 
 from .dataset import load_behavior_cloning_dataset
-from .features import FEATURE_SCHEMA_VERSION, PTCGFeatureConfig
+from .features import (
+    FEATURE_SCHEMA_VERSION,
+    PTCGFeatureConfig,
+    feature_config_for_schema,
+)
 
 
 MODEL_INPUT_KEYS = (
@@ -136,7 +140,10 @@ def train(
     storage = assert_storage_safe(storage_path, min_free_gib)
     device = _resolve_device(device_name)
     records = load_behavior_cloning_dataset(dataset_path)
-    feature_config = PTCGFeatureConfig()
+    schemas = {str(record.get("feature_schema_version")) for record in records}
+    if len(schemas) != 1:
+        raise ValueError(f"dataset must contain exactly one feature schema: {sorted(schemas)}")
+    feature_config = feature_config_for_schema(next(iter(schemas)))
     model_config = _model_config(feature_config, args)
     shuffled = list(records)
     random.Random(seed).shuffle(shuffled)

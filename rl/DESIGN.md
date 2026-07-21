@@ -118,6 +118,17 @@ schema version。
 是否有效，不等同于在线 PPO；整局胜负复制给每个动作的粗粒度方案若不能通过冻结评测，
 应退回并改用 transition-level shaping 或 MCTS target。
 
+### Phase A.5：DAgger 分布修正
+
+纯 BC 只覆盖 teacher 访问过的状态；candidate 一旦选错 main action，后续状态可能
+离开训练分布。`build_dagger_dataset.py` 在 candidate rollout 的实际状态上调用规则
+teacher，重新生成合法 main-action label，再用 `merge_datasets.py` 和原 teacher 数据
+合并。effect selection 仍只用于保持 teacher 的 turn memory，不进入当前模型训练。
+
+DAgger 不是 reward 优化，也不能凭训练 loss 判断有效。它必须和原 teacher 数据保持可
+审计的混合比例，并经过小规模探索和完整 17×10 evaluation；如果关键 opponent 回归，
+立即丢弃该 checkpoint。
+
 ### Phase C：MCTS-guided self-play
 
 官方 Search API 负责状态转移，policy 提供动作先验，value 评价叶子节点。先使用很小

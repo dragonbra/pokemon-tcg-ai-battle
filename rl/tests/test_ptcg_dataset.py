@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import ModuleType
 
 from rl.ptcg.dataset import (
     DATASET_VERSION,
@@ -11,6 +12,7 @@ from rl.ptcg.dataset import (
     load_behavior_cloning_dataset,
 )
 from rl.ptcg.features import PTCGFeatureConfig
+from rl.ptcg.build_dagger_dataset import iter_dagger_records
 from rl.ptcg.rewards import observation_potential, potential_shaping
 
 
@@ -75,6 +77,49 @@ class PTCGDatasetTests(unittest.TestCase):
                 for name in ("prize_race", "attack_readiness", "library_safety")
             ),
         )
+
+    def test_dagger_relabels_only_main_actions_with_a_legal_teacher_target(self) -> None:
+        teacher = ModuleType("toy_teacher")
+        calls: list[dict] = []
+
+        def agent(observation: dict) -> list[int]:
+            calls.append(observation)
+            return [] if observation.get("select") is None else [0]
+
+        teacher.agent = agent  # type: ignore[attr-defined]
+        observation = {
+            "current": {
+                "yourIndex": 0,
+                "players": [{"active": [], "bench": []}, {"active": [], "bench": []}],
+            },
+            "select": {
+                "type": 0,
+                "context": 0,
+                "minCount": 1,
+                "maxCount": 1,
+                "option": [{"type": 13}, {"type": 14}],
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "rollout.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "result": {
+                            "candidate_physical_index": 0,
+                            "winner": 0,
+                            "game_id": "dagger-toy",
+                        },
+                        "trace": [{"step": 1, "observation": observation, "action": [1]}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            records = list(iter_dagger_records(path, teacher))
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["target"], 0)
+        self.assertEqual(records[0]["label_source"], "rule_teacher_dagger")
+        self.assertEqual(len(calls), 2)  # reset plus the candidate-owned decision
 
     def test_local_trace_is_converted_to_a_legal_main_action_record(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

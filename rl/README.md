@@ -28,6 +28,8 @@ observation + 当前合法 options
 - `core/storage.py`：WSL C 盘空间护栏，默认低于 20 GiB 时阻止大任务。
 - `ptcg/features.py`：官方 observation 的初版纯 Python 编码器。
 - `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
+- `ptcg/build_dagger_dataset.py`：把 candidate rollout 状态交给规则 teacher 重新标注。
+- `ptcg/merge_datasets.py`：合并同一 feature schema 的 BC/DAgger 数据集。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
 - `ptcg/train_ppo.py`：从模型 rollout trace 做 masked PPO-style terminal reward 微调。
 - `ptcg/rewards.py`：只使用可见 observation 的 Prize、攻击准备度和牌库势能。
@@ -176,6 +178,28 @@ python3.11 -m rl.ptcg.train_ppo \
 
 dataset 会保留 `potential_shaping` 分量，便于在 TensorBoard 和 evaluation report 中做
 reward ablation；这些势能是辅助信号，终局胜负仍是主目标。
+
+### DAgger 分布偏移实验
+
+当模型开始偏离 teacher 后，可以先收集少量 candidate rollout，再让规则 teacher 对
+candidate 实际访问到的状态重新标注 main action。这个过程只扩展监督数据，不改变
+model 输入/输出合同：
+
+```bash
+python3.11 -m rl.ptcg.build_dagger_dataset \
+  /tmp/evaluation/<run-id>/.trace-store-*/<trace>.json \
+  --teacher work/alakazam_v9 \
+  --feature-schema ptcg_features_v2 \
+  --output rl/runs/datasets/alakazam_dagger.jsonl
+
+python3.11 -m rl.ptcg.merge_datasets \
+  rl/runs/datasets/alakazam_v9_teacher_v3_features_v2.jsonl \
+  rl/runs/datasets/alakazam_dagger.jsonl \
+  --output rl/runs/datasets/alakazam_teacher_plus_dagger.jsonl
+```
+
+DAgger rollout 可以改善分布覆盖，但小样本重标注也可能改变原 teacher 数据的比例；
+必须先做 1–2 局/对手探索，只有明显有希望才进入最低 17×10 正式评测。
 
 ### 本地 checkpoint 评测 candidate
 
