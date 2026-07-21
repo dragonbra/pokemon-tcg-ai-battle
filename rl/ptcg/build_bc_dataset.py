@@ -7,7 +7,7 @@ from pathlib import Path
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH
 
 from .dataset import write_behavior_cloning_dataset
-from .features import PTCGFeatureConfig
+from .features import feature_config_for_schema
 
 
 DEFAULT_OUTPUT = Path(__file__).resolve().parents[2] / "rl" / "runs" / "ptcg_bc" / "dataset.jsonl"
@@ -32,6 +32,11 @@ def main() -> None:
         action="store_true",
         help="include single-option effect selections; main actions are the default",
     )
+    parser.add_argument(
+        "--feature-schema",
+        default="ptcg_features_v3",
+        choices=("ptcg_features_v1", "ptcg_features_v2", "ptcg_features_v3"),
+    )
     args = parser.parse_args()
     teacher_player_index = (
         None if args.teacher_player_index == "auto" else int(args.teacher_player_index)
@@ -40,7 +45,7 @@ def main() -> None:
         args.traces,
         args.output,
         teacher_player_index=teacher_player_index,
-        feature_config=PTCGFeatureConfig(),
+        feature_config=feature_config_for_schema(args.feature_schema),
         include_effect_selections=args.include_effect_selections,
         storage_path=args.storage_path,
         min_free_gib=args.min_free_gib,

@@ -41,7 +41,7 @@ class PTCGDatasetTests(unittest.TestCase):
         potential = observation_potential(observation)
         self.assertAlmostEqual(potential.prize_race, -1 / 6)
         self.assertAlmostEqual(potential.attack_readiness, 0.58)
-        self.assertAlmostEqual(potential.library_safety, 0.6)
+        self.assertAlmostEqual(potential.library_safety, 0.0)
         self.assertAlmostEqual(
             potential.total,
             potential.prize_race + potential.attack_readiness + potential.library_safety,
@@ -52,7 +52,7 @@ class PTCGDatasetTests(unittest.TestCase):
             "current": {
                 "yourIndex": 0,
                 "players": [
-                    {"prizeCount": 6, "deckCount": 60, "active": [], "bench": []},
+                    {"prizeCount": 6, "deckCount": 16, "active": [], "bench": []},
                     {"prizeCount": 6, "deckCount": 60, "active": [], "bench": []},
                 ],
             }
@@ -61,14 +61,14 @@ class PTCGDatasetTests(unittest.TestCase):
             "current": {
                 "yourIndex": 0,
                 "players": [
-                    {"prizeCount": 5, "deckCount": 50, "active": [], "bench": []},
+                    {"prizeCount": 5, "deckCount": 10, "active": [], "bench": []},
                     {"prizeCount": 6, "deckCount": 60, "active": [], "bench": []},
                 ],
             }
         }
         shaping = potential_shaping(current, next_observation, gamma=0.9)
         self.assertAlmostEqual(shaping["prize_race"], 0.15)
-        self.assertAlmostEqual(shaping["library_safety"], -0.28)
+        self.assertAlmostEqual(shaping["library_safety"], -0.3)
         self.assertAlmostEqual(shaping["attack_readiness"], 0.0)
         self.assertAlmostEqual(
             shaping["total"],

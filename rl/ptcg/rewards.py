@@ -79,9 +79,12 @@ def observation_potential(observation: dict[str, Any]) -> PotentialComponents:
     attack_readiness = min(readiness, 1.0)
 
     deck_count = float(player.get("deckCount", 0) or 0)
-    # Positive when the player still has library room; sharp depletion is
-    # visible without pretending to know the hidden card order.
-    library_safety = max(-1.0, min(1.0, (deck_count - 10.0) / 50.0))
+    # Normal draw/search above 15 cards is not intrinsically bad. Once the
+    # V6 mid-game protection threshold is crossed, make the potential
+    # piecewise so shaping reacts to depletion rather than rewarding idling.
+    library_safety = (
+        0.0 if deck_count >= 15.0 else max(-1.0, (deck_count - 15.0) / 15.0)
+    )
     return PotentialComponents(prize_race, attack_readiness, library_safety)
 
 
