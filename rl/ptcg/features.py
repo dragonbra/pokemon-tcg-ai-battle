@@ -4,15 +4,15 @@ from dataclasses import dataclass
 from typing import Any
 
 
-FEATURE_SCHEMA_VERSION = "ptcg_features_v1"
+FEATURE_SCHEMA_VERSION = "ptcg_features_v2"
 
 
 @dataclass(frozen=True)
 class PTCGFeatureConfig:
     """Stable initial feature contract for the candidate policy/value model."""
 
-    state_numeric_dim: int = 24
-    state_token_count: int = 24
+    state_numeric_dim: int = 32
+    state_token_count: int = 40
     candidate_numeric_dim: int = 10
     max_candidates: int = 64
     card_vocab_size: int = 4096
@@ -130,6 +130,22 @@ def _normal(value: Any, divisor: float) -> float:
         return 0.0
 
 
+def _log_numeric(current: dict[str, Any], your_index: int) -> list[float]:
+    logs = [log for log in current.get("logs") or [] if isinstance(log, dict)]
+    opponent_index = 1 - your_index
+    last = logs[-1] if logs else {}
+    return [
+        min(len(logs), 200) / 200.0,
+        min(sum(log.get("playerIndex") == your_index for log in logs), 100) / 100.0,
+        min(sum(log.get("playerIndex") == opponent_index for log in logs), 100) / 100.0,
+        _normal(last.get("type", 0), 32.0),
+        _normal(last.get("cardId", last.get("id", 0)), 4096.0),
+        _normal(last.get("attackId", 0), 2000.0),
+        min(sum("cardId" in log for log in logs), 100) / 100.0,
+        min(sum("attackId" in log for log in logs), 100) / 100.0,
+    ]
+
+
 def encode_observation(
     observation: dict[str, Any],
     config: PTCGFeatureConfig = PTCGFeatureConfig(),
@@ -164,6 +180,7 @@ def encode_observation(
             _normal(select.get("minCount", 0), 8.0),
             _normal(select.get("maxCount", 0), 8.0),
             1.0 if isinstance(result, int) and result >= 0 else 0.0,
+            *_log_numeric(current, your_index),
         ]
     )
     if len(state_numeric) != config.state_numeric_dim:
@@ -175,9 +192,9 @@ def encode_observation(
     state_tokens = [
         *_field_tokens(player, 6),
         *_field_tokens(opponent, 6),
-        *_zone_tokens(player, "hand", 6),
-        *_zone_tokens(player, "discard", 4),
-        *_zone_tokens(opponent, "discard", 2),
+        *_zone_tokens(player, "hand", 16),
+        *_zone_tokens(player, "discard", 8),
+        *_zone_tokens(opponent, "discard", 4),
     ]
     if len(state_tokens) != config.state_token_count:
         raise ValueError(
