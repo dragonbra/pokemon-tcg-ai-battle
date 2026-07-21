@@ -35,15 +35,33 @@ class RLFrameworkTests(unittest.TestCase):
 
     def test_promotion_requires_primary_gain_and_guardrails(self) -> None:
         champion = {"win_rate": 0.50}
+        coverage = {"by_opponent": {str(index): {"games": 10} for index in range(17)}}
         self.assertTrue(
             is_promotable(
-                {"win_rate": 0.52, "invalid_action_rate": 0.0, "error_rate": 0.0},
+                {
+                    **coverage,
+                    "win_rate": 0.52,
+                    "invalid_action_rate": 0.0,
+                    "error_rate": 0.0,
+                },
                 champion,
             )
         )
         self.assertFalse(
             is_promotable(
-                {"win_rate": 0.52, "invalid_action_rate": 0.01, "error_rate": 0.0},
+                {
+                    **coverage,
+                    "win_rate": 0.52,
+                    "invalid_action_rate": 0.01,
+                    "error_rate": 0.0,
+                },
+                champion,
+            )
+        )
+
+        self.assertFalse(
+            is_promotable(
+                {"win_rate": 0.90, "invalid_action_rate": 0.0, "error_rate": 0.0},
                 champion,
             )
         )

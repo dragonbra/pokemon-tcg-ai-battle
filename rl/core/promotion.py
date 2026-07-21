@@ -13,7 +13,7 @@ def has_minimum_evaluation_coverage(
     if opponent_count < 1 or games_per_opponent < 1:
         raise ValueError("opponent_count and games_per_opponent must be positive")
     by_opponent = summary.get("by_opponent")
-    if not isinstance(by_opponent, Mapping) or len(by_opponent) < opponent_count:
+    if not isinstance(by_opponent, Mapping) or len(by_opponent) != opponent_count:
         return False
     return all(
         isinstance(result, Mapping)
@@ -23,14 +23,16 @@ def has_minimum_evaluation_coverage(
 
 
 def is_promotable(
-    candidate: Mapping[str, float],
-    champion: Mapping[str, float],
+    candidate: Mapping[str, object],
+    champion: Mapping[str, object],
     *,
     min_win_rate_delta: float = 0.01,
     max_invalid_action_rate: float = 0.0,
     max_error_rate: float = 0.0,
 ) -> bool:
     """Apply conservative promotion guardrails to a frozen evaluation summary."""
+    if not has_minimum_evaluation_coverage(candidate):
+        return False
     candidate_win = float(candidate.get("win_rate", 0.0))
     champion_win = float(champion.get("win_rate", 0.0))
     if candidate_win < champion_win + min_win_rate_delta:
