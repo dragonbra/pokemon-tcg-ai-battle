@@ -9,6 +9,8 @@ from .profiles import (
     CORE_PROFILE_ID,
     MetricPriority,
     MetricProfile,
+    MetricSemantic,
+    SemanticGroup,
     available_metric_profiles,
     get_metric_profile,
 )
@@ -32,7 +34,9 @@ __all__ = [
     "MetricPresentation",
     "MetricPriority",
     "MetricProfile",
+    "MetricSemantic",
     "OutcomePlugin",
+    "SemanticGroup",
     "AUTO_ITERATION_PROFILE_ID",
     "CORE_PROFILE_ID",
     "available_metric_profiles",

@@ -8,6 +8,7 @@
 - `evaluation/` 是仓库内的评测运行入口：`configs/opponents.json` 固定 catalog，`opponents/<name>/` 下每个对手都是独立标准 package（`main.py`、60 行 `deck.csv`、物理复制的 `cg/`），不是 adapter。官方 engine runtime 是唯一运行时来源；评测代码不得修改 `engine/source/`，也不得依赖隔壁评测仓库。
 - 评测 CLI 使用 `python3 -m evaluation list-opponents`、`validate <package>` 和 `run --candidate <package> --opponents all --output <report-root>`。每次 `run` 在指定报告根目录下创建独立 `run_id/`，写入 manifest、逐局记录、指标、case 及 Markdown/HTML 报告；`evaluation/opponents/` 不属于 Kaggle 正式 submission 输出目录。
 - 每场评测在独立 worker 进程中运行，隔离双方策略的模块级状态、导入缓存和 cg 状态。完整 trace 仅在当前 run 的临时目录保留，结束时默认删除；长期报告最多保留三份被选中的完整 trace，只有调试时才使用 `--keep-temp`。
+- AutoIteration 使用 `--metric-profile auto_iteration_v8_setup_relay`（当前 revision 2）生成语义化完整报告；报告按结果护栏、阶段一二回合基础能力、阶段二 Post-KO 接力、阶段三攻击质量和辅助审计分组，同时保留原始 metric payload。使用步骤、产物和调用边界见 [`evaluation/HANDOFF.md`](evaluation/HANDOFF.md)。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
 - `notes/`、`reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
 

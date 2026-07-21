@@ -41,6 +41,14 @@ Powerful Hand、post-KO relay 和 attack quality 的结构化 payload。Powerful
 `games.jsonl` 的 `metric_refs`，专属 Markdown/HTML 展示写入 `report.md` 和
 `report.html`。
 
+AutoIteration 的 `report.html` 会在原始 metric 汇总之前按语义分组展示：结果与正确性护栏、
+阶段一二回合基础能力、阶段二 Post-KO 接力能力、阶段三攻击质量惩罚项，以及辅助健康与审计
+指标。每一行同时保留中文语义名、原始 `metric_id`、角色、方向、分子/分母和追踪目标；复合
+指标可以从同一个 plugin 展开多个观察项，例如四组件、Dunsparce bridge 和额外过牌。
+页面的语义值按 AutoIteration 定义选择 payload 字段。例如 `post_ko_relay` 的语义展示值
+使用 `payload.success_rate`（成功数 / 机会数），而 `metrics.json` 中旧的顶层失败率仍原样
+保留，便于审计和兼容既有调用层。
+
 Evaluation 只负责指标测量、证据审计和可视化，不负责晋级决策，也不负责
 candidate/control 比较；调用层根据 profile revision 和报告数据自行解释 promote、observe、reject 等
 业务状态。

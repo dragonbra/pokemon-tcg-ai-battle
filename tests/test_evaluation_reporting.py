@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 from evaluation.metrics import MetricPresentation
+from evaluation.metrics.profiles import AUTO_ITERATION_PROFILE_ID, get_metric_profile
 from evaluation.reporting import ReportData, render_html, render_markdown, write_report
 
 
@@ -101,6 +102,187 @@ def report_data() -> ReportData:
 
 
 class EvaluationReportingTests(unittest.TestCase):
+    def test_auto_iteration_html_maps_metric_ids_to_semantic_stages(self) -> None:
+        metrics = {
+            "outcome": {
+                "numerator": 70,
+                "denominator": 170,
+                "value": 70 / 170,
+                "payload": {
+                    "by_turn_order": {
+                        "first": {"numerator": 35, "denominator": 85, "value": 35 / 85},
+                        "second": {"numerator": 35, "denominator": 85, "value": 35 / 85},
+                    }
+                },
+            },
+            "correctness": {
+                "numerator": 1,
+                "denominator": 170,
+                "value": 1 / 170,
+                "payload": {},
+            },
+            "powerful_hand": {
+                "numerator": 4,
+                "denominator": 170,
+                "value": 4 / 170,
+                "payload": {
+                    "reached_value": 4 / 154,
+                    "reached_numerator": 4,
+                    "reached_denominator": 154,
+                    "by_turn_order": {
+                        "first": {"numerator": 2, "denominator": 85, "value": 2 / 85},
+                        "second": {"numerator": 2, "denominator": 85, "value": 2 / 85},
+                    },
+                },
+            },
+            "setup_relay": {
+                "numerator": 4,
+                "denominator": 170,
+                "value": 4 / 170,
+                "payload": {
+                    "dunsparce_bridge": {"numerator": 0, "denominator": 59},
+                    "second_turn_draws": {
+                        "all_games": {"total": 471, "games": 170, "average": 471 / 170},
+                        "reached_second_turn": {"total": 471, "games": 154, "average": 471 / 154},
+                        "first": {"total": 258, "games": 85, "average": 258 / 85},
+                        "second": {"total": 213, "games": 85, "average": 213 / 85},
+                        "normal_draw_cards": {
+                            "all_games": {"total": 337, "games": 170, "average": 337 / 170}
+                        },
+                    },
+                    "opening_four_components": {
+                        "component_counts": {
+                            "active_abra": 76,
+                            "rare_candy": 66,
+                            "alakazam_or_search": 156,
+                            "psychic_energy_or_hilda": 133,
+                        },
+                        "sample_games": 170,
+                    },
+                },
+            },
+            "post_ko_relay": {
+                "numerator": 339,
+                "denominator": 455,
+                "value": 339 / 455,
+                "payload": {
+                    "successes": 116,
+                    "opportunities": 455,
+                    "success_rate": 0.3,
+                    "by_turn_order": {
+                        "first": {"successes": 70, "opportunities": 234, "success_rate": 70 / 234},
+                        "second": {"successes": 46, "opportunities": 221, "success_rate": 46 / 221},
+                    },
+                },
+            },
+            "attack_quality": {
+                "numerator": 139,
+                "denominator": 458,
+                "value": 139 / 458,
+                "payload": {
+                    "non_prize_attacks": {"numerator": 139, "denominator": 458, "rate": 139 / 458},
+                    "powerful_hand": {
+                        "non_prize_attacks": 54,
+                        "resolved_attacks": 367,
+                        "unknown_prize_attacks": 0,
+                    },
+                },
+            },
+            "library_pressure": {
+                "numerator": 564,
+                "denominator": 170,
+                "value": 564 / 170,
+                "payload": {},
+            },
+        }
+        data = ReportData(
+            manifest={"run_id": "semantic-fixture"},
+            summary={"total_games": 170, "wins": 70, "losses": 99, "draws": 0, "errors": 1},
+            games=(),
+            metrics=metrics,
+            cases=(),
+            metric_profile=get_metric_profile(AUTO_ITERATION_PROFILE_ID).manifest(),
+        )
+
+        html = render_html(data)
+
+        expected = (
+            "结果与正确性护栏",
+            "阶段一：二回合基础能力",
+            "阶段二：Post-KO 接力能力",
+            "阶段三：攻击质量惩罚项",
+            "辅助健康与审计指标",
+            "二回合 Alakazam 实际攻击",
+            "Post-KO 立即接力成功率",
+            "攻击但未拿奖赏率",
+            "Powerful Hand 子集未拿奖赏率",
+            "metric_id",
+            "post_ko_relay",
+            "116/455",
+            "30.00%",
+            "139/458",
+            "30.35%",
+            "3.31765",
+            "先手：70/234 = 29.91%",
+            "后手：46/221 = 20.81%",
+            "实际到达二回合：3.05844 张/局",
+            "先手额外过牌：3.03529 张/局",
+            "后手额外过牌：2.50588 张/局",
+            "正常回合抽牌审计：1.98235 张/局",
+            "追踪目标",
+        )
+        for value in expected:
+            self.assertIn(value, html)
+
+        self.assertLess(html.index("结果与正确性护栏"), html.index("阶段一：二回合基础能力"))
+        self.assertLess(html.index("阶段一：二回合基础能力"), html.index("阶段二：Post-KO 接力能力"))
+        self.assertLess(html.index("阶段二：Post-KO 接力能力"), html.index("阶段三：攻击质量惩罚项"))
+        self.assertLess(html.index("阶段三：攻击质量惩罚项"), html.index("辅助健康与审计指标"))
+        stage_two = html[html.index("阶段二：Post-KO 接力能力") : html.index("阶段三：攻击质量惩罚项")]
+        self.assertIn("116/455 = 30.00%", stage_two)
+        self.assertNotIn("339/455 = 74.51%", stage_two)
+        self.assertNotIn("331.76%", html)
+
+    def test_auto_iteration_html_marks_empty_event_rates_as_undefined(self) -> None:
+        data = ReportData(
+            manifest={"run_id": "empty-semantic-fixture"},
+            summary={},
+            games=(),
+            metrics={
+                "post_ko_relay": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "value": None,
+                    "payload": {"successes": 0, "opportunities": 0, "success_rate": None},
+                },
+                "attack_quality": {
+                    "numerator": 0,
+                    "denominator": 0,
+                    "value": None,
+                    "payload": {
+                        "non_prize_attacks": {"numerator": 0, "denominator": 0, "rate": None},
+                        "powerful_hand": {
+                            "non_prize_attacks": 0,
+                            "resolved_attacks": 0,
+                            "unknown_prize_attacks": 0,
+                        },
+                    },
+                },
+            },
+            cases=(),
+            metric_profile=get_metric_profile(AUTO_ITERATION_PROFILE_ID).manifest(),
+        )
+
+        html = render_html(data)
+
+        self.assertIn("未定义（无有效样本）", html)
+        self.assertIn("无机会", html)
+        self.assertIn("无有效攻击", html)
+        stage_three = html[html.index("阶段三：攻击质量惩罚项") :]
+        self.assertGreaterEqual(stage_three.count("未定义（无有效样本）"), 2)
+        self.assertNotIn("0/0", html)
+        self.assertNotIn("0/0 =", html)
+
     def test_plugin_presentations_and_profile_metadata_are_rendered(self) -> None:
         base = report_data()
         data = ReportData(
@@ -143,6 +325,12 @@ class EvaluationReportingTests(unittest.TestCase):
             self.assertIn(value, markdown)
             self.assertIn(value, html)
         self.assertIn('"presentations"', html)
+
+    def test_generic_html_keeps_legacy_metric_table_title(self) -> None:
+        html = render_html(report_data())
+
+        self.assertIn("<h2>指标</h2>", html)
+        self.assertIn("<th>达成值</th>", html)
 
     def test_markdown_and_html_render_the_same_aggregated_fixture(self) -> None:
         data = report_data()

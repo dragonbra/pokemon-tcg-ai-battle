@@ -35,6 +35,38 @@ class EvaluationProfileTests(unittest.TestCase):
         self.assertEqual(profile.priorities[0].priority, "result_guardrail")
         self.assertEqual(profile.priorities[1].metric_id, "powerful_hand")
 
+    def test_auto_iteration_manifest_declares_semantic_stages_and_metric_targets(self) -> None:
+        profile = get_metric_profile(AUTO_ITERATION_PROFILE_ID)
+        manifest = profile.manifest()
+
+        self.assertEqual(
+            [group["id"] for group in manifest["semantic_groups"]],
+            [
+                "result_correctness_guardrail",
+                "stage_1_setup",
+                "stage_2_post_ko_relay",
+                "stage_3_attack_quality",
+                "auxiliary_health_audit",
+            ],
+        )
+        semantics = {
+            item["semantic_id"]: item for item in manifest["metric_semantics"]
+        }
+        self.assertEqual(semantics["powerful_hand"]["title"], "二回合 Alakazam 实际攻击")
+        self.assertEqual(semantics["powerful_hand"]["direction"], "higher")
+        self.assertEqual(semantics["post_ko_success"]["value_source"], "payload.success_rate")
+        self.assertEqual(semantics["post_ko_success"]["role"], "target")
+        self.assertEqual(
+            semantics["attack_quality_powerful"]["title"],
+            "Powerful Hand 子集未拿奖赏率",
+        )
+
+    def test_core_manifest_keeps_semantic_metadata_additive(self) -> None:
+        manifest = get_metric_profile("core").manifest()
+
+        self.assertNotIn("semantic_groups", manifest)
+        self.assertNotIn("metric_semantics", manifest)
+
     def test_unknown_profile_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown metric profile"):
             get_metric_profile("missing")
