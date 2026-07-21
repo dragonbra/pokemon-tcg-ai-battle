@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from rl.core.promotion import is_promotable
+from rl.core.promotion import has_minimum_evaluation_coverage, is_promotable
 from rl.core.reward import RewardProfile, potential_difference, terminal_reward
 from rl.demo.toy_env import LEFT, RIGHT, ToyLineEnv
 from rl.ptcg.features import PTCGFeatureConfig, encode_observation
@@ -47,6 +47,12 @@ class RLFrameworkTests(unittest.TestCase):
                 champion,
             )
         )
+
+    def test_promotion_requires_seventeen_opponents_and_ten_games_each(self) -> None:
+        summary = {"by_opponent": {str(index): {"games": 10} for index in range(17)}}
+        self.assertTrue(has_minimum_evaluation_coverage(summary))
+        summary["by_opponent"]["0"] = {"games": 9}
+        self.assertFalse(has_minimum_evaluation_coverage(summary))
 
     def test_ptcg_encoder_has_stable_shapes(self) -> None:
         config = PTCGFeatureConfig()

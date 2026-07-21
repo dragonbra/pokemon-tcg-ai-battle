@@ -104,6 +104,12 @@ df -h /mnt/c /
 
 如果低于警戒线，程序会停止并提示清理旧的 `rl/runs` 实验；不会自动删除文件。
 
+## 评测层级
+
+1–2 局/对手只用于快速探索，不能据此晋级模型。任何 promotion、正式仓库 evaluation
+或提交前结论，必须使用全部 17 个 opponent、每个至少 10 局（最低 170 局），并保留
+先手/后手轮换；如果胜率差异接近或方差较大，再提高到每个 opponent 20–30 局。
+
 toy 演示只证明 model forward、合法候选 mask、交叉熵行为克隆、JSONL 和 checkpoint
 能协同工作。它不是 Pokémon TCG 强度实验。
 
