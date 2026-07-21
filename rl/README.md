@@ -29,6 +29,7 @@ observation + 当前合法 options
 - `ptcg/features.py`：官方 observation 的初版纯 Python 编码器。
 - `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
+- `ptcg/train_ppo.py`：从模型 rollout trace 做 masked PPO-style terminal reward 微调。
 - `ptcg/build_research_candidate.py`：生成“模型主动作 + 规则效果 handler”的本地评测 candidate。
 - `demo/`：没有 simulator 依赖的行为克隆 toy 演示。
 - `references/`：Kaggle notebook/report 参考和分析。
@@ -148,6 +149,19 @@ python3.11 -m rl.ptcg.train_behavior_cloning \
 
 TensorBoard 会额外记录 `train/policy_loss` 和 `train/value_loss`；如果实战 evaluation
 没有改善，这个 profile 不应晋级。
+
+当已有纯 BC candidate 的 rollout trace 后，可以继续做 terminal PPO-style 微调：
+
+```bash
+python3.11 -m rl.ptcg.train_ppo \
+  rl/runs/datasets/alakazam_v9_teacher_v4_reward.jsonl \
+  --checkpoint rl/runs/training/alakazam_bc_v2/checkpoints/best_validation.pt \
+  --output rl/runs/training/alakazam_ppo_terminal_v1 \
+  --epochs 20 --device auto
+```
+
+这里的 dataset 必须来自当前 checkpoint 的 candidate rollout；用旧 teacher trace 直接
+当 PPO 数据会破坏 on-policy 假设，因此只作为接口 smoke test，不作为正式 reward 结论。
 
 ### 本地 checkpoint 评测 candidate
 

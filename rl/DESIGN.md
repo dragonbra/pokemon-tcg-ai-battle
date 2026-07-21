@@ -124,8 +124,10 @@ determinization，不能直接照搬 notebook 的固定对手占位卡。
 
 ### Phase D：Masked PPO（可选）
 
-只有前面接口和奖励通过验证后，才从已有 checkpoint 开始 PPO 微调。策略始终只能在
-官方合法候选中选择。
+`rl/ptcg/train_ppo.py` 已提供第一版 masked PPO-style terminal reward 微调器。它从
+checkpoint 的旧 policy 计算 old log-prob，以终局胜负构造 advantage，并始终在 simulator
+候选 mask 内更新。第一版只用于验证 policy/value/reward 接口，rollout 必须来自当前
+checkpoint；真正的 transition-level shaping、GAE 和 MCTS target 仍待后续实现。
 
 当前 milestone 只完成 Phase A 的通用实现和 toy 验证，还没有把 checkpoint 接入正式
 `work/<name>/main.py`，也没有把 terminal reward 训练误称为已经完成。正式 submission
