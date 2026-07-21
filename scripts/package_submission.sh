@@ -32,6 +32,11 @@ mkdir -p "$out_dir"
 rm -f "$out_file"
 
 cd "$src_dir"
-COPYFILE_DISABLE=1 tar --exclude='__pycache__' --exclude='*.pyc' -czf "$out_file" main.py deck.csv cg
+archive_entries=(main.py deck.csv cg)
+if [[ -d strategy ]]; then
+  archive_entries+=(strategy)
+fi
+COPYFILE_DISABLE=1 tar --exclude='__pycache__' --exclude='*.pyc' --exclude='*.pyo' \
+  -czf "$out_file" "${archive_entries[@]}"
 
 echo "$out_file"

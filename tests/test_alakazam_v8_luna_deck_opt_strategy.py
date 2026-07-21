@@ -77,8 +77,7 @@ def base_obs(me, opponent, options, *, turn=5, logs=None):
 
 class V8CurrentStrategyTests(unittest.TestCase):
     def setUp(self):
-        MODULE._EFFECT_PROGRESS.clear()
-        MODULE._TURN_MEMORY.reset()
+        MODULE.agent({"select": None})
 
     def test_fezandipiti_draw_precedes_nonterminal_powerful_hand_after_ko(self):
         me = player(
@@ -94,7 +93,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
         ]
         logs = [{"type": 6, "playerIndex": 0, "fromArea": 4, "toArea": 3}]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options, logs=logs)), [0])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options, logs=logs)), [0])
 
     def test_fezandipiti_does_not_delay_the_last_prize_attack(self):
         me = player(
@@ -110,7 +109,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
         ]
         logs = [{"type": 6, "playerIndex": 0, "fromArea": 4, "toArea": 3}]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options, logs=logs)), [1])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options, logs=logs)), [1])
 
     def test_dawn_precedes_nonterminal_powerful_hand_for_bench_abra_evolution(self):
         me = player(
@@ -125,14 +124,14 @@ class V8CurrentStrategyTests(unittest.TestCase):
             {"type": 14},
         ]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options)), [0])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options)), [0])
 
     def test_trading_places_is_not_used_when_only_forbidden_attack_remains(self):
         me = player(active=pokemon(MODULE.DUNSPARCE, 1))
         opponent = player(active=pokemon(900, 2, hp=220))
         options = [{"type": 13, "attackId": MODULE.TRADING_PLACES_ATTACK}]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options)), [])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options)), [])
 
     def test_run_away_draw_hands_active_position_to_ready_bench_alakazam(self):
         me = player(
@@ -152,7 +151,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
             {"type": 14},
         ]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options)), [0])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options)), [0])
 
     def test_enhanced_hammer_precedes_nonterminal_powerful_hand(self):
         me = player(
@@ -168,14 +167,13 @@ class V8CurrentStrategyTests(unittest.TestCase):
             {"type": 14},
         ]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options)), [0])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options)), [0])
 
     def test_hammer_prefers_benched_protective_energy_over_active_other_special_energy(self):
         me = player(active=pokemon(MODULE.ALAKAZAM, 1, energies=[MODULE.PSYCHIC_ENERGY_TYPE]))
         opponent_active = pokemon(900, 2, energy_cards=[MODULE.TELEPATH_ENERGY])
         opponent_bench = pokemon(901, 3, energy_cards=[MODULE.MIST_ENERGY])
         opponent = player(active=opponent_active, bench=[opponent_bench])
-        current = base_obs(me, opponent, [])['current']
         options = [
             {
                 "type": 3,
@@ -192,8 +190,17 @@ class V8CurrentStrategyTests(unittest.TestCase):
                 "energyIndex": 0,
             },
         ]
+        obs = base_obs(me, opponent, options)
+        obs["select"] = {
+            "type": 4,
+            "context": 30,
+            "effect": {"id": MODULE.ENHANCED_HAMMER, "serial": 6},
+            "minCount": 1,
+            "maxCount": 1,
+            "option": options,
+        }
 
-        self.assertEqual(MODULE._choose_energy_option(options, current, me), [1])
+        self.assertEqual(MODULE.agent(obs), [1])
 
     def test_lanas_aid_prefers_multiple_abra_line_pokemon_over_energy(self):
         me = player(
@@ -218,12 +225,12 @@ class V8CurrentStrategyTests(unittest.TestCase):
             "option": options,
         }
 
-        chosen = MODULE._select_effect(obs)
+        chosen = MODULE.agent(obs)
 
         self.assertEqual(len(chosen), 3)
         self.assertEqual(
             {
-                MODULE._option_card_id(options[index], obs["select"], obs["current"])
+                me["discard"][options[index]["index"]]["id"]
                 for index in chosen
             },
             {MODULE.ABRA, MODULE.KADABRA, MODULE.ALAKAZAM},
@@ -243,7 +250,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
             {"type": 14},
         ]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options)), [0])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options)), [0])
 
     def test_sacred_ash_uses_all_available_slots_for_recovery_chain(self):
         me = player(active=pokemon(MODULE.DUNSPARCE, 1), discard=[
@@ -268,7 +275,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
             "option": options,
         }
 
-        self.assertEqual(len(MODULE._select_effect(obs)), 5)
+        self.assertEqual(len(MODULE.agent(obs)), 5)
 
     def test_sacred_ash_deprioritizes_kadabra_when_rare_candy_is_available(self):
         me = player(
@@ -292,10 +299,10 @@ class V8CurrentStrategyTests(unittest.TestCase):
             "option": options,
         }
 
-        chosen = MODULE._select_effect(obs)
+        chosen = MODULE.agent(obs)
 
         chosen_ids = [
-            MODULE._option_card_id(options[index], obs["select"], obs["current"])
+            me["discard"][options[index]["index"]]["id"]
             for index in chosen
         ]
         self.assertEqual(chosen_ids[:3], [MODULE.ABRA, MODULE.ALAKAZAM, MODULE.KADABRA])
@@ -312,10 +319,14 @@ class V8CurrentStrategyTests(unittest.TestCase):
             {"type": 14},
         ]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options, turn=1)), [1])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options, turn=1)), [1])
 
     def test_pokepad_finds_dudunsparce_for_active_dunsparce_handoff(self):
-        me = player(active=pokemon(MODULE.DUNSPARCE, 1), hand=[MODULE.POKE_PAD])
+        me = player(
+            active=pokemon(MODULE.DUNSPARCE, 1),
+            bench=[pokemon(MODULE.ALAKAZAM, 3, energies=[MODULE.PSYCHIC_ENERGY_TYPE])],
+            hand=[MODULE.POKE_PAD],
+        )
         opponent = player(active=pokemon(900, 2, hp=220))
         options = [
             {"type": 1, "cardId": MODULE.KADABRA},
@@ -331,7 +342,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
             "option": options,
         }
 
-        self.assertEqual(MODULE._select_effect(obs), [1])
+        self.assertEqual(MODULE.agent(obs), [1])
 
     def test_dawn_finds_dunsparce_when_no_dunsparce_is_in_play(self):
         me = player(active=pokemon(MODULE.ALAKAZAM, 1), hand=[MODULE.DAWN])
@@ -350,10 +361,14 @@ class V8CurrentStrategyTests(unittest.TestCase):
             "option": options,
         }
 
-        self.assertEqual(MODULE._select_effect(obs), [1])
+        self.assertEqual(MODULE.agent(obs), [1])
 
     def test_dawn_finds_dudunsparce_for_active_dunsparce_handoff(self):
-        me = player(active=pokemon(MODULE.DUNSPARCE, 1), hand=[MODULE.DAWN])
+        me = player(
+            active=pokemon(MODULE.DUNSPARCE, 1),
+            bench=[pokemon(MODULE.ALAKAZAM, 3, energies=[MODULE.PSYCHIC_ENERGY_TYPE])],
+            hand=[MODULE.DAWN],
+        )
         opponent = player(active=pokemon(900, 2, hp=220))
         options = [
             {"type": 1, "cardId": MODULE.KADABRA},
@@ -368,9 +383,9 @@ class V8CurrentStrategyTests(unittest.TestCase):
             "maxCount": 1,
             "option": options,
         }
-        MODULE._EFFECT_PROGRESS[4] = 1
+        obs["select"]["effectStep"] = 1
 
-        self.assertEqual(MODULE._select_effect(obs), [1])
+        self.assertEqual(MODULE.agent(obs), [1])
 
     def test_nighttime_mine_precedes_nonterminal_attack(self):
         me = player(
@@ -384,7 +399,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
             {"type": 14},
         ]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options)), [0])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options)), [0])
 
     def test_nighttime_mine_precedes_even_bench_insurance_setup(self):
         me = player(
@@ -398,7 +413,7 @@ class V8CurrentStrategyTests(unittest.TestCase):
             {"type": 13, "attackId": MODULE.POWERFUL_HAND_ATTACK},
         ]
 
-        self.assertEqual(MODULE._main_action(base_obs(me, opponent, options)), [0])
+        self.assertEqual(MODULE.agent(base_obs(me, opponent, options)), [0])
 
 
 if __name__ == "__main__":
