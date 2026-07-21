@@ -33,6 +33,34 @@ def _load_deck(path: Path) -> list[int]:
     return values
 
 
+def _load_card_pool(path: Path) -> list[int]:
+    values = [
+        int(line.strip())
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if not values:
+        raise ValueError(f"card pool is empty: {path}")
+    return values
+
+
+def _sample_hidden_deck(
+    pool: Sequence[int] | None,
+    count: int,
+    rng: random.Random,
+) -> list[int]:
+    """Sample hidden cards without using an opponent identifier."""
+    if count <= 0:
+        return []
+    if not pool:
+        return [1072] * count
+    if len(pool) >= count:
+        return rng.sample(list(pool), count)
+    result = [pool[index % len(pool)] for index in range(count)]
+    rng.shuffle(result)
+    return result
+
+
 def _load_trace(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict) or not isinstance(payload.get("trace"), list):
@@ -205,6 +233,7 @@ def _start_search(
     player_index: int,
     deck: list[int],
     rng: random.Random,
+    opponent_deck_pool: Sequence[int] | None,
     search_begin: Any,
     to_observation_class: Any,
 ) -> Any:
@@ -217,11 +246,12 @@ def _start_search(
     active = opponent.get("active") or []
     deck_count = int(own.get("deckCount", 0) or 0)
     prize_count = len(own.get("prize") or [])
+    opponent_deck_count = int(opponent.get("deckCount", 0) or 0)
     return search_begin(
         to_observation_class(observation),
         your_deck=rng.sample(deck, min(deck_count, len(deck))),
         your_prize=rng.sample(deck, min(prize_count, len(deck))),
-        opponent_deck=[1072] * int(opponent.get("deckCount", 0) or 0),
+        opponent_deck=_sample_hidden_deck(opponent_deck_pool, opponent_deck_count, rng),
         opponent_prize=[1] * len(opponent.get("prize") or []),
         opponent_hand=[1] * int(opponent.get("handCount", 0) or 0),
         opponent_active=[1072] if active and active[0] is None else [],
@@ -239,6 +269,7 @@ def _run_search(
     search_step: Any,
     to_observation_class: Any,
     rng: random.Random,
+    opponent_deck_pool: Sequence[int] | None,
     simulations: int,
     cpuct: float,
     rollout_teacher: ModuleType | None,
@@ -248,6 +279,7 @@ def _run_search(
         player_index=player_index,
         deck=deck,
         rng=rng,
+        opponent_deck_pool=opponent_deck_pool,
         search_begin=search_begin,
         to_observation_class=to_observation_class,
     )
@@ -371,6 +403,7 @@ def build_records(
     cpuct: float = 1.25,
     determinizations: int = 1,
     teacher_policy_weight: float = 0.0,
+    opponent_deck_pool: Sequence[int] | None = None,
 ) -> list[dict[str, Any]]:
     if rollout_steps < 0:
         raise ValueError("rollout_steps cannot be negative")
@@ -431,6 +464,7 @@ def build_records(
                             search_step=search_step,
                             to_observation_class=to_observation_class,
                             rng=rng,
+                            opponent_deck_pool=opponent_deck_pool,
                             simulations=simulations,
                             cpuct=cpuct,
                             rollout_teacher=rollout_teacher,
@@ -497,6 +531,12 @@ def main() -> None:
     parser.add_argument("--cpuct", type=float, default=1.25)
     parser.add_argument("--determinizations", type=int, default=1)
     parser.add_argument("--teacher-policy-weight", type=float, default=0.0)
+    parser.add_argument(
+        "--opponent-deck-pool",
+        type=Path,
+        action="append",
+        help="repeatable deck.csv path for the fixed hidden-card determinization pool",
+    )
     # Kept for command-line compatibility with the pre-PUCT collector. The
     # search budget is now controlled by --simulations.
     parser.add_argument("--rollout-steps", type=int, default=0)
@@ -518,6 +558,13 @@ def main() -> None:
         )
     storage = assert_storage_safe(args.storage_path, args.min_free_gib)
     rollout_teacher = _load_teacher(args.rollout_teacher) if args.rollout_teacher else None
+    opponent_deck_pool = None
+    if args.opponent_deck_pool:
+        opponent_deck_pool = [
+            card_id
+            for path in args.opponent_deck_pool
+            for card_id in _load_card_pool(path)
+        ]
     records = build_records(
         args.traces,
         checkpoint=args.checkpoint,
@@ -531,6 +578,7 @@ def main() -> None:
         cpuct=args.cpuct,
         determinizations=args.determinizations,
         teacher_policy_weight=args.teacher_policy_weight,
+        opponent_deck_pool=opponent_deck_pool,
     )
     if not records:
         raise ValueError("MCTS target collection produced no records")
@@ -545,6 +593,7 @@ def main() -> None:
                 "output": str(args.output),
                 "storage_path": storage.path,
                 "storage_free_gib": round(storage.free_gib, 2),
+                "opponent_deck_pool_size": len(opponent_deck_pool or []),
             },
             ensure_ascii=False,
             sort_keys=True,

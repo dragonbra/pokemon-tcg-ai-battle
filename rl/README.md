@@ -207,6 +207,19 @@ python3.11 -m rl.ptcg.train_behavior_cloning \
 该参数只对含 `mcts_policy` 的记录生效；普通 BC 数据默认仍使用 hard target。硬 target
 accuracy 和 soft loss 都会保留在训练日志中，不能仅凭 loss 判断策略是否晋级。
 
+为了让 hidden-card prior 不依赖某个 opponent，可重复传入多个 deck 文件：
+
+```bash
+python3.11 -m rl.ptcg.build_mcts_dataset \
+  --opponent-deck-pool evaluation/opponents/romanrozen_v9/deck.csv \
+  --opponent-deck-pool evaluation/opponents/pilkwang_v2/deck.csv \
+  --opponent-deck-pool evaluation/opponents/kokinn_search/deck.csv \
+  ...
+```
+
+`...` 代表其余 catalog opponent；pool 只用于统一 determinization，不作为模型输入。
+本轮 pool MCTS candidate 的完整验收为 `111/170 = 65.29%`、2 errors，未晋级。
+
 研究 candidate 若打开 runtime search，应优先通过 `PTCG_RL_SEARCH_OPPONENT_DECK` 注入一个
 固定的 opponent deck card pool；pool 对所有对手相同，不携带 opponent ID。未提供 pool
 时 search 会 fail-closed 地使用旧占位配置，且默认不开启。任何 search candidate 仍先做

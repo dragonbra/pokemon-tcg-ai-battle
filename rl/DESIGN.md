@@ -194,6 +194,15 @@ count 做聚合。d4 小实验（4 次 determinization、每次 8 次 simulation
 70.59%`，因此没有进入第二次 17×10 验收。这个参数保留给更大 trace、改进 value
 model 或 self-play 数据使用；增加搜索次数本身不能弥补错误的叶评估。
 
+collector 现在还支持重复传入 `--opponent-deck-pool evaluation/opponents/*/deck.csv`，
+将 17 个 opponent 的卡牌合并为一个不依赖 opponent ID 的 hidden-card prior。使用 v5
+policy、2 次 determinization、每次 8 次 simulation 收集 512 条 target 后训练的
+MCTS-only candidate 在 34 局探索中为 `27/34`，但固定 17×10 验收降为
+`111/170 = 65.29%`、2 个 engine error，且 Powerful Hand/Setup relay 下降，因此拒绝
+晋级。统一 deck pool 改善了输入契约，却没有证明当前 value/prior 能指导 policy。
+将这批 target 以 soft-policy weight `0.5` 混回 v5 teacher records 的 34 局探索为
+`26/34`、1 个 error，也没有触发第二次正式验收。
+
 另外保留了可选的 `--teacher-policy-weight`，用于把 trace 中的 teacher action 作为
 soft target 锚点。d4 + teacher 0.5 的 34 局探索只有 `19/34 = 55.88%` 且有 1 个
 error，明显劣于不加锚点的 d4 分支，因此当前默认保持 0，不把 teacher label 与搜索

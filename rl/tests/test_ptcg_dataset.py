@@ -16,7 +16,11 @@ from rl.ptcg.features import PTCGFeatureConfig, encode_observation, feature_conf
 from rl.ptcg.build_dagger_dataset import iter_dagger_records
 from rl.ptcg.annotate_transition_returns import annotate_records
 from rl.ptcg.rewards import observation_potential, potential_shaping
-from rl.ptcg.build_mcts_dataset import _aggregate_search_results, _blend_teacher_policy
+from rl.ptcg.build_mcts_dataset import (
+    _aggregate_search_results,
+    _blend_teacher_policy,
+    _sample_hidden_deck,
+)
 
 
 class PTCGDatasetTests(unittest.TestCase):
@@ -90,6 +94,16 @@ class PTCGDatasetTests(unittest.TestCase):
         self.assertAlmostEqual(values[0], 0.4)
         self.assertAlmostEqual(values[1], 0.6)
         self.assertEqual(root_values, values)
+
+    def test_mcts_hidden_deck_pool_is_identifier_independent(self) -> None:
+        import random
+
+        pool = [101, 102, 103, 104]
+        sampled = _sample_hidden_deck(pool, 3, random.Random(7))
+        self.assertEqual(len(sampled), 3)
+        self.assertEqual(len(set(sampled)), 3)
+        self.assertTrue(set(sampled).issubset(set(pool)))
+        self.assertEqual(_sample_hidden_deck(None, 2, random.Random(7)), [1072, 1072])
 
     def test_mcts_teacher_policy_anchor_preserves_a_probability_target(self) -> None:
         policy = _blend_teacher_policy([0.25, 0.75], [0], 0.5)
