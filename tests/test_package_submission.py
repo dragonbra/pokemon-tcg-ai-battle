@@ -108,17 +108,21 @@ class PackageSubmissionTests(unittest.TestCase):
                 )
 
     def test_real_v8_archive_imports_from_kaggle_agent_directory(self) -> None:
-        result = subprocess.run(
-            ["bash", str(PACKAGE_SCRIPT), "alakazam_v8_current"],
-            cwd=REPO_ROOT,
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        archive = REPO_ROOT / "submission" / "dist" / "alakazam_v8_current.tar.gz"
         with tempfile.TemporaryDirectory() as temp_name:
-            agent_dir = Path(temp_name) / "kaggle_simulations" / "agent"
+            root = Path(temp_name)
+            (root / "scripts").mkdir()
+            shutil.copy2(PACKAGE_SCRIPT, root / "scripts" / PACKAGE_SCRIPT.name)
+            package_name = "alakazam_v8_luna_deck_opt_new_eval"
+            shutil.copytree(
+                REPO_ROOT / "submission" / package_name,
+                root / "submission" / package_name,
+            )
+
+            result = self.run_packager(root, package_name)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            archive = root / "submission" / "dist" / f"{package_name}.tar.gz"
+            agent_dir = root / "kaggle_simulations" / "agent"
             agent_dir.mkdir(parents=True)
             with tarfile.open(archive, "r:gz") as handle:
                 handle.extractall(agent_dir)
@@ -154,7 +158,7 @@ class PackageSubmissionTests(unittest.TestCase):
                         "assert len(scope['DECK']) == 60"
                     ),
                 ],
-                cwd=temp_name,
+                cwd=root,
                 check=False,
                 capture_output=True,
                 text=True,

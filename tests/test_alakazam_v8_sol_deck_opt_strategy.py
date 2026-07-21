@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAIN_PATH = ROOT / "work" / "alakazam_v8_current" / "main.py"
+MAIN_PATH = ROOT / "submission" / "alakazam_v8_luna_deck_opt_new_eval" / "main.py"
 
 
 def load_main():

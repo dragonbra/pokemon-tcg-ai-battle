@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import scripts.auto_iteration_report as auto_iteration_report
 from scripts.auto_iteration_report import (
     analyze_game_record,
     aggregate_iteration,
@@ -84,6 +85,430 @@ def game(*, swap: bool = False, steps: list[dict[str, object]]) -> dict[str, obj
 
 
 class AutoIterationReportTests(unittest.TestCase):
+    def _write_native_run(
+        self,
+        history_root: Path,
+        iteration_id: str,
+        *,
+        wins: int,
+        errors: int,
+    ) -> tuple[Path, Path]:
+        run_root = history_root / iteration_id / f"run-{iteration_id}"
+        run_root.mkdir(parents=True)
+        first_wins = min(wins, 2)
+        second_wins = max(wins - 2, 0)
+        first_losses = 2 - first_wins
+        second_losses = max(2 - second_wins - errors, 0)
+        summary = {
+            "total_games": 4,
+            "completed_games": 4 - errors,
+            "wins": wins,
+            "losses": 4 - wins - errors,
+            "draws": 0,
+            "errors": errors,
+            "unfinished": 0,
+            "win_rate": wins / 4,
+            "by_opponent": {
+                "fixture_a": {
+                    "games": 2,
+                    "wins": first_wins,
+                    "losses": first_losses,
+                    "draws": 0,
+                    "errors": 0,
+                    "unfinished": 0,
+                    "win_rate": first_wins / 2,
+                },
+                "fixture_b": {
+                    "games": 2,
+                    "wins": second_wins,
+                    "losses": second_losses,
+                    "draws": 0,
+                    "errors": errors,
+                    "unfinished": 0,
+                    "win_rate": second_wins / 2,
+                },
+            },
+        }
+        outcome_groups = {
+            "all_games": {
+                "games": 4,
+                "numerator": wins,
+                "denominator": 4,
+                "value": wins / 4,
+                "wins": wins,
+                "losses": 4 - wins - errors,
+                "draws": 0,
+                "errors": errors,
+                "unfinished": 0,
+            },
+            "by_turn_order": {
+                "first": {
+                    "games": 2,
+                    "numerator": first_wins,
+                    "denominator": 2,
+                    "value": first_wins / 2,
+                    "wins": first_wins,
+                    "losses": first_losses,
+                    "draws": 0,
+                    "errors": 0,
+                    "unfinished": 0,
+                },
+                "second": {
+                    "games": 2,
+                    "numerator": second_wins,
+                    "denominator": 2,
+                    "value": second_wins / 2,
+                    "wins": second_wins,
+                    "losses": second_losses,
+                    "draws": 0,
+                    "errors": errors,
+                    "unfinished": 0,
+                },
+            },
+        }
+        metrics = {
+            "outcome": {
+                "metric_id": "outcome",
+                "numerator": wins,
+                "denominator": 4,
+                "value": wins / 4,
+                "payload": outcome_groups,
+            },
+            "correctness": {
+                "metric_id": "correctness",
+                "numerator": errors,
+                "denominator": 4,
+                "value": errors / 4,
+                "payload": {},
+            },
+            "powerful_hand": {
+                "metric_id": "powerful_hand",
+                "numerator": 2,
+                "denominator": 4,
+                "value": 0.5,
+                "payload": {
+                    "all_games": {"numerator": 2, "denominator": 4, "value": 0.5},
+                    "by_turn_order": {
+                        "first": {"numerator": 1, "denominator": 2, "value": 0.5},
+                        "second": {"numerator": 1, "denominator": 2, "value": 0.5},
+                    },
+                },
+            },
+            "setup_relay": {
+                "metric_id": "setup_relay",
+                "numerator": 2,
+                "denominator": 4,
+                "value": 0.5,
+                "payload": {
+                    "opening_four_components": {
+                        "component_counts": {
+                            "active_abra": 3,
+                            "rare_candy": 2,
+                            "alakazam_or_search": 4,
+                            "psychic_energy_or_hilda": 3,
+                            "all_four": 1,
+                        },
+                        "sample_games": 4,
+                    },
+                    "dunsparce_bridge": {"numerator": 1, "denominator": 2},
+                    "by_turn_order": {
+                        "first": {
+                            "games": 2,
+                            "bridge_successes": 1,
+                            "bridge_opportunities": 1,
+                        },
+                        "second": {
+                            "games": 2,
+                            "bridge_successes": 0,
+                            "bridge_opportunities": 1,
+                        },
+                    },
+                    "second_turn_draws": {
+                        "all_games": {"total": 8, "games": 4, "average": 2.0},
+                        "reached_second_turn": {"total": 8, "games": 4, "average": 2.0},
+                        "first": {"total": 3, "games": 2, "average": 1.5},
+                        "second": {"total": 5, "games": 2, "average": 2.5},
+                    },
+                },
+            },
+            "post_ko_relay": {
+                "metric_id": "post_ko_relay",
+                "numerator": 3,
+                "denominator": 6,
+                "value": 0.5,
+                "payload": {
+                    "opportunities": 6,
+                    "successes": 3,
+                    "success_rate": 0.5,
+                    "failure_counts": {"recoverable_discard_miss": 2},
+                },
+            },
+            "attack_quality": {
+                "metric_id": "attack_quality",
+                "numerator": 2,
+                "denominator": 10,
+                "value": 0.2,
+                "payload": {
+                    "attack_submissions": 10,
+                    "resolved_attacks": 10,
+                    "unresolved_attacks": 0,
+                    "unknown_prize_attacks": 0,
+                    "non_prize_attacks": {"numerator": 2, "denominator": 10, "rate": 0.2},
+                    "powerful_hand": {
+                        "non_prize_attacks": 1,
+                        "resolved_attacks": 8,
+                        "unknown_prize_attacks": 0,
+                    },
+                },
+            },
+            "library_pressure": {
+                "metric_id": "library_pressure",
+                "numerator": 7,
+                "denominator": 4,
+                "value": 1.75,
+            },
+        }
+        manifest = {
+            "games": 4,
+            "metric_profile": {"id": "auto_iteration_v8_setup_relay", "revision": 2},
+            "candidate": {"name": "alakazam_v9", "package_hash": "candidate-hash"},
+            "control": None,
+            "opponents": [{"name": "fixture_a"}, {"name": "fixture_b"}],
+        }
+        summary_path = run_root / "summary.json"
+        metrics_path = run_root / "metrics.json"
+        summary_path.write_text(json.dumps(summary), encoding="utf-8")
+        metrics_path.write_text(json.dumps(metrics), encoding="utf-8")
+        (run_root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        (run_root / "report.html").write_text("<h1>native report</h1>", encoding="utf-8")
+        (run_root / "report.md").write_text("# native report", encoding="utf-8")
+        return summary_path, metrics_path
+
+    def test_build_native_iteration_normalizes_metrics_and_writes_artifacts(self) -> None:
+        build_native_iteration = getattr(auto_iteration_report, "build_native_iteration", None)
+        self.assertTrue(callable(build_native_iteration), "缺少 build_native_iteration")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            history_root = Path(temporary)
+            summary_path, metrics_path = self._write_native_run(
+                history_root, "baseline", wins=2, errors=1
+            )
+            document = build_native_iteration(
+                summary_path,
+                metrics_path,
+                history_root,
+                iteration_id="baseline",
+                label="V9 fixed-deck baseline",
+                change_summary="固定卡表策略基线",
+                decision="observe",
+                agent_label="alakazam_v9_baseline",
+            )
+
+            iteration_root = history_root / "baseline"
+            self.assertEqual(document["metadata"]["sample_type"], "full")
+            self.assertIsNone(document["metadata"]["control_id"])
+            self.assertEqual(document["sample"]["games"], 4)
+            self.assertEqual(document["sample"]["errors"], 1)
+            self.assertEqual(document["metrics"]["win_rate"]["first"]["denominator"], 2)
+            self.assertEqual(
+                document["metrics"]["t2_alakazam"]["overall"]["all_games"]["rate"], 0.5
+            )
+            self.assertEqual(
+                document["metrics"]["post_ko_relay"]["overall"]["success_rate"], 0.5
+            )
+            self.assertEqual(
+                document["metrics"]["non_prize_attacks"]["overall"]
+                ["non_prize_attacks"]["denominator"],
+                10,
+            )
+            self.assertEqual(document["metrics"]["library_pressure"]["value"], 1.75)
+            self.assertIsNone(document["native_metrics"]["library_pressure"]["payload"])
+            self.assertEqual(document["native_metrics"]["correctness"]["denominator"], 4)
+            for artifact in ("result.json", "iteration.md", "index.html"):
+                self.assertTrue((iteration_root / artifact).is_file())
+            self.assertTrue((history_root / "index.html").is_file())
+
+            detail_html = (iteration_root / "index.html").read_text(encoding="utf-8")
+            iteration_markdown = (iteration_root / "iteration.md").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn('href="run-baseline/report.html"', detail_html)
+            self.assertIn('href="run-baseline/report.md"', detail_html)
+            self.assertIn("主要假设", detail_html)
+            self.assertIn("固定卡表策略基线", detail_html)
+            self.assertIn("observe", detail_html)
+            self.assertIn("Revision: 2", detail_html)
+            self.assertIn("legacy zero-ready 失败率", detail_html)
+            self.assertIn("profile revision：`2`", iteration_markdown)
+            self.assertIn("legacy zero-ready 失败率", iteration_markdown)
+            self.assertIn("<td>1/4</td><td>未提供</td><td>未提供</td>", detail_html)
+            self.assertNotIn("<td>0/0</td>", detail_html)
+
+    def test_native_post_ko_relay_preserves_values_and_declares_semantics(self) -> None:
+        build_native_iteration = getattr(auto_iteration_report, "build_native_iteration", None)
+        self.assertTrue(callable(build_native_iteration), "缺少 build_native_iteration")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            history_root = Path(temporary)
+            summary_path, metrics_path = self._write_native_run(
+                history_root, "baseline", wins=2, errors=0
+            )
+            document = build_native_iteration(
+                summary_path,
+                metrics_path,
+                history_root,
+                iteration_id="baseline",
+                label="baseline",
+                change_summary="baseline",
+                decision="observe",
+                agent_label="alakazam_v9",
+            )
+
+        relay = document["native_metrics"]["post_ko_relay"]
+        self.assertEqual(relay["numerator"], 3)
+        self.assertEqual(relay["denominator"], 6)
+        self.assertEqual(relay["value"], 0.5)
+        self.assertEqual(
+            relay.get("semantics"),
+            {
+                "value": "legacy_zero_ready_failure_rate",
+                "direction": "lower_is_better",
+                "numerator": "failure_count",
+                "denominator": "opportunity_count",
+            },
+        )
+
+    def test_build_native_iteration_relativizes_only_whitelisted_run_artifacts(self) -> None:
+        build_native_iteration = getattr(auto_iteration_report, "build_native_iteration", None)
+        self.assertTrue(callable(build_native_iteration), "缺少 build_native_iteration")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            history_root = Path(temporary)
+            summary_path, metrics_path = self._write_native_run(
+                history_root, "baseline", wins=2, errors=0
+            )
+            run_root = summary_path.parent
+            absolute_trace = f"{run_root.resolve()}/traces/example.json"
+            for filename in ("cases.jsonl", "games.jsonl", "report.md", "report.html"):
+                (run_root / filename).write_text(absolute_trace, encoding="utf-8")
+            untouched = run_root / "unlisted.txt"
+            untouched_text = absolute_trace
+            untouched.write_text(untouched_text, encoding="utf-8")
+            nested = run_root / "nested"
+            nested.mkdir()
+            nested_file = nested / "report.md"
+            nested_file.write_text(absolute_trace, encoding="utf-8")
+
+            build_native_iteration(
+                summary_path,
+                metrics_path,
+                history_root,
+                iteration_id="baseline",
+                label="baseline",
+                change_summary="baseline",
+                decision="observe",
+                agent_label="alakazam_v9",
+            )
+
+            for filename in ("cases.jsonl", "games.jsonl", "report.md", "report.html"):
+                content = (run_root / filename).read_text(encoding="utf-8")
+                self.assertNotIn(str(run_root.resolve()), content)
+                self.assertIn("traces/example.json", content)
+            self.assertEqual(untouched.read_text(encoding="utf-8"), untouched_text)
+            self.assertEqual(nested_file.read_text(encoding="utf-8"), absolute_trace)
+
+    def test_build_native_iteration_rejects_external_run_before_relativizing(self) -> None:
+        build_native_iteration = getattr(auto_iteration_report, "build_native_iteration", None)
+        self.assertTrue(callable(build_native_iteration), "缺少 build_native_iteration")
+
+        with (
+            tempfile.TemporaryDirectory() as history_temporary,
+            tempfile.TemporaryDirectory() as external_temporary,
+        ):
+            history_root = Path(history_temporary)
+            summary_path, metrics_path = self._write_native_run(
+                Path(external_temporary), "baseline", wins=2, errors=0
+            )
+            run_root = summary_path.parent
+            absolute_trace = f"{run_root.resolve()}/traces/example.json"
+            cases_path = run_root / "cases.jsonl"
+            cases_path.write_text(absolute_trace, encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "must remain under"):
+                build_native_iteration(
+                    summary_path,
+                    metrics_path,
+                    history_root,
+                    iteration_id="baseline",
+                    label="external",
+                    change_summary="external",
+                    decision="reject",
+                    agent_label="alakazam_v9",
+                )
+
+            self.assertEqual(cases_path.read_text(encoding="utf-8"), absolute_trace)
+
+    def test_build_native_iteration_rejects_unsafe_iteration_ids(self) -> None:
+        build_native_iteration = getattr(auto_iteration_report, "build_native_iteration", None)
+        self.assertTrue(callable(build_native_iteration), "缺少 build_native_iteration")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            history_root = Path(temporary)
+            summary_path, metrics_path = self._write_native_run(
+                history_root, "baseline", wins=2, errors=0
+            )
+            for iteration_id in ("", ".", "..", "/absolute", "nested/iteration", r"nested\iteration"):
+                with self.subTest(iteration_id=iteration_id):
+                    with self.assertRaisesRegex(ValueError, "iteration_id"):
+                        build_native_iteration(
+                            summary_path,
+                            metrics_path,
+                            history_root,
+                            iteration_id=iteration_id,
+                            label="invalid",
+                            change_summary="invalid",
+                            decision="reject",
+                            agent_label="alakazam_v9",
+                        )
+
+    def test_build_native_iteration_rebuilds_cross_iteration_history(self) -> None:
+        build_native_iteration = getattr(auto_iteration_report, "build_native_iteration", None)
+        self.assertTrue(callable(build_native_iteration), "缺少 build_native_iteration")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            history_root = Path(temporary)
+            for iteration_id, wins, errors, control_id in (
+                ("baseline", 2, 1, None),
+                ("iteration-001", 3, 0, "baseline"),
+            ):
+                summary_path, metrics_path = self._write_native_run(
+                    history_root, iteration_id, wins=wins, errors=errors
+                )
+                build_native_iteration(
+                    summary_path,
+                    metrics_path,
+                    history_root,
+                    iteration_id=iteration_id,
+                    label=iteration_id,
+                    change_summary=f"{iteration_id} hypothesis",
+                    decision="promote" if control_id else "observe",
+                    agent_label="alakazam_v9",
+                    control_id=control_id,
+                )
+
+            history_html = (history_root / "index.html").read_text(encoding="utf-8")
+
+        self.assertIn('href="baseline/index.html"', history_html)
+        self.assertIn('href="iteration-001/index.html"', history_html)
+        self.assertIn("50.0% (2/4)", history_html)
+        self.assertIn("75.0% (3/4)", history_html)
+        self.assertIn("Correctness errors", history_html)
+        self.assertIn("Powerful Hand", history_html)
+        self.assertIn("Post-KO", history_html)
+        self.assertIn("Decision", history_html)
+        self.assertIn("iteration-001 hypothesis", history_html)
+        self.assertIn("promote", history_html)
+
     def test_game_analysis_counts_first_turn_standard_attack(self) -> None:
         opening = state(
             active=[pokemon(ABRA, 1)],

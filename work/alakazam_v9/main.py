@@ -1,14 +1,12 @@
-"""Alakazam V7: a rule-semantic strategy rebuild on the V6 runtime.
+"""Alakazam V9: fixed-deck setup, attack-route, and Post-KO relay strategy.
 
-The deck and simulator bridge stay fixed. V7 adds explicit turn memory and a
-pre-attack preparation gate before the remaining deterministic score ordering,
-so attack is never treated as an ordinary post-setup action when a required
-preparation option is visible.
+The V8 deck and simulator bridge stay fixed. V9 adds an explicit TurnPlan,
+Abra-first/Dunsparce-second field anchors, route-preserving Energy decisions,
+option-driven Fezandipiti draw, and shared Lana/Night Stretcher recovery logic.
 """
 
-from __future__ import annotations
-
 from collections import Counter
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -382,6 +380,24 @@ class TurnMemory:
 _TURN_MEMORY = TurnMemory()
 
 
+@dataclass(frozen=True)
+class TurnPlan:
+    """Resources reserved for the best attack route in the current observation."""
+
+    attack_now: bool
+    attack_route: str | None
+    reserved_energy_id: int | None
+    reserved_energy_target_serial: int | None
+    reserved_supporter_id: int | None
+    abra_count: int
+    dunsparce_count: int
+    missing_abra: int
+    missing_dunsparce: int
+    reserved_bench_slots: int
+    safe_draw: bool
+    terminal_attack: bool
+
+
 def read_deck_csv() -> list[int]:
     values = [line.strip() for line in DECK_PATH.read_text(encoding="utf-8").splitlines()]
     deck = [int(value) for value in values if value]
@@ -510,6 +526,43 @@ def _has_field_card(player: dict[str, Any], card_ids: set[int]) -> bool:
 def _field_count(player: dict[str, Any], card_ids: set[int]) -> int:
     """Count matching Pokémon in Active plus Bench, regardless of position."""
     return sum(card.get("id") in card_ids for card in _field_pokemon(player))
+
+
+def _abra_series_count(player: dict[str, Any]) -> int:
+    """Count independent Abra-line instances currently in play."""
+    return _field_count(player, ATTACK_LINE)
+
+
+def _dunsparce_series_count(player: dict[str, Any]) -> int:
+    """Count independent Dunsparce-line instances currently in play."""
+    return _field_count(player, {DUNSPARCE, DUDUNSPARCE})
+
+
+def _field_gaps(player: dict[str, Any]) -> tuple[int, int]:
+    """Return the missing Abra-first and Dunsparce-second field anchors."""
+    return (
+        max(0, 2 - _abra_series_count(player)),
+        max(0, 1 - _dunsparce_series_count(player)),
+    )
+
+
+def _reserve_bench_slots(player: dict[str, Any]) -> int:
+    """Reserve available Bench space for the missing minimum field anchors."""
+    missing_abra, missing_dunsparce = _field_gaps(player)
+    bench_space = max(0, int(player.get("benchMax", 5)) - len(_bench(player)))
+    return min(missing_abra + missing_dunsparce, bench_space)
+
+
+def _field_anchor_priority(card_id: int | None, player: dict[str, Any]) -> tuple[int, int]:
+    """Rank field anchors using the two-Abra, then one-Dunsparce invariant."""
+    missing_abra, missing_dunsparce = _field_gaps(player)
+    if missing_abra and card_id == ABRA:
+        return 0, 0
+    if not missing_abra and missing_dunsparce and card_id == DUNSPARCE:
+        return 1, 0
+    if card_id in {ABRA, DUNSPARCE}:
+        return 2, 0 if card_id == ABRA else 1
+    return 3, int(card_id or 0)
 
 
 def _attack_line_count(player: dict[str, Any]) -> int:
@@ -1149,6 +1202,27 @@ def _v6_draw_is_blocked(
     return False
 
 
+def _fezandipiti_ability_allowed(
+    current: dict[str, Any],
+    player: dict[str, Any],
+    plan: TurnPlan,
+    *,
+    gain: int = DRAW_ABILITY_GAIN[FEZANDIPITI_EX],
+) -> bool:
+    """Accept a simulator-legal Flip the Script without re-proving its KO trigger."""
+    if plan.terminal_attack:
+        return False
+    if not plan.safe_draw and gain == DRAW_ABILITY_GAIN[FEZANDIPITI_EX]:
+        return False
+    return not _v6_draw_is_blocked(
+        current,
+        player,
+        gain=gain,
+        deck_delta=gain,
+        options=_TURN_MEMORY.last_main_options,
+    )
+
+
 def _recovery_needs(current: dict[str, Any], player: dict[str, Any]) -> tuple[bool, bool]:
     """Return the Pokémon and Psychic Energy gaps for a real attack route."""
     field = _field_pokemon(player)
@@ -1222,6 +1296,114 @@ def _recovery_can_complete_route(
             not needs_energy or can_recover_energy
         )
     return False
+
+
+def _recovery_selection_ids(
+    effect_id: int,
+    options: list[dict[str, Any]],
+    current: dict[str, Any],
+    player: dict[str, Any],
+    max_count: int,
+) -> list[int]:
+    """Select only recovery cards that advance the shared field/attack route."""
+    if effect_id not in {LANAS_AID, NIGHT_STRETCHER} or max_count <= 0:
+        return []
+    card_ids = [
+        _option_card_id(option, {"type": 0}, current)
+        for option in options
+    ]
+    selected: list[int] = []
+
+    def take(card_id: int, *, limit: int = 1) -> int:
+        taken = 0
+        for index, option_id in enumerate(card_ids):
+            if len(selected) >= max_count or taken >= limit:
+                break
+            if index not in selected and option_id == card_id:
+                selected.append(index)
+                taken += 1
+        return taken
+
+    needs_pokemon, needs_energy = _recovery_needs(current, player)
+    missing_abra, missing_dunsparce = _field_gaps(player)
+
+    active = _active(player)
+    current_attack_needs_energy = bool(
+        active
+        and active.get("id") in ATTACK_LINE
+        and not _has_psychic_energy(active)
+        and BASIC_PSYCHIC in card_ids
+    )
+    if effect_id == NIGHT_STRETCHER and current_attack_needs_energy:
+        # Night Stretcher can recover only one card.  When Basic Psychic is
+        # the missing step for the current Active attack, preserve that
+        # immediate route before filling a future field anchor gap.
+        take(BASIC_PSYCHIC)
+        if selected:
+            return selected
+
+    recovered_abra = take(ABRA, limit=missing_abra)
+    visible_abra_count = _abra_series_count(player) + recovered_abra
+
+    if effect_id == LANAS_AID:
+        if recovered_abra or needs_energy:
+            take(BASIC_PSYCHIC)
+        if len(selected) < max_count and (recovered_abra or needs_pokemon):
+            take(KADABRA)
+            take(ALAKAZAM)
+        if visible_abra_count >= 2 and missing_dunsparce:
+            take(DUNSPARCE)
+        return selected
+
+    if selected:
+        return selected
+    if not selected and visible_abra_count >= 2 and missing_dunsparce:
+        take(DUNSPARCE)
+    if not selected and needs_energy:
+        take(BASIC_PSYCHIC)
+    if not selected and needs_pokemon:
+        take(KADABRA)
+        take(ALAKAZAM)
+    return selected
+
+
+def _poffin_selection_ids(
+    options: list[dict[str, Any]],
+    select: dict[str, Any],
+    current: dict[str, Any],
+    player: dict[str, Any],
+    max_count: int,
+) -> list[int]:
+    """Select Poffin targets while updating anchor gaps within the batch."""
+    if max_count <= 0:
+        return []
+    card_ids = [
+        _option_card_id(option, select, current)
+        for option in options
+    ]
+    selected: list[int] = []
+
+    def take(card_id: int, *, limit: int) -> int:
+        taken = 0
+        for index, option_id in enumerate(card_ids):
+            if len(selected) >= max_count or taken >= limit:
+                break
+            if index not in selected and option_id == card_id:
+                selected.append(index)
+                taken += 1
+        return taken
+
+    missing_abra, missing_dunsparce = _field_gaps(player)
+    recovered_abra = take(ABRA, limit=missing_abra)
+    visible_abra_count = _abra_series_count(player) + recovered_abra
+    if visible_abra_count >= 2 and missing_dunsparce:
+        take(DUNSPARCE, limit=missing_dunsparce)
+
+    # The minimum board is a floor, not a stop condition.  Fill any remaining
+    # useful slots deterministically with additional Abra/Dunsparce anchors.
+    take(ABRA, limit=max_count)
+    take(DUNSPARCE, limit=max_count)
+    return selected
 
 
 def _recovery_requires_pokemon_and_energy(player: dict[str, Any]) -> bool:
@@ -2125,21 +2307,7 @@ def _choose_card_option(
             if any(_option_card_id(option, select, current) in wanted for option in options):
                 return 0 if card_id in wanted else 4
         if effect_id == POFFIN:
-            # Buddy-Buddy Poffin is limited to Basic Pokémon with 70 HP or
-            # less. Complete the three-Pokémon attack line before expanding
-            # the Dunsparce engine. Energy alone is not enough: an Abra with
-            # no visible Kadabra/Rare Candy route is not a ready replacement
-            # after a knockout, even when it already has Psychic attached.
-            visible_handoff = _has_visible_bench_handoff_route(current, player)
-            wanted = (
-                {DUNSPARCE}
-                if _poffin_dunsparce_draw_route(current, player)
-                else {ABRA}
-                if _attack_line_count(player) < 3
-                or not visible_handoff
-                else {DUNSPARCE}
-            )
-            return 0 if card_id in wanted else 4
+            return _field_anchor_priority(card_id, player)[0]
         if effect_id == TELEPATH_ENERGY:
             return 0 if card_id == ABRA else 4
         if effect_id in {NIGHT_STRETCHER, LANAS_AID}:
@@ -2265,8 +2433,26 @@ def _choose_card_option(
     return [index for index, _ in ranked[:count]]
 
 
+def _energy_option_matches_plan(
+    option: dict[str, Any], plan: TurnPlan, current: dict[str, Any]
+) -> bool:
+    """Whether an Energy option is the exact card/instance reserved by TurnPlan."""
+    if option.get("type") not in {None, 8}:
+        return False
+    if plan.reserved_energy_id is None or plan.reserved_energy_target_serial is None:
+        return False
+    target = _pokemon_from_option(option, current)
+    return bool(
+        _option_card_id(option, {"type": 0}, current) == plan.reserved_energy_id
+        and (target or {}).get("serial") == plan.reserved_energy_target_serial
+    )
+
+
 def _choose_energy_option(
-    options: list[dict[str, Any]], current: dict[str, Any], player: dict[str, Any]
+    options: list[dict[str, Any]],
+    current: dict[str, Any],
+    player: dict[str, Any],
+    plan: TurnPlan | None = None,
 ) -> list[int]:
     """Attach one useful Energy without overloading a single attacker."""
     active = _active(player)
@@ -2296,6 +2482,9 @@ def _choose_energy_option(
                     return -320, index
                 return -260, index
             return -180 if energy_id in PROTECTIVE_DAMAGE_ENERGIES else -140, index
+
+        if plan is not None and _energy_option_matches_plan(option, plan, current):
+            return -300, index
 
         # The simulator should normally omit these options; a high score keeps
         # them as last-resort legal fallbacks if it does not.
@@ -2389,7 +2578,7 @@ def _choose_switch_option(options: list[dict[str, Any]], current: dict[str, Any]
             # to low, per the V6 target rule. A non-KO target stays behind
             # every certain KO regardless of its Prize value.
             return knockout, active_bonus, -hp, -_prize_value(target_id), index
-        ready_handoff_exists = active_id == DUNSPARCE and any(
+        ready_handoff_exists = any(
             pokemon.get("id") == ALAKAZAM and _has_psychic_energy(pokemon)
             for pokemon in _bench(your_player)
         )
@@ -2456,6 +2645,205 @@ def _has_attack_option(options: list[dict[str, Any]]) -> bool:
     return any(option.get("type") == 13 for option in options)
 
 
+def _build_turn_plan(
+    current: dict[str, Any],
+    player: dict[str, Any],
+    options: list[dict[str, Any]],
+    select: dict[str, Any],
+) -> TurnPlan:
+    """Recompute the best current attack route from simulator-legal options."""
+    active = _active(player)
+    active_id = (active or {}).get("id")
+    active_serial = (active or {}).get("serial")
+    abra_count = _abra_series_count(player)
+    dunsparce_count = _dunsparce_series_count(player)
+    missing_abra, missing_dunsparce = _field_gaps(player)
+    reserved_bench_slots = _reserve_bench_slots(player)
+    safe_draw = not _v6_draw_is_blocked(
+        current,
+        player,
+        gain=DRAW_ABILITY_GAIN[FEZANDIPITI_EX],
+        deck_delta=DRAW_ABILITY_GAIN[FEZANDIPITI_EX],
+        options=options,
+    )
+
+    def finish(
+        route: str | None,
+        *,
+        energy_id: int | None = None,
+        energy_target_serial: int | None = None,
+        supporter_id: int | None = None,
+        terminal: bool = False,
+    ) -> TurnPlan:
+        return TurnPlan(
+            attack_now=route is not None,
+            attack_route=route,
+            reserved_energy_id=energy_id,
+            reserved_energy_target_serial=energy_target_serial,
+            reserved_supporter_id=supporter_id,
+            abra_count=abra_count,
+            dunsparce_count=dunsparce_count,
+            missing_abra=missing_abra,
+            missing_dunsparce=missing_dunsparce,
+            reserved_bench_slots=reserved_bench_slots,
+            safe_draw=safe_draw,
+            terminal_attack=terminal,
+        )
+
+    def option_card_id(option: dict[str, Any]) -> int | None:
+        return _option_card_id(option, select, current)
+
+    def energy_option_for(
+        target: dict[str, Any] | None, *, psychic_only: bool
+    ) -> dict[str, Any] | None:
+        if target is None:
+            return None
+        for option in options:
+            if option.get("type") != 8 or _pokemon_from_option(option, current) is not target:
+                continue
+            energy_id = option_card_id(option)
+            if not psychic_only or energy_id in {BASIC_PSYCHIC, TELEPATH_ENERGY}:
+                return option
+        return None
+
+    direct_powerful_hand = any(
+        option.get("type") == 13
+        and option.get("attackId") == POWERFUL_HAND_ATTACK
+        for option in options
+    )
+    boss_step = any(
+        option.get("type") == 7 and option_card_id(option) == BOSS_ORDERS
+        for option in options
+    )
+    terminal_boss_targets = _boss_ko_targets(current, player) if boss_step else []
+    remaining_prizes = len(player.get("prize") or [])
+    if (
+        active_id == ALAKAZAM
+        and _has_psychic_energy(active)
+        and direct_powerful_hand
+        and terminal_boss_targets
+        and remaining_prizes
+        <= max(_prize_value(target.get("id")) for target in terminal_boss_targets)
+    ):
+        return finish(
+            "boss_then_attack",
+            supporter_id=BOSS_ORDERS,
+            terminal=True,
+        )
+    if active_id == ALAKAZAM and _has_psychic_energy(active) and direct_powerful_hand:
+        target = _opponent_active(current)
+        terminal = bool(
+            target
+            and _can_knockout(current, player)
+            and remaining_prizes <= _prize_value(target.get("id"))
+        )
+        return finish("direct_attack", terminal=terminal)
+
+    active_energy_option = energy_option_for(active, psychic_only=True)
+    evolution_steps = [
+        option
+        for option in options
+        if option.get("type") == 9
+        and option_card_id(option) == ALAKAZAM
+        and _field_option_area(option) == 4
+        and _pokemon_from_option(option, current) is active
+    ]
+    rare_candy_step = any(
+        option.get("type") == 7 and option_card_id(option) == RARE_CANDY
+        for option in options
+    )
+    can_start_active_evolution = bool(evolution_steps) or bool(
+        active_id == ABRA
+        and rare_candy_step
+        and ALAKAZAM in _hand_ids(player)
+    )
+    if active_id in {ABRA, KADABRA} and can_start_active_evolution:
+        if _has_psychic_energy(active):
+            return finish("evolve_active")
+        if active_energy_option is not None:
+            return finish(
+                "evolve_active",
+                energy_id=option_card_id(active_energy_option),
+                energy_target_serial=active_serial,
+            )
+
+    hilda_step = any(
+        option.get("type") == 7 and option_card_id(option) == HILDA for option in options
+    )
+    if hilda_step and _active_hilda_rare_candy_route(current, player):
+        energy_id = option_card_id(active_energy_option) if active_energy_option else None
+        return finish(
+            "evolve_active",
+            energy_id=energy_id,
+            energy_target_serial=active_serial if energy_id is not None else None,
+            supporter_id=HILDA,
+        )
+
+    if active_energy_option is not None and (
+        active_id == ALAKAZAM or can_start_active_evolution
+    ):
+        return finish(
+            "attach_active",
+            energy_id=option_card_id(active_energy_option),
+            energy_target_serial=active_serial,
+        )
+
+    retreat_step = any(option.get("type") == 12 for option in options)
+    ready_bench_alakazam = next(
+        (
+            pokemon
+            for pokemon in _bench(player)
+            if pokemon.get("id") == ALAKAZAM and _has_psychic_energy(pokemon)
+        ),
+        None,
+    )
+    retreat_energy_option = energy_option_for(active, psychic_only=False)
+    if (
+        active_id in {FEZANDIPITI_EX, SHAYMIN}
+        and _retreat_available(current)
+        and ready_bench_alakazam is not None
+        and retreat_energy_option is not None
+    ):
+        return finish(
+            "retreat_after_attach",
+            energy_id=option_card_id(retreat_energy_option),
+            energy_target_serial=active_serial,
+        )
+    if (
+        retreat_step
+        and _retreat_available(current)
+        and ready_bench_alakazam is not None
+        and _energy_count(active) >= 1
+    ):
+        return finish("retreat_ready_bench")
+
+    if retreat_step and _retreat_available(current):
+        unready_bench_alakazam = next(
+            (
+                pokemon
+                for pokemon in _bench(player)
+                if pokemon.get("id") == ALAKAZAM and not _has_psychic_energy(pokemon)
+            ),
+            None,
+        )
+        bench_energy_option = energy_option_for(unready_bench_alakazam, psychic_only=True)
+        if bench_energy_option is not None and _energy_count(active) >= 1:
+            return finish(
+                "retreat_after_attach",
+                energy_id=option_card_id(bench_energy_option),
+                energy_target_serial=(unready_bench_alakazam or {}).get("serial"),
+            )
+
+        if ready_bench_alakazam is not None and retreat_energy_option is not None:
+            return finish(
+                "retreat_after_attach",
+                energy_id=option_card_id(retreat_energy_option),
+                energy_target_serial=active_serial,
+            )
+
+    return finish(None)
+
+
 def _has_attack_line(player: dict[str, Any]) -> bool:
     """Whether the three-Pokémon Abra attack-line setup target is reached."""
     return _attack_line_target_reached(player)
@@ -2502,6 +2890,39 @@ def _can_knockout_after_gain(current: dict[str, Any], player: dict[str, Any], ga
     hand_count = int(player.get("handCount", len(player.get("hand") or [])))
     damage = _attack_damage_against(active_id, max(0, hand_count + gain), target)
     return damage > 0 and int(target.get("hp", 9999)) <= damage
+
+
+def _hand_consumption_loses_powerful_hand_knockout(
+    current: dict[str, Any],
+    player: dict[str, Any],
+    option: dict[str, Any],
+    card_id: int | None,
+) -> bool:
+    """Whether a legal hand action would remove the current certain knockout."""
+    option_type = option.get("type")
+    if option_type not in {7, 8, 9} or (_active(player) or {}).get("id") != ALAKAZAM:
+        return False
+
+    hand_delta = _main_draw_gain(option, card_id, player)
+    if (
+        option_type == 7
+        and hand_delta == 0
+        and card_id not in {POKE_PAD, NIGHT_STRETCHER}
+    ):
+        # Ordinary PLAY actions consume their card. Poké Pad and Night
+        # Stretcher replace it in hand; the positive-gain effects above already
+        # report their net change after paying the played card.
+        hand_delta = -1
+    if hand_delta >= 0 or not _can_knockout(current, player):
+        return False
+
+    if card_id == BOSS_ORDERS:
+        post_play_hand_count = max(
+            0, int(player.get("handCount", len(player.get("hand") or []))) + hand_delta
+        )
+        if _boss_ko_targets(current, player, hand_count=post_play_hand_count):
+            return False
+    return not _can_knockout_after_gain(current, player, hand_delta)
 
 
 def _can_kadabra_knockout_after_evolution(
@@ -2597,6 +3018,13 @@ def _select_effect(obs: dict[str, Any]) -> list[int]:
     max_count = int(select.get("maxCount", len(options)))
     current, player = _your_state(obs)
     _TURN_MEMORY.sync(current, player, logs=obs.get("logs") or [])
+    plan_options = list(_TURN_MEMORY.last_main_options)
+    effect_plan = _build_turn_plan(
+        current,
+        player,
+        plan_options,
+        {"type": 0, "context": 0, "option": plan_options},
+    )
     context = int(select.get("context", 0))
     select_type = int(select.get("type", 0))
 
@@ -2627,7 +3055,7 @@ def _select_effect(obs: dict[str, Any]) -> list[int]:
         # Wondrous Patch first chooses a Basic Psychic Energy, then a
         # Benched Psychic Pokémon. The latter is a field target, not a card
         # from the hand/deck/discard selection list.
-        chosen = _choose_energy_option(options, current, player)
+        chosen = _choose_energy_option(options, current, player, effect_plan)
         _advance_effect(select)
         return chosen[: max(1, min_count)]
 
@@ -2653,6 +3081,31 @@ def _select_effect(obs: dict[str, Any]) -> list[int]:
         effect_id = _effect_id(select)
         known = [_option_card_id(option, select, current) for option in options]
         useful = [card_id for card_id in known if card_id is not None]
+        if effect_id == POFFIN:
+            chosen = _poffin_selection_ids(options, select, current, player, max_count)
+            if len(chosen) < min_count:
+                chosen.extend(
+                    index for index in range(len(options)) if index not in chosen
+                )
+            _advance_effect(select)
+            return chosen[:max_count]
+        if effect_id in {LANAS_AID, NIGHT_STRETCHER}:
+            chosen = _recovery_selection_ids(
+                effect_id,
+                options,
+                current,
+                player,
+                max_count,
+            )
+            if chosen:
+                if len(chosen) < min_count:
+                    chosen.extend(
+                        index
+                        for index in range(len(options))
+                        if index not in chosen
+                    )
+                _advance_effect(select)
+                return chosen[:max_count]
         if effect_id == LANAS_AID:
             # Lana's Aid can recover both a Pokémon and a Basic Energy in one
             # Supporter action.  The simulator's minCount is only the
@@ -2688,7 +3141,7 @@ def _select_effect(obs: dict[str, Any]) -> list[int]:
 
     if select_type == 4:  # ENERGY
         count = max(1, min_count)
-        chosen = _choose_energy_option(options, current, player)[:count]
+        chosen = _choose_energy_option(options, current, player, effect_plan)[:count]
         _advance_effect(select)
         return chosen
 
@@ -2728,6 +3181,7 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
     options = select.get("option") or []
     current, player = _your_state(obs)
     _TURN_MEMORY.sync(current, player, logs=obs.get("logs") or [])
+    plan = _build_turn_plan(current, player, options, select)
     _TURN_MEMORY.last_main_options = list(options)
     hand = _hand_ids(player)
     active = _active(player)
@@ -2849,6 +3303,48 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
         index, option = item
         option_type = option.get("type")
         card_id = _option_card_id(option, select, current)
+        target = _pokemon_from_option(option, current)
+
+        if (
+            plan.terminal_attack
+            and plan.attack_route == "boss_then_attack"
+            and option_type == 7
+            and card_id == plan.reserved_supporter_id
+        ):
+            return (-20, 0, index)
+        if (
+            plan.terminal_attack
+            and plan.attack_route == "direct_attack"
+            and option_type == 13
+            and option.get("attackId") == POWERFUL_HAND_ATTACK
+        ):
+            return (-20, 0, index)
+        if plan.attack_route == "evolve_active":
+            if (
+                option_type == 9
+                and card_id == ALAKAZAM
+                and _field_option_area(option) == 4
+                and target is active
+            ):
+                return (-20, 0, index)
+            if option_type == 7 and card_id == RARE_CANDY and active_id == ABRA:
+                return (-20, 0, index)
+            if option_type == 7 and card_id == plan.reserved_supporter_id:
+                return (-20, 0, index)
+        if (
+            plan.attack_route in {"attach_active", "retreat_after_attach"}
+            and option_type == 8
+            and card_id == plan.reserved_energy_id
+            and (target or {}).get("serial") == plan.reserved_energy_target_serial
+        ):
+            return (-20, 0, index)
+        if plan.attack_route == "retreat_ready_bench" and option_type == 12:
+            return (-20, 0, index)
+
+        if _hand_consumption_loses_powerful_hand_knockout(
+            current, player, option, card_id
+        ):
+            return (100, 0, index)
 
         if option_type == 13:
             # Attack is a terminal submission. Even a knockout waits until
@@ -2858,6 +3354,13 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
                 return (120, 0, index)
             if _is_abra_attack(option, active_id):
                 return (130, 0, index)
+            if plan.attack_route in {
+                "evolve_active",
+                "attach_active",
+                "retreat_ready_bench",
+                "retreat_after_attach",
+            }:
+                return (60, 0, index)
             if preparation_due:
                 return (60, 0, index)
             if (
@@ -2893,6 +3396,10 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
                     current, player, gain=gain, deck_delta=deck_delta, options=options
                 ):
                     return (100, 0, index)
+            if card_id == FEZANDIPITI_EX:
+                if _fezandipiti_ability_allowed(current, player, plan, gain=gain):
+                    return (-10, -gain, index)
+                return (130, 0, index)
             if _draw_changes_knockout(current, player, gain):
                 return (1, -gain, index)
             if (
@@ -2903,8 +3410,6 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
                 return (1, -gain, index)
             if card_id == DUNSPARCE:
                 return (24, 0, index)
-            if card_id == FEZANDIPITI_EX and not fezandipiti_needed:
-                return (130, 0, index)
             if card_id in DRAW_CARDS or card_id == FEZANDIPITI_EX:
                 if card_id == DUDUNSPARCE and _can_use_enriching_for_draw(
                     player, current
@@ -2922,7 +3427,6 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
 
         if option_type == 9:
             evolved_id = card_id
-            target = _pokemon_from_option(option, current)
             target_id = (target or {}).get("id")
             target_area = _field_option_area(option)
             if target is not None and not _evolution_target_is_legal(current, player, target):
@@ -2988,10 +3492,22 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
                 # action window before the terminal attack.
                 return (100, 0, index)
             energy_id = card_id
-            target = _pokemon_from_option(option, current)
             target_id = (target or {}).get("id")
             target_area = _field_option_area(option)
             gain = _main_draw_gain(option, energy_id, player)
+            if (
+                not _retreat_available(current)
+                and active_id in {FEZANDIPITI_EX, SHAYMIN}
+                and target is active
+                and any(
+                    pokemon.get("id") == ALAKAZAM
+                    and _has_psychic_energy(pokemon)
+                    for pokemon in bench
+                )
+            ):
+                # No Energy type can complete this handoff after Retreat was
+                # already spent; preserve the attachment for a future route.
+                return (100, 0, index)
             if (
                 _unenergized_active_has_bench_psychic_handoff(
                     current, player, options, select
@@ -3106,6 +3622,15 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
                 return (140, 0, index)
             if card_id == RARE_CANDY and not _rare_candy_route_available(current, player):
                 return (140, 0, index)
+            if card_id == ABRA and plan.missing_abra:
+                return (-12, 0, index)
+            if card_id == DUNSPARCE and not plan.missing_abra and plan.missing_dunsparce:
+                return (-12, 0, index)
+            if (
+                card_id in POKEMON
+                and bench_space <= plan.reserved_bench_slots
+            ):
+                return (130, 0, index)
             if (
                 card_id == LANAS_AID
                 and bench_handoff_preparation_due
@@ -3295,7 +3820,7 @@ DECK = read_deck_csv()
 
 
 def agent(obs_dict: dict[str, Any]) -> list[int]:
-    """Return one legal action for the deterministic Alakazam V7 policy."""
+    """Return one legal action for the deterministic Alakazam V9 policy."""
     if obs_dict.get("select") is None:
         # The evaluator reuses this module across games. Effect serials are
         # allocated by the engine per battle, so progress from the previous
