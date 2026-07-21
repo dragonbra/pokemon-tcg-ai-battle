@@ -9,6 +9,7 @@ import random
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Iterable
 
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
@@ -30,6 +31,16 @@ def _load_trace(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict) or not isinstance(payload.get("trace"), list):
         raise ValueError(f"not an evaluation trace: {path}")
     return payload
+
+
+def _load_teacher(root: Path) -> ModuleType:
+    path = root.resolve() / "main.py"
+    spec = importlib.util.spec_from_file_location("rl_mcts_rollout_teacher", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"could not load rollout teacher: {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _load_cg(cg_root: Path):
@@ -85,6 +96,7 @@ def _search_action_value(
     to_observation_class: Any,
     rng: random.Random,
     rollout_steps: int,
+    rollout_teacher: ModuleType | None,
 ) -> float | None:
     current = observation.get("current") or {}
     players = current.get("players") or []
@@ -105,6 +117,8 @@ def _search_action_value(
         )
         search_id = root.searchId
         leaf = search_step(search_id, [action_index]).observation
+        if rollout_teacher is not None:
+            rollout_teacher.agent({"select": None})
         for _ in range(rollout_steps):
             state = getattr(leaf, "current", None)
             if state is None or int(getattr(state, "result", -1)) >= 0:
@@ -116,7 +130,22 @@ def _search_action_value(
                 break
             minimum = int(next_select.get("minCount", 1) or 0)
             maximum = int(next_select.get("maxCount", 1) or 1)
-            if minimum == maximum == 1 and int(getattr(state, "yourIndex", -1)) == player_index:
+            if rollout_teacher is not None:
+                try:
+                    proposed = rollout_teacher.agent(leaf_dict)
+                    if (
+                        isinstance(proposed, list)
+                        and minimum <= len(proposed) <= maximum
+                        and len(set(int(index) for index in proposed)) == len(proposed)
+                        and all(0 <= int(index) < len(options) for index in proposed)
+                    ):
+                        selection = [int(index) for index in proposed]
+                    else:
+                        raise ValueError("teacher returned an invalid search selection")
+                except Exception:
+                    count = min(max(1, minimum), maximum, len(options))
+                    selection = list(range(count))
+            elif minimum == maximum == 1 and int(getattr(state, "yourIndex", -1)) == player_index:
                 try:
                     next_index, _value = policy.select(leaf_dict)
                     selection = [next_index]
@@ -145,6 +174,7 @@ def build_records(
     max_records: int,
     seed: int,
     rollout_steps: int,
+    rollout_teacher: ModuleType | None,
 ) -> list[dict[str, Any]]:
     policy = PTCGCandidatePolicy.from_checkpoint(str(checkpoint), map_location="cpu")
     schema_by_width = {24: "ptcg_features_v1", 32: "ptcg_features_v2", 36: "ptcg_features_v3"}
@@ -192,6 +222,7 @@ def build_records(
                         to_observation_class,
                         rng,
                         rollout_steps,
+                        rollout_teacher,
                     )
                 )
             valid = [index for index, value in enumerate(values) if value is not None]
@@ -226,6 +257,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--deck", type=Path, required=True)
     parser.add_argument("--cg-root", type=Path, required=True)
+    parser.add_argument("--rollout-teacher", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-records", type=int, default=128)
     parser.add_argument("--rollout-steps", type=int, default=0)
@@ -236,6 +268,7 @@ def main() -> None:
     if args.max_records < 1 or args.rollout_steps < 0:
         raise ValueError("max-records must be positive and rollout-steps cannot be negative")
     storage = assert_storage_safe(args.storage_path, args.min_free_gib)
+    rollout_teacher = _load_teacher(args.rollout_teacher) if args.rollout_teacher else None
     records = build_records(
         args.traces,
         checkpoint=args.checkpoint,
@@ -244,6 +277,7 @@ def main() -> None:
         max_records=args.max_records,
         seed=args.seed,
         rollout_steps=args.rollout_steps,
+        rollout_teacher=rollout_teacher,
     )
     if not records:
         raise ValueError("MCTS target collection produced no records")
