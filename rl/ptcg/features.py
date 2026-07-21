@@ -4,14 +4,14 @@ from dataclasses import dataclass
 from typing import Any
 
 
-FEATURE_SCHEMA_VERSION = "ptcg_features_v2"
+FEATURE_SCHEMA_VERSION = "ptcg_features_v3"
 
 
 @dataclass(frozen=True)
 class PTCGFeatureConfig:
     """Stable initial feature contract for the candidate policy/value model."""
 
-    state_numeric_dim: int = 32
+    state_numeric_dim: int = 36
     state_token_count: int = 40
     candidate_numeric_dim: int = 10
     max_candidates: int = 64
@@ -146,6 +146,17 @@ def _log_numeric(current: dict[str, Any], your_index: int) -> list[float]:
     ]
 
 
+def _history_numeric(observation: dict[str, Any]) -> list[float]:
+    history = [item for item in observation.get("rl_history") or [] if isinstance(item, dict)]
+    last = history[-1] if history else {}
+    return [
+        min(len(history), 100) / 100.0,
+        _normal(last.get("type", 0), 32.0),
+        _normal(last.get("cardId", 0), 4096.0),
+        _normal(last.get("attackId", 0), 2000.0),
+    ]
+
+
 def encode_observation(
     observation: dict[str, Any],
     config: PTCGFeatureConfig = PTCGFeatureConfig(),
@@ -181,6 +192,7 @@ def encode_observation(
             _normal(select.get("maxCount", 0), 8.0),
             1.0 if isinstance(result, int) and result >= 0 else 0.0,
             *_log_numeric(current, your_index),
+            *_history_numeric(observation),
         ]
     )
     if len(state_numeric) != config.state_numeric_dim:

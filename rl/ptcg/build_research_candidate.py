@@ -36,6 +36,29 @@ _TEACHER = _load_teacher()
 _POLICY = PTCGCandidatePolicy.from_checkpoint(CHECKPOINT, map_location="cpu")
 CONFIDENCE_THRESHOLD = float(os.environ.get("PTCG_RL_CONFIDENCE_THRESHOLD", "1.1"))
 DECK = _TEACHER.read_deck_csv()
+_MODEL_HISTORY: list[dict[str, int]] = []
+
+
+def _model_observation(obs_dict: dict) -> dict:
+    enriched = dict(obs_dict)
+    enriched["rl_history"] = list(_MODEL_HISTORY)
+    return enriched
+
+
+def _remember_action(obs_dict: dict, action: list[int]) -> None:
+    select = obs_dict.get("select") or {}
+    options = select.get("option") or []
+    if len(action) != 1 or not 0 <= int(action[0]) < len(options):
+        return
+    option = options[int(action[0])]
+    _MODEL_HISTORY.append(
+        {
+            "type": int(option.get("type", 0) or 0),
+            "cardId": int(option.get("cardId", 0) or 0),
+            "attackId": int(option.get("attackId", 0) or 0),
+        }
+    )
+    del _MODEL_HISTORY[:-32]
 
 
 def _record_model_main_action(obs_dict: dict, option_index: int) -> None:
@@ -50,14 +73,21 @@ def _record_model_main_action(obs_dict: dict, option_index: int) -> None:
 
 def agent(obs_dict: dict):
     if obs_dict.get("select") is None:
-        return DECK
+        _MODEL_HISTORY.clear()
+        return _TEACHER.agent(obs_dict)
     select = obs_dict.get("select") or {}
     if int(select.get("type", 0)) == 0 and int(select.get("context", 0)) == 0:
-        option_index, _value, confidence = _POLICY.select_with_confidence(obs_dict)
+        option_index, _value, confidence = _POLICY.select_with_confidence(
+            _model_observation(obs_dict)
+        )
         if confidence >= CONFIDENCE_THRESHOLD:
             _record_model_main_action(obs_dict, option_index)
+            _remember_action(obs_dict, [option_index])
             return [option_index]
-    return _TEACHER.agent(obs_dict)
+    action = _TEACHER.agent(obs_dict)
+    if int(select.get("type", 0)) == 0 and int(select.get("context", 0)) == 0:
+        _remember_action(obs_dict, action)
+    return action
 '''
 
 

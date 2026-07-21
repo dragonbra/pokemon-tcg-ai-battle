@@ -53,6 +53,7 @@ def iter_behavior_cloning_records(
         raise ValueError(f"invalid candidate physical index in {source_path}")
 
     trace_entries = payload["trace"]
+    history: list[dict[str, int]] = []
     for entry_index, entry in enumerate(trace_entries):
         if not isinstance(entry, dict):
             continue
@@ -86,11 +87,23 @@ def iter_behavior_cloning_records(
             raise ValueError(
                 f"teacher action is outside legal options at {source_path}:{entry.get('step')}"
             )
-        encoded = encode_observation(observation, feature_config)
+        model_observation = dict(observation)
+        model_observation["rl_history"] = list(history)
+        encoded = encode_observation(model_observation, feature_config)
         if not encoded["action_mask"][target]:
             raise ValueError(
                 f"teacher action is masked at {source_path}:{entry.get('step')}"
             )
+        option = options[target]
+        if is_main:
+            history.append(
+                {
+                    "type": int(option.get("type", 0) or 0),
+                    "cardId": int(option.get("cardId", 0) or 0),
+                    "attackId": int(option.get("attackId", 0) or 0),
+                }
+            )
+            del history[:-32]
         yield {
             "dataset_version": DATASET_VERSION,
             "feature_schema_version": FEATURE_SCHEMA_VERSION,
