@@ -13,9 +13,10 @@ from typing import Any
 
 from evaluation.cases import CaseCandidate, case_record, select_cases, write_case_records
 from evaluation.metrics import GameContext, GameMetric
+from evaluation.metrics.profiles import get_metric_profile
 from evaluation.metrics.registry import MetricRegistry, create_metric_registry
 from evaluation.packages.loader import SubmissionPackage
-from evaluation.reporting import ReportData, write_report
+from evaluation.reporting import ReportData, json_ready, write_report
 from evaluation.runner.models import GameRequest, GameResult
 from evaluation.traces.store import TraceStore
 
@@ -31,6 +32,7 @@ class BatchConfig:
     control: SubmissionPackage | None = None
     plugin_ids: tuple[str, ...] = ()
     metric_module_paths: tuple[str, ...] = ()
+    metric_profile_id: str = "core"
     keep_temp: bool = False
     worker_timeout_seconds: float = 30.0
 
@@ -57,7 +59,11 @@ def run_batch(config: BatchConfig) -> BatchResult:
     report_root = config.output_root.resolve() / run_id
     temp_root = Path(tempfile.gettempdir()) / "evaluation" / run_id
     store = TraceStore(temp_root, report_root)
-    registry = _metric_registry(config.metric_module_paths, config.plugin_ids)
+    registry = _metric_registry(
+        config.metric_module_paths,
+        config.plugin_ids,
+        config.metric_profile_id,
+    )
     started_at = _timestamp()
     metric_values: dict[str, list[GameMetric]] = {
         plugin.metric_id: [] for plugin in registry.plugins
@@ -102,9 +108,12 @@ def run_batch(config: BatchConfig) -> BatchResult:
 
         aggregate_metrics = registry.aggregate(metric_values)
         metric_results = {
-            metric_id: asdict(metric) for metric_id, metric in aggregate_metrics.items()
+            metric_id: json_ready(asdict(metric))
+            for metric_id, metric in aggregate_metrics.items()
         }
         _add_metric_diagnostics(metric_results, metric_values)
+        presentations = registry.present(aggregate_metrics, metric_values)
+        presentation_errors = registry.presentation_errors
         selected_cases = select_cases(case_candidates, limit=store.retain_limit)
         retained = store.retain({candidate.game_id for candidate in selected_cases})
         retained_cases = tuple(
@@ -124,6 +133,7 @@ def run_batch(config: BatchConfig) -> BatchResult:
             finished_at=finished_at,
             retained=retained,
             metric_ids=tuple(plugin.metric_id for plugin in registry.plugins),
+            presentation_errors=presentation_errors,
         )
         (report_root / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True),
@@ -135,6 +145,9 @@ def run_batch(config: BatchConfig) -> BatchResult:
             games=store.game_records,
             metrics=metric_results,
             cases=case_records,
+            metric_profile=manifest["metric_profile"],
+            presentations=presentations,
+            presentation_errors=presentation_errors,
         )
         (report_root / "summary.json").write_text(
             json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True),
@@ -162,6 +175,7 @@ def run_batch(config: BatchConfig) -> BatchResult:
 def _metric_registry(
     metric_module_paths: tuple[str, ...],
     plugin_ids: tuple[str, ...] = (),
+    metric_profile_id: str = "core",
 ) -> MetricRegistry:
     if plugin_ids and metric_module_paths:
         raise ValueError("plugin_ids and metric_module_paths cannot be used together")
@@ -170,7 +184,7 @@ def _metric_registry(
             "plugin_ids is deprecated because batch always enables core metrics; "
             "use metric_module_paths for extra plugins"
         )
-    return create_metric_registry(metric_module_paths)
+    return create_metric_registry(metric_module_paths, metric_profile_id)
 
 
 def _run_worker(
@@ -347,10 +361,26 @@ def _metric_refs(game_metrics: dict[str, GameMetric]) -> dict[str, dict[str, obj
     return {
         metric_id: {
             "status": metric.status,
+            "numerator": metric.numerator,
+            "denominator": metric.denominator,
             "value": metric.value,
+            "payload": _metric_ref_payload(metric.payload),
         }
         for metric_id, metric in game_metrics.items()
     }
+
+
+def _metric_ref_payload(payload: object) -> object:
+    """保留单局计数与审计摘要，把详细事件留在 retained trace/聚合结果。"""
+    value = json_ready(payload)
+    if not isinstance(value, dict):
+        return value
+    compact = dict(value)
+    for key in ("attacks", "events"):
+        details = compact.pop(key, None)
+        if isinstance(details, list):
+            compact[f"{key}_count"] = len(details)
+    return compact
 
 
 def _add_metric_diagnostics(
@@ -537,7 +567,9 @@ def _manifest(
     finished_at: str,
     retained: dict[str, Path],
     metric_ids: tuple[str, ...],
+    presentation_errors: tuple[dict[str, object], ...] = (),
 ) -> dict[str, object]:
+    profile = get_metric_profile(config.metric_profile_id)
     return {
         "run_id": run_id,
         "candidate": _manifest_package(config.candidate),
@@ -546,6 +578,8 @@ def _manifest(
         "games": len(config.opponents) * config.games_per_opponent,
         "swap_policy": "alternate_candidate_first",
         "plugins": list(metric_ids),
+        "metric_profile": profile.manifest(),
+        "presentation_errors": list(presentation_errors),
         "python_version": sys.version,
         "engine_runtime": {
             "cg_tree_hash": config.candidate.cg_manifest.get("tree_hash"),

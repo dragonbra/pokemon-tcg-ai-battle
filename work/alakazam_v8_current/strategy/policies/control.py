@@ -53,9 +53,6 @@ def propose(
     if (
         NIGHTTIME_MINE in play_ids
         and stadium_allowed
-        and routes.attack.certainty.value == "confirmed"
-        and routes.attack.target
-        and routes.attack.expected_damage < routes.attack.target.hp
     ):
         intents.append(
             _play(

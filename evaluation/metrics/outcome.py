@@ -68,6 +68,8 @@ class OutcomePlugin:
                     "game_id": context.game_id,
                     "opponent": context.opponent_name,
                     "category": category,
+                    "candidate_first": context.candidate_first,
+                    "turn_order": "first" if context.candidate_first else "second",
                 },
             ),
         )
@@ -82,6 +84,19 @@ class OutcomePlugin:
             denominator=denominator,
             value=(numerator / denominator if denominator else None),
             by_opponent=by_opponent,
+            payload={
+                "all_games": _turn_order_group(results),
+                "by_turn_order": {
+                    turn_order: _turn_order_group(
+                        result
+                        for result in results
+                        if result.diagnostics
+                        and isinstance(result.diagnostics[0], dict)
+                        and result.diagnostics[0].get("turn_order") == turn_order
+                    )
+                    for turn_order in ("first", "second")
+                },
+            },
         )
 
 
@@ -119,3 +134,24 @@ def _by_opponent(results: Iterable[GameMetric]) -> dict[str, dict[str, object]]:
         if category_key in group:
             group[category_key] = int(group[category_key]) + 1
     return dict(grouped)
+
+
+def _turn_order_group(results: Iterable[GameMetric]) -> dict[str, object]:
+    values = list(results)
+    games = len(values)
+    wins = sum(result.value == "win" for result in values)
+    losses = sum(result.value == "loss" for result in values)
+    draws = sum(result.value == "draw" for result in values)
+    errors = sum(result.value == "error" for result in values)
+    unfinished = sum(result.value == "unfinished" for result in values)
+    return {
+        "games": games,
+        "wins": wins,
+        "losses": losses,
+        "draws": draws,
+        "errors": errors,
+        "unfinished": unfinished,
+        "numerator": wins,
+        "denominator": games,
+        "value": wins / games if games else None,
+    }

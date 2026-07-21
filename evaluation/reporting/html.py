@@ -35,6 +35,17 @@ def render_html(data: ReportData) -> str:
                 "games": data.games,
                 "metrics": data.metrics,
                 "cases": data.cases,
+                "metric_profile": data.metric_profile,
+                "presentations": {
+                    metric_id: {
+                        "metric_id": presentation.metric_id,
+                        "title": presentation.title,
+                        "markdown": presentation.markdown,
+                        "html": presentation.html,
+                    }
+                    for metric_id, presentation in data.presentations.items()
+                },
+                "presentation_errors": data.presentation_errors,
             }
         ),
         ensure_ascii=False,
@@ -62,16 +73,44 @@ def render_html(data: ReportData) -> str:
             "</head>",
             "<body><main>",
             f"<h1>评测报告</h1><p class=\"muted\">运行 ID：{run_id}</p>",
+            _profile_html(data.metric_profile),
             _summary_html(summary),
             _matchup_html(summary),
             _metrics_html(data.metrics),
             _failure_html(data.metrics),
             _cases_html(data.cases),
             _control_html(summary),
+            _presentations_html(data),
             f'<script id="report-data" type="application/json">{document_data}</script>',
             "</main></body></html>",
         )
     )
+
+
+def _profile_html(profile: Mapping[str, object]) -> str:
+    if not profile:
+        return ""
+    values = as_mapping(profile)
+    rows = "".join(
+        f"<tr><th>{_text(label)}</th><td>{_text(value)}</td></tr>"
+        for label, value in (
+            ("profile", values.get("id", "-")),
+            ("revision", values.get("revision", "-")),
+            ("metrics", ", ".join(str(item) for item in values.get("metric_ids", ()) if item)),
+        )
+    )
+    return f"<section><h2>Metric profile</h2><table>{rows}</table></section>"
+
+
+def _presentations_html(data: ReportData) -> str:
+    sections = "".join(presentation.html for presentation in data.presentations.values())
+    if data.presentation_errors:
+        diagnostics = "".join(
+            f"<li>{_text(item.get('metric_id', 'unknown'))}: {_text(item.get('error', 'unknown'))}</li>"
+            for item in data.presentation_errors
+        )
+        sections += f"<section><h2>Presentation diagnostics</h2><ul>{diagnostics}</ul></section>"
+    return sections
 
 
 def _summary_html(summary: Mapping[str, object]) -> str:

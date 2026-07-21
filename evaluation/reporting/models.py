@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from math import isfinite
 from typing import Any
+
+from evaluation.metrics.base import MetricPresentation
 
 
 @dataclass(frozen=True)
@@ -15,6 +17,9 @@ class ReportData:
     games: tuple
     metrics: dict[str, object]
     cases: tuple
+    metric_profile: Mapping[str, object] = field(default_factory=dict)
+    presentations: Mapping[str, MetricPresentation] = field(default_factory=dict)
+    presentation_errors: tuple[Mapping[str, object], ...] = ()
 
 
 def as_mapping(value: object) -> Mapping[str, object]:

@@ -56,9 +56,16 @@ def _selection_card_id(
     option_type = int(option.get("type", -1))
     owner = int(option.get("playerIndex", facts.your_index))
     area = _first_int(option, "area", "inPlayArea")
-    index = _first_int(option, "indexInArea", "index")
+    if area == Area.HAND or option_type == 7:
+        index = _first_int(option, "indexInArea", "index")
+    else:
+        index = _first_int(option, "inPlayIndex", "indexInArea", "index")
 
     if option_type == 7:
+        if owner != facts.your_index or index is None:
+            return None
+        return facts.yours.hand_ids[index] if 0 <= index < len(facts.yours.hand_ids) else None
+    if area == Area.HAND:
         if owner != facts.your_index or index is None:
             return None
         return facts.yours.hand_ids[index] if 0 <= index < len(facts.yours.hand_ids) else None

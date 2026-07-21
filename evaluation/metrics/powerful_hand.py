@@ -13,6 +13,7 @@ from .trace_utils import (
     option_attack_id,
     option_list,
     selected_attack_id,
+    lifecycle_status,
     trace_steps,
 )
 
@@ -72,6 +73,10 @@ class PowerfulHandPlugin:
     metric_id = "powerful_hand"
 
     def analyze_game(self, trace: dict, context: GameContext) -> GameMetric:
+        lifecycle = lifecycle_status(trace)
+        target_turn = agent_turn_target(trace, context.candidate_physical_index)
+        if target_turn is None:
+            target_turn = 3 if context.candidate_first else 4
         entries = second_own_turn_entries(trace, context)
         selected = next(
             (
@@ -115,6 +120,11 @@ class PowerfulHandPlugin:
             steps = trace_steps(trace)
             source = (len(steps) - 1, steps[-1]) if steps else (0, None)
 
+        if lifecycle == "error":
+            status = "error"
+        elif lifecycle == "unfinished":
+            status = "unavailable"
+
         diagnostic = {
             "game_id": context.game_id,
             "opponent": context.opponent_name,
@@ -122,6 +132,10 @@ class PowerfulHandPlugin:
             "reached_second_turn_denominator": int(bool(entries)),
             "reason": reason,
             "powerful_hand_available": available is not None,
+            "target_turn": target_turn,
+            "candidate_first": context.candidate_first,
+            "turn_order": "first" if context.candidate_first else "second",
+            "lifecycle_status": lifecycle,
         }
         return GameMetric(
             metric_id=self.metric_id,
@@ -137,6 +151,16 @@ class PowerfulHandPlugin:
                 reason=reason,
             ),
             diagnostics=(diagnostic,),
+            payload={
+                "games": 1,
+                "error_games": int(lifecycle == "error"),
+                "unfinished_games": int(lifecycle == "unfinished"),
+                "lifecycle_status": lifecycle,
+                "target_turn": target_turn,
+                "reached_second_turn": bool(entries),
+                "powerful_hand_available": available is not None,
+                "reason": reason,
+            },
         )
 
     def aggregate(self, results: list[GameMetric]) -> AggregateMetric:
@@ -169,10 +193,92 @@ class PowerfulHandPlugin:
         for group in grouped.values():
             all_games = int(group["all_games_denominator"])
             group["value"] = int(group["numerator"]) / all_games if all_games else None
+        turn_order_groups = {
+            turn_order: _turn_order_group(
+                result
+                for result in results
+                if result.diagnostics
+                and isinstance(result.diagnostics[0], dict)
+                and result.diagnostics[0].get("turn_order") == turn_order
+            )
+            for turn_order in ("first", "second")
+        }
+        all_games = _turn_order_group(results)
         return AggregateMetric(
             metric_id=self.metric_id,
             numerator=numerator,
             denominator=denominator,
             value=numerator / denominator if denominator else None,
             by_opponent=dict(grouped),
+            payload={
+                "all_games": all_games,
+                "by_turn_order": turn_order_groups,
+                "games": all_games["games"],
+                "reached_numerator": all_games["reached_numerator"],
+                "reached_denominator": all_games["reached_denominator"],
+                "reached_value": all_games["reached_value"],
+                "error_games": all_games["error_games"],
+                "unfinished_games": all_games["unfinished_games"],
+                "reached_second_turn_denominator": sum(
+                    int(
+                        result.diagnostics
+                        and isinstance(result.diagnostics[0], dict)
+                        and result.diagnostics[0].get("reached_second_turn_denominator", 0)
+                    )
+                    for result in results
+                ),
+                "reason_counts": _reason_counts(results),
+            },
         )
+
+
+def _turn_order_group(results: list[GameMetric] | object) -> dict[str, object]:
+    values = list(results)  # type: ignore[arg-type]
+    games = len(values)
+    numerator = sum(result.numerator for result in values)
+    reached = sum(
+        int(
+            result.diagnostics
+            and isinstance(result.diagnostics[0], dict)
+            and result.diagnostics[0].get("reached_second_turn_denominator", 0)
+        )
+        for result in values
+    )
+    reached_numerator = sum(
+        result.numerator
+        for result in values
+        if result.diagnostics
+        and isinstance(result.diagnostics[0], dict)
+        and result.diagnostics[0].get("reached_second_turn_denominator", 0)
+    )
+    error_games = sum(
+        int(result.payload.get("error_games", result.status == "error"))
+        for result in values
+    )
+    unfinished_games = sum(
+        int(result.payload.get("unfinished_games", result.status == "unfinished"))
+        for result in values
+    )
+    return {
+        "games": games,
+        "numerator": numerator,
+        "denominator": games,
+        "value": numerator / games if games else None,
+        "reached_numerator": reached_numerator,
+        "reached_denominator": reached,
+        "reached_value": reached_numerator / reached if reached else None,
+        "reached_second_turn_denominator": reached,
+        "error_games": error_games,
+        "unfinished_games": unfinished_games,
+    }
+
+
+def _reason_counts(results: list[GameMetric]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for result in results:
+        diagnostic = result.diagnostics[0] if result.diagnostics else {}
+        if not isinstance(diagnostic, dict):
+            continue
+        reason = str(diagnostic.get("reason", "unknown"))
+        counts[reason] = counts.get(reason, 0) + 1
+    return counts

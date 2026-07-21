@@ -12,8 +12,11 @@ CANDIDATE_ROOT = ROOT / "work" / "alakazam_v8_current"
 sys.path.insert(0, str(CANDIDATE_ROOT))
 
 from strategy.cards import (  # noqa: E402
+    ABRA,
     ALAKAZAM,
+    BASIC_PSYCHIC,
     DUDUNSPARCE,
+    DUNSPARCE,
     KADABRA,
     load_deck,
     make_deck_spec,
@@ -134,6 +137,82 @@ class SemanticOptionTests(unittest.TestCase):
         self.assertEqual(options[1].action_kind, ActionKind.EVOLVE)
         self.assertEqual(options[1].card_id, ALAKAZAM)
         self.assertEqual(options[1].target, facts.yours.active)
+
+    def test_evolution_option_resolves_hand_card_without_explicit_card_id(self) -> None:
+        me = player(active=pokemon(KADABRA, 11), hand=[ALAKAZAM])
+        opponent = player(active=pokemon(900, 2))
+        obs = main_obs(
+            me,
+            opponent,
+            [{"type": 9, "area": 2, "indexInArea": 0, "inPlayArea": 4, "inPlayIndex": 0}],
+        )
+
+        facts = build_turn_facts(obs, self.memory, self.deck_spec)
+        option = decode_options(obs["select"], facts)[0]
+
+        self.assertEqual(option.action_kind, ActionKind.EVOLVE)
+        self.assertEqual(option.card_id, ALAKAZAM)
+        self.assertEqual(option.target, facts.yours.active)
+
+    def test_attach_option_resolves_hand_energy_without_explicit_card_id(self) -> None:
+        me = player(active=pokemon(ALAKAZAM, 11), hand=[BASIC_PSYCHIC])
+        opponent = player(active=pokemon(900, 2))
+        obs = main_obs(
+            me,
+            opponent,
+            [{"type": 8, "area": 2, "indexInArea": 0, "inPlayArea": 4, "inPlayIndex": 0}],
+        )
+
+        facts = build_turn_facts(obs, self.memory, self.deck_spec)
+        option = decode_options(obs["select"], facts)[0]
+
+        self.assertEqual(option.action_kind, ActionKind.ATTACH)
+        self.assertEqual(option.card_id, BASIC_PSYCHIC)
+        self.assertEqual(option.energy_id, BASIC_PSYCHIC)
+        self.assertEqual(option.target, facts.yours.active)
+
+    def test_ability_option_resolves_field_card_from_in_play_index(self) -> None:
+        me = player(active=pokemon(DUDUNSPARCE, 11))
+        opponent = player(active=pokemon(900, 2))
+        obs = main_obs(
+            me,
+            opponent,
+            [{"type": 10, "inPlayArea": 4, "inPlayIndex": 0}],
+        )
+
+        facts = build_turn_facts(obs, self.memory, self.deck_spec)
+        option = decode_options(obs["select"], facts)[0]
+
+        self.assertEqual(option.action_kind, ActionKind.ABILITY)
+        self.assertEqual(option.card_id, DUDUNSPARCE)
+        self.assertEqual(option.source, facts.yours.active)
+
+    def test_attach_option_keeps_hand_index_separate_from_field_target_index(self) -> None:
+        me = player(
+            active=pokemon(DUNSPARCE, 11),
+            bench=[pokemon(ABRA, 12)],
+            hand=[1146, BASIC_PSYCHIC],
+        )
+        opponent = player(active=pokemon(900, 2))
+        obs = main_obs(
+            me,
+            opponent,
+            [
+                {
+                    "type": 8,
+                    "area": 2,
+                    "indexInArea": 1,
+                    "inPlayArea": 5,
+                    "inPlayIndex": 0,
+                }
+            ],
+        )
+
+        facts = build_turn_facts(obs, self.memory, self.deck_spec)
+        option = decode_options(obs["select"], facts)[0]
+
+        self.assertEqual(option.card_id, BASIC_PSYCHIC)
+        self.assertEqual(option.target, facts.yours.bench[0])
 
     def test_attached_energy_selection_resolves_opponent_target(self) -> None:
         me = player(active=pokemon(ALAKAZAM, 1))

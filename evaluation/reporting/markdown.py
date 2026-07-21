@@ -22,13 +22,45 @@ def render_markdown(data: ReportData) -> str:
     if manifest.get("run_id") is not None:
         lines.extend((f"运行 ID：{_cell(manifest['run_id'])}", ""))
 
+    lines.extend(_profile_section(data.metric_profile))
     lines.extend(_summary_section(summary))
     lines.extend(_matchup_section(summary))
     lines.extend(_metrics_section(data.metrics))
     lines.extend(_failure_section(data.metrics))
     lines.extend(_cases_section(data.cases))
     lines.extend(_control_section(summary))
+    lines.extend(_presentation_sections(data))
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _profile_section(profile: Mapping[str, object]) -> list[str]:
+    if not profile:
+        return []
+    values = as_mapping(profile)
+    rows = (
+        ("profile", values.get("id")),
+        ("revision", values.get("revision")),
+        ("metrics", ", ".join(str(item) for item in values.get("metric_ids", ()) if item)),
+    )
+    lines = ["## Metric profile", "", "| 项目 | 数值 |", "| --- | --- |"]
+    lines.extend(f"| {_cell(label)} | {_cell(value)} |" for label, value in rows)
+    return [*lines, ""]
+
+
+def _presentation_sections(data: ReportData) -> list[str]:
+    lines: list[str] = []
+    for presentation in data.presentations.values():
+        rendered = presentation.markdown.strip()
+        if rendered:
+            lines.extend((rendered, ""))
+    if data.presentation_errors:
+        lines.extend(("## Presentation diagnostics", ""))
+        lines.extend(
+            f"- {_cell(item.get('metric_id', 'unknown'))}: {_cell(item.get('error', 'unknown'))}"
+            for item in data.presentation_errors
+        )
+        lines.append("")
+    return lines
 
 
 def _summary_section(summary: Mapping[str, object]) -> list[str]:

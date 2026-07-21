@@ -17,6 +17,22 @@ def result_field(trace: dict, name: str, default: Any = None) -> Any:
     return trace.get(name, default)
 
 
+def lifecycle_status(trace: dict) -> str:
+    """把 worker 终态归一为 finished、unfinished 或 error。"""
+    error_kind = str(result_field(trace, "error_kind", "") or "").lower()
+    status = str(result_field(trace, "status", "") or "").lower()
+    unfinished_values = {"step_limit", "step limit", "unfinished"}
+    if error_kind in unfinished_values or status in unfinished_values:
+        return "unfinished"
+    if error_kind:
+        return "error"
+    if status and status not in {"finished", "success"}:
+        return "error"
+    if result_field(trace, "finished") is False:
+        return "unfinished"
+    return "finished"
+
+
 def as_int(value: Any, default: int | None = None) -> int | None:
     if isinstance(value, bool):
         return int(value)

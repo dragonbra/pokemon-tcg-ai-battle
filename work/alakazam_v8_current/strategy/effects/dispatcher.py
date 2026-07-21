@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 from ..cards import (
+    ABRA,
     ALAKAZAM,
     BASIC_PSYCHIC,
     BOSS_ORDERS,
@@ -10,6 +11,7 @@ from ..cards import (
     DUDUNSPARCE,
     ENHANCED_HAMMER,
     HILDA,
+    KADABRA,
     LANAS_AID,
     NIGHT_STRETCHER,
     POKE_PAD,
@@ -59,7 +61,7 @@ def _yes_no(
     accept = True
     if effect_id == DUDUNSPARCE:
         accept = any(
-            pokemon.card_id == ALAKAZAM and pokemon.has_energy_type(BASIC_PSYCHIC)
+            pokemon.card_id in {ABRA, KADABRA, ALAKAZAM}
             for pokemon in facts.yours.bench
         ) and (facts.yours.deck_count > 10 or plan.kind == PlanKind.VICTORY)
     chosen = yes if accept else no

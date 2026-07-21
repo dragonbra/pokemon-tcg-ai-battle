@@ -10,6 +10,7 @@ from evaluation.metrics import (
     AggregateMetric,
     GameContext,
     GameMetric,
+    MetricPresentation,
     MetricPlugin,
     OutcomePlugin,
     CorrectnessPlugin,
@@ -554,6 +555,185 @@ class EvaluationMetricsTests(unittest.TestCase):
         self.assertEqual(set(results), {"outcome", "length", "correctness"})
         aggregates = registry.aggregate(results)
         self.assertEqual(aggregates["outcome"].value, 1.0)
+
+    def test_registry_supports_payload_and_plugin_presentation(self) -> None:
+        class PresentedPlugin:
+            metric_id = "presented"
+
+            def analyze_game(self, trace, context):
+                return GameMetric(
+                    self.metric_id,
+                    "success",
+                    1,
+                    2,
+                    0.5,
+                    (),
+                    (),
+                    {"seen": True},
+                )
+
+            def aggregate(self, results):
+                return AggregateMetric(
+                    self.metric_id,
+                    1,
+                    2,
+                    0.5,
+                    {},
+                    {"total": 1},
+                )
+
+            def render(self, aggregate, results):
+                return MetricPresentation(
+                    self.metric_id,
+                    "Presented",
+                    "## Presented",
+                    "<h2>Presented</h2>",
+                )
+
+        registry = MetricRegistry((PresentedPlugin(),), trusted_plugins=("presented",))
+        results = registry.analyze({}, context())
+        aggregates = registry.aggregate(results)
+        presentations = registry.present(aggregates, results)
+
+        self.assertEqual(results["presented"].payload["seen"], True)
+        self.assertEqual(aggregates["presented"].payload["total"], 1)
+        self.assertEqual(presentations["presented"].title, "Presented")
+        self.assertIn("Presented", presentations["presented"].markdown)
+
+    def test_registry_uses_generic_presentation_for_legacy_plugins(self) -> None:
+        class LegacyPlugin:
+            metric_id = "legacy"
+
+            def analyze_game(self, trace, context):
+                return GameMetric(self.metric_id, "success", 1, 1, "ok", (), ())
+
+            def aggregate(self, results):
+                return AggregateMetric(self.metric_id, 1, 1, 1.0, {})
+
+        registry = MetricRegistry((LegacyPlugin(),))
+        results = registry.analyze({}, context())
+        presentations = registry.present(registry.aggregate(results), results)
+
+        self.assertEqual(presentations["legacy"].metric_id, "legacy")
+        self.assertIn("1", presentations["legacy"].markdown)
+        self.assertIn("legacy", presentations["legacy"].html)
+
+    def test_generic_presentation_escapes_all_aggregate_values(self) -> None:
+        class UnsafeValuesPlugin:
+            metric_id = "unsafe_values"
+
+            def analyze_game(self, trace, context):
+                return GameMetric(self.metric_id, "success", 1, 1, "ok", (), ())
+
+            def aggregate(self, results):
+                return AggregateMetric(
+                    self.metric_id,
+                    "<img src=x onerror=alert(1)>",
+                    "<svg onload=alert(2)>",
+                    "<script>alert(3)</script>",
+                    {},
+                )
+
+        registry = MetricRegistry((UnsafeValuesPlugin(),))
+        results = registry.analyze({}, context())
+        presentation = registry.present(registry.aggregate(results), results)["unsafe_values"]
+
+        self.assertNotIn("<img", presentation.html)
+        self.assertNotIn("<svg", presentation.html)
+        self.assertNotIn("<script", presentation.html)
+        self.assertIn("&lt;img", presentation.html)
+
+
+    def test_dynamic_plugin_cannot_inject_raw_html_presentation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            module_path = Path(temp_dir) / "unsafe_metric.py"
+            module_path.write_text(
+                """
+from evaluation.metrics.base import AggregateMetric, GameMetric, MetricPresentation
+
+class UnsafePlugin:
+    metric_id = 'unsafe_metric'
+    def analyze_game(self, trace, context):
+        return GameMetric(self.metric_id, 'success', 1, 1, 1, (), ())
+    def aggregate(self, results):
+        return AggregateMetric(self.metric_id, 1, 1, 1, {})
+    def render(self, aggregate, results):
+        return MetricPresentation(self.metric_id, 'Unsafe', '<script>alert(1)</script>', '<script>alert(1)</script>')
+""",
+                encoding="utf-8",
+            )
+
+            registry = create_metric_registry([str(module_path)])
+            results = registry.analyze(trace(winner=0), context())
+            presentation = registry.present(registry.aggregate(results), results)["unsafe_metric"]
+
+        self.assertEqual(presentation.title, "指标：unsafe_metric")
+        self.assertNotIn("<script", presentation.html.lower())
+
+    def test_registry_plugins_are_untrusted_without_explicit_allowlist(self) -> None:
+        class UntrustedPlugin:
+            metric_id = "untrusted"
+
+            def analyze_game(self, trace, context):
+                return GameMetric(self.metric_id, "success", 1, 1, 1, (), ())
+
+            def aggregate(self, results):
+                return AggregateMetric(self.metric_id, 1, 1, 1, {})
+
+            def render(self, aggregate, results):
+                return MetricPresentation(
+                    self.metric_id,
+                    "Untrusted",
+                    "# raw",
+                    "<script>alert(1)</script>",
+                )
+
+        registry = MetricRegistry((UntrustedPlugin(),))
+        results = registry.analyze(trace(winner=0), context())
+        presentation = registry.present(registry.aggregate(results), results)["untrusted"]
+
+        self.assertEqual(presentation.title, "指标：untrusted")
+        self.assertNotIn("<script", presentation.html.lower())
+
+    def test_registry_isolates_metric_analysis_errors(self) -> None:
+        class BrokenPlugin:
+            metric_id = "broken"
+
+            def analyze_game(self, trace, context):
+                raise RuntimeError("fixture metric failure")
+
+            def aggregate(self, results):
+                return AggregateMetric(self.metric_id, 0, 0, None, {})
+
+        registry = MetricRegistry((OutcomePlugin(), BrokenPlugin()))
+        results = registry.analyze(trace(winner=0), context())
+
+        self.assertEqual(results["outcome"].value, "win")
+        self.assertEqual(results["broken"].status, "error")
+        self.assertEqual(results["broken"].value, "metric_error")
+        self.assertEqual(results["broken"].denominator, 1)
+        self.assertEqual(results["broken"].payload["games"], 1)
+        self.assertEqual(results["broken"].payload["error_games"], 1)
+        self.assertIn("fixture metric failure", results["broken"].diagnostics[0]["error"])
+
+    def test_registry_aggregate_errors_preserve_attempt_audit(self) -> None:
+        class BrokenAggregatePlugin:
+            metric_id = "broken_aggregate"
+
+            def analyze_game(self, trace, context):
+                return GameMetric(self.metric_id, "success", 0, 1, 0, (), ())
+
+            def aggregate(self, results):
+                raise RuntimeError("fixture aggregate failure")
+
+        registry = MetricRegistry((BrokenAggregatePlugin(),))
+        result = registry.analyze({}, context())["broken_aggregate"]
+        aggregate = registry.aggregate({"broken_aggregate": [result]})["broken_aggregate"]
+
+        self.assertEqual(aggregate.denominator, 1)
+        self.assertEqual(aggregate.payload["games"], 1)
+        self.assertEqual(aggregate.payload["error_games"], 1)
+        self.assertIn("fixture aggregate failure", aggregate.payload["error"])
 
     def test_powerful_hand_uses_candidate_relative_second_turn_and_actual_selection(self) -> None:
         plugin = PowerfulHandPlugin()

@@ -11,6 +11,7 @@ from evaluation.packages.loader import (
     SubmissionPackage,
     load_submission_package,
 )
+from evaluation.metrics.profiles import available_metric_profiles
 from evaluation.runner.batch import BatchConfig, run_batch
 from evaluation.runtime import assert_cg_compatible
 
@@ -202,6 +203,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--max-steps", type=int, default=DEFAULT_MAX_STEPS)
     run.add_argument(
+        "--metric-profile",
+        choices=available_metric_profiles(),
+        default="core",
+        help="选择内置 metric profile",
+    )
+    run.add_argument(
         "--metric-module",
         action="append",
         default=[],
@@ -235,10 +242,11 @@ def _run(args: argparse.Namespace) -> str:
             games_per_opponent=args.games,
             output_root=args.output,
             visualize=args.visualize,
-        max_steps=args.max_steps,
-        control=control,
-        metric_module_paths=_metric_modules(args.metric_module),
-        keep_temp=args.keep_temp,
+            max_steps=args.max_steps,
+            control=control,
+            metric_module_paths=_metric_modules(args.metric_module),
+            metric_profile_id=args.metric_profile,
+            keep_temp=args.keep_temp,
         )
     )
     return result.run_id

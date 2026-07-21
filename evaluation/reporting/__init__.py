@@ -1,6 +1,6 @@
 from .html import render_html
 from .markdown import render_markdown
-from .models import ReportData
+from .models import ReportData, json_ready
 
 from pathlib import Path
 
@@ -12,4 +12,4 @@ def write_report(data: ReportData, output_dir: Path) -> None:
     (output_dir / "report.html").write_text(render_html(data), encoding="utf-8")
 
 
-__all__ = ("ReportData", "render_html", "render_markdown", "write_report")
+__all__ = ("ReportData", "json_ready", "render_html", "render_markdown", "write_report")

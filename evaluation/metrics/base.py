@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from typing import Protocol, runtime_checkable
 
 
@@ -22,6 +23,7 @@ class GameMetric:
     value: float | int | str | None
     evidence: tuple
     diagnostics: tuple
+    payload: Mapping[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -31,6 +33,15 @@ class AggregateMetric:
     denominator: int
     value: float | int | str | None
     by_opponent: dict[str, dict[str, object]]
+    payload: Mapping[str, object] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class MetricPresentation:
+    metric_id: str
+    title: str
+    markdown: str
+    html: str
 
 
 @runtime_checkable

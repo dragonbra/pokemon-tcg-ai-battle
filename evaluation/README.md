@@ -19,6 +19,32 @@ python3 -m evaluation run \
 不会触发 promotion、reject 或其他自动晋级决定。动态模块必须是独立的 `MetricPlugin`，
 只能追加统计，不能使用任何核心 metric ID。
 
+AutoIteration V8 使用内置的 `auto_iteration_v8_setup_relay` profile，当前为
+`revision 2`：
+
+```bash
+python3 -m evaluation run \
+  --candidate work/alakazam_v8_current \
+  --opponents all \
+  --games 10 \
+  --metric-profile auto_iteration_v8_setup_relay \
+  --no-visualize \
+  --output /tmp/ptcg-auto-iteration-evaluation
+```
+
+这个 profile 在核心 outcome、health 和 correctness 指标之外提供 setup/relay、
+Powerful Hand、post-KO relay 和 attack quality 的结构化 payload。Powerful Hand 的
+第二个己方回合按实际先后手使用 engine turn 3/4，只有实际选择 `attackId=1072`
+才计为成功；未到达目标回合、未完成对局和未知 Prize 状态会保留在审计字段及相应
+分母中，不会被静默删除。profile 的 id、revision、metric ids 和优先级写入
+`manifest.json`，聚合 payload 写入 `metrics.json`，单局轻量 payload 写入
+`games.jsonl` 的 `metric_refs`，专属 Markdown/HTML 展示写入 `report.md` 和
+`report.html`。
+
+Evaluation 只负责指标测量、证据审计和可视化，不负责晋级决策，也不负责
+candidate/control 比较；调用层根据 profile revision 和报告数据自行解释 promote、observe、reject 等
+业务状态。
+
 ## Package 与 catalog
 
 候选和 opponent 都必须是标准 package：根目录包含 `main.py`、60 行 `deck.csv` 和
@@ -34,7 +60,8 @@ python3 -m evaluation run \
 `manifest.json`、`summary.json`、`games.jsonl`、`metrics.json`、`cases.jsonl`、
 `report.md`、`report.html` 和 `traces/`。指标插件通过稳定的 metric ID 注册；
 `--metric-module` 的模块路径由 metrics registry 动态加载，只能追加统计，不得覆盖核心
-输出。核心指标固定为 outcome、length、correctness、powerful_hand、rare_candy、
+输出；动态模块的 HTML renderer 默认不受信任，会退回安全的通用指标展示。只有内置
+profile plugin 才能提供专属 HTML section。核心指标固定为 outcome、length、correctness、powerful_hand、rare_candy、
 post_ko_relay、run_away_draw 和 library_pressure。
 
 完整逐局 trace 只在评测过程中临时保存。默认结束后会清理临时目录，长期报告按 case

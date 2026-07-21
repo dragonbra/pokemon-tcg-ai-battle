@@ -15,6 +15,7 @@ from evaluation.runner.batch import (
     BatchConfig,
     ReportData as BatchReportData,
     _case_candidate,
+    _metric_refs,
     _metric_registry,
     run_batch,
 )
@@ -298,6 +299,31 @@ class BatchRunnerTests(unittest.TestCase):
             CORE_METRIC_IDS,
         )
 
+    def test_metric_refs_include_lightweight_payload_and_denominators(self) -> None:
+        metric = GameMetric(
+            "fixture",
+            "available",
+            2,
+            3,
+            2 / 3,
+            (),
+            (),
+            {"direction": "first", "nested": [1, 2]},
+        )
+
+        self.assertEqual(
+            _metric_refs({"fixture": metric}),
+            {
+                "fixture": {
+                    "status": "available",
+                    "numerator": 2,
+                    "denominator": 3,
+                    "value": 2 / 3,
+                    "payload": {"direction": "first", "nested": [1, 2]},
+                }
+            },
+        )
+
     def test_batch_metric_registry_appends_dynamic_plugin(self) -> None:
         candidate = self.make_package("candidate", 7)
         opponent = self.make_package("opponent", 8)
@@ -448,6 +474,33 @@ class OverridePlugin:
         self.assertEqual(result.report_data.metrics, result.metric_results)
         self.assertEqual((report_root / "cases.jsonl").read_text(encoding="utf-8"), "")
         self.assertEqual(len(list((report_root / "traces").glob("*.json"))), 0)
+
+    def test_auto_iteration_profile_writes_payloads_and_presentations(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        config = replace(
+            self.make_config(candidate, (opponent,), games=1),
+            metric_profile_id="auto_iteration_v8_setup_relay",
+        )
+
+        result = run_batch(config)
+        report_root = self.root / "reports" / result.run_id
+        manifest = json.loads((report_root / "manifest.json").read_text(encoding="utf-8"))
+        games = [
+            json.loads(line)
+            for line in (report_root / "games.jsonl").read_text(encoding="utf-8").splitlines()
+        ]
+        metrics = json.loads((report_root / "metrics.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(manifest["metric_profile"]["id"], "auto_iteration_v8_setup_relay")
+        self.assertEqual(manifest["metric_profile"]["revision"], 2)
+        self.assertEqual(result.report_data.metric_profile["revision"], 2)
+        self.assertIn("setup_relay", result.report_data.presentations)
+        self.assertIn("attack_quality", result.report_data.presentations)
+        self.assertIn("payload", metrics["setup_relay"])
+        self.assertIn("payload", games[0]["metric_refs"]["setup_relay"])
+        self.assertIn("Setup and relay", (report_root / "report.md").read_text(encoding="utf-8"))
+        self.assertIn("Attack quality", (report_root / "report.html").read_text(encoding="utf-8"))
 
     def test_batch_writes_one_canonical_report_from_fake_worker_results(self) -> None:
         candidate = self.make_package("candidate", 7)

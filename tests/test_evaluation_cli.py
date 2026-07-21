@@ -38,6 +38,14 @@ class EvaluationCliTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
+    def test_run_help_exposes_metric_profile_selection(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output), self.assertRaises(SystemExit):
+            cli.main(["run", "--help"])
+
+        self.assertIn("--metric-profile", output.getvalue())
+        self.assertIn("auto_iteration_v8_setup_relay", output.getvalue())
+
     def test_validate_prints_standard_package_fingerprints(self) -> None:
         output = io.StringIO()
         with (
@@ -93,6 +101,8 @@ class EvaluationCliTests(unittest.TestCase):
                     "--keep-temp",
                     "--max-steps",
                     "77",
+                    "--metric-profile",
+                    "auto_iteration_v8_setup_relay",
                     "--metric-module",
                     "metrics/custom.py:CustomPlugin",
                 ]
@@ -108,6 +118,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertFalse(config.visualize)
         self.assertTrue(config.keep_temp)
         self.assertEqual(config.max_steps, 77)
+        self.assertEqual(config.metric_profile_id, "auto_iteration_v8_setup_relay")
         self.assertEqual(config.metric_module_paths, ("metrics/custom.py:CustomPlugin",))
         self.assertIn("run-cli-test", output.getvalue())
         self.assertNotIn("promotion", output.getvalue().lower())

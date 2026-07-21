@@ -7,16 +7,29 @@ from ..cards import (
     ALAKAZAM,
     BASIC_PSYCHIC,
     DAWN,
+    DUDUNSPARCE,
+    DUNSPARCE,
+    ENRICHING_ENERGY,
+    FEZANDIPITI_EX,
     HILDA,
     KADABRA,
     LANAS_AID,
     NIGHT_STRETCHER,
     RARE_CANDY,
     SACRED_ASH,
+    SHAYMIN,
     TELEPATH_ENERGY,
     XEROSIC,
 )
-from ..model import ActionIntent, ActionKind, DecisionPhase, SemanticOption, TurnFacts, TurnPlan
+from ..model import (
+    ActionIntent,
+    ActionKind,
+    DecisionPhase,
+    PlanKind,
+    SemanticOption,
+    TurnFacts,
+    TurnPlan,
+)
 from ..profiles import StrategyProfile
 from ..routes import RouteAnalysis
 
@@ -79,6 +92,15 @@ def propose(
             )
             if hilda:
                 intents.append(hilda)
+        elif plan.supporter_purpose == "supply_handoff_engine":
+            hilda = _play(
+                options,
+                HILDA,
+                "resource.hilda_handoff_engine",
+                "supply_handoff_engine",
+            )
+            if hilda:
+                intents.append(hilda)
         elif plan.supporter_purpose == "recover_attack_line":
             lana = _play(
                 options,
@@ -102,6 +124,59 @@ def propose(
         for option in options:
             if option.action_kind != ActionKind.ATTACH or option.target is None:
                 continue
+            if (
+                option.card_id == TELEPATH_ENERGY
+                and option.target.card_id in {DUNSPARCE, DUDUNSPARCE}
+                and not option.target.has_energy_type(BASIC_PSYCHIC)
+            ):
+                intents.append(
+                    _intent(
+                        "resource.attach_telepath_setup",
+                        ActionKind.ATTACH,
+                        "open_basic_psychic_search",
+                        card_id=option.card_id,
+                        target_key=option.target.key,
+                    )
+                )
+                break
+            if (
+                option.card_id == ENRICHING_ENERGY
+                and option.target.card_id == DUDUNSPARCE
+                and facts.yours.active is not None
+                and facts.yours.active.key == option.target.key
+                and (
+                    facts.yours.hand_count < 20
+                    and facts.yours.deck_count > 14
+                    or plan.kind.value == "victory"
+                )
+            ):
+                intents.append(
+                    _intent(
+                        "resource.attach_enriching_dudunsparce",
+                        ActionKind.ATTACH,
+                        "enable_run_away_draw",
+                        card_id=option.card_id,
+                        target_key=option.target.key,
+                    )
+                )
+                break
+            if (
+                option.card_id == ENRICHING_ENERGY
+                and facts.yours.active is not None
+                and option.target.key == facts.yours.active.key
+                and option.target.card_id in {DUNSPARCE, DUDUNSPARCE, FEZANDIPITI_EX, SHAYMIN}
+                and (facts.yours.deck_count > 14 or plan.kind == PlanKind.VICTORY)
+            ):
+                intents.append(
+                    _intent(
+                        "resource.attach_enriching_draw",
+                        ActionKind.ATTACH,
+                        "trigger_enriching_draw",
+                        card_id=option.card_id,
+                        target_key=option.target.key,
+                    )
+                )
+                break
             if option.card_id == TELEPATH_ENERGY and option.target.card_id in {
                 ABRA,
                 KADABRA,

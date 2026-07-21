@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 
-from .cards import ABRA, ALAKAZAM, BASIC_PSYCHIC, DUDUNSPARCE, DUNSPARCE, KADABRA
+from .cards import ABRA, ALAKAZAM, BASIC_PSYCHIC, DUDUNSPARCE, DUNSPARCE, HILDA, KADABRA
 from .model import PlanGoal, PlanKind, RouteCertainty, TurnFacts, TurnPlan
 from .profiles import AttackPreparation, StrategyProfile
 from .routes import RouteAnalysis
@@ -37,6 +37,37 @@ def build_turn_plan(
     prepare_before_lethal = (
         profile.attack_preparation == AttackPreparation.COMPLETE_BEFORE_ATTACK or not can_ko
     )
+    if (
+        not victory
+        and prepare_before_lethal
+        and active
+        and active.card_id == ABRA
+        and active.can_evolve
+    ):
+        active_evolutions = tuple(
+            option
+            for option in routes.evolution_options
+            if option.target is not None
+            and option.target.key == active.key
+            and option.card_id in {KADABRA, ALAKAZAM}
+        )
+        if active_evolutions:
+            target_card = (
+                ALAKAZAM
+                if any(option.card_id == ALAKAZAM for option in active_evolutions)
+                else KADABRA
+            )
+            goals.append(
+                PlanGoal(
+                    rule_id=(
+                        "evolution.active_abra_alakazam"
+                        if target_card == ALAKAZAM
+                        else "evolution.active_abra_kadabra"
+                    ),
+                    purpose="prepare_current_attacker",
+                    required_before_attack=True,
+                )
+            )
     if not victory and prepare_before_lethal and active and active.card_id == ALAKAZAM:
         for bench in facts.yours.bench:
             if bench.card_id == KADABRA and bench.can_evolve and ALAKAZAM in facts.yours.hand_ids:
@@ -44,6 +75,42 @@ def build_turn_plan(
                     PlanGoal(
                         rule_id="evolution.bench_kadabra",
                         purpose="preserve_next_attack_line",
+                        required_before_attack=True,
+                    )
+                )
+                break
+        else:
+            for bench in facts.yours.bench:
+                if bench.card_id != ABRA or not bench.can_evolve:
+                    continue
+                if any(
+                    option.target is not None
+                    and option.target.key == bench.key
+                    and option.card_id == KADABRA
+                    for option in routes.evolution_options
+                ):
+                    goals.append(
+                        PlanGoal(
+                            rule_id="evolution.bench_abra_kadabra",
+                            purpose="prepare_next_attack",
+                            required_before_attack=True,
+                        )
+                    )
+                    break
+    if not victory and prepare_before_lethal and active and active.card_id == ALAKAZAM:
+        for bench in facts.yours.bench:
+            if bench.card_id != DUNSPARCE or not bench.can_evolve:
+                continue
+            if any(
+                option.target is not None
+                and option.target.key == bench.key
+                and option.card_id == DUDUNSPARCE
+                for option in routes.evolution_options
+            ):
+                goals.append(
+                    PlanGoal(
+                        rule_id="evolution.bench_dunsparce_dudunsparce",
+                        purpose="prepare_draw_handoff_engine",
                         required_before_attack=True,
                     )
                 )
@@ -63,6 +130,77 @@ def build_turn_plan(
                     required_before_attack=True,
                 )
             )
+    if (
+        not victory
+        and prepare_before_lethal
+        and active
+        and active.card_id == KADABRA
+        and attack.certainty == RouteCertainty.CONFIRMED
+        and (
+            not active.can_evolve
+            or ALAKAZAM not in facts.yours.hand_ids
+        )
+    ):
+        for bench in facts.yours.bench:
+            if bench.card_id != ABRA or not bench.can_evolve:
+                continue
+            if any(
+                option.target is not None
+                and option.target.key == bench.key
+                and option.card_id == KADABRA
+                for option in routes.evolution_options
+            ):
+                goals.append(
+                    PlanGoal(
+                        rule_id="evolution.bench_abra_kadabra",
+                        purpose="prepare_next_attack",
+                        required_before_attack=True,
+                    )
+                )
+                break
+    if (
+        not victory
+        and prepare_before_lethal
+        and active
+        and active.card_id == DUNSPARCE
+        and any(
+            option.target is not None
+            and option.target.key == active.key
+            and option.card_id == DUDUNSPARCE
+            and option.target.can_evolve
+            for option in routes.evolution_options
+        )
+    ):
+        goals.append(
+            PlanGoal(
+                rule_id="evolution.active_dudunsparce",
+                purpose="prepare_draw_handoff_engine",
+                required_before_attack=True,
+            )
+        )
+    if (
+        not victory
+        and prepare_before_lethal
+        and active
+        and active.card_id == DUNSPARCE
+    ):
+        for bench in facts.yours.bench:
+            if bench.card_id != ABRA or not bench.can_evolve:
+                continue
+            if any(
+                option.target is not None
+                and option.target.key == bench.key
+                and option.card_id == KADABRA
+                for option in routes.evolution_options
+            ):
+                goals.append(
+                    PlanGoal(
+                        rule_id="evolution.bench_abra_kadabra",
+                        purpose="prepare_next_attack",
+                        required_before_attack=True,
+                    )
+                )
+                break
     if routes.handoff.via_dudunsparce and not victory:
         goals.append(
             PlanGoal(
@@ -91,6 +229,14 @@ def build_turn_plan(
             for pokemon in facts.yours.bench
         ):
             supporter_purpose = "complete_evolution_chain"
+        elif (
+            active
+            and active.card_id in {ALAKAZAM, DUNSPARCE}
+            and DUNSPARCE in {pokemon.card_id for pokemon in facts.yours.field}
+            and DUDUNSPARCE not in {pokemon.card_id for pokemon in facts.yours.field}
+            and HILDA in facts.yours.hand_ids
+        ):
+            supporter_purpose = "supply_handoff_engine"
         elif not any(
             pokemon.card_id == ALAKAZAM
             and pokemon.has_energy_type(BASIC_PSYCHIC)
@@ -102,8 +248,20 @@ def build_turn_plan(
             supporter_purpose = "recover_attack_line"
         elif (
             active
-            and active.card_id in {ABRA, KADABRA}
-            and ALAKAZAM in facts.yours.hand_ids
+            and (
+                (
+                    active.card_id in {ABRA, KADABRA}
+                    and (
+                        ALAKAZAM in facts.yours.hand_ids
+                        or HILDA in facts.yours.hand_ids
+                    )
+                )
+                or (
+                    active.card_id == ALAKAZAM
+                    and not active.has_energy_type(BASIC_PSYCHIC)
+                    and HILDA in facts.yours.hand_ids
+                )
+            )
         ):
             supporter_purpose = "supply_evolution_and_energy"
         elif (

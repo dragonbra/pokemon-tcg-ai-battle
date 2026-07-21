@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from ..cards import POWERFUL_HAND_ATTACK, TRADING_PLACES_ATTACK
+from ..cards import ABRA, POWERFUL_HAND_ATTACK, TRADING_PLACES_ATTACK
 from ..model import ActionIntent, ActionKind, DecisionPhase, SemanticOption, TurnFacts, TurnPlan
 from ..profiles import StrategyProfile
 from ..routes import RouteAnalysis
@@ -17,6 +17,8 @@ def propose(
 ) -> tuple[ActionIntent, ...]:
     del facts, profile
     if plan.attack_blockers or routes.attack.certainty.value != "confirmed":
+        return ()
+    if routes.attack.attacker and routes.attack.attacker.card_id == ABRA:
         return ()
     intents: list[ActionIntent] = []
     for option in options:

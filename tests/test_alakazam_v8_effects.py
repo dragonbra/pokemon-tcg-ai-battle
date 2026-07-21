@@ -19,9 +19,11 @@ from strategy.cards import (  # noqa: E402
     DUNSPARCE,
     DUDUNSPARCE,
     ENHANCED_HAMMER,
+    HILDA,
     KADABRA,
     LANAS_AID,
     MIST_ENERGY,
+    NIGHT_STRETCHER,
     POKE_PAD,
     SACRED_ASH,
     TELEPATH_ENERGY,
@@ -146,6 +148,47 @@ class EffectSelectorTests(unittest.TestCase):
         )
 
         self.assertEqual(self._choose(obs).option_indexes, (1,))
+
+    def test_hilda_prefers_dudunsparce_for_alakazam_handoff_engine(self) -> None:
+        obs = effect_obs(
+            player(
+                active=pokemon(ALAKAZAM, 1),
+                bench=[pokemon(KADABRA, 2), pokemon(DUNSPARCE, 3)],
+            ),
+            player(active=pokemon(900, 4)),
+            [{"type": 1, "cardId": KADABRA}, {"type": 1, "cardId": DUDUNSPARCE}],
+            effect_id=HILDA,
+            context=7,
+        )
+
+        self.assertEqual(self._choose(obs).option_indexes, (1,))
+
+    def test_night_stretcher_can_rank_kadabra_without_dispatch_name_error(self) -> None:
+        discard = [KADABRA]
+        obs = effect_obs(
+            player(active=pokemon(DUNSPARCE, 1), discard=discard),
+            player(active=pokemon(900, 2)),
+            [{"type": 3, "area": 3, "index": 0}],
+            effect_id=NIGHT_STRETCHER,
+            context=7,
+        )
+
+        self.assertEqual(self._choose(obs).option_indexes, (0,))
+
+    def test_dudunsparce_run_away_draw_accepts_an_unready_bench_successor(self) -> None:
+        obs = effect_obs(
+            player(
+                active=pokemon(DUDUNSPARCE, 1),
+                bench=[pokemon(ABRA, 2)],
+                deck_count=30,
+            ),
+            player(active=pokemon(900, 2)),
+            [{"type": 1}, {"type": 2}],
+            effect_id=DUDUNSPARCE,
+            context=43,
+        )
+
+        self.assertEqual(self._choose(obs).option_indexes, (0,))
 
 
 if __name__ == "__main__":

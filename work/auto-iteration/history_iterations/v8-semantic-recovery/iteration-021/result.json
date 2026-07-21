@@ -1,0 +1,1375 @@
+{
+  "schema_version": 3,
+  "metadata": {
+    "iteration_id": "iteration-021",
+    "profile": "v8-setup-relay",
+    "profile_revision": 2,
+    "label": "iteration-021",
+    "change_summary": "恢复 bench insurance / handoff 语义的 focused 验证",
+    "decision": "observe",
+    "agent_label": "v8_iteration_021",
+    "trace_root": "/private/tmp/ptcg-v8-iteration-021-focus"
+  },
+  "sample": {
+    "games": 12,
+    "opponents": 3,
+    "errors": 0,
+    "turn_order_games": {
+      "first": 8,
+      "second": 4
+    }
+  },
+  "metrics": {
+    "win_rate": {
+      "overall": {
+        "games": 12,
+        "wins": 7,
+        "losses": 5,
+        "draws": 0,
+        "errors": 0,
+        "numerator": 7,
+        "denominator": 12,
+        "rate": 0.5833333333333334
+      },
+      "first": {
+        "games": 8,
+        "wins": 6,
+        "losses": 2,
+        "draws": 0,
+        "errors": 0,
+        "numerator": 6,
+        "denominator": 8,
+        "rate": 0.75
+      },
+      "second": {
+        "games": 4,
+        "wins": 1,
+        "losses": 3,
+        "draws": 0,
+        "errors": 0,
+        "numerator": 1,
+        "denominator": 4,
+        "rate": 0.25
+      }
+    },
+    "t2_alakazam": {
+      "overall": {
+        "all_games": {
+          "numerator": 1,
+          "denominator": 12,
+          "rate": 0.08333333333333333
+        },
+        "opening_four_components": {
+          "component_counts": {
+            "active_abra": 2,
+            "rare_candy": 5,
+            "alakazam_or_search": 11,
+            "psychic_energy_or_hilda": 10,
+            "all_four": 1
+          },
+          "sample_games": 12
+        },
+        "dunsparce_bridge": {
+          "numerator": 0,
+          "denominator": 6,
+          "rate": 0.0
+        }
+      },
+      "all_games": {
+        "numerator": 1,
+        "denominator": 12,
+        "rate": 0.08333333333333333
+      },
+      "first": {
+        "all_games": {
+          "numerator": 1,
+          "denominator": 8,
+          "rate": 0.125
+        },
+        "opening_four_components": {
+          "component_counts": {
+            "active_abra": 1,
+            "rare_candy": 4,
+            "alakazam_or_search": 8,
+            "psychic_energy_or_hilda": 7,
+            "all_four": 1
+          },
+          "sample_games": 8
+        },
+        "dunsparce_bridge": {
+          "numerator": 0,
+          "denominator": 5,
+          "rate": 0.0
+        }
+      },
+      "second": {
+        "all_games": {
+          "numerator": 0,
+          "denominator": 4,
+          "rate": 0.0
+        },
+        "opening_four_components": {
+          "component_counts": {
+            "active_abra": 1,
+            "rare_candy": 1,
+            "alakazam_or_search": 3,
+            "psychic_energy_or_hilda": 3,
+            "all_four": 0
+          },
+          "sample_games": 4
+        },
+        "dunsparce_bridge": {
+          "numerator": 0,
+          "denominator": 1,
+          "rate": 0.0
+        }
+      }
+    },
+    "second_turn_draws": {
+      "all_games": {
+        "total": 26,
+        "games": 12,
+        "average": 2.1666666666666665
+      },
+      "reached_second_turn": {
+        "total": 26,
+        "games": 10,
+        "average": 2.6
+      },
+      "first": {
+        "total": 16,
+        "games": 8,
+        "average": 2.0
+      },
+      "second": {
+        "total": 10,
+        "games": 4,
+        "average": 2.5
+      },
+      "normal_draw_cards": {
+        "all_games": {
+          "total": 22,
+          "games": 12,
+          "average": 1.8333333333333333
+        },
+        "reached_second_turn": {
+          "total": 20,
+          "games": 10,
+          "average": 2.0
+        },
+        "first": {
+          "total": 15,
+          "games": 8,
+          "average": 1.875
+        },
+        "second": {
+          "total": 7,
+          "games": 4,
+          "average": 1.75
+        }
+      }
+    },
+    "non_prize_attacks": {
+      "overall": {
+        "attack_submissions": 35,
+        "resolved_attacks": 35,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": {
+          "numerator": 11,
+          "denominator": 35,
+          "rate": 0.3142857142857143
+        },
+        "powerful_hand": {
+          "resolved_attacks": 34,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": {
+            "numerator": 10,
+            "denominator": 34,
+            "rate": 0.29411764705882354
+          }
+        }
+      },
+      "first": {
+        "attack_submissions": 29,
+        "resolved_attacks": 29,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": {
+          "numerator": 9,
+          "denominator": 29,
+          "rate": 0.3103448275862069
+        },
+        "powerful_hand": {
+          "resolved_attacks": 29,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": {
+            "numerator": 9,
+            "denominator": 29,
+            "rate": 0.3103448275862069
+          }
+        }
+      },
+      "second": {
+        "attack_submissions": 6,
+        "resolved_attacks": 6,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": {
+          "numerator": 2,
+          "denominator": 6,
+          "rate": 0.3333333333333333
+        },
+        "powerful_hand": {
+          "resolved_attacks": 5,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": {
+            "numerator": 1,
+            "denominator": 5,
+            "rate": 0.2
+          }
+        }
+      }
+    },
+    "post_ko_relay": {
+      "overall": {
+        "opportunities": 11,
+        "successes": 0,
+        "success_rate": 0.0,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 11,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        }
+      },
+      "by_turn_order": {
+        "first": {
+          "opportunities": 9,
+          "successes": 0,
+          "success_rate": 0.0,
+          "failure_counts": {
+            "field_route_miss": 0,
+            "recoverable_discard_miss": 9,
+            "recoverable_route_incomplete": 0,
+            "nonterminal_no_field_route": 0,
+            "terminal_no_resource": 0
+          }
+        },
+        "second": {
+          "opportunities": 2,
+          "successes": 0,
+          "success_rate": 0.0,
+          "failure_counts": {
+            "field_route_miss": 0,
+            "recoverable_discard_miss": 2,
+            "recoverable_route_incomplete": 0,
+            "nonterminal_no_field_route": 0,
+            "terminal_no_resource": 0
+          }
+        }
+      }
+    }
+  },
+  "opponents": [
+    {
+      "opponent": "crustle_v1",
+      "numerator": 4,
+      "denominator": 4,
+      "rate": 1.0
+    },
+    {
+      "opponent": "maktha_1084",
+      "numerator": 2,
+      "denominator": 4,
+      "rate": 0.5
+    },
+    {
+      "opponent": "romanrozen_v9",
+      "numerator": 1,
+      "denominator": 4,
+      "rate": 0.25
+    }
+  ],
+  "games": [
+    {
+      "opponent": "crustle_v1",
+      "game": 1,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 0,
+        "win": true,
+        "loss": false,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": false,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": false,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 4,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 6
+        },
+        "dunsparce_bridge_opportunity": true,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 1,
+        "resolved_attacks": 1,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 0,
+        "powerful_hand": {
+          "resolved_attacks": 1,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": [
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    },
+    {
+      "opponent": "crustle_v1",
+      "game": 2,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 0,
+        "win": true,
+        "loss": false,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": false,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 0,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 2
+        },
+        "dunsparce_bridge_opportunity": true,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 9,
+        "resolved_attacks": 9,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 5,
+        "powerful_hand": {
+          "resolved_attacks": 9,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 5
+        },
+        "cases": [
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 3,
+        "successes": 0,
+        "success_rate": 0.0,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 3,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": [
+          {
+            "previous_turn": 11,
+            "current_turn": 12,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          },
+          {
+            "previous_turn": 15,
+            "current_turn": 16,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          },
+          {
+            "previous_turn": 19,
+            "current_turn": 20,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          }
+        ]
+      }
+    },
+    {
+      "opponent": "crustle_v1",
+      "game": 3,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 0,
+        "win": true,
+        "loss": false,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": true,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 3,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 5
+        },
+        "dunsparce_bridge_opportunity": true,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 1,
+        "resolved_attacks": 1,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 0,
+        "powerful_hand": {
+          "resolved_attacks": 1,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": [
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    },
+    {
+      "opponent": "crustle_v1",
+      "game": 4,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 0,
+        "win": true,
+        "loss": false,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": false,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 4,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 6
+        },
+        "dunsparce_bridge_opportunity": false,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 4,
+        "resolved_attacks": 4,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 0,
+        "powerful_hand": {
+          "resolved_attacks": 4,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": [
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    },
+    {
+      "opponent": "maktha_1084",
+      "game": 1,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 0,
+        "win": true,
+        "loss": false,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": true,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 2,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 4
+        },
+        "dunsparce_bridge_opportunity": true,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 6,
+        "resolved_attacks": 6,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 2,
+        "powerful_hand": {
+          "resolved_attacks": 6,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 2
+        },
+        "cases": [
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 3,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 3,
+        "successes": 0,
+        "success_rate": 0.0,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 3,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": [
+          {
+            "previous_turn": 7,
+            "current_turn": 8,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          },
+          {
+            "previous_turn": 11,
+            "current_turn": 12,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          },
+          {
+            "previous_turn": 13,
+            "current_turn": 14,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          }
+        ]
+      }
+    },
+    {
+      "opponent": "maktha_1084",
+      "game": 2,
+      "turn_order": {
+        "first": false,
+        "second": true
+      },
+      "outcome": {
+        "winner": 0,
+        "win": true,
+        "loss": false,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 4,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": true,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": false,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 6,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 8
+        },
+        "dunsparce_bridge_opportunity": false,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 5,
+        "resolved_attacks": 5,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 1,
+        "powerful_hand": {
+          "resolved_attacks": 5,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 1
+        },
+        "cases": [
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 3,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 2,
+        "successes": 0,
+        "success_rate": 0.0,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 2,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": [
+          {
+            "previous_turn": 10,
+            "current_turn": 11,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          },
+          {
+            "previous_turn": 14,
+            "current_turn": 15,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          }
+        ]
+      }
+    },
+    {
+      "opponent": "maktha_1084",
+      "game": 3,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 1,
+        "win": false,
+        "loss": true,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": false,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 0,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 2
+        },
+        "dunsparce_bridge_opportunity": false,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 0,
+        "resolved_attacks": 0,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 0,
+        "powerful_hand": {
+          "resolved_attacks": 0,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": []
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    },
+    {
+      "opponent": "maktha_1084",
+      "game": 4,
+      "turn_order": {
+        "first": false,
+        "second": true
+      },
+      "outcome": {
+        "winner": 1,
+        "win": false,
+        "loss": true,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 4,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": false,
+          "alakazam_or_search": false,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 0,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 2
+        },
+        "dunsparce_bridge_opportunity": false,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 0,
+        "resolved_attacks": 0,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 0,
+        "powerful_hand": {
+          "resolved_attacks": 0,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": []
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    },
+    {
+      "opponent": "romanrozen_v9",
+      "game": 1,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 0,
+        "win": true,
+        "loss": false,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": true,
+        "opening_four_components": {
+          "active_abra": true,
+          "rare_candy": true,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": true
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 3,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 5
+        },
+        "dunsparce_bridge_opportunity": false,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 8,
+        "resolved_attacks": 8,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 2,
+        "powerful_hand": {
+          "resolved_attacks": 8,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 2
+        },
+        "cases": [
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          },
+          {
+            "attack_id": 1072,
+            "powerful_hand": true,
+            "resolved": true,
+            "non_prize": false,
+            "prize_delta": 1,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 3,
+        "successes": 0,
+        "success_rate": 0.0,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 3,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": [
+          {
+            "previous_turn": 7,
+            "current_turn": 8,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          },
+          {
+            "previous_turn": 11,
+            "current_turn": 12,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          },
+          {
+            "previous_turn": 17,
+            "current_turn": 18,
+            "success": false,
+            "classification": "recoverable_discard_miss"
+          }
+        ]
+      }
+    },
+    {
+      "opponent": "romanrozen_v9",
+      "game": 2,
+      "turn_order": {
+        "first": false,
+        "second": true
+      },
+      "outcome": {
+        "winner": 1,
+        "win": false,
+        "loss": true,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 4,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": true,
+          "rare_candy": false,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": true,
+          "ability_draw_cards": 4,
+          "normal_draw_cards": 2,
+          "total_draw_cards": 6
+        },
+        "dunsparce_bridge_opportunity": false,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 1,
+        "resolved_attacks": 1,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 1,
+        "powerful_hand": {
+          "resolved_attacks": 0,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": [
+          {
+            "attack_id": 1071,
+            "powerful_hand": false,
+            "resolved": true,
+            "non_prize": true,
+            "prize_delta": 0,
+            "damage_observed": true
+          }
+        ]
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    },
+    {
+      "opponent": "romanrozen_v9",
+      "game": 3,
+      "turn_order": {
+        "first": true,
+        "second": false
+      },
+      "outcome": {
+        "winner": 1,
+        "win": false,
+        "loss": true,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 3,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": true,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": false,
+          "ability_draw_cards": 0,
+          "normal_draw_cards": 1,
+          "total_draw_cards": 1
+        },
+        "dunsparce_bridge_opportunity": true,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 0,
+        "resolved_attacks": 0,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 0,
+        "powerful_hand": {
+          "resolved_attacks": 0,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": []
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    },
+    {
+      "opponent": "romanrozen_v9",
+      "game": 4,
+      "turn_order": {
+        "first": false,
+        "second": true
+      },
+      "outcome": {
+        "winner": 1,
+        "win": false,
+        "loss": true,
+        "draw": false,
+        "error": false
+      },
+      "t2": {
+        "engine_turn": 4,
+        "attack_success": false,
+        "opening_four_components": {
+          "active_abra": false,
+          "rare_candy": false,
+          "alakazam_or_search": true,
+          "psychic_energy_or_hilda": true,
+          "all_four": false
+        },
+        "draws_to_second_turn": {
+          "reached_second_turn": false,
+          "ability_draw_cards": 0,
+          "normal_draw_cards": 1,
+          "total_draw_cards": 1
+        },
+        "dunsparce_bridge_opportunity": true,
+        "dunsparce_bridge_completed": false
+      },
+      "attack_quality": {
+        "attack_submissions": 0,
+        "resolved_attacks": 0,
+        "unresolved_attacks": 0,
+        "unknown_prize_attacks": 0,
+        "non_prize_attacks": 0,
+        "powerful_hand": {
+          "resolved_attacks": 0,
+          "unknown_prize_attacks": 0,
+          "non_prize_attacks": 0
+        },
+        "cases": []
+      },
+      "relay": {
+        "opportunities": 0,
+        "successes": 0,
+        "success_rate": null,
+        "failure_counts": {
+          "field_route_miss": 0,
+          "recoverable_discard_miss": 0,
+          "recoverable_route_incomplete": 0,
+          "nonterminal_no_field_route": 0,
+          "terminal_no_resource": 0
+        },
+        "cases": []
+      }
+    }
+  ]
+}

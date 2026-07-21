@@ -11,6 +11,7 @@ from .trace_utils import (
     field_state,
     knockout_is_confirmed,
     logs,
+    lifecycle_status,
     normalized_evidence,
     player_at,
     trace_steps,
@@ -19,6 +20,14 @@ from .trace_utils import (
 
 READY_ATTACKER_CARD_IDS = {742, 743}
 PSYCHIC_ENERGY = 5
+RELAY_ROUTE_CARD_IDS = {741, 742, 743}
+RELAY_FAILURES = (
+    "field_route_miss",
+    "recoverable_discard_miss",
+    "recoverable_route_incomplete",
+    "nonterminal_no_field_route",
+    "terminal_no_resource",
+)
 
 
 def _ready_attacker_count(step: dict, physical_index: int) -> int:
@@ -35,6 +44,7 @@ class PostKORelayPlugin:
     metric_id = "post_ko_relay"
 
     def analyze_game(self, trace: dict, context: GameContext) -> GameMetric:
+        lifecycle = lifecycle_status(trace)
         physical_index = candidate_index(trace, context.candidate_physical_index)
         previous_field: dict[int, dict] = {}
         seen: set[tuple[int, int]] = set()
@@ -63,6 +73,10 @@ class PostKORelayPlugin:
                     "knocked_out_card_id": as_int(log.get("cardId")),
                     "ready_attacker_count": ready_count,
                     "zero_ready": ready_count == 0,
+                    "classification": _relay_failure_class(step, physical_index)
+                    if ready_count == 0
+                    else "success",
+                    "evidence_strength": "proxy",
                 }
                 events.append(event)
                 source = normalized_evidence(
@@ -93,15 +107,44 @@ class PostKORelayPlugin:
             "zero_ready_events": zero_ready_count,
             "games_denominator": 1,
             "games_with_zero_ready": int(zero_ready_count > 0),
+            "candidate_first": context.candidate_first,
+            "turn_order": "first" if context.candidate_first else "second",
+            "lifecycle_status": lifecycle,
+        }
+        failure_counts = {
+            name: sum(
+                int(event.get("classification") == name)
+                for event in events
+            )
+            for name in RELAY_FAILURES
         }
         return GameMetric(
             metric_id=self.metric_id,
-            status="success" if events else "unavailable",
+            status=(
+                "error"
+                if lifecycle == "error"
+                else "unavailable"
+                if lifecycle == "unfinished"
+                else "success"
+                if events
+                else "unavailable"
+            ),
             numerator=zero_ready_count,
             denominator=len(events),
             value=zero_ready_count / len(events) if events else None,
             evidence=tuple(evidence),
             diagnostics=(diagnostic,),
+            payload={
+                "opportunities": len(events),
+                "successes": len(events) - zero_ready_count,
+                "failure_counts": failure_counts,
+                "events": events,
+                "evidence_strength": "proxy",
+                "games": 1,
+                "error_games": int(lifecycle == "error"),
+                "unfinished_games": int(lifecycle == "unfinished"),
+                "lifecycle_status": lifecycle,
+            },
         )
 
     def aggregate(self, results: list[GameMetric]) -> AggregateMetric:
@@ -135,10 +178,84 @@ class PostKORelayPlugin:
             group["games_with_zero_ready_rate"] = (
                 int(group["games_with_zero_ready"]) / games if games else None
             )
+        payload = _aggregate_payload(results)
         return AggregateMetric(
             metric_id=self.metric_id,
             numerator=numerator,
             denominator=denominator,
             value=numerator / denominator if denominator else None,
             by_opponent=dict(grouped),
+            payload=payload,
         )
+
+
+def _relay_failure_class(step: dict, physical_index: int) -> str:
+    player = player_at(step, physical_index)
+    field_ids = {
+        as_int(card.get("id"))
+        for card in [active(player), *bench(player)]
+        if isinstance(card, dict) and as_int(card.get("id")) is not None
+    }
+    discard_ids = {
+        as_int(card.get("id"))
+        for card in (player.get("discard") or [])
+        if isinstance(card, dict) and as_int(card.get("id")) is not None
+    }
+    hand_ids = {
+        as_int(card.get("id"))
+        for card in (player.get("hand") or [])
+        if isinstance(card, dict) and as_int(card.get("id")) is not None
+    }
+    if field_ids & {741, 742}:
+        return "field_route_miss"
+    if discard_ids & RELAY_ROUTE_CARD_IDS:
+        return "recoverable_discard_miss"
+    if hand_ids & RELAY_ROUTE_CARD_IDS:
+        return "recoverable_route_incomplete"
+    deck_count = as_int(player.get("deckCount"), 0) or 0
+    return "nonterminal_no_field_route" if deck_count > 0 else "terminal_no_resource"
+
+
+def _aggregate_payload(
+    results: list[GameMetric], *, include_turn_order: bool = True
+) -> dict[str, object]:
+    values = list(results)
+    failure_counts = {
+        name: sum(
+            int(result.payload.get("failure_counts", {}).get(name, 0))
+            for result in values
+        )
+        for name in RELAY_FAILURES
+    }
+    opportunities = sum(int(result.payload.get("opportunities", 0)) for result in values)
+    successes = sum(int(result.payload.get("successes", 0)) for result in values)
+    by_turn_order = {
+        turn_order: _aggregate_payload(
+            [
+                result
+                for result in values
+                if result.diagnostics
+                and isinstance(result.diagnostics[0], dict)
+                and result.diagnostics[0].get("turn_order") == turn_order
+            ],
+            include_turn_order=False,
+        )
+        for turn_order in ("first", "second")
+    } if include_turn_order else {}
+    return {
+        "games": len(values),
+        "error_games": sum(
+            int(result.payload.get("error_games", result.status == "error"))
+            for result in values
+        ),
+        "unfinished_games": sum(
+            int(result.payload.get("unfinished_games", result.status == "unfinished"))
+            for result in values
+        ),
+        "opportunities": opportunities,
+        "successes": successes,
+        "success_rate": successes / opportunities if opportunities else None,
+        "failure_counts": failure_counts,
+        "by_turn_order": by_turn_order,
+        "evidence_strength": "proxy",
+    }

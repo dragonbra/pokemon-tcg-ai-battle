@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from evaluation.metrics import MetricPresentation
 from evaluation.reporting import ReportData, render_html, render_markdown, write_report
 
 
@@ -100,6 +101,49 @@ def report_data() -> ReportData:
 
 
 class EvaluationReportingTests(unittest.TestCase):
+    def test_plugin_presentations_and_profile_metadata_are_rendered(self) -> None:
+        base = report_data()
+        data = ReportData(
+            manifest={
+                **base.manifest,
+                "metric_profile": {
+                    "id": "auto_iteration_v8_setup_relay",
+                    "revision": 2,
+                },
+            },
+            summary=base.summary,
+            games=base.games,
+            metrics=base.metrics,
+            cases=base.cases,
+            metric_profile={
+                "id": "auto_iteration_v8_setup_relay",
+                "revision": 2,
+                "metric_ids": ["setup_relay", "attack_quality"],
+            },
+            presentations={
+                "setup_relay": MetricPresentation(
+                    "setup_relay",
+                    "Setup and relay",
+                    "## Setup and relay\n\nbridge rate: 0.5",
+                    "<section><h2>Setup and relay</h2><p>bridge rate: 0.5</p></section>",
+                ),
+                "attack_quality": MetricPresentation(
+                    "attack_quality",
+                    "Attack quality",
+                    "## Attack quality\n\nnon-prize attacks: 2",
+                    "<section><h2>Attack quality</h2><p>non-prize attacks: 2</p></section>",
+                ),
+            },
+        )
+
+        markdown = render_markdown(data)
+        html = render_html(data)
+
+        for value in ("auto_iteration_v8_setup_relay", "revision", "Setup and relay", "Attack quality"):
+            self.assertIn(value, markdown)
+            self.assertIn(value, html)
+        self.assertIn('"presentations"', html)
+
     def test_markdown_and_html_render_the_same_aggregated_fixture(self) -> None:
         data = report_data()
 

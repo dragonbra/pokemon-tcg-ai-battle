@@ -9,6 +9,7 @@ from ..cards import (
     DAWN,
     DUNSPARCE,
     DUDUNSPARCE,
+    ENRICHING_ENERGY,
     HILDA,
     KADABRA,
     POKE_PAD,
@@ -77,6 +78,17 @@ def choose_search(
         return _first_matching(options, priorities)
 
     if effect_id == HILDA:
+        field_ids = {pokemon.card_id for pokemon in facts.yours.field}
+        if (
+            facts.yours.active
+            and facts.yours.active.card_id == ALAKAZAM
+            and ABRA not in field_ids
+            and DUNSPARCE in field_ids
+        ):
+            return _first_matching(
+                options,
+                (DUDUNSPARCE, ENRICHING_ENERGY, ALAKAZAM, KADABRA),
+            )
         attack_base = next(
             (pokemon for pokemon in facts.yours.field if pokemon.card_id in {ABRA, KADABRA}),
             None,
