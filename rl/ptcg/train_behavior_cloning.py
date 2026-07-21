@@ -158,6 +158,8 @@ def train(
             order = list(range(len(training)))
             random.Random(seed + epoch).shuffle(order)
             train_losses: list[float] = []
+            train_policy_losses: list[float] = []
+            train_value_losses: list[float] = []
             for start in range(0, len(order), batch_size):
                 batch_records = [training[index] for index in order[start : start + batch_size]]
                 batch = _move_batch(_batch(batch_records), device)
@@ -174,11 +176,15 @@ def train(
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
                 train_losses.append(float(loss.item()))
+                train_policy_losses.append(float(policy_loss.item()))
+                train_value_losses.append(float(value_loss.item()))
 
             train_metrics = _evaluate(model, training, device)
             validation_metrics = _evaluate(model, validation or training, device)
             last_metrics = {
                 "train/bc_loss": sum(train_losses) / max(1, len(train_losses)),
+                "train/policy_loss": sum(train_policy_losses) / max(1, len(train_policy_losses)),
+                "train/value_loss": sum(train_value_losses) / max(1, len(train_value_losses)),
                 "train/action_accuracy": train_metrics["action_accuracy"],
                 "train/legal_action_rate": train_metrics["legal_action_rate"],
                 "validation/bc_loss": validation_metrics["bc_loss"],

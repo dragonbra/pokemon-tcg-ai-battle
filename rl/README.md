@@ -137,6 +137,18 @@ option index 的决策；卡牌效果的多选仍由规则 handler 负责。`sel
 全局动作编号。`checkpoints/best_validation.pt` 的 metadata 会保存模型和特征 schema，
 可直接交给 `PTCGCandidatePolicy.from_checkpoint()` 恢复推理结构。
 
+终局 reward 过渡实验可以在不改变输入输出 contract 的前提下开启：
+
+```bash
+python3.11 -m rl.ptcg.train_behavior_cloning \
+  rl/runs/datasets/alakazam_v9_teacher_v4_reward.jsonl \
+  --output rl/runs/training/alakazam_terminal_reward \
+  --outcome-weight 0.5 --value-loss-weight 0.1 --device auto
+```
+
+TensorBoard 会额外记录 `train/policy_loss` 和 `train/value_loss`；如果实战 evaluation
+没有改善，这个 profile 不应晋级。
+
 ### 本地 checkpoint 评测 candidate
 
 BC checkpoint 可以生成一个只用于研究评测的 hybrid candidate：主动作使用模型，卡牌效果

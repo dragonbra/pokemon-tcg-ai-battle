@@ -111,6 +111,11 @@ schema version。
 用完整对局胜负训练 `value(s)`。检查 value MAE、胜率校准和它对攻击路线/断档局面的
 排序能力。
 
+当前已提供一个离线过渡实验：dataset 记录终局胜负，`--outcome-weight` 对 policy loss
+做胜负重加权，`--value-loss-weight` 训练 value head。它只用于验证 reward 信号和日志
+是否有效，不等同于在线 PPO；整局胜负复制给每个动作的粗粒度方案若不能通过冻结评测，
+应退回并改用 transition-level shaping 或 MCTS target。
+
 ### Phase C：MCTS-guided self-play
 
 官方 Search API 负责状态转移，policy 提供动作先验，value 评价叶子节点。先使用很小
