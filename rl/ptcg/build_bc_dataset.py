@@ -19,10 +19,9 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
         "--teacher-player-index",
-        type=int,
-        default=0,
-        choices=(0, 1),
-        help="physical player index whose actions are the teacher labels",
+        default="auto",
+        choices=("auto", "0", "1"),
+        help="teacher physical player index, or auto from evaluation result metadata",
     )
     parser.add_argument(
         "--include-effect-selections",
@@ -30,10 +29,13 @@ def main() -> None:
         help="include single-option effect selections; main actions are the default",
     )
     args = parser.parse_args()
+    teacher_player_index = (
+        None if args.teacher_player_index == "auto" else int(args.teacher_player_index)
+    )
     result = write_behavior_cloning_dataset(
         args.traces,
         args.output,
-        teacher_player_index=args.teacher_player_index,
+        teacher_player_index=teacher_player_index,
         feature_config=PTCGFeatureConfig(),
         include_effect_selections=args.include_effect_selections,
     )

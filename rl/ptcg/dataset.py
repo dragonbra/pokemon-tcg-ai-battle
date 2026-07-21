@@ -23,7 +23,7 @@ def _read_trace(path: str | Path) -> dict[str, Any]:
 def iter_behavior_cloning_records(
     path: str | Path,
     *,
-    teacher_player_index: int = 0,
+    teacher_player_index: int | None = 0,
     feature_config: PTCGFeatureConfig = PTCGFeatureConfig(),
     include_effect_selections: bool = False,
 ) -> Iterator[dict[str, Any]]:
@@ -35,12 +35,17 @@ def iter_behavior_cloning_records(
     and single-index decisions. Effect selections can be enabled later, but
     multi-select effects still require a separate sequential target contract.
     """
-    if teacher_player_index not in (0, 1):
+    if teacher_player_index not in (None, 0, 1):
         raise ValueError("teacher_player_index must be 0 or 1")
     payload = _read_trace(path)
     source_path = str(Path(path).resolve())
     result = payload.get("result") or {}
     game_id = str(result.get("game_id") or result.get("gameId") or Path(path).stem)
+    actual_teacher_index = teacher_player_index
+    if actual_teacher_index is None:
+        actual_teacher_index = int(result.get("candidate_physical_index", 0))
+    if actual_teacher_index not in (0, 1):
+        raise ValueError(f"invalid candidate physical index in {source_path}")
 
     for entry in payload["trace"]:
         if not isinstance(entry, dict):
@@ -50,7 +55,7 @@ def iter_behavior_cloning_records(
             continue
         current = observation.get("current") or {}
         select = observation.get("select") or {}
-        if int(current.get("yourIndex", -1)) != teacher_player_index:
+        if int(current.get("yourIndex", -1)) != actual_teacher_index:
             continue
         select_type_value = select.get("type", -1)
         context_value = select.get("context", -1)
@@ -86,7 +91,7 @@ def iter_behavior_cloning_records(
             "source": source_path,
             "game_id": game_id,
             "step": int(entry.get("step", -1)),
-            "player_index": teacher_player_index,
+            "player_index": actual_teacher_index,
             "selection_type": select_type,
             "selection_context": context,
             "target": target,
@@ -98,7 +103,7 @@ def write_behavior_cloning_dataset(
     traces: Iterable[str | Path],
     output: str | Path,
     *,
-    teacher_player_index: int = 0,
+    teacher_player_index: int | None = 0,
     feature_config: PTCGFeatureConfig = PTCGFeatureConfig(),
     include_effect_selections: bool = False,
 ) -> dict[str, int | str]:
