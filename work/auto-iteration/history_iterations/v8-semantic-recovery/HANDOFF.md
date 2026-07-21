@@ -51,7 +51,7 @@ Nighttime Mine 的语义修复和对应回归测试，但不应把它称为性�
 - Nighttime Mine 的机制测试已通过，但 `iteration-024-full` 回退，说明“语义正确”
   与“整体结果改善”必须分开验证，不能直接继续放大该动作的优先级。
 
-## 给 gpt-5.6-luna 的 review 任务
+## 给 gpt-5.6-sol 的 review 任务
 
 建议 review 按以下顺序进行，每次只提出一个主要假设并先写失败测试：
 
