@@ -99,6 +99,31 @@ class RLFrameworkTests(unittest.TestCase):
         self.assertEqual(len(encoded["action_mask"]), config.max_candidates)
         self.assertEqual(sum(encoded["action_mask"]), 2)
 
+    def test_ptcg_encoder_can_restore_legacy_v2_checkpoint_inputs(self) -> None:
+        config = PTCGFeatureConfig(state_numeric_dim=32, state_token_count=40)
+        observation = {
+            "current": {
+                "turn": 2,
+                "yourIndex": 0,
+                "firstPlayer": 0,
+                "players": [
+                    {"active": [{"id": 741}], "bench": []},
+                    {"active": [], "bench": []},
+                ],
+            },
+            "rl_history": [{"type": 13, "attackId": 1072}],
+            "select": {
+                "type": 0,
+                "context": 0,
+                "minCount": 1,
+                "maxCount": 1,
+                "option": [{"type": 13}, {"type": 14}],
+            },
+        }
+        encoded = encode_observation(observation, config)
+        self.assertEqual(len(encoded["state_numeric"]), 32)
+        self.assertEqual(len(encoded["state_card_ids"]), 40)
+
     @unittest.skipUnless(torch is not None, "PyTorch is an optional RL dependency")
     def test_collate_encoded_uses_expected_dtypes(self) -> None:
         sample = {

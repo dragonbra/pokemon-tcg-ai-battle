@@ -63,7 +63,9 @@ def _resolve_device(requested: str) -> torch.device:
     return device
 
 
-def _load_model(checkpoint: Path, device: torch.device) -> CandidatePolicyValueNet:
+def _load_model(
+    checkpoint: Path, device: torch.device
+) -> tuple[CandidatePolicyValueNet, dict[str, Any], str]:
     payload = torch.load(checkpoint, map_location=device, weights_only=False)
     metadata = payload.get("metadata") or {}
     saved_config = metadata.get("model_config")
@@ -71,7 +73,14 @@ def _load_model(checkpoint: Path, device: torch.device) -> CandidatePolicyValueN
         raise ValueError("checkpoint metadata.model_config is required")
     model = CandidatePolicyValueNet(ModelConfig(**saved_config)).to(device)
     model.load_state_dict(payload["model"])
-    return model
+    saved_features = metadata.get("feature_config")
+    feature_config = (
+        dict(saved_features) if isinstance(saved_features, dict) else PTCGFeatureConfig().__dict__
+    )
+    feature_schema_version = str(
+        metadata.get("feature_schema_version") or "ptcg_features_v3"
+    )
+    return model, feature_config, feature_schema_version
 
 
 @torch.no_grad()
@@ -123,7 +132,7 @@ def train(
     random.seed(seed)
     device = _resolve_device(device_name)
     records = load_behavior_cloning_dataset(dataset_path)
-    model = _load_model(checkpoint, device)
+    model, feature_config, feature_schema_version = _load_model(checkpoint, device)
     old_log_prob, old_value, terminal_outcome = _old_policy_targets(model, records, device)
     shaping = torch.tensor(
         [float((record.get("potential_shaping") or {}).get("total", 0.0)) for record in records],
@@ -188,7 +197,8 @@ def train(
                 "dataset": str(dataset_path.resolve()),
                 "source_checkpoint": str(checkpoint.resolve()),
                 "model_config": model.config.to_dict(),
-                "feature_config": PTCGFeatureConfig().__dict__,
+                "feature_config": feature_config,
+                "feature_schema_version": feature_schema_version,
                 "seed": seed,
                 "device": str(device),
                 "clip_ratio": clip_ratio,

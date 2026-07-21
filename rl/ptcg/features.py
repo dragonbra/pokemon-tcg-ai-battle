@@ -177,6 +177,11 @@ def encode_observation(
     opponent_index = 1 - your_index
     opponent = players[opponent_index] if 0 <= opponent_index < len(players) else {}
 
+    if config.state_numeric_dim not in (24, 32, 36):
+        raise ValueError(
+            "unsupported feature schema state width: "
+            f"{config.state_numeric_dim}; expected 24, 32, or 36"
+        )
     state_numeric = _player_numeric(player, opponent)
     result = current.get("result")
     state_numeric.extend(
@@ -191,23 +196,39 @@ def encode_observation(
             _normal(select.get("minCount", 0), 8.0),
             _normal(select.get("maxCount", 0), 8.0),
             1.0 if isinstance(result, int) and result >= 0 else 0.0,
-            *_log_numeric(current, your_index),
-            *_history_numeric(observation),
         ]
     )
+    if config.state_numeric_dim >= 32:
+        state_numeric.extend(_log_numeric(current, your_index))
+    if config.state_numeric_dim >= 36:
+        state_numeric.extend(_history_numeric(observation))
     if len(state_numeric) != config.state_numeric_dim:
         raise ValueError(
             f"state feature schema has {len(state_numeric)} values, "
             f"expected {config.state_numeric_dim}"
         )
 
-    state_tokens = [
-        *_field_tokens(player, 6),
-        *_field_tokens(opponent, 6),
-        *_zone_tokens(player, "hand", 16),
-        *_zone_tokens(player, "discard", 8),
-        *_zone_tokens(opponent, "discard", 4),
-    ]
+    if config.state_token_count == 24:
+        state_tokens = [
+            *_field_tokens(player, 6),
+            *_field_tokens(opponent, 6),
+            *_zone_tokens(player, "hand", 6),
+            *_zone_tokens(player, "discard", 4),
+            *_zone_tokens(opponent, "discard", 2),
+        ]
+    elif config.state_token_count == 40:
+        state_tokens = [
+            *_field_tokens(player, 6),
+            *_field_tokens(opponent, 6),
+            *_zone_tokens(player, "hand", 16),
+            *_zone_tokens(player, "discard", 8),
+            *_zone_tokens(opponent, "discard", 4),
+        ]
+    else:
+        raise ValueError(
+            "unsupported feature schema token width: "
+            f"{config.state_token_count}; expected 24 or 40"
+        )
     if len(state_tokens) != config.state_token_count:
         raise ValueError(
             f"state token schema has {len(state_tokens)} values, "

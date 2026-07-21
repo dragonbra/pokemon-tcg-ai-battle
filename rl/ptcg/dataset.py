@@ -11,6 +11,9 @@ from .rewards import potential_shaping
 
 
 DATASET_VERSION = "ptcg_bc_v1"
+SUPPORTED_FEATURE_SCHEMA_VERSIONS = frozenset(
+    {"ptcg_features_v1", "ptcg_features_v2", FEATURE_SCHEMA_VERSION}
+)
 MAIN_SELECT_TYPE = 0
 MAIN_SELECT_CONTEXT = 0
 
@@ -179,7 +182,7 @@ def load_behavior_cloning_dataset(path: str | Path) -> list[dict[str, Any]]:
             if (
                 not isinstance(record, dict)
                 or record.get("dataset_version") != DATASET_VERSION
-                or record.get("feature_schema_version") != FEATURE_SCHEMA_VERSION
+                or record.get("feature_schema_version") not in SUPPORTED_FEATURE_SCHEMA_VERSIONS
             ):
                 raise ValueError(f"unsupported dataset record at line {line_number}")
             encoded = record.get("encoded")

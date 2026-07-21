@@ -5,12 +5,22 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from rl.ptcg.dataset import DATASET_VERSION, load_behavior_cloning_dataset
+from rl.ptcg.dataset import (
+    DATASET_VERSION,
+    SUPPORTED_FEATURE_SCHEMA_VERSIONS,
+    load_behavior_cloning_dataset,
+)
 from rl.ptcg.features import PTCGFeatureConfig
 from rl.ptcg.rewards import observation_potential, potential_shaping
 
 
 class PTCGDatasetTests(unittest.TestCase):
+    def test_loader_keeps_known_legacy_feature_schemas_readable(self) -> None:
+        self.assertEqual(
+            SUPPORTED_FEATURE_SCHEMA_VERSIONS,
+            {"ptcg_features_v1", "ptcg_features_v2", "ptcg_features_v3"},
+        )
+
     def test_visible_potential_components_are_stable_and_auditable(self) -> None:
         observation = {
             "current": {
