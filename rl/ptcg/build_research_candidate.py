@@ -57,6 +57,11 @@ TYPE_GUARD_ENABLED = os.environ.get("PTCG_RL_TYPE_GUARD", "0") == "1"
 SEARCH_ENABLED = os.environ.get("PTCG_RL_SEARCH", "0") == "1"
 SEARCH_BUDGET = max(1, int(os.environ.get("PTCG_RL_SEARCH_BUDGET", "4")))
 SEARCH_RNG = random.Random(int(os.environ.get("PTCG_RL_SEARCH_SEED", "7")))
+_SEARCH_OPPONENT_DECK_POOL = [
+    int(value)
+    for value in os.environ.get("PTCG_RL_SEARCH_OPPONENT_DECK", "").split(",")
+    if value.strip().lstrip("-").isdigit()
+]
 DECK = _TEACHER.read_deck_csv()
 _MODEL_HISTORY: list[dict[str, int]] = []
 
@@ -230,6 +235,22 @@ def _search_score(observation: object, your_index: int) -> float:
     return value
 
 
+def _search_opponent_deck(count: int) -> list[int]:
+    """Sample a fixed, opponent-ID-independent hidden-deck prior."""
+    if count <= 0:
+        return []
+    if not _SEARCH_OPPONENT_DECK_POOL:
+        return [1072] * count
+    if len(_SEARCH_OPPONENT_DECK_POOL) >= count:
+        return SEARCH_RNG.sample(_SEARCH_OPPONENT_DECK_POOL, count)
+    values = [
+        _SEARCH_OPPONENT_DECK_POOL[index % len(_SEARCH_OPPONENT_DECK_POOL)]
+        for index in range(count)
+    ]
+    SEARCH_RNG.shuffle(values)
+    return values
+
+
 def _search_main_action(obs_dict: dict, model_index: int) -> int | None:
     """Run a small optional forward search over model and teacher first actions.
 
@@ -275,7 +296,7 @@ def _search_main_action(obs_dict: dict, model_index: int) -> int | None:
                     to_observation_class(obs_dict),
                     your_deck=SEARCH_RNG.sample(DECK, min(own_deck_count, len(DECK))),
                     your_prize=SEARCH_RNG.sample(DECK, min(len((players[your_index] if len(players) == 2 else {}).get("prize") or []), len(DECK))),
-                    opponent_deck=[1072] * opponent_deck_count,
+                    opponent_deck=_search_opponent_deck(opponent_deck_count),
                     opponent_prize=[1] * len(opponent.get("prize") or []),
                     opponent_hand=[1] * int(opponent.get("handCount", 0) or 0),
                     opponent_active=[1072] if opponent_active and opponent_active[0] is None else [],

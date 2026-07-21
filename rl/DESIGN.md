@@ -216,6 +216,12 @@ Post-KO relay 诊断指标有所上升，但 attack-quality 惩罚项和正确�
 value calibration 能让搜索 action value 产生有效排序，但当前搜索样本量和 policy
 target 仍不足以安全改写主动作策略。
 
+runtime research candidate 现在还支持 `PTCG_RL_SEARCH_OPPONENT_DECK`：它接受固定的
+17-opponent deck card pool，所有对局使用同一个混合先验，不读取 opponent ID。这样比
+`[1072] * deck_count` 的占位 determinization 更接近真实隐藏牌分布；但 transition-value
+checkpoint 加该 pool 的 34 局探索为 `23/34 = 67.65%`、1 个 error，仍未进入正式验收。
+该环境变量默认为空，search 默认关闭。
+
 ### Phase D：Masked PPO（可选）
 
 `rl/ptcg/train_ppo.py` 已提供第一版 masked PPO-style terminal reward 微调器。它从

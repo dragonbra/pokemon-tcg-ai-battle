@@ -207,6 +207,11 @@ python3.11 -m rl.ptcg.train_behavior_cloning \
 该参数只对含 `mcts_policy` 的记录生效；普通 BC 数据默认仍使用 hard target。硬 target
 accuracy 和 soft loss 都会保留在训练日志中，不能仅凭 loss 判断策略是否晋级。
 
+研究 candidate 若打开 runtime search，应优先通过 `PTCG_RL_SEARCH_OPPONENT_DECK` 注入一个
+固定的 opponent deck card pool；pool 对所有对手相同，不携带 opponent ID。未提供 pool
+时 search 会 fail-closed 地使用旧占位配置，且默认不开启。任何 search candidate 仍先做
+34 局探索，只有通过 outcome/correctness guardrails 才能做最低 17×10 验收。
+
 在把 checkpoint 用作搜索叶评估器前，可以先冻结 policy 校准 value head：
 
 ```bash
