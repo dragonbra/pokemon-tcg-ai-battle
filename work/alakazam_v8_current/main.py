@@ -67,6 +67,7 @@ HILDA = 1225
 DAWN = 1231
 ENHANCED_HAMMER = 1081
 BOSS_ORDERS = 1182
+NIGHTTIME_MINE = 1266
 
 POKEMON = {ALAKAZAM, ABRA, KADABRA, DUNSPARCE, DUDUNSPARCE, FEZANDIPITI_EX, PSYDUCK, SHAYMIN}
 EVOLUTION = {ALAKAZAM, KADABRA, DUDUNSPARCE}
@@ -154,6 +155,7 @@ DECK_DRAW_WATCH = 15
 SUPPORTER_IDS = {XEROSIC, HILDA, DAWN, LANAS_AID, BOSS_ORDERS}
 ITEM_IDS = {
     ENHANCED_HAMMER,
+    NIGHTTIME_MINE,
     NIGHT_STRETCHER,
     POFFIN,
     POKE_PAD,
@@ -979,13 +981,8 @@ def _fezandipiti_play_is_safe(
     logs: list[dict[str, Any]] | None = None,
     options: list[dict[str, Any]] | None = None,
 ) -> bool:
-    """Avoid exposing a two-Prize Fez when an ordinary Bench already exists."""
-    if not _bench(player):
-        return True
-    opponent = _opponent_state(current)
-    if len(opponent.get("prize") or []) <= 2 and _ready_attack_line_count(player) > 0:
-        return False
-    return _fezandipiti_needed(current, player, logs, options)
+    """Use Flip the Script whenever the previous turn supplied its trigger."""
+    return _previous_turn_had_knockout(current, logs)
 
 
 def _telepath_requires_abra_first(player: dict[str, Any]) -> bool:
@@ -1016,6 +1013,30 @@ def _pokepad_kadabra_route_available(
     if int(player.get("deckCount", 0)) <= 0:
         return False
     return _TURN_MEMORY.resource_unknown.get(KADABRA, 0) > 0
+
+
+def _active_dunsparce_handoff_route(
+    current: dict[str, Any], player: dict[str, Any]
+) -> bool:
+    """Whether Active Dunsparce should preserve a Dudunsparce handoff route."""
+    active = _active(player)
+    return bool(
+        active
+        and active.get("id") == DUNSPARCE
+        and _own_turn_number(current) > 1
+        and any(
+            pokemon.get("id") == ALAKAZAM and _has_psychic_energy(pokemon)
+            for pokemon in _bench(player)
+        )
+    )
+
+
+def _first_turn_pokepad_is_redundant(player: dict[str, Any]) -> bool:
+    """Keep Poké Pad when the opening board already has its Basic anchors."""
+    hand = _hand_ids(player)
+    abra_count = _field_count(player, {ABRA}) + hand.count(ABRA)
+    dunsparce_count = _field_count(player, {DUNSPARCE}) + hand.count(DUNSPARCE)
+    return abra_count >= 2 and dunsparce_count >= 1
 
 
 def _dudunsparce_net_deck_change(removed_count: int) -> int:
@@ -2035,8 +2056,28 @@ def _choose_card_option(
     effect_id = _effect_id(select)
     effect_step = _effect_step(select)
     known_ids = [_option_card_id(option, select, current) for option in options]
+    sacred_ash_order: dict[int, int] = {}
+    if effect_id == SACRED_ASH:
+        stage = {ABRA: 0, KADABRA: 1, ALAKAZAM: 2}
+        occurrences: Counter[int] = Counter()
+        for index, card_id in enumerate(known_ids):
+            if card_id in stage:
+                sacred_ash_order[index] = occurrences[card_id] * 3 + stage[card_id]
+                occurrences[card_id] += 1
+            elif card_id in {DUNSPARCE, DUDUNSPARCE}:
+                sacred_ash_order[index] = 100 + index
+            else:
+                sacred_ash_order[index] = 200 + index
 
     def category(card_id: int | None) -> int:
+        if effect_id == LANAS_AID:
+            needs_pokemon, needs_energy = _recovery_needs(current, player)
+            if needs_pokemon and card_id in ATTACK_LINE:
+                return {ABRA: 0, KADABRA: 1, ALAKAZAM: 2}[card_id]
+            if needs_pokemon and card_id == BASIC_PSYCHIC:
+                return 20
+            if needs_energy and card_id == BASIC_PSYCHIC:
+                return 0
         if effect_id == DAWN:
             groups = (
                 BASIC_SETUP,
@@ -2054,6 +2095,8 @@ def _choose_card_option(
                     and _has_field_card(player, {DUNSPARCE})
                 ):
                     wanted = {DUDUNSPARCE, ENRICHING_ENERGY}
+                elif _active_dunsparce_handoff_route(current, player):
+                    wanted = {DUDUNSPARCE}
                 elif _item_lock_active(current) and active_id == ABRA:
                     wanted = {KADABRA}
                 elif _active_hilda_rare_candy_route(current, player) or (
@@ -2132,7 +2175,12 @@ def _choose_card_option(
             elif _own_turn_number(current) <= 1:
                 # Nothing can evolve on the first turn. Search a setup Basic
                 # instead of putting a dead Kadabra into hand.
-                wanted = {DUNSPARCE} if DUNSPARCE in known_ids else {ABRA}
+                if active_id == DUNSPARCE and ABRA in known_ids:
+                    # An Active Dunsparce opening needs an Abra anchor so the
+                    # Bench can become the second-turn Alakazam route.
+                    wanted = {ABRA}
+                else:
+                    wanted = {DUNSPARCE} if DUNSPARCE in known_ids else {ABRA}
             elif active and active.get("id") == ABRA:
                 wanted = {KADABRA}
             elif any(option_id == KADABRA for option_id in known_ids):
@@ -2150,6 +2198,9 @@ def _choose_card_option(
     def score(item: tuple[int, dict[str, Any]]) -> tuple[int, int, int]:
         index, option = item
         card_id = _option_card_id(option, select, current)
+
+        if effect_id == SACRED_ASH:
+            return sacred_ash_order.get(index, 300), 0, index
 
         value = 0
         if context == 1:  # SETUP_ACTIVE_POKEMON
@@ -2613,7 +2664,13 @@ def _select_effect(obs: dict[str, Any]) -> list[int]:
                 needs_pokemon = True
                 needs_energy = True
             desired_count = int(needs_pokemon) + int(needs_energy)
-            count = min(max_count, max(min_count, desired_count))
+            attack_line_count = sum(card_id in ATTACK_LINE for card_id in useful)
+            count = min(
+                max_count,
+                max(min_count, attack_line_count or desired_count),
+            )
+        elif effect_id == SACRED_ASH:
+            count = min(max_count, len(useful))
         elif min_count:
             count = min_count
         elif effect_id in {POFFIN, TELEPATH_ENERGY}:
@@ -3061,11 +3118,9 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
             if card_id == ABRA and telepath_requires_abra:
                 return (0, 0, index)
             if card_id == FEZANDIPITI_EX:
-                if _v7_terminal_prize_closure(current, player, options=options):
-                    # Flip the Script is optional setup; a legal Powerful Hand
-                    # that closes the final Prize must be submitted first.
-                    return (130, 0, index)
                 return (0 if fezandipiti_needed else 130, 0, index)
+            if card_id == NIGHTTIME_MINE:
+                return (0, 0, index)
             if card_id == ABRA and bench_insurance_due:
                 # A Basic played from hand is a valid Bench anchor even when
                 # Poffin is unavailable. The next evolution/attachment is a
@@ -3089,6 +3144,8 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
                 if protective_energy_blocks_attack:
                     return (130, 0, index)
                 return (100, 0, index)
+            if card_id == HILDA and _active_dunsparce_handoff_route(current, player):
+                return (0, 0, index)
             if card_id in {DAWN, HILDA, LANAS_AID} and gain > 0:
                 if _draw_changes_knockout(current, player, gain):
                     return (4, -gain, index)
@@ -3148,6 +3205,8 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
                     index,
                 )
             if card_id == POKE_PAD:
+                if early_setup and _first_turn_pokepad_is_redundant(player):
+                    return (100, 0, index)
                 if direct_hilda_route:
                     return (9, 0, index)
                 if active_id == ABRA and KADABRA not in hand:
@@ -3188,24 +3247,13 @@ def _main_action(obs: dict[str, Any]) -> list[int]:
             if card_id == SACRED_ASH:
                 return (15 if recovery_need >= 2 else 35, 0, index)
             priorities = {
-                ENHANCED_HAMMER: (
-                    6
-                    if protective_energy_blocks_attack
-                    and _boss_has_strictly_better_prize(
-                        current, player, attack_is_legal, options, select
-                    )
-                    else 0
-                    if protective_energy_blocks_attack
-                    else 3
-                    if active_special_energy and not attack_is_ko
-                    else 9
-                    if any(
-                        _has_special_energy(pokemon)
-                        for pokemon in _bench(_opponent_state(current))
-                    )
-                    and not attack_is_ko
-                    else 30
-                ),
+                ENHANCED_HAMMER: 0
+                if active_special_energy
+                or any(
+                    _has_special_energy(pokemon)
+                    for pokemon in _bench(_opponent_state(current))
+                )
+                else 30,
             }
             return priorities.get(card_id, 25), 0, index
         if option_type == 12:
