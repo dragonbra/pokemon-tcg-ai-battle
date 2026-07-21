@@ -102,12 +102,11 @@ def propose(
     profile: StrategyProfile,
 ) -> tuple[ActionIntent, ...]:
     del routes, profile
-    if facts.item_lock:
-        return ()
     play_ids = {option.card_id for option in options if option.action_kind == ActionKind.PLAY}
     intents: list[ActionIntent] = []
     if (
-        POFFIN in play_ids
+        not facts.item_lock
+        and POFFIN in play_ids
         and len(facts.yours.bench) < facts.yours.bench_max
         and not _current_attacker_needs_psychic(facts, options)
     ):
@@ -121,6 +120,10 @@ def propose(
     if DUNSPARCE in play_ids and len(facts.yours.bench) < facts.yours.bench_max:
         if DUNSPARCE not in {pokemon.card_id for pokemon in facts.yours.field}:
             intents.append(_play(DUNSPARCE, "setup.dunsparce_anchor", "establish_handoff_base"))
-    if POKE_PAD in play_ids and not (facts.own_turn <= 1 and _setup_complete(facts)):
+    if (
+        not facts.item_lock
+        and POKE_PAD in play_ids
+        and not (facts.own_turn <= 1 and _setup_complete(facts))
+    ):
         intents.append(_play(POKE_PAD, "setup.poke_pad_route", "find_required_evolution"))
     return tuple(intents)

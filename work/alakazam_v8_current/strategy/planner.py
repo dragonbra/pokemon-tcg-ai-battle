@@ -2,8 +2,17 @@ from __future__ import annotations
 
 import hashlib
 
-from .cards import ABRA, ALAKAZAM, BASIC_PSYCHIC, DUDUNSPARCE, DUNSPARCE, HILDA, KADABRA
-from .model import PlanGoal, PlanKind, RouteCertainty, TurnFacts, TurnPlan
+from .cards import (
+    ABRA,
+    ALAKAZAM,
+    BASIC_PSYCHIC,
+    DUDUNSPARCE,
+    DUNSPARCE,
+    HILDA,
+    KADABRA,
+    RARE_CANDY,
+)
+from .model import Area, PlanGoal, PlanKind, RouteCertainty, TurnFacts, TurnPlan
 from .profiles import AttackPreparation, StrategyProfile
 from .routes import RouteAnalysis
 
@@ -51,7 +60,34 @@ def build_turn_plan(
             and option.target.key == active.key
             and option.card_id in {KADABRA, ALAKAZAM}
         )
-        if active_evolutions:
+        bench_kadabra = next(
+            (
+                option
+                for option in routes.evolution_options
+                if option.target is not None
+                and option.target.area == Area.BENCH
+                and option.target.card_id == ABRA
+                and option.target.can_evolve
+                and option.card_id == KADABRA
+            ),
+            None,
+        )
+        preserve_active_rare_candy_route = bool(
+            active.has_energy_type(BASIC_PSYCHIC)
+            and RARE_CANDY in facts.yours.hand_ids
+            and ALAKAZAM in facts.yours.hand_ids
+            and not facts.item_lock
+            and bench_kadabra is not None
+        )
+        if preserve_active_rare_candy_route:
+            goals.append(
+                PlanGoal(
+                    rule_id="evolution.bench_abra_kadabra",
+                    purpose="preserve_active_rare_candy_route",
+                    required_before_attack=True,
+                )
+            )
+        elif active_evolutions:
             target_card = (
                 ALAKAZAM
                 if any(option.card_id == ALAKAZAM for option in active_evolutions)

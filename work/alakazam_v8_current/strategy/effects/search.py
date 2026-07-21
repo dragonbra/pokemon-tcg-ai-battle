@@ -51,6 +51,10 @@ def choose_search(
     del plan
     if effect_id == POKE_PAD:
         active = facts.yours.active
+        if facts.own_turn <= 1:
+            opening_basic = _first_matching(options, (DUNSPARCE, ABRA))
+            if opening_basic:
+                return opening_basic
         if active and active.card_id == DUNSPARCE and _ready_bench_alakazam(facts):
             return _first_matching(options, (DUDUNSPARCE, ALAKAZAM, KADABRA, ABRA))
         if active and active.card_id == KADABRA:

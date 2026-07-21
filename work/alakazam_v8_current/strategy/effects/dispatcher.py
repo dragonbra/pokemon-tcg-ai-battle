@@ -9,7 +9,9 @@ from ..cards import (
     BOSS_ORDERS,
     DAWN,
     DUDUNSPARCE,
+    DUNSPARCE,
     ENHANCED_HAMMER,
+    FEZANDIPITI_EX,
     HILDA,
     KADABRA,
     LANAS_AID,
@@ -17,6 +19,7 @@ from ..cards import (
     POKE_PAD,
     POFFIN,
     SACRED_ASH,
+    SHAYMIN,
     TELEPATH_ENERGY,
 )
 from ..memory import GameMemory
@@ -88,7 +91,15 @@ def select_effect(
     indexes: tuple[int, ...] = ()
     rule_id = "effect.required_fallback"
     purpose = "satisfy_required_effect"
-    if context == 37:
+    if context == 2:
+        indexes = _choose_card_by_priority(
+            options,
+            (ABRA, DUNSPARCE, FEZANDIPITI_EX, SHAYMIN),
+        )
+        if not indexes and options:
+            indexes = (options[0].index,)
+        rule_id, purpose = "effect.setup_bench", "establish_opening_bench"
+    elif context == 37:
         indexes = choose_rare_candy_target(options, facts)
         rule_id, purpose = "effect.rare_candy_target", "evolve_attack_base"
     elif effect_id == ENHANCED_HAMMER:

@@ -10,6 +10,9 @@ from ..cards import (
     ENRICHING_ENERGY,
     FEZANDIPITI_EX,
     KADABRA,
+    POFFIN,
+    SHAYMIN,
+    TELEPATH_ENERGY,
 )
 from ..model import (
     ActionIntent,
@@ -224,6 +227,39 @@ def propose(
                     "build_next_attack_or_draw_line",
                     card_id=successor.card_id,
                     target_key=successor.target.key,
+                )
+            )
+
+    active = facts.yours.active
+    if (
+        active
+        and active.card_id in {FEZANDIPITI_EX, SHAYMIN}
+        and not active.attached_energy_ids
+        and not facts.budget.energy_used
+        and not any(
+            option.action_kind == ActionKind.PLAY and option.card_id == POFFIN
+            for option in options
+        )
+    ):
+        retreat_attachment = next(
+            (
+                option
+                for option in options
+                if option.action_kind == ActionKind.ATTACH
+                and option.card_id == TELEPATH_ENERGY
+                and option.target is not None
+                and option.target.key == active.key
+            ),
+            None,
+        )
+        if retreat_attachment:
+            intents.append(
+                _intent(
+                    "continuity.temporary_active_retreat_energy",
+                    ActionKind.ATTACH,
+                    "prepare_future_alakazam_handoff",
+                    card_id=TELEPATH_ENERGY,
+                    target_key=active.key,
                 )
             )
 
