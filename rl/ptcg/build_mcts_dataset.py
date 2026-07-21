@@ -84,6 +84,7 @@ def _search_action_value(
     search_step: Any,
     to_observation_class: Any,
     rng: random.Random,
+    rollout_steps: int,
 ) -> float | None:
     current = observation.get("current") or {}
     players = current.get("players") or []
@@ -102,7 +103,29 @@ def _search_action_value(
             opponent_hand=[1] * int(opponent.get("handCount", 0) or 0),
             opponent_active=[1072] if active and active[0] is None else [],
         )
-        leaf = search_step(root.searchId, [action_index]).observation
+        search_id = root.searchId
+        leaf = search_step(search_id, [action_index]).observation
+        for _ in range(rollout_steps):
+            state = getattr(leaf, "current", None)
+            if state is None or int(getattr(state, "result", -1)) >= 0:
+                break
+            leaf_dict = asdict(leaf)
+            next_select = leaf_dict.get("select") or {}
+            options = next_select.get("option") or []
+            if not options:
+                break
+            minimum = int(next_select.get("minCount", 1) or 0)
+            maximum = int(next_select.get("maxCount", 1) or 1)
+            if minimum == maximum == 1 and int(getattr(state, "yourIndex", -1)) == player_index:
+                try:
+                    next_index, _value = policy.select(leaf_dict)
+                    selection = [next_index]
+                except Exception:
+                    selection = [0]
+            else:
+                count = min(max(1, minimum), maximum, len(options))
+                selection = list(range(count))
+            leaf = search_step(search_id, selection).observation
         return _leaf_value(leaf, player_index, policy)
     except Exception:
         return None
@@ -121,6 +144,7 @@ def build_records(
     cg_root: Path,
     max_records: int,
     seed: int,
+    rollout_steps: int,
 ) -> list[dict[str, Any]]:
     policy = PTCGCandidatePolicy.from_checkpoint(str(checkpoint), map_location="cpu")
     schema_by_width = {24: "ptcg_features_v1", 32: "ptcg_features_v2", 36: "ptcg_features_v3"}
@@ -167,6 +191,7 @@ def build_records(
                         search_step,
                         to_observation_class,
                         rng,
+                        rollout_steps,
                     )
                 )
             valid = [index for index, value in enumerate(values) if value is not None]
@@ -203,12 +228,13 @@ def main() -> None:
     parser.add_argument("--cg-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-records", type=int, default=128)
+    parser.add_argument("--rollout-steps", type=int, default=0)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
     args = parser.parse_args()
-    if args.max_records < 1:
-        raise ValueError("max-records must be positive")
+    if args.max_records < 1 or args.rollout_steps < 0:
+        raise ValueError("max-records must be positive and rollout-steps cannot be negative")
     storage = assert_storage_safe(args.storage_path, args.min_free_gib)
     records = build_records(
         args.traces,
@@ -217,6 +243,7 @@ def main() -> None:
         cg_root=args.cg_root,
         max_records=args.max_records,
         seed=args.seed,
+        rollout_steps=args.rollout_steps,
     )
     if not records:
         raise ValueError("MCTS target collection produced no records")
