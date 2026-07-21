@@ -38,12 +38,19 @@ class PTCGCandidatePolicy:
         checkpoint: str,
         model_config: ModelConfig | None = None,
         *,
-        feature_config: PTCGFeatureConfig = PTCGFeatureConfig(),
+        feature_config: PTCGFeatureConfig | None = None,
         map_location: str = "cpu",
     ) -> "PTCGCandidatePolicy":
         payload = torch.load(checkpoint, map_location=map_location, weights_only=False)
+        metadata = payload.get("metadata") or {}
+        if feature_config is None:
+            saved_features = metadata.get("feature_config")
+            feature_config = (
+                PTCGFeatureConfig(**saved_features)
+                if isinstance(saved_features, dict)
+                else PTCGFeatureConfig()
+            )
         if model_config is None:
-            metadata = payload.get("metadata") or {}
             saved_config = metadata.get("model_config")
             if not isinstance(saved_config, dict):
                 raise ValueError(

@@ -149,6 +149,7 @@ class RLFrameworkTests(unittest.TestCase):
     @unittest.skipUnless(torch is not None, "PyTorch is an optional RL dependency")
     def test_ptcg_inference_bridge_returns_a_legal_option(self) -> None:
         from rl.ptcg.inference import PTCGCandidatePolicy
+        from tempfile import TemporaryDirectory
 
         feature_config = PTCGFeatureConfig()
         model_config = ModelConfig(
@@ -184,6 +185,37 @@ class RLFrameworkTests(unittest.TestCase):
         self.assertTrue(-1.0 <= value <= 1.0)
         _, _, confidence = policy.select_with_confidence(observation)
         self.assertTrue(0.0 <= confidence <= 1.0)
+
+        old_feature_config = PTCGFeatureConfig(
+            state_numeric_dim=24,
+            state_token_count=24,
+        )
+        old_model_config = ModelConfig(
+            state_numeric_dim=old_feature_config.state_numeric_dim,
+            state_token_count=old_feature_config.state_token_count,
+            candidate_numeric_dim=old_feature_config.candidate_numeric_dim,
+            max_candidates=old_feature_config.max_candidates,
+            card_vocab_size=old_feature_config.card_vocab_size,
+            action_type_vocab_size=old_feature_config.action_type_vocab_size,
+            d_model=16,
+            hidden_dim=32,
+            num_heads=2,
+        )
+        old_model = CandidatePolicyValueNet(old_model_config)
+        with TemporaryDirectory() as directory:
+            checkpoint = f"{directory}/old.pt"
+            torch.save(
+                {
+                    "model": old_model.state_dict(),
+                    "metadata": {
+                        "model_config": old_model_config.to_dict(),
+                        "feature_config": old_feature_config.__dict__,
+                    },
+                },
+                checkpoint,
+            )
+            restored = PTCGCandidatePolicy.from_checkpoint(checkpoint)
+        self.assertEqual(restored.feature_config.state_token_count, 24)
 
 
 if __name__ == "__main__":
