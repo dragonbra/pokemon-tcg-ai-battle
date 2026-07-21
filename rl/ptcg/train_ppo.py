@@ -130,8 +130,9 @@ def train(
         dtype=torch.float32,
         device=device,
     )
-    outcome = (terminal_outcome + shaping_weight * shaping).clamp(-1.0, 1.0)
-    advantage = outcome - old_value
+    shaped_return = terminal_outcome + shaping_weight * shaping
+    policy_target = shaped_return.clamp(-1.0, 1.0)
+    advantage = policy_target - old_value
     advantage = (advantage - advantage.mean()) / advantage.std().clamp_min(1e-6)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     manager = CheckpointManager(output_dir / "checkpoints")
@@ -159,7 +160,10 @@ def train(
                 unclipped = ratio * batch_advantage
                 clipped = ratio.clamp(1.0 - clip_ratio, 1.0 + clip_ratio) * batch_advantage
                 policy_loss = -torch.minimum(unclipped, clipped).mean()
-                value_loss = value_huber_loss(value, batch["terminal_outcome"])
+                batch_shaped_return = (
+                    batch["terminal_outcome"] + shaping_weight * batch["potential_shaping"]
+                ).clamp(-1.0, 1.0)
+                value_loss = value_huber_loss(value, batch_shaped_return)
                 probabilities = torch.softmax(logits, dim=-1)
                 entropy = -(probabilities * log_probs).sum(dim=-1).mean()
                 loss = policy_loss + value_loss_weight * value_loss - entropy_weight * entropy
@@ -174,7 +178,8 @@ def train(
                 "train/ppo_policy_loss": sum(policy_losses) / max(1, len(policy_losses)),
                 "train/ppo_value_loss": sum(value_losses) / max(1, len(value_losses)),
                 "train/ppo_entropy": sum(entropy_values) / max(1, len(entropy_values)),
-                "train/terminal_outcome_mean": float(outcome.mean().item()),
+                "train/terminal_outcome_mean": float(terminal_outcome.mean().item()),
+                "train/shaped_return_mean": float(policy_target.mean().item()),
                 "train/shaping_reward_mean": float(shaping.mean().item()),
             }
             logger.log(epoch, last_metrics)
@@ -190,6 +195,7 @@ def train(
                 "value_loss_weight": value_loss_weight,
                 "entropy_weight": entropy_weight,
                 "shaping_weight": shaping_weight,
+                "value_target": "clipped_terminal_plus_potential",
                 "storage_path": storage.path,
                 "storage_free_gib": round(storage.free_gib, 2),
                 "epoch_metrics": last_metrics,
