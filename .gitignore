@@ -15,6 +15,10 @@ data/competition/
 replays/raw/
 logs/
 
+# RL experiments: keep code/design/reference files tracked, ignore all
+# generated datasets, checkpoints, metrics and TensorBoard event files.
+rl/runs/
+
 # Official card data and Card ID PDFs are local reference downloads only.
 # Keep the small README tracked, but do not upload the resource files.
 data/official/*

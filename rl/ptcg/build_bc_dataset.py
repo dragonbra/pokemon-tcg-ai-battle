@@ -1,0 +1,44 @@
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+from .dataset import write_behavior_cloning_dataset
+from .features import PTCGFeatureConfig
+
+
+DEFAULT_OUTPUT = Path(__file__).resolve().parents[2] / "rl" / "runs" / "ptcg_bc" / "dataset.jsonl"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Build a legal-candidate Pokémon TCG behavior-cloning JSONL dataset"
+    )
+    parser.add_argument("traces", nargs="+", type=Path, help="local battle trace JSON files")
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--teacher-player-index",
+        type=int,
+        default=0,
+        choices=(0, 1),
+        help="physical player index whose actions are the teacher labels",
+    )
+    parser.add_argument(
+        "--include-effect-selections",
+        action="store_true",
+        help="include single-option effect selections; main actions are the default",
+    )
+    args = parser.parse_args()
+    result = write_behavior_cloning_dataset(
+        args.traces,
+        args.output,
+        teacher_player_index=args.teacher_player_index,
+        feature_config=PTCGFeatureConfig(),
+        include_effect_selections=args.include_effect_selections,
+    )
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

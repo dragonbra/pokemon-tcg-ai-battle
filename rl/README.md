@@ -1,0 +1,94 @@
+# RL 训练实验框架
+
+这里保存训练研究代码，不是正式 Kaggle submission。正式 submission 仍然必须经过
+`work/<name>/`、官方 `cg/` runtime 和 `evaluation` 验收。
+
+## 当前目标
+
+第一版固定 Alakazam 卡组，先验证一个通用的 candidate policy/value 模型：
+
+```text
+observation + 当前合法 options
+    -> 状态/动作编码
+    -> CandidatePolicyValueNet
+    -> masked policy logits + value
+```
+
+模型不生成 simulator 不允许的动作。候选动作由官方 observation 的 `select.option`
+提供，mask 只保留当前合法候选。
+
+## 目录
+
+- `core/model.py`：结构化状态、候选动作打分和 value head。
+- `core/losses.py`：合法候选交叉熵和带 padding mask 的 Huber loss。
+- `core/reward.py`：可版本化 reward profile 和透明 reward breakdown。
+- `core/logging.py`：JSONL 原始日志，TensorBoard 可选镜像。
+- `core/checkpoint.py`：保存模型、optimizer、随机状态和实验 metadata。
+- `core/promotion.py`：checkpoint 晋级护栏。
+- `ptcg/features.py`：官方 observation 的初版纯 Python 编码器。
+- `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
+- `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
+- `demo/`：没有 simulator 依赖的行为克隆 toy 演示。
+- `references/`：Kaggle notebook/report 参考和分析。
+- `DESIGN.md`：当前设计、训练路线和评测协议。
+
+## 安装和 toy 演示
+
+项目要求 Python 3.11+。训练依赖是可选的：
+
+```bash
+python3.11 -m pip install -e '.[rl]'
+PYTHONPATH=. python3.11 -m rl.demo.train_behavior_cloning \
+  --output rl/runs/toy_behavior_cloning
+```
+
+验证日志：
+
+```bash
+python3.11 -m unittest -v rl.tests.test_rl_framework
+tensorboard --logdir rl/runs/toy_behavior_cloning/tensorboard
+```
+
+启动后打开 `http://localhost:6006`，在 Scalars 页面选择：
+`train/bc_loss`、`train/action_accuracy` 和 `train/legal_action_rate`。如果希望同时
+比较多个实验，可以直接指定整个目录：
+
+```bash
+tensorboard --logdir rl/runs
+```
+
+`rl/runs/` 专门保存本地训练生成的 metrics、TensorBoard event、checkpoint 和实验数据，
+已加入根目录 `.gitignore`，不会进入提交或同步。
+
+toy 演示只证明 model forward、合法候选 mask、交叉熵行为克隆、JSONL 和 checkpoint
+能协同工作。它不是 Pokémon TCG 强度实验。
+
+## 第一条真实数据链
+
+先用现有规则策略作为 teacher 运行本地官方 simulator。输出 trace 只写到 `/tmp`：
+
+```bash
+./scripts/run_local_battle.sh \
+  --agent0 alakazam_v9 --agent1 alakazam_v9 \
+  --output /tmp/ptcg-bc-game.json
+
+PYTHONPATH=. python3.11 -m rl.ptcg.build_bc_dataset \
+  /tmp/ptcg-bc-game.json \
+  --output rl/runs/ptcg_bc/dataset.jsonl
+
+PYTHONPATH=. python3.11 -m rl.ptcg.train_behavior_cloning \
+  rl/runs/ptcg_bc/dataset.jsonl \
+  --output rl/runs/ptcg_bc/run
+```
+
+这里默认只收集 `select.type=0, context=0` 的主动作，并且只保留 teacher 返回单个
+option index 的决策；卡牌效果的多选仍由规则 handler 负责。`select.option` 本身就是
+官方 simulator 给出的合法动作集合，所以模型不会被训练成生成一个 simulator 不接受的
+全局动作编号。`checkpoints/best_validation.pt` 的 metadata 会保存模型和特征 schema，
+可直接交给 `PTCGCandidatePolicy.from_checkpoint()` 恢复推理结构。
+
+## 训练边界
+
+批量训练可以使用经过验证的快速环境，但官方 `cg` simulator 是规则真相来源。任何
+训练模型必须在固定 seed、先后手和 opponent catalog 上经过 `evaluation` 冻结评测，
+再考虑复制到 `work/<name>/` 作为可打包策略。

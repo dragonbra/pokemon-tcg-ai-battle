@@ -11,5 +11,12 @@ dependencies = [
   "python-dotenv",
 ]
 
+[project.optional-dependencies]
+rl = [
+  "numpy<2",
+  "torch>=2.2",
+  "tensorboard>=2.14",
+]
+
 [tool.ruff]
 line-length = 100
