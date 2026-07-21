@@ -7,6 +7,7 @@ from typing import Any, Iterable, Iterator
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 
 from .features import FEATURE_SCHEMA_VERSION, PTCGFeatureConfig, encode_observation
+from .rewards import potential_shaping
 
 
 DATASET_VERSION = "ptcg_bc_v1"
@@ -51,7 +52,8 @@ def iter_behavior_cloning_records(
     if actual_teacher_index not in (0, 1):
         raise ValueError(f"invalid candidate physical index in {source_path}")
 
-    for entry in payload["trace"]:
+    trace_entries = payload["trace"]
+    for entry_index, entry in enumerate(trace_entries):
         if not isinstance(entry, dict):
             continue
         observation = entry.get("observation")
@@ -100,6 +102,15 @@ def iter_behavior_cloning_records(
             "selection_context": context,
             "target": target,
             "terminal_outcome": terminal_outcome,
+            "potential_shaping": potential_shaping(
+                observation,
+                (
+                    trace_entries[entry_index + 1].get("observation")
+                    if entry_index + 1 < len(trace_entries)
+                    and isinstance(trace_entries[entry_index + 1], dict)
+                    else None
+                ),
+            ),
             "encoded": encoded,
         }
 
@@ -166,6 +177,10 @@ def load_behavior_cloning_dataset(path: str | Path) -> list[dict[str, Any]]:
                 record["terminal_outcome"] = 0.0
             if record["terminal_outcome"] not in (-1.0, 0.0, 1.0):
                 raise ValueError(f"invalid terminal outcome at dataset line {line_number}")
+            if "potential_shaping" not in record:
+                record["potential_shaping"] = {"total": 0.0}
+            if not isinstance(record["potential_shaping"], dict):
+                raise ValueError(f"invalid potential shaping at dataset line {line_number}")
             mask = encoded.get("action_mask")
             if not isinstance(mask, list) or not 0 <= target < len(mask) or not mask[target]:
                 raise ValueError(f"illegal target at dataset line {line_number}")

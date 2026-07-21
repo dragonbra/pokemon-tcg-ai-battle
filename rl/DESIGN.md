@@ -129,6 +129,10 @@ checkpoint 的旧 policy 计算 old log-prob，以终局胜负构造 advantage�
 候选 mask 内更新。第一版只用于验证 policy/value/reward 接口，rollout 必须来自当前
 checkpoint；真正的 transition-level shaping、GAE 和 MCTS target 仍待后续实现。
 
+`rl/ptcg/rewards.py` 的第一版 transition shaping 只使用可见的 Prize race、攻击准备度
+和牌库安全势能，按 `gamma * Phi(next) - Phi(current)` 记录分量。每个分量都可通过
+`shaping_weight` 做消融，不能因为 shaping 曲线上升就替代 17×10 的 outcome 评测。
+
 当前 milestone 只完成 Phase A 的通用实现和 toy 验证，还没有把 checkpoint 接入正式
 `work/<name>/main.py`，也没有把 terminal reward 训练误称为已经完成。正式 submission
 需要一个不依赖 PyTorch 的推理封装或可接受的运行时方案，并经过 evaluation 的固定

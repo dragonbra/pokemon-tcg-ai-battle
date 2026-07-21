@@ -39,6 +39,10 @@ def _batch(records: list[dict[str, Any]]) -> dict[str, Tensor]:
         [float(record.get("terminal_outcome", 0.0)) for record in records],
         dtype=torch.float32,
     )
+    batch["potential_shaping"] = torch.tensor(
+        [float((record.get("potential_shaping") or {}).get("total", 0.0)) for record in records],
+        dtype=torch.float32,
+    )
     return batch
 
 
@@ -90,9 +94,7 @@ def _old_policy_targets(
     old_log_prob = torch.cat(old_log_probs)
     old_value = torch.cat(old_values)
     outcome = torch.cat(outcomes)
-    advantage = outcome - old_value
-    advantage = (advantage - advantage.mean()) / advantage.std().clamp_min(1e-6)
-    return old_log_prob, advantage, outcome
+    return old_log_prob, old_value, outcome
 
 
 def train(
@@ -106,6 +108,7 @@ def train(
     clip_ratio: float = 0.2,
     value_loss_weight: float = 0.5,
     entropy_weight: float = 0.01,
+    shaping_weight: float = 0.0,
     seed: int = 7,
     device_name: str = "auto",
     storage_path: Path = DEFAULT_STORAGE_PATH,
@@ -121,7 +124,15 @@ def train(
     device = _resolve_device(device_name)
     records = load_behavior_cloning_dataset(dataset_path)
     model = _load_model(checkpoint, device)
-    old_log_prob, advantage, outcome = _old_policy_targets(model, records, device)
+    old_log_prob, old_value, terminal_outcome = _old_policy_targets(model, records, device)
+    shaping = torch.tensor(
+        [float((record.get("potential_shaping") or {}).get("total", 0.0)) for record in records],
+        dtype=torch.float32,
+        device=device,
+    )
+    outcome = (terminal_outcome + shaping_weight * shaping).clamp(-1.0, 1.0)
+    advantage = outcome - old_value
+    advantage = (advantage - advantage.mean()) / advantage.std().clamp_min(1e-6)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     manager = CheckpointManager(output_dir / "checkpoints")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -164,6 +175,7 @@ def train(
                 "train/ppo_value_loss": sum(value_losses) / max(1, len(value_losses)),
                 "train/ppo_entropy": sum(entropy_values) / max(1, len(entropy_values)),
                 "train/terminal_outcome_mean": float(outcome.mean().item()),
+                "train/shaping_reward_mean": float(shaping.mean().item()),
             }
             logger.log(epoch, last_metrics)
             metadata = {
@@ -177,6 +189,7 @@ def train(
                 "clip_ratio": clip_ratio,
                 "value_loss_weight": value_loss_weight,
                 "entropy_weight": entropy_weight,
+                "shaping_weight": shaping_weight,
                 "storage_path": storage.path,
                 "storage_free_gib": round(storage.free_gib, 2),
                 "epoch_metrics": last_metrics,
@@ -204,6 +217,7 @@ def main() -> None:
     parser.add_argument("--clip-ratio", type=float, default=0.2)
     parser.add_argument("--value-loss-weight", type=float, default=0.5)
     parser.add_argument("--entropy-weight", type=float, default=0.01)
+    parser.add_argument("--shaping-weight", type=float, default=0.0)
     parser.add_argument("--seed", type=int, default=7)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
@@ -219,6 +233,7 @@ def main() -> None:
         clip_ratio=args.clip_ratio,
         value_loss_weight=args.value_loss_weight,
         entropy_weight=args.entropy_weight,
+        shaping_weight=args.shaping_weight,
         seed=args.seed,
         device_name=args.device,
         storage_path=args.storage_path,
