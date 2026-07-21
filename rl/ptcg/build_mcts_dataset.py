@@ -381,7 +381,12 @@ def build_records(
     if not 0.0 <= teacher_policy_weight <= 1.0:
         raise ValueError("teacher_policy_weight must be in [0, 1]")
     policy = PTCGCandidatePolicy.from_checkpoint(str(checkpoint), map_location="cpu")
-    schema_by_width = {24: "ptcg_features_v1", 32: "ptcg_features_v2", 36: "ptcg_features_v3"}
+    schema_by_width = {
+        24: "ptcg_features_v1",
+        32: "ptcg_features_v2",
+        36: "ptcg_features_v3",
+        40: "ptcg_features_v4",
+    }
     feature_schema_version = schema_by_width[policy.feature_config.state_numeric_dim]
     search_begin, search_end, search_step, to_observation_class = _load_cg(cg_root)
     rng = random.Random(seed)

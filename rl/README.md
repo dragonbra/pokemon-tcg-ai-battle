@@ -219,6 +219,10 @@ python3.11 -m rl.ptcg.calibrate_value \
 该流程只更新 `value_head.*`，不会改变 policy logits；校准后的 checkpoint 仍必须经过
 完整 17×10 evaluation，不能因为 value MAE 下降就直接替换 teacher。
 
+`ptcg_features_v4` 在不改变 action contract 的前提下加入 effect id、context card、
+effect sequence step 和候选计数。旧 v1–v3 checkpoint 会按 metadata 继续恢复；effect
+policy 目前使用独立 checkpoint，运行时默认关闭，多选 effect 仍由规则 handler 处理。
+
 ### 有限预算 PUCT target smoke
 
 使用真实 evaluation trace 生成搜索 target 时，`--cg-root` 应指向包含 `cg/` 的 package

@@ -11,6 +11,7 @@ from .features import (
     KNOWN_FEATURE_SCHEMA_VERSIONS,
     PTCGFeatureConfig,
     encode_observation,
+    feature_schema_for_config,
 )
 from .rewards import potential_shaping
 
@@ -60,6 +61,7 @@ def iter_behavior_cloning_records(
 
     trace_entries = payload["trace"]
     history: list[dict[str, int]] = []
+    effect_steps: dict[int, int] = {}
     for entry_index, entry in enumerate(trace_entries):
         if not isinstance(entry, dict):
             continue
@@ -77,11 +79,23 @@ def iter_behavior_cloning_records(
         is_main = select_type == MAIN_SELECT_TYPE and context == MAIN_SELECT_CONTEXT
         if not is_main and not include_effect_selections:
             continue
+        effect = select.get("effect") or {}
+        serial = effect.get("serial")
+        try:
+            serial_key = int(serial) if serial is not None else None
+        except (TypeError, ValueError):
+            serial_key = None
+        model_observation = dict(observation)
+        model_observation["rl_effect_step"] = (
+            effect_steps.get(serial_key, 0) if serial_key is not None else 0
+        )
         action = entry.get("action")
         if not isinstance(action, list) or len(action) != 1:
             # The candidate policy currently scores one option at a time.
             # Ignoring a multi-select record is safer than pretending its
             # first target was the complete teacher decision.
+            if serial_key is not None and not is_main:
+                effect_steps[serial_key] = effect_steps.get(serial_key, 0) + 1
             continue
         try:
             target = int(action[0])
@@ -93,7 +107,6 @@ def iter_behavior_cloning_records(
             raise ValueError(
                 f"teacher action is outside legal options at {source_path}:{entry.get('step')}"
             )
-        model_observation = dict(observation)
         model_observation["rl_history"] = list(history)
         encoded = encode_observation(model_observation, feature_config)
         if not encoded["action_mask"][target]:
@@ -110,9 +123,11 @@ def iter_behavior_cloning_records(
                 }
             )
             del history[:-32]
+        elif serial_key is not None:
+            effect_steps[serial_key] = effect_steps.get(serial_key, 0) + 1
         yield {
             "dataset_version": DATASET_VERSION,
-            "feature_schema_version": FEATURE_SCHEMA_VERSION,
+            "feature_schema_version": feature_schema_for_config(feature_config),
             "source": source_path,
             "game_id": game_id,
             "step": int(entry.get("step", -1)),

@@ -11,7 +11,7 @@ from rl.ptcg.dataset import (
     SUPPORTED_FEATURE_SCHEMA_VERSIONS,
     load_behavior_cloning_dataset,
 )
-from rl.ptcg.features import PTCGFeatureConfig
+from rl.ptcg.features import PTCGFeatureConfig, encode_observation, feature_config_for_schema
 from rl.ptcg.build_dagger_dataset import iter_dagger_records
 from rl.ptcg.rewards import observation_potential, potential_shaping
 from rl.ptcg.build_mcts_dataset import _aggregate_search_results, _blend_teacher_policy
@@ -39,8 +39,35 @@ class PTCGDatasetTests(unittest.TestCase):
     def test_loader_keeps_known_legacy_feature_schemas_readable(self) -> None:
         self.assertEqual(
             SUPPORTED_FEATURE_SCHEMA_VERSIONS,
-            {"ptcg_features_v1", "ptcg_features_v2", "ptcg_features_v3"},
+            {
+                "ptcg_features_v1",
+                "ptcg_features_v2",
+                "ptcg_features_v3",
+                "ptcg_features_v4",
+            },
         )
+
+    def test_v4_effect_state_adds_explicit_effect_features(self) -> None:
+        config = feature_config_for_schema("ptcg_features_v4")
+        observation = {
+            "current": {
+                "yourIndex": 0,
+                "players": [{"active": [], "bench": []}, {"active": [], "bench": []}],
+            },
+            "select": {
+                "type": 1,
+                "context": 7,
+                "minCount": 1,
+                "maxCount": 1,
+                "option": [{"type": 1}, {"type": 2}],
+                "effect": {"id": 123, "serial": 9},
+                "contextCard": {"id": 456},
+            },
+            "rl_effect_step": 2,
+        }
+        encoded = encode_observation(observation, config)
+        self.assertEqual(len(encoded["state_numeric"]), 40)
+        self.assertEqual(encoded["state_numeric"][-1], 2 / 64)
 
     def test_visible_potential_components_are_stable_and_auditable(self) -> None:
         observation = {

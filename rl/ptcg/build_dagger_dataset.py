@@ -180,7 +180,12 @@ def main() -> None:
     parser.add_argument(
         "--feature-schema",
         default="ptcg_features_v2",
-        choices=("ptcg_features_v1", "ptcg_features_v2", "ptcg_features_v3"),
+        choices=(
+            "ptcg_features_v1",
+            "ptcg_features_v2",
+            "ptcg_features_v3",
+            "ptcg_features_v4",
+        ),
     )
     parser.add_argument("--teacher-player-index", type=int, choices=(0, 1))
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)

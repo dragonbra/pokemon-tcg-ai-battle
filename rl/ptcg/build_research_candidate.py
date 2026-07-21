@@ -38,7 +38,21 @@ def _load_teacher():
 
 _TEACHER = _load_teacher()
 _POLICY = PTCGCandidatePolicy.from_checkpoint(CHECKPOINT, map_location="cpu")
+EFFECT_CHECKPOINT = os.environ.get("PTCG_RL_EFFECT_CHECKPOINT")
+_EFFECT_POLICY = (
+    PTCGCandidatePolicy.from_checkpoint(EFFECT_CHECKPOINT, map_location="cpu")
+    if EFFECT_CHECKPOINT
+    else None
+)
 CONFIDENCE_THRESHOLD = float(os.environ.get("PTCG_RL_CONFIDENCE_THRESHOLD", "1.1"))
+EFFECT_CONFIDENCE_THRESHOLD = float(
+    os.environ.get("PTCG_RL_EFFECT_CONFIDENCE_THRESHOLD", "1.1")
+)
+_EFFECT_CONTEXTS = {
+    int(value)
+    for value in os.environ.get("PTCG_RL_EFFECT_CONTEXTS", "").split(",")
+    if value.strip().lstrip("-").isdigit()
+}
 TYPE_GUARD_ENABLED = os.environ.get("PTCG_RL_TYPE_GUARD", "0") == "1"
 SEARCH_ENABLED = os.environ.get("PTCG_RL_SEARCH", "0") == "1"
 SEARCH_BUDGET = max(1, int(os.environ.get("PTCG_RL_SEARCH_BUDGET", "4")))
@@ -50,6 +64,13 @@ _MODEL_HISTORY: list[dict[str, int]] = []
 def _model_observation(obs_dict: dict) -> dict:
     enriched = dict(obs_dict)
     enriched["rl_history"] = list(_MODEL_HISTORY)
+    select = obs_dict.get("select") or {}
+    effect = select.get("effect") or {}
+    serial = effect.get("serial")
+    try:
+        enriched["rl_effect_step"] = _TEACHER._effect_step(select) if serial is not None else 0
+    except Exception:
+        enriched["rl_effect_step"] = 0
     return enriched
 
 
@@ -77,6 +98,43 @@ def _record_model_main_action(obs_dict: dict, option_index: int) -> None:
     _TEACHER._TURN_MEMORY.sync(current, player, logs=obs_dict.get("logs") or [])
     _TEACHER._TURN_MEMORY.last_main_options = list(options)
     _TEACHER._TURN_MEMORY.record_main_action(options[option_index], current, player)
+
+
+def _record_model_effect_selection(obs_dict: dict, option_index: int) -> None:
+    """Keep effect serial progress aligned when the optional model acts."""
+    select = obs_dict.get("select") or {}
+    options = select.get("option") or []
+    current, player = _TEACHER._your_state(obs_dict)
+    _TEACHER._TURN_MEMORY.sync(current, player, logs=obs_dict.get("logs") or [])
+    if int(select.get("context", 0) or 0) == 37:
+        target = _TEACHER._pokemon_from_option(options[option_index], current)
+        if target:
+            _TEACHER._TURN_MEMORY.record_evolution(target.get("serial"))
+    _TEACHER._advance_effect(select)
+
+
+def _select_model_effect(obs_dict: dict) -> list[int] | None:
+    if _EFFECT_POLICY is None:
+        return None
+    select = obs_dict.get("select") or {}
+    if int(select.get("minCount", 0) or 0) != 1 or int(select.get("maxCount", 0) or 0) != 1:
+        return None
+    context = int(select.get("context", 0) or 0)
+    if _EFFECT_CONTEXTS and context not in _EFFECT_CONTEXTS:
+        return None
+    try:
+        option_index, _value, confidence = _EFFECT_POLICY.select_with_confidence(
+            _model_observation(obs_dict)
+        )
+        if confidence < EFFECT_CONFIDENCE_THRESHOLD:
+            return None
+        options = select.get("option") or []
+        if not 0 <= option_index < len(options):
+            return None
+        _record_model_effect_selection(obs_dict, option_index)
+        return [option_index]
+    except Exception:
+        return None
 
 
 def _teacher_main_index(obs_dict: dict) -> int | None:
@@ -275,6 +333,9 @@ def agent(obs_dict: dict):
             _record_model_main_action(obs_dict, option_index)
             _remember_action(obs_dict, [option_index])
             return [option_index]
+    effect_action = _select_model_effect(obs_dict)
+    if effect_action is not None:
+        return effect_action
     action = _TEACHER.agent(obs_dict)
     if int(select.get("type", 0)) == 0 and int(select.get("context", 0)) == 0:
         _remember_action(obs_dict, action)

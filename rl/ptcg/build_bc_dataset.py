@@ -35,7 +35,12 @@ def main() -> None:
     parser.add_argument(
         "--feature-schema",
         default="ptcg_features_v3",
-        choices=("ptcg_features_v1", "ptcg_features_v2", "ptcg_features_v3"),
+        choices=(
+            "ptcg_features_v1",
+            "ptcg_features_v2",
+            "ptcg_features_v3",
+            "ptcg_features_v4",
+        ),
     )
     args = parser.parse_args()
     teacher_player_index = (

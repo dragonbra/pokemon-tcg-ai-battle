@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Any
 
 
-FEATURE_SCHEMA_VERSION = "ptcg_features_v3"
+FEATURE_SCHEMA_VERSION = "ptcg_features_v4"
 KNOWN_FEATURE_SCHEMA_VERSIONS = frozenset(
-    {"ptcg_features_v1", "ptcg_features_v2", FEATURE_SCHEMA_VERSION}
+    {"ptcg_features_v1", "ptcg_features_v2", "ptcg_features_v3", FEATURE_SCHEMA_VERSION}
 )
 
 
@@ -14,7 +14,7 @@ KNOWN_FEATURE_SCHEMA_VERSIONS = frozenset(
 class PTCGFeatureConfig:
     """Stable initial feature contract for the candidate policy/value model."""
 
-    state_numeric_dim: int = 36
+    state_numeric_dim: int = 40
     state_token_count: int = 40
     candidate_numeric_dim: int = 10
     max_candidates: int = 64
@@ -30,7 +30,23 @@ def feature_config_for_schema(schema_version: str) -> PTCGFeatureConfig:
         return PTCGFeatureConfig(state_numeric_dim=32, state_token_count=40)
     if schema_version == FEATURE_SCHEMA_VERSION:
         return PTCGFeatureConfig()
+    if schema_version == "ptcg_features_v3":
+        return PTCGFeatureConfig(state_numeric_dim=36, state_token_count=40)
     raise ValueError(f"unsupported feature schema version: {schema_version}")
+
+
+def feature_schema_for_config(config: PTCGFeatureConfig) -> str:
+    """Return the version name for an immutable feature shape."""
+    shapes = {
+        (24, 24): "ptcg_features_v1",
+        (32, 40): "ptcg_features_v2",
+        (36, 40): "ptcg_features_v3",
+        (40, 40): FEATURE_SCHEMA_VERSION,
+    }
+    try:
+        return shapes[(config.state_numeric_dim, config.state_token_count)]
+    except KeyError as exc:
+        raise ValueError("unsupported feature configuration") from exc
 
 
 def _card_id(card: Any) -> int | None:
@@ -191,10 +207,10 @@ def encode_observation(
     opponent_index = 1 - your_index
     opponent = players[opponent_index] if 0 <= opponent_index < len(players) else {}
 
-    if config.state_numeric_dim not in (24, 32, 36):
+    if config.state_numeric_dim not in (24, 32, 36, 40):
         raise ValueError(
             "unsupported feature schema state width: "
-            f"{config.state_numeric_dim}; expected 24, 32, or 36"
+            f"{config.state_numeric_dim}; expected 24, 32, 36, or 40"
         )
     state_numeric = _player_numeric(player, opponent)
     result = current.get("result")
@@ -216,6 +232,17 @@ def encode_observation(
         state_numeric.extend(_log_numeric(current, your_index))
     if config.state_numeric_dim >= 36:
         state_numeric.extend(_history_numeric(observation))
+    if config.state_numeric_dim >= 40:
+        effect = select.get("effect") or {}
+        context_card = select.get("contextCard") or {}
+        state_numeric.extend(
+            [
+                _normal(effect.get("id", select.get("effectId", 0)), 4096.0),
+                _normal(context_card.get("id", 0), 4096.0),
+                _normal(observation.get("rl_effect_step", 0), 32.0),
+                _normal(len(select.get("option") or []), 64.0),
+            ]
+        )
     if len(state_numeric) != config.state_numeric_dim:
         raise ValueError(
             f"state feature schema has {len(state_numeric)} values, "

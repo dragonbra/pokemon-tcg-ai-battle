@@ -22,11 +22,7 @@ from rl.core.model import CandidatePolicyValueNet, ModelConfig
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 
 from .dataset import load_behavior_cloning_dataset
-from .features import (
-    FEATURE_SCHEMA_VERSION,
-    PTCGFeatureConfig,
-    feature_config_for_schema,
-)
+from .features import PTCGFeatureConfig, feature_config_for_schema
 
 
 MODEL_INPUT_KEYS = (
@@ -162,7 +158,29 @@ def train(
     schemas = {str(record.get("feature_schema_version")) for record in records}
     if len(schemas) != 1:
         raise ValueError(f"dataset must contain exactly one feature schema: {sorted(schemas)}")
-    feature_config = feature_config_for_schema(next(iter(schemas)))
+    feature_schema_version = next(iter(schemas))
+    feature_config = feature_config_for_schema(feature_schema_version)
+    selection_scope = getattr(args, "selection_scope", "all")
+    if selection_scope not in {"all", "main", "effect"}:
+        raise ValueError("selection_scope must be all, main, or effect")
+    if selection_scope == "main":
+        records = [
+            record
+            for record in records
+            if int(record.get("selection_type", -1)) == 0
+            and int(record.get("selection_context", -1)) == 0
+        ]
+    elif selection_scope == "effect":
+        records = [
+            record
+            for record in records
+            if not (
+                int(record.get("selection_type", -1)) == 0
+                and int(record.get("selection_context", -1)) == 0
+            )
+        ]
+    if not records:
+        raise ValueError(f"selection scope contains no records: {selection_scope}")
     model_config = _model_config(feature_config, args)
     shuffled = list(records)
     random.Random(seed).shuffle(shuffled)
@@ -235,9 +253,10 @@ def train(
             metadata = {
                 "task": "ptcg_behavior_cloning",
                 "dataset": str(dataset_path.resolve()),
-                "feature_schema_version": FEATURE_SCHEMA_VERSION,
+                "feature_schema_version": feature_schema_version,
                 "model_config": model_config.to_dict(),
                 "feature_config": feature_config.__dict__,
+                "selection_scope": selection_scope,
                 "seed": seed,
                 "device": str(device),
                 "outcome_weight": args.outcome_weight,
@@ -311,6 +330,12 @@ def main() -> None:
         type=float,
         default=0.0,
         help="blend MCTS visit-count cross entropy with hard target loss",
+    )
+    parser.add_argument(
+        "--selection-scope",
+        choices=("all", "main", "effect"),
+        default="all",
+        help="train all records, main actions only, or effect selections only",
     )
     parser.add_argument(
         "--potential-weight",

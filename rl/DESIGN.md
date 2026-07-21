@@ -55,6 +55,13 @@ version；不要静默改变已有字段的语义。checkpoint metadata 会自�
 第一阶段只学习 main action。卡牌效果中的多选、目标和数量选择继续由规则 handler
 完成；确认主动作模型稳定后，再把 effect selection 加入 candidate dataset。
 
+当前 v4 实验已把 170 局 teacher trace 中的 5,338 条 main 和 3,764 条单选 effect
+记录编码到同一 versioned state contract；184 条多选记录继续排除。混合训练会让 main
+accuracy 降低，因此 effect-only checkpoint 与 v3 main checkpoint 分离。effect-only
+validation accuracy 为 `76.86%`、legal action rate 为 `1.0`，但在运行时以 confidence
+0.95 接管 effect 后 34 局为 `22/34 = 64.71%`，confidence 0.99 为 `20/34 = 58.82%`，
+均有 error，故 effect 接管保持关闭。
+
 ## 4. Reward 版本
 
 训练目标必须和 reward profile 一起记录：
