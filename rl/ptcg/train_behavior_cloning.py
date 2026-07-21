@@ -14,6 +14,7 @@ from rl.core.checkpoint import CheckpointManager
 from rl.core.losses import masked_cross_entropy
 from rl.core.logging import TrainingLogger
 from rl.core.model import CandidatePolicyValueNet, ModelConfig
+from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 
 from .dataset import load_behavior_cloning_dataset
 from .features import FEATURE_SCHEMA_VERSION, PTCGFeatureConfig
@@ -112,6 +113,8 @@ def train(
     seed: int = 7,
     validation_fraction: float = 0.1,
     device_name: str = "auto",
+    storage_path: Path = DEFAULT_STORAGE_PATH,
+    min_free_gib: float = DEFAULT_MIN_FREE_GIB,
     args: argparse.Namespace,
 ) -> dict[str, float | int | str]:
     if epochs < 1 or batch_size < 1:
@@ -120,6 +123,7 @@ def train(
         raise ValueError("validation_fraction must be in [0, 1)")
     torch.manual_seed(seed)
     random.seed(seed)
+    storage = assert_storage_safe(storage_path, min_free_gib)
     device = _resolve_device(device_name)
     records = load_behavior_cloning_dataset(dataset_path)
     feature_config = PTCGFeatureConfig()
@@ -174,6 +178,8 @@ def train(
                 "feature_config": feature_config.__dict__,
                 "seed": seed,
                 "device": str(device),
+                "storage_path": storage.path,
+                "storage_free_gib": round(storage.free_gib, 2),
                 "epoch_metrics": last_metrics,
             }
             manager.save("latest", model, optimizer=optimizer, step=epoch, metadata=metadata)
@@ -192,6 +198,8 @@ def train(
         "training_records": len(training),
         "validation_records": len(validation),
         "device": str(device),
+        "storage_path": storage.path,
+        "storage_free_gib": round(storage.free_gib, 2),
         "best_validation_accuracy": best_score,
         **last_metrics,
         "checkpoint": str((output_dir / "checkpoints" / "best_validation.pt").resolve()),
@@ -213,6 +221,8 @@ def main() -> None:
     parser.add_argument("--transformer-layers", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--device", default="auto", help="auto, cpu, or cuda")
+    parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
+    parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
     args = parser.parse_args()
     if not 0 <= args.validation_fraction < 1:
         parser.error("--validation-fraction must be in [0, 1)")
@@ -225,6 +235,8 @@ def main() -> None:
         seed=args.seed,
         validation_fraction=args.validation_fraction,
         device_name=args.device,
+        storage_path=args.storage_path,
+        min_free_gib=args.min_free_gib,
         args=args,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))

@@ -176,6 +176,8 @@ class RLFrameworkTests(unittest.TestCase):
         index, value = policy.select(observation)
         self.assertIn(index, (0, 1))
         self.assertTrue(-1.0 <= value <= 1.0)
+        _, _, confidence = policy.select_with_confidence(observation)
+        self.assertTrue(0.0 <= confidence <= 1.0)
 
 
 if __name__ == "__main__":

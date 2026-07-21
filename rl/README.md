@@ -25,6 +25,7 @@ observation + 当前合法 options
 - `core/logging.py`：JSONL 原始日志，TensorBoard 可选镜像。
 - `core/checkpoint.py`：保存模型、optimizer、随机状态和实验 metadata。
 - `core/promotion.py`：checkpoint 晋级护栏。
+- `core/storage.py`：WSL C 盘空间护栏，默认低于 20 GiB 时阻止大任务。
 - `ptcg/features.py`：官方 observation 的初版纯 Python 编码器。
 - `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
@@ -91,6 +92,18 @@ tensorboard --logdir rl/runs
 `rl/runs/` 专门保存本地训练生成的 metrics、TensorBoard event、checkpoint 和实验数据，
 已加入根目录 `.gitignore`，不会进入提交或同步。
 
+## 存储空间护栏
+
+WSL 下优先检查挂载到 `/mnt/c` 的 C 盘，而不是只看 Linux 根盘。dataset builder 和
+训练器默认都会在开始前检查至少 20 GiB 可用空间：
+
+```bash
+python3.11 -m rl.core.storage
+df -h /mnt/c /
+```
+
+如果低于警戒线，程序会停止并提示清理旧的 `rl/runs` 实验；不会自动删除文件。
+
 toy 演示只证明 model forward、合法候选 mask、交叉熵行为克隆、JSONL 和 checkpoint
 能协同工作。它不是 Pokémon TCG 强度实验。
 
@@ -129,6 +142,7 @@ python3.11 -m rl.ptcg.build_research_candidate \
   --output rl/runs/research_candidates/alakazam_bc_v2
 
 PTCG_RL_CHECKPOINT="$PWD/rl/runs/training/alakazam_bc_v2/checkpoints/best_validation.pt" \
+PTCG_RL_CONFIDENCE_THRESHOLD=0.8 \
 LD_LIBRARY_PATH="$HOME/.local/ptcg-cxx-runtime/lib" \
 LD_PRELOAD="$HOME/.local/ptcg-cxx-runtime/lib/libstdc++.so.6" \
 python3.11 -m evaluation run \

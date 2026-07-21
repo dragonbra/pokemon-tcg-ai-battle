@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
+from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
+
 from .features import FEATURE_SCHEMA_VERSION, PTCGFeatureConfig, encode_observation
 
 
@@ -106,8 +108,11 @@ def write_behavior_cloning_dataset(
     teacher_player_index: int | None = 0,
     feature_config: PTCGFeatureConfig = PTCGFeatureConfig(),
     include_effect_selections: bool = False,
-) -> dict[str, int | str]:
+    storage_path: str | Path = DEFAULT_STORAGE_PATH,
+    min_free_gib: float = DEFAULT_MIN_FREE_GIB,
+) -> dict[str, int | str | float]:
     """Convert one or more local traces to a versioned JSONL dataset."""
+    storage = assert_storage_safe(storage_path, min_free_gib)
     output_path = Path(output)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     records = 0
@@ -128,6 +133,8 @@ def write_behavior_cloning_dataset(
         "traces": traces_read,
         "records": records,
         "output": str(output_path),
+        "storage_path": storage.path,
+        "storage_free_gib": round(storage.free_gib, 2),
     }
 
 

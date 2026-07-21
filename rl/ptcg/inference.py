@@ -58,10 +58,18 @@ class PTCGCandidatePolicy:
     @torch.no_grad()
     def select(self, observation: dict) -> tuple[int, float]:
         """Return ``(option_index, value_estimate)`` for the current observation."""
+        index, value, _confidence = self.select_with_confidence(observation)
+        return index, value
+
+    @torch.no_grad()
+    def select_with_confidence(self, observation: dict) -> tuple[int, float, float]:
+        """Return option index, value estimate, and masked policy confidence."""
         encoded = encode_observation(observation, self.feature_config)
         batch = collate_encoded([encoded])
         value, logits = self.model(**batch)
         index = int(logits.argmax(dim=-1).item())
         if not bool(batch["action_mask"][0, index]):
             raise RuntimeError("model selected an option outside the legal action mask")
-        return index, float(value.item())
+        probabilities = self.model.masked_probabilities(logits, batch["action_mask"])
+        confidence = float(probabilities[0, index].item())
+        return index, float(value.item()), confidence

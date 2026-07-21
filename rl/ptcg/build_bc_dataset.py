@@ -4,6 +4,8 @@ import argparse
 import json
 from pathlib import Path
 
+from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH
+
 from .dataset import write_behavior_cloning_dataset
 from .features import PTCGFeatureConfig
 
@@ -17,6 +19,8 @@ def main() -> None:
     )
     parser.add_argument("traces", nargs="+", type=Path, help="local battle trace JSON files")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
+    parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
     parser.add_argument(
         "--teacher-player-index",
         default="auto",
@@ -38,6 +42,8 @@ def main() -> None:
         teacher_player_index=teacher_player_index,
         feature_config=PTCGFeatureConfig(),
         include_effect_selections=args.include_effect_selections,
+        storage_path=args.storage_path,
+        min_free_gib=args.min_free_gib,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 

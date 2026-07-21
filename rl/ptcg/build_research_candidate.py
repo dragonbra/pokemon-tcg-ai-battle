@@ -34,6 +34,7 @@ def _load_teacher():
 
 _TEACHER = _load_teacher()
 _POLICY = PTCGCandidatePolicy.from_checkpoint(CHECKPOINT, map_location="cpu")
+CONFIDENCE_THRESHOLD = float(os.environ.get("PTCG_RL_CONFIDENCE_THRESHOLD", "1.1"))
 DECK = _TEACHER.read_deck_csv()
 
 
@@ -42,8 +43,9 @@ def agent(obs_dict: dict):
         return DECK
     select = obs_dict.get("select") or {}
     if int(select.get("type", 0)) == 0 and int(select.get("context", 0)) == 0:
-        option_index, _value = _POLICY.select(obs_dict)
-        return [option_index]
+        option_index, _value, confidence = _POLICY.select_with_confidence(obs_dict)
+        if confidence >= CONFIDENCE_THRESHOLD:
+            return [option_index]
     return _TEACHER.agent(obs_dict)
 '''
 
