@@ -42,6 +42,36 @@ PYTHONPATH=. python3.11 -m rl.demo.train_behavior_cloning \
   --output rl/runs/toy_behavior_cloning
 ```
 
+在本机 RTX 5080 环境中，真实 Python 3.11 已验证使用 CUDA 版 PyTorch：
+
+```bash
+python3.11 -m pip install --user --break-system-packages \
+  --upgrade 'torch==2.11.0+cu128' \
+  --index-url https://download.pytorch.org/whl/cu128
+python3.11 -m pip install --user --break-system-packages \
+  --upgrade 'numpy<2' 'tensorboard>=2.14'
+```
+
+验证 GPU：
+
+```bash
+python3.11 -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+```
+
+当前实测输出为 `True NVIDIA GeForce RTX 5080`。`cu128` 是 PyTorch wheel 自带的
+CUDA 12.8 runtime，驱动报告 CUDA 13.2，二者可以兼容。
+
+如果官方 `cg` 提示缺少 `GLIBCXX_3.4.29`，准备一个只提供 C++ runtime 的 conda
+prefix，并通过环境变量交给本地 battle runner：
+
+```bash
+conda create -y -p "$HOME/.local/ptcg-cxx-runtime" \
+  -c conda-forge 'libstdcxx-ng>=13'
+PTCG_CXX_RUNTIME="$HOME/.local/ptcg-cxx-runtime" \
+  ./scripts/run_local_battle.sh --agent0 alakazam_v9 --agent1 alakazam_v9 \
+  --output rl/runs/ptcg_bc/battle.json
+```
+
 验证日志：
 
 ```bash

@@ -16,4 +16,5 @@ if [[ -n "${PTCG_CXX_RUNTIME:-}" ]]; then
   export LD_PRELOAD="$runtime_lib/libstdc++.so.6${LD_PRELOAD:+:$LD_PRELOAD}"
 fi
 
-exec python3 "$root_dir/scripts/run_local_battle.py" "$@"
+python_bin="${PTCG_PYTHON:-python3.11}"
+exec "$python_bin" "$root_dir/scripts/run_local_battle.py" "$@"
