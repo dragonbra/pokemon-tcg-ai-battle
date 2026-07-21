@@ -59,8 +59,25 @@ def _model_inputs(batch: dict[str, Tensor]) -> dict[str, Tensor]:
     return {key: batch[key] for key in MODEL_INPUT_KEYS}
 
 
+def _move_batch(batch: dict[str, Tensor], device: torch.device) -> dict[str, Tensor]:
+    return {key: value.to(device) for key, value in batch.items()}
+
+
+def _resolve_device(requested: str) -> torch.device:
+    if requested == "auto":
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(requested)
+    if device.type == "cuda" and not torch.cuda.is_available():
+        raise RuntimeError("CUDA was requested but torch.cuda.is_available() is false")
+    return device
+
+
 @torch.no_grad()
-def _evaluate(model: CandidatePolicyValueNet, records: list[dict[str, Any]]) -> dict[str, float]:
+def _evaluate(
+    model: CandidatePolicyValueNet,
+    records: list[dict[str, Any]],
+    device: torch.device,
+) -> dict[str, float]:
     model.eval()
     total_correct = 0
     total_legal = 0
@@ -68,7 +85,7 @@ def _evaluate(model: CandidatePolicyValueNet, records: list[dict[str, Any]]) -> 
     losses: list[float] = []
     for start in range(0, len(records), 256):
         batch_records = records[start : start + 256]
-        batch = _batch(batch_records)
+        batch = _move_batch(_batch(batch_records), device)
         _, logits = model(**_model_inputs(batch))
         loss = masked_cross_entropy(logits, batch["target"], batch["action_mask"])
         prediction = logits.argmax(dim=-1)
@@ -94,6 +111,7 @@ def train(
     learning_rate: float = 3e-4,
     seed: int = 7,
     validation_fraction: float = 0.1,
+    device_name: str = "auto",
     args: argparse.Namespace,
 ) -> dict[str, float | int | str]:
     if epochs < 1 or batch_size < 1:
@@ -102,6 +120,7 @@ def train(
         raise ValueError("validation_fraction must be in [0, 1)")
     torch.manual_seed(seed)
     random.seed(seed)
+    device = _resolve_device(device_name)
     records = load_behavior_cloning_dataset(dataset_path)
     feature_config = PTCGFeatureConfig()
     model_config = _model_config(feature_config, args)
@@ -112,7 +131,7 @@ def train(
         validation_count = max(1, validation_count)
     validation = shuffled[:validation_count]
     training = shuffled[validation_count:] or shuffled
-    model = CandidatePolicyValueNet(model_config)
+    model = CandidatePolicyValueNet(model_config).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
     manager = CheckpointManager(output_dir / "checkpoints")
     best_score = -1.0
@@ -127,7 +146,7 @@ def train(
             train_losses: list[float] = []
             for start in range(0, len(order), batch_size):
                 batch_records = [training[index] for index in order[start : start + batch_size]]
-                batch = _batch(batch_records)
+                batch = _move_batch(_batch(batch_records), device)
                 optimizer.zero_grad()
                 _, logits = model(**_model_inputs(batch))
                 loss = masked_cross_entropy(logits, batch["target"], batch["action_mask"])
@@ -136,8 +155,8 @@ def train(
                 optimizer.step()
                 train_losses.append(float(loss.item()))
 
-            train_metrics = _evaluate(model, training)
-            validation_metrics = _evaluate(model, validation or training)
+            train_metrics = _evaluate(model, training, device)
+            validation_metrics = _evaluate(model, validation or training, device)
             last_metrics = {
                 "train/bc_loss": sum(train_losses) / max(1, len(train_losses)),
                 "train/action_accuracy": train_metrics["action_accuracy"],
@@ -154,6 +173,7 @@ def train(
                 "model_config": model_config.to_dict(),
                 "feature_config": feature_config.__dict__,
                 "seed": seed,
+                "device": str(device),
                 "epoch_metrics": last_metrics,
             }
             manager.save("latest", model, optimizer=optimizer, step=epoch, metadata=metadata)
@@ -171,6 +191,7 @@ def train(
         "records": len(records),
         "training_records": len(training),
         "validation_records": len(validation),
+        "device": str(device),
         "best_validation_accuracy": best_score,
         **last_metrics,
         "checkpoint": str((output_dir / "checkpoints" / "best_validation.pt").resolve()),
@@ -191,6 +212,7 @@ def main() -> None:
     parser.add_argument("--num-heads", type=int, default=2)
     parser.add_argument("--transformer-layers", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.0)
+    parser.add_argument("--device", default="auto", help="auto, cpu, or cuda")
     args = parser.parse_args()
     if not 0 <= args.validation_fraction < 1:
         parser.error("--validation-fraction must be in [0, 1)")
@@ -202,6 +224,7 @@ def main() -> None:
         learning_rate=args.learning_rate,
         seed=args.seed,
         validation_fraction=args.validation_fraction,
+        device_name=args.device,
         args=args,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
