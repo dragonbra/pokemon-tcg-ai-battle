@@ -43,6 +43,8 @@ def iter_behavior_cloning_records(
     source_path = str(Path(path).resolve())
     result = payload.get("result") or {}
     game_id = str(result.get("game_id") or result.get("gameId") or Path(path).stem)
+    winner = result.get("winner")
+    terminal_outcome = 1.0 if winner == 0 else -1.0 if winner == 1 else 0.0
     actual_teacher_index = teacher_player_index
     if actual_teacher_index is None:
         actual_teacher_index = int(result.get("candidate_physical_index", 0))
@@ -97,6 +99,7 @@ def iter_behavior_cloning_records(
             "selection_type": select_type,
             "selection_context": context,
             "target": target,
+            "terminal_outcome": terminal_outcome,
             "encoded": encoded,
         }
 
@@ -159,6 +162,10 @@ def load_behavior_cloning_dataset(path: str | Path) -> list[dict[str, Any]]:
             target = record.get("target")
             if not isinstance(encoded, dict) or not isinstance(target, int):
                 raise ValueError(f"malformed dataset record at line {line_number}")
+            if "terminal_outcome" not in record:
+                record["terminal_outcome"] = 0.0
+            if record["terminal_outcome"] not in (-1.0, 0.0, 1.0):
+                raise ValueError(f"invalid terminal outcome at dataset line {line_number}")
             mask = encoded.get("action_mask")
             if not isinstance(mask, list) or not 0 <= target < len(mask) or not mask[target]:
                 raise ValueError(f"illegal target at dataset line {line_number}")

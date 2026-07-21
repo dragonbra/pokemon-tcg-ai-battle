@@ -16,6 +16,21 @@ def masked_cross_entropy(logits: Tensor, target: Tensor, action_mask: Tensor) ->
     return F.cross_entropy(masked_logits, target)
 
 
+def masked_cross_entropy_per_sample(
+    logits: Tensor,
+    target: Tensor,
+    action_mask: Tensor,
+) -> Tensor:
+    """Return one legal-candidate cross-entropy value per sample."""
+    if target.ndim != 1:
+        raise ValueError("target must have shape [batch]")
+    rows = torch.arange(target.shape[0], device=target.device)
+    if not action_mask[rows, target].all():
+        raise ValueError("cross-entropy target contains an illegal action")
+    masked_logits = logits.masked_fill(~action_mask, torch.finfo(logits.dtype).min)
+    return F.cross_entropy(masked_logits, target, reduction="none")
+
+
 def masked_huber_loss(
     prediction: Tensor,
     target: Tensor,

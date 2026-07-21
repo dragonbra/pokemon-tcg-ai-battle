@@ -11,7 +11,11 @@ from torch import Tensor
 
 from rl.core.batch import collate_encoded
 from rl.core.checkpoint import CheckpointManager
-from rl.core.losses import masked_cross_entropy
+from rl.core.losses import (
+    masked_cross_entropy,
+    masked_cross_entropy_per_sample,
+    value_huber_loss,
+)
 from rl.core.logging import TrainingLogger
 from rl.core.model import CandidatePolicyValueNet, ModelConfig
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
@@ -52,6 +56,10 @@ def _batch(records: list[dict[str, Any]]) -> dict[str, Tensor]:
     batch = collate_encoded([record["encoded"] for record in records])
     batch["target"] = torch.tensor(
         [int(record["target"]) for record in records], dtype=torch.long
+    )
+    batch["terminal_outcome"] = torch.tensor(
+        [float(record.get("terminal_outcome", 0.0)) for record in records],
+        dtype=torch.float32,
     )
     return batch
 
@@ -121,6 +129,8 @@ def train(
         raise ValueError("epochs and batch_size must be positive")
     if not 0 <= validation_fraction < 1:
         raise ValueError("validation_fraction must be in [0, 1)")
+    if args.outcome_weight < 0 or args.value_loss_weight < 0:
+        raise ValueError("outcome_weight and value_loss_weight must not be negative")
     torch.manual_seed(seed)
     random.seed(seed)
     storage = assert_storage_safe(storage_path, min_free_gib)
@@ -152,8 +162,14 @@ def train(
                 batch_records = [training[index] for index in order[start : start + batch_size]]
                 batch = _move_batch(_batch(batch_records), device)
                 optimizer.zero_grad()
-                _, logits = model(**_model_inputs(batch))
-                loss = masked_cross_entropy(logits, batch["target"], batch["action_mask"])
+                value, logits = model(**_model_inputs(batch))
+                per_sample = masked_cross_entropy_per_sample(
+                    logits, batch["target"], batch["action_mask"]
+                )
+                weights = (1.0 + args.outcome_weight * batch["terminal_outcome"]).clamp_min(0.1)
+                policy_loss = (per_sample * weights).mean()
+                value_loss = value_huber_loss(value, batch["terminal_outcome"])
+                loss = policy_loss + args.value_loss_weight * value_loss
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
@@ -178,6 +194,11 @@ def train(
                 "feature_config": feature_config.__dict__,
                 "seed": seed,
                 "device": str(device),
+                "reward_profile": "terminal_outcome_v1"
+                if args.outcome_weight or args.value_loss_weight
+                else "none",
+                "outcome_weight": args.outcome_weight,
+                "value_loss_weight": args.value_loss_weight,
                 "storage_path": storage.path,
                 "storage_free_gib": round(storage.free_gib, 2),
                 "epoch_metrics": last_metrics,
@@ -221,6 +242,18 @@ def main() -> None:
     parser.add_argument("--transformer-layers", type=int, default=1)
     parser.add_argument("--dropout", type=float, default=0.0)
     parser.add_argument("--device", default="auto", help="auto, cpu, or cuda")
+    parser.add_argument(
+        "--outcome-weight",
+        type=float,
+        default=0.0,
+        help="reweight policy loss by terminal win/loss outcome",
+    )
+    parser.add_argument(
+        "--value-loss-weight",
+        type=float,
+        default=0.0,
+        help="add value-head Huber loss against terminal outcome",
+    )
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
     args = parser.parse_args()
