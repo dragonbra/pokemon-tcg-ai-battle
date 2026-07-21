@@ -33,6 +33,7 @@ observation + 当前合法 options
 - `ptcg/mcts.py`：与官方 SearchState 解耦的有限预算 PUCT 树和 visit-count target。
 - `ptcg/build_mcts_dataset.py`：调用官方 Search API 生成 counterfactual policy target。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
+- `ptcg/calibrate_value.py`：冻结 policy、仅用终局结果校准 value head。
 - `ptcg/train_ppo.py`：从模型 rollout trace 做 masked PPO-style terminal reward 微调。
 - `ptcg/rewards.py`：只使用可见 observation 的 Prize、攻击准备度和牌库势能。
 - `ptcg/build_research_candidate.py`：生成“模型主动作 + 规则效果 handler”的本地评测 candidate。
@@ -192,6 +193,19 @@ python3.11 -m rl.ptcg.train_behavior_cloning \
 
 该参数只对含 `mcts_policy` 的记录生效；普通 BC 数据默认仍使用 hard target。硬 target
 accuracy 和 soft loss 都会保留在训练日志中，不能仅凭 loss 判断策略是否晋级。
+
+在把 checkpoint 用作搜索叶评估器前，可以先冻结 policy 校准 value head：
+
+```bash
+python3.11 -m rl.ptcg.calibrate_value \
+  rl/runs/datasets/alakazam_v9_teacher_v5_history.jsonl \
+  --checkpoint rl/runs/training/alakazam_bc_v5_history/checkpoints/best_validation.pt \
+  --output rl/runs/training/alakazam_bc_v5_value_calibrated_v1 \
+  --device cuda
+```
+
+该流程只更新 `value_head.*`，不会改变 policy logits；校准后的 checkpoint 仍必须经过
+完整 17×10 evaluation，不能因为 value MAE 下降就直接替换 teacher。
 
 ### 有限预算 PUCT target smoke
 

@@ -113,6 +113,12 @@ schema version。
 用完整对局胜负训练 `value(s)`。检查 value MAE、胜率校准和它对攻击路线/断档局面的
 排序能力。
 
+`ptcg/calibrate_value.py` 提供冻结 policy 的 value-head calibration：它在 teacher 的
+完整轨迹上只更新 `value_head.*`，将终局结果变成可审计的 MAE、相关性和 win/loss
+分组均值。对 `alakazam_bc_v5_history` 的校准使 validation value MAE 达到 `0.0663`、
+相关性达到 `0.9693`，且 39 组模型参数中只有 6 组 value-head 参数变化。这个 checkpoint
+适合作为 PUCT 的叶评估器，但不等于 policy 已经变强。
+
 当前已提供一个离线过渡实验：dataset 记录终局胜负，`--outcome-weight` 对 policy loss
 做胜负重加权，`--value-loss-weight` 训练 value head。它只用于验证 reward 信号和日志
 是否有效，不等同于在线 PPO；整局胜负复制给每个动作的粗粒度方案若不能通过冻结评测，
@@ -169,6 +175,11 @@ value 强行混合。
 Post-KO relay 诊断指标有所上升，但 attack-quality 惩罚项和正确性恶化；这说明当前
 单次 hidden-card determinization、模型 value 叶评估和有限样本 target 仍不足以指导
 策略改进。失败分支的报告仍保存在 `rl/runs/evaluation/`，不得用过程指标替代结果护栏。
+
+使用校准 value 重新训练的 `alakazam_mcts_calibrated_soft_v1` 在 17×10 上为
+`117/170 = 68.82%`，有 3 个 engine error，仍低于 teacher，继续拒绝晋级。它验证了
+value calibration 能让搜索 action value 产生有效排序，但当前搜索样本量和 policy
+target 仍不足以安全改写主动作策略。
 
 ### Phase D：Masked PPO（可选）
 
