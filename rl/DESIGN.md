@@ -47,8 +47,10 @@ value head 组成。动作候选是当前 simulator 给出的 option，不使用
 弃牌数量、Active/Bench、HP、能量、Supporter/Energy/Retreat flags、select context
 和候选动作上下文。未知对手手牌、牌库顺序和未知 Prize 不能泄漏给模型。
 
-初版 state token 固定 24 个槽位，使用位置 embedding 区分 Active、Bench、手牌和弃牌
-区域。后续增加特征时应增加 schema version；不要静默改变已有字段的语义。
+初版 `ptcg_features_v1` 使用 24 个 state token；当前 `ptcg_features_v3` 使用 36 个
+numeric features、40 个 state token，并加入最近 32 个 teacher/main action 的摘要，
+使用位置 embedding 区分 Active、Bench、手牌和弃牌区域。后续增加特征时应增加 schema
+version；不要静默改变已有字段的语义。checkpoint metadata 会自动恢复对应旧 schema。
 
 第一阶段只学习 main action。卡牌效果中的多选、目标和数量选择继续由规则 handler
 完成；确认主动作模型稳定后，再把 effect selection 加入 candidate dataset。
