@@ -158,6 +158,11 @@ soft target 锚点。d4 + teacher 0.5 的 34 局探索只有 `19/34 = 55.88%` �
 error，明显劣于不加锚点的 d4 分支，因此当前默认保持 0，不把 teacher label 与搜索
 value 强行混合。
 
+将 5,338 条 teacher BC 记录与 4 倍 d4 搜索记录混合，并以 0.5 soft-policy weight
+训练的 34 局探索为 `23/34 = 67.65%`、1 个 error，同样没有进入正式验收。训练器现已
+支持 mixed batch：没有 MCTS target 的记录自动使用 hard label 的 one-hot soft target，
+因此该能力可以安全用于后续更大规模的搜索数据，但本轮不晋级。
+
 第一次真实 PUCT target 分支已完成固定 17×10 验收：`alakazam_mcts_puct_soft_v1`
 得到 `115/170 = 67.65%`，teacher `alakazam_v9` 在同一正式协议下为 `124/170 =
 72.94%`，并出现 4 个 engine error，因此不晋级。该分支的 Powerful Hand 和

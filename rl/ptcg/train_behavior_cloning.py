@@ -66,17 +66,18 @@ def _batch(records: list[dict[str, Any]]) -> dict[str, Tensor]:
         [float(record.get("terminal_outcome", 0.0)) for record in records],
         dtype=torch.float32,
     )
-    if all("mcts_policy" in record for record in records):
-        candidate_width = len(records[0]["encoded"]["action_mask"])
-        mcts_targets: list[list[float]] = []
-        for record in records:
+    candidate_width = len(records[0]["encoded"]["action_mask"])
+    mcts_targets: list[list[float]] = []
+    for record in records:
+        if "mcts_policy" in record:
             target = [float(value) for value in record["mcts_policy"]]
-            if len(target) > candidate_width:
-                raise ValueError("mcts_policy is wider than the encoded candidate mask")
-            mcts_targets.append(target + [0.0] * (candidate_width - len(target)))
-        batch["mcts_policy"] = torch.tensor(
-            mcts_targets, dtype=torch.float32
-        )
+        else:
+            target = [0.0] * candidate_width
+            target[int(record["target"])] = 1.0
+        if len(target) > candidate_width:
+            raise ValueError("mcts_policy is wider than the encoded candidate mask")
+        mcts_targets.append(target + [0.0] * (candidate_width - len(target)))
+    batch["mcts_policy"] = torch.tensor(mcts_targets, dtype=torch.float32)
     return batch
 
 
@@ -190,10 +191,6 @@ def train(
                     logits, batch["target"], batch["action_mask"]
                 )
                 if args.mcts_policy_weight:
-                    if "mcts_policy" not in batch:
-                        raise ValueError(
-                            "mcts_policy_weight requires records with mcts_policy targets"
-                        )
                     soft_per_sample = masked_soft_cross_entropy_per_sample(
                         logits, batch["mcts_policy"], batch["action_mask"]
                     )
