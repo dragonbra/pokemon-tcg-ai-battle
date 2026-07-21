@@ -127,8 +127,9 @@ schema version。
 BC trainer 还支持 `--potential-weight` 的可见势能重加权。一次 `potential_weight=0.5`
 消融使 library pressure 从 teacher 的 `1.824` 降到 `1.794`，但 34 局 outcome 只有
 `22/34 = 64.71%`，因此不晋级。这个结果说明辅助指标变好并不代表 reward shaping
-正确；当前默认保持 0，后续应使用 transition-level return 和 failure-specific target
-做更细的消融。
+正确；较小的 `potential_weight=0.1` 也只有 `23/34 = 67.65%`，并伴随 Powerful Hand
+下降和 library pressure 上升。当前默认保持 0，后续应使用 transition-level return
+和 failure-specific target 做更细的消融。
 
 ### Phase A.5：DAgger 分布修正
 
@@ -180,7 +181,8 @@ value 强行混合。
 状态覆盖而不是纠错。teacher-v5 + DAgger state coverage 的 BC 分支在探索中为
 `26/34 = 76.47%`、0 error，随后 17×10 为 `123/170 = 72.35%`、3 个 engine error；
 它接近但没有超过 teacher `124/170 = 72.94%`，故不晋级。将 confidence gate 从 0.85
-提高到 0.95 的 34 局探索降至 `23/34 = 67.65%`，只说明减少模型接管不能单独解决问题。
+提高到 0.90 的 34 局探索为 `23/34 = 67.65%`、1 error，提高到 0.95 同样为
+`23/34 = 67.65%`、0 error；只说明减少模型接管不能单独解决问题。
 
 第一次真实 PUCT target 分支已完成固定 17×10 验收：`alakazam_mcts_puct_soft_v1`
 得到 `115/170 = 67.65%`，teacher `alakazam_v9` 在同一正式协议下为 `124/170 =
