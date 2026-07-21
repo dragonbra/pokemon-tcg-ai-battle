@@ -1,9 +1,51 @@
-# 迭代规则
+# AutoIteration 迭代规则
 
-## Gate 与 guardrail
+这些规则跨不同指标 profile 生效。某一轮的指标定义和具体情形放在
+`metrics/<profile>.md`，不能把一次性的关注点写成永久规则。
 
-先通过 correctness gate：资产、语法、合法动作、确定性和打包结构均通过。失败 case 必须分类并完成 case resolution，不能用胜率抵消规则错误。outcome guardrail 要求候选不引入崩溃、非法动作或明确的核心指标回退。
+## 不可违反的约束
 
-## 流程
+1. correctness gate 优先于所有策略指标；非法动作、崩溃、状态污染和评测错误不能由胜率抵消。
+2. 每轮只能有一个主要假设；其他指标只能作为健康检查或后续线索。
+3. control、candidate、卡组状态、评测器版本和 active metric profile 必须明确记录。
+4. 运行 candidate 前固定指标定义、事件识别、分母、排除条件和 promotion 条件。
+5. 不能为了改善比例而事后缩小分母、删除不可达样本或改变异常归属。
+6. 不同 profile、不同评测矩阵或不同分析器口径的结果不得直接作为 A/B 比较。
+7. 改动策略和改动测量器必须分开记录；只改测量器的轮次只能使用 `measurement_only`。
+8. focused evaluation 用于验证机制，full comparison 才能支持版本比较；focused 不能单独 promotion。
+9. 独立随机批次不得写成逐局配对 A/B；结论必须说明样本和不确定性限制。
+10. 不使用隐藏总分吞并不同分母的指标；目标指标、健康指标和结果护栏分层解释。
+11. `observe` 是正式结论，不得为了产生版本晋级而强行写成 `promote` 或 `reject`。
+12. 每轮必须记录失败归因和下一轮最小研究问题，不能只保留版本号和胜率。
+13. active profile 必须声明指标优先级；解释结果时先检查高优先级指标，低优先级指标的
+    改善不能抵消高优先级指标的未解释回退。惩罚项只能作为额外证据，不能单独推动晋级。
 
-先运行 control，再运行 candidate；先做 focused evaluation 定位主要假设，最后按同一分母比较。只有候选通过 gate、满足 guardrail 且核心指标达到预设 promotion 阈值，才晋级；否则保留 control 并记录 decision。
+## 迭代类型
+
+| 类型 | 允许改变 | 能否声称策略改善 |
+| --- | --- | --- |
+| `strategy` | agent 决策逻辑 | 可以，需通过完整证据链 |
+| `deck` | 卡组构筑或卡表 | 可以，但必须更换明确基线 |
+| `measurement` | trace、分析器、分母或报告 | 不可以，使用 `measurement_only` |
+| `evaluation` | 对手矩阵、运行配置或采样 | 不可以直接归因策略，需重新建立可比基线 |
+
+## Promotion 条件
+
+candidate 至少需要同时满足：
+
+- G0 correctness 通过；
+- active profile 的主要假设得到支持；
+- 目标改善不是由分母、样本或分析器变化造成；
+- 没有不可接受的核心健康回退；
+- 胜率及先手/后手结果没有未解释的明显退化；
+- 记录中包含可复核 case、批次来源和下一轮基线引用。
+
+胜率是长期最高优先级，但某个过程能力的改善可以在胜率暂时持平时被保留，前提是
+它与长期目标有明确机制联系，且没有违反上述护栏。
+
+## Evidence 保留
+
+- repo 内保留轻量 summary、decision、指标结果和关键 case；
+- 原始大批 trace 按项目 replay 约定保存和清理；
+- 结论必须标记数据来源、样本范围和限制；
+- 没有可靠数据时写“未验证”，不能补写推断结果。
