@@ -205,12 +205,14 @@ python3.11 -m rl.ptcg.build_mcts_dataset \
   --deck work/alakazam_v9/deck.csv \
   --cg-root work/alakazam_v9 \
   --output rl/runs/datasets/mcts_puct_smoke.jsonl \
-  --max-records 32 --simulations 32 --cpuct 1.25
+  --max-records 32 --simulations 32 --determinizations 1 --cpuct 1.25
 ```
 
 JSONL 中的 `mcts_policy` 是 root visit-count target，`mcts_visit_counts` 应在每条记录
 上加总为 `mcts_simulations`。这个阶段只验证搜索和 target contract；单次 hidden-card
-determinization 的结果不能直接作为晋级或正式 evaluation 结论。
+determinizations 的结果不能直接作为晋级或正式 evaluation 结论。提高
+`--determinizations` 会按多次搜索的 visit count 聚合，但也会近似线性增加 collector
+成本。
 
 ### DAgger 分布偏移实验
 

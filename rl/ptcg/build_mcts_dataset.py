@@ -12,7 +12,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 
@@ -242,7 +242,7 @@ def _run_search(
     simulations: int,
     cpuct: float,
     rollout_teacher: ModuleType | None,
-) -> tuple[list[float | None], list[int], list[float], list[float]]:
+) -> tuple[list[float | None], list[int], list[float], list[float | None]]:
     root_state = _start_search(
         observation,
         player_index=player_index,
@@ -296,6 +296,45 @@ def _run_search(
         search_end()
 
 
+def _aggregate_search_results(
+    results: Sequence[
+        tuple[list[float | None], list[int], list[float], list[float | None]]
+    ],
+    option_count: int,
+) -> tuple[list[float | None], list[int], list[float], list[float | None]]:
+    """Aggregate root targets from several hidden-card determinizations."""
+    if not results:
+        raise ValueError("cannot aggregate an empty MCTS result set")
+    value_sums = [0.0] * option_count
+    value_counts = [0] * option_count
+    visit_counts = [0] * option_count
+    fallback_policy = [0.0] * option_count
+    for values, visits, policy, _root_values in results:
+        if not (len(values) == len(visits) == len(policy) == option_count):
+            raise ValueError("MCTS result width does not match the root option count")
+        for index in range(option_count):
+            if values[index] is not None:
+                value_sums[index] += float(values[index])
+                value_counts[index] += 1
+            visit_counts[index] += int(visits[index])
+            fallback_policy[index] += float(policy[index])
+    values = [
+        value_sums[index] / value_counts[index] if value_counts[index] else None
+        for index in range(option_count)
+    ]
+    total_visits = sum(visit_counts)
+    if total_visits:
+        policy = [count / total_visits for count in visit_counts]
+    else:
+        total_fallback = sum(fallback_policy)
+        policy = (
+            [value / total_fallback for value in fallback_policy]
+            if total_fallback
+            else [1.0 / option_count] * option_count
+        )
+    return values, visit_counts, policy, values.copy()
+
+
 def build_records(
     traces: Iterable[Path],
     *,
@@ -308,11 +347,14 @@ def build_records(
     rollout_teacher: ModuleType | None = None,
     simulations: int = 32,
     cpuct: float = 1.25,
+    determinizations: int = 1,
 ) -> list[dict[str, Any]]:
     if rollout_steps < 0:
         raise ValueError("rollout_steps cannot be negative")
     if simulations < 1:
         raise ValueError("simulations must be positive")
+    if determinizations < 1:
+        raise ValueError("determinizations must be positive")
     policy = PTCGCandidatePolicy.from_checkpoint(str(checkpoint), map_location="cpu")
     schema_by_width = {24: "ptcg_features_v1", 32: "ptcg_features_v2", 36: "ptcg_features_v3"}
     feature_schema_version = schema_by_width[policy.feature_config.state_numeric_dim]
@@ -344,19 +386,31 @@ def build_records(
             if not select.get("option"):
                 continue
             encoded = encode_observation(observation, policy.feature_config)
-            values, visit_counts, mcts_policy, root_values = _run_search(
-                observation,
-                player_index=player_index,
-                deck=deck,
-                policy=policy,
-                search_begin=search_begin,
-                search_end=search_end,
-                search_step=search_step,
-                to_observation_class=to_observation_class,
-                rng=rng,
-                simulations=simulations,
-                cpuct=cpuct,
-                rollout_teacher=rollout_teacher,
+            search_results = []
+            for _ in range(determinizations):
+                try:
+                    search_results.append(
+                        _run_search(
+                            observation,
+                            player_index=player_index,
+                            deck=deck,
+                            policy=policy,
+                            search_begin=search_begin,
+                            search_end=search_end,
+                            search_step=search_step,
+                            to_observation_class=to_observation_class,
+                            rng=rng,
+                            simulations=simulations,
+                            cpuct=cpuct,
+                            rollout_teacher=rollout_teacher,
+                        )
+                    )
+                except Exception:
+                    continue
+            if not search_results:
+                continue
+            values, visit_counts, mcts_policy, root_values = _aggregate_search_results(
+                search_results, len(select.get("option") or [])
             )
             valid = [index for index, value in enumerate(values) if value is not None]
             if not valid:
@@ -385,6 +439,7 @@ def build_records(
                     "mcts_root_values": root_values,
                     "mcts_simulations": simulations,
                     "mcts_cpuct": cpuct,
+                    "mcts_determinizations": len(search_results),
                     "teacher_or_rollout_action": entry.get("action"),
                     "encoded": encoded,
                 }
@@ -403,6 +458,7 @@ def main() -> None:
     parser.add_argument("--max-records", type=int, default=128)
     parser.add_argument("--simulations", type=int, default=32)
     parser.add_argument("--cpuct", type=float, default=1.25)
+    parser.add_argument("--determinizations", type=int, default=1)
     # Kept for command-line compatibility with the pre-PUCT collector. The
     # search budget is now controlled by --simulations.
     parser.add_argument("--rollout-steps", type=int, default=0)
@@ -412,8 +468,10 @@ def main() -> None:
     args = parser.parse_args()
     if args.max_records < 1 or args.rollout_steps < 0:
         raise ValueError("max-records must be positive and rollout-steps cannot be negative")
-    if args.simulations < 1 or args.cpuct <= 0:
-        raise ValueError("simulations must be positive and cpuct must be positive")
+    if args.simulations < 1 or args.cpuct <= 0 or args.determinizations < 1:
+        raise ValueError(
+            "simulations and determinizations must be positive and cpuct must be positive"
+        )
     storage = assert_storage_safe(args.storage_path, args.min_free_gib)
     rollout_teacher = _load_teacher(args.rollout_teacher) if args.rollout_teacher else None
     records = build_records(
@@ -427,6 +485,7 @@ def main() -> None:
         rollout_teacher=rollout_teacher,
         simulations=args.simulations,
         cpuct=args.cpuct,
+        determinizations=args.determinizations,
     )
     if not records:
         raise ValueError("MCTS target collection produced no records")

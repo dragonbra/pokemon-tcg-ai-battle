@@ -14,9 +14,22 @@ from rl.ptcg.dataset import (
 from rl.ptcg.features import PTCGFeatureConfig
 from rl.ptcg.build_dagger_dataset import iter_dagger_records
 from rl.ptcg.rewards import observation_potential, potential_shaping
+from rl.ptcg.build_mcts_dataset import _aggregate_search_results
 
 
 class PTCGDatasetTests(unittest.TestCase):
+    def test_mcts_determinizations_aggregate_visit_counts(self) -> None:
+        results = [
+            ([0.2, 0.8], [3, 1], [0.75, 0.25], [0.2, 0.8]),
+            ([0.6, 0.4], [1, 3], [0.25, 0.75], [0.6, 0.4]),
+        ]
+        values, visits, policy, root_values = _aggregate_search_results(results, 2)
+        self.assertEqual(visits, [4, 4])
+        self.assertEqual(policy, [0.5, 0.5])
+        self.assertAlmostEqual(values[0], 0.4)
+        self.assertAlmostEqual(values[1], 0.6)
+        self.assertEqual(root_values, values)
+
     def test_loader_keeps_known_legacy_feature_schemas_readable(self) -> None:
         self.assertEqual(
             SUPPORTED_FEATURE_SCHEMA_VERSIONS,

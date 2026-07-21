@@ -147,6 +147,12 @@ leaf，预算不会意外变成完整对局 rollout；同时保存 action value�
 determinization、self-play 数据和固定评测后，才能把它视为有效策略改进。任何 target
 变体仍须先通过小规模探索，再走 17×10 正式评测。
 
+collector 现在支持 `--determinizations N`，会对同一 observation 的多次 root visit
+count 做聚合。d4 小实验（4 次 determinization、每次 8 次 simulation、115 条记录）
+的 34 局探索为 `23/34 = 67.65%`，低于单次 determinization 分支的 `24/34 =
+70.59%`，因此没有进入第二次 17×10 验收。这个参数保留给更大 trace、改进 value
+model 或 self-play 数据使用；增加搜索次数本身不能弥补错误的叶评估。
+
 第一次真实 PUCT target 分支已完成固定 17×10 验收：`alakazam_mcts_puct_soft_v1`
 得到 `115/170 = 67.65%`，teacher `alakazam_v9` 在同一正式协议下为 `124/170 =
 72.94%`，并出现 4 个 engine error，因此不晋级。该分支的 Powerful Hand 和
