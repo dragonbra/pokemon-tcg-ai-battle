@@ -153,6 +153,11 @@ count 做聚合。d4 小实验（4 次 determinization、每次 8 次 simulation
 70.59%`，因此没有进入第二次 17×10 验收。这个参数保留给更大 trace、改进 value
 model 或 self-play 数据使用；增加搜索次数本身不能弥补错误的叶评估。
 
+另外保留了可选的 `--teacher-policy-weight`，用于把 trace 中的 teacher action 作为
+soft target 锚点。d4 + teacher 0.5 的 34 局探索只有 `19/34 = 55.88%` 且有 1 个
+error，明显劣于不加锚点的 d4 分支，因此当前默认保持 0，不把 teacher label 与搜索
+value 强行混合。
+
 第一次真实 PUCT target 分支已完成固定 17×10 验收：`alakazam_mcts_puct_soft_v1`
 得到 `115/170 = 67.65%`，teacher `alakazam_v9` 在同一正式协议下为 `124/170 =
 72.94%`，并出现 4 个 engine error，因此不晋级。该分支的 Powerful Hand 和

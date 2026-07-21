@@ -14,7 +14,7 @@ from rl.ptcg.dataset import (
 from rl.ptcg.features import PTCGFeatureConfig
 from rl.ptcg.build_dagger_dataset import iter_dagger_records
 from rl.ptcg.rewards import observation_potential, potential_shaping
-from rl.ptcg.build_mcts_dataset import _aggregate_search_results
+from rl.ptcg.build_mcts_dataset import _aggregate_search_results, _blend_teacher_policy
 
 
 class PTCGDatasetTests(unittest.TestCase):
@@ -29,6 +29,12 @@ class PTCGDatasetTests(unittest.TestCase):
         self.assertAlmostEqual(values[0], 0.4)
         self.assertAlmostEqual(values[1], 0.6)
         self.assertEqual(root_values, values)
+
+    def test_mcts_teacher_policy_anchor_preserves_a_probability_target(self) -> None:
+        policy = _blend_teacher_policy([0.25, 0.75], [0], 0.5)
+        self.assertAlmostEqual(sum(policy), 1.0)
+        self.assertAlmostEqual(policy[0], 0.625)
+        self.assertAlmostEqual(policy[1], 0.375)
 
     def test_loader_keeps_known_legacy_feature_schemas_readable(self) -> None:
         self.assertEqual(

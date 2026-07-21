@@ -335,6 +335,28 @@ def _aggregate_search_results(
     return values, visit_counts, policy, values.copy()
 
 
+def _blend_teacher_policy(
+    policy: list[float],
+    action: object,
+    weight: float,
+) -> list[float]:
+    """Optionally anchor a search target to a known teacher action."""
+    if not 0.0 <= weight <= 1.0:
+        raise ValueError("teacher policy weight must be in [0, 1]")
+    if weight == 0.0 or not isinstance(action, list) or len(action) != 1:
+        return policy
+    try:
+        target = int(action[0])
+    except (TypeError, ValueError):
+        return policy
+    if not 0 <= target < len(policy):
+        return policy
+    return [
+        (1.0 - weight) * value + (weight if index == target else 0.0)
+        for index, value in enumerate(policy)
+    ]
+
+
 def build_records(
     traces: Iterable[Path],
     *,
@@ -348,6 +370,7 @@ def build_records(
     simulations: int = 32,
     cpuct: float = 1.25,
     determinizations: int = 1,
+    teacher_policy_weight: float = 0.0,
 ) -> list[dict[str, Any]]:
     if rollout_steps < 0:
         raise ValueError("rollout_steps cannot be negative")
@@ -355,6 +378,8 @@ def build_records(
         raise ValueError("simulations must be positive")
     if determinizations < 1:
         raise ValueError("determinizations must be positive")
+    if not 0.0 <= teacher_policy_weight <= 1.0:
+        raise ValueError("teacher_policy_weight must be in [0, 1]")
     policy = PTCGCandidatePolicy.from_checkpoint(str(checkpoint), map_location="cpu")
     schema_by_width = {24: "ptcg_features_v1", 32: "ptcg_features_v2", 36: "ptcg_features_v3"}
     feature_schema_version = schema_by_width[policy.feature_config.state_numeric_dim]
@@ -412,6 +437,11 @@ def build_records(
             values, visit_counts, mcts_policy, root_values = _aggregate_search_results(
                 search_results, len(select.get("option") or [])
             )
+            mcts_policy = _blend_teacher_policy(
+                mcts_policy,
+                entry.get("action"),
+                teacher_policy_weight,
+            )
             valid = [index for index, value in enumerate(values) if value is not None]
             if not valid:
                 continue
@@ -440,6 +470,7 @@ def build_records(
                     "mcts_simulations": simulations,
                     "mcts_cpuct": cpuct,
                     "mcts_determinizations": len(search_results),
+                    "mcts_teacher_policy_weight": teacher_policy_weight,
                     "teacher_or_rollout_action": entry.get("action"),
                     "encoded": encoded,
                 }
@@ -459,6 +490,7 @@ def main() -> None:
     parser.add_argument("--simulations", type=int, default=32)
     parser.add_argument("--cpuct", type=float, default=1.25)
     parser.add_argument("--determinizations", type=int, default=1)
+    parser.add_argument("--teacher-policy-weight", type=float, default=0.0)
     # Kept for command-line compatibility with the pre-PUCT collector. The
     # search budget is now controlled by --simulations.
     parser.add_argument("--rollout-steps", type=int, default=0)
@@ -468,9 +500,15 @@ def main() -> None:
     args = parser.parse_args()
     if args.max_records < 1 or args.rollout_steps < 0:
         raise ValueError("max-records must be positive and rollout-steps cannot be negative")
-    if args.simulations < 1 or args.cpuct <= 0 or args.determinizations < 1:
+    if (
+        args.simulations < 1
+        or args.cpuct <= 0
+        or args.determinizations < 1
+        or not 0.0 <= args.teacher_policy_weight <= 1.0
+    ):
         raise ValueError(
-            "simulations and determinizations must be positive and cpuct must be positive"
+            "simulations and determinizations must be positive, cpuct must be positive, "
+            "and teacher-policy-weight must be in [0, 1]"
         )
     storage = assert_storage_safe(args.storage_path, args.min_free_gib)
     rollout_teacher = _load_teacher(args.rollout_teacher) if args.rollout_teacher else None
@@ -486,6 +524,7 @@ def main() -> None:
         simulations=args.simulations,
         cpuct=args.cpuct,
         determinizations=args.determinizations,
+        teacher_policy_weight=args.teacher_policy_weight,
     )
     if not records:
         raise ValueError("MCTS target collection produced no records")

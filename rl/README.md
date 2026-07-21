@@ -212,7 +212,8 @@ JSONL 中的 `mcts_policy` 是 root visit-count target，`mcts_visit_counts` 应
 上加总为 `mcts_simulations`。这个阶段只验证搜索和 target contract；单次 hidden-card
 determinizations 的结果不能直接作为晋级或正式 evaluation 结论。提高
 `--determinizations` 会按多次搜索的 visit count 聚合，但也会近似线性增加 collector
-成本。
+成本。`--teacher-policy-weight` 可以在 teacher trace 上做 soft target 锚定实验；它
+默认是 0，必须先通过小规模探索再考虑使用。
 
 ### DAgger 分布偏移实验
 
