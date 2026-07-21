@@ -39,6 +39,7 @@ def _load_teacher():
 _TEACHER = _load_teacher()
 _POLICY = PTCGCandidatePolicy.from_checkpoint(CHECKPOINT, map_location="cpu")
 CONFIDENCE_THRESHOLD = float(os.environ.get("PTCG_RL_CONFIDENCE_THRESHOLD", "1.1"))
+TYPE_GUARD_ENABLED = os.environ.get("PTCG_RL_TYPE_GUARD", "0") == "1"
 SEARCH_ENABLED = os.environ.get("PTCG_RL_SEARCH", "0") == "1"
 SEARCH_BUDGET = max(1, int(os.environ.get("PTCG_RL_SEARCH_BUDGET", "4")))
 SEARCH_RNG = random.Random(int(os.environ.get("PTCG_RL_SEARCH_SEED", "7")))
@@ -78,6 +79,41 @@ def _record_model_main_action(obs_dict: dict, option_index: int) -> None:
     _TEACHER._TURN_MEMORY.record_main_action(options[option_index], current, player)
 
 
+def _teacher_main_index(obs_dict: dict) -> int | None:
+    """Read the teacher's main-action category without leaking memory state."""
+    memory_state = copy.deepcopy(getattr(_TEACHER._TURN_MEMORY, "__dict__", {}))
+    effect_progress = dict(getattr(_TEACHER, "_EFFECT_PROGRESS", {}))
+    try:
+        action = _TEACHER.agent(obs_dict)
+        options = (obs_dict.get("select") or {}).get("option") or []
+        if isinstance(action, list) and len(action) == 1:
+            index = int(action[0])
+            if 0 <= index < len(options):
+                return index
+    except Exception:
+        return None
+    finally:
+        _TEACHER._TURN_MEMORY.__dict__.clear()
+        _TEACHER._TURN_MEMORY.__dict__.update(memory_state)
+        _TEACHER._EFFECT_PROGRESS.clear()
+        _TEACHER._EFFECT_PROGRESS.update(effect_progress)
+    return None
+
+
+def _passes_type_guard(obs_dict: dict, model_index: int) -> bool:
+    if not TYPE_GUARD_ENABLED:
+        return True
+    options = (obs_dict.get("select") or {}).get("option") or []
+    if not 0 <= model_index < len(options):
+        return False
+    teacher_index = _teacher_main_index(obs_dict)
+    if teacher_index is None:
+        return False
+    return int(options[teacher_index].get("type", -1)) == int(
+        options[model_index].get("type", -2)
+    )
+
+
 def _first_legal_selection(observation: dict) -> list[int]:
     select = observation.get("select") or {}
     options = select.get("option") or []
@@ -99,6 +135,21 @@ def _teacher_search_selection(observation: dict) -> list[int]:
     return _first_legal_selection(observation)
 
 
+def _perspective_observation(observation: object, your_index: int) -> dict:
+    observation_dict = asdict(observation)
+    current = observation_dict.get("current") or {}
+    if int(current.get("yourIndex", your_index)) == your_index:
+        return observation_dict
+    players = current.get("players") or []
+    if len(players) == 2:
+        current["players"] = [players[1], players[0]]
+    current["yourIndex"] = your_index
+    first_player = current.get("firstPlayer")
+    if first_player in (0, 1):
+        current["firstPlayer"] = 1 - int(first_player)
+    return observation_dict
+
+
 def _search_score(observation: object, your_index: int) -> float:
     state = getattr(observation, "current", None)
     if state is None:
@@ -108,14 +159,16 @@ def _search_score(observation: object, your_index: int) -> float:
         return 100.0
     if result in (0, 1):
         return -100.0
-    observation_dict = asdict(observation)
-    value = observation_potential(observation_dict).total
-    if getattr(state, "yourIndex", -1) == your_index:
-        try:
-            _, model_value = _POLICY.select(observation_dict)
-            value += 0.25 * model_value
-        except Exception:
-            pass
+    observation_dict = _perspective_observation(observation, your_index)
+    value = 0.1 * observation_potential(observation_dict).total
+    try:
+        # The value head is state-only in the model contract. After swapping
+        # players, the legal options can belong to the opponent without
+        # affecting this scalar estimate.
+        _, model_value = _POLICY.select(observation_dict)
+        value += 2.0 * model_value
+    except Exception:
+        pass
     return value
 
 
@@ -215,7 +268,7 @@ def agent(obs_dict: dict):
         option_index, _value, confidence = _POLICY.select_with_confidence(
             _model_observation(obs_dict)
         )
-        if confidence >= CONFIDENCE_THRESHOLD:
+        if confidence >= CONFIDENCE_THRESHOLD and _passes_type_guard(obs_dict, option_index):
             searched_index = _search_main_action(obs_dict, option_index)
             if searched_index is not None:
                 option_index = searched_index
