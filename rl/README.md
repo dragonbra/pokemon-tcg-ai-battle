@@ -28,6 +28,7 @@ observation + 当前合法 options
 - `ptcg/features.py`：官方 observation 的初版纯 Python 编码器。
 - `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
 - `ptcg/train_behavior_cloning.py`：从真实 PTCG trace 训练 policy checkpoint。
+- `ptcg/build_research_candidate.py`：生成“模型主动作 + 规则效果 handler”的本地评测 candidate。
 - `demo/`：没有 simulator 依赖的行为克隆 toy 演示。
 - `references/`：Kaggle notebook/report 参考和分析。
 - `DESIGN.md`：当前设计、训练路线和评测协议。
@@ -116,6 +117,26 @@ option index 的决策；卡牌效果的多选仍由规则 handler 负责。`sel
 官方 simulator 给出的合法动作集合，所以模型不会被训练成生成一个 simulator 不接受的
 全局动作编号。`checkpoints/best_validation.pt` 的 metadata 会保存模型和特征 schema，
 可直接交给 `PTCGCandidatePolicy.from_checkpoint()` 恢复推理结构。
+
+### 本地 checkpoint 评测 candidate
+
+BC checkpoint 可以生成一个只用于研究评测的 hybrid candidate：主动作使用模型，卡牌效果
+选择暂时复用 `work/alakazam_v9`。它不会进入正式 Kaggle submission，生成目录同样在
+`rl/runs/`：
+
+```bash
+python3.11 -m rl.ptcg.build_research_candidate \
+  --output rl/runs/research_candidates/alakazam_bc_v2
+
+PTCG_RL_CHECKPOINT="$PWD/rl/runs/training/alakazam_bc_v2/checkpoints/best_validation.pt" \
+LD_LIBRARY_PATH="$HOME/.local/ptcg-cxx-runtime/lib" \
+LD_PRELOAD="$HOME/.local/ptcg-cxx-runtime/lib/libstdc++.so.6" \
+python3.11 -m evaluation run \
+  --candidate rl/runs/research_candidates/alakazam_bc_v2 \
+  --opponents all --games 2 --no-visualize \
+  --metric-profile auto_iteration_v8_setup_relay \
+  --output rl/runs/evaluation/alakazam_bc_v2
+```
 
 ## 训练边界
 
