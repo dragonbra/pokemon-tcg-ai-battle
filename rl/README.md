@@ -156,6 +156,18 @@ python3.11 -m rl.ptcg.train_behavior_cloning \
 TensorBoard 会额外记录 `train/policy_loss` 和 `train/value_loss`；如果实战 evaluation
 没有改善，这个 profile 不应晋级。
 
+BC 阶段也可以做可见势能的 reward ablation：
+
+```bash
+python3.11 -m rl.ptcg.train_behavior_cloning \
+  rl/runs/datasets/alakazam_v9_teacher_v5_history.jsonl \
+  --output rl/runs/training/alakazam_bc_potential_w05 \
+  --potential-weight 0.5 --device cuda
+```
+
+它按 `potential_shaping.total` 重加权样本，包含 Prize、attack readiness 和 library
+safety 三个已审计分量；默认权重为 0，必须以 outcome 和 correctness evaluation 验证。
+
 当已有纯 BC candidate 的 rollout trace 后，可以继续做 terminal PPO-style 微调：
 
 ```bash

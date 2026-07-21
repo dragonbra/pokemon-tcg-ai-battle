@@ -66,6 +66,10 @@ def _batch(records: list[dict[str, Any]]) -> dict[str, Tensor]:
         [float(record.get("terminal_outcome", 0.0)) for record in records],
         dtype=torch.float32,
     )
+    batch["potential_shaping"] = torch.tensor(
+        [float((record.get("potential_shaping") or {}).get("total", 0.0)) for record in records],
+        dtype=torch.float32,
+    )
     candidate_width = len(records[0]["encoded"]["action_mask"])
     mcts_targets: list[list[float]] = []
     for record in records:
@@ -146,8 +150,8 @@ def train(
         raise ValueError("epochs and batch_size must be positive")
     if not 0 <= validation_fraction < 1:
         raise ValueError("validation_fraction must be in [0, 1)")
-    if args.outcome_weight < 0 or args.value_loss_weight < 0:
-        raise ValueError("outcome_weight and value_loss_weight must not be negative")
+    if args.outcome_weight < 0 or args.value_loss_weight < 0 or args.potential_weight < 0:
+        raise ValueError("reward weights must not be negative")
     if not 0.0 <= args.mcts_policy_weight <= 1.0:
         raise ValueError("mcts_policy_weight must be in [0, 1]")
     torch.manual_seed(seed)
@@ -200,7 +204,11 @@ def train(
                     )
                 else:
                     per_sample = hard_per_sample
-                weights = (1.0 + args.outcome_weight * batch["terminal_outcome"]).clamp_min(0.1)
+                weights = (
+                    1.0
+                    + args.outcome_weight * batch["terminal_outcome"]
+                    + args.potential_weight * batch["potential_shaping"]
+                ).clamp_min(0.1)
                 policy_loss = (per_sample * weights).mean()
                 value_loss = value_huber_loss(value, batch["terminal_outcome"])
                 loss = policy_loss + args.value_loss_weight * value_loss
@@ -232,12 +240,17 @@ def train(
                 "feature_config": feature_config.__dict__,
                 "seed": seed,
                 "device": str(device),
-                "reward_profile": "terminal_outcome_v1"
-                if args.outcome_weight or args.value_loss_weight
-                else "none",
                 "outcome_weight": args.outcome_weight,
                 "value_loss_weight": args.value_loss_weight,
                 "mcts_policy_weight": args.mcts_policy_weight,
+                "potential_weight": args.potential_weight,
+                "reward_profile": "terminal_plus_visible_potential_v1"
+                if args.potential_weight
+                else (
+                    "terminal_outcome_v1"
+                    if args.outcome_weight or args.value_loss_weight
+                    else "none"
+                ),
                 "storage_path": storage.path,
                 "storage_free_gib": round(storage.free_gib, 2),
                 "epoch_metrics": last_metrics,
@@ -298,6 +311,12 @@ def main() -> None:
         type=float,
         default=0.0,
         help="blend MCTS visit-count cross entropy with hard target loss",
+    )
+    parser.add_argument(
+        "--potential-weight",
+        type=float,
+        default=0.0,
+        help="reweight policy loss by visible transition potential shaping",
     )
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)

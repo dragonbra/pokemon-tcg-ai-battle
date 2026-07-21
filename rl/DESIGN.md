@@ -124,6 +124,12 @@ schema version。
 是否有效，不等同于在线 PPO；整局胜负复制给每个动作的粗粒度方案若不能通过冻结评测，
 应退回并改用 transition-level shaping 或 MCTS target。
 
+BC trainer 还支持 `--potential-weight` 的可见势能重加权。一次 `potential_weight=0.5`
+消融使 library pressure 从 teacher 的 `1.824` 降到 `1.794`，但 34 局 outcome 只有
+`22/34 = 64.71%`，因此不晋级。这个结果说明辅助指标变好并不代表 reward shaping
+正确；当前默认保持 0，后续应使用 transition-level return 和 failure-specific target
+做更细的消融。
+
 ### Phase A.5：DAgger 分布修正
 
 纯 BC 只覆盖 teacher 访问过的状态；candidate 一旦选错 main action，后续状态可能
