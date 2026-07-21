@@ -169,6 +169,13 @@ value 强行混合。
 支持 mixed batch：没有 MCTS target 的记录自动使用 hard label 的 one-hot soft target，
 因此该能力可以安全用于后续更大规模的搜索数据，但本轮不晋级。
 
+在 calibrated-PUCT candidate 的 34 局真实 rollout 上，DAgger 采集到 1,033 条新状态，
+但 candidate 与规则 teacher 的单选主动作标签一致率为 100%，说明这一批数据主要是
+状态覆盖而不是纠错。teacher-v5 + DAgger state coverage 的 BC 分支在探索中为
+`26/34 = 76.47%`、0 error，随后 17×10 为 `123/170 = 72.35%`、3 个 engine error；
+它接近但没有超过 teacher `124/170 = 72.94%`，故不晋级。将 confidence gate 从 0.85
+提高到 0.95 的 34 局探索降至 `23/34 = 67.65%`，只说明减少模型接管不能单独解决问题。
+
 第一次真实 PUCT target 分支已完成固定 17×10 验收：`alakazam_mcts_puct_soft_v1`
 得到 `115/170 = 67.65%`，teacher `alakazam_v9` 在同一正式协议下为 `124/170 =
 72.94%`，并出现 4 个 engine error，因此不晋级。该分支的 Powerful Hand 和
