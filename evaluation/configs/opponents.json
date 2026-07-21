@@ -1,0 +1,106 @@
+{
+  "opponents": [
+    {
+      "name": "romanrozen_v9",
+      "package": "opponents/romanrozen_v9",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "pilkwang_v2",
+      "package": "opponents/pilkwang_v2",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "kokinn_search",
+      "package": "opponents/kokinn_search",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "penguin_915",
+      "package": "opponents/penguin_915",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "crustle_wall",
+      "package": "opponents/crustle_wall",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "crustle_v1",
+      "package": "opponents/crustle_v1",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "kiyotah_lucario",
+      "package": "opponents/kiyotah_lucario",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "kiyotah_dragapult",
+      "package": "opponents/kiyotah_dragapult",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "kiyotah_iono",
+      "package": "opponents/kiyotah_iono",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "kiyotah_abomasnow",
+      "package": "opponents/kiyotah_abomasnow",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "kacchan_anti_wall",
+      "package": "opponents/kacchan_anti_wall",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "nursrijan_lucario",
+      "package": "opponents/nursrijan_lucario",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "yakitori_raging_bolt",
+      "package": "opponents/yakitori_raging_bolt",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "zoli_dragapult",
+      "package": "opponents/zoli_dragapult",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "sue_alakazam",
+      "package": "opponents/sue_alakazam",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "maktha_1084",
+      "package": "opponents/maktha_1084",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "yanxiaohan",
+      "package": "opponents/yanxiaohan",
+      "enabled": true,
+      "tags": []
+    }
+  ]
+}

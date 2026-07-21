@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import csv
+import sys
 from collections import Counter
 
 try:
@@ -12,6 +13,27 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "official"
+EVALUATION_CG_BASELINE = ROOT / "submission" / "alakazam_v8" / "cg"
+EXPECTED_EVALUATION_OPPONENT_NAMES = (
+    "romanrozen_v9",
+    "pilkwang_v2",
+    "kokinn_search",
+    "penguin_915",
+    "crustle_wall",
+    "crustle_v1",
+    "kiyotah_lucario",
+    "kiyotah_dragapult",
+    "kiyotah_iono",
+    "kiyotah_abomasnow",
+    "kacchan_anti_wall",
+    "nursrijan_lucario",
+    "yakitori_raging_bolt",
+    "zoli_dragapult",
+    "sue_alakazam",
+    "maktha_1084",
+    "yanxiaohan",
+)
+FOREIGN_EVALUATION_REPOSITORY = "/Users/hejinyu/Documents/repos/ptcg-agent-kaggle"
 
 
 def submission_dirs() -> list[Path]:
@@ -56,6 +78,44 @@ def check_submission(submission: Path) -> None:
     print(f"OK submission/{submission.name}: main.py present, 60 valid cards, counts={dict(Counter(card_ids))}")
 
 
+def official_card_ids() -> set[int]:
+    ids: set[int] = set()
+    with (DATA / "EN_Card_Data.csv").open(newline="", encoding="utf-8-sig") as f:
+        for row in csv.reader(f):
+            if row and row[0] != "Card ID":
+                ids.add(int(row[0].split(":")[-1]))
+    return ids
+
+
+def check_evaluation_catalog() -> None:
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from evaluation.cli import validate_catalog
+    from evaluation.runtime.loader import compute_cg_manifest
+
+    catalog = ROOT / "evaluation" / "configs" / "opponents.json"
+    packages = validate_catalog(catalog, official_card_ids())
+    names = tuple(package.name for package in packages)
+    if names != EXPECTED_EVALUATION_OPPONENT_NAMES:
+        raise SystemExit(
+            "evaluation catalog must contain the exact enabled opponent set: "
+            f"{', '.join(EXPECTED_EVALUATION_OPPONENT_NAMES)}"
+        )
+
+    baseline_hash = compute_cg_manifest(EVALUATION_CG_BASELINE)["tree_hash"]
+    opponents_root = ROOT / "evaluation" / "opponents"
+    for package in packages:
+        expected_root = opponents_root / package.name
+        if package.root != expected_root:
+            raise SystemExit(f"evaluation/{package.name} must be a direct opponent package")
+        if package.cg_manifest["tree_hash"] != baseline_hash:
+            raise SystemExit(f"evaluation/{package.name}/cg hash does not match the baseline")
+        main_source = package.entrypoint.read_text(encoding="utf-8")
+        if FOREIGN_EVALUATION_REPOSITORY in main_source:
+            raise SystemExit(f"evaluation/{package.name}/main.py references an external repository")
+    print(f"OK evaluation catalog: {len(packages)} standard opponents, matching cg baseline")
+
+
 def check_simulator(submission: Path) -> None:
     cg = submission / "cg"
     if not (cg / "libcg.so").exists():
@@ -74,6 +134,7 @@ def main() -> None:
     for submission in submissions:
         check_submission(submission)
         check_simulator(submission)
+    check_evaluation_catalog()
 
 
 if __name__ == "__main__":

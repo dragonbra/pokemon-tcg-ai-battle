@@ -10,13 +10,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import subprocess
 import sys
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Iterable
+
+from evaluation.cli import main as evaluation_cli_main
 
 
 ALAKAZAM = 743
@@ -71,8 +71,7 @@ TWO_PRIZE_POKEMON = {
 }
 RULE_BOX_POKEMON = {FEZANDIPITI_EX, 306, 389, 481, 723, 997}
 
-# Keep this in sync with ptcg-agent-kaggle/eval/matchup_test.py. Unknown
-# opponents intentionally use the evaluator's 0.05 fallback weight.
+# 固定 catalog 的历史 meta 权重；未知 opponent 使用 0.05 fallback。
 META_WEIGHTS = {
     "romanrozen_v9": 0.10,
     "pilkwang_v2": 0.08,
@@ -1196,11 +1195,25 @@ def analyze_records(
 
 
 def _iter_game_files(report_dir: Path) -> list[Path]:
+    old_game_files = report_dir.rglob("game_*.json")
+    retained_trace_files = (report_dir / "traces").glob("*.json")
     return sorted(
-        path
-        for path in report_dir.rglob("game_*.json")
-        if path.is_file() and path.name != "summary.json"
+        {
+            path
+            for path in [*old_game_files, *retained_trace_files]
+            if path.is_file() and path.name != "summary.json"
+        }
     )
+
+
+def _record_from_report_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Flatten native TraceStore's nested result without changing old records."""
+    record = dict(payload)
+    nested_result = payload.get("result")
+    if isinstance(nested_result, dict):
+        for key, value in nested_result.items():
+            record.setdefault(key, value)
+    return record
 
 
 def analyze_report(report_dir: Path, agent_label: str | None = None) -> AnalysisResult:
@@ -1211,7 +1224,7 @@ def analyze_report(report_dir: Path, agent_label: str | None = None) -> Analysis
     for path in files:
         payload = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(payload, dict):
-            records.append(payload)
+            records.append(_record_from_report_payload(payload))
 
     if not records:
         summary_path = report_dir / "summary.json"
@@ -1303,10 +1316,69 @@ def write_analysis(
 def _load_metrics(path: Path) -> EvaluationMetrics:
     payload = json.loads((path / "metrics.json").read_text(encoding="utf-8"))
     values = payload.get("metrics", payload)
-    values = dict(values)
-    values["first_alakazam_turns"] = tuple(values.get("first_alakazam_turns") or [])
-    fields = set(EvaluationMetrics.__dataclass_fields__)
-    return EvaluationMetrics(**{key: value for key, value in values.items() if key in fields})
+    if not isinstance(values, dict):
+        raise ValueError(f"metrics.json must contain an object: {path}")
+    if "games" in values:
+        legacy_values = dict(values)
+        legacy_values["first_alakazam_turns"] = tuple(
+            legacy_values.get("first_alakazam_turns") or []
+        )
+        fields = set(EvaluationMetrics.__dataclass_fields__)
+        return EvaluationMetrics(
+            **{key: value for key, value in legacy_values.items() if key in fields}
+        )
+
+    summary_path = path / "summary.json"
+    if not summary_path.is_file():
+        raise ValueError("native metrics.json requires sibling summary.json")
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    if not isinstance(summary, dict):
+        raise ValueError(f"summary.json must contain an object: {summary_path}")
+    games = _as_int(summary.get("total_games"), 0) or 0
+    wins = _as_int(summary.get("wins"), 0) or 0
+    losses = _as_int(summary.get("losses"), 0) or 0
+    draws = _as_int(summary.get("draws"), 0) or 0
+    errors = _as_int(summary.get("errors"), 0) or 0
+
+    def metric(metric_id: str) -> dict[str, Any]:
+        value = values.get(metric_id, {})
+        return value if isinstance(value, dict) else {}
+
+    powerful_hand = metric("powerful_hand")
+    powerful_games = _as_int(powerful_hand.get("numerator"), 0) or 0
+    post_ko_relay = metric("post_ko_relay")
+    post_ko_zero_ready = _as_int(post_ko_relay.get("numerator"), 0) or 0
+    post_ko_count = _as_int(post_ko_relay.get("denominator"), 0) or 0
+    run_away_draw = metric("run_away_draw")
+    empty_bench_draws = _as_int(run_away_draw.get("numerator"), 0) or 0
+    games_with_post_ko_break = sum(
+        _as_int(group.get("games_with_zero_ready"), 0) or 0
+        for group in post_ko_relay.get("by_opponent", {}).values()
+        if isinstance(group, dict)
+    )
+
+    return EvaluationMetrics(
+        games=games,
+        wins=wins,
+        losses=losses,
+        draws=draws,
+        errors=errors,
+        win_rate=wins / games if games else 0.0,
+        meta_weighted_win_rate=wins / games if games else 0.0,
+        second_turn_powerful_hand_games=powerful_games,
+        second_turn_powerful_hand_rate=powerful_games / games if games else 0.0,
+        post_ko_count=post_ko_count,
+        post_ko_zero_ready_count=post_ko_zero_ready,
+        post_ko_zero_ready_event_rate=(
+            post_ko_zero_ready / post_ko_count if post_ko_count else 0.0
+        ),
+        games_with_post_ko_break=games_with_post_ko_break,
+        games_with_post_ko_break_rate=(
+            games_with_post_ko_break / games if games else 0.0
+        ),
+        empty_bench_run_away_draw_count=empty_bench_draws,
+        first_alakazam_turns=(),
+    )
 
 
 def _load_cases(path: Path) -> list[dict[str, Any]]:
@@ -1410,6 +1482,14 @@ def compare_reports(control_dir: Path, candidate_dir: Path, output_dir: Path) ->
     return payload
 
 
+def legacy_candidate_root(agent_path: Path) -> Path:
+    """Resolve the old ``--agent`` value to a standard submission package."""
+    root = agent_path.resolve().parent if agent_path.name == "main.py" else agent_path.resolve()
+    if not (root / "main.py").is_file() or not (root / "deck.csv").is_file():
+        raise ValueError("legacy --agent must point to a standard submission package")
+    return root
+
+
 def build_replay_command(
     evaluator_root: Path,
     agent: Path,
@@ -1420,25 +1500,29 @@ def build_replay_command(
     cg_path: Path,
     save_traces: bool = False,
 ) -> list[str]:
-    """Build, but do not execute, the external alakazam_replay.py command."""
+    """Build the native evaluation CLI command for callers retaining this helper.
+
+    ``evaluator_root``, ``label`` and ``cg_path`` remain in the signature for
+    import compatibility. They are intentionally not used for external lookup;
+    the runtime contract is now the candidate's own standard package.
+    """
+    del evaluator_root, label, cg_path
     command = [
         sys.executable,
-        str((evaluator_root / "eval" / "alakazam_replay.py").resolve()),
-        "--agent",
-        str(agent.resolve()),
-        "--label",
-        label,
+        "-m",
+        "evaluation",
+        "run",
+        "--candidate",
+        str(agent.resolve().parent if agent.name == "main.py" else agent.resolve()),
         "--opponents",
         ",".join(opponents),
         "--games",
         str(games),
         "--output",
         str(output.resolve()),
-        "--cg-path",
-        str(cg_path.resolve()),
     ]
     if save_traces:
-        command.insert(command.index("--output"), "--save-traces")
+        command.append("--save-traces")
     return command
 
 
@@ -1456,8 +1540,12 @@ def _command_parser() -> argparse.ArgumentParser:
     compare.add_argument("--candidate", type=Path, required=True)
     compare.add_argument("--output-dir", type=Path, required=True)
 
-    run = subparsers.add_parser("run", help="运行隔壁 evaluator 并分析结果")
-    run.add_argument("--evaluator-root", type=Path, required=True)
+    run = subparsers.add_parser("run", help="通过原生 evaluation CLI 运行旧兼容入口")
+    run.add_argument(
+        "--evaluator-root",
+        type=Path,
+        help="已废弃；仅记录兼容调用，不再用于导入或路径查找",
+    )
     run.add_argument("--agent", type=Path, required=True)
     run.add_argument("--cg-path", type=Path, required=True)
     run.add_argument("--label", required=True)
@@ -1495,37 +1583,40 @@ def main(argv: list[str] | None = None) -> int:
         compare_reports(args.control, args.candidate, args.output_dir)
         return 0
 
-    opponents = [item.strip() for item in args.opponents.split(",") if item.strip()]
-    command = build_replay_command(
-        args.evaluator_root,
-        args.agent,
-        args.label,
-        opponents,
-        args.games,
-        args.output_dir,
-        args.cg_path,
-        save_traces=args.save_traces,
-    )
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    subprocess.run(command, cwd=args.evaluator_root, env=env, check=True)
-    result = analyze_report(args.output_dir, agent_label=args.label)
-    write_analysis(
-        result,
-        args.output_dir,
-        {
-            "command": command,
-            "evaluator_root": str(args.evaluator_root.resolve()),
-            "agent": str(args.agent.resolve()),
-            "label": args.label,
-            "opponents": opponents,
-            "games": args.games,
-            "trace_mode": "full" if args.save_traces else "summary",
-            "swap": True,
-            "seed_policy": "evaluator_default_independent_randomness",
-        },
-    )
-    return 0
+    try:
+        candidate_root = legacy_candidate_root(args.agent)
+        expected_cg_path = (candidate_root / "cg").resolve()
+        if args.cg_path.resolve() != expected_cg_path:
+            raise ValueError("legacy --cg-path must point to candidate/cg")
+    except ValueError as exc:
+        _command_parser().error(str(exc))
+
+    if args.evaluator_root is not None:
+        print(
+            "warning: --evaluator-root is deprecated and ignored; "
+            "the candidate package provides its own runtime",
+            file=sys.stderr,
+        )
+    if args.save_traces:
+        print(
+            "warning: --save-traces maps to --keep-temp; persistent reports retain at most three traces",
+            file=sys.stderr,
+        )
+
+    cli_args = [
+        "run",
+        "--candidate",
+        str(candidate_root),
+        "--opponents",
+        args.opponents,
+        "--games",
+        str(args.games),
+        "--output",
+        str(args.output_dir),
+    ]
+    if args.save_traces:
+        cli_args.append("--keep-temp")
+    return evaluation_cli_main(cli_args)
 
 
 if __name__ == "__main__":
