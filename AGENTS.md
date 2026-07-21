@@ -5,6 +5,9 @@
 - `work/<name>/` 是当前可打包候选，必须包含 `main.py`、60 行 `deck.csv` 和 `cg/` 运行时；策略说明放在 `work/docs/`。`submission/<name>/` 保留历史提交源目录。
 - `scripts/` 提供资产校验、提交打包、本地对局和官方引擎构建脚本。
 - `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。
+- `evaluation/` 是仓库内的评测运行入口：`configs/opponents.json` 固定 catalog，`opponents/<name>/` 下每个对手都是独立标准 package（`main.py`、60 行 `deck.csv`、物理复制的 `cg/`），不是 adapter。官方 engine runtime 是唯一运行时来源；评测代码不得修改 `engine/source/`，也不得依赖隔壁评测仓库。
+- 评测 CLI 使用 `python3 -m evaluation list-opponents`、`validate <package>` 和 `run --candidate <package> --opponents all --output <report-root>`。每次 `run` 在指定报告根目录下创建独立 `run_id/`，写入 manifest、逐局记录、指标、case 及 Markdown/HTML 报告；`evaluation/opponents/` 不属于 Kaggle 正式 submission 输出目录。
+- 每场评测在独立 worker 进程中运行，隔离双方策略的模块级状态、导入缓存和 cg 状态。完整 trace 仅在当前 run 的临时目录保留，结束时默认删除；长期报告最多保留三份被选中的完整 trace，只有调试时才使用 `--keep-temp`。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
 - `notes/`、`reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
 
@@ -50,7 +53,9 @@ bash scripts/package_submission.sh alakazam_v8_luna_deck_opt
   --output /tmp/ptcg-local-battle.json
 ```
 
-第一条检查卡牌数据、60 张卡组和模拟器文件；第二条优先打包 `work/<name>/`，历史目录回退到 `submission/<name>/`，并生成 `submission/dist/<name>.tar.gz`；本地 battle runner 仅用于临时调试，输出应写到 `/tmp`。官方真实对局以 Kaggle submission/episode/replay 为主要分析依据。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
+第一条检查卡牌数据、submission 的 60 张卡组与模拟器文件，并检查 evaluation 的精确 17 个 opponent package、cg runtime 基线和外部路径依赖；第二条优先打包 `work/<name>/`，历史目录回退到 `submission/<name>/`，并生成 `submission/dist/<name>.tar.gz`；本地 battle runner 仅用于临时调试，输出应写到 `/tmp`。官方真实对局以 Kaggle submission/episode/replay 为主要分析依据。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
+
+新增 evaluation opponent 时，先建立自包含标准 package，保证 `main.py` 从同目录读取 deck、`deck.csv` 恰为 60 行且 `cg/` 与基线 hash 一致；然后添加 catalog 条目、补充资产/策略测试，并运行 `python3 -m unittest -v tests.test_evaluation_assets` 和 `python3 scripts/check_assets.py`。不要把 opponent adapter、共享 cg 目录、symlink 或其他仓库的绝对路径带入运行时。
 
 ### Replay 可视化工具
 
@@ -75,8 +80,10 @@ Python 使用 4 个空格、类型注解和清晰的小函数；遵守 Ruff 的 
 
 ## 测试指南
 
-仓库当前没有 pytest 测试套件。提交前至少运行 `python3 scripts/check_assets.py`；本地对局不是当前主要评测来源，如需运行只将输出写到 `/tmp`。策略或引擎改动应优先记录 Kaggle 官方 Episode，并在说明中记录对手、步数和结果。必要时使用 `python3 -m compileall scripts submission` 检查语法。
+测试使用标准库 `unittest`。提交前至少运行 `python3 scripts/check_assets.py`；evaluation 资产改动还必须运行 `python3 -m unittest -v tests.test_evaluation_assets`。本地对局不是当前主要评测来源，如需运行只将输出写到 `/tmp`；评测 smoke 输出也写到 `/tmp`，不要提交生成的 trace 或报告。策略或引擎改动应优先记录 Kaggle 官方 Episode，并在说明中记录对手、步数和结果。必要时使用 `python3 -m compileall -q evaluation scripts` 检查语法。
 
 ## 提交与 Pull Request
 
-提交信息采用 Git 风格操作前缀加中文说明，例如 `feat: 新增胡地策略`、`fix: 修复合法选项选择`、`docs: 补充实验记录`、`test: 记录本地对局`、`chore: 整理脚本`；一次提交聚焦一个主题。除非用户主动要求，否则不要执行 `git commit`。每次执行 `git commit` 后必须立即执行对应的 `git push`；如果远端、分支或权限导致无法 push，应报告失败，不得把仅完成本地 commit 当作同步完成。PR 应说明动机、改动目录、验证命令和结果，涉及策略时附 replay 或指标；本项目无 UI，截图仅在确有帮助时提供。不要提交 Kaggle 凭据、`.env`、下载的官方数据或未经许可的二进制资源，也不要自动上传正式 submission。
+提交信息采用 Git 风格操作前缀加中文说明，例如 `feat: 新增胡地策略`、`fix: 修复合法选项选择`、`docs: 补充实验记录`、`test: 记录本地对局`、`chore: 整理脚本`；一次提交聚焦一个主题。除非用户主动要求，否则不要执行 `git commit`。每次执行 `git commit` 后必须立即执行对应的 `git push`；如果远端、分支或权限导致无法 push，应报告失败，不得把仅完成本地 commit 当作同步完成。PR 应说明动机、改动目录、验证命令和结果，涉及策略时附 replay 或指标；本项目无 UI，截图仅在确有帮助时提供。
+- Kaggle 提交默认禁止重复提交。除非用户明确要求进行一次 Kaggle submission，否则不得执行 `kaggle competitions submit`，也不得因为上传失败、状态 pending 或结果不理想而自行重试或追加提交。用户明确要求提交一次时，只允许针对当时完成验收的最终归档执行一次打包和提交；后续再次提交、更新归档或更换说明都必须重新获得用户明确授权。
+- 不要提交 Kaggle 凭据、`.env`、下载的官方数据或未经许可的二进制资源，也不要自动上传正式 submission。
