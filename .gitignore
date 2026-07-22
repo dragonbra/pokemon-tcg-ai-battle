@@ -19,14 +19,18 @@ replays/kaggle_yushin_ito_*/
 replays/kaggle_top100_exact_deck_*/
 logs/
 
-# RL experiments: keep code/design/reference files tracked, ignore all
-# generated datasets, checkpoints, metrics and TensorBoard event files.
-rl/runs/
+# RL artifacts: large supervised datasets and checkpoints stay local.
+# Run metadata, metrics, evaluation reports, and TensorBoard events are tracked.
+rl/artifact/dataset/*
+!rl/artifact/dataset/README.md
+rl/artifact/checkpoint/*
+!rl/artifact/checkpoint/README.md
 *.egg-info/
 
 # Official card data and Card ID PDFs are local reference downloads only.
 # Keep the small README tracked, but do not upload the resource files.
 data/official/*
+data/replays/*
 !data/official/README.md
 
 .DS_Store

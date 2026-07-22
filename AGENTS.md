@@ -20,9 +20,9 @@
 - 实现或配置已经变化但 `rl/model/DESIGN.html` 尚未同步时，该项工作视为未完成。交付前必须用当前代码、数据 audit、checkpoint metadata 和 run manifest 交叉核对页面内容；不能只根据旧报告手工推断。
 - 纯粹的内部重构、文件移动或不改变模型/训练语义的修复不要求制造文档改动；但如果路径发生变化，页面中的事实来源链接也必须保持可用。
 
-## 宝可梦 TCG 规则学习长期记忆（V6）
+## 宝可梦 TCG 规则学习长期记忆
 
-详细证据见 [`reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)，官方规则书为 [Pokémon TCG Rules](https://www.pokemon.com/static-assets/content-assets/cms2/pdf/trading-card-game/rulebook/par_rulebook_en.pdf)。后续新会话设计策略时，必须同时遵守下面的官方规则和 V6 已确认的策略语义。
+详细证据见 [`reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)，官方规则书为 [Pokémon TCG Rules](https://www.pokemon.com/static-assets/content-assets/cms2/pdf/trading-card-game/rulebook/par_rulebook_en.pdf)。后续新会话设计策略时，必须同时遵守下面的官方规则和已确认的策略语义。
 
 ### 官方规则硬约束
 
@@ -33,7 +33,7 @@
 - 胜利来自拿完 Prize、对手没有可战斗 Pokémon，或对手在自己回合开始无法抽牌。牌库变空本身不会立即输，卡牌效果抽不到足够数量也不会立即输；规则没有通用手牌上限。
 - Prize、手牌、Active、Bench、弃牌区和牌库是不同资源区域；卡牌效果改变区域时必须更新资源位置，不要把“当前看不到”误当成“仍在牌库”。
 
-### V6 已确认策略语义
+### 已确认策略语义
 
 - 攻击是回合终止提交。低阶段 Abra/Kadabra 攻击是最后手段；只要仍能完成 Alakazam 进化、后场铺场、过牌或明确的下一条攻击路线，就先准备再攻击。
 - Active Kadabra 已有 Psychic Energy 且手里有 Alakazam 时，优先自然进化 Active 并攻击；之后可以把合法 Bench Abra 进化为 Kadabra，使用其 Psychic Draw。不要为了立即消耗 Rare Candy 把 Bench Abra 直进。
@@ -44,7 +44,7 @@
 - Dunsparce 的 Trading Places 是攻击，不是普通换位；V6 初版禁用。只有 Retreat 后能让已经具备攻击条件的 Alakazam 在本回合攻击时，才立即 Retreat；换位后仍不能攻击时，才让低 Prize 的 Dunsparce 留在 Active。
 - 不预设 opponent ID 或完整对手构筑，只根据 observation 中实际看到的 Pokémon、Energy、伤害、手牌、Prize 和牌库压力做决策。Land Collapse 只在实际观察到 Great Tusk/攻击压力后按通用进攻与牌库规则处理，不增加预设 matchup 分支。
 
-### V6 必须维护的状态来源
+### 必须维护的状态来源
 
 - 新对局开始时清空本地动作历史和 effect serial；每个己方回合开始保存 Active/Bench Pokémon 实例快照。
 - 记录每只 Pokémon 的进场回合、进化回合、本回合是否已使用 Supporter/手填 Energy/Retreat，以及是否已经攻击或主动结束回合。用这些时间节点判断进化时机，不能只看当前 card ID。
@@ -62,7 +62,7 @@ bash scripts/package_submission.sh alakazam_v8_luna_deck_opt
   --output /tmp/ptcg-local-battle.json
 ```
 
-第一条检查卡牌数据、submission 的 60 张卡组与模拟器文件，并检查 evaluation 的精确 17 个 opponent package、cg runtime 基线和外部路径依赖；第二条优先打包 `work/<name>/`，历史目录回退到 `submission/<name>/`，并生成 `submission/dist/<name>.tar.gz`；本地 battle runner 仅用于临时调试，输出应写到 `/tmp`。官方真实对局以 Kaggle submission/episode/replay 为主要分析依据。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
+第一条检查卡牌数据、submission 的 60 张卡组与模拟器文件，并检查 evaluation 的精确 18 个 opponent package、cg runtime 基线和外部路径依赖；第二条优先打包 `work/<name>/`，历史目录回退到 `submission/<name>/`，并生成 `submission/dist/<name>.tar.gz`；本地 battle runner 仅用于临时调试，输出应写到 `/tmp`。官方真实对局以 Kaggle submission/episode/replay 为主要分析依据。若动态库不兼容，设置 `PTCG_CXX_RUNTIME=/path/to/runtime`；需要回归官方源码时运行 `./scripts/build_official_engine.sh`，再设置 `PTCG_CG_LIBRARY`。
 
 新增 evaluation opponent 时，先建立自包含标准 package，保证 `main.py` 从同目录读取 deck、`deck.csv` 恰为 60 行且 `cg/` 与基线 hash 一致；然后添加 catalog 条目、补充资产/策略测试，并运行 `python3 -m unittest -v tests.test_evaluation_assets` 和 `python3 scripts/check_assets.py`。不要把 opponent adapter、共享 cg 目录、symlink 或其他仓库的绝对路径带入运行时。
 
