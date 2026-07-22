@@ -27,6 +27,11 @@ observation + 当前合法 options
 - `core/promotion.py`：checkpoint 晋级护栏。
 - `core/storage.py`：WSL C 盘空间护栏，默认低于 20 GiB 时阻止大任务。
 - `ptcg/features.py`：官方 observation 的初版纯 Python 编码器。
+- `ptcg/download_expert_replays.py`：下载并审计 expert submission 的 public replay。
+- `ptcg/build_kaggle_bc_dataset.py`：按 Kaggle 的一步 action lag 构建全动作 BC 数据。
+- `ptcg/full_action_model.py`：候选动作打分和 selection-count head。
+- `ptcg/train_full_action_bc.py`：训练单选、空选和多选的纯 BC checkpoint。
+- `ptcg/build_full_action_candidate.py`：生成不含规则 teacher fallback 的评测 candidate。
 - `ptcg/dataset.py`：把本地官方 battle trace 转成合法候选 BC JSONL。
 - `ptcg/build_dagger_dataset.py`：把 candidate rollout 状态交给规则 teacher 重新标注。
 - `ptcg/merge_datasets.py`：合并同一 feature schema 的 BC/DAgger 数据集。
@@ -98,30 +103,22 @@ tensorboard --logdir rl/runs
 ```
 
 `rl/runs/` 专门保存本地训练生成的 metrics、TensorBoard event、checkpoint 和实验数据，
-已加入根目录 `.gitignore`，不会进入提交或同步。顶层只保留通用的 `datasets/` 和
-`ptcg_bc/`；一次完整实验使用同一个编号，分组放在：
+已加入根目录 `.gitignore`，不会进入提交或同步。一次完整实验只使用一个编号目录：
 
 ```text
 rl/runs/
-  datasets/
-  ptcg_bc/
-  training/0009-project_name/
-  research_candidates/0009-project_name/
-  evaluation/0009-project_name/
+  0001-project_name/
+    manifest.json
+    data/
+    source/
+    training/
+    candidate/
+    evaluation/
+    notes/
 ```
 
-candidate package 必须位于 `research_candidates/0009-project_name/` 内，不放在
-`rl/runs/` 顶层。evaluation CLI 和 candidate builder 会为未编号的直接输出自动分配
-全局顺序号；训练命令使用已分配的同一编号目录。
-
-当前大数据 BC 实验的对应路径为：
-
-```text
-rl/runs/datasets/alakazam_teacher_main_v6_action_cards_1gb_v1.jsonl
-rl/runs/training/0009-alakazam_bc_v6_action_cards_1gb_v1/
-rl/runs/research_candidates/0009-alakazam_bc_v6_action_cards_1gb_v1/
-rl/runs/evaluation/0009-alakazam_bc_v6_action_cards_1gb_v1/
-```
+完整规范见 [`RUNS.md`](RUNS.md)。旧的 `datasets/training/research_candidates/evaluation`
+平行目录只为 CLI 兼容保留，不再用于新实验。
 
 ## 存储空间护栏
 
@@ -146,29 +143,39 @@ evaluation 报告当成候选晋级证据。若胜率差异接近或方差较大
 toy 演示只证明 model forward、合法候选 mask、交叉熵行为克隆、JSONL 和 checkpoint
 能协同工作。它不是 Pokémon TCG 强度实验。
 
-## 第一条真实数据链
+## 当前主 Baseline 数据链
 
-先用现有规则策略作为 teacher 运行本地官方 simulator。输出 trace 只写到 `/tmp`：
+当前主 baseline 只模仿 Yushin Ito 最新 exact submission `54773249`。Kaggle API 对该
+submission 暴露最近 1000 局且没有分页字段，因此 manifest 必须记录 API 上限和固定的
+episode snapshot；旧 submission `54486275` 的 60 张卡不同，不纳入训练。
 
 ```bash
-./scripts/run_local_battle.sh \
-  --agent0 alakazam_v9 --agent1 alakazam_v9 \
-  --output /tmp/ptcg-bc-game.json
+PYTHONPATH=. python3.11 -m rl.ptcg.download_expert_replays \
+  --submission-id 54773249 --agent-name 'Yushin Ito' \
+  --deck work/alakazam_v9/deck.csv \
+  --output replays/kaggle_yushin_ito_54773249
 
-PYTHONPATH=. python3.11 -m rl.ptcg.build_bc_dataset \
-  /tmp/ptcg-bc-game.json \
-  --output rl/runs/ptcg_bc/dataset.jsonl
+PYTHONPATH=. python3.11 -m rl.ptcg.build_kaggle_bc_dataset \
+  replays/kaggle_yushin_ito_54773249 \
+  --manifest replays/kaggle_yushin_ito_54773249/manifest.json \
+  --output rl/runs/0001-yushin_ito_exact_bc_baseline/data/dataset.jsonl
 
-PYTHONPATH=. python3.11 -m rl.ptcg.train_behavior_cloning \
-  rl/runs/ptcg_bc/dataset.jsonl \
-  --output rl/runs/ptcg_bc/run
+PYTHONPATH=. python3.11 -m rl.ptcg.train_full_action_bc \
+  rl/runs/0001-yushin_ito_exact_bc_baseline/data/dataset.jsonl \
+  --output rl/runs/0001-yushin_ito_exact_bc_baseline/training \
+  --device cuda
 ```
 
-这里默认只收集 `select.type=0, context=0` 的主动作，并且只保留 teacher 返回单个
-option index 的决策；卡牌效果的多选仍由规则 handler 负责。`select.option` 本身就是
-官方 simulator 给出的合法动作集合，所以模型不会被训练成生成一个 simulator 不接受的
-全局动作编号。`checkpoints/best_validation.pt` 的 metadata 会保存模型和特征 schema，
-可直接交给 `PTCGCandidatePolicy.from_checkpoint()` 恢复推理结构。
+数据按完整 episode 的时间顺序切为 80% train、10% validation、10% test。模型处理所有
+`select.type/context`，单选使用 masked categorical loss，多选使用 candidate multi-label
+loss，selection-count head 预测可变选择数量。legal option mask 是 simulator contract；
+runtime 不调用规则 teacher、confidence gate 或 search fallback。
+
+## 已归档的旧路线
+
+下面的 rule-teacher、reward、MCTS 和 DAgger 命令只保留接口参考；它们引用的旧
+`rl/runs` 数据与 checkpoint 已删除，不属于当前 baseline。结论摘要见
+[`reports/rl/behavior-cloning-history-conclusions-20260722.md`](../reports/rl/behavior-cloning-history-conclusions-20260722.md)。
 
 终局 reward 过渡实验可以在不改变输入输出 contract 的前提下开启：
 

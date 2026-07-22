@@ -13,6 +13,9 @@ venv/
 engine/build/
 data/competition/
 replays/raw/
+# Large expert replay corpora are reproducible from their run manifest and
+# must not be committed with source code.
+replays/kaggle_yushin_ito_*/
 logs/
 
 # RL experiments: keep code/design/reference files tracked, ignore all
