@@ -17,25 +17,25 @@ python3 -m evaluation run \
   --games 10 \
   --metric-profile auto_iteration_v8_setup_relay \
   --no-visualize \
-  --output rl/runs/evaluation/alakazam_candidate
+  --output rl/_runs/alakazam_candidate/evaluation
 ```
 
 `validate` 必须先通过。`run` 完成后会打印 `run_id` 和报告目录。输出根目录位于
-`rl/runs/evaluation/` 时，实验目录会自动获得顺序前缀，例如：
+`rl/_runs/<label>/evaluation` 时，实验目录会自动获得顺序前缀，例如：
 
 ```text
-rl/runs/evaluation/0001-alakazam_candidate/run-<uuid>/
+rl/_runs/0001-alakazam_candidate/evaluation/run-<uuid>/
 ```
 
 直接打开该目录下的 `report.html` 即可查看完整语义报告：
 
 ```bash
-open rl/runs/evaluation/0001-alakazam_candidate/run-<uuid>/report.html
+open rl/_runs/0001-alakazam_candidate/evaluation/run-<uuid>/report.html
 ```
 
-正式复盘建议把 `--output` 指向 `rl/runs/evaluation/<label>`，以获得自动编号；对应的
-training 和 candidate 产物也应使用相同的 `0001-<label>` 目录名。CLI
-强制 `--opponents all --games 10` 或更高，即固定 17 个 opponent、至少 170 局；小样本
+正式复盘建议把 `--output` 指向 `rl/_runs/<label>/evaluation`，以获得自动编号；对应的
+checkpoint 与 TensorBoard 也应使用相同的 `0001-<label>` 目录名。CLI
+强制 `--opponents all --games 10` 或更高，即固定 18 个 opponent、至少 180 局；小样本
 探索请使用训练日志、离线数据或 simulator smoke，不通过 repo evaluation CLI。
 
 ## 报告产物

@@ -22,8 +22,8 @@ EXPECTED_FIELDS = frozenset({"name", "package", "enabled", "tags"})
 DEFAULT_CATALOG = Path(__file__).resolve().parent / "configs" / "opponents.json"
 DEFAULT_MAX_STEPS = 1_000
 MIN_RESEARCH_GAMES = 10
-REQUIRED_RESEARCH_OPPONENTS = 17
-RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl" / "runs" / "evaluation"
+REQUIRED_RESEARCH_OPPONENTS = 18
+RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl" / "_runs"
 _NUMBERED_OUTPUT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
 
 
@@ -178,7 +178,7 @@ def _validate_positive(value: int, argument: str) -> None:
 
 
 def _numbered_research_output_root(requested: Path) -> Path:
-    """Allocate a globally numbered report below ``rl/runs/evaluation``."""
+    """Allocate a globally numbered report below ``rl/_runs``."""
     return numbered_artifact_path(requested, "evaluation")
 
 
@@ -187,15 +187,17 @@ def _validate_research_coverage(
     games: int,
     opponents: tuple[SubmissionPackage, ...],
 ) -> None:
-    """Enforce the project-level 17×10 evaluation contract at the CLI."""
+    """Enforce the project-level 18×10 evaluation contract at the CLI."""
+    minimum_total_games = REQUIRED_RESEARCH_OPPONENTS * MIN_RESEARCH_GAMES
     if games < MIN_RESEARCH_GAMES:
         raise PackageValidationError(
             f"repo evaluation requires at least {MIN_RESEARCH_GAMES} games per opponent "
-            f"({REQUIRED_RESEARCH_OPPONENTS}×{MIN_RESEARCH_GAMES}=170); got {games}"
+            f"({REQUIRED_RESEARCH_OPPONENTS}×{MIN_RESEARCH_GAMES}="
+            f"{minimum_total_games}); got {games}"
         )
     if requested_opponents.strip() != "all" or len(opponents) != REQUIRED_RESEARCH_OPPONENTS:
         raise PackageValidationError(
-            "repo evaluation requires --opponents all and the fixed 17-opponent catalog"
+            "repo evaluation requires --opponents all and the fixed 18-opponent catalog"
         )
 
 
@@ -222,7 +224,7 @@ def _parser() -> argparse.ArgumentParser:
         "--games",
         type=int,
         default=30,
-        help="每个 opponent 的对局数（至少 10；固定 17 opponent catalog）",
+        help="每个 opponent 的对局数（至少 10；固定 18 opponent catalog）",
     )
     run.add_argument("--output", type=Path, required=True, help="评测报告根目录；RL 路径自动编号")
     run.add_argument("--control", type=Path, help="仅用于报告对比展示的标准 package")

@@ -73,12 +73,6 @@
       "tags": []
     },
     {
-      "name": "yakitori_raging_bolt",
-      "package": "opponents/yakitori_raging_bolt",
-      "enabled": true,
-      "tags": []
-    },
-    {
       "name": "zoli_dragapult",
       "package": "opponents/zoli_dragapult",
       "enabled": true,
@@ -99,6 +93,18 @@
     {
       "name": "yanxiaohan",
       "package": "opponents/yanxiaohan",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "Agent_Lucario",
+      "package": "opponents/Agent_Lucario",
+      "enabled": true,
+      "tags": []
+    },
+    {
+      "name": "Agent_Aluxian",
+      "package": "opponents/Agent_Aluxian",
       "enabled": true,
       "tags": []
     }
