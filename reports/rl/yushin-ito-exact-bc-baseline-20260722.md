@@ -27,5 +27,6 @@
 - Kaggle archive：`submission/dist/alakazam_bc_v1.tar.gz`
 - archive SHA-256：`5b832bdc103ac347596ed7588b23b07065b6672760678cf2442acc361aeb084e`
 - self-contained `strategy/model.bin` SHA-256：`7ec19da29ce1b1ba294132146bf409ae2ef739417309540a11ed9e212f49d3c8`
+- Kaggle submission：ref `54908815`，文件 `alakazam_bc_v1.tar.gz`，状态 `PENDING`（2026-07-22 17:14:19 UTC）。
 
 本报告记录的是第一次纯神经 BC baseline；后续 reward ablation 应从该 checkpoint 和同一 exact 数据快照开始，单独改变 reward 或模型结构。
