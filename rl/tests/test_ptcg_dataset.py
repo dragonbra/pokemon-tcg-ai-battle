@@ -158,6 +158,7 @@ class PTCGDatasetTests(unittest.TestCase):
                 "ptcg_features_v4",
                 "ptcg_features_v5",
                 "ptcg_features_v6",
+                "ptcg_features_universal",
             },
         )
 

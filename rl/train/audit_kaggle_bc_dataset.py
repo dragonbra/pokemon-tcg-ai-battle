@@ -9,14 +9,24 @@ from pathlib import Path
 from typing import Any
 
 
-def audit(dataset: Path, manifest: Path) -> dict[str, Any]:
+def audit(
+    dataset: Path,
+    manifest: Path,
+    *,
+    require_single_expert: bool = False,
+) -> dict[str, Any]:
     source = json.loads(manifest.read_text(encoding="utf-8"))
     expected_episodes = {int(row["episode_id"]) for row in source["episodes"]}
-    expected_trajectories = {
-        (int(row["episode_id"]), int(player["player_index"]))
-        for row in source["episodes"]
-        for player in row["expert_players"]
-    }
+    expected_trajectories: set[tuple[int, int]] = set()
+    for row in source["episodes"]:
+        experts = row.get("expert_players") or []
+        if experts:
+            expected_trajectories.update(
+                (int(row["episode_id"]), int(player["player_index"]))
+                for player in experts
+            )
+        elif "agent_index" in row:
+            expected_trajectories.add((int(row["episode_id"]), int(row["agent_index"])))
     episode_splits: dict[int, set[str]] = collections.defaultdict(set)
     decision_keys: set[tuple[int, int, int]] = set()
     trajectories: set[tuple[int, int]] = set()
@@ -26,7 +36,7 @@ def audit(dataset: Path, manifest: Path) -> dict[str, Any]:
     selection_counts: collections.Counter[str] = collections.Counter()
     multi_by_selection: collections.Counter[str] = collections.Counter()
     source_records: collections.Counter[str] = collections.Counter()
-    dimension_contract: tuple[int, int, int, int] | None = None
+    dimension_contract: tuple[int, ...] | None = None
     max_target_count = 0
     records = 0
     empty_selections = 0
@@ -104,6 +114,12 @@ def audit(dataset: Path, manifest: Path) -> dict[str, Any]:
                 len(encoded.get("state_card_ids") or []),
                 len(mask),
                 len((encoded.get("action_numeric") or [[None]])[0]),
+                len(encoded.get("deck_card_ids") or []),
+                len((encoded.get("deck_card_numeric") or [[None]])[0]),
+                len(encoded.get("entity_card_ids") or []),
+                len((encoded.get("entity_numeric") or [[None]])[0]),
+                len(encoded.get("history_card_ids") or []),
+                len((encoded.get("history_numeric") or [[None]])[0]),
             )
             if dimension_contract is None:
                 dimension_contract = current_dimensions
@@ -117,6 +133,8 @@ def audit(dataset: Path, manifest: Path) -> dict[str, Any]:
         violations["manifest_episode_coverage_mismatch"] += 1
     if trajectories != expected_trajectories:
         violations["manifest_trajectory_coverage_mismatch"] += 1
+    if require_single_expert and len(source_records) != 1:
+        violations["multiple_expert_sources"] += 1
     report = {
         "status": "passed" if not violations else "failed",
         "dataset": str(dataset.resolve()),
@@ -138,6 +156,12 @@ def audit(dataset: Path, manifest: Path) -> dict[str, Any]:
             "state_tokens": dimension_contract[1] if dimension_contract else 0,
             "max_candidates": dimension_contract[2] if dimension_contract else 0,
             "candidate_numeric": dimension_contract[3] if dimension_contract else 0,
+            "deck_tokens": dimension_contract[4] if dimension_contract else 0,
+            "deck_numeric": dimension_contract[5] if dimension_contract else 0,
+            "entity_tokens": dimension_contract[6] if dimension_contract else 0,
+            "entity_numeric": dimension_contract[7] if dimension_contract else 0,
+            "history_tokens": dimension_contract[8] if dimension_contract else 0,
+            "history_numeric": dimension_contract[9] if dimension_contract else 0,
         },
         "violations": dict(sorted(violations.items())),
     }
@@ -151,9 +175,14 @@ def main() -> None:
     parser.add_argument("dataset", type=Path)
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--allow-multiple-experts", action="store_true")
     args = parser.parse_args()
     try:
-        report = audit(args.dataset, args.manifest)
+        report = audit(
+            args.dataset,
+            args.manifest,
+            require_single_expert=not args.allow_multiple_experts,
+        )
     except ValueError as exc:
         try:
             report = json.loads(str(exc))
