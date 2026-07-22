@@ -1,0 +1,30 @@
+{
+  "batch_size": 256,
+  "dataset": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/dataset/0002-alakazam_bc_v1_tried_exact_2021/dataset.jsonl",
+  "dataset_records": {
+    "test": 17807,
+    "train": 138123,
+    "validation": 17321
+  },
+  "device": "cuda",
+  "epochs": 20,
+  "fallback": null,
+  "learning_rate": 0.0003,
+  "max_selection_count": 64,
+  "model_config": {
+    "action_type_vocab_size": 32,
+    "candidate_numeric_dim": 10,
+    "card_vocab_size": 4096,
+    "d_model": 256,
+    "dropout": 0.0,
+    "hidden_dim": 512,
+    "max_candidates": 64,
+    "num_heads": 4,
+    "num_transformer_layers": 2,
+    "state_numeric_dim": 46,
+    "state_token_count": 40
+  },
+  "reward_profile": "none_pure_behavior_cloning",
+  "seed": 7,
+  "selection_contract": "single categorical CE + multi-label candidate BCE + count CE"
+}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from rl.ptcg.mcts import PUCTSearch
+from rl.model.mcts import PUCTSearch
 
 
 class PUCTSearchTests(unittest.TestCase):

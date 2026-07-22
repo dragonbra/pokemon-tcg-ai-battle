@@ -1,0 +1,6 @@
+python=3.11.15
+torch=2.11.0+cu128
+cuda_runtime=12.8
+cuda_available=True
+gpu=NVIDIA GeForce RTX 5080
+git_commit=76c3d8095c9cc9d3d7fc2e1a7ca1eb2e903e9de4

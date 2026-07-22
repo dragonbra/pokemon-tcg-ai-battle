@@ -8,11 +8,11 @@ import unittest
 import torch
 
 from rl.core.model import ModelConfig
-from rl.ptcg.build_full_action_submission import build as build_submission
-from rl.ptcg.build_kaggle_bc_dataset import iter_kaggle_records
-from rl.ptcg.features import PTCGFeatureConfig
-from rl.ptcg.full_action_model import FullActionPolicyValueNet
-from rl.ptcg.full_action_inference import FullActionPolicy
+from rl.model.features import PTCGFeatureConfig
+from rl.model.full_action_inference import FullActionPolicy
+from rl.model.full_action_model import FullActionPolicyValueNet
+from rl.train.build_full_action_submission import build as build_submission
+from rl.train.build_kaggle_bc_dataset import iter_kaggle_records
 
 
 class FullActionBCMiniTests(unittest.TestCase):

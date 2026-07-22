@@ -116,9 +116,9 @@ baseline，而不是声明找到了最优动作。
 
 ```text
 官方 cg battle trace
-  -> rl.ptcg.build_bc_dataset
+  -> rl.train.build_bc_dataset
   -> ptcg_bc_v1 JSONL
-  -> rl.ptcg.train_behavior_cloning
+  -> rl.train.train_behavior_cloning
   -> best_validation.pt
   -> PTCGCandidatePolicy.from_checkpoint
 ```
@@ -137,13 +137,13 @@ schema version。
 用完整对局胜负训练 `value(s)`。检查 value MAE、胜率校准和它对攻击路线/断档局面的
 排序能力。
 
-`ptcg/calibrate_value.py` 提供冻结 policy 的 value-head calibration：它在 teacher 的
+`train/calibrate_value.py` 提供冻结 policy 的 value-head calibration：它在 teacher 的
 完整轨迹上只更新 `value_head.*`，将终局结果变成可审计的 MAE、相关性和 win/loss
 分组均值。对 `alakazam_bc_v5_history` 的校准使 validation value MAE 达到 `0.0663`、
 相关性达到 `0.9693`，且 39 组模型参数中只有 6 组 value-head 参数变化。这个 checkpoint
 适合作为 PUCT 的叶评估器，但不等于 policy 已经变强。
 
-`ptcg/annotate_transition_returns.py` 还提供 transition-level value target：每局最后一个
+`train/annotate_transition_returns.py` 还提供 transition-level value target：每局最后一个
 己方决策得到 terminal reward，中间决策使用同一 player 视角的可见势能差，并按
 `G_t = r_t + gamma * G_(t+1)` 反向累计。数据构建器不能直接拿下一条 raw trace entry
 计算势能，因为那一条可能属于 opponent；它会寻找下一条同一 player 的有效决策。由于
@@ -190,7 +190,7 @@ DAgger 不是 reward 优化，也不能凭训练 loss 判断有效。它必须�
 的搜索预算，收集搜索后的 action/value target，再训练模型。隐藏信息需要多次
 determinization，不能直接照搬 notebook 的固定对手占位卡。
 
-当前 `build_mcts_dataset.py` 使用 `ptcg/mcts.py` 的有限预算 PUCT：官方
+当前 `train/build_mcts_dataset.py` 使用 `model/mcts.py` 的有限预算 PUCT：官方
 `search_begin/search_step` 负责状态转移，policy 输出 prior，value head 评价叶节点，
 并把 root 的 visit count 归一化为 `mcts_policy` target。每次 simulation 只展开一个新
 leaf，预算不会意外变成完整对局 rollout；同时保存 action value、visit count、先验和
@@ -247,7 +247,8 @@ value 强行混合。
 72.94%`，并出现 4 个 engine error，因此不晋级。该分支的 Powerful Hand 和
 Post-KO relay 诊断指标有所上升，但 attack-quality 惩罚项和正确性恶化；这说明当前
 单次 hidden-card determinization、模型 value 叶评估和有限样本 target 仍不足以指导
-策略改进。失败分支的报告仍保存在 `rl/runs/evaluation/`，不得用过程指标替代结果护栏。
+策略改进。失败分支的报告仍保存在对应的 `rl/_runs/<run-name>/evaluation/`，不得用过程
+指标替代结果护栏。
 
 使用校准 value 重新训练的 `alakazam_mcts_calibrated_soft_v1` 在 17×10 上为
 `117/170 = 68.82%`，有 3 个 engine error，仍低于 teacher，继续拒绝晋级。它验证了
@@ -262,12 +263,12 @@ checkpoint 加该 pool 的 34 局探索为 `23/34 = 67.65%`、1 个 error，仍�
 
 ### Phase D：Masked PPO（可选）
 
-`rl/ptcg/train_ppo.py` 已提供第一版 masked PPO-style terminal reward 微调器。它从
+`rl/train/train_ppo.py` 已提供第一版 masked PPO-style terminal reward 微调器。它从
 checkpoint 的旧 policy 计算 old log-prob，以终局胜负构造 advantage，并始终在 simulator
 候选 mask 内更新。第一版只用于验证 policy/value/reward 接口，rollout 必须来自当前
 checkpoint；真正的 transition-level shaping、GAE 和 MCTS target 仍待后续实现。
 
-`rl/ptcg/rewards.py` 的第一版 transition shaping 只使用可见的 Prize race、攻击准备度
+`rl/train/rewards.py` 的第一版 transition shaping 只使用可见的 Prize race、攻击准备度
 和牌库安全势能，按 `gamma * Phi(next) - Phi(current)` 记录分量。每个分量都可通过
 `shaping_weight` 做消融，不能因为 shaping 曲线上升就替代 17×10 的 outcome 评测。
 

@@ -1,0 +1,166 @@
+{
+  "by_opponent": {
+    "crustle_v1": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.9,
+      "wins": 9
+    },
+    "crustle_wall": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.9,
+      "wins": 9
+    },
+    "kacchan_anti_wall": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.9,
+      "wins": 9
+    },
+    "kiyotah_abomasnow": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.9,
+      "wins": 9
+    },
+    "kiyotah_dragapult": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 5,
+      "unfinished": 0,
+      "win_rate": 0.5,
+      "wins": 5
+    },
+    "kiyotah_iono": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 6,
+      "unfinished": 0,
+      "win_rate": 0.4,
+      "wins": 4
+    },
+    "kiyotah_lucario": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.9,
+      "wins": 9
+    },
+    "kokinn_search": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 4,
+      "unfinished": 0,
+      "win_rate": 0.6,
+      "wins": 6
+    },
+    "maktha_1084": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 2,
+      "unfinished": 0,
+      "win_rate": 0.8,
+      "wins": 8
+    },
+    "nursrijan_lucario": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 6,
+      "unfinished": 0,
+      "win_rate": 0.4,
+      "wins": 4
+    },
+    "penguin_915": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 5,
+      "unfinished": 0,
+      "win_rate": 0.5,
+      "wins": 5
+    },
+    "pilkwang_v2": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 3,
+      "unfinished": 0,
+      "win_rate": 0.7,
+      "wins": 7
+    },
+    "romanrozen_v9": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 2,
+      "unfinished": 0,
+      "win_rate": 0.8,
+      "wins": 8
+    },
+    "sue_alakazam": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 3,
+      "unfinished": 0,
+      "win_rate": 0.7,
+      "wins": 7
+    },
+    "yakitori_raging_bolt": {
+      "draws": 0,
+      "errors": 2,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.7,
+      "wins": 7
+    },
+    "yanxiaohan": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 4,
+      "unfinished": 0,
+      "win_rate": 0.6,
+      "wins": 6
+    },
+    "zoli_dragapult": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 2,
+      "unfinished": 0,
+      "win_rate": 0.8,
+      "wins": 8
+    }
+  },
+  "completed_games": 168,
+  "completion_rate": 0.9882352941176471,
+  "draws": 0,
+  "errors": 2,
+  "losses": 48,
+  "total_games": 170,
+  "unfinished": 0,
+  "win_rate": 0.7058823529411765,
+  "wins": 120
+}

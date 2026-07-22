@@ -6,17 +6,17 @@ import unittest
 from pathlib import Path
 from types import ModuleType
 
-from rl.ptcg.dataset import (
+from rl.train.dataset import (
     DATASET_VERSION,
     SUPPORTED_FEATURE_SCHEMA_VERSIONS,
     iter_behavior_cloning_records,
     load_behavior_cloning_dataset,
 )
-from rl.ptcg.features import PTCGFeatureConfig, encode_observation, feature_config_for_schema
-from rl.ptcg.build_dagger_dataset import iter_dagger_records
-from rl.ptcg.annotate_transition_returns import annotate_records
-from rl.ptcg.rewards import observation_potential, potential_shaping
-from rl.ptcg.build_mcts_dataset import (
+from rl.model.features import PTCGFeatureConfig, encode_observation, feature_config_for_schema
+from rl.train.build_dagger_dataset import iter_dagger_records
+from rl.train.annotate_transition_returns import annotate_records
+from rl.train.rewards import observation_potential, potential_shaping
+from rl.train.build_mcts_dataset import (
     _aggregate_search_results,
     _action_value_soft_policy,
     _blend_teacher_policy,
@@ -397,7 +397,7 @@ class PTCGDatasetTests(unittest.TestCase):
                 encoding="utf-8",
             )
             output = root / "dataset.jsonl"
-            from rl.ptcg.dataset import write_behavior_cloning_dataset
+            from rl.train.dataset import write_behavior_cloning_dataset
 
             result = write_behavior_cloning_dataset([trace_path], output)
             self.assertEqual(result["dataset_version"], DATASET_VERSION)
@@ -437,7 +437,7 @@ class PTCGDatasetTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            from rl.ptcg.dataset import write_behavior_cloning_dataset
+            from rl.train.dataset import write_behavior_cloning_dataset
 
             result = write_behavior_cloning_dataset([trace_path], root / "dataset.jsonl")
             self.assertEqual(result["records"], 0)

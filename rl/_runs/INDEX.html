@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alakazam RL Experiments</title>
+  <style>
+    body { font: 15px/1.55 system-ui, sans-serif; margin: 32px auto; max-width: 1180px;
+      padding: 0 20px; color: #20242b; background: #f7f8fa; }
+    h1 { margin-bottom: 4px; } .subtle { color: #667085; }
+    table { width: 100%; border-collapse: collapse; background: white; margin: 24px 0; }
+    th, td { padding: 12px; border: 1px solid #d8dde6; text-align: left; vertical-align: top; }
+    th { background: #eef1f5; } code { background: #eef1f5; padding: 2px 5px; }
+    .keep { color: #087443; font-weight: 700; } .reject { color: #a33a2b; font-weight: 700; }
+    a { color: #2457c5; } ul { padding-left: 22px; }
+  </style>
+</head>
+<body>
+  <h1>Alakazam RL Experiments</h1>
+  <p class="subtle">Tracked run records、TensorBoard 与固定 evaluation 的统一索引。</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Run</th><th>数据</th><th>模型 / 离线指标</th><th>固定评测</th><th>结论</th><th>产物</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0001-yushin_ito_exact_bc_baseline</code></td>
+        <td>Yushin Ito exact submission 54773249；1,000 replays；86,875 records</td>
+        <td>ptcg_features_v6 + full_action_set_v1；validation exact 78.88%；test exact 77.02%</td>
+        <td>122 / 170；6 engine errors；71.76%</td>
+        <td class="keep">保留主 baseline；对应 <code>work/alakazam_bc_v1</code></td>
+        <td>
+          <a href="0001-yushin_ito_exact_bc_baseline/manifest.json">manifest</a> ·
+          <a href="0001-yushin_ito_exact_bc_baseline/training_config.json">config</a> ·
+          <a href="0001-yushin_ito_exact_bc_baseline/training_summary.json">training</a> ·
+          <a href="0001-yushin_ito_exact_bc_baseline/evaluation/run-873882eef9f04d74a8c76df4f680d1b0/report.html">evaluation</a>
+        </td>
+      </tr>
+      <tr>
+        <td><code>0002-alakazam_bc_v1_tried_exact_2021</code></td>
+        <td>同 deck hash 的 expert pool；2,021 unique episodes；173,251 records；数据审计通过</td>
+        <td>同一结构；validation exact 76.25%；test exact 75.84%</td>
+        <td>118 / 170；5 engine errors；69.41%</td>
+        <td class="reject">不晋级；后续仍从 0001 开始</td>
+        <td>
+          <a href="0002-alakazam_bc_v1_tried_exact_2021/manifest.json">manifest</a> ·
+          <a href="0002-alakazam_bc_v1_tried_exact_2021/audit.json">audit</a> ·
+          <a href="0002-alakazam_bc_v1_tried_exact_2021/training_summary.json">training</a> ·
+          <a href="0002-alakazam_bc_v1_tried_exact_2021/evaluation/run-d2de0a4992f5490e874804d2901f04aa/report.html">evaluation</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>当前方向</h2>
+  <ul>
+    <li>主 baseline：<code>0001-yushin_ito_exact_bc_baseline</code> / <code>work/alakazam_bc_v1</code>。</li>
+    <li>后续 reward 或 RL 实验继续使用新的全局编号，不覆盖 0001。</li>
+    <li>TensorBoard 对比入口：<code>tensorboard --logdir rl/_runs/tensorboard</code>。</li>
+    <li>大文件位于 <code>rl/artifact/dataset</code> 与 <code>rl/artifact/checkpoint</code>，不进入 Git。</li>
+  </ul>
+</body>
+</html>

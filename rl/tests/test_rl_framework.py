@@ -4,8 +4,7 @@ import unittest
 
 from rl.core.promotion import has_minimum_evaluation_coverage, is_promotable
 from rl.core.reward import RewardProfile, potential_difference, terminal_reward
-from rl.demo.toy_env import LEFT, RIGHT, ToyLineEnv
-from rl.ptcg.features import PTCGFeatureConfig, encode_observation
+from rl.model.features import PTCGFeatureConfig, encode_observation
 
 try:
     import torch
@@ -18,14 +17,6 @@ except ImportError:  # pragma: no cover - exercised by environments without torc
 
 
 class RLFrameworkTests(unittest.TestCase):
-    def test_toy_environment_exposes_only_legal_actions(self) -> None:
-        env = ToyLineEnv(target=2)
-        env.reset(position=0)
-        self.assertNotIn(LEFT, env.legal_actions())
-        self.assertIn(RIGHT, env.legal_actions())
-        with self.assertRaises(ValueError):
-            env.step(LEFT)
-
     def test_reward_profile_is_explicit_and_potential_shaping_is_local(self) -> None:
         profile = RewardProfile(name="test", win=1.0, loss=-1.0)
         self.assertEqual(terminal_reward(0, 0, profile), 1.0)
@@ -203,7 +194,7 @@ class RLFrameworkTests(unittest.TestCase):
 
     @unittest.skipUnless(torch is not None, "PyTorch is an optional RL dependency")
     def test_ptcg_inference_bridge_returns_a_legal_option(self) -> None:
-        from rl.ptcg.inference import PTCGCandidatePolicy
+        from rl.model.inference import PTCGCandidatePolicy
         from tempfile import TemporaryDirectory
 
         feature_config = PTCGFeatureConfig()

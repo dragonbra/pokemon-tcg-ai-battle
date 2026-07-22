@@ -1,10 +1,4 @@
-"""Helpers for keeping RL artifacts grouped by numbered experiment.
-
-New experiments use one directory per experiment so that the data manifest,
-source snapshot, training output, candidate package and frozen evaluation stay
-together.  ``numbered_artifact_path`` remains for compatibility with the
-older evaluation CLI and is intentionally not used by new experiments.
-"""
+"""Helpers for allocating tracked, globally numbered RL experiments."""
 
 from __future__ import annotations
 
@@ -12,56 +6,68 @@ import re
 import argparse
 import json
 import subprocess
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 
-RUNS_ROOT = Path(__file__).resolve().parents[1] / "runs"
-ARTIFACT_GROUPS = ("training", "research_candidates", "evaluation")
+RUNS_ROOT = Path(__file__).resolve().parents[1] / "_runs"
+ARTIFACT_ROOT = Path(__file__).resolve().parents[1] / "artifact"
 NUMBERED_ARTIFACT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
 EXPERIMENT_DIR = re.compile(r"^(?P<number>\d{4})-(?P<label>[a-z0-9][a-z0-9_-]*)$")
-EXPERIMENT_GROUPS = ("data", "source", "training", "candidate", "evaluation", "notes")
+
+
+@dataclass(frozen=True)
+class TrainingPaths:
+    """Separated paths for one training run."""
+
+    run: Path
+    checkpoints: Path
+    tensorboard: Path
+    config: Path
+    metrics: Path
+    summary: Path
+
+
+def training_paths(output: Path) -> TrainingPaths:
+    """Resolve the new layout, retaining local `/tmp` smoke compatibility."""
+    if output.resolve().parent == RUNS_ROOT.resolve():
+        return TrainingPaths(
+            run=output,
+            checkpoints=ARTIFACT_ROOT / "checkpoint" / output.name,
+            tensorboard=RUNS_ROOT / "tensorboard" / output.name,
+            config=output / "training_config.json",
+            metrics=output / "training_metrics.jsonl",
+            summary=output / "training_summary.json",
+        )
+    return TrainingPaths(
+        run=output,
+        checkpoints=output / "checkpoints",
+        tensorboard=output / "tensorboard",
+        config=output / "config.json",
+        metrics=output / "metrics.jsonl",
+        summary=output / "summary.json",
+    )
 
 
 def numbered_artifact_path(requested: Path, group: str) -> Path:
-    """Number an unnumbered direct child of one RL artifact group.
-
-    The next number is selected across training, research candidates, and
-    evaluation so one experiment can reuse the same ID in each group.
-    Paths outside ``rl/runs/<group>`` and already-numbered paths are unchanged.
-    """
-    if group not in ARTIFACT_GROUPS:
+    """Number ``rl/_runs/<label>/evaluation`` using the global run sequence."""
+    if group != "evaluation":
         raise ValueError(f"unknown RL artifact group: {group}")
     resolved = requested.resolve()
-    group_root = (RUNS_ROOT / group).resolve()
-    if resolved.parent != group_root or NUMBERED_ARTIFACT.match(resolved.name):
+    runs_root = RUNS_ROOT.resolve()
+    if resolved.name != "evaluation" or resolved.parent.parent != runs_root:
         return requested
-
-    numbers: list[int] = []
-    matching_numbers: list[int] = []
-    for artifact_group in ARTIFACT_GROUPS:
-        root = RUNS_ROOT / artifact_group
-        if not root.is_dir():
-            continue
-        for child in root.iterdir():
-            if not child.is_dir():
-                continue
-            match = NUMBERED_ARTIFACT.match(child.name)
-            if match is not None:
-                number = int(match.group("number"))
-                numbers.append(number)
-                if match.group("label") == resolved.name:
-                    matching_numbers.append(number)
-
-    if matching_numbers:
-        return group_root / f"{min(matching_numbers):04d}-{resolved.name}"
-
-    number = max(numbers, default=0) + 1
-    while True:
-        candidate = group_root / f"{number:04d}-{resolved.name}"
-        if not candidate.exists():
-            return candidate
-        number += 1
+    experiment = resolved.parent
+    if NUMBERED_ARTIFACT.match(experiment.name):
+        return requested
+    normalized = re.sub(r"[^a-z0-9_-]+", "-", experiment.name.lower()).strip("-")
+    if RUNS_ROOT.is_dir():
+        for child in RUNS_ROOT.iterdir():
+            match = EXPERIMENT_DIR.match(child.name)
+            if child.is_dir() and match is not None and match.group("label") == normalized:
+                return child / "evaluation"
+    return next_experiment_path(experiment.name) / "evaluation"
 
 
 def _git_value(*args: str) -> str | None:
@@ -99,13 +105,17 @@ def initialize_experiment(
     runs_root: Path = RUNS_ROOT,
     metadata: dict[str, object] | None = None,
 ) -> Path:
-    """Create a numbered experiment directory and its immutable manifest."""
+    """Create a tracked run record without creating a supervised dataset."""
     root = next_experiment_path(label, runs_root)
     root.mkdir(parents=True)
-    for group in EXPERIMENT_GROUPS:
-        (root / group).mkdir()
+    (root / "evaluation").mkdir()
+    tensorboard = runs_root / "tensorboard" / root.name
+    tensorboard.mkdir(parents=True)
+    artifact_root = runs_root.parent / "artifact"
+    checkpoint = artifact_root / "checkpoint" / root.name
+    checkpoint.mkdir(parents=True)
     manifest = {
-        "schema_version": "ptcg_experiment_v1",
+        "schema_version": "ptcg_experiment_v2",
         "experiment_id": root.name,
         "label": root.name.split("-", 1)[1],
         "objective": objective,
@@ -113,7 +123,12 @@ def initialize_experiment(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "git_commit": _git_value("rev-parse", "HEAD"),
         "git_status_porcelain": _git_value("status", "--short"),
-        "artifact_groups": {group: group for group in EXPERIMENT_GROUPS},
+        "paths": {
+            "run": str(root.relative_to(runs_root.parent)),
+            "tensorboard": str(tensorboard.relative_to(runs_root.parent)),
+            "checkpoint": str(checkpoint.relative_to(runs_root.parent)),
+            "dataset": None,
+        },
         **(metadata or {}),
     }
     (root / "manifest.json").write_text(

@@ -6,14 +6,14 @@ from types import SimpleNamespace
 from tempfile import TemporaryDirectory
 import unittest
 
-from rl.ptcg.audit_kaggle_bc_dataset import audit
-from rl.ptcg.build_kaggle_bc_dataset import build_aggregate_dataset
-from rl.ptcg.download_top100_exact_replays import (
+from rl.train.audit_kaggle_bc_dataset import audit
+from rl.train.build_kaggle_bc_dataset import build_aggregate_dataset
+from rl.train.download_top100_exact_replays import (
     canonical_deck_sha256,
     episode_player_index,
     select_leaderboard_submission,
 )
-from rl.ptcg.features import PTCGFeatureConfig
+from rl.model.features import PTCGFeatureConfig
 
 
 def _observation(player_index: int) -> dict:
