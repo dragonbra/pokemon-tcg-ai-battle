@@ -1,73 +1,236 @@
-# Pokémon TCG AI Battle 研究与实现仓库
+# Pokémon TCG AI Battle
 
-这是 Kaggle Pokémon TCG AI Battle Challenge Simulation 的中文研究与协作仓库。
+面向 Kaggle [Pokémon TCG AI Battle Challenge Simulation](https://www.kaggle.com/competitions/pokemon-tcg-ai-battle/overview)
+的中文研究、训练与评测仓库。项目围绕胡地卡组维护三条可审计链路：规则策略历史、基于人类
+专家 replay 的行为克隆（BC），以及使用官方引擎运行的本地闭环评测。
 
-比赛主页：https://www.kaggle.com/competitions/pokemon-tcg-ai-battle/overview
-模拟器文档：https://matsuoinstitute.github.io/cabt/
-
-## 仓库定位
-
-本仓库同时保存研究资料和第一版可运行提交。所有面向人的文档统一使用中文。仓库保存：
-
-- 已核实的比赛事实和模拟器行为；
-- Kaggle Discussion、公开 Notebook、Replay 的研究记录；
-- 卡组、策略和实验协议；
-- 交给实现机器执行的中文实现任务书；
-- 不依赖 GPU 的轻量级分析工具。
-
-## 目录约定
-
-| 目录 | 用途 |
-|---|---|
-| `data/official/` | 官方下载的卡牌 CSV、Card ID List PDF，只读参考资源，不直接打包提交 |
-| `work/<name>/` | 当前可打包候选，仅包含 agent、卡组和官方 `cg` 模拟器运行时 |
-| `submission/<name>/` | 历史版本的完整 agent、卡组和官方 `cg` 模拟器运行时 |
-| `submission/dist/` | 打包生成的 `.tar.gz` 提交产物 |
-| `engine/` | 官方引擎源码的本地缓存与构建边界，不进入提交包 |
-| `rl/` | 模型、训练入口、checkpoint/dataset 边界和可审计实验记录 |
-| `scripts/` | 唯一的 TensorBoard 启动入口，不存放训练基建或一次性脚本 |
-| `visualization/` | replay 可视化核心、外部 viewer launcher 和使用说明 |
-| `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
-| `docs/reports/` | 调研结论、卡组分析和实现任务书 |
-| `experiments/` | 后续实验协议与结果模板 |
-| `replays/` | Kaggle 官方 Episode replay 和 agent log；本地临时回放不保存 |
-
-`work/<name>/` 是当前候选源目录，`submission/<name>/` 保存历史完整提交。每套提交都独立包含 `main.py`、`deck.csv` 和 `cg/`；当前训练与评测入口位于 `rl/` 和 `evaluation/`，不再由根目录一次性脚本串联。
-
-大规模模拟、向量化环境、MCTS、自博弈和神经网络训练可以在另一台 5080 机器上进行。实现端应读取本仓库的中文任务书，并把代码、命令、指标和失败信息写回仓库。
-
-## 当前研究顺序
-
-1. 先确认 simulator 的 observation、action、deck 和规则差异。
-2. 研究热门 Discussion 和公开代码，区分事实、作者推测和我们的假设。
-3. 以 Kaggle 官方 submission/episode/replay 为主要真实对局数据。
-4. 从官方对局提取卡组、对手、回合和行动指标，建立复盘协议。
-5. 再比较规则、搜索、神经网络三类方法。
-6. 最后考虑神经网络、自博弈或“神经网络 + 有界搜索”。
+模拟器接口参考 [CABT 文档](https://matsuoinstitute.github.io/cabt/)。仓库中的性能结论必须来自
+官方 engine runtime 的真实模拟对局；静态分析、单元测试和离线动作准确率只作为辅助证据。
 
 ## 当前状态
 
-官方卡牌资源和 starter simulator 已经合并。历史目录中的 `submission/official_water/` 和 `submission/alakazam_v1/` 保留最初 baseline；当前候选位于 `work/alakazam_v8_current/`。所有 agent 都只从 simulator 给出的合法选项中选择。
+项目已经从规则代理迭代进入单专家纯 BC 验证阶段。当前可运行候选是
+[`work/yushin_ito_exact_bc_v2`](work/yushin_ito_exact_bc_v2)，归档 baseline 是
+[`work/alakazam_bc_v1`](work/alakazam_bc_v1)。两者都是标准 package，独立包含 `main.py`、
+60 行 `deck.csv` 和官方 `cg/` runtime。
 
-本机能否直接加载提交目录中的 `cg/libcg.so` 取决于动态库版本。官方二进制要求 `GLIBCXX_3.4.29` 或更新的 `libstdc++.so.6`；如果本机旧于此版本，应在兼容的 Linux/Kaggle 环境运行，不要替换官方模拟器二进制。
+当前主实验 [`0003-yushin_ito_exact_bc_v2`](rl/_runs/0003-yushin_ito_exact_bc_v2/) 的
+`V2_card_token_fix` 使用同一位 Yushin Ito 专家的 1,000 场 replay、86,875 条决策记录：
 
-## 常用命令
+| 项目 | 当前结果 |
+|---|---:|
+| 模型 | Universal full-action BC，5.19M 参数，无规则 fallback |
+| 数据切分 | 800 / 100 / 100 个完整 episode（train / validation / test） |
+| Validation exact action rate | 80.52% |
+| Test exact action rate / legal action rate | 78.37% / 100% |
+| 本地官方引擎评测 | 136–44–0，180/180 完成，0 errors，75.56% 胜率 |
+| Kaggle | submission `54912599`，public score `713.2` |
+
+完整事实和原始产物见：
+
+- [RL 实验索引](rl/_runs/INDEX.html)
+- [0003 决策记录](rl/_runs/0003-yushin_ito_exact_bc_v2/decisions.md)
+- [V2 训练摘要](rl/_runs/0003-yushin_ito_exact_bc_v2/V2_card_token_fix/training_summary.json)
+- [V2 官方引擎评测报告](rl/_runs/0003-yushin_ito_exact_bc_v2/evaluation/V2_card_token_fix/run-8688bfdaa9c44059a7fec383b5f64f6e/report.html)
+- [当前 RL 模型设计](rl/model/DESIGN.html)
+
+这些结果验证了单 deck、单 expert 的 BC inference 和 full-action contract，不代表已经完成跨卡组
+泛化或强化学习。Rollout collection、reward/value calibration 和 PPO fine-tuning 仍是后续阶段。
+
+## 核心工作流
+
+```text
+Kaggle expert replay
+  → 来源冻结、整局 split 与 dataset audit
+  → 行为克隆训练和 best-validation checkpoint
+  → 标准 candidate package（main.py + deck.csv + cg/）
+  → 固定 18-opponent 官方引擎 evaluation
+  → rl/_runs 中的 config、metrics、case 和 HTML 报告
+  → 验收后进入 work/；历史正式 payload 进入 submission/
+```
+
+关键边界：
+
+- 一个 BC dataset 默认只包含一个明确的 team/agent policy；不同专家不能无条件混合标签。
+- 同一 experiment 的每次训练使用新的 `V<n>_<tag>`，run、checkpoint、TensorBoard 和
+  evaluation 版本名保持一致，失败版本也不覆盖或删除。
+- `work/` 只保存当前候选，`submission/` 保存历史正式 payload；训练 checkpoint 和研究
+  candidate 不是 Kaggle submission。
+- `evaluation/` 负责测量和报告，不自动执行 promote/reject，也不替代 Kaggle 官方成绩。
+
+## 仓库结构
+
+| 路径 | 职责 |
+|---|---|
+| [`work/`](work/) | 当前标准候选 package；候选目录只放可运行/可打包内容 |
+| [`submission/`](submission/) | 历史提交源目录、规则代理归档和正式 BC payload |
+| [`rl/`](rl/) | 数据构建、特征、模型、训练入口、checkpoint 边界与实验记录 |
+| [`rl/_runs/`](rl/_runs/) | 可审计的 config、metrics、status、TensorBoard 索引和 evaluation 报告 |
+| [`evaluation/`](evaluation/) | 固定 opponent catalog、独立 worker、指标插件和 Markdown/HTML 报告 |
+| [`visualization/`](visualization/) | Kaggle replay 与 engine `visualize` 帧的统一 viewer launcher |
+| [`engine/`](engine/) | 官方引擎只读源码和本地构建边界；构建产物只写 `engine/build/` |
+| [`data/official/`](data/official/) | 官方卡牌参考数据，只读使用，不直接打包 |
+| [`docs/reports/`](docs/reports/) | 研究报告、规则证据、Kaggle 复盘和实现结论 |
+| [`scripts/`](scripts/) | 只保留 TensorBoard 启动入口，不放一次性训练/规则脚本 |
+| [`tests/`](tests/) / [`rl/tests/`](rl/tests/) | evaluation、资产、可视化和 RL 数据/训练回归测试 |
+
+大体积 dataset、checkpoint 和临时 replay 不进入 Git。BC 数据和 checkpoint 分别位于
+`rl/artifact/dataset/` 与 `rl/artifact/checkpoint/`；本地临时评测、trace 和 replay 应写入
+`/tmp`。
+
+## 环境安装
+
+项目要求 Python 3.11+：
 
 ```bash
-# 查看全部训练 run；默认 http://127.0.0.1:6006
+python3.11 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[rl]'
+```
+
+基础依赖包含 Kaggle 客户端和数据工具；`rl` extra 安装 PyTorch、NumPy 与 TensorBoard。
+GPU/CUDA 版本应根据训练机环境选择兼容的 PyTorch wheel。
+
+## 快速开始
+
+### 查看实验与训练曲线
+
+直接打开 [`rl/_runs/INDEX.html`](rl/_runs/INDEX.html) 查看已归档实验、离线指标和正式评测。
+跨 run 启动 TensorBoard：
+
+```bash
 ./scripts/start_tensorboard.sh
+```
 
-# 当前评测入口
+默认读取 `rl/_runs/tensorboard` 并监听 `127.0.0.1:6006`。可通过
+`TENSORBOARD_LOGDIR`、`TENSORBOARD_HOST`、`TENSORBOARD_PORT` 和 `PYTHON` 覆盖；远程机器
+建议保持本地监听并使用 SSH 端口转发。
+
+### 验证当前候选
+
+```bash
 python3 -m evaluation list-opponents
-python3 -m evaluation validate work/alakazam_bc_v1
+python3 -m evaluation validate work/yushin_ito_exact_bc_v2
+```
 
-# 查看 Kaggle replay 或本地可视化 replay
+`validate` 会检查 package 布局、60 张 deck、deck hash、`cg/` tree hash 和官方 card ID。
+
+### 运行正式本地评测
+
+```bash
+python3 -m evaluation run \
+  --candidate work/yushin_ito_exact_bc_v2 \
+  --opponents all \
+  --games 10 \
+  --metric-profile auto_iteration_v8_setup_relay \
+  --no-visualize \
+  --output /tmp/ptcg-yushin-v2-evaluation
+```
+
+正式入口固定使用全部 18 个 opponent，每个至少 10 局。每次 run 会建立独立目录并写入：
+
+- `manifest.json`：candidate、catalog、profile、hash 和运行参数；
+- `summary.json` / `games.jsonl`：总体与逐局事实；
+- `metrics.json` / `cases.jsonl`：聚合指标和证据 case；
+- `report.md` / `report.html`：可直接审阅的语义报告；
+- `traces/`：默认最多长期保留三份被选中的完整 trace。
+
+`auto_iteration_v8_setup_relay` 当前为 revision 2，除胜负和正确性外，还展示二回合 setup、
+Powerful Hand、Post-KO relay、攻击质量和牌库健康等指标。完整调用边界见
+[`evaluation/HANDOFF.md`](evaluation/HANDOFF.md)。`--control` 目前只记录对比包信息，不会替你
+执行第二批 control 对局；真实比较需要分别运行两个 candidate。
+
+### 查看 replay
+
+```bash
 python3 -m visualization.replay.cli path/to/replay.json
 python3 -m visualization.replay.cli path/to/replay.json --no-open
 ```
 
-TensorBoard 默认读取 `rl/_runs/tensorboard`。需要改变监听地址、端口、日志目录或 Python 解释器时，分别设置 `TENSORBOARD_HOST`、`TENSORBOARD_PORT`、`TENSORBOARD_LOGDIR` 或 `PYTHON`。
+CLI 支持 Kaggle replay，以及包含非空 `visualize` / `visualize_frames` 的本地 replay。只有
+observation/action 的旧 trace 无法事后还原卡面。详细格式和 viewer 故障排查见
+[`visualization/README.md`](visualization/README.md)。
 
-Kaggle 登录、接受规则、下载比赛数据和正式提交仍然需要明确的人工操作；仓库不会自动上传 submission。
+## RL 实验约定
 
-回放可视化的完整说明见 [`visualization/README.md`](visualization/README.md)。launcher 会在当前标签页完成 POST 跳转，不创建新的浏览器窗口。
+RL 子系统的目录关系如下：
+
+```text
+rl/_runs/<000N-experiment>/<Vn_tag>/                 # config、metrics、summary/status
+rl/_runs/tensorboard/<000N-experiment>/<Vn_tag>/     # TensorBoard event
+rl/artifact/checkpoint/<000N-experiment>/<Vn_tag>/   # 大模型文件，Git 忽略
+rl/_runs/<000N-experiment>/evaluation/<Vn_tag>/      # 对应版本的真实对局报告
+```
+
+新项目先通过 `rl.core.runs create` 分配全局编号；同一项目的新尝试严格递增 `V<n>`，不能把
+event、metrics 或 checkpoint 继续写进已有版本。训练入口、dataset 构建方式和完整命名规则见：
+
+- [RL 使用说明](rl/README.md)
+- [RL run 归档规则](rl/RUNS.md)
+- [模型输入、结构和阶段设计](rl/model/DESIGN.html)
+
+任何涉及 feature schema、模型结构/output head、action contract、BC/RL loss、reward/value/PPO
+接口或项目阶段的改动，都必须同步更新 `rl/model/DESIGN.html`。
+
+## 标准 package 与提交边界
+
+一个可运行 package 必须自包含：
+
+```text
+<candidate>/
+├── main.py
+├── deck.csv      # 恰好 60 行
+└── cg/           # 物理复制的官方 runtime，不使用 symlink
+```
+
+神经网络提交还会包含 `strategy/` 和 `model.bin`。候选必须只返回 simulator 提供的合法选项，
+并在新对局清理模块级状态。
+
+Kaggle 登录、接受规则、打包和正式 submission 都是显式人工操作。仓库不会自动上传，也不会在
+pending、失败或低分后自动重试。不要提交 Kaggle 凭据、`.env`、下载的比赛数据或未经许可的
+新二进制资源。
+
+## 官方引擎边界
+
+[`engine/source/`](engine/source/) 是官方 C++ 源码的只读版本化输入，禁止为适配 agent、指标
+或测试而修改。允许按照官方说明构建，但所有产物只能写入 `engine/build/` 或仓库外临时目录，
+不能覆盖任何 candidate/submission 的 `cg/`。
+
+用于判断策略实际能力的结果必须来自官方 runtime 真实对局。mock、静态检查和离线 BC 指标
+不能替代 evaluation。具体构建与许可证边界见 [`engine/README.md`](engine/README.md)。
+
+## 开发与验证
+
+Python 使用 4 空格、类型注解和清晰的小函数；Ruff 行宽为 100。测试使用标准库
+`unittest`：
+
+```bash
+python3 -m unittest discover -s tests -p 'test_*.py'
+python3 -m unittest discover -s rl/tests -p 'test_*.py'
+python3 -m compileall -q evaluation visualization rl
+bash -n scripts/start_tensorboard.sh
+```
+
+evaluation 资产变更还应单独运行：
+
+```bash
+python3 -m unittest -v tests.test_evaluation_assets
+```
+
+新增 opponent 必须是独立标准 package，并更新唯一 catalog
+[`evaluation/configs/opponents.json`](evaluation/configs/opponents.json)。不要使用 adapter、共享
+`cg/`、symlink 或其他仓库的绝对路径。更完整的协作、规则和提交流程见
+[`AGENTS.md`](AGENTS.md)。
+
+## 文档入口
+
+- [实验总览](rl/_runs/INDEX.html)
+- [RL 框架](rl/README.md)
+- [模型设计](rl/model/DESIGN.html)
+- [Evaluation 使用说明](evaluation/README.md)
+- [Evaluation 交接契约](evaluation/HANDOFF.md)
+- [Replay 可视化](visualization/README.md)
+- [官方引擎边界](engine/README.md)
+- [研究报告索引](docs/reports/README.md)
+- [历史 submission 说明](submission/README.md)
