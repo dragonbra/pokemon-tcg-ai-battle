@@ -1,0 +1,389 @@
+{
+  "config": {
+    "rating_method": "official_gaussian_approx"
+  },
+  "demoted": [
+    {
+      "deck_id": "internal_alakazam_v8_current",
+      "display_name": "Alakazam",
+      "mu": 295.292389
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__aman5153684__a-crustle-aware-fighting-agent",
+      "display_name": "Lucario",
+      "mu": 296.327451
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__evgendvorkin__pokemon-eda-test-random",
+      "display_name": "Lucario",
+      "mu": 292.839064
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__harukiharada__crustle-wall-mirror-ok",
+      "display_name": "Crustle",
+      "mu": 299.641703
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-diary-day1",
+      "display_name": "Lucario",
+      "mu": 298.736289
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-lucario-public-lab-anti-crustle-log",
+      "display_name": "Lucario",
+      "mu": 298.837274
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__map1e114514__iwapalace-resource-balance-1000-fixed-agent",
+      "display_name": "Crustle",
+      "mu": 298.499316
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__penguin069__public-scores-915",
+      "display_name": "Lucario",
+      "mu": 296.201265
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__pixiux__ptcg-mega-lucario-ex-v63",
+      "display_name": "Lucario",
+      "mu": 298.305411
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__serariagomes__heurestic-baseline-agent",
+      "display_name": "Mega Abomasnow",
+      "mu": 332.451773
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__stealthtechnologies__pure-dragapult-ex-deck",
+      "display_name": "Dragapult",
+      "mu": 297.689235
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__suneetsaini__ptcgai-optimize-baseline",
+      "display_name": "Mega Abomasnow",
+      "mu": -14.846429
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__yaminh__the-pokemon-company-ai-challenge",
+      "display_name": "Lucario",
+      "mu": 297.761819
+    },
+    {
+      "deck_id": "pokemon-tcg-ai-battle__yoikoarmor__pokemon-tcg-gen0-lstm-pipeline-ja",
+      "display_name": "Lucario",
+      "mu": 299.455031
+    }
+  ],
+  "generated_at": "2026-07-22T15:34:32.505857+00:00",
+  "quality": "all",
+  "ratings": [
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__daniilkrasnovvv__pokemon-conservative-probabilistic-agent",
+      "display_name": "Lucario",
+      "elo": 2222.639185,
+      "games": 8893,
+      "mu": 1668.556432,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5110761272911278
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__makthanithin__ptcg-mega-lucario-ex-v62",
+      "display_name": "Lucario",
+      "elo": 2039.249249,
+      "games": 16719,
+      "mu": 1534.927548,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5079849273281895
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__romanrozen__strong-start-baseline-agent-v10-lb-950",
+      "display_name": "Lucario",
+      "elo": 1852.146329,
+      "games": 14060,
+      "mu": 1405.12576,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5091749644381224
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__pixiux__ptcg-mega-lucario-ex-v62",
+      "display_name": "Lucario",
+      "elo": 1655.445608,
+      "games": 14459,
+      "mu": 1273.776965,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.509025520437098
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__aristophanivan__2plyexpectimax",
+      "display_name": "Lucario",
+      "elo": 1445.083998,
+      "games": 16282,
+      "mu": 1139.92181,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5011669328092372
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__rahuljiwane__pokemon-tcg-rahul-jiwane7",
+      "display_name": "Lucario",
+      "elo": 1253.878027,
+      "games": 21246,
+      "mu": 1009.400707,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5023063164831028
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__makthanithin__improved-probabilistic-agent",
+      "display_name": "Lucario",
+      "elo": 1072.846126,
+      "games": 19384,
+      "mu": 879.71301,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.500515889393314
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__aristophanivan__probablity-v2",
+      "display_name": "Lucario",
+      "elo": 773.538609,
+      "games": 16518,
+      "mu": 687.575584,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5032086208984139
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__aristophanivan__multiply-agent-best-940-lb",
+      "display_name": "Lucario",
+      "elo": 785.27241,
+      "games": 14555,
+      "mu": 678.216451,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5001717622810031
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__aristophanivan__improved-probabilistic-agent",
+      "display_name": "Lucario",
+      "elo": 480.536593,
+      "games": 14778,
+      "mu": 484.834745,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.5032480714575721
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__aristophanivan__probability-agent",
+      "display_name": "Lucario",
+      "elo": 279.698875,
+      "games": 21022,
+      "mu": 350.759398,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "active",
+      "win_rate": 0.4961468937303777
+    },
+    {
+      "archetype": "Mega Abomasnow",
+      "deck_id": "pokemon-tcg-ai-battle__serariagomes__heurestic-baseline-agent",
+      "display_name": "Mega Abomasnow",
+      "elo": 386.346775,
+      "games": 240,
+      "mu": 332.451773,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.15
+    },
+    {
+      "archetype": "Crustle",
+      "deck_id": "pokemon-tcg-ai-battle__harukiharada__crustle-wall-mirror-ok",
+      "display_name": "Crustle",
+      "elo": 30.20577,
+      "games": 1636,
+      "mu": 299.641703,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.47004889975550124
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__yoikoarmor__pokemon-tcg-gen0-lstm-pipeline-ja",
+      "display_name": "Lucario",
+      "elo": 103.072427,
+      "games": 262,
+      "mu": 299.455031,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.2633587786259542
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-lucario-public-lab-anti-crustle-log",
+      "display_name": "Lucario",
+      "elo": 33.139263,
+      "games": 1334,
+      "mu": 298.837274,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.48200899550224885
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-diary-day1",
+      "display_name": "Lucario",
+      "elo": 46.507,
+      "games": 776,
+      "mu": 298.736289,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.4652061855670103
+    },
+    {
+      "archetype": "Crustle",
+      "deck_id": "pokemon-tcg-ai-battle__map1e114514__iwapalace-resource-balance-1000-fixed-agent",
+      "display_name": "Crustle",
+      "elo": 33.705753,
+      "games": 1307,
+      "mu": 298.499316,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.46748278500382556
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__pixiux__ptcg-mega-lucario-ex-v63",
+      "display_name": "Lucario",
+      "elo": 166.779953,
+      "games": 7817,
+      "mu": 298.305411,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.4904694895740054
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__yaminh__the-pokemon-company-ai-challenge",
+      "display_name": "Lucario",
+      "elo": 130.978409,
+      "games": 6639,
+      "mu": 297.761819,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.5014309383943365
+    },
+    {
+      "archetype": "Dragapult",
+      "deck_id": "pokemon-tcg-ai-battle__stealthtechnologies__pure-dragapult-ex-deck",
+      "display_name": "Dragapult",
+      "elo": 43.484029,
+      "games": 586,
+      "mu": 297.689235,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.4232081911262799
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__aman5153684__a-crustle-aware-fighting-agent",
+      "display_name": "Lucario",
+      "elo": 89.51649,
+      "games": 3280,
+      "mu": 296.327451,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.4969512195121951
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__penguin069__public-scores-915",
+      "display_name": "Lucario",
+      "elo": 15.64865,
+      "games": 1082,
+      "mu": 296.201265,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.4824399260628466
+    },
+    {
+      "archetype": "Alakazam",
+      "deck_id": "internal_alakazam_v8_current",
+      "display_name": "Alakazam",
+      "elo": 64.064409,
+      "games": 2387,
+      "mu": 295.292389,
+      "role": "internal_reference",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.5010473397570172
+    },
+    {
+      "archetype": "Lucario",
+      "deck_id": "pokemon-tcg-ai-battle__evgendvorkin__pokemon-eda-test-random",
+      "display_name": "Lucario",
+      "elo": 43.158613,
+      "games": 488,
+      "mu": 292.839064,
+      "role": "public",
+      "sigma": 40.0,
+      "status": "demoted",
+      "win_rate": 0.38934426229508196
+    },
+    {
+      "archetype": "Mega Abomasnow",
+      "deck_id": "pokemon-tcg-ai-battle__suneetsaini__ptcgai-optimize-baseline",
+      "display_name": "Mega Abomasnow",
+      "elo": -46.94255,
+      "games": 230,
+      "mu": -14.846429,
+      "role": "public",
+      "sigma": 66.669895,
+      "status": "demoted",
+      "win_rate": 0.008695652173913044
+    }
+  ],
+  "run_id": "run-20260722T030243-smoke",
+  "summary": {
+    "draws": 0,
+    "losses": 51328,
+    "total_games": 102990,
+    "win_rate": 0.5016215166521022,
+    "wins": 51662
+  }
+}

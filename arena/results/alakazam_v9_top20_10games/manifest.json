@@ -1,0 +1,390 @@
+{
+  "candidate": {
+    "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+    "deck_hash": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
+    "name": "alakazam_v9",
+    "package_hash": "752028e581184d703f43fb7ee48b018f5f7c47df8780d01e75ab9094d584d233"
+  },
+  "control": null,
+  "engine_runtime": {
+    "cg_tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+    "native_files": [
+      "cg.dll",
+      "libcg-arm64.so",
+      "libcg.dylib",
+      "libcg.so"
+    ]
+  },
+  "finished_at": "2026-07-22T15:23:40.472966+00:00",
+  "games": 200,
+  "metric_profile": {
+    "description": "V8 Setup and Relay AutoIteration metric profile",
+    "id": "auto_iteration_v8_setup_relay",
+    "metric_ids": [
+      "outcome",
+      "length",
+      "correctness",
+      "powerful_hand",
+      "rare_candy",
+      "post_ko_relay",
+      "run_away_draw",
+      "library_pressure",
+      "setup_relay",
+      "attack_quality"
+    ],
+    "metric_semantics": [
+      {
+        "direction": "higher",
+        "display_kind": "outcome_turn_order",
+        "group_id": "result_correctness_guardrail",
+        "metric_id": "outcome",
+        "role": "guardrail",
+        "semantic_id": "outcome",
+        "title": "结果护栏：总体胜率",
+        "tracking_target": "总体、实际先手、实际后手胜率；同时保留 error、unfinished 和完整样本数。",
+        "value_source": "aggregate.value"
+      },
+      {
+        "direction": "lower",
+        "display_kind": "aggregate_ratio",
+        "group_id": "result_correctness_guardrail",
+        "metric_id": "correctness",
+        "role": "guardrail",
+        "semantic_id": "correctness",
+        "title": "G0 正确性门槛",
+        "tracking_target": "非法动作、agent error、运行时错误和未完成对局必须先通过 correctness gate。",
+        "value_source": "aggregate.value"
+      },
+      {
+        "direction": "higher",
+        "display_kind": "powerful_hand_turn_order",
+        "group_id": "stage_1_setup",
+        "metric_id": "powerful_hand",
+        "role": "target",
+        "semantic_id": "powerful_hand",
+        "title": "二回合 Alakazam 实际攻击",
+        "tracking_target": "实际选择 attackId=1072 的对局数 / 全部评测对局数；同时展示到达二回合分母。",
+        "value_source": "aggregate.value"
+      },
+      {
+        "direction": "diagnostic",
+        "display_kind": "component_summary",
+        "group_id": "stage_1_setup",
+        "metric_id": "setup_relay",
+        "role": "diagnostic",
+        "semantic_id": "opening_components",
+        "title": "第一回合起始四组件状态",
+        "tracking_target": "Active Abra、Rare Candy、Alakazam/检索路线、Psychic Energy/Hilda 的出现次数。",
+        "value_source": "payload.opening_four_components"
+      },
+      {
+        "direction": "higher",
+        "display_kind": "payload_ratio",
+        "group_id": "stage_1_setup",
+        "metric_id": "setup_relay",
+        "role": "diagnostic",
+        "semantic_id": "dunsparce_bridge",
+        "title": "无 Abra 的 Dunsparce 换位路线",
+        "tracking_target": "在机会样本中完成 Dudunsparce 接力并于二回合实际提交 Powerful Hand。",
+        "value_source": "payload.dunsparce_bridge"
+      },
+      {
+        "direction": "higher",
+        "display_kind": "draw_summary",
+        "group_id": "stage_1_setup",
+        "metric_id": "setup_relay",
+        "role": "diagnostic",
+        "semantic_id": "second_turn_draws",
+        "title": "二回合额外过牌张数",
+        "tracking_target": "展示全部对局和实际到达二回合样本；正常回合抽牌单独作为审计字段。",
+        "value_source": "payload.second_turn_draws"
+      },
+      {
+        "direction": "higher",
+        "display_kind": "payload_success_ratio",
+        "group_id": "stage_2_post_ko_relay",
+        "metric_id": "post_ko_relay",
+        "role": "target",
+        "semantic_id": "post_ko_success",
+        "title": "Post-KO 立即接力成功率",
+        "tracking_target": "下一回合另一只 Alakazam 合法来到 Active 并实际提交攻击 / Post-KO 机会数。",
+        "value_source": "payload.success_rate"
+      },
+      {
+        "direction": "lower",
+        "display_kind": "payload_scalar",
+        "group_id": "stage_2_post_ko_relay",
+        "metric_id": "post_ko_relay",
+        "role": "diagnostic",
+        "semantic_id": "recoverable_discard_miss",
+        "title": "recoverable_discard_miss",
+        "tracking_target": "优先定位弃牌区仍有攻击线资源却没有形成接力的失败次数。",
+        "value_source": "payload.failure_counts.recoverable_discard_miss"
+      },
+      {
+        "direction": "lower",
+        "display_kind": "payload_ratio",
+        "group_id": "stage_3_attack_quality",
+        "metric_id": "attack_quality",
+        "role": "penalty",
+        "semantic_id": "attack_quality",
+        "title": "攻击但未拿奖赏率",
+        "tracking_target": "已结算且 Prize 状态明确的未拿奖赏攻击数 / 已结算且 Prize 状态明确的攻击总数。",
+        "value_source": "payload.non_prize_attacks.rate"
+      },
+      {
+        "direction": "lower",
+        "display_kind": "powerful_hand_attack_ratio",
+        "group_id": "stage_3_attack_quality",
+        "metric_id": "attack_quality",
+        "role": "penalty",
+        "semantic_id": "attack_quality_powerful",
+        "title": "Powerful Hand 子集未拿奖赏率",
+        "tracking_target": "重点降低 Powerful Hand 已结算攻击中的未拿奖赏比例。",
+        "value_source": "payload.powerful_hand.non_prize_attacks"
+      },
+      {
+        "direction": "higher",
+        "display_kind": "aggregate_ratio",
+        "group_id": "auxiliary_health_audit",
+        "metric_id": "rare_candy",
+        "role": "health",
+        "semantic_id": "rare_candy",
+        "title": "Rare Candy 进化链完成率",
+        "tracking_target": "辅助观察二回合 Rare Candy 进化链是否完成，不单独解释为策略改善。",
+        "value_source": "aggregate.value"
+      },
+      {
+        "direction": "lower",
+        "display_kind": "scalar",
+        "group_id": "auxiliary_health_audit",
+        "metric_id": "run_away_draw",
+        "role": "health",
+        "semantic_id": "run_away_draw",
+        "title": "空 Bench Run Away Draw 错误次数",
+        "tracking_target": "明确的局部策略错误，目标为零；每次触发都应保留 case 证据。",
+        "value_source": "aggregate.numerator"
+      },
+      {
+        "direction": "lower",
+        "display_kind": "scalar",
+        "group_id": "auxiliary_health_audit",
+        "metric_id": "library_pressure",
+        "role": "audit",
+        "semantic_id": "library_pressure",
+        "title": "低牌库区间消耗量",
+        "tracking_target": "记录牌库低于 15/10 张后的消耗，结合终局闭环解释，不能单独排序。",
+        "value_source": "aggregate.value"
+      },
+      {
+        "direction": "diagnostic",
+        "display_kind": "scalar",
+        "group_id": "auxiliary_health_audit",
+        "metric_id": "length",
+        "role": "audit",
+        "semantic_id": "length",
+        "title": "平均对局长度",
+        "tracking_target": "用于发现异常过长、过早结束或运行时行为变化。",
+        "value_source": "aggregate.value"
+      }
+    ],
+    "priorities": [
+      {
+        "direction": "higher",
+        "metric_id": "outcome",
+        "priority": "result_guardrail"
+      },
+      {
+        "direction": "higher",
+        "metric_id": "powerful_hand",
+        "priority": "target"
+      },
+      {
+        "direction": "higher",
+        "metric_id": "post_ko_relay",
+        "priority": "target"
+      },
+      {
+        "direction": "lower",
+        "metric_id": "attack_quality",
+        "priority": "penalty"
+      }
+    ],
+    "revision": 2,
+    "semantic_groups": [
+      {
+        "description": "先检查 G0 correctness，再检查总体、实际先手和实际后手结果；异常不能被过程指标抵消。",
+        "id": "result_correctness_guardrail",
+        "title": "结果与正确性护栏"
+      },
+      {
+        "description": "观察二回合实际提交 Powerful Hand、起手四组件、Dunsparce 替代路线和额外过牌。",
+        "id": "stage_1_setup",
+        "title": "阶段一：二回合基础能力"
+      },
+      {
+        "description": "观察可攻击 Alakazam 被击倒后，下一回合另一只 Alakazam 是否立即接力攻击。",
+        "id": "stage_2_post_ko_relay",
+        "title": "阶段二：Post-KO 接力能力"
+      },
+      {
+        "description": "观察已经提交的攻击是否真正推进 Prize race；未拿奖赏率越低越好。",
+        "id": "stage_3_attack_quality",
+        "title": "阶段三：攻击质量惩罚项"
+      },
+      {
+        "description": "提供进化链、局部错误、牌库压力和对局长度等解释性信号，不单独决定晋级。",
+        "id": "auxiliary_health_audit",
+        "title": "辅助健康与审计指标"
+      }
+    ]
+  },
+  "opponents": [
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__daniilkrasnovvv__pokemon-conservative-probabilistic-agent",
+      "package_hash": "8be41fae42d25cc95ed5856052d1cdf13ebaaa611a6a4754fd63985964f63d29"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "1a282ad180ca7481f560fb88beb7164f1a7ab22241ad4efbdd0ca8ff0e486f01",
+      "name": "pokemon-tcg-ai-battle__makthanithin__ptcg-mega-lucario-ex-v62",
+      "package_hash": "6ed02f40957315c45cd61b02b9b8a1bd7666592965949ef1b52f42bd3e5009b4"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__romanrozen__strong-start-baseline-agent-v10-lb-950",
+      "package_hash": "92270134a11bc722bd0833352e32f12685476217aef17f983f29d8afca492211"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "1a282ad180ca7481f560fb88beb7164f1a7ab22241ad4efbdd0ca8ff0e486f01",
+      "name": "pokemon-tcg-ai-battle__pixiux__ptcg-mega-lucario-ex-v62",
+      "package_hash": "6ed02f40957315c45cd61b02b9b8a1bd7666592965949ef1b52f42bd3e5009b4"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__aristophanivan__2plyexpectimax",
+      "package_hash": "3444d5b3e6956e386f9270fd9a575e81f013e8f05972029f21b9718c6a7c6e17"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__rahuljiwane__pokemon-tcg-rahul-jiwane7",
+      "package_hash": "f7c99569dccb2139a5fff6a0dc4b1be62bb72c5140afb892fdc35aa9ba5b042c"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__makthanithin__improved-probabilistic-agent",
+      "package_hash": "92270134a11bc722bd0833352e32f12685476217aef17f983f29d8afca492211"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__aristophanivan__probablity-v2",
+      "package_hash": "f7c99569dccb2139a5fff6a0dc4b1be62bb72c5140afb892fdc35aa9ba5b042c"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__aristophanivan__multiply-agent-best-940-lb",
+      "package_hash": "3549f34f4fdd9c5931ef30a18fe5f5bc6da03c4be3c628dd4899f5d04595b24e"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__aristophanivan__improved-probabilistic-agent",
+      "package_hash": "92270134a11bc722bd0833352e32f12685476217aef17f983f29d8afca492211"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "pokemon-tcg-ai-battle__aristophanivan__probability-agent",
+      "package_hash": "56abd26174ed8b752f44965a449752ecb5ceed9e61bf3a1a65a13794517bf67b"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "1156379af39e71bc83eecb50d1e04c5cc480501d293621fcc89c2d355d99be78",
+      "name": "pokemon-tcg-ai-battle__serariagomes__heurestic-baseline-agent",
+      "package_hash": "1c53f805c70f4705ac856644fb9df5e7a387192b48d54bb0c9be1354b52ab4a9"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "0bf6b29c6d3555637da0302dedc65087836a1d628c3c44dcb8cff52289062072",
+      "name": "pokemon-tcg-ai-battle__harukiharada__crustle-wall-mirror-ok",
+      "package_hash": "74b5e44bbf0927788354ad1beff8c4e1b122ebf68e77c21746274775fbfe7c1d"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "58ba6642302836dda3d4602d6f19066dbc319e2263091995ab1207780cd97ffd",
+      "name": "pokemon-tcg-ai-battle__yoikoarmor__pokemon-tcg-gen0-lstm-pipeline-ja",
+      "package_hash": "bdc3f8c5cb528db1238d714ade2f0cd8cc53d79f818d37f9a978d1870fda8966"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "b4464eb525a25e6598a972d00efc5e5b5156372e77f51853f4076d8ebb34fd7d",
+      "name": "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-lucario-public-lab-anti-crustle-log",
+      "package_hash": "0acb7284c871f5a00fd5466fafed59a0df475df643e534fe9b93920033eb5a5b"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "b4464eb525a25e6598a972d00efc5e5b5156372e77f51853f4076d8ebb34fd7d",
+      "name": "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-diary-day1",
+      "package_hash": "478ec914e65d3c0dec397eb804805e95a89400bdb784c755c2d9d8c9bc61d55d"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "e0116f33826ce3548bf742ad00b098fc0bc68ccf8598d03fedd1561326357eef",
+      "name": "pokemon-tcg-ai-battle__map1e114514__iwapalace-resource-balance-1000-fixed-agent",
+      "package_hash": "5c09baf846cac7ea4766307801fa8a4039da142bba1ed14bb24c12eb46df84a9"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "dc2b68464064ae885ad04704dc032853526584afa9bec408984e23cc4840bd5e",
+      "name": "pokemon-tcg-ai-battle__pixiux__ptcg-mega-lucario-ex-v63",
+      "package_hash": "a9f5fd65c7f616efacc81848a2a081b947b9a9a2aa6411b0adb6e2e3c4048325"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "dc2b68464064ae885ad04704dc032853526584afa9bec408984e23cc4840bd5e",
+      "name": "pokemon-tcg-ai-battle__yaminh__the-pokemon-company-ai-challenge",
+      "package_hash": "bb8836175960969cb286a0308fb0e0769afbd88d6096fcc03234982dcca10dcc"
+    },
+    {
+      "cg_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+      "deck_hash": "e8d1e9f18f253eefd5f5c65913b93b32a3793cd2f7e22c320f2d091011dd934a",
+      "name": "pokemon-tcg-ai-battle__stealthtechnologies__pure-dragapult-ex-deck",
+      "package_hash": "2120c673618d2cd58de73ff7a0b0558d22cc2c7a6ec6f11111ab3ca4de3b2611"
+    }
+  ],
+  "plugins": [
+    "outcome",
+    "length",
+    "correctness",
+    "powerful_hand",
+    "rare_candy",
+    "post_ko_relay",
+    "run_away_draw",
+    "library_pressure",
+    "setup_relay",
+    "attack_quality"
+  ],
+  "presentation_errors": [],
+  "python_version": "3.13.2 (main, Feb  4 2025, 14:51:09) [Clang 16.0.0 (clang-1600.0.26.6)]",
+  "run_id": "run-1996bf89f89847ab92c4a0a8fa31143e",
+  "started_at": "2026-07-22T15:23:10.771476+00:00",
+  "swap_policy": "alternate_candidate_first",
+  "trace_policy": {
+    "keep_temp": false,
+    "retain_limit": 3,
+    "retained_game_ids": [
+      "pokemon-tcg-ai-battle__aristophanivan__2plyexpectimax-002",
+      "pokemon-tcg-ai-battle__aristophanivan__improved-probabilistic-agent-005",
+      "pokemon-tcg-ai-battle__aristophanivan__probability-agent-002"
+    ]
+  }
+}

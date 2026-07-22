@@ -1,0 +1,25 @@
+{
+  "agent_name": "generation0_lucario_tactical_overlay_policy",
+  "agent_version": "lucario_tactical_overlay_v61_ver58fallback_cubchoo_v1",
+  "base_model": "public_lstm_residual_h384",
+  "generation": 0,
+  "branch": "lucario",
+  "deck_candidate": "lucario_v61_rank2",
+  "primary_decision_method": "neural_policy_with_wall_dragapult_tactical_overlay_and_cubchoo_deckout_guard",
+  "fallback_method": "ver61_rule_for_unsupported_contexts",
+  "checkpoint": "model/policy.pt",
+  "model_hash": "3253e32c85733a6e25e55273330ad95f215a257f7dd38aac3680060d28ea2be0",
+  "deck_hash": "58ba6642302836dda3d4602d6f19066dbc319e2263091995ab1207780cd97ffd",
+  "config_hash": "e3435df2673552027403b2a49461d30835f5ed5d49add6501aeb045d2c5d0f7a",
+  "python_version": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+  "torch_version": "2.11.0+cu128",
+  "device": "cpu",
+  "package_size": {
+    "file_count": 58,
+    "uncompressed_bytes": 23957435,
+    "archive_bytes": 0
+  },
+  "expected_entrypoint": "main.agent",
+  "created_at": "2026-07-06T03:22:16.188664+00:00",
+  "git_commit_if_available": null
+}

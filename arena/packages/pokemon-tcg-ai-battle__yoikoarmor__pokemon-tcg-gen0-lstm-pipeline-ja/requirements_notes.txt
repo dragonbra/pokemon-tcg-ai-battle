@@ -1,0 +1,5 @@
+No extra pip packages are required for this submission.
+
+The package uses only the bundled cg engine, Python standard library modules,
+and the rule-based agent code included under src/.
+

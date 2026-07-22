@@ -112,13 +112,14 @@ import os
 import sys
 from pathlib import Path
 
+sys.path.insert(0, sys.argv[3])
 from evaluation.packages.loader import _validate_agent
 
 
 try:
     entrypoint = Path(sys.argv[1])
     package_root = Path(sys.argv[2])
-    deck = [int(card_id) for card_id in sys.argv[3:]]
+    deck = [int(card_id) for card_id in sys.argv[4:]]
     _validate_agent(entrypoint, package_root, deck)
 except BaseException as exc:
     print(str(exc), file=sys.stderr)
@@ -201,9 +202,10 @@ def _validate_agent_in_subprocess(entrypoint: Path, root: Path, deck: list[int])
                         _SUBPROCESS_VALIDATION_SCRIPT,
                         str(entrypoint),
                         str(root),
+                        str(repository_root),
                         *(str(card_id) for card_id in deck),
                     ],
-                    cwd=repository_root,
+                    cwd=root,
                     env=environment,
                     capture_output=True,
                     text=True,

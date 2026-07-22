@@ -1,0 +1,193 @@
+{
+  "by_opponent": {
+    "pokemon-tcg-ai-battle__aristophanivan__2plyexpectimax": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 5,
+      "unfinished": 0,
+      "win_rate": 0.5,
+      "wins": 5
+    },
+    "pokemon-tcg-ai-battle__aristophanivan__improved-probabilistic-agent": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 6,
+      "unfinished": 0,
+      "win_rate": 0.4,
+      "wins": 4
+    },
+    "pokemon-tcg-ai-battle__aristophanivan__multiply-agent-best-940-lb": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 5,
+      "unfinished": 0,
+      "win_rate": 0.5,
+      "wins": 5
+    },
+    "pokemon-tcg-ai-battle__aristophanivan__probability-agent": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 5,
+      "unfinished": 0,
+      "win_rate": 0.5,
+      "wins": 5
+    },
+    "pokemon-tcg-ai-battle__aristophanivan__probablity-v2": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 5,
+      "unfinished": 0,
+      "win_rate": 0.5,
+      "wins": 5
+    },
+    "pokemon-tcg-ai-battle__daniilkrasnovvv__pokemon-conservative-probabilistic-agent": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 3,
+      "unfinished": 0,
+      "win_rate": 0.7,
+      "wins": 7
+    },
+    "pokemon-tcg-ai-battle__harukiharada__crustle-wall-mirror-ok": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.9,
+      "wins": 9
+    },
+    "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-diary-day1": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 3,
+      "unfinished": 0,
+      "win_rate": 0.7,
+      "wins": 7
+    },
+    "pokemon-tcg-ai-battle__kokinnwakashuu__ptcg-lucario-public-lab-anti-crustle-log": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 3,
+      "unfinished": 0,
+      "win_rate": 0.7,
+      "wins": 7
+    },
+    "pokemon-tcg-ai-battle__makthanithin__improved-probabilistic-agent": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 6,
+      "unfinished": 0,
+      "win_rate": 0.4,
+      "wins": 4
+    },
+    "pokemon-tcg-ai-battle__makthanithin__ptcg-mega-lucario-ex-v62": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 4,
+      "unfinished": 0,
+      "win_rate": 0.6,
+      "wins": 6
+    },
+    "pokemon-tcg-ai-battle__map1e114514__iwapalace-resource-balance-1000-fixed-agent": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 0,
+      "unfinished": 0,
+      "win_rate": 1.0,
+      "wins": 10
+    },
+    "pokemon-tcg-ai-battle__pixiux__ptcg-mega-lucario-ex-v62": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 7,
+      "unfinished": 0,
+      "win_rate": 0.3,
+      "wins": 3
+    },
+    "pokemon-tcg-ai-battle__pixiux__ptcg-mega-lucario-ex-v63": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 7,
+      "unfinished": 0,
+      "win_rate": 0.3,
+      "wins": 3
+    },
+    "pokemon-tcg-ai-battle__rahuljiwane__pokemon-tcg-rahul-jiwane7": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 4,
+      "unfinished": 0,
+      "win_rate": 0.6,
+      "wins": 6
+    },
+    "pokemon-tcg-ai-battle__romanrozen__strong-start-baseline-agent-v10-lb-950": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 5,
+      "unfinished": 0,
+      "win_rate": 0.5,
+      "wins": 5
+    },
+    "pokemon-tcg-ai-battle__serariagomes__heurestic-baseline-agent": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 1,
+      "unfinished": 0,
+      "win_rate": 0.9,
+      "wins": 9
+    },
+    "pokemon-tcg-ai-battle__stealthtechnologies__pure-dragapult-ex-deck": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 6,
+      "unfinished": 0,
+      "win_rate": 0.4,
+      "wins": 4
+    },
+    "pokemon-tcg-ai-battle__yaminh__the-pokemon-company-ai-challenge": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 6,
+      "unfinished": 0,
+      "win_rate": 0.4,
+      "wins": 4
+    },
+    "pokemon-tcg-ai-battle__yoikoarmor__pokemon-tcg-gen0-lstm-pipeline-ja": {
+      "draws": 0,
+      "errors": 0,
+      "games": 10,
+      "losses": 3,
+      "unfinished": 0,
+      "win_rate": 0.7,
+      "wins": 7
+    }
+  },
+  "completed_games": 200,
+  "completion_rate": 1.0,
+  "draws": 0,
+  "errors": 0,
+  "losses": 85,
+  "total_games": 200,
+  "unfinished": 0,
+  "win_rate": 0.575,
+  "wins": 115
+}

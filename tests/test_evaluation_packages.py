@@ -87,6 +87,23 @@ class EvaluationPackageTests(unittest.TestCase):
         self.assertEqual(len(loader_pids), 1)
         self.assertNotEqual(int(loader_pids[0]), os.getpid())
 
+    def test_loader_runs_validation_from_the_package_directory(self) -> None:
+        package_root = self.make_package(
+            deck=[1] * 60,
+            main_source=(
+                "from pathlib import Path\n\n"
+                "Path('validation_cwd.txt').write_text(str(Path.cwd()), encoding='utf-8')\n\n"
+                "def agent(observation):\n    return [1] * 60\n"
+            ),
+        )
+
+        load_submission_package(package_root, {1})
+
+        self.assertEqual(
+            Path((package_root / "validation_cwd.txt").read_text(encoding="utf-8")).resolve(),
+            package_root.resolve(),
+        )
+
     def test_loader_rejects_system_exit_during_main_import(self) -> None:
         package_root = self.make_package(
             deck=[1] * 60,

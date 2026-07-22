@@ -1,0 +1,13 @@
+{
+  "agent_name": "generation0_lucario_tactical_overlay_policy",
+  "agent_version": "lucario_tactical_overlay_v61_ver58fallback_cubchoo_v1",
+  "base_model": "public_lstm_residual_h384",
+  "generation": 0,
+  "branch": "lucario",
+  "deck_candidate": "lucario_v61_rank2",
+  "primary_decision_method": "neural_policy_with_wall_dragapult_tactical_overlay_and_cubchoo_deckout_guard",
+  "fallback_method": "ver61_rule_for_unsupported_contexts",
+  "uses_mcts": false,
+  "uses_torch": true,
+  "device": "cpu"
+}
