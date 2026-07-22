@@ -120,6 +120,7 @@ class PTCGDatasetTests(unittest.TestCase):
                 "ptcg_features_v3",
                 "ptcg_features_v4",
                 "ptcg_features_v5",
+                "ptcg_features_v6",
             },
         )
 
@@ -176,6 +177,58 @@ class PTCGDatasetTests(unittest.TestCase):
         self.assertAlmostEqual(encoded["state_numeric"][-6], 3 / 32)
         self.assertAlmostEqual(encoded["state_numeric"][-4], 1 / 6)
         self.assertEqual(encoded["state_numeric"][-2:], [1.0, 0.0])
+
+    def test_v6_resolves_compact_play_and_attack_options(self) -> None:
+        config = feature_config_for_schema("ptcg_features_v6")
+        observation = {
+            "current": {
+                "yourIndex": 0,
+                "players": [
+                    {
+                        "active": [{"id": 742}],
+                        "bench": [],
+                        "hand": [{"id": 1079}, {"id": 1182}],
+                    },
+                    {"active": [{"id": 678}], "bench": [], "hand": []},
+                ],
+            },
+            "select": {
+                "type": 0,
+                "context": 0,
+                "minCount": 1,
+                "maxCount": 1,
+                "option": [
+                    {"type": 7, "index": 0},
+                    {"type": 7, "index": 1},
+                    {"type": 13, "attackId": 1072},
+                ],
+            },
+        }
+        encoded = encode_observation(observation, config)
+        self.assertEqual(encoded["action_card_ids"][:3], [1080, 1183, 0])
+        self.assertEqual(encoded["action_target_ids"][:3], [0, 0, 743])
+
+    def test_legacy_v5_keeps_compact_action_semantics(self) -> None:
+        config = feature_config_for_schema("ptcg_features_v5")
+        observation = {
+            "current": {
+                "yourIndex": 0,
+                "players": [
+                    {"active": [{"id": 742}], "bench": [], "hand": [{"id": 1079}]},
+                    {"active": [], "bench": [], "hand": []},
+                ],
+            },
+            "select": {
+                "type": 0,
+                "context": 0,
+                "minCount": 1,
+                "maxCount": 1,
+                "option": [{"type": 7, "index": 0}, {"type": 13, "attackId": 1072}],
+            },
+        }
+        encoded = encode_observation(observation, config)
+        self.assertEqual(encoded["action_card_ids"][:2], [0, 0])
+        self.assertEqual(encoded["action_target_ids"][:2], [0, 0])
 
     def test_visible_potential_components_are_stable_and_auditable(self) -> None:
         observation = {

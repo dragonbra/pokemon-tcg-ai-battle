@@ -186,6 +186,7 @@ def main() -> None:
             "ptcg_features_v3",
             "ptcg_features_v4",
             "ptcg_features_v5",
+            "ptcg_features_v6",
         ),
     )
     parser.add_argument("--teacher-player-index", type=int, choices=(0, 1))

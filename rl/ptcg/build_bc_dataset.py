@@ -41,6 +41,7 @@ def main() -> None:
             "ptcg_features_v3",
             "ptcg_features_v4",
             "ptcg_features_v5",
+            "ptcg_features_v6",
         ),
     )
     args = parser.parse_args()

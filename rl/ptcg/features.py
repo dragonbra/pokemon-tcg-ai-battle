@@ -4,13 +4,14 @@ from dataclasses import dataclass
 from typing import Any
 
 
-FEATURE_SCHEMA_VERSION = "ptcg_features_v5"
+FEATURE_SCHEMA_VERSION = "ptcg_features_v6"
 KNOWN_FEATURE_SCHEMA_VERSIONS = frozenset(
     {
         "ptcg_features_v1",
         "ptcg_features_v2",
         "ptcg_features_v3",
         "ptcg_features_v4",
+        "ptcg_features_v5",
         FEATURE_SCHEMA_VERSION,
     }
 )
@@ -26,18 +27,43 @@ class PTCGFeatureConfig:
     max_candidates: int = 64
     card_vocab_size: int = 4096
     action_type_vocab_size: int = 32
+    # v6 keeps tensor shapes stable while making visible action-card
+    # resolution explicit. Legacy checkpoints did not store this field.
+    schema_version: str = FEATURE_SCHEMA_VERSION
 
 
 def feature_config_for_schema(schema_version: str) -> PTCGFeatureConfig:
     """Return the immutable input contract for a known feature schema."""
     if schema_version == "ptcg_features_v1":
-        return PTCGFeatureConfig(state_numeric_dim=24, state_token_count=24)
+        return PTCGFeatureConfig(
+            state_numeric_dim=24,
+            state_token_count=24,
+            schema_version="ptcg_features_v1",
+        )
     if schema_version == "ptcg_features_v2":
-        return PTCGFeatureConfig(state_numeric_dim=32, state_token_count=40)
+        return PTCGFeatureConfig(
+            state_numeric_dim=32,
+            state_token_count=40,
+            schema_version="ptcg_features_v2",
+        )
     if schema_version == "ptcg_features_v3":
-        return PTCGFeatureConfig(state_numeric_dim=36, state_token_count=40)
+        return PTCGFeatureConfig(
+            state_numeric_dim=36,
+            state_token_count=40,
+            schema_version="ptcg_features_v3",
+        )
     if schema_version == "ptcg_features_v4":
-        return PTCGFeatureConfig(state_numeric_dim=40, state_token_count=40)
+        return PTCGFeatureConfig(
+            state_numeric_dim=40,
+            state_token_count=40,
+            schema_version="ptcg_features_v4",
+        )
+    if schema_version == "ptcg_features_v5":
+        return PTCGFeatureConfig(
+            state_numeric_dim=46,
+            state_token_count=40,
+            schema_version="ptcg_features_v5",
+        )
     if schema_version == FEATURE_SCHEMA_VERSION:
         return PTCGFeatureConfig()
     raise ValueError(f"unsupported feature schema version: {schema_version}")
@@ -45,6 +71,19 @@ def feature_config_for_schema(schema_version: str) -> PTCGFeatureConfig:
 
 def feature_schema_for_config(config: PTCGFeatureConfig) -> str:
     """Return the version name for an immutable feature shape."""
+    expected_shapes = {
+        "ptcg_features_v1": (24, 24),
+        "ptcg_features_v2": (32, 40),
+        "ptcg_features_v3": (36, 40),
+        "ptcg_features_v4": (40, 40),
+        "ptcg_features_v5": (46, 40),
+        FEATURE_SCHEMA_VERSION: (46, 40),
+    }
+    if config.schema_version in expected_shapes and (
+        config.state_numeric_dim,
+        config.state_token_count,
+    ) == expected_shapes[config.schema_version]:
+        return config.schema_version
     shapes = {
         (24, 24): "ptcg_features_v1",
         (32, 40): "ptcg_features_v2",
@@ -140,6 +179,34 @@ def _target_card_id(
                 return int(option[key])
             except (TypeError, ValueError):
                 pass
+    area = option.get("inPlayArea", option.get("area"))
+    index = option.get("inPlayIndex", option.get("index"))
+    if area not in (4, 5) or not isinstance(index, int):
+        return None
+    players = current.get("players") or []
+    owner = option.get("playerIndex", your_index)
+    try:
+        owner = int(owner)
+    except (TypeError, ValueError):
+        owner = your_index
+    player = players[owner] if 0 <= owner < len(players) else {}
+    zone = "active" if area == 4 else "bench"
+    cards = _cards(player, zone)
+    return _card_id(cards[index]) if 0 <= index < len(cards) else None
+
+
+def _legacy_target_card_id(
+    option: dict[str, Any],
+    current: dict[str, Any],
+    your_index: int,
+) -> int | None:
+    """The pre-v6 target resolver used by legacy checkpoints."""
+    for key in ("targetCardId", "targetId", "inPlayCardId"):
+        if key in option:
+            try:
+                return int(option[key])
+            except (TypeError, ValueError):
+                pass
     area = option.get("inPlayArea")
     index = option.get("inPlayIndex")
     if area not in (4, 5) or not isinstance(index, int):
@@ -149,6 +216,53 @@ def _target_card_id(
     zone = "active" if area == 4 else "bench"
     cards = _cards(player, zone)
     return _card_id(cards[index]) if 0 <= index < len(cards) else None
+
+
+def _visible_option_card_id(
+    option: dict[str, Any],
+    select: dict[str, Any],
+    current: dict[str, Any],
+    your_index: int,
+) -> int | None:
+    """Resolve a visible card represented by a compact simulator option.
+
+    Several main-action options expose only an index.  In particular, PLAY
+    options index the player's hand, so encoding only ``type`` and ``index``
+    loses the distinction between Rare Candy, Boss, Energy, and other cards.
+    This resolver uses only public/current-player information.
+    """
+    direct = _option_card_id(option)
+    if direct is not None:
+        return direct
+
+    players = current.get("players") or []
+    owner = option.get("playerIndex", your_index)
+    try:
+        owner = int(owner)
+    except (TypeError, ValueError):
+        owner = your_index
+    player = players[owner] if 0 <= owner < len(players) else {}
+    option_type = int(option.get("type", -1) or -1)
+
+    if option_type == 7:
+        hand = _cards(player, "hand")
+        index = option.get("indexInArea", option.get("index"))
+        if owner == your_index and isinstance(index, int) and 0 <= index < len(hand):
+            return _card_id(hand[index])
+
+    area = option.get("area")
+    index = option.get("indexInArea", option.get("index"))
+    if area == 1:
+        deck = select.get("deck") or []
+        if isinstance(index, int) and 0 <= index < len(deck):
+            return _card_id(deck[index])
+    if area == 3:
+        discard = _cards(player, "discard")
+        if isinstance(index, int) and 0 <= index < len(discard):
+            return _card_id(discard[index])
+
+    # Evolution, energy, and switch options identify a public field slot.
+    return _target_card_id(option, current, your_index)
 
 
 def _option_card_id(option: dict[str, Any]) -> int | None:
@@ -319,8 +433,20 @@ def encode_observation(
     action_mask: list[bool] = []
     for index, option in enumerate(options[: config.max_candidates]):
         option_type = int(option.get("type", 0) or 0)
-        card_id = _option_card_id(option)
-        target_id = _target_card_id(option, current, your_index)
+        is_v6 = config.schema_version == FEATURE_SCHEMA_VERSION
+        card_id = (
+            _visible_option_card_id(option, select, current, your_index)
+            if is_v6
+            else _option_card_id(option)
+        )
+        target_id = (
+            _target_card_id(option, current, your_index)
+            if is_v6
+            else _legacy_target_card_id(option, current, your_index)
+        )
+        if is_v6 and target_id is None and option_type == 13:
+            own_active = _cards(player, "active")
+            target_id = _card_id(own_active[0]) if own_active else None
         action_type_ids.append(min(config.action_type_vocab_size, option_type + 1))
         action_card_ids.append(
             min(config.card_vocab_size, (card_id + 1) if card_id is not None else 0)

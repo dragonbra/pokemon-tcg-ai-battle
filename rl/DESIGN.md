@@ -58,6 +58,15 @@ Post-KO 接力条件，不改变合法 option/action contract。第一阶段只�
 卡牌效果中的多选、目标和数量选择继续由规则 handler
 完成；确认主动作模型稳定后，再把 effect selection 加入 candidate dataset。
 
+当前 v6 保持 v5 的张量形状和合法候选 contract，但补齐可从公开 observation 还原的
+`action_card_ids`：PLAY 选项解析为手牌卡牌，弃牌/搜索选项解析为相应公开区域卡牌，
+进化、附能、换位和攻击选项解析为公开场上目标。v5 checkpoint 没有
+`schema_version` 时仍按旧语义读取，不会静默套用 v6 编码。v6 离线验证约为 `69%`
+action accuracy，但直接接管主动作在 34 局只有 `12/34`；0.95 residual gate 探索为
+`27/34`，完整 `17×10` 仍为 `110/170 = 64.71%`，低于 teacher 的
+`124/170 = 72.94%`，因此不晋级。这是“输入描述更完整”与“策略强度提升”必须分开
+验收的实例。
+
 当前 v4 实验已把 170 局 teacher trace 中的 5,338 条 main 和 3,764 条单选 effect
 记录编码到同一 versioned state contract；184 条多选记录继续排除。混合训练会让 main
 accuracy 降低，因此 effect-only checkpoint 与 v3 main checkpoint 分离。effect-only
@@ -169,6 +178,11 @@ teacher，重新生成合法 main-action label，再用 `merge_datasets.py` 和�
 DAgger 不是 reward 优化，也不能凭训练 loss 判断有效。它必须和原 teacher 数据保持可
 审计的混合比例，并经过小规模探索和完整 17×10 evaluation；如果关键 opponent 回归，
 立即丢弃该 checkpoint。
+
+在 v6 residual gate 的完整 170 局 rollout 上，DAgger 重标注得到 5,178 条记录，
+仅 174 条动作与 teacher 不同；合并后 34 局为 `25/34` 且有 1 个 error，未晋级。
+这表明 DAgger 覆盖分布本身不是 reward improvement，后续需要真正的反事实收益或
+更可靠的 advantage target，而不是简单重复 teacher label。
 
 ### Phase C：MCTS-guided self-play
 

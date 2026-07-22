@@ -45,11 +45,20 @@ class PTCGCandidatePolicy:
         metadata = payload.get("metadata") or {}
         if feature_config is None:
             saved_features = metadata.get("feature_config")
-            feature_config = (
-                PTCGFeatureConfig(**saved_features)
-                if isinstance(saved_features, dict)
-                else PTCGFeatureConfig()
-            )
+            if isinstance(saved_features, dict):
+                # Checkpoints written before schema v6 have the same 46/40
+                # tensor shape but no schema_version field.  Preserve their
+                # old action-card semantics instead of silently applying the
+                # v6 resolver at inference time.
+                saved_features = dict(saved_features)
+                if (
+                    "schema_version" not in saved_features
+                    and saved_features.get("state_numeric_dim") == 46
+                ):
+                    saved_features["schema_version"] = "ptcg_features_v5"
+                feature_config = PTCGFeatureConfig(**saved_features)
+            else:
+                feature_config = PTCGFeatureConfig()
         if model_config is None:
             saved_config = metadata.get("model_config")
             if not isinstance(saved_config, dict):

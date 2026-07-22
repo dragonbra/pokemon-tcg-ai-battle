@@ -265,6 +265,11 @@ effect sequence step 和候选计数。当前 v5 在此基础上显式加入 `tu
 v1–v4 checkpoint 会按 metadata 继续恢复；effect policy 目前使用独立 checkpoint，
 运行时默认关闭，多选 effect 仍由规则 handler 处理。
 
+v6 保持同样的 tensor shape，但把公开 observation 中可解析的 PLAY/弃牌/场上目标卡牌
+写入 action-card embedding；没有 `schema_version` 的旧 v5 checkpoint 仍按 v5 语义读取。
+这版离线准确率提升到约 69%，但 residual gate 的完整 17×10 验收为 `110/170`，低于
+teacher 的 `124/170`，所以 checkpoint 只留在 `rl/runs/` 做研究，不进入 `work/`。
+
 ### 有限预算 PUCT target smoke
 
 使用真实 evaluation trace 生成搜索 target 时，`--cg-root` 应指向包含 `cg/` 的 package
