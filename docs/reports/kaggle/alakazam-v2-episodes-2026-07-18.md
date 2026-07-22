@@ -5,17 +5,17 @@
 - Submission：`54810679`，文件 `alakazam_v2.tar.gz`。
 - 提交状态：`COMPLETE`，当前 public score `611.8`。
 - Kaggle 账号在 replay 中显示为 `炽月殿-ptcg糕手`。
-- 原始数据目录：[`replays/kaggle_v2_54810679/`](../../replays/kaggle_v2_54810679/)。
+- 原始数据目录：[`replays/kaggle_v2_54810679/`](../../../replays/kaggle_v2_54810679/)。
 - 本文只分析 Kaggle 官方 Episode；本地 simulator 生成的 replay 不纳入结论。
 
 ## Episode 总览
 
 | Episode | 类型 | 对手 | V2 位置 | 先手 | 结果 | replay steps | 主要终局状态 |
 |---:|---|---|---:|---:|---|---:|---|
-| [86708975](../../replays/kaggle_v2_54810679/86708975/episode-86708975-replay.json) | validation self-play | 自己 | 0 | 0 | V2 胜 | 163 | 双方同一提交的验证对局 |
-| [86709121](../../replays/kaggle_v2_54810679/86709121/episode-86709121-replay.json) | public | Đức Nguyễn Minh | 0 | 0 | V2 胜 | 136 | V2 剩 1 Prize，对手 Active 被击倒 |
-| [86709641](../../replays/kaggle_v2_54810679/86709641/episode-86709641-replay.json) | public | princehur | 1 | 0 | V2 负 | 56 | Dunsparce 受到 180 伤害后无 Bench 可替换 |
-| [86710197](../../replays/kaggle_v2_54810679/86710197/episode-86710197-replay.json) | public | Rostislav | 0 | 0 | V2 负 | 144 | V2 牌库为 0，剩 3 Prize；对手剩 1 Prize |
+| [86708975](../../../replays/kaggle_v2_54810679/86708975/episode-86708975-replay.json) | validation self-play | 自己 | 0 | 0 | V2 胜 | 163 | 双方同一提交的验证对局 |
+| [86709121](../../../replays/kaggle_v2_54810679/86709121/episode-86709121-replay.json) | public | Đức Nguyễn Minh | 0 | 0 | V2 胜 | 136 | V2 剩 1 Prize，对手 Active 被击倒 |
+| [86709641](../../../replays/kaggle_v2_54810679/86709641/episode-86709641-replay.json) | public | princehur | 1 | 0 | V2 负 | 56 | Dunsparce 受到 180 伤害后无 Bench 可替换 |
+| [86710197](../../../replays/kaggle_v2_54810679/86710197/episode-86710197-replay.json) | public | Rostislav | 0 | 0 | V2 负 | 144 | V2 牌库为 0，剩 3 Prize；对手剩 1 Prize |
 
 Public 样本为 1 胜 2 负。`86708975` 是官方 validation self-play，不应与 public
 对手池结果混为一谈。

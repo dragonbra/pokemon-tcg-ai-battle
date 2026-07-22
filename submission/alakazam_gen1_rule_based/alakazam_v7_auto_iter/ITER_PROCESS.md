@@ -64,7 +64,7 @@
 
 - 原始 V7 详细评测：17 个对手 × 10 局 = 170 局。
 - `submission/alakazam_v7/EVAL_RESULT.md`：用于完整矩阵的 V7 参考值。
-- `reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/`：当前实际可读取的 74
+- `docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/`：当前实际可读取的 74
   个完整 trace，用于验证分析器口径；不是完整 170 局的替代品。
 
 ### 已知基线
@@ -931,7 +931,7 @@ Telepath 可能被解析成另一张手牌，从而漏掉 Bench Kadabra/Alakazam
 
 按 AutoIter 约定启动独立 strategy advisor，要求其核对 deck 卡牌效果、规则合法性、历史
 case 和本轮 focused trace；advisor 不直接修改生产代码，结论写入
-`reports/kaggle/alakazam-v7-auto-iter/iter-30/advisor.md`。
+`docs/reports/kaggle/alakazam-v7-auto-iter/iter-30/advisor.md`。
 
 ### 验收与测试
 
@@ -1209,7 +1209,7 @@ Itchy Pollen 对 Rare Candy 的限制，确认本轮不应修改全局 ready att
 
 历史 iter-36 full trace 中的 4 个 case 已用当前策略重新执行，旧动作分别为
 `[2]`/`[2]`/`[6]`/`[4]`，当前动作分别为 `[0]`/`[1]`/`[4]`/`[3]`，均不再把 Telepath
-贴给没有可见进化路线的 Bench Abra；详细状态写入 `reports/kaggle/alakazam-v7-auto-iter/iter-37/cases.jsonl`。
+贴给没有可见进化路线的 Bench Abra；详细状态写入 `docs/reports/kaggle/alakazam-v7-auto-iter/iter-37/cases.jsonl`。
 
 ### 评测结果
 
@@ -1266,7 +1266,7 @@ Abra-line 接力不够完整，就倾向先用 Poffin 建立更多 Basic。advis
 **observe，不晋升。** broad gate 过宽，损害了攻击节奏和整体结果；`BEST_STRATEGY.json`
 不变。完整 trace 的原始 label 曾因分析命令缺少日期后缀而被误识别，导致一份临时 0% 的
 第二回合结果；该结果已废弃，正式结果由完整 role label 重跑得到。详细记录见
-`reports/kaggle/alakazam-v7-auto-iter/iter-38/`。
+`docs/reports/kaggle/alakazam-v7-auto-iter/iter-38/`。
 
 ## AutoIter V30：narrow fresh-Bench second-turn gate（iter-39）
 
@@ -1429,7 +1429,7 @@ action error 0。
 - `nursrijan_lucario/game_001` 受同回合连续进化规则限制；
 - `kacchan_anti_wall/game_003` 已在攻击前执行 Poffin，属于 analyzer 边界误报。
 
-详细轻量证据见 `reports/kaggle/alakazam-v7-auto-iter/iter-43/` 的
+详细轻量证据见 `docs/reports/kaggle/alakazam-v7-auto-iter/iter-43/` 的
 `analysis.md`、`decision.md`、`advisor.md`、`metrics.json` 和 `cases.jsonl`。
 
 ### 采纳状态

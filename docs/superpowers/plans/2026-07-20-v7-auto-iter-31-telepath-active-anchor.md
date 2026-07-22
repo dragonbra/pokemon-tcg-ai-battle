@@ -79,10 +79,10 @@ Expected: all tests pass, including the existing cases that prefer a hand Abra o
 ### Task 3: Verify and record the iteration
 
 **Files:**
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-31/decision.md`
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-31/metrics.json`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-31/decision.md`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-31/metrics.json`
 - Modify: `submission/alakazam_v7_auto_iter/ITER_PROCESS.md`
-- Create if advisor returns: `reports/kaggle/alakazam-v7-auto-iter/iter-30/advisor.md`
+- Create if advisor returns: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-30/advisor.md`
 
 - [ ] **Step 1: Run repository checks**
 

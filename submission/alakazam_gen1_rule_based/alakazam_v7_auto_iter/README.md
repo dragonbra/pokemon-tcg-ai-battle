@@ -29,7 +29,7 @@ AutoIter 固定本目录的 `deck.csv`，只接受有明确 replay case 假设�
 ```bash
 python3 scripts/alakazam_auto_iter.py analyze \
   --report-dir /path/to/ptcg-agent-kaggle/reports/alakazam_v7 \
-  --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline
+  --output-dir docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline
 ```
 
 默认从 trace 中实际出现的 agent `role` 自动识别标签。只有在确认参数与 trace 中的完整
@@ -56,9 +56,9 @@ python3 scripts/alakazam_auto_iter.py run \
 
 ```bash
 python3 scripts/alakazam_auto_iter.py compare \
-  --control reports/kaggle/alakazam-v7-auto-iter/iter-01/control \
-  --candidate reports/kaggle/alakazam-v7-auto-iter/iter-01/candidate \
-  --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-01/comparison
+  --control docs/reports/kaggle/alakazam-v7-auto-iter/iter-01/control \
+  --candidate docs/reports/kaggle/alakazam-v7-auto-iter/iter-01/candidate \
+  --output-dir docs/reports/kaggle/alakazam-v7-auto-iter/iter-01/comparison
 ```
 
 `metrics.json`、`cases.jsonl` 和 `analysis.md` 只保存精炼结果；需要保存时，完整 trace 留在隔壁

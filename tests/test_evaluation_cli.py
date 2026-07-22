@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -11,7 +10,6 @@ from unittest.mock import patch
 
 from evaluation import cli
 from evaluation.packages.loader import PackageValidationError, SubmissionPackage
-from scripts import alakazam_auto_iter
 
 
 def package(name: str, root: Path) -> SubmissionPackage:
@@ -156,124 +154,6 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertNotEqual(error.exception.code, 0)
         self.assertIn("deck.csv must contain 60 cards", stderr.getvalue())
         run_batch.assert_not_called()
-
-    def test_legacy_agent_path_resolves_to_standard_package_root(self) -> None:
-        package_root = self.root / "legacy_candidate"
-        package_root.mkdir()
-        (package_root / "main.py").write_text("def agent(observation): return []\n", encoding="utf-8")
-        (package_root / "deck.csv").write_text("1\n", encoding="utf-8")
-
-        self.assertEqual(
-            alakazam_auto_iter.legacy_candidate_root(package_root / "main.py"),
-            package_root.resolve(),
-        )
-        with self.assertRaisesRegex(ValueError, "standard submission package"):
-            alakazam_auto_iter.legacy_candidate_root(self.root / "not_a_package")
-
-    def test_legacy_analyze_reads_retained_native_evaluation_trace(self) -> None:
-        report_root = self.root / "native_report"
-        trace_root = report_root / "traces"
-        trace_root.mkdir(parents=True)
-        (trace_root / "opponent_a-001.json").write_text(
-            json.dumps(
-                {
-                    "trace": [],
-                    "result": {"winner": 0, "error_kind": None},
-                    "opponent": "opponent_a",
-                }
-            ),
-            encoding="utf-8",
-        )
-
-        result = alakazam_auto_iter.analyze_report(report_root)
-
-        self.assertEqual(result.metrics.games, 1)
-        self.assertEqual(result.metrics.wins, 1)
-        self.assertEqual(result.source_files, ("traces/opponent_a-001.json",))
-
-    def test_legacy_compare_reads_native_summary_and_metric_artifacts(self) -> None:
-        control = self.root / "control"
-        candidate = self.root / "candidate_report"
-        comparison_dir = self.root / "comparison"
-        for directory, wins in ((control, 2), (candidate, 3)):
-            directory.mkdir()
-            (directory / "summary.json").write_text(
-                json.dumps(
-                    {
-                        "total_games": 4,
-                        "wins": wins,
-                        "losses": 4 - wins,
-                        "draws": 0,
-                        "errors": 0,
-                    }
-                ),
-                encoding="utf-8",
-            )
-            (directory / "metrics.json").write_text(
-                json.dumps(
-                    {
-                        "powerful_hand": {"numerator": 1, "denominator": 4},
-                        "post_ko_relay": {"numerator": 0, "denominator": 0},
-                        "run_away_draw": {"numerator": 0, "denominator": 4},
-                    }
-                ),
-                encoding="utf-8",
-            )
-            (directory / "cases.jsonl").write_text("", encoding="utf-8")
-
-        comparison = alakazam_auto_iter.compare_reports(control, candidate, comparison_dir)
-
-        self.assertEqual(comparison["control"]["games"], 4)
-        self.assertEqual(comparison["candidate"]["wins"], 3)
-        self.assertTrue((comparison_dir / "comparison.json").is_file())
-
-    def test_legacy_run_delegates_without_using_evaluator_root(self) -> None:
-        package_root = self.root / "legacy_run_candidate"
-        (package_root / "cg").mkdir(parents=True)
-        (package_root / "main.py").write_text("def agent(observation): return []\n", encoding="utf-8")
-        (package_root / "deck.csv").write_text("1\n", encoding="utf-8")
-        stderr = io.StringIO()
-        with (
-            patch.object(alakazam_auto_iter, "evaluation_cli_main", return_value=0) as cli_main,
-            redirect_stderr(stderr),
-        ):
-            exit_code = alakazam_auto_iter.main(
-                [
-                    "run",
-                    "--evaluator-root",
-                    str(self.root / "unavailable-adjacent-repo"),
-                    "--agent",
-                    str(package_root / "main.py"),
-                    "--cg-path",
-                    str(package_root / "cg"),
-                    "--label",
-                    "legacy_candidate",
-                    "--opponents",
-                    "opponent_a",
-                    "--games",
-                    "2",
-                    "--output-dir",
-                    str(self.root / "reports"),
-                ]
-            )
-
-        self.assertEqual(exit_code, 0)
-        self.assertEqual(
-            cli_main.call_args.args[0],
-            [
-                "run",
-                "--candidate",
-                str(package_root.resolve()),
-                "--opponents",
-                "opponent_a",
-                "--games",
-                "2",
-                "--output",
-                str(self.root / "reports"),
-            ],
-        )
-        self.assertIn("deprecated and ignored", stderr.getvalue())
-
 
 if __name__ == "__main__":
     unittest.main()

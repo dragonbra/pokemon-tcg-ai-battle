@@ -5,15 +5,14 @@ import unittest
 from pathlib import Path
 
 from evaluation.runtime.loader import compute_cg_manifest
-from scripts.check_assets import (
-    EVALUATION_CG_BASELINE,
-    EXPECTED_EVALUATION_OPPONENT_NAMES,
-)
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "evaluation" / "configs" / "opponents.json"
 OPPONENTS_ROOT = ROOT / "evaluation" / "opponents"
+EVALUATION_CG_BASELINE = (
+    ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
+)
 FOREIGN_EVALUATION_REPOSITORY = "/Users/hejinyu/Documents/repos/ptcg-agent-kaggle"
 EXPECTED_NAMES = (
     "romanrozen_v9",
@@ -46,7 +45,6 @@ class EvaluationAssetTests(unittest.TestCase):
     def test_catalog_contains_the_exact_enabled_opponent_set(self) -> None:
         opponents = self.catalog["opponents"]
 
-        self.assertEqual(EXPECTED_EVALUATION_OPPONENT_NAMES, EXPECTED_NAMES)
         self.assertEqual([opponent["name"] for opponent in opponents], list(EXPECTED_NAMES))
         self.assertTrue(all(opponent["enabled"] for opponent in opponents))
         self.assertEqual(len(opponents), len(EXPECTED_NAMES))

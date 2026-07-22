@@ -8,10 +8,10 @@
 
 ## 当时的提交（历史记录）
 
-- 入口：[`../../submission/official_water/main.py`](../../submission/official_water/main.py)
-- 卡组：[`../../submission/official_water/deck.csv`](../../submission/official_water/deck.csv)
-- 模拟器 API：[`../../submission/official_water/cg/`](../../submission/official_water/cg/)
-- 卡牌参考：[`../../data/official/`](../../data/official/)
+- 入口：[`../../submission/official_water/main.py`](../../../submission/official_water/main.py)
+- 卡组：[`../../submission/official_water/deck.csv`](../../../submission/official_water/deck.csv)
+- 模拟器 API：[`../../submission/official_water/cg/`](../../../submission/official_water/cg/)
+- 卡牌参考：[`../../data/official/`](../../../data/official/)
 
 当前卡组沿用下载的官方 starter deck，包含 60 张合法卡牌；`scripts/check_assets.py` 会检查数量、整数 ID 和英文 Card Data 中的存在性。
 

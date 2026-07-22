@@ -11,7 +11,7 @@ python3 -m evaluation run \
   --candidate work/alakazam_v8_current \
   --opponents all \
   --games 30 \
-  --output reports/evaluation
+  --output docs/reports/evaluation
 ```
 
 `run` 也支持 `--control PACKAGE`（只在报告中展示对比）、`--no-visualize`、

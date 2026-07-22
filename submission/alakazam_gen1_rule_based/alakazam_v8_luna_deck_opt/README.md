@@ -4,7 +4,7 @@
 `cg/`；设计文档保留在本目录中，但不会进入 Kaggle 压缩包。
 
 开发源仍位于 [`work/alakazam_v8_current/`](../../work/alakazam_v8_current/)。
-历史结论放在 `codex/index/` 或 `reports/`，完整 replay 不复制到此目录。
+历史结论放在 `codex/index/` 或 `docs/reports/`，完整 replay 不复制到此目录。
 
 ## 当前 V8 文档入口
 

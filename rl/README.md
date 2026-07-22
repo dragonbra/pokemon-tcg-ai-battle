@@ -75,8 +75,12 @@ python3 -m evaluation run \
 跨实验查看 TensorBoard：
 
 ```bash
-tensorboard --logdir rl/_runs/tensorboard
+./scripts/start_tensorboard.sh
 ```
+
+脚本默认监听 `127.0.0.1:6006`；远程训练机建议保留本地监听并使用 SSH 端口转发。
+确需覆盖时可设置 `TENSORBOARD_LOGDIR`、`TENSORBOARD_HOST`、`TENSORBOARD_PORT` 或
+`PYTHON`，额外命令行参数会原样传给 TensorBoard。
 
 完整命名和归档规则见 [`RUNS.md`](RUNS.md)，实验对比入口见
 [`_runs/INDEX.html`](_runs/INDEX.html)，模型设计背景见 [`DESIGN.md`](DESIGN.md)。

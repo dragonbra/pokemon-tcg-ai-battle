@@ -1,6 +1,6 @@
 # 规则索引
 
-这里保存可执行的规则摘要；完整证据见 [规则报告](../../reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)。
+这里保存可执行的规则摘要；完整证据见 [规则报告](../../docs/reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)。
 
 - 攻击是回合终止动作；宣告后不能继续执行主行动。
 - 进化、Supporter、手动附能、Retreat 和卡牌效果必须遵守 simulator 提供的时点与合法选项。

@@ -13,7 +13,7 @@
 - 当前候选卡组目录必须保持纯净，只包含最终提交包需要的 `main.py`、`deck.csv` 和 `cg/`；
 - `submission/` 保存历史完整提交，并新增 `submission/dist/` 保存打包产物；
 - `codex/index/` 保存经过沉淀的长期项目知识和索引；
-- 评测和可视化的核心代码逐步收回本仓库，详细结果和复盘资料继续放入 `reports/`。
+- 评测和可视化的核心代码逐步收回本仓库，详细结果和复盘资料继续放入 `docs/reports/`。
 
 ## 2. 目标目录结构
 
@@ -79,7 +79,7 @@
 │   ├── analysis/
 │   └── templates/
 │
-├── reports/
+├── docs/reports/
 ├── replays/
 ├── data/official/
 ├── engine/
@@ -97,7 +97,7 @@
 
 - `CURRENT_STATE.md`：当前工作候选、已确认基线、最近结果和下一步目标；
 - `DESIGN_PRINCIPLES.md`：从规则研究和历史实验中沉淀出的策略设计原则；
-- `RULES.md`：官方规则和 simulator 行为的可执行摘要，详细证据链接到 `reports/rules/`；
+- `RULES.md`：官方规则和 simulator 行为的可执行摘要，详细证据链接到 `docs/reports/rules/`；
 - `EVALUATION.md`：历史评测结果、关键指标、分母和报告链接；
 - `CHANGELOG.md`：单一 Alakazam 卡组从 V1 到当前版本的重大变化和原因。
 
@@ -131,7 +131,7 @@
 - control、candidate、focused evaluation 和 promotion 的流程；
 - iteration manifest、analysis、decision 和 case 的模板。
 
-具体迭代结果继续放入 `reports/kaggle/` 或其他报告目录，精炼后的结论登记到
+具体迭代结果继续放入 `docs/reports/kaggle/` 或其他报告目录，精炼后的结论登记到
 `codex/index/EVALUATION.md` 和 `codex/index/CHANGELOG.md`。
 
 #### `work/alakazam_v8_<candidate-name>/`
@@ -194,7 +194,7 @@ cg/
 - `analysis/`：生成行动时间线、策略指标和问题摘要；
 - `templates/`：Markdown 或 HTML 复盘报告模板。
 
-原始官方 replay 继续放在 `replays/`，生成的分析报告放在 `reports/`，不把临时 HTML 或大型本地
+原始官方 replay 继续放在 `replays/`，生成的分析报告放在 `docs/reports/`，不把临时 HTML 或大型本地
 可视化输出写入当前候选提交目录。
 
 ## 4. 迁移边界和顺序

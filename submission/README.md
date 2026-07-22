@@ -5,15 +5,6 @@
 - `official_water/`：官方水系 starter baseline；
 - `alakazam_v1/`：胡地 V1 baseline。
 
-每个历史目录都包含自己的 `main.py`、`deck.csv` 和 `cg/`。打包时脚本优先读取 `work/<name>/`，找不到时回退到 `submission/<name>/`，产物写入 `submission/dist/`：
-
-```bash
-bash scripts/package_submission.sh alakazam_v1
-bash scripts/package_submission.sh official_water
-```
-
-当前候选示例：
-
-```bash
-bash scripts/package_submission.sh alakazam_v8_luna_deck_opt
-```
+每个历史目录都包含自己的 `main.py`、`deck.csv` 和 `cg/`。旧的通用打包 wrapper 已随规则
+代理流程一起移除；这些目录现在作为历史源包保留，不再通过根目录 `scripts/` 自动打包。
+当前训练产生的候选应进入 `../work/`，并先通过 `python3 -m evaluation validate <package>`。

@@ -15,7 +15,7 @@
 - submission/ 保存历史完整提交；打包产物统一写入 submission/dist/。
 - 压缩包顶层必须是 main.py、deck.csv 和 cg/。
 - data/official/ 和 engine/source/ 保持只读，本计划不修改策略行为、卡组和官方引擎。
-- 详细报告继续放在 reports/，官方 replay 继续放在 replays/，本地临时输出写入 /tmp。
+- 详细报告继续放在 docs/reports/，官方 replay 继续放在 replays/，本地临时输出写入 /tmp。
 - 除非用户显式要求，不执行 git commit。
 
 ## Scope
@@ -137,7 +137,7 @@
 
     mkdir -p codex/index codex/design work/docs/decisions work/auto-iteration/templates
 
-- [ ] Step 2: 编写 codex/index/。RULES.md 链接 reports/rules/；EVALUATION.md 链接 reports/kaggle/；CHANGELOG.md 按 V1 至 V8 记录卡组变化、策略变化、评测结论和来源；CURRENT_STATE.md 记录当前候选、基线和下一目标。
+- [ ] Step 2: 编写 codex/index/。RULES.md 链接 docs/reports/rules/；EVALUATION.md 链接 docs/reports/kaggle/；CHANGELOG.md 按 V1 至 V8 记录卡组变化、策略变化、评测结论和来源；CURRENT_STATE.md 记录当前候选、基线和下一目标。
 
 - [ ] Step 3: 编写 work/docs/。DECK_NOTES.md 和 STRATEGY.md 只描述当前候选的设计，CURRENT_OBJECTIVES.md 记录本轮目标；这些文件不进入打包包体。
 
@@ -147,7 +147,7 @@
 
     python3 -m json.tool work/auto-iteration/templates/manifest.json >/dev/null
     python3 -m json.tool work/auto-iteration/templates/case.json >/dev/null
-    rg -n 'reports/|submission/|control|candidate|case_status' codex/index work/auto-iteration
+    rg -n 'docs/reports/|submission/|control|candidate|case_status' codex/index work/auto-iteration
     git diff --check
 
 ---
@@ -238,7 +238,7 @@
 
 - [ ] Step 2: 使用 git mv 移动实现；原 scripts 文件只 re-export 新模块并保留 if __name__ == '__main__' 的 CLI 调用。
 
-- [ ] Step 3: 编写 evaluation/README.md，明确评测代码在本仓库、详细结果在 reports/、原始 trace 不进入当前候选。
+- [ ] Step 3: 编写 evaluation/README.md，明确评测代码在本仓库、详细结果在 docs/reports/、原始 trace 不进入当前候选。
 
 - [ ] Step 4: 验证。
 
@@ -283,7 +283,7 @@
 
 **Files:**
 
-- Modify: AGENTS.md、README.md、reports/README.md、docs/replay-visualization.md
+- Modify: AGENTS.md、README.md、docs/reports/README.md、docs/replay-visualization.md
 - Move: docs/superpowers/specs/ to codex/design/specs/；docs/superpowers/plans/ to codex/design/plans/，仅在 live links 更新后执行
 
 - [ ] Step 1: 用 rg 检查当前入口中的旧路径。

@@ -60,7 +60,7 @@ def _extract_with_source(record: object) -> tuple[str, list[dict[str, Any]]]:
                 if isinstance(item, dict) and item.get("visualize"):
                     return "kaggle-steps", _validate_frames(item["visualize"], "Kaggle steps")
     raise ReplayFormatError(
-        "回放没有 visualize 帧；旧 trace 需要用 --visualize-output 重新生成"
+        "回放没有 visualize 帧；旧 trace 无法回放，请从原运行器重新导出带帧回放"
     )
 
 

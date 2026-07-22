@@ -258,15 +258,15 @@ max_damage = max_hand_size * 20
 
 本轮新增 notebook 原文件：
 
-- `reports/kaggle/notebooks/ryotasueyoshi-rule-based-not-psychic-alakazam-best-5th-v4.ipynb`
-- `reports/kaggle/notebooks/ryotasueyoshi-alakazam-deck-best-5th-place-v1.ipynb`
-- `reports/kaggle/notebooks/heiseimikiko-why-alakazam-is-a-good-baseline-for-ai-v2.ipynb`
-- `reports/kaggle/notebooks/naoto714-alakazam-mirror-setup-speed-en-v2.ipynb`
-- `reports/kaggle/notebooks/naoto714-alakazam-no-tech-pivot-ja-v1.ipynb`
+- `docs/reports/kaggle/notebooks/ryotasueyoshi-rule-based-not-psychic-alakazam-best-5th-v4.ipynb`
+- `docs/reports/kaggle/notebooks/ryotasueyoshi-alakazam-deck-best-5th-place-v1.ipynb`
+- `docs/reports/kaggle/notebooks/heiseimikiko-why-alakazam-is-a-good-baseline-for-ai-v2.ipynb`
+- `docs/reports/kaggle/notebooks/naoto714-alakazam-mirror-setup-speed-en-v2.ipynb`
+- `docs/reports/kaggle/notebooks/naoto714-alakazam-no-tech-pivot-ja-v1.ipynb`
 
 上一轮已保存：
 
-- `reports/kaggle/notebooks/tientrum-search-augmented-heuristic-agent-alakazam-v26.ipynb`
+- `docs/reports/kaggle/notebooks/tientrum-search-augmented-heuristic-agent-alakazam-v26.ipynb`
 
 ## 来源
 

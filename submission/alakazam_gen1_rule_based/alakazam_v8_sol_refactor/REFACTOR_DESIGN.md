@@ -11,7 +11,7 @@
 - [`DECK_NOTES.md`](DECK_NOTES.md)：V8 实际卡表和逐张卡牌语义；
 - [`STRATEGY.md`](STRATEGY.md)：现有 V7 AutoIter 继承策略和 Item Lock 边界；
 - [`CURRENT_OBJECTIVES.md`](CURRENT_OBJECTIVES.md)：V8C-01 至 V8C-10 的任务与验证指标；
-- [`pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](../../reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)：规则硬约束和 V6 已确认语义。
+- [`pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](../../../docs/reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)：规则硬约束和 V6 已确认语义。
 
 目标不是让 Agent 更频繁地使用某一张牌，而是让它在每个己方回合结束时，都已经
 完成本回合仍然有价值的准备，并把攻击作为经过检查的不可逆提交。

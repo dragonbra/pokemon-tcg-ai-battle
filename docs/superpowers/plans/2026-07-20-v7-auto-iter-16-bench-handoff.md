@@ -56,9 +56,9 @@
 ### Task 2: 记录 advisor、指标和评测结果
 
 **Files:**
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-16/advisor.md`
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-16/decision.md`
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-16/metrics.json`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-16/advisor.md`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-16/decision.md`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-16/metrics.json`
 - Modify: `submission/alakazam_v7_auto_iter/ITER_PROCESS.md`
 - Modify: `submission/alakazam_v7_auto_iter/STRATEGY.md`
 

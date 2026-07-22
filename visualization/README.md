@@ -30,22 +30,14 @@ python3 -m visualization.replay.cli path/to/replay.json \
   --viewer-url https://example.test/Visualizer/Replay/0
 ```
 
-## 生成本地可视化 replay
+## 本地可视化 replay
 
-普通本地 smoke test 仍然只保存轻量 trace。需要浏览器回放时显式增加 `--visualize-output`：
+根目录不再提供一次性本地对局 wrapper。需要生成本地回放时，调用方必须在对局结束前
+直接从 engine 导出非空 `visualize` 帧；仅有 observation/action 的轻量 trace 无法事后还原
+卡面。临时回放应写入 `/tmp`，不纳入仓库。
 
-```bash
-./scripts/run_local_battle.sh \
-  --agent0 alakazam_v7 \
-  --agent1 official_water \
-  --output /tmp/ptcg-local-battle.json \
-  --visualize-output /tmp/ptcg-local-battle-visualize.json
-
-python3 -m visualization.replay.cli \
-  /tmp/ptcg-local-battle-visualize.json
-```
-
-可视化输出保留本地 `trace`，并在 engine 帧中补充对应的 observation/action；如果 observation 带有 `current.yourIndex`，action 会放到正确的玩家槽位，方便播放器回放和之后的策略复盘。输出应放在 `/tmp` 等临时目录，不纳入仓库。
+`attach_trace_metadata` 可以把已有 trace 中的 observation/action 补充到对应 engine 帧；
+如果 observation 带有 `current.yourIndex`，action 会放到正确的玩家槽位。
 
 ## 支持的输入
 

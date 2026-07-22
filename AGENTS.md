@@ -10,7 +10,7 @@
 - 每场评测在独立 worker 进程中运行，隔离双方策略的模块级状态、导入缓存和 cg 状态。完整 trace 仅在当前 run 的临时目录保留，结束时默认删除；长期报告最多保留三份被选中的完整 trace，只有调试时才使用 `--keep-temp`。
 - AutoIteration 使用 `--metric-profile auto_iteration_v8_setup_relay`（当前 revision 2）生成语义化完整报告；报告按结果护栏、阶段一二回合基础能力、阶段二 Post-KO 接力、阶段三攻击质量和辅助审计分组，同时保留原始 metric payload。使用步骤、产物和调用边界见 [`evaluation/HANDOFF.md`](evaluation/HANDOFF.md)。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
-- `notes/`、`reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
+- `notes/`、`docs/reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
 
 ## RL 设计文档同步约定
 
@@ -22,7 +22,7 @@
 
 ## 宝可梦 TCG 规则学习长期记忆
 
-详细证据见 [`reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)，官方规则书为 [Pokémon TCG Rules](https://www.pokemon.com/static-assets/content-assets/cms2/pdf/trading-card-game/rulebook/par_rulebook_en.pdf)。后续新会话设计策略时，必须同时遵守下面的官方规则和已确认的策略语义。
+详细证据见 [`docs/reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](docs/reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)，官方规则书为 [Pokémon TCG Rules](https://www.pokemon.com/static-assets/content-assets/cms2/pdf/trading-card-game/rulebook/par_rulebook_en.pdf)。后续新会话设计策略时，必须同时遵守下面的官方规则和已确认的策略语义。
 
 ### 官方规则硬约束
 

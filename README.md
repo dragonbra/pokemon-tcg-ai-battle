@@ -27,7 +27,7 @@
 | `scripts/` | 资产校验、提交打包和本地对局 runner |
 | `visualization/` | replay 可视化核心、外部 viewer launcher 和使用说明 |
 | `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
-| `reports/` | 调研结论、卡组分析和实现任务书 |
+| `docs/reports/` | 调研结论、卡组分析和实现任务书 |
 | `experiments/` | 后续实验协议与结果模板 |
 | `replays/` | Kaggle 官方 Episode replay 和 agent log；本地临时回放不保存 |
 

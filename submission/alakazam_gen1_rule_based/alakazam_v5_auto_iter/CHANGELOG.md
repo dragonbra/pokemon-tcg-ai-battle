@@ -13,7 +13,7 @@
 - 正式评测：每个对手 30 局，共 480 局；每隔一局交换先后手
 - 引擎：`submission/alakazam_v5_auto_iter/cg/libcg.dylib`，通过
   `eval/alakazam_replay.py` 加载；结果不使用固定随机种子
-- 结果：`reports/kaggle/alakazam-v5-auto-iter/baseline-v0-full/summary.json`
+- 结果：`docs/reports/kaggle/alakazam-v5-auto-iter/baseline-v0-full/summary.json`
 
 ### 成绩
 
@@ -51,7 +51,7 @@
 正式基线的首要风险是 `kiyotah_iono`、`kiyotah_dragapult`、
 `kokinn_search` 和 `penguin_915`。对最弱对局额外保存了 5 个 opponent、每个 4 局
 的 full trace，路径为：
-`reports/kaggle/alakazam-v5-auto-iter/baseline-v0-traces/`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/baseline-v0-traces/`。
 
 现阶段证据支持以下第一轮假设：连续攻击线不足是主要问题；仅有 Bench Pokémon
 并不代表下一回合有可攻击的 Abra/Kadabra/Alakazam。Iono 对局尤其表现为牌库仍有
@@ -88,7 +88,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 eval/alakazam_replay.py \
 ### 完整评测
 
 协议保持 v0：16 个对手 × 30 局、交替先后手、同一 `libcg.dylib`。结果文件：
-`reports/kaggle/alakazam-v5-auto-iter/iter-1-poffin-continuity/summary.json`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-1-poffin-continuity/summary.json`。
 
 | 指标 | v0 | v1 | 变化 |
 |---|---:|---:|---:|
@@ -121,7 +121,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 eval/alakazam_replay.py \
 ### 复盘与准入判断
 
 对 v1 的 5 个重点 opponent 另存了每个 4 局 full trace：
-`reports/kaggle/alakazam-v5-auto-iter/iter-1-poffin-continuity-traces/`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-1-poffin-continuity-traces/`。
 Iono 仍是主要瓶颈，部分失败在第一次空 Active 时已有 1–2 只 ready attacker，
 说明仅放宽 Poffin 目标不足以解决后续两次 KO 的连续接力。
 
@@ -141,7 +141,7 @@ Dudunsparce；否则继续保留进化/能量线路。该改动建立在 v1 的 
 ### 评测结果
 
 完整协议仍为 16 个对手 × 30 局。结果文件：
-`reports/kaggle/alakazam-v5-auto-iter/iter-2-hilda-continuity/summary.json`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-2-hilda-continuity/summary.json`。
 
 | 指标 | v1 | v2 | 变化 |
 |---|---:|---:|---:|
@@ -170,7 +170,7 @@ Hilda 第二段搜索只有在 ready attacker 至少 2 只时才优先拿 Enrich
 ### 评测结果
 
 结果文件：
-`reports/kaggle/alakazam-v5-auto-iter/iter-3-hilda-energy-continuity/summary.json`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-3-hilda-energy-continuity/summary.json`。
 
 | 指标 | v1 | v3 | 变化 |
 |---|---:|---:|---:|
@@ -199,7 +199,7 @@ Hilda 的 Enriching Energy 条件，除非有更细的对手状态证据。
 ### 评测结果
 
 结果文件：
-`reports/kaggle/alakazam-v5-auto-iter/iter-4-retreat-handoff/summary.json`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-4-retreat-handoff/summary.json`。
 
 | 对手 | v1 | v4 | 变化 |
 |---|---:|---:|---:|
@@ -224,7 +224,7 @@ v4 的 `kiyotah_iono` 为 13.3%，没有解决主要瓶颈；总体结果也低�
 ### 评测结果
 
 结果文件：
-`reports/kaggle/alakazam-v5-auto-iter/iter-5-prize-reserve/summary.json`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-5-prize-reserve/summary.json`。
 
 | 指标 | v1 | v5 | 变化 |
 |---|---:|---:|---:|
@@ -251,7 +251,7 @@ Reserve gate 反而提前阻断了这些动作。由于平均胜率下降且主�
 
 ### 完整评测
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-6-fez-recovery/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-6-fez-recovery/summary.json`。
 
 | 指标 | v1 | v6 | 变化 |
 |---|---:|---:|---:|
@@ -262,7 +262,7 @@ Reserve gate 反而提前阻断了这些动作。由于平均胜率下降且主�
 
 重点对手：`kiyotah_iono` 13.3%、`pilkwang_v2` 33.3%、`penguin_915` 30.0%、
 `kokinn_search` 40.0%、`kacchan_anti_wall` 70.0%。重点 full trace 保存在
-`reports/kaggle/alakazam-v5-auto-iter/iter-6-fez-recovery-traces/`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-6-fez-recovery-traces/`。
 
 ### 复盘与准入判断
 
@@ -282,7 +282,7 @@ Reserve gate 反而提前阻断了这些动作。由于平均胜率下降且主�
 
 ### 完整评测
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-7-retreat-guard/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-7-retreat-guard/summary.json`。
 
 | 指标 | v6 | v7 | 变化 |
 |---|---:|---:|---:|
@@ -306,7 +306,7 @@ Energy 的保护条件之前，允许 Fezandipiti 的三张牌恰好把 Powerful
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-8-fez-lethal/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-8-fez-lethal/summary.json`。
 
 | 指标 | v7 | v8 | 变化 |
 |---|---:|---:|---:|
@@ -328,7 +328,7 @@ Energy 的保护条件之前，允许 Fezandipiti 的三张牌恰好把 Powerful
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-9-xerosic-pressure/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-9-xerosic-pressure/summary.json`。
 
 | 指标 | v7 | v9 | 变化 |
 |---|---:|---:|---:|
@@ -351,7 +351,7 @@ Battle Cage、Night Stretcher、Wondrous Patch、Sacred Ash 和 Lana's Aid 的�
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-10-deck-safety/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-10-deck-safety/summary.json`。
 
 | 指标 | v7 | v10 | 变化 |
 |---|---:|---:|---:|
@@ -375,7 +375,7 @@ Alakazam 进化的可见线路放行。
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-11-deck-hand-safety/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-11-deck-hand-safety/summary.json`。
 
 | 指标 | v7 | v11 | 变化 |
 |---|---:|---:|---:|
@@ -396,7 +396,7 @@ Alakazam 进化的可见线路放行。
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-12-fourth-dunsparce/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-12-fourth-dunsparce/summary.json`。
 
 | 指标 | v7 | v12 | 变化 |
 |---|---:|---:|---:|
@@ -418,7 +418,7 @@ Alakazam 进化的可见线路放行。
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-13-emergency-setup/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-13-emergency-setup/summary.json`。
 
 | 指标 | v7 | v13 | 变化 |
 |---|---:|---:|---:|
@@ -443,7 +443,7 @@ Alakazam 进化的可见线路放行。
 
 ### 完整评测
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-14-prize-values/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-14-prize-values/summary.json`。
 
 | 指标 | v7 | v14 | 变化 |
 |---|---:|---:|---:|
@@ -467,7 +467,7 @@ Alakazam 进化的可见线路放行。
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-15-extra-psychic/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-15-extra-psychic/summary.json`。
 
 | 指标 | v14 | v15 | 变化 |
 |---|---:|---:|---:|
@@ -492,7 +492,7 @@ Energy、Bench 仍有未充能攻击线时，选项顺序可能导致再次给 A
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-16-enriching-guard/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-16-enriching-guard/summary.json`。
 
 | 指标 | v14 | v16 | 变化 |
 |---|---:|---:|---:|
@@ -518,7 +518,7 @@ Bench 有 Fez、对手仍有超过两张 Prize、没有直接 Alakazam 路线，
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-17-fez-low-hand/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-17-fez-low-hand/summary.json`。
 
 | 指标 | v14 | v17 | 变化 |
 |---|---:|---:|---:|
@@ -544,7 +544,7 @@ Energy 时触发。主行动的能量选择、牌表和其他策略保持不变�
 
 ### 完整评测
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-18-effect-energy-type/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-18-effect-energy-type/summary.json`。
 
 | 指标 | v14 | v18 | 变化 |
 |---|---:|---:|---:|
@@ -569,7 +569,7 @@ Drakloak 或 Dragapult ex 时，把 Battle Cage 的主行动优先级提高到�
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-19-dragapult-cage/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-19-dragapult-cage/summary.json`。
 
 | 指标 | v18 | v19 | 变化 |
 |---|---:|---:|---:|
@@ -592,7 +592,7 @@ Battle Cage 提前到通用行动之前；开局没有攻击线时不触发。
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-20-ready-cage/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-20-ready-cage/summary.json`。
 
 | 指标 | v18 | v20 | 变化 |
 |---|---:|---:|---:|
@@ -615,7 +615,7 @@ v18 的 Dragapult trace 显示，对手 Active Dragapult ex（320 HP）常常无
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-21-dragapult-boss/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-21-dragapult-boss/summary.json`。
 
 | 指标 | v18 | v21 | 变化 |
 |---|---:|---:|---:|
@@ -640,7 +640,7 @@ v18 的 Dragapult trace 显示，对手 Active Dragapult ex（320 HP）常常无
 
 ### Control run
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-22-hammer-gate/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-22-hammer-gate/summary.json`。
 
 | 指标 | v18 | v22 control |
 |---|---:|---:|
@@ -661,8 +661,8 @@ v18 的 Dragapult trace 显示，对手 Active Dragapult ex（320 HP）常常无
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-23-hammer-gate/summary.json`；
-补充 trace：`reports/kaggle/alakazam-v5-auto-iter/iter-23-focus-traces/`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-23-hammer-gate/summary.json`；
+补充 trace：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-23-focus-traces/`。
 
 | 指标 | v18 | v23 | 变化 |
 |---|---:|---:|---:|
@@ -689,7 +689,7 @@ Energy 仅提供无色，预计不应与对手攻击能量同等处理。Bench �
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-24-attack-relevant-hammer/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-24-attack-relevant-hammer/summary.json`。
 
 | 指标 | v18 | v24 | 变化 |
 |---|---:|---:|---:|
@@ -713,8 +713,8 @@ Active、牌表和攻击目标逻辑不变。
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-25-kadabra-handoff/summary.json`；
-补充 trace：`reports/kaggle/alakazam-v5-auto-iter/iter-25-focus-traces/`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-25-kadabra-handoff/summary.json`；
+补充 trace：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-25-focus-traces/`。
 
 | 指标 | v18 | v25 | 变化 |
 |---|---:|---:|---:|
@@ -738,8 +738,8 @@ Supporter。v26 将该 fallback 改到 END 之后，保留值得压手时的优�
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-26-xerosic-guard/summary.json`；
-补充 trace：`reports/kaggle/alakazam-v5-auto-iter/iter-26-focus-traces/`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-26-xerosic-guard/summary.json`；
+补充 trace：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-26-focus-traces/`。
 
 | 指标 | v18 | v26 | 变化 |
 |---|---:|---:|---:|
@@ -762,9 +762,9 @@ ready 判断统一为 `_has_psychic_energy(active)`，Dunsparce 线仍使用通�
 
 ### 完整评测与 control 对比
 
-候选结果：`reports/kaggle/alakazam-v5-auto-iter/iter-27-psychic-ready/summary.json`；
-focus trace：`reports/kaggle/alakazam-v5-auto-iter/iter-27-focus-traces/`；同协议的
-v18 control：`reports/kaggle/alakazam-v5-auto-iter/iter-27-control/summary.json`。
+候选结果：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-27-psychic-ready/summary.json`；
+focus trace：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-27-focus-traces/`；同协议的
+v18 control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-27-control/summary.json`。
 
 | 指标 | v27 candidate | v27 control | 变化 |
 |---|---:|---:|---:|
@@ -789,8 +789,8 @@ Poffin 的卡牌选择、牌表、能量和 Hilda 逻辑。
 
 ### 完整评测与同协议 control
 
-候选结果：`reports/kaggle/alakazam-v5-auto-iter/iter-28-poffin-ready-gate/summary.json`；
-control 结果：`reports/kaggle/alakazam-v5-auto-iter/iter-28-control/summary.json`。
+候选结果：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-28-poffin-ready-gate/summary.json`；
+control 结果：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-28-control/summary.json`。
 
 | 指标 | v28 candidate | v28 control | 变化 |
 |---|---:|---:|---:|
@@ -806,8 +806,8 @@ control 结果：`reports/kaggle/alakazam-v5-auto-iter/iter-28-control/summary.j
 
 ### 完整评测
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-30-candidate/summary.json`；
-同协议 control：`reports/kaggle/alakazam-v5-auto-iter/iter-30-control/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-30-candidate/summary.json`；
+同协议 control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-30-control/summary.json`。
 
 | 指标 | v30 candidate（v28） | v30 control（v27） | 变化 |
 |---|---:|---:|---:|
@@ -831,7 +831,7 @@ Poffin 主行动 gate 没有稳定改善关键 Dragapult/Iono 对局，已回退
 
 ### 完整评测与回退
 
-结果文件：`reports/kaggle/alakazam-v5-auto-iter/iter-29-recovery-abra/summary.json`。
+结果文件：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-29-recovery-abra/summary.json`。
 
 | 指标 | v28 | v29 | 变化 |
 |---|---:|---:|---:|
@@ -853,8 +853,8 @@ Dudunsparce 的 Run Away Draw；但原分数 34 仍高于 `END` 的 99，实际�
 
 ### 完整评测与同协议 control
 
-候选结果：`reports/kaggle/alakazam-v5-auto-iter/iter-31-dudunsparce-guard/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-31-control/summary.json`。
+候选结果：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-31-dudunsparce-guard/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-31-control/summary.json`。
 
 | 指标 | v31 candidate | v31 control | 变化 |
 |---|---:|---:|---:|
@@ -872,8 +872,8 @@ candidate 的 `kiyotah_dragapult` 为 10/30、`kiyotah_iono` 为 7/30，较 cont
 
 ### 完整评测与同协议 control
 
-候选结果：`reports/kaggle/alakazam-v5-auto-iter/iter-32-boss-guard/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-32-control/summary.json`。
+候选结果：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-32-boss-guard/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-32-control/summary.json`。
 
 | 指标 | v32 candidate | v32 control | 变化 |
 |---|---:|---:|---:|
@@ -895,8 +895,8 @@ control，以确认 v32 的 +27 胜是否只是随机批次差异。
 
 ### 独立重复结果
 
-候选：`reports/kaggle/alakazam-v5-auto-iter/iter-33-candidate/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-33-control/summary.json`。
+候选：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-33-candidate/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-33-control/summary.json`。
 
 | 指标 | v33 candidate | v33 control | 变化 |
 |---|---:|---:|---:|
@@ -919,8 +919,8 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-33-control/summary.json`。
 
 ### 完整评测与同协议 control
 
-候选结果：`reports/kaggle/alakazam-v5-auto-iter/iter-34-xerosic-guard/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-34-control/summary.json`。
+候选结果：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-34-xerosic-guard/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-34-control/summary.json`。
 
 | 指标 | v34 candidate | v34 control | 变化 |
 |---|---:|---:|---:|
@@ -942,8 +942,8 @@ candidate，并以同时恢复两个旧 fallback 分数的版本作为 control�
 
 ### 完整评测与回退
 
-candidate：`reports/kaggle/alakazam-v5-auto-iter/iter-35-candidate/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-35-control/summary.json`。
+candidate：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-35-candidate/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-35-control/summary.json`。
 
 | 指标 | v35 candidate（双 guard） | v35 control（双回退） | 变化 |
 |---|---:|---:|---:|
@@ -967,8 +967,8 @@ Alakazam 的抽牌能力原 fallback 分数为 55，仍高于 `END` 的 99。v36
 
 ### 完整评测与回退
 
-candidate：`reports/kaggle/alakazam-v5-auto-iter/iter-36-blocked-draw-guard/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-36-control/summary.json`。
+candidate：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-36-blocked-draw-guard/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-36-control/summary.json`。
 
 | 指标 | v36 candidate | v36 control | 变化 |
 |---|---:|---:|---:|
@@ -992,8 +992,8 @@ END 之后；Enriching→Dudunsparce 的安全抽牌分支和所有 Psychic Ener
 
 ### 完整评测与同协议 control
 
-候选结果：`reports/kaggle/alakazam-v5-auto-iter/iter-37-enriching-guard/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-37-control/summary.json`。
+候选结果：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-37-enriching-guard/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-37-control/summary.json`。
 
 | 指标 | v37 candidate | v37 control | 变化 |
 |---|---:|---:|---:|
@@ -1011,7 +1011,7 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-37-control/summary.json`。
 ### Trace 复盘与准入判断
 
 另外保存了 5 个重点对手各 4 局 full trace：
-`reports/kaggle/alakazam-v5-auto-iter/iter-37-focus-traces/`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-37-focus-traces/`。
 失败样本中 14 局有 10 局最多只有 1 只带 Psychic Energy 的 Abra 线攻击者，
 第一只 Active 被击倒时有 11 局 ready 数为 0；这与“场上有 Abra/Kadabra 不等于
 下一回合能攻击”的诊断一致。v37 的改动没有引入非法动作，也没有破坏安全的
@@ -1030,8 +1030,8 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-37-control/summary.json`。
 
 ### 完整评测与同协议 control
 
-候选：`reports/kaggle/alakazam-v5-auto-iter/iter-38-hilda-guard/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-38-control/summary.json`。
+候选：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-38-hilda-guard/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-38-control/summary.json`。
 
 | 指标 | v38 candidate | v38 control | 变化 |
 |---|---:|---:|---:|
@@ -1048,7 +1048,7 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-38-control/summary.json`。
 ### Trace 复盘与回退
 
 候选重点 trace 位于
-`reports/kaggle/alakazam-v5-auto-iter/iter-38-focus-traces/`。16 局定向 trace 中
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-38-focus-traces/`。16 局定向 trace 中
 13 局失败；失败样本仍反复出现 Active 被击倒时 ready attacker 为 0 或最多只有
 1 只，说明 Hilda 安全判定不是主要瓶颈。v38 已主动回退，当前代码保持 v37
 Enriching guard 与原 `_attack_security()`。
@@ -1066,8 +1066,8 @@ Enriching guard 与原 `_attack_security()`。
 
 ### 完整评测与同协议 control
 
-候选：`reports/kaggle/alakazam-v5-auto-iter/iter-39-attack-id/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-38-control/summary.json`。
+候选：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-39-attack-id/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-38-control/summary.json`。
 
 | 指标 | v39 candidate | v39 control | 变化 |
 |---|---:|---:|---:|
@@ -1077,7 +1077,7 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-38-control/summary.json`。
 | 我方 agent error | 0 | 0 | 无变化 |
 
 候选在 `kiyotah_dragapult` 为 4/30、`kiyotah_iono` 为 3/30，均未改善主要瓶颈；
-定向 trace `reports/kaggle/alakazam-v5-auto-iter/iter-39-focus-traces/` 中未发现
+定向 trace `docs/reports/kaggle/alakazam-v5-auto-iter/iter-39-focus-traces/` 中未发现
 非法动作，Trading Places 的 attack ID 分支也按预期工作，但本批没有转化为胜场。
 该规则修正暂不纳入当前策略，已回退到 v37 状态；保留 v39 报告作为后续在更大
 样本或出现 Dunsparce 误判样本时重测的依据。
@@ -1096,7 +1096,7 @@ Fez 抽牌逻辑。
 第一次目录 `iter-40-recovery-guard/` 因回退 v39 时遗漏 Boss helper 的局部变量，
 出现 384 局 `NameError: target is not defined`，判定为无效运行，不纳入统计。
 修复后有效候选结果为：
-`reports/kaggle/alakazam-v5-auto-iter/iter-40-recovery-guard-rerun/summary.json`；
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-40-recovery-guard-rerun/summary.json`；
 对照沿用同协议 `iter-38-control/summary.json`。
 
 | 指标 | v40 candidate | v40 control | 变化 |
@@ -1106,7 +1106,7 @@ Fez 抽牌逻辑。
 | 有效胜率（排除未完成） | 59.8% | 59.6% | +0.2pp |
 | 我方 agent error | 0 | 0 | 无变化 |
 
-重点 trace：`reports/kaggle/alakazam-v5-auto-iter/iter-40-focus-traces/`。定向失败
+重点 trace：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-40-focus-traces/`。定向失败
 仍主要表现为第一次 Active 被击倒时 ready attacker 为 0 或只有 1 只；
 `kiyotah_dragapult` 为 8/30、`kiyotah_iono` 为 5/30，均低于 control 的 10/30、
 6/30。候选的 +3 胜不足以证明恢复 guard 稳健，且若干强势对手回退，已主动回退
@@ -1128,11 +1128,11 @@ v40，当前代码恢复为 v37 基线。
 ### 完整评测、control 与独立重复
 
 第一批 candidate：
-`reports/kaggle/alakazam-v5-auto-iter/iter-41-low-deck-relax/summary.json`；
-同协议 control：`reports/kaggle/alakazam-v5-auto-iter/iter-41-control/summary.json`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-41-low-deck-relax/summary.json`；
+同协议 control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-41-control/summary.json`。
 为排除随机洗牌影响，随后又运行一批独立 candidate：
-`reports/kaggle/alakazam-v5-auto-iter/iter-41-candidate-repeat/summary.json`，以及独立
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-41-control-repeat/summary.json`。
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-41-candidate-repeat/summary.json`，以及独立
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-41-control-repeat/summary.json`。
 
 | 指标 | 第一批 candidate | 第一批 control | 独立 candidate | 独立 control |
 |---|---:|---:|---:|---:|
@@ -1148,7 +1148,7 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-41-control-repeat/summary.j
 
 ### Trace 复盘与准入判断
 
-重点 trace：`reports/kaggle/alakazam-v5-auto-iter/iter-41-focus-traces/`，5 个
+重点 trace：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-41-focus-traces/`，5 个
 对手各 4 局。trace 未发现非法动作、牌库耗尽或我方异常；失败仍主要是第一只
 Active 被击倒时没有带 Psychic Energy 的接力攻击者。由于单变量规则假设在两批
 对照中方向一致，v41 暂保留为当前基线；后续候选必须以 v41 为 control，不能再以
@@ -1165,8 +1165,8 @@ Active 被击倒时没有带 Psychic Energy 的接力攻击者。由于单变量
 
 ### 完整评测与同协议 control
 
-候选：`reports/kaggle/alakazam-v5-auto-iter/iter-42-evolution-legal/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-42-control/summary.json`。
+候选：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-42-evolution-legal/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-42-control/summary.json`。
 
 | 指标 | v42 candidate | v42 control | 变化 |
 |---|---:|---:|---:|
@@ -1177,7 +1177,7 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-42-control/summary.json`。
 
 候选的 `kiyotah_dragapult` 为 5/30，与 control 持平；`kiyotah_iono` 虽为 7/30，
 但整体在多个对手回退。重点 trace：
-`reports/kaggle/alakazam-v5-auto-iter/iter-42-focus-traces/`，失败仍集中于
+`docs/reports/kaggle/alakazam-v5-auto-iter/iter-42-focus-traces/`，失败仍集中于
 ready attacker 数量不足，而不是首回合误判本身。v42 已主动回退，当前代码恢复为
 v41 的低牌库 Dudunsparce guard。
 
@@ -1192,8 +1192,8 @@ Alakazam 时，换位才有即时收益。候选在主攻击评分中将“没�
 
 ### 完整评测与同协议 control
 
-候选：`reports/kaggle/alakazam-v5-auto-iter/iter-43-trading-guard/summary.json`；
-control：`reports/kaggle/alakazam-v5-auto-iter/iter-43-control/summary.json`。
+候选：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-43-trading-guard/summary.json`；
+control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-43-control/summary.json`。
 
 | 指标 | v43 candidate | v43 control | 变化 |
 |---|---:|---:|---:|
@@ -1204,7 +1204,7 @@ control：`reports/kaggle/alakazam-v5-auto-iter/iter-43-control/summary.json`。
 
 ### Trace 复盘与回退
 
-候选 trace：`reports/kaggle/alakazam-v5-auto-iter/iter-43-focus-traces/`。该 guard
+候选 trace：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-43-focus-traces/`。该 guard
 确实消除了定向 trace 中无接力的 423 选择，但在部分场面让策略改选普通 20 点攻击
 或 `END`，没有形成 ready 接力；`kiyotah_dragapult` 为 6/30，低于 control 的
 10/30。规则判断本身正确，但动作收益不足，v43 已回退，当前代码保持 v41。
@@ -1225,10 +1225,10 @@ Voltorb/Tadbulb/Wattrel（265/268/270）且确认当前攻击可击倒；其他 
 每批均为 16 个对手 × 30 局 = 480 局、交替先后手；`yakitori_raging_bolt` 的异常是
 对手侧错误，未计为我方 agent error。结果目录：
 
-- candidate：`reports/kaggle/alakazam-v5-auto-iter/iter-44-iono-boss/`
-- 同批 control：`reports/kaggle/alakazam-v5-auto-iter/iter-44-control/`
-- 独立 candidate repeat：`reports/kaggle/alakazam-v5-auto-iter/iter-44-candidate-repeat/`
-- 独立 control repeat：`reports/kaggle/alakazam-v5-auto-iter/iter-44-control-repeat/`
+- candidate：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-44-iono-boss/`
+- 同批 control：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-44-control/`
+- 独立 candidate repeat：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-44-candidate-repeat/`
+- 独立 control repeat：`docs/reports/kaggle/alakazam-v5-auto-iter/iter-44-control-repeat/`
 
 | 指标 | 第一批 candidate | 第一批 control | 独立 candidate | 独立 control |
 |---|---:|---:|---:|---:|

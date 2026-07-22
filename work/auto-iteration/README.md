@@ -65,24 +65,21 @@ AutoIteration 文档只保存研究约定和轻量决策记录。每轮评测结
 `history_iterations/<iteration-id>/`，并由 `history_iterations/index.html` 汇总。
 原始大批 trace 仍放在 `/tmp` 或 replay 目录，不复制进这个目录。
 
-从完整 evaluator trace 生成一轮报告：
+旧的独立报告生成脚本已经退役。当前完整语义报告由 `evaluation` 的 metric profile 直接
+生成，并写入带全局编号的 RL run：
 
 ```bash
-python3 scripts/auto_iteration_report.py \
-  --traces /tmp/<trace-dir> \
-  --history-root work/auto-iteration/history_iterations \
-  --iteration-id iteration-001 \
-  --profile v8-setup-relay \
-  --profile-revision 2 \
-  --label "V8 current baseline" \
-  --change-summary "本轮改动说明" \
-  --decision observe \
-  --agent-label alakazam_v8_current
+python3 -m evaluation run \
+  --candidate work/<candidate-name> \
+  --opponents all \
+  --games 10 \
+  --metric-profile auto_iteration_v8_setup_relay \
+  --output rl/_runs/<run-name>/evaluation
 ```
 
-每轮的 `result.json` 保存可复核的分母、分类、攻击质量惩罚项和按对手胜率；history
-`index.html` 汇总胜率、二回合攻击、过牌、攻击但未拿奖赏和 post-KO 接力，单轮页面再
-展示组件状态和详细分母。二回合和攻击质量主指标仍合并全部对手。当前 trace 无法证明
+`history_iterations/` 保留旧规则策略时期的历史页面，不再由当前工作流重绘。新报告中的
+`metrics.json` 保存可复核的分母、分类、攻击质量惩罚项和按对手胜率，`report.html` 展示
+组件状态和详细分母。二回合和攻击质量主指标仍合并全部对手。当前 trace 无法证明
 弃牌区资源一定存在合法回收选项，因此 `recoverable_discard_miss` 只能作为保守候选，
 不能直接当作 agent 错误；同理，攻击但未拿奖赏只能作为结果惩罚项，原因需要后续
 evaluator 的选项级事实。

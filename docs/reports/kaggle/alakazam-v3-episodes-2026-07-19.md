@@ -5,7 +5,7 @@
 - Submission：`54813215`，文件 `alakazam_v3.tar.gz`。
 - 查询时状态：`COMPLETE`，public score `652.4`。
 - Kaggle 账号在 replay 中显示为 `炽月殿-ptcg糕手`。
-- 原始数据目录：[`replays/kaggle_v3_54813215/`](../../replays/kaggle_v3_54813215/)。
+- 原始数据目录：[`replays/kaggle_v3_54813215/`](../../../replays/kaggle_v3_54813215/)。
 - 本文只分析 Kaggle 官方 Episode；本地 simulator 输出不纳入结论。
 - V3 沿用 V2 的 60 张卡组，本轮主要验证行动排序、Telepath Energy 铺场、Dunsparce
   过牌保护和进化目标选择。
@@ -14,12 +14,12 @@
 
 | Episode | 类型 | 对手 | V3 位置 | 先手 | 结果 | replay steps | 主要终局/观察 |
 |---:|---|---|---:|---:|---|---:|---|
-| [86733922](../../replays/kaggle_v3_54813215/86733922/episode-86733922-replay.json) | public | kyulkyu | 0 | 0 | V3 胜 | 37 | turn 5 Alakazam 以 280 伤害击倒 Crustle |
-| [86733250](../../replays/kaggle_v3_54813215/86733250/episode-86733250-replay.json) | public | wbt | 0 | 0 | V3 负 | 117 | 对带 Mist Energy 的 Crustle 连续造成 0 伤害，turn 19 牌库耗尽 |
-| [86732591](../../replays/kaggle_v3_54813215/86732591/episode-86732591-replay.json) | public | tk | 1 | 0 | V3 负 | 152 | 对手 Boss’s Orders 拉出 Bench 上的 Fezandipiti ex 并完成两奖击倒 |
-| [86731938](../../replays/kaggle_v3_54813215/86731938/episode-86731938-replay.json) | public | Ömer Faruk Yüce | 0 | 0 | V3 胜 | 143 | turn 13 Alakazam 以 600 伤害击倒 Solrock |
-| [86731321](../../replays/kaggle_v3_54813215/86731321/episode-86731321-replay.json) | public | snow_n | 1 | 1 | V3 胜 | 71 | 首只 Alakazam 被击倒后，第二只 Alakazam 在 turn 9 完成反击 |
-| [86730455](../../replays/kaggle_v3_54813215/86730455/episode-86730455-replay.json) | validation self-play | 自己 | 0 | 0 | V3 胜 | 138 | 官方 validation self-play，不计入 public 样本 |
+| [86733922](../../../replays/kaggle_v3_54813215/86733922/episode-86733922-replay.json) | public | kyulkyu | 0 | 0 | V3 胜 | 37 | turn 5 Alakazam 以 280 伤害击倒 Crustle |
+| [86733250](../../../replays/kaggle_v3_54813215/86733250/episode-86733250-replay.json) | public | wbt | 0 | 0 | V3 负 | 117 | 对带 Mist Energy 的 Crustle 连续造成 0 伤害，turn 19 牌库耗尽 |
+| [86732591](../../../replays/kaggle_v3_54813215/86732591/episode-86732591-replay.json) | public | tk | 1 | 0 | V3 负 | 152 | 对手 Boss’s Orders 拉出 Bench 上的 Fezandipiti ex 并完成两奖击倒 |
+| [86731938](../../../replays/kaggle_v3_54813215/86731938/episode-86731938-replay.json) | public | Ömer Faruk Yüce | 0 | 0 | V3 胜 | 143 | turn 13 Alakazam 以 600 伤害击倒 Solrock |
+| [86731321](../../../replays/kaggle_v3_54813215/86731321/episode-86731321-replay.json) | public | snow_n | 1 | 1 | V3 胜 | 71 | 首只 Alakazam 被击倒后，第二只 Alakazam 在 turn 9 完成反击 |
+| [86730455](../../../replays/kaggle_v3_54813215/86730455/episode-86730455-replay.json) | validation self-play | 自己 | 0 | 0 | V3 胜 | 138 | 官方 validation self-play，不计入 public 样本 |
 
 public 样本为 3 胜 2 负。`86730455` 是官方 validation self-play，不能和 public
 对手池结果混合计算。

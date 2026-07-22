@@ -42,8 +42,8 @@
 
 原始 replay：
 
-- [`v5_auto_iter` 10 场](../../../replays/kaggle_v5_auto_iter_54820051/)
-- [`V5` 10 场](../../../replays/kaggle_v5_54820045/)
+- [`v5_auto_iter` 10 场](../../../../replays/kaggle_v5_auto_iter_54820051/)
+- [`V5` 10 场](../../../../replays/kaggle_v5_54820045/)
 - 结构化逐局指标：[`games.json`](games.json)
 - 聚合指标：[`summary.json`](summary.json)
 
@@ -96,16 +96,16 @@ auto 的终局牌库平均少 7.3 张，说明它不是单纯“更幸运地摸�
 
 | Episode | 对手与构筑线索 | 结果 | 首 Alakazam | 首攻 | 首 Alakazam 攻 | Abra 线攻 | 终局牌库 / Prize | 复盘重点 |
 |---:|---|:---:|---:|---:|---:|---:|---:|---|
-| [86817353](../../../replays/kaggle_v5_auto_iter_54820051/episode-86817353-replay.json) | MBOOK：Mega Lucario / Solrock | 胜 | 4 | 4 | 8 | 2 | 17 / 2 | turn 4 已建立；终局对手 Active 为空，但仍有 Bench，非标准 6 Prize 终结 |
-| [86817907](../../../replays/kaggle_v5_auto_iter_54820051/episode-86817907-replay.json) | jam yann：Mist/Spiky Energy 的 Crustle / Mega Kangaskhan | 负 | 5 | 3 | 7 | 4 | 0 / 2 | 有两只 ready attacker，仍在 turn 13 牌库耗尽；是最直接的 draw/Prize 转化失败 |
-| [86818454](../../../replays/kaggle_v5_auto_iter_54820051/episode-86818454-replay.json) | Gregers Rygg：Dragapult | 胜 | 5 | 7 | 7 | 1 | 23 / 1 | turn 7 才主攻，但终局对手 Active 为空；说明不是所有胜局都靠高速攻击 |
-| [86818982](../../../replays/kaggle_v5_auto_iter_54820051/episode-86818982-replay.json) | PokePoke-777：Alakazam mirror | 负 | 6 | 2 | — | 4 | 25 / 5 | 低阶段攻击早，但最终 Active Shaymin、无 ready attacker，Prize race 5–1 失败 |
-| [86819534](../../../replays/kaggle_v5_auto_iter_54820051/episode-86819534-replay.json) | treo_hihihi：Alakazam mirror | 胜 | 6 | 2 | — | 5 | 0 / 4 | turn 18 双方牌库都到 0，属于极限资源局，不应当作普通 Prize race 样本 |
-| [86820080](../../../replays/kaggle_v5_auto_iter_54820051/episode-86820080-replay.json) | hoodrichpirobo：Alakazam mirror | 负 | — | 2 | — | 3 | 30 / 6 | 没有完成 Alakazam；最终 Active Kadabra、无 Bench，属于 setup 失败 |
-| [86820570](../../../replays/kaggle_v5_auto_iter_54820051/episode-86820570-replay.json) | kunihiro：Marnie’s Grimmsnarl | 负 | 4 | 2 | — | 2 | 28 / 4 | 虽然 turn 4 有 Alakazam，终局退回 Dunsparce、ready=0，对手已到 1 Prize |
-| [86821266](../../../replays/kaggle_v5_auto_iter_54820051/episode-86821266-replay.json) | David Tan：Marnie’s Grimmsnarl | 胜 | 6 | 6 | — | 1 | 13 / 2 | 只记录到一次主攻，终局对手 Active 为空；说明 matchup 结果受终局形态影响 |
-| [86824177](../../../replays/kaggle_v5_auto_iter_54820051/episode-86824177-replay.json) | madoka1111：Crustle / Mega Kangaskhan | 胜 | 5 | 3 | 5 | 2 | 12 / 2 | turn 3 先低阶段攻击，turn 5 兑现 Alakazam，并保留 2 个 ready attacker |
-| [86828026](../../../replays/kaggle_v5_auto_iter_54820051/episode-86828026-replay.json) | Water Xiao：Great Tusk / Crustle / Land Collapse | 负 | 9 | 3 | 11 | 1 | 0 / 6 | Alakazam 太晚；终局虽有两只 ready attacker，但没有拿 Prize，牌库先耗尽 |
+| [86817353](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86817353-replay.json) | MBOOK：Mega Lucario / Solrock | 胜 | 4 | 4 | 8 | 2 | 17 / 2 | turn 4 已建立；终局对手 Active 为空，但仍有 Bench，非标准 6 Prize 终结 |
+| [86817907](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86817907-replay.json) | jam yann：Mist/Spiky Energy 的 Crustle / Mega Kangaskhan | 负 | 5 | 3 | 7 | 4 | 0 / 2 | 有两只 ready attacker，仍在 turn 13 牌库耗尽；是最直接的 draw/Prize 转化失败 |
+| [86818454](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86818454-replay.json) | Gregers Rygg：Dragapult | 胜 | 5 | 7 | 7 | 1 | 23 / 1 | turn 7 才主攻，但终局对手 Active 为空；说明不是所有胜局都靠高速攻击 |
+| [86818982](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86818982-replay.json) | PokePoke-777：Alakazam mirror | 负 | 6 | 2 | — | 4 | 25 / 5 | 低阶段攻击早，但最终 Active Shaymin、无 ready attacker，Prize race 5–1 失败 |
+| [86819534](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86819534-replay.json) | treo_hihihi：Alakazam mirror | 胜 | 6 | 2 | — | 5 | 0 / 4 | turn 18 双方牌库都到 0，属于极限资源局，不应当作普通 Prize race 样本 |
+| [86820080](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86820080-replay.json) | hoodrichpirobo：Alakazam mirror | 负 | — | 2 | — | 3 | 30 / 6 | 没有完成 Alakazam；最终 Active Kadabra、无 Bench，属于 setup 失败 |
+| [86820570](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86820570-replay.json) | kunihiro：Marnie’s Grimmsnarl | 负 | 4 | 2 | — | 2 | 28 / 4 | 虽然 turn 4 有 Alakazam，终局退回 Dunsparce、ready=0，对手已到 1 Prize |
+| [86821266](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86821266-replay.json) | David Tan：Marnie’s Grimmsnarl | 胜 | 6 | 6 | — | 1 | 13 / 2 | 只记录到一次主攻，终局对手 Active 为空；说明 matchup 结果受终局形态影响 |
+| [86824177](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86824177-replay.json) | madoka1111：Crustle / Mega Kangaskhan | 胜 | 5 | 3 | 5 | 2 | 12 / 2 | turn 3 先低阶段攻击，turn 5 兑现 Alakazam，并保留 2 个 ready attacker |
+| [86828026](../../../../replays/kaggle_v5_auto_iter_54820051/episode-86828026-replay.json) | Water Xiao：Great Tusk / Crustle / Land Collapse | 负 | 9 | 3 | 11 | 1 | 0 / 6 | Alakazam 太晚；终局虽有两只 ready attacker，但没有拿 Prize，牌库先耗尽 |
 
 ### Auto 的三类失败
 
@@ -122,16 +122,16 @@ auto 的终局牌库平均少 7.3 张，说明它不是单纯“更幸运地摸�
 
 | Episode | 对手与构筑线索 | 结果 | 首 Alakazam | 首攻 | 首 Alakazam 攻 | Abra 线攻 | 终局牌库 / Prize | 复盘重点 |
 |---:|---|:---:|---:|---:|---:|---:|---:|---|
-| [86816242](../../../replays/kaggle_v5_54820045/episode-86816242-replay.json) | Abhi：Marnie’s Grimmsnarl | 负 | — | — | — | 0 | 43 / 6 | 完全没有攻击线，且对手已拿到 3 Prize |
-| [86816792](../../../replays/kaggle_v5_54820045/episode-86816792-replay.json) | PaShm：Crustle / Mega Kangaskhan | 负 | 5 | 7 | — | 1 | 14 / 5 | 建立慢，只有一次 Abra 线攻击，对手到 1 Prize |
-| [86817359](../../../replays/kaggle_v5_54820045/episode-86817359-replay.json) | Dino Xie：Duraludon / Archaludon ex | 胜 | 5 | 3 | 5 | 3 | 23 / 6 | 终局对手 Active 为空、Prize 未推进，属于非标准胜局 |
-| [86817911](../../../replays/kaggle_v5_54820045/episode-86817911-replay.json) | Hawk：Dragapult | 负 | 3 | 17 | 17 | 2 | 17 / 2 | Alakazam 虽早落地，但首攻拖到 turn 17，主攻兑现严重失败 |
-| [86818453](../../../replays/kaggle_v5_54820045/episode-86818453-replay.json) | 中村文彌：Mega Abomasnow / Kyogre | 胜 | 6 | — | — | 0 | 29 / 6 | 对手终局 Active/Bench 为空，非标准 6 Prize 胜局 |
-| [86818992](../../../replays/kaggle_v5_54820045/episode-86818992-replay.json) | half pizza：Mega Froslass / Mega Starmie | 负 | 9 | 5 | — | 4 | 13 / 6 | setup 和主攻都晚，对手到 1 Prize |
-| [86819545](../../../replays/kaggle_v5_54820045/episode-86819545-replay.json) | Ben Desprets：Mega Lucario / Solrock | 负 | — | 4 | — | 3 | 21 / 5 | 没有形成可验证的 Alakazam 主攻，Prize race 5–1 |
-| [86820104](../../../replays/kaggle_v5_54820045/episode-86820104-replay.json) | Climber513：Crustle / Mega Kangaskhan | 负 | 8 | 8 | 8 | 3 | 0 / 2 | 牌库耗尽，仍有 2 Prize；setup 太晚 |
-| [86820648](../../../replays/kaggle_v5_54820045/episode-86820648-replay.json) | Mingzhengxuan Wu：Mega Lucario / Fighting | 负 | — | — | — | 0 | 44 / 6 | 早期完全没有 Alakazam 或攻击，属于开局失败 |
-| [86830447](../../../replays/kaggle_v5_54820045/episode-86830447-replay.json) | what peter：Mega Abomasnow / Kyogre | 负 | 4 | 4 | — | 3 | 17 / 3 | 有攻击线但只推进到对手 1 Prize，未形成连续击倒 |
+| [86816242](../../../../replays/kaggle_v5_54820045/episode-86816242-replay.json) | Abhi：Marnie’s Grimmsnarl | 负 | — | — | — | 0 | 43 / 6 | 完全没有攻击线，且对手已拿到 3 Prize |
+| [86816792](../../../../replays/kaggle_v5_54820045/episode-86816792-replay.json) | PaShm：Crustle / Mega Kangaskhan | 负 | 5 | 7 | — | 1 | 14 / 5 | 建立慢，只有一次 Abra 线攻击，对手到 1 Prize |
+| [86817359](../../../../replays/kaggle_v5_54820045/episode-86817359-replay.json) | Dino Xie：Duraludon / Archaludon ex | 胜 | 5 | 3 | 5 | 3 | 23 / 6 | 终局对手 Active 为空、Prize 未推进，属于非标准胜局 |
+| [86817911](../../../../replays/kaggle_v5_54820045/episode-86817911-replay.json) | Hawk：Dragapult | 负 | 3 | 17 | 17 | 2 | 17 / 2 | Alakazam 虽早落地，但首攻拖到 turn 17，主攻兑现严重失败 |
+| [86818453](../../../../replays/kaggle_v5_54820045/episode-86818453-replay.json) | 中村文彌：Mega Abomasnow / Kyogre | 胜 | 6 | — | — | 0 | 29 / 6 | 对手终局 Active/Bench 为空，非标准 6 Prize 胜局 |
+| [86818992](../../../../replays/kaggle_v5_54820045/episode-86818992-replay.json) | half pizza：Mega Froslass / Mega Starmie | 负 | 9 | 5 | — | 4 | 13 / 6 | setup 和主攻都晚，对手到 1 Prize |
+| [86819545](../../../../replays/kaggle_v5_54820045/episode-86819545-replay.json) | Ben Desprets：Mega Lucario / Solrock | 负 | — | 4 | — | 3 | 21 / 5 | 没有形成可验证的 Alakazam 主攻，Prize race 5–1 |
+| [86820104](../../../../replays/kaggle_v5_54820045/episode-86820104-replay.json) | Climber513：Crustle / Mega Kangaskhan | 负 | 8 | 8 | 8 | 3 | 0 / 2 | 牌库耗尽，仍有 2 Prize；setup 太晚 |
+| [86820648](../../../../replays/kaggle_v5_54820045/episode-86820648-replay.json) | Mingzhengxuan Wu：Mega Lucario / Fighting | 负 | — | — | — | 0 | 44 / 6 | 早期完全没有 Alakazam 或攻击，属于开局失败 |
+| [86830447](../../../../replays/kaggle_v5_54820045/episode-86830447-replay.json) | what peter：Mega Abomasnow / Kyogre | 负 | 4 | 4 | — | 3 | 17 / 3 | 有攻击线但只推进到对手 1 Prize，未形成连续击倒 |
 
 ## 对 V5 Auto Iteration 的策略判断
 

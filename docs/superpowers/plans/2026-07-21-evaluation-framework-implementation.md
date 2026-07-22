@@ -724,7 +724,7 @@ def select_cases(
 
 - [ ] **Step 3: 接入 TraceStore**
 
-只把 selected_game_ids 复制到 reports/evaluation/run_id/traces/；未选完整 trace 在当前 run 临时目录内删除。没有符合条件的 case 时允许 traces 为空，不制造虚假 case。
+只把 selected_game_ids 复制到 docs/reports/evaluation/run_id/traces/；未选完整 trace 在当前 run 临时目录内删除。没有符合条件的 case 时允许 traces 为空，不制造虚假 case。
 
 ~~~bash
 python3 -m pytest tests/test_evaluation_cases.py -q
@@ -803,7 +803,7 @@ python3 -m evaluation run \
   --candidate submission/alakazam_v8 \
   --opponents all \
   --games 30 \
-  --output reports/evaluation
+  --output docs/reports/evaluation
 ~~~
 
 - [ ] **Step 1: 实现 list-opponents 和 validate**
@@ -812,7 +812,7 @@ list-opponents 读取唯一 catalog；validate 接受 package 目录并打印 na
 
 - [ ] **Step 2: 实现 run 参数和输出**
 
-CLI 支持 --candidate、--opponents all 或逗号列表、--games、--output、--control、--no-visualize、--keep-temp、--max-steps、--metric-module。默认对每个 opponent 交替先后手，并写入 reports/evaluation/run_id/manifest.json、summary.json、games.jsonl、metrics.json、cases.jsonl、report.md、report.html、traces/。
+CLI 支持 --candidate、--opponents all 或逗号列表、--games、--output、--control、--no-visualize、--keep-temp、--max-steps、--metric-module。默认对每个 opponent 交替先后手，并写入 docs/reports/evaluation/run_id/manifest.json、summary.json、games.jsonl、metrics.json、cases.jsonl、report.md、report.html、traces/。
 
 - [ ] **Step 3: 保留旧命令的分析和比较能力**
 

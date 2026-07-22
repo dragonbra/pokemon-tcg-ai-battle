@@ -149,16 +149,4 @@ class ReplayAdapterTests(unittest.TestCase):
             )
 
         self.assertEqual(result.returncode, 1)
-        self.assertIn("--visualize-output", result.stderr)
-
-    def test_build_visual_replay_keeps_trace_and_attaches_frames(self):
-        from scripts.run_local_battle import _build_visual_replay
-
-        result = {"agent0": "a", "agent1": "b", "trace": [{"action": [0]}]}
-        frames = [{"state": "initial"}, {"state": "after"}]
-
-        replay = _build_visual_replay(result, frames)
-
-        self.assertEqual(replay["replay_format"], "ptcg-local-v1")
-        self.assertEqual(replay["trace"], result["trace"])
-        self.assertEqual(replay["visualize"][1]["action"], [[0], [0]])
+        self.assertIn("旧 trace 无法回放", result.stderr)

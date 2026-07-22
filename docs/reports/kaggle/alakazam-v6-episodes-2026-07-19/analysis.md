@@ -30,7 +30,7 @@ episode `86874383`。提交的 public score 为 `668.3`。
 - Submission：`54829503`，文件为 `alakazam_v6.tar.gz`。
 - Public episodes：`86881791`、`86881221`、`86880664`、`86880094`、
   `86879518`、`86878963`、`86878402`、`86877819`、`86877253`、`86876715`。
-- 原始官方 replay：[`replays/kaggle_v6_54829503/`](../../../replays/kaggle_v6_54829503/)。
+- 原始官方 replay：[`replays/kaggle_v6_54829503/`](../../../../replays/kaggle_v6_54829503/)。
 - 结构化逐局指标：[`games.json`](games.json)。
 - 逐事件时间线：[`timeline.json`](timeline.json)。
 - 聚合指标：[`summary.json`](summary.json)。
@@ -60,16 +60,16 @@ Alakazam 后，是否知道这一次攻击能否改变胜负状态**。
 
 | Episode | 对手构筑 | 结果 | 首只 Alakazam | 我方攻击回合 | 终局我方 Prize / 牌库 | 复盘标签 |
 |---:|---|:---:|---:|---|---:|---|
-| [86881791](../../../replays/kaggle_v6_54829503/episode-86881791-replay.json) | Team Rocket's Mewtwo / Spidops | 负 | 3 | 4, 14, 16 | 5 / 10 | 高 HP 特殊 matchup，后续攻击未继续取奖 |
-| [86881221](../../../replays/kaggle_v6_54829503/episode-86881221-replay.json) | Alakazam mirror | 负 | 未完成 | 19, 21 | 6 / 13 | 搜索顺序没有形成 Basic 路线 |
-| [86880664](../../../replays/kaggle_v6_54829503/episode-86880664-replay.json) | Mega Lucario | 胜 | 3 | 4, 6, 7, 9, 11 | 2 / 3 | 多次主攻，但终局对手 Active 为空 |
-| [86880094](../../../replays/kaggle_v6_54829503/episode-86880094-replay.json) | Dragapult | 负 | 7 | 7, 12, 14 | 3 / 24 | Iono/手牌压低后仍弱攻 |
-| [86879518](../../../replays/kaggle_v6_54829503/episode-86879518-replay.json) | Dragapult | 胜 | 7 | 3, 5, 7, 17 | 1 / 13 | Abra 线连续攻击，终局对手 Active 为空 |
-| [86878963](../../../replays/kaggle_v6_54829503/episode-86878963-replay.json) | Mega Starmie | 胜 | 3 | 3 | 4 / 31 | 对手 Bench 清空后提前结束 |
-| [86878402](../../../replays/kaggle_v6_54829503/episode-86878402-replay.json) | Crustle wall | 胜 | 3 | 3 | 6 / 40 | 极早终止，没有形成 Prize 结论 |
-| [86877819](../../../replays/kaggle_v6_54829503/episode-86877819-replay.json) | Mega Kangaskhan / Crustle | 胜 | 6 | 2, 5, 6 | 1 / 0 | 牌库归零但对手终局 Active 为空 |
-| [86877253](../../../replays/kaggle_v6_54829503/episode-86877253-replay.json) | Mega Venusaur / Ogerpon | 负 | 4 | 2, 5, 7, 9, 11 | 6 / 16 | 五次非 KO 攻击，没有 Prize 推进 |
-| [86876715](../../../replays/kaggle_v6_54829503/episode-86876715-replay.json) | Mega Lucario | 胜 | 4 | 4, 9, 10 | 1 / 5 | 有主攻和接力，但对手 Active 为空终局 |
+| [86881791](../../../../replays/kaggle_v6_54829503/episode-86881791-replay.json) | Team Rocket's Mewtwo / Spidops | 负 | 3 | 4, 14, 16 | 5 / 10 | 高 HP 特殊 matchup，后续攻击未继续取奖 |
+| [86881221](../../../../replays/kaggle_v6_54829503/episode-86881221-replay.json) | Alakazam mirror | 负 | 未完成 | 19, 21 | 6 / 13 | 搜索顺序没有形成 Basic 路线 |
+| [86880664](../../../../replays/kaggle_v6_54829503/episode-86880664-replay.json) | Mega Lucario | 胜 | 3 | 4, 6, 7, 9, 11 | 2 / 3 | 多次主攻，但终局对手 Active 为空 |
+| [86880094](../../../../replays/kaggle_v6_54829503/episode-86880094-replay.json) | Dragapult | 负 | 7 | 7, 12, 14 | 3 / 24 | Iono/手牌压低后仍弱攻 |
+| [86879518](../../../../replays/kaggle_v6_54829503/episode-86879518-replay.json) | Dragapult | 胜 | 7 | 3, 5, 7, 17 | 1 / 13 | Abra 线连续攻击，终局对手 Active 为空 |
+| [86878963](../../../../replays/kaggle_v6_54829503/episode-86878963-replay.json) | Mega Starmie | 胜 | 3 | 3 | 4 / 31 | 对手 Bench 清空后提前结束 |
+| [86878402](../../../../replays/kaggle_v6_54829503/episode-86878402-replay.json) | Crustle wall | 胜 | 3 | 3 | 6 / 40 | 极早终止，没有形成 Prize 结论 |
+| [86877819](../../../../replays/kaggle_v6_54829503/episode-86877819-replay.json) | Mega Kangaskhan / Crustle | 胜 | 6 | 2, 5, 6 | 1 / 0 | 牌库归零但对手终局 Active 为空 |
+| [86877253](../../../../replays/kaggle_v6_54829503/episode-86877253-replay.json) | Mega Venusaur / Ogerpon | 负 | 4 | 2, 5, 7, 9, 11 | 6 / 16 | 五次非 KO 攻击，没有 Prize 推进 |
+| [86876715](../../../../replays/kaggle_v6_54829503/episode-86876715-replay.json) | Mega Lucario | 胜 | 4 | 4, 9, 10 | 1 / 5 | 有主攻和接力，但对手 Active 为空终局 |
 
 ## 重点败局一：86881221，mirror 中路线来源错误
 
@@ -92,14 +92,14 @@ Alakazam 后，是否知道这一次攻击能否改变胜负状态**。
 ### 为什么 V6 会这样做
 
 当前 Hilda 的搜索分类在
-[`main.py:1160-1171`](../../../submission/alakazam_v6/main.py:1160)；当 Active
+[`main.py:1160-1171`](../../../../submission/alakazam_v6/main.py:1160)；当 Active
 不是 Abra、没有现成直接进化路线、攻击线也没有完成时，默认目标是整个
 `EVOLUTION` 集合，而不是一个有来源的 Basic/Stage 1 路线。这样“拿到 Alakazam”在
 牌面上看起来像 setup，实际上不能落场。
 
 这与宝可梦 TCG 的进化规则直接冲突：Stage 2 在手上并不等于本回合或下一回合有
 攻击者。V6 的 `_recovery_needs()` 在
-[`main.py:834-851`](../../../submission/alakazam_v6/main.py:834) 也有相同的
+[`main.py:834-851`](../../../../submission/alakazam_v6/main.py:834) 也有相同的
 抽象问题：只要手牌出现任意 Abra 线卡，就可能被当成已有可用路线；Stage 1/Stage 2
 单卡不能替代 Basic 来源。
 
@@ -139,7 +139,7 @@ Alakazam。只有 Active Kadabra 已经合法存在时，拿 Alakazam 才是完�
 
 `preparation_is_due()` 会先处理进化和抽牌，但当这些动作都不被判定为“当前必须
 做”时，攻击分支在
-[`main.py:1803-1819`](../../../submission/alakazam_v6/main.py:1803) 仍然给普通
+[`main.py:1803-1819`](../../../../submission/alakazam_v6/main.py:1803) 仍然给普通
 攻击一个固定的可接受分数。它没有区分：
 
 - Alakazam 对无法立即 KO 的目标进行一次正常攻击；
@@ -216,7 +216,7 @@ V6 的 `attack_security` 主要回答“有没有带 Psychic Energy 的可攻击
 识别并不相同；需要继续核对官方引擎对该卡/该攻击的日志语义。
 
 当前 `_attack_damage_against()` 只在目标附有 Mist Energy 时返回 0，见
-[`main.py:1028-1039`](../../../submission/alakazam_v6/main.py:1028)。因此这里至少
+[`main.py:1028-1039`](../../../../submission/alakazam_v6/main.py:1028)。因此这里至少
 需要补一项 V7 研究：把“策略估算伤害”和“官方引擎实际伤害/效果”在 replay 中逐击
 对齐，尤其是 Team Rocket Energy、特殊能量和防御类 Ability。
 
@@ -225,10 +225,10 @@ V6 的 `attack_security` 主要回答“有没有带 Psychic Energy 的可攻击
 本批没有牌库耗尽败局，但 `86877819` 以牌库 0 结束仍获得胜利，说明牌库线已经
 非常接近终局边界。V6 的静态逻辑还有两个风险：
 
-- [`main.py:442-450`](../../../submission/alakazam_v6/main.py:442) 以
+- [`main.py:442-450`](../../../../submission/alakazam_v6/main.py:442) 以
   `ATTACK_ENERGY_COUNT[DUNSPARCE] = 1` 把有一张能量的 Dunsparce 算作 ready
   attacker；但 V6 已经禁止 Trading Places，Ram 也不应默认作为攻击安全性。
-- [`main.py:827-830`](../../../submission/alakazam_v6/main.py:827) 的 15 张 watch
+- [`main.py:827-830`](../../../../submission/alakazam_v6/main.py:827) 的 15 张 watch
   gate 依赖 `_attack_security()`。如果 Dunsparce 被计入安全攻击者，牌库低于 15
   张时可能继续抽牌，而实际没有能拿 Prize 的路线。
 

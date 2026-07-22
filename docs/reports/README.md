@@ -4,7 +4,7 @@
 
 ## 1. 比赛与 simulator 事实
 
-- [`../notes/competition-facts.md`](../notes/competition-facts.md)：官方事实、提交约束和已知规则差异。
+- [`../../notes/competition-facts.md`](../../notes/competition-facts.md)：官方事实、提交约束和已知规则差异。
 - [`research/community-research-zh.md`](research/community-research-zh.md)：Discussion、公开 Notebook 和社区路线的研究摘要。
 - [`implementation/interactive-battle-brief-zh.md`](implementation/interactive-battle-brief-zh.md)：交互式 battle 调试需求，暂不作为当前第一阶段阻塞项。
 
@@ -17,7 +17,7 @@
 
 - [`implementation/implementation-brief.md`](implementation/implementation-brief.md)：第一版官方 simulator baseline 的目标、验收标准和运行记录。
 - [`implementation/baseline-run-zh.md`](implementation/baseline-run-zh.md)：已完成的资源整理、smoke test、提交包和本地 battle 结果。
-- 实际提交在 [`../submission/`](../submission/) 下，每个子目录都是一套可独立打包的 agent；官方参考资源在 [`../data/official/`](../data/official/)。
+- 实际提交在 [`../../submission/`](../../submission/) 下，每个子目录都是一套可独立打包的 agent；官方参考资源在 [`../../data/official/`](../../data/official/)。
 - [`implementation/alakazam-v1-run-zh.md`](implementation/alakazam-v1-run-zh.md)：胡地 V1 卡表映射、目录结构和本地对局验收。
 - [`kaggle/alakazam-v2-episodes-2026-07-18.md`](kaggle/alakazam-v2-episodes-2026-07-18.md)：V2 submission 的 Kaggle 官方 Episode 初步复盘。
 - [`kaggle/alakazam-v3-episodes-2026-07-19.md`](kaggle/alakazam-v3-episodes-2026-07-19.md)：V3 submission 的 Kaggle 官方 Episode 复盘。

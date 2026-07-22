@@ -264,7 +264,7 @@ worker 接收候选 package、opponent package、先后手和 trace 配置，运
 完整 trace 处理后转换为长期保留的精简 GameRecord。未入选的完整 JSON 删除，入选的最多三场复制到：
 
 ~~~text
-reports/evaluation/<run_id>/traces/
+docs/reports/evaluation/<run_id>/traces/
 ~~~
 
 长期保存：
@@ -346,7 +346,7 @@ CaseSelector 独立于指标插件，负责选择值得保留的完整回放。
 每次评测输出：
 
 ~~~text
-reports/evaluation/<run_id>/
+docs/reports/evaluation/<run_id>/
 ├── manifest.json
 ├── summary.json
 ├── games.jsonl
@@ -439,7 +439,7 @@ python3 -m evaluation run \
   --candidate work/alakazam_v8_current \
   --opponents all \
   --games 30 \
-  --output reports/evaluation
+  --output docs/reports/evaluation
 ~~~
 
 可选参数：

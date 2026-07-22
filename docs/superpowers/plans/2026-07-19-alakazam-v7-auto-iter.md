@@ -24,7 +24,7 @@
 - Create: `scripts/alakazam_auto_iter.py` — trace 规范化、指标提取、case 输出、control/candidate 比较和 CLI。
 - Create: `tests/test_alakazam_auto_iter.py` — synthetic trace fixtures 和 CLI/domain regression tests。
 - Modify: `submission/alakazam_v7_auto_iter/README.md` — AutoIter 命令、指标口径和报告目录说明。
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/` — 初始 V7 AutoIter 分析的精炼产物。
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/` — 初始 V7 AutoIter 分析的精炼产物。
 
 ## Task 1: Trace Normalization and Core Metrics
 
@@ -341,12 +341,12 @@ Add a Chinese usage section to `submission/alakazam_v7_auto_iter/README.md`:
 ```bash
 python3 scripts/alakazam_auto_iter.py analyze \
   --report-dir /path/to/reports/alakazam_v7 \
-  --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline
+  --output-dir docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline
 
 python3 scripts/alakazam_auto_iter.py compare \
-  --control reports/kaggle/alakazam-v7-auto-iter/iter-01/control \
-  --candidate reports/kaggle/alakazam-v7-auto-iter/iter-01/candidate \
-  --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-01/comparison
+  --control docs/reports/kaggle/alakazam-v7-auto-iter/iter-01/control \
+  --candidate docs/reports/kaggle/alakazam-v7-auto-iter/iter-01/candidate \
+  --output-dir docs/reports/kaggle/alakazam-v7-auto-iter/iter-01/comparison
 ```
 
 Explain that raw traces stay in the adjacent evaluation repository, the deck is fixed, V7 metrics are diagnostic plus guardrails, and each strategy edit must be accompanied by a case hypothesis.
@@ -363,9 +363,9 @@ Expected result: all AutoIter, V7 and V6 tests pass.
 ## Task 4: Initial V7 Baseline Iteration
 
 **Files:**
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/metrics.json`
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/cases.jsonl`
-- Create: `reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/analysis.md`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/metrics.json`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/cases.jsonl`
+- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline/analysis.md`
 
 **Interfaces:**
 - Consumes: the available V7 detailed evaluator report and its trace files under `/Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7`.
@@ -378,7 +378,7 @@ Run:
 ```bash
 python3 scripts/alakazam_auto_iter.py analyze \
   --report-dir /Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7 \
-  --output-dir reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline \
+  --output-dir docs/reports/kaggle/alakazam-v7-auto-iter/iter-00-baseline \
   --agent-label alakazam_v7
 ```
 

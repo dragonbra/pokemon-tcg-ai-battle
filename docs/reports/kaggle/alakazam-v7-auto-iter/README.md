@@ -16,7 +16,7 @@
 对应目录中的 `decision.md` 是透明的缺档记录，而不是虚构的实验报告。
 
 从 `iter-18` 开始，正式的 AutoIter V9 及后续记录已经恢复为目录级摘要；完整过程也在
-[`submission/alakazam_v7_auto_iter/ITER_PROCESS.md`](../../../submission/alakazam_v7_auto_iter/ITER_PROCESS.md)
+[`submission/alakazam_v7_auto_iter/ITER_PROCESS.md`](../../../../submission/alakazam_v7_auto_iter/ITER_PROCESS.md)
 中维护。
 
 ## 保留约定

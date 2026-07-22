@@ -52,7 +52,7 @@ V6 不会把现有 `_main_action.score()` 继续当成唯一的策略骨架，�
 ## 0.3 官方规则学习后的硬约束
 
 官方规则书与本地引擎审计已经把 V6 的规则边界明确下来，完整证据见：
-`reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`。
+`docs/reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`。
 
 - **攻击是终止提交**：宣告攻击后本回合结束，不能再进化、附能、使用 Supporter、
   铺 Bench 或使用普通 Ability；所有准备必须在攻击前完成。
@@ -469,7 +469,7 @@ simulator 暴露的 `supporterPlayed`、`energyAttached`、`retreated`、`appear
 
 ### 1.3 官方十场 replay 给出的事实
 
-来源：`reports/kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md`。
+来源：`docs/reports/kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md`。
 这组样本不是同一对手、同一先后手的 paired experiment，且 V5 与 auto_iter 的
 `deck.csv` 顺序不同，所以只能作为方向证据，不能把差异全部归因于代码。
 
@@ -638,6 +638,6 @@ V6 实验已经把这些决定落成 `main.py` 的统一顺序。主行动使用
 - 基线实现：`submission/alakazam_v5_auto_iter/main.py`
 - 基线说明：`submission/alakazam_v5_auto_iter/STRATEGY.md`
 - auto_iter 迭代记录：`submission/alakazam_v5_auto_iter/CHANGELOG.md`
-- 最新官方 replay 复盘：`reports/kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md`
+- 最新官方 replay 复盘：`docs/reports/kaggle/alakazam-v5-auto-iter-episodes-2026-07-19/analysis.md`
 - 流程可视化：`submission/alakazam_v5_auto_iter/strategy-flow.html`
-- 官方规则学习：`reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`
+- 官方规则学习：`docs/reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`
