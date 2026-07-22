@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
 
 FEATURE_SCHEMA_VERSION = "ptcg_features_v6"
+UNIVERSAL_FEATURE_SCHEMA = "ptcg_features_universal"
 KNOWN_FEATURE_SCHEMA_VERSIONS = frozenset(
     {
         "ptcg_features_v1",
@@ -13,6 +15,7 @@ KNOWN_FEATURE_SCHEMA_VERSIONS = frozenset(
         "ptcg_features_v4",
         "ptcg_features_v5",
         FEATURE_SCHEMA_VERSION,
+        UNIVERSAL_FEATURE_SCHEMA,
     }
 )
 
@@ -30,6 +33,13 @@ class PTCGFeatureConfig:
     # v6 keeps tensor shapes stable while making visible action-card
     # resolution explicit. Legacy checkpoints did not store this field.
     schema_version: str = FEATURE_SCHEMA_VERSION
+    deck_token_count: int = 0
+    deck_numeric_dim: int = 0
+    entity_token_count: int = 0
+    entity_numeric_dim: int = 0
+    history_token_count: int = 0
+    history_numeric_dim: int = 0
+    expert_vocab_size: int = 0
 
 
 def feature_config_for_schema(schema_version: str) -> PTCGFeatureConfig:
@@ -66,6 +76,23 @@ def feature_config_for_schema(schema_version: str) -> PTCGFeatureConfig:
         )
     if schema_version == FEATURE_SCHEMA_VERSION:
         return PTCGFeatureConfig()
+    if schema_version == UNIVERSAL_FEATURE_SCHEMA:
+        return PTCGFeatureConfig(
+            state_numeric_dim=64,
+            state_token_count=40,
+            candidate_numeric_dim=10,
+            max_candidates=64,
+            card_vocab_size=4096,
+            action_type_vocab_size=32,
+            schema_version=UNIVERSAL_FEATURE_SCHEMA,
+            deck_token_count=60,
+            deck_numeric_dim=6,
+            entity_token_count=12,
+            entity_numeric_dim=16,
+            history_token_count=32,
+            history_numeric_dim=8,
+            expert_vocab_size=64,
+        )
     raise ValueError(f"unsupported feature schema version: {schema_version}")
 
 
@@ -78,18 +105,29 @@ def feature_schema_for_config(config: PTCGFeatureConfig) -> str:
         "ptcg_features_v4": (40, 40),
         "ptcg_features_v5": (46, 40),
         FEATURE_SCHEMA_VERSION: (46, 40),
+        UNIVERSAL_FEATURE_SCHEMA: (64, 40),
     }
     if config.schema_version in expected_shapes and (
         config.state_numeric_dim,
         config.state_token_count,
     ) == expected_shapes[config.schema_version]:
         return config.schema_version
+    if config.schema_version == UNIVERSAL_FEATURE_SCHEMA and (
+        config.deck_token_count,
+        config.deck_numeric_dim,
+        config.entity_token_count,
+        config.entity_numeric_dim,
+        config.history_token_count,
+        config.history_numeric_dim,
+    ) == (60, 6, 12, 16, 32, 8):
+        return UNIVERSAL_FEATURE_SCHEMA
     shapes = {
         (24, 24): "ptcg_features_v1",
         (32, 40): "ptcg_features_v2",
         (36, 40): "ptcg_features_v3",
         (40, 40): "ptcg_features_v4",
         (46, 40): FEATURE_SCHEMA_VERSION,
+        (64, 40): UNIVERSAL_FEATURE_SCHEMA,
     }
     try:
         return shapes[(config.state_numeric_dim, config.state_token_count)]

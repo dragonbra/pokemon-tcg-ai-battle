@@ -13,7 +13,9 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "official"
-EVALUATION_CG_BASELINE = ROOT / "submission" / "alakazam_v8" / "cg"
+EVALUATION_CG_BASELINE = (
+    ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
+)
 EXPECTED_EVALUATION_OPPONENT_NAMES = (
     "romanrozen_v9",
     "pilkwang_v2",
@@ -27,11 +29,12 @@ EXPECTED_EVALUATION_OPPONENT_NAMES = (
     "kiyotah_abomasnow",
     "kacchan_anti_wall",
     "nursrijan_lucario",
-    "yakitori_raging_bolt",
     "zoli_dragapult",
     "sue_alakazam",
     "maktha_1084",
     "yanxiaohan",
+    "Agent_Lucario",
+    "Agent_Aluxian",
 )
 FOREIGN_EVALUATION_REPOSITORY = "/Users/hejinyu/Documents/repos/ptcg-agent-kaggle"
 

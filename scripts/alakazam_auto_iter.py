@@ -85,10 +85,11 @@ META_WEIGHTS = {
     "kiyotah_abomasnow": 0.04,
     "kacchan_anti_wall": 0.06,
     "nursrijan_lucario": 0.05,
-    "yakitori_raging_bolt": 0.03,
     "zoli_dragapult": 0.04,
     "sue_alakazam": 0.05,
     "maktha_1084": 0.08,
+    "Agent_Lucario": 0.05,
+    "Agent_Aluxian": 0.05,
 }
 
 
