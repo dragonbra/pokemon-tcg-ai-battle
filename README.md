@@ -24,14 +24,15 @@
 | `submission/<name>/` | 历史版本的完整 agent、卡组和官方 `cg` 模拟器运行时 |
 | `submission/dist/` | 打包生成的 `.tar.gz` 提交产物 |
 | `engine/` | 官方引擎源码的本地缓存与构建边界，不进入提交包 |
-| `scripts/` | 资产校验、提交打包和本地对局 runner |
+| `rl/` | 模型、训练入口、checkpoint/dataset 边界和可审计实验记录 |
+| `scripts/` | 唯一的 TensorBoard 启动入口，不存放训练基建或一次性脚本 |
 | `visualization/` | replay 可视化核心、外部 viewer launcher 和使用说明 |
 | `notes/` | 比赛事实、CLI、协作约定和术语等基础资料 |
 | `docs/reports/` | 调研结论、卡组分析和实现任务书 |
 | `experiments/` | 后续实验协议与结果模板 |
 | `replays/` | Kaggle 官方 Episode replay 和 agent log；本地临时回放不保存 |
 
-`work/<name>/` 是当前候选源目录，`submission/<name>/` 保存历史完整提交。每套提交都独立包含 `main.py`、`deck.csv` 和 `cg/`，由脚本单独打包到 `submission/dist/`，归档根部包含这三项。当前候选为 `work/alakazam_v8_current/`。
+`work/<name>/` 是当前候选源目录，`submission/<name>/` 保存历史完整提交。每套提交都独立包含 `main.py`、`deck.csv` 和 `cg/`；当前训练与评测入口位于 `rl/` 和 `evaluation/`，不再由根目录一次性脚本串联。
 
 大规模模拟、向量化环境、MCTS、自博弈和神经网络训练可以在另一台 5080 机器上进行。实现端应读取本仓库的中文任务书，并把代码、命令、指标和失败信息写回仓库。
 
@@ -53,31 +54,19 @@
 ## 常用命令
 
 ```bash
-python scripts/check_assets.py
-bash scripts/package_submission.sh alakazam_v1
-bash scripts/package_submission.sh official_water
-PTCG_CXX_RUNTIME=/path/to/compatible/runtime ./scripts/run_local_battle.sh \
-  --agent0 alakazam_v1 --agent1 official_water \
-  --output /tmp/ptcg-local-battle.json
+# 查看全部训练 run；默认 http://127.0.0.1:6006
+./scripts/start_tensorboard.sh
+
+# 当前评测入口
+python3 -m evaluation list-opponents
+python3 -m evaluation validate work/alakazam_bc_v1
 
 # 查看 Kaggle replay 或本地可视化 replay
 python3 -m visualization.replay.cli path/to/replay.json
 python3 -m visualization.replay.cli path/to/replay.json --no-open
-
-# 本地对局同时保存可播放帧（默认不保存，避免 smoke test 产生大文件）
-./scripts/run_local_battle.sh \
-  --agent0 alakazam_v1 --agent1 official_water \
-  --output /tmp/ptcg-local-battle.json \
-  --visualize-output /tmp/ptcg-local-battle-visualize.json
-
-# 可选：从本地官方源码快照构建独立测试运行时
-./scripts/build_official_engine.sh
-PTCG_CG_LIBRARY="$PWD/engine/build/libcg.so" ./scripts/run_local_battle.sh \
-  --agent0 alakazam_v1 --agent1 official_water \
-  --output /tmp/ptcg-local-battle.json
 ```
 
-如果当前环境已经能直接加载官方 `libcg.so`，可以省略 `PTCG_CXX_RUNTIME`；变量指向的目录应包含 `lib/libstdc++.so.6`。
+TensorBoard 默认读取 `rl/_runs/tensorboard`。需要改变监听地址、端口、日志目录或 Python 解释器时，分别设置 `TENSORBOARD_HOST`、`TENSORBOARD_PORT`、`TENSORBOARD_LOGDIR` 或 `PYTHON`。
 
 Kaggle 登录、接受规则、下载比赛数据和正式提交仍然需要明确的人工操作；仓库不会自动上传 submission。
 
