@@ -12,6 +12,12 @@
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
 - `notes/`、`docs/reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
 
+## 官方引擎与评测硬约束
+
+- 任何开发、调试、训练、评测或自动化行为都不得修改官方提供的 `engine/source/` 源代码，包括直接编辑、格式化、自动修复或生成补丁。允许只读分析与构建；构建产物只能写入 `engine/build/` 或仓库外临时目录。
+- 所有用于判断 agent 实际能力、比较版本或形成评测结论的结果，都必须来自使用官方 engine runtime 执行的真实模拟对战。静态分析、mock、伪造 trace、单元测试或合法性检查只能作为辅助证据，不能替代真实对局评测。
+- 即使用户明确要求修改 `engine/source/`，也必须在执行前停止，明确警告这会偏离官方引擎、破坏评测真实性和结果可比性，并先与用户讨论用途、影响与替代方案；只有再次取得明确确认后才能继续。
+
 ## RL 设计文档同步约定
 
 - [`rl/model/DESIGN.html`](rl/model/DESIGN.html) 是 RL 模型输入、网络结构、训练目标和项目阶段的项目级可视化现状文档，不是一次性说明或历史快照。
