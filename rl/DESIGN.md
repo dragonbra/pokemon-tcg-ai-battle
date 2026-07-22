@@ -297,6 +297,7 @@ engine error，低于 teacher 的 `124/170 = 72.94%`，因此只作为新的 BC 
 | visible potential shaping `0.1` | `123/170`，1 error | 最接近 teacher，但未取得 primary outcome 增益 |
 | transition return `0.1` | `113/170`，2 errors | 当前 return target 不可靠，拒绝 |
 | potential checkpoint，confidence gate `0.90` | `121/170`，1 error | 提高 gate 不能单独改善 outcome |
+| potential BC + potential PPO，`shaping_weight=0.1` | `110/170`，1 error | reward 微调再次破坏策略，拒绝 |
 
 因此后续应优先收集可靠的反事实 action advantage 或针对 failure class 的重标注，不能
 继续把整局终局结果复制给每个动作，也不能用 Powerful Hand、library pressure 等过程
