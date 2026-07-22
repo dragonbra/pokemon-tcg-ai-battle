@@ -10,6 +10,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 from evaluation.cli import (
+    _numbered_research_output_root,
+    _validate_research_coverage,
     list_enabled_opponents,
     load_opponent_catalog,
     validate_catalog,
@@ -160,6 +162,23 @@ class EvaluationCatalogTests(unittest.TestCase):
 
             with self.assertRaisesRegex(PackageValidationError, "does not exist"):
                 load_opponent_catalog(path, EVALUATION_ROOT)
+
+    def test_research_output_root_allocates_after_legacy_and_numbered_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "evaluation"
+            root.mkdir()
+            (root / "legacy_experiment").mkdir()
+            (root / "0003-previous").mkdir()
+            with patch("evaluation.cli.RESEARCH_EVALUATION_ROOT", root):
+                allocated = _numbered_research_output_root(root / "new_candidate")
+            self.assertEqual(allocated, root / "0004-new_candidate")
+
+    def test_research_coverage_requires_fixed_catalog_and_ten_games(self) -> None:
+        with self.assertRaisesRegex(PackageValidationError, "170"):
+            _validate_research_coverage("all", 2, tuple(range(17)))  # type: ignore[arg-type]
+        with self.assertRaisesRegex(PackageValidationError, "opponents all"):
+            _validate_research_coverage("one", 10, tuple(range(17)))  # type: ignore[arg-type]
+        _validate_research_coverage("all", 10, tuple(range(17)))  # type: ignore[arg-type]
 
     def test_catalog_skips_loading_disabled_package(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

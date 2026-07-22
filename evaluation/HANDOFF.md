@@ -17,28 +17,29 @@ python3 -m evaluation run \
   --games 10 \
   --metric-profile auto_iteration_v8_setup_relay \
   --no-visualize \
-  --output /tmp/ptcg-auto-iteration-evaluation
+  --output rl/runs/evaluation/alakazam_candidate
 ```
 
-`validate` 必须先通过。`run` 完成后会打印 `run_id` 和报告目录，例如：
+`validate` 必须先通过。`run` 完成后会打印 `run_id` 和报告目录。输出根目录位于
+`rl/runs/evaluation/` 时，实验目录会自动获得顺序前缀，例如：
 
 ```text
-/tmp/ptcg-auto-iteration-evaluation/run-<uuid>/
+rl/runs/evaluation/0001-alakazam_candidate/run-<uuid>/
 ```
 
 直接打开该目录下的 `report.html` 即可查看完整语义报告：
 
 ```bash
-open /tmp/ptcg-auto-iteration-evaluation/run-<uuid>/report.html
+open rl/runs/evaluation/0001-alakazam_candidate/run-<uuid>/report.html
 ```
 
-正式复盘可以把 `--output` 指向仓库外的持久目录；临时 smoke run 使用 `/tmp`，不要把
-trace 或批量报告混入候选 submission。`--games` 是每个 opponent 的对局数，`--opponents`
-可以是 `all` 或 catalog 中逗号分隔的名称。
+正式复盘建议把 `--output` 指向 `rl/runs/evaluation/<label>`，以获得自动编号。CLI
+强制 `--opponents all --games 10` 或更高，即固定 17 个 opponent、至少 170 局；小样本
+探索请使用训练日志、离线数据或 simulator smoke，不通过 repo evaluation CLI。
 
 ## 报告产物
 
-每次运行在 `<output>/<run_id>/` 写入：
+每次运行在 `<numbered-output>/<run_id>/` 写入：
 
 - `manifest.json`：候选、对手、参数、profile id/revision、metric ids、hash 和保留 trace。
 - `summary.json`：总体结果、错误、未完成对局和按 opponent 汇总。

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -19,6 +20,10 @@ from evaluation.runtime import assert_cg_compatible
 EXPECTED_FIELDS = frozenset({"name", "package", "enabled", "tags"})
 DEFAULT_CATALOG = Path(__file__).resolve().parent / "configs" / "opponents.json"
 DEFAULT_MAX_STEPS = 1_000
+MIN_RESEARCH_GAMES = 10
+REQUIRED_RESEARCH_OPPONENTS = 17
+RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl" / "runs" / "evaluation"
+_NUMBERED_OUTPUT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
 
 
 def _read_catalog_entries(path: Path) -> list[dict[str, Any]]:
@@ -171,6 +176,51 @@ def _validate_positive(value: int, argument: str) -> None:
         raise PackageValidationError(f"{argument} must be at least one")
 
 
+def _numbered_research_output_root(requested: Path) -> Path:
+    """Allocate a monotonic experiment directory under ``rl/runs/evaluation``.
+
+    Existing unnumbered reports are deliberately left in place so historical
+    links remain valid.  New RL reports use a fresh numbered sequence; an
+    already-numbered path is respected.
+    """
+    resolved = requested.resolve()
+    root = RESEARCH_EVALUATION_ROOT.resolve()
+    if resolved.parent != root:
+        return requested
+    if _NUMBERED_OUTPUT.match(resolved.name):
+        return requested
+
+    children = [child for child in root.iterdir() if child.is_dir()] if root.is_dir() else []
+    numbers = [
+        int(match.group("number"))
+        for child in children
+        if (match := _NUMBERED_OUTPUT.match(child.name)) is not None
+    ]
+    next_number = max([*numbers, 0]) + 1
+    while True:
+        candidate = root / f"{next_number:04d}-{resolved.name}"
+        if not candidate.exists():
+            return candidate
+        next_number += 1
+
+
+def _validate_research_coverage(
+    requested_opponents: str,
+    games: int,
+    opponents: tuple[SubmissionPackage, ...],
+) -> None:
+    """Enforce the project-level 17×10 evaluation contract at the CLI."""
+    if games < MIN_RESEARCH_GAMES:
+        raise PackageValidationError(
+            f"repo evaluation requires at least {MIN_RESEARCH_GAMES} games per opponent "
+            f"({REQUIRED_RESEARCH_OPPONENTS}×{MIN_RESEARCH_GAMES}=170); got {games}"
+        )
+    if requested_opponents.strip() != "all" or len(opponents) != REQUIRED_RESEARCH_OPPONENTS:
+        raise PackageValidationError(
+            "repo evaluation requires --opponents all and the fixed 17-opponent catalog"
+        )
+
+
 def _write_validation(package: SubmissionPackage) -> None:
     print(f"name: {package.name}")
     print(f"deck_hash: {package.deck_hash}")
@@ -190,8 +240,13 @@ def _parser() -> argparse.ArgumentParser:
     run = subparsers.add_parser("run", help="运行候选与 catalog opponent 的批量评测")
     run.add_argument("--candidate", type=Path, required=True)
     run.add_argument("--opponents", required=True, help="all 或以逗号分隔的 opponent 名称")
-    run.add_argument("--games", type=int, default=30, help="每个 opponent 的对局数")
-    run.add_argument("--output", type=Path, required=True, help="评测报告根目录")
+    run.add_argument(
+        "--games",
+        type=int,
+        default=30,
+        help="每个 opponent 的对局数（至少 10；固定 17 opponent catalog）",
+    )
+    run.add_argument("--output", type=Path, required=True, help="评测报告根目录；RL 路径自动编号")
     run.add_argument("--control", type=Path, help="仅用于报告对比展示的标准 package")
     run.add_argument("--no-visualize", dest="visualize", action="store_false")
     run.add_argument("--keep-temp", action="store_true")
@@ -232,8 +287,11 @@ def _run(args: argparse.Namespace) -> str:
         args.opponents,
         load_opponent_catalog(args.catalog, evaluation_root),
     )
+    _validate_research_coverage(args.opponents, args.games, opponents)
     for opponent in opponents:
         assert_cg_compatible(candidate, opponent)
+
+    args.output = _numbered_research_output_root(args.output)
 
     result = run_batch(
         BatchConfig(

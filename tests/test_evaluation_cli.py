@@ -69,6 +69,10 @@ class EvaluationCliTests(unittest.TestCase):
     def test_run_delegates_validated_packages_to_batch_with_control(self) -> None:
         output = io.StringIO()
         result = SimpleNamespace(run_id="run-cli-test")
+        opponents = tuple(
+            package(f"opponent_{index}", self.root / f"opponent_{index}")
+            for index in range(17)
+        )
         with (
             patch.object(cli, "_load_official_card_ids", return_value={1}),
             patch.object(
@@ -79,7 +83,7 @@ class EvaluationCliTests(unittest.TestCase):
             patch.object(
                 cli,
                 "load_opponent_catalog",
-                return_value=[self.opponent_a, self.opponent_b],
+                return_value=list(opponents),
             ),
             patch.object(cli, "run_batch", return_value=result, create=True) as run_batch,
             redirect_stdout(output),
@@ -92,9 +96,9 @@ class EvaluationCliTests(unittest.TestCase):
                     "--control",
                     str(self.control.root),
                     "--opponents",
-                    "opponent_b,opponent_a",
+                    "all",
                     "--games",
-                    "4",
+                    "10",
                     "--output",
                     str(self.root / "reports"),
                     "--no-visualize",
@@ -111,9 +115,9 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         config = run_batch.call_args.args[0]
         self.assertEqual(config.candidate, self.candidate)
-        self.assertEqual(config.opponents, (self.opponent_b, self.opponent_a))
+        self.assertEqual(config.opponents, opponents)
         self.assertEqual(config.control, self.control)
-        self.assertEqual(config.games_per_opponent, 4)
+        self.assertEqual(config.games_per_opponent, 10)
         self.assertEqual(config.output_root, self.root / "reports")
         self.assertFalse(config.visualize)
         self.assertTrue(config.keep_temp)

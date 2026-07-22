@@ -114,9 +114,11 @@ df -h /mnt/c /
 
 ## 评测层级
 
-1–2 局/对手只用于快速探索，不能据此晋级模型。任何 promotion、正式仓库 evaluation
-或提交前结论，必须使用全部 17 个 opponent、每个至少 10 局（最低 170 局），并保留
-先手/后手轮换；如果胜率差异接近或方差较大，再提高到每个 opponent 20–30 局。
+所有 repo evaluation 统一使用固定 17 个 opponent、每个至少 10 局（最低 170 局），
+并保留先手/后手轮换；CLI 会拒绝小于 10 局或非 `--opponents all` 的评测。训练阶段的
+快速探索应使用离线指标、toy/simulator smoke 或直接检查 checkpoint，不能把小样本
+evaluation 报告当成候选晋级证据。若胜率差异接近或方差较大，再提高到每个 opponent
+20–30 局。
 
 toy 演示只证明 model forward、合法候选 mask、交叉熵行为克隆、JSONL 和 checkpoint
 能协同工作。它不是 Pokémon TCG 强度实验。
@@ -312,7 +314,7 @@ python3.11 -m rl.ptcg.merge_datasets \
 ```
 
 DAgger rollout 可以改善分布覆盖，但小样本重标注也可能改变原 teacher 数据的比例；
-必须先做 1–2 局/对手探索，只有明显有希望才进入最低 17×10 正式评测。
+必须先做离线检查；一旦调用 repo evaluation，就直接执行最低 17×10 正式评测。
 
 ### 本地 checkpoint 评测 candidate
 
@@ -330,7 +332,7 @@ LD_LIBRARY_PATH="$HOME/.local/ptcg-cxx-runtime/lib" \
 LD_PRELOAD="$HOME/.local/ptcg-cxx-runtime/lib/libstdc++.so.6" \
 python3.11 -m evaluation run \
   --candidate rl/runs/research_candidates/alakazam_bc_v2 \
-  --opponents all --games 2 --no-visualize \
+  --opponents all --games 10 --no-visualize \
   --metric-profile auto_iteration_v8_setup_relay \
   --output rl/runs/evaluation/alakazam_bc_v2
 ```
