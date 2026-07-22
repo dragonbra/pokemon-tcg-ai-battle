@@ -36,11 +36,12 @@ EXPECTED_NAMES = [
     "kiyotah_abomasnow",
     "kacchan_anti_wall",
     "nursrijan_lucario",
-    "yakitori_raging_bolt",
     "zoli_dragapult",
     "sue_alakazam",
     "maktha_1084",
     "yanxiaohan",
+    "Agent_Lucario",
+    "Agent_Aluxian",
 ]
 
 
@@ -166,36 +167,32 @@ class EvaluationCatalogTests(unittest.TestCase):
 
     def test_research_output_root_allocates_after_numbered_runs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "runs"
-            (root / "evaluation").mkdir(parents=True)
-            (root / "training").mkdir()
-            (root / "research_candidates").mkdir()
-            (root / "evaluation" / "0003-previous").mkdir()
+            root = Path(temporary) / "_runs"
+            (root / "0003-previous").mkdir(parents=True)
+            (root / "tensorboard").mkdir()
             with patch("rl.core.runs.RUNS_ROOT", root):
-                allocated = _numbered_research_output_root(root / "evaluation" / "new_candidate")
-            self.assertEqual(allocated, root / "evaluation" / "0004-new_candidate")
+                allocated = _numbered_research_output_root(root / "new_candidate" / "evaluation")
+            self.assertEqual(allocated, root / "0004-new_candidate" / "evaluation")
 
     def test_research_coverage_requires_fixed_catalog_and_ten_games(self) -> None:
-        with self.assertRaisesRegex(PackageValidationError, "170"):
-            _validate_research_coverage("all", 2, tuple(range(17)))  # type: ignore[arg-type]
+        with self.assertRaisesRegex(PackageValidationError, "180"):
+            _validate_research_coverage("all", 2, tuple(range(18)))  # type: ignore[arg-type]
         with self.assertRaisesRegex(PackageValidationError, "opponents all"):
-            _validate_research_coverage("one", 10, tuple(range(17)))  # type: ignore[arg-type]
-        _validate_research_coverage("all", 10, tuple(range(17)))  # type: ignore[arg-type]
+            _validate_research_coverage("one", 10, tuple(range(18)))  # type: ignore[arg-type]
+        _validate_research_coverage("all", 10, tuple(range(18)))  # type: ignore[arg-type]
 
     def test_artifact_path_reuses_matching_experiment_number(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "runs"
-            (root / "training" / "0009-shared_project").mkdir(parents=True)
-            (root / "research_candidates").mkdir()
-            (root / "evaluation").mkdir()
+            root = Path(temporary) / "_runs"
+            (root / "0009-shared_project").mkdir(parents=True)
             with patch("rl.core.runs.RUNS_ROOT", root):
                 allocated = numbered_artifact_path(
-                    root / "research_candidates" / "shared_project",
-                    "research_candidates",
+                    root / "shared_project" / "evaluation",
+                    "evaluation",
                 )
             self.assertEqual(
                 allocated,
-                root / "research_candidates" / "0009-shared_project",
+                root / "0009-shared_project" / "evaluation",
             )
 
     def test_catalog_skips_loading_disabled_package(self) -> None:

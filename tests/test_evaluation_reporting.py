@@ -23,7 +23,7 @@ OPPONENTS = (
     "kiyotah_abomasnow",
     "kacchan_anti_wall",
     "nursrijan_lucario",
-    "yakitori_raging_bolt",
+    "Agent_Lucario",
     'zoli_dragapult <&"',
     "sue_alakazam",
     "maktha_1084",

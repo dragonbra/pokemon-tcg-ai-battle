@@ -71,7 +71,7 @@ class EvaluationCliTests(unittest.TestCase):
         result = SimpleNamespace(run_id="run-cli-test")
         opponents = tuple(
             package(f"opponent_{index}", self.root / f"opponent_{index}")
-            for index in range(17)
+            for index in range(18)
         )
         with (
             patch.object(cli, "_load_official_card_ids", return_value={1}),

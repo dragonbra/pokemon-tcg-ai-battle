@@ -15,13 +15,14 @@ from evaluation.runtime.loader import compute_cg_manifest
 ROOT = Path(__file__).resolve().parents[1]
 DECK_FIXTURE = ROOT / "tests" / "fixtures" / "evaluation_opponent_decks.json"
 OPPONENTS_ROOT = ROOT / "evaluation" / "opponents"
-CG_SOURCE_ROOT = ROOT / "submission" / "alakazam_v8" / "cg"
+CG_SOURCE_ROOT = ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
 OPPONENT_NAMES = (
-    "yakitori_raging_bolt",
     "zoli_dragapult",
     "sue_alakazam",
     "maktha_1084",
     "yanxiaohan",
+    "Agent_Lucario",
+    "Agent_Aluxian",
 )
 YANXIAOHAN_FORBIDDEN_REFERENCES = (
     "ptcg-agent-kaggle",

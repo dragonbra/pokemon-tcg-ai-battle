@@ -28,11 +28,12 @@ EXPECTED_NAMES = (
     "kiyotah_abomasnow",
     "kacchan_anti_wall",
     "nursrijan_lucario",
-    "yakitori_raging_bolt",
     "zoli_dragapult",
     "sue_alakazam",
     "maktha_1084",
     "yanxiaohan",
+    "Agent_Lucario",
+    "Agent_Aluxian",
 )
 
 
