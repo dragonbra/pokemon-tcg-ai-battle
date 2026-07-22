@@ -217,6 +217,13 @@ MCTS-only candidate 在 34 局探索中为 `27/34`，但固定 17×10 验收降�
 将这批 target 以 soft-policy weight `0.5` 混回 v5 teacher records 的 34 局探索为
 `26/34`、1 个 error，也没有触发第二次正式验收。
 
+随后在 v6 action-card schema 上加入 advantage-like action-value soft target：对每个
+root candidate 的 search value 做相对最大值 softmax，temperature `0.15`，并以权重
+`0.2` 混入 5,338 条 teacher records。该 checkpoint 使用 2 次 determinization、每次
+32 次 simulation 的统一 opponent pool，编号评测 `0001` 为 `108/170 = 63.53%`、
+2 errors；Powerful Hand/Rare Candy 为 `46/170 = 27.06%`，但 outcome 和 correctness
+均回归，拒绝晋级。结论是当前叶节点 value 的排序尚不足以产生可靠 advantage target。
+
 另外保留了可选的 `--teacher-policy-weight`，用于把 trace 中的 teacher action 作为
 soft target 锚点。d4 + teacher 0.5 的 34 局探索只有 `19/34 = 55.88%` 且有 1 个
 error，明显劣于不加锚点的 d4 分支，因此当前默认保持 0，不把 teacher label 与搜索

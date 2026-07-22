@@ -367,6 +367,28 @@ def _aggregate_search_results(
     return values, visit_counts, policy, values.copy()
 
 
+def _action_value_soft_policy(
+    values: Sequence[float | None],
+    temperature: float,
+) -> list[float]:
+    """Convert relative root action values into a soft legal-action target."""
+    if temperature <= 0.0:
+        raise ValueError("action-value temperature must be positive")
+    finite = [float(value) for value in values if value is not None]
+    if not finite:
+        return [0.0] * len(values)
+    best = max(finite)
+    weights = [
+        math.exp((float(value) - best) / temperature) if value is not None else 0.0
+        for value in values
+    ]
+    total = sum(weights)
+    if total <= 0.0 or not math.isfinite(total):
+        count = len(finite)
+        return [1.0 / count if value is not None else 0.0 for value in values]
+    return [weight / total for weight in weights]
+
+
 def _blend_teacher_policy(
     policy: list[float],
     action: object,
@@ -404,6 +426,7 @@ def build_records(
     determinizations: int = 1,
     teacher_policy_weight: float = 0.0,
     opponent_deck_pool: Sequence[int] | None = None,
+    action_value_temperature: float = 0.0,
 ) -> list[dict[str, Any]]:
     if rollout_steps < 0:
         raise ValueError("rollout_steps cannot be negative")
@@ -413,6 +436,8 @@ def build_records(
         raise ValueError("determinizations must be positive")
     if not 0.0 <= teacher_policy_weight <= 1.0:
         raise ValueError("teacher_policy_weight must be in [0, 1]")
+    if action_value_temperature < 0.0:
+        raise ValueError("action value temperature cannot be negative")
     policy = PTCGCandidatePolicy.from_checkpoint(str(checkpoint), map_location="cpu")
     feature_schema_version = feature_schema_for_config(policy.feature_config)
     search_begin, search_end, search_step, to_observation_class = _load_cg(cg_root)
@@ -470,6 +495,10 @@ def build_records(
             values, visit_counts, mcts_policy, root_values = _aggregate_search_results(
                 search_results, len(select.get("option") or [])
             )
+            target_kind = "visit_count_v1"
+            if action_value_temperature > 0.0:
+                mcts_policy = _action_value_soft_policy(values, action_value_temperature)
+                target_kind = "action_value_softmax_v1"
             mcts_policy = _blend_teacher_policy(
                 mcts_policy,
                 entry.get("action"),
@@ -499,6 +528,8 @@ def build_records(
                     "mcts_action_values": values,
                     "mcts_visit_counts": visit_counts,
                     "mcts_policy": mcts_policy,
+                    "mcts_target_kind": target_kind,
+                    "mcts_action_value_temperature": action_value_temperature,
                     "mcts_root_values": root_values,
                     "mcts_simulations": simulations,
                     "mcts_cpuct": cpuct,
@@ -525,6 +556,12 @@ def main() -> None:
     parser.add_argument("--determinizations", type=int, default=1)
     parser.add_argument("--teacher-policy-weight", type=float, default=0.0)
     parser.add_argument(
+        "--action-value-temperature",
+        type=float,
+        default=0.0,
+        help="positive value enables advantage-like action-value soft targets; 0 keeps visit targets",
+    )
+    parser.add_argument(
         "--opponent-deck-pool",
         type=Path,
         action="append",
@@ -544,6 +581,7 @@ def main() -> None:
         or args.cpuct <= 0
         or args.determinizations < 1
         or not 0.0 <= args.teacher_policy_weight <= 1.0
+        or args.action_value_temperature < 0.0
     ):
         raise ValueError(
             "simulations and determinizations must be positive, cpuct must be positive, "
@@ -572,6 +610,7 @@ def main() -> None:
         determinizations=args.determinizations,
         teacher_policy_weight=args.teacher_policy_weight,
         opponent_deck_pool=opponent_deck_pool,
+        action_value_temperature=args.action_value_temperature,
     )
     if not records:
         raise ValueError("MCTS target collection produced no records")

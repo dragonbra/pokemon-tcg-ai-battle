@@ -18,6 +18,7 @@ from rl.ptcg.annotate_transition_returns import annotate_records
 from rl.ptcg.rewards import observation_potential, potential_shaping
 from rl.ptcg.build_mcts_dataset import (
     _aggregate_search_results,
+    _action_value_soft_policy,
     _blend_teacher_policy,
     _sample_hidden_deck,
 )
@@ -110,6 +111,14 @@ class PTCGDatasetTests(unittest.TestCase):
         self.assertAlmostEqual(sum(policy), 1.0)
         self.assertAlmostEqual(policy[0], 0.625)
         self.assertAlmostEqual(policy[1], 0.375)
+
+    def test_action_value_soft_policy_uses_relative_advantage(self) -> None:
+        policy = _action_value_soft_policy([0.8, 0.6, None], 0.1)
+        self.assertAlmostEqual(sum(policy), 1.0)
+        self.assertGreater(policy[0], policy[1])
+        self.assertEqual(policy[2], 0.0)
+        with self.assertRaises(ValueError):
+            _action_value_soft_policy([0.1], 0.0)
 
     def test_loader_keeps_known_legacy_feature_schemas_readable(self) -> None:
         self.assertEqual(

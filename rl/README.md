@@ -272,6 +272,10 @@ v6 保持同样的 tensor shape，但把公开 observation 中可解析的 PLAY/
 这版离线准确率提升到约 69%，但 residual gate 的完整 17×10 验收为 `110/170`，低于
 teacher 的 `124/170`，所以 checkpoint 只留在 `rl/runs/` 做研究，不进入 `work/`。
 
+action-value soft target 的第一轮消融也已完成：v6 checkpoint 在 2×32 search target、
+temperature `0.15`、soft weight `0.2` 下，编号评测 `0001` 为 `108/170` 且有 2 errors，
+未晋级；后续应先改进叶节点 value/反事实 rollout，再提高 search target 权重。
+
 ### 有限预算 PUCT target smoke
 
 使用真实 evaluation trace 生成搜索 target 时，`--cg-root` 应指向包含 `cg/` 的 package
