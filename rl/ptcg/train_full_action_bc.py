@@ -49,6 +49,14 @@ def _load(path: Path) -> list[dict[str, Any]]:
             mask = encoded.get("action_mask")
             if not isinstance(mask, list) or not mask or not any(mask):
                 raise ValueError(f"missing legal action mask at line {line_number}")
+            minimum = int(record.get("selection_min_count", 0))
+            maximum = int(record.get("selection_max_count", len(targets)))
+            target_count = int(record.get("target_count", len(targets)))
+            legal_count = sum(bool(value) for value in mask)
+            if target_count != len(targets) or len(set(targets)) != len(targets):
+                raise ValueError(f"invalid target cardinality at line {line_number}")
+            if not 0 <= minimum <= target_count <= maximum <= legal_count:
+                raise ValueError(f"selection count is outside legal range at line {line_number}")
             if any(
                 not isinstance(target, int)
                 or target < 0
@@ -274,6 +282,7 @@ def train(
         json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     best_score = -1.0
+    best_epoch = 0
     last_summary: dict[str, Any] = {}
     with TrainingLogger(output / "metrics.jsonl", output / "tensorboard") as logger:
         for epoch in range(1, epochs + 1):
@@ -323,6 +332,7 @@ def train(
             score = validation_metrics["exact_action_rate"]
             if score > best_score:
                 best_score = score
+                best_epoch = epoch
                 manager.save(
                     "best_validation", model, optimizer=optimizer, step=epoch, metadata=metadata
                 )
@@ -330,6 +340,7 @@ def train(
     test_metrics = _evaluate(model, splits["test"], device, batch_size) if splits["test"] else {}
     summary = {
         "best_validation_exact_action_rate": best_score,
+        "best_epoch": best_epoch,
         "final_test": test_metrics,
         "last_epoch": last_summary,
         "config": config,

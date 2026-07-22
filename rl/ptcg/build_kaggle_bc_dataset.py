@@ -84,7 +84,9 @@ def _action_for_previous_observation(action: Any, select: dict[str, Any]) -> lis
         return None
     if not all(isinstance(index, int) and 0 <= index < len(options) for index in action):
         return None
-    return [int(index) for index in action]
+    # Multi-selection order is not semantic.  Canonical order makes exact-set
+    # comparisons and duplicate detection stable across replay exporters.
+    return sorted(int(index) for index in action)
 
 
 def _split_for_episode(episode_id: int, split_map: dict[str, str]) -> str:
@@ -97,14 +99,21 @@ def _split_for_episode(episode_id: int, split_map: dict[str, str]) -> str:
 def iter_kaggle_records(
     replay_path: str | Path,
     *,
-    agent_name: str,
+    agent_name: str | None,
     split_map: dict[str, str],
     submission_id: int,
     feature_config: PTCGFeatureConfig,
+    agent_index: int | None = None,
+    expert_team_name: str | None = None,
 ) -> Iterator[dict[str, Any]]:
     path = Path(replay_path)
     payload = _read_json(path)
-    agent_index = _agent_index(payload, agent_name)
+    if agent_index is None:
+        if agent_name is None:
+            raise ValueError("agent_name is required when agent_index is not provided")
+        agent_index = _agent_index(payload, agent_name)
+    if agent_index < 0 or agent_index >= 2:
+        raise ValueError(f"invalid player index {agent_index} in {path}")
     episode_id = int((payload.get("info") or {}).get("EpisodeId", path.stem.split("-")[1]))
     # Validate that this is a full replay before using any action labels.
     if len(_episode_deck(payload, agent_index)) != 60:
@@ -178,6 +187,7 @@ def iter_kaggle_records(
             "feature_schema_version": feature_schema_for_config(feature_config),
             "source": str(path.resolve()),
             "submission_id": submission_id,
+            "expert_team_name": expert_team_name or agent_name,
             "episode_id": episode_id,
             "episode_step": step_index,
             "player_index": agent_index,
@@ -267,6 +277,103 @@ def build_dataset(
     return summary
 
 
+def build_aggregate_dataset(
+    replay_root: Path,
+    manifest: dict[str, Any],
+    output: Path,
+    *,
+    feature_config: PTCGFeatureConfig,
+    storage_path: Path = DEFAULT_STORAGE_PATH,
+    min_free_gib: float = DEFAULT_MIN_FREE_GIB,
+) -> dict[str, Any]:
+    """Build one BC corpus from a deduplicated multi-expert replay manifest."""
+    storage = assert_storage_safe(storage_path, min_free_gib)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    counts: Counter[str] = Counter()
+    selection_counts: Counter[str] = Counter()
+    target_count_distribution: Counter[str] = Counter()
+    episode_outcomes: Counter[str] = Counter()
+    source_trajectories: Counter[str] = Counter()
+    source_records: Counter[str] = Counter()
+    episode_splits: dict[int, str] = {}
+    seen_trajectories: set[tuple[int, int]] = set()
+    decisions = 0
+
+    with output.open("w", encoding="utf-8") as handle:
+        for episode in manifest.get("episodes") or []:
+            episode_id = int(episode["episode_id"])
+            split = str(episode["split"])
+            if split not in {"train", "validation", "test"}:
+                raise ValueError(f"invalid split for episode {episode_id}: {split}")
+            episode_splits[episode_id] = split
+            replay_path = replay_root / str(episode["file"])
+            if not replay_path.is_file():
+                raise FileNotFoundError(f"manifest replay is missing: {replay_path}")
+            for expert in episode.get("expert_players") or []:
+                player_index = int(expert["player_index"])
+                trajectory_key = (episode_id, player_index)
+                if trajectory_key in seen_trajectories:
+                    continue
+                seen_trajectories.add(trajectory_key)
+                submission_id = int(expert["submission_id"])
+                team_name = str(expert["team_name"])
+                source_key = f"{submission_id}:{team_name}"
+                source_trajectories[source_key] += 1
+                trajectory_outcome: float | None = None
+                for record in iter_kaggle_records(
+                    replay_path,
+                    agent_name=None,
+                    agent_index=player_index,
+                    expert_team_name=team_name,
+                    split_map={str(episode_id): split},
+                    submission_id=submission_id,
+                    feature_config=feature_config,
+                ):
+                    handle.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
+                    decisions += 1
+                    counts[split] += 1
+                    source_records[source_key] += 1
+                    trajectory_outcome = float(record["terminal_outcome"])
+                    selection_counts[
+                        f"type={record['selection_type']},context={record['selection_context']}"
+                    ] += 1
+                    target_count_distribution[str(record["target_count"])] += 1
+                if trajectory_outcome is not None:
+                    outcome_name = (
+                        "win"
+                        if trajectory_outcome > 0
+                        else "loss"
+                        if trajectory_outcome < 0
+                        else "draw"
+                    )
+                    episode_outcomes[outcome_name] += 1
+
+    summary = {
+        "dataset_version": DATASET_VERSION,
+        "action_schema_version": ACTION_SCHEMA_VERSION,
+        "feature_schema_version": feature_schema_for_config(feature_config),
+        "source_manifest_schema_version": manifest.get("schema_version"),
+        "unique_replays": len(episode_splits),
+        "expert_trajectories": len(seen_trajectories),
+        "records": decisions,
+        "records_by_split": dict(sorted(counts.items())),
+        "episodes_by_split": dict(sorted(Counter(episode_splits.values()).items())),
+        "trajectory_outcomes": dict(sorted(episode_outcomes.items())),
+        "trajectories_by_source": dict(sorted(source_trajectories.items())),
+        "records_by_source": dict(sorted(source_records.items())),
+        "records_by_selection": dict(sorted(selection_counts.items())),
+        "target_count_distribution": dict(sorted(target_count_distribution.items())),
+        "output": str(output.resolve()),
+        "storage_path": storage.path,
+        "storage_free_gib": round(storage.free_gib, 2),
+    }
+    (output.with_suffix(output.suffix + ".summary.json")).write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return summary
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("replay_root", type=Path)
@@ -278,6 +385,19 @@ def main() -> None:
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") == "ptcg_top_ladder_exact_deck_replays_v1":
+        result = build_aggregate_dataset(
+            args.replay_root,
+            manifest,
+            args.output,
+            feature_config=PTCGFeatureConfig(**manifest["feature_config"])
+            if manifest.get("feature_config")
+            else feature_config_for_schema(args.feature_schema),
+            storage_path=args.storage_path,
+            min_free_gib=args.min_free_gib,
+        )
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return
     split_map = {str(item["episode_id"]): str(item["split"]) for item in manifest["episodes"]}
     paths = [args.replay_root / str(item["file"]) for item in manifest["episodes"]]
     missing = [path for path in paths if not path.is_file()]

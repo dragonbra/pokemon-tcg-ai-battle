@@ -81,6 +81,7 @@ def build(
     source_package: Path,
     *,
     experiment_id: str,
+    name: str = "Alakazam BC v1",
 ) -> Path:
     output = output.resolve()
     checkpoint = checkpoint.resolve()
@@ -134,7 +135,7 @@ def build(
     )
     manifest = {
         "schema_version": "ptcg_pure_model_submission_v1",
-        "name": "Alakazam BC v1",
+        "name": name,
         "experiment_id": experiment_id,
         "checkpoint_step": int(payload.get("step", 0)),
         "model_sha256": _sha256(model_path),
@@ -158,6 +159,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-package", type=Path, default=Path("work/alakazam_v9"))
     parser.add_argument("--experiment-id", required=True)
+    parser.add_argument("--name", default="Alakazam BC v1")
     args = parser.parse_args()
     print(
         build(
@@ -165,6 +167,7 @@ def main() -> None:
             args.checkpoint,
             args.source_package,
             experiment_id=args.experiment_id,
+            name=args.name,
         )
     )
 

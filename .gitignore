@@ -16,6 +16,7 @@ replays/raw/
 # Large expert replay corpora are reproducible from their run manifest and
 # must not be committed with source code.
 replays/kaggle_yushin_ito_*/
+replays/kaggle_top100_exact_deck_*/
 logs/
 
 # RL experiments: keep code/design/reference files tracked, ignore all

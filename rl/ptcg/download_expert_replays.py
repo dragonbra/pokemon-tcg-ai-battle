@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 
 from kaggle.api.kaggle_api_extended import KaggleApi
+from kagglesdk.competitions.types.competition_api_service import ApiGetEpisodeReplayRequest
 
 
 _THREAD_LOCAL = threading.local()
@@ -66,6 +67,7 @@ def _download_one(
     output_root: Path,
     retries: int,
     request_interval: float,
+    network_timeout: float = 60.0,
 ) -> tuple[int, str, int]:
     destination = output_root / f"episode-{episode_id}-replay.json"
     if destination.is_file() and destination.stat().st_size > 0:
@@ -81,8 +83,30 @@ def _download_one(
         temporary_root = Path(tempfile.mkdtemp(prefix=f"episode-{episode_id}-", dir=output_root))
         try:
             _wait_for_request_slot(request_interval)
-            _api().competition_episode_replay(episode_id, path=str(temporary_root), quiet=True)
-            downloaded = temporary_root / destination.name
+            client = _api()
+            with client.build_kaggle_client() as kaggle:
+                http_client = kaggle.http_client()
+                http_client._init_session()
+                session = http_client._session
+                original_send = session.send
+
+                def send_with_timeout(request: Any, **kwargs: Any) -> Any:
+                    kwargs.setdefault("timeout", network_timeout)
+                    return original_send(request, **kwargs)
+
+                session.send = send_with_timeout
+                request = ApiGetEpisodeReplayRequest()
+                request.episode_id = episode_id
+                response = kaggle.competitions.competition_api_client.get_episode_replay(request)
+                downloaded = temporary_root / destination.name
+                client.download_file(
+                    response,
+                    str(downloaded),
+                    http_client,
+                    quiet=True,
+                    max_retries=1,
+                    timeout=network_timeout,
+                )
             if not downloaded.is_file() or downloaded.stat().st_size == 0:
                 raise RuntimeError(f"Kaggle did not create {downloaded}")
             os.replace(downloaded, destination)
@@ -94,6 +118,9 @@ def _download_one(
             _defer_requests(backoff)
         finally:
             try:
+                for child in temporary_root.iterdir():
+                    if child.is_file():
+                        child.unlink()
                 temporary_root.rmdir()
             except OSError:
                 pass
