@@ -5,6 +5,8 @@ import importlib.util
 import shutil
 from pathlib import Path
 
+from rl.core.runs import numbered_artifact_path
+
 
 MAIN_TEMPLATE = '''
 from __future__ import annotations
@@ -396,7 +398,8 @@ def main() -> None:
         default=Path(__file__).resolve().parents[2] / "work" / "alakazam_v9",
     )
     args = parser.parse_args()
-    print(build(args.output, args.teacher))
+    output = numbered_artifact_path(args.output, "research_candidates")
+    print(build(output, args.teacher))
 
 
 if __name__ == "__main__":

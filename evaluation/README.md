@@ -18,7 +18,9 @@ python3 -m evaluation run \
 `--keep-temp`、`--max-steps N` 和可重复的 `--metric-module MODULE[:Class]`。每次 CLI
 评测固定使用全部 17 个 opponent、每个至少 10 局；小于 10 局或指定 opponent 子集会被
 拒绝。输出到 `rl/runs/evaluation/<label>` 时，label 目录会自动获得 `0001-` 形式的
-顺序前缀。control
+顺序前缀。训练、candidate 和 evaluation 应使用同一个编号，分别放在
+`rl/runs/training/0001-<label>`、`rl/runs/research_candidates/0001-<label>` 和
+`rl/runs/evaluation/0001-<label>`；这样一个实验的产物按编号横向对应。control
 不会触发 promotion、reject 或其他自动晋级决定。动态模块必须是独立的 `MetricPlugin`，
 只能追加统计，不能使用任何核心 metric ID。
 

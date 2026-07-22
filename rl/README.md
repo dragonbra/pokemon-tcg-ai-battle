@@ -98,7 +98,21 @@ tensorboard --logdir rl/runs
 ```
 
 `rl/runs/` 专门保存本地训练生成的 metrics、TensorBoard event、checkpoint 和实验数据，
-已加入根目录 `.gitignore`，不会进入提交或同步。
+已加入根目录 `.gitignore`，不会进入提交或同步。顶层只保留通用的 `datasets/` 和
+`ptcg_bc/`；一次完整实验使用同一个编号，分组放在：
+
+```text
+rl/runs/
+  datasets/
+  ptcg_bc/
+  training/0009-project_name/
+  research_candidates/0009-project_name/
+  evaluation/0009-project_name/
+```
+
+candidate package 必须位于 `research_candidates/0009-project_name/` 内，不放在
+`rl/runs/` 顶层。evaluation CLI 和 candidate builder 会为未编号的直接输出自动分配
+全局顺序号；训练命令使用已分配的同一编号目录。
 
 ## 存储空间护栏
 
@@ -152,7 +166,7 @@ option index 的决策；卡牌效果的多选仍由规则 handler 负责。`sel
 ```bash
 python3.11 -m rl.ptcg.train_behavior_cloning \
   rl/runs/datasets/alakazam_v9_teacher_v4_reward.jsonl \
-  --output rl/runs/training/alakazam_terminal_reward \
+  --output rl/runs/training/0000-legacy/alakazam_terminal_reward \
   --outcome-weight 0.5 --value-loss-weight 0.1 --device auto
 ```
 
@@ -164,7 +178,7 @@ BC 阶段也可以做可见势能的 reward ablation：
 ```bash
 python3.11 -m rl.ptcg.train_behavior_cloning \
   rl/runs/datasets/alakazam_v9_teacher_v5_history.jsonl \
-  --output rl/runs/training/alakazam_bc_potential_w05 \
+  --output rl/runs/training/0000-legacy/alakazam_bc_potential_w05 \
   --potential-weight 0.5 --device cuda
 ```
 
@@ -176,8 +190,8 @@ safety 三个已审计分量；默认权重为 0，必须以 outcome 和 correct
 ```bash
 python3.11 -m rl.ptcg.train_ppo \
   rl/runs/datasets/alakazam_v9_teacher_v4_reward.jsonl \
-  --checkpoint rl/runs/training/alakazam_bc_v2/checkpoints/best_validation.pt \
-  --output rl/runs/training/alakazam_ppo_terminal_v1 \
+  --checkpoint rl/runs/training/0000-legacy/alakazam_bc_v2/checkpoints/best_validation.pt \
+  --output rl/runs/training/0000-legacy/alakazam_ppo_terminal_v1 \
   --epochs 20 --device auto
 ```
 
@@ -189,8 +203,8 @@ transition-level potential shaping 可以单独打开：
 ```bash
 python3.11 -m rl.ptcg.train_ppo \
   rl/runs/datasets/current_rollout.jsonl \
-  --checkpoint rl/runs/training/current/checkpoints/best_validation.pt \
-  --output rl/runs/training/current_ppo_shaping \
+  --checkpoint rl/runs/training/0000-legacy/current/checkpoints/best_validation.pt \
+  --output rl/runs/training/0000-legacy/current_ppo_shaping \
   --shaping-weight 0.2 --device auto
 ```
 
@@ -202,7 +216,7 @@ MCTS JSONL 同时包含 root visit-count 分布时，可以用 soft policy loss 
 ```bash
 python3.11 -m rl.ptcg.train_behavior_cloning \
   rl/runs/datasets/mcts_puct_targets.jsonl \
-  --output rl/runs/training/mcts_puct_soft \
+  --output rl/runs/training/0000-legacy/mcts_puct_soft \
   --mcts-policy-weight 1.0 --device cuda
 ```
 
@@ -232,8 +246,8 @@ python3.11 -m rl.ptcg.build_mcts_dataset \
 ```bash
 python3.11 -m rl.ptcg.calibrate_value \
   rl/runs/datasets/alakazam_v9_teacher_v5_history.jsonl \
-  --checkpoint rl/runs/training/alakazam_bc_v5_history/checkpoints/best_validation.pt \
-  --output rl/runs/training/alakazam_bc_v5_value_calibrated_v1 \
+  --checkpoint rl/runs/training/0000-legacy/alakazam_bc_v5_history/checkpoints/best_validation.pt \
+  --output rl/runs/training/0000-legacy/alakazam_bc_v5_value_calibrated_v1 \
   --device cuda
 ```
 
@@ -250,8 +264,8 @@ python3.11 -m rl.ptcg.annotate_transition_returns \
 
 python3.11 -m rl.ptcg.calibrate_value \
   rl/runs/datasets/teacher_main_effect_transition_return.jsonl \
-  --checkpoint rl/runs/training/current/checkpoints/best_validation.pt \
-  --output rl/runs/training/current_value_transition \
+  --checkpoint rl/runs/training/0000-legacy/current/checkpoints/best_validation.pt \
+  --output rl/runs/training/0000-legacy/current_value_transition \
   --value-target transition_return --selection-scope main --device cuda
 ```
 
@@ -283,8 +297,8 @@ temperature `0.15`、soft weight `0.2` 下，编号评测 `0001` 为 `108/170` �
 
 ```bash
 python3.11 -m rl.ptcg.build_mcts_dataset \
-  rl/runs/evaluation/teacher_collection_v1/run-.../traces/example.json \
-  --checkpoint rl/runs/training/alakazam_mcts_bc_v1/checkpoints/best_validation.pt \
+  rl/runs/evaluation/0000-legacy/teacher_collection_v1/run-.../traces/example.json \
+  --checkpoint rl/runs/training/0000-legacy/alakazam_mcts_bc_v1/checkpoints/best_validation.pt \
   --deck work/alakazam_v9/deck.csv \
   --cg-root work/alakazam_v9 \
   --output rl/runs/datasets/mcts_puct_smoke.jsonl \
@@ -328,17 +342,17 @@ BC checkpoint 可以生成一个只用于研究评测的 hybrid candidate：主�
 
 ```bash
 python3.11 -m rl.ptcg.build_research_candidate \
-  --output rl/runs/research_candidates/alakazam_bc_v2
+  --output rl/runs/research_candidates/0000-legacy/alakazam_bc_v2
 
-PTCG_RL_CHECKPOINT="$PWD/rl/runs/training/alakazam_bc_v2/checkpoints/best_validation.pt" \
+PTCG_RL_CHECKPOINT="$PWD/rl/runs/training/0000-legacy/alakazam_bc_v2/checkpoints/best_validation.pt" \
 PTCG_RL_CONFIDENCE_THRESHOLD=0.8 \
 LD_LIBRARY_PATH="$HOME/.local/ptcg-cxx-runtime/lib" \
 LD_PRELOAD="$HOME/.local/ptcg-cxx-runtime/lib/libstdc++.so.6" \
 python3.11 -m evaluation run \
-  --candidate rl/runs/research_candidates/alakazam_bc_v2 \
+  --candidate rl/runs/research_candidates/0000-legacy/alakazam_bc_v2 \
   --opponents all --games 10 --no-visualize \
   --metric-profile auto_iteration_v8_setup_relay \
-  --output rl/runs/evaluation/alakazam_bc_v2
+  --output rl/runs/evaluation/0000-legacy/alakazam_bc_v2
 ```
 
 ## 训练边界

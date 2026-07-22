@@ -15,6 +15,7 @@ from evaluation.packages.loader import (
 from evaluation.metrics.profiles import available_metric_profiles
 from evaluation.runner.batch import BatchConfig, run_batch
 from evaluation.runtime import assert_cg_compatible
+from rl.core.runs import numbered_artifact_path
 
 
 EXPECTED_FIELDS = frozenset({"name", "package", "enabled", "tags"})
@@ -177,31 +178,8 @@ def _validate_positive(value: int, argument: str) -> None:
 
 
 def _numbered_research_output_root(requested: Path) -> Path:
-    """Allocate a monotonic experiment directory under ``rl/runs/evaluation``.
-
-    Existing unnumbered reports are deliberately left in place so historical
-    links remain valid.  New RL reports use a fresh numbered sequence; an
-    already-numbered path is respected.
-    """
-    resolved = requested.resolve()
-    root = RESEARCH_EVALUATION_ROOT.resolve()
-    if resolved.parent != root:
-        return requested
-    if _NUMBERED_OUTPUT.match(resolved.name):
-        return requested
-
-    children = [child for child in root.iterdir() if child.is_dir()] if root.is_dir() else []
-    numbers = [
-        int(match.group("number"))
-        for child in children
-        if (match := _NUMBERED_OUTPUT.match(child.name)) is not None
-    ]
-    next_number = max([*numbers, 0]) + 1
-    while True:
-        candidate = root / f"{next_number:04d}-{resolved.name}"
-        if not candidate.exists():
-            return candidate
-        next_number += 1
+    """Allocate a globally numbered report below ``rl/runs/evaluation``."""
+    return numbered_artifact_path(requested, "evaluation")
 
 
 def _validate_research_coverage(

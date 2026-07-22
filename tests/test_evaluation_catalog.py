@@ -17,6 +17,7 @@ from evaluation.cli import (
     validate_catalog,
 )
 from evaluation.packages.loader import PackageValidationError
+from rl.core.runs import numbered_artifact_path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -163,15 +164,16 @@ class EvaluationCatalogTests(unittest.TestCase):
             with self.assertRaisesRegex(PackageValidationError, "does not exist"):
                 load_opponent_catalog(path, EVALUATION_ROOT)
 
-    def test_research_output_root_allocates_after_legacy_and_numbered_runs(self) -> None:
+    def test_research_output_root_allocates_after_numbered_runs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "evaluation"
-            root.mkdir()
-            (root / "legacy_experiment").mkdir()
-            (root / "0003-previous").mkdir()
-            with patch("evaluation.cli.RESEARCH_EVALUATION_ROOT", root):
-                allocated = _numbered_research_output_root(root / "new_candidate")
-            self.assertEqual(allocated, root / "0004-new_candidate")
+            root = Path(temporary) / "runs"
+            (root / "evaluation").mkdir(parents=True)
+            (root / "training").mkdir()
+            (root / "research_candidates").mkdir()
+            (root / "evaluation" / "0003-previous").mkdir()
+            with patch("rl.core.runs.RUNS_ROOT", root):
+                allocated = _numbered_research_output_root(root / "evaluation" / "new_candidate")
+            self.assertEqual(allocated, root / "evaluation" / "0004-new_candidate")
 
     def test_research_coverage_requires_fixed_catalog_and_ten_games(self) -> None:
         with self.assertRaisesRegex(PackageValidationError, "170"):
@@ -179,6 +181,22 @@ class EvaluationCatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(PackageValidationError, "opponents all"):
             _validate_research_coverage("one", 10, tuple(range(17)))  # type: ignore[arg-type]
         _validate_research_coverage("all", 10, tuple(range(17)))  # type: ignore[arg-type]
+
+    def test_artifact_path_reuses_matching_experiment_number(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "runs"
+            (root / "training" / "0009-shared_project").mkdir(parents=True)
+            (root / "research_candidates").mkdir()
+            (root / "evaluation").mkdir()
+            with patch("rl.core.runs.RUNS_ROOT", root):
+                allocated = numbered_artifact_path(
+                    root / "research_candidates" / "shared_project",
+                    "research_candidates",
+                )
+            self.assertEqual(
+                allocated,
+                root / "research_candidates" / "0009-shared_project",
+            )
 
     def test_catalog_skips_loading_disabled_package(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
