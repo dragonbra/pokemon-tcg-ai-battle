@@ -114,6 +114,15 @@ candidate package 必须位于 `research_candidates/0009-project_name/` 内，�
 `rl/runs/` 顶层。evaluation CLI 和 candidate builder 会为未编号的直接输出自动分配
 全局顺序号；训练命令使用已分配的同一编号目录。
 
+当前大数据 BC 实验的对应路径为：
+
+```text
+rl/runs/datasets/alakazam_teacher_main_v6_action_cards_1gb_v1.jsonl
+rl/runs/training/0009-alakazam_bc_v6_action_cards_1gb_v1/
+rl/runs/research_candidates/0009-alakazam_bc_v6_action_cards_1gb_v1/
+rl/runs/evaluation/0009-alakazam_bc_v6_action_cards_1gb_v1/
+```
+
 ## 存储空间护栏
 
 WSL 下优先检查挂载到 `/mnt/c` 的 C 盘，而不是只看 Linux 根盘。dataset builder 和

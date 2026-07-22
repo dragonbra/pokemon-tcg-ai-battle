@@ -277,6 +277,31 @@ MCTS 分支尚未通过正式护栏，还没有把任何 RL checkpoint 晋级为
 需要一个不依赖 PyTorch 的推理封装或可接受的运行时方案，并经过 evaluation 的固定
 opponent 矩阵验收后才能建立新的 `work/<name>/`。
 
+### Phase E：1 GB BC baseline 与第一轮 reward 消融
+
+为避免把小数据集的拟合误判成策略学习，`0008-alakazam_teacher_bc_collection_1gb`
+使用规则 teacher 在 17 个 opponent、每个 350 局的矩阵上收集了 5,950 局 trace，随后
+转换为 179,947 条 `ptcg_features_v6` 主动作记录，数据集大小约 979 MiB。49 个 engine
+error 保留在 collection 报告中；对应的 520 条 neutral outcome 不被当作胜负正例。
+
+`0009-alakazam_bc_v6_action_cards_1gb_v1` 使用 2-layer、256-dim Transformer 在 RTX
+5080/CUDA 上训练，validation action accuracy 为 85.42%，legal action rate 为 100%。
+其 teacher-fallback candidate 在完整 17×10 evaluation 中为 `121/170 = 71.18%`、1 个
+engine error，低于 teacher 的 `124/170 = 72.94%`，因此只作为新的 BC baseline 保存。
+
+以同一 baseline 继续做 reward 迭代，结果如下：
+
+| 分支 | 结果 | 结论 |
+| --- | --- | --- |
+| terminal PPO，5 epoch，学习率 `1e-6` | `117/170`，3 errors | 稀疏终局 reward 造成策略漂移，拒绝 |
+| visible potential shaping `0.1` | `123/170`，1 error | 最接近 teacher，但未取得 primary outcome 增益 |
+| transition return `0.1` | `113/170`，2 errors | 当前 return target 不可靠，拒绝 |
+| potential checkpoint，confidence gate `0.90` | `121/170`，1 error | 提高 gate 不能单独改善 outcome |
+
+因此后续应优先收集可靠的反事实 action advantage 或针对 failure class 的重标注，不能
+继续把整局终局结果复制给每个动作，也不能用 Powerful Hand、library pressure 等过程
+指标替代完整 outcome/correctness 护栏。
+
 ## 6. 对手池和冻结评测
 
 训练可以从 opponent pool 采样，但不能把 opponent ID 当作策略捷径。每个 checkpoint
