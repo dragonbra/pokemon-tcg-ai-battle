@@ -90,12 +90,22 @@ def iter_behavior_cloning_records(
     result = payload.get("result") or {}
     game_id = str(result.get("game_id") or result.get("gameId") or Path(path).stem)
     winner = result.get("winner")
-    terminal_outcome = 1.0 if winner == 0 else -1.0 if winner == 1 else 0.0
     actual_teacher_index = teacher_player_index
     if actual_teacher_index is None:
         actual_teacher_index = int(result.get("candidate_physical_index", 0))
     if actual_teacher_index not in (0, 1):
         raise ValueError(f"invalid candidate physical index in {source_path}")
+    # Rewards and value targets are always from the acting candidate's
+    # perspective.  Evaluation alternates physical player index, so using
+    # winner==0 as a universal positive label silently flips every second-seat
+    # trajectory and corrupts outcome/return/PPO experiments.
+    terminal_outcome = (
+        1.0
+        if winner == actual_teacher_index
+        else -1.0
+        if winner in (0, 1)
+        else 0.0
+    )
 
     trace_entries = payload["trace"]
     history: list[dict[str, int]] = []

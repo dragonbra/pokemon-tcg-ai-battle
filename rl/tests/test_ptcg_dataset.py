@@ -84,6 +84,34 @@ class PTCGDatasetTests(unittest.TestCase):
         self.assertEqual(len(records), 2)
         self.assertAlmostEqual(records[0]["potential_shaping"]["prize_race"], 0.99 / 6.0)
 
+    def test_terminal_outcome_uses_candidate_physical_perspective(self) -> None:
+        observation = {
+            "current": {
+                "yourIndex": 1,
+                "players": [{"active": [], "bench": []}, {"active": [], "bench": []}],
+            },
+            "select": {
+                "type": 0,
+                "context": 0,
+                "minCount": 1,
+                "maxCount": 1,
+                "option": [{"type": 14}],
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "second-seat-win.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "result": {"winner": 1, "candidate_physical_index": 1},
+                        "trace": [{"step": 1, "observation": observation, "action": [0]}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            records = list(iter_behavior_cloning_records(path, teacher_player_index=None))
+        self.assertEqual(records[0]["terminal_outcome"], 1.0)
+
     def test_mcts_determinizations_aggregate_visit_counts(self) -> None:
         results = [
             ([0.2, 0.8], [3, 1], [0.75, 0.25], [0.2, 0.8]),
