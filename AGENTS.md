@@ -25,6 +25,16 @@
 - 同步内容至少覆盖受影响的字段与张量 shape、模型数据流与参数结构、训练目标、当前/下一阶段、正式工作包与研究 checkpoint 的边界；不得让页面继续展示已经失效的 schema、数字或阶段结论。
 - 实现或配置已经变化但 `rl/model/DESIGN.html` 尚未同步时，该项工作视为未完成。交付前必须用当前代码、数据 audit、checkpoint metadata 和 run manifest 交叉核对页面内容；不能只根据旧报告手工推断。
 - 纯粹的内部重构、文件移动或不改变模型/训练语义的修复不要求制造文档改动；但如果路径发生变化，页面中的事实来源链接也必须保持可用。
+- BC 数据默认只允许来自同一个明确的 team/agent policy；manifest、dataset summary 和 run record 必须记录并校验该来源。不得把不同 team、不同实现逻辑的动作标签直接混成一个无条件 BC policy；只有在模型显式加入可审计的 expert/source conditioning、并单独设计冲突标签与分来源评测时，才可以开启多来源训练。
+
+## RL 实验内迭代版本硬约束
+
+- `rl/_runs/<000N-experiment>/` 表示一个项目级实验，根目录只保存共享的 manifest、数据 manifest/audit、决策与命令记录；同一实验内每次实际训练、校准或策略更新都必须新建 `V<序号>_<tag>/` 子目录，例如 `V1_initial_contract`、`V2_card_token_fix`。
+- 序号从 `V1` 开始，在同一实验内严格单调递增；`tag` 使用能说明本次假设或修复的 ASCII 小写 `snake_case`。不得复用旧序号、覆盖旧目录、向旧 metrics 追加新 run，或因为结果失败而删除旧版本。
+- 每个版本的 tracked 训练产物必须写到 `rl/_runs/<experiment>/V<n>_<tag>/`，至少包含独立的 training config、metrics、summary/status；TensorBoard event 必须写到 `rl/_runs/tensorboard/<experiment>/V<n>_<tag>/`，checkpoint 必须写到 `rl/artifact/checkpoint/<experiment>/V<n>_<tag>/`。三处版本名必须完全一致，禁止直接把 event 或 checkpoint 写在 experiment 根目录。
+- 评测同样使用 `evaluation/V<n>_<tag>/`，并与产生 candidate 的训练版本对应；仅评测解析器或 opponent catalog 变化时也要新建版本并在 tag/决策记录中说明变量，不得混写已有报告。
+- 失败、被中止或确认存在数据/编码缺陷的版本仍然是正式迭代记录：必须保留可恢复产物，在 version status 或 experiment decisions 中记录失败原因、发现证据和下一版本具体改进。后续版本的价值需要能从这些记录和 TensorBoard 曲线中被追溯。
+- 启动新 run 前必须先检查目标 version 的 run、TensorBoard 和 checkpoint 三个目录均未被使用；若任一路径已有文件，必须分配下一个 `V<n>_<tag>`，不得依赖 TensorBoard 新建 event 文件来区分逻辑 run。
 
 ## 宝可梦 TCG 规则学习长期记忆
 

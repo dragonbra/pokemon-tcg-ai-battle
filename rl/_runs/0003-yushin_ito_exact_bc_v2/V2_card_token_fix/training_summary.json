@@ -1,0 +1,267 @@
+{
+  "best_epoch": 13,
+  "best_validation_exact_action_rate": 0.8051768214742224,
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/checkpoint/0003-yushin_ito_exact_bc_v2/V2_card_token_fix/best_validation.pt",
+  "config": {
+    "batch_size": 256,
+    "card_metadata": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl.card_metadata.json",
+    "dataset": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl",
+    "dataset_records": {
+      "test": 8217,
+      "train": 69270,
+      "validation": 9388
+    },
+    "device": "cuda",
+    "epochs": 20,
+    "fallback": null,
+    "feature_schema": "ptcg_features_universal",
+    "learning_rate": 0.0003,
+    "max_selection_count": 64,
+    "model_config": {
+      "action_type_vocab_size": 32,
+      "candidate_numeric_dim": 22,
+      "card_vocab_size": 4096,
+      "d_model": 256,
+      "deck_numeric_dim": 18,
+      "deck_token_count": 60,
+      "dropout": 0.0,
+      "entity_numeric_dim": 28,
+      "entity_token_count": 12,
+      "expert_vocab_size": 64,
+      "hidden_dim": 512,
+      "history_numeric_dim": 8,
+      "history_token_count": 32,
+      "max_candidates": 64,
+      "num_heads": 4,
+      "num_transformer_layers": 2,
+      "state_numeric_dim": 64,
+      "state_token_count": 40
+    },
+    "reward_profile": "none_pure_behavior_cloning",
+    "seed": 7,
+    "selection_contract": "single categorical CE + multi-label candidate BCE + count CE"
+  },
+  "final_test": {
+    "by_selection": {
+      "type=0,context=0": {
+        "exact_action_rate": 0.7040050062578223,
+        "records": 4794
+      },
+      "type=1,context=1": {
+        "exact_action_rate": 0.85,
+        "records": 100
+      },
+      "type=1,context=18": {
+        "exact_action_rate": 1.0,
+        "records": 1
+      },
+      "type=1,context=19": {
+        "exact_action_rate": 1.0,
+        "records": 1
+      },
+      "type=1,context=2": {
+        "exact_action_rate": 0.972972972972973,
+        "records": 37
+      },
+      "type=1,context=3": {
+        "exact_action_rate": 0.8737373737373737,
+        "records": 198
+      },
+      "type=1,context=4": {
+        "exact_action_rate": 0.921832884097035,
+        "records": 371
+      },
+      "type=1,context=5": {
+        "exact_action_rate": 0.9478827361563518,
+        "records": 307
+      },
+      "type=1,context=7": {
+        "exact_action_rate": 0.8773204196933011,
+        "records": 1239
+      },
+      "type=1,context=8": {
+        "exact_action_rate": 0.03125,
+        "records": 64
+      },
+      "type=1,context=9": {
+        "exact_action_rate": 0.8225806451612904,
+        "records": 62
+      },
+      "type=4,context=30": {
+        "exact_action_rate": 0.9361702127659575,
+        "records": 141
+      },
+      "type=5,context=34": {
+        "exact_action_rate": 1.0,
+        "records": 17
+      },
+      "type=7,context=37": {
+        "exact_action_rate": 0.9919354838709677,
+        "records": 124
+      },
+      "type=8,context=38": {
+        "exact_action_rate": 1.0,
+        "records": 19
+      },
+      "type=9,context=41": {
+        "exact_action_rate": 1.0,
+        "records": 59
+      },
+      "type=9,context=43": {
+        "exact_action_rate": 0.9458272327964861,
+        "records": 683
+      }
+    },
+    "count_loss": 0.006204311371689211,
+    "exact_action_rate": 0.7837410247048802,
+    "legal_action_rate": 1.0,
+    "multi_action_exact_rate": 0.7634194831013916,
+    "policy_loss": 0.7371694120493802,
+    "records": 8217.0,
+    "selection_count_accuracy": 0.9985396129974443,
+    "single_action_accuracy": 0.7850661135597615
+  },
+  "last_epoch": {
+    "train/by_selection": {
+      "type=0,context=0": {
+        "exact_action_rate": 0.9441631605219996,
+        "records": 42069
+      },
+      "type=1,context=1": {
+        "exact_action_rate": 0.9275,
+        "records": 800
+      },
+      "type=1,context=2": {
+        "exact_action_rate": 0.9633802816901409,
+        "records": 355
+      },
+      "type=1,context=3": {
+        "exact_action_rate": 0.8992490613266583,
+        "records": 1598
+      },
+      "type=1,context=4": {
+        "exact_action_rate": 0.9482809285924184,
+        "records": 3403
+      },
+      "type=1,context=5": {
+        "exact_action_rate": 0.9804005112910098,
+        "records": 2347
+      },
+      "type=1,context=7": {
+        "exact_action_rate": 0.9744913452778622,
+        "records": 9879
+      },
+      "type=1,context=8": {
+        "exact_action_rate": 0.04299065420560748,
+        "records": 535
+      },
+      "type=1,context=9": {
+        "exact_action_rate": 0.8059071729957806,
+        "records": 474
+      },
+      "type=4,context=30": {
+        "exact_action_rate": 0.9817813765182186,
+        "records": 988
+      },
+      "type=5,context=34": {
+        "exact_action_rate": 1.0,
+        "records": 164
+      },
+      "type=7,context=37": {
+        "exact_action_rate": 0.9758897818599311,
+        "records": 871
+      },
+      "type=8,context=38": {
+        "exact_action_rate": 1.0,
+        "records": 170
+      },
+      "type=9,context=41": {
+        "exact_action_rate": 1.0,
+        "records": 387
+      },
+      "type=9,context=43": {
+        "exact_action_rate": 0.994263862332696,
+        "records": 5230
+      }
+    },
+    "train/count_loss": 0.0009066403583164077,
+    "train/exact_action_rate": 0.9461816081997979,
+    "train/legal_action_rate": 1.0,
+    "train/loss": 0.18128142635100883,
+    "train/multi_action_exact_rate": 0.7986611740473738,
+    "train/policy_loss": 0.1514819566367926,
+    "train/records": 69270.0,
+    "train/selection_count_accuracy": 0.9996390934026274,
+    "train/single_action_accuracy": 0.9549444835285841,
+    "validation/by_selection": {
+      "type=0,context=0": {
+        "exact_action_rate": 0.7402072720885298,
+        "records": 5693
+      },
+      "type=1,context=1": {
+        "exact_action_rate": 0.9,
+        "records": 100
+      },
+      "type=1,context=2": {
+        "exact_action_rate": 0.8205128205128205,
+        "records": 39
+      },
+      "type=1,context=3": {
+        "exact_action_rate": 0.8324022346368715,
+        "records": 179
+      },
+      "type=1,context=4": {
+        "exact_action_rate": 0.8784370477568741,
+        "records": 691
+      },
+      "type=1,context=5": {
+        "exact_action_rate": 0.9444444444444444,
+        "records": 288
+      },
+      "type=1,context=7": {
+        "exact_action_rate": 0.8788844621513944,
+        "records": 1255
+      },
+      "type=1,context=8": {
+        "exact_action_rate": 0.034482758620689655,
+        "records": 87
+      },
+      "type=1,context=9": {
+        "exact_action_rate": 0.8225806451612904,
+        "records": 62
+      },
+      "type=4,context=30": {
+        "exact_action_rate": 0.9312977099236641,
+        "records": 131
+      },
+      "type=5,context=34": {
+        "exact_action_rate": 1.0,
+        "records": 13
+      },
+      "type=7,context=37": {
+        "exact_action_rate": 0.9823008849557522,
+        "records": 113
+      },
+      "type=8,context=38": {
+        "exact_action_rate": 1.0,
+        "records": 18
+      },
+      "type=9,context=41": {
+        "exact_action_rate": 1.0,
+        "records": 55
+      },
+      "type=9,context=43": {
+        "exact_action_rate": 0.9593373493975904,
+        "records": 664
+      }
+    },
+    "validation/count_loss": 0.005458347400899338,
+    "validation/exact_action_rate": 0.7964422667234767,
+    "validation/legal_action_rate": 1.0,
+    "validation/multi_action_exact_rate": 0.7222222222222222,
+    "validation/policy_loss": 0.8679811356438173,
+    "validation/records": 9388.0,
+    "validation/selection_count_accuracy": 0.9988282914358756,
+    "validation/single_action_accuracy": 0.8004942709503482
+  }
+}

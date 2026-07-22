@@ -1,0 +1,8 @@
+Python 3.11.15
+Linux 6.6.87.2-microsoft-standard-WSL2 x86_64
+PyTorch 2.11.0+cu128
+CUDA 12.8
+GPU NVIDIA GeForce RTX 5080
+Training device cuda
+Seed 7
+Storage guard /mnt/c with minimum 10 GiB free

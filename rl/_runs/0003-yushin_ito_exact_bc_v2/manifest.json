@@ -1,0 +1,105 @@
+{
+  "schema_version": "ptcg_experiment_v2",
+  "experiment_id": "0003-yushin_ito_exact_bc_v2",
+  "label": "yushin_ito_exact_bc_v2",
+  "objective": "Validate the universal deck, entity, history, card-metadata, and expert-conditioned BC design on the frozen 0001 Yushin Ito corpus",
+  "status": "completed_closed_loop_submitted",
+  "created_at": "2026-07-22T20:12:25.576432+00:00",
+  "completed_at": "2026-07-22T21:16:51.397000+00:00",
+  "git_commit_at_start": "b98d27db3c7edfc3e0d7ba2375592c2136422235",
+  "source": {
+    "canonical": [
+      "rl/model",
+      "rl/train",
+      "rl/core"
+    ],
+    "working_tree_note": "Model and feature changes were uncommitted during both attempts; version status records the observed contract and failure evidence."
+  },
+  "paths": {
+    "run": "rl/_runs/0003-yushin_ito_exact_bc_v2",
+    "dataset": "rl/artifact/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl",
+    "checkpoint_root": "rl/artifact/checkpoint/0003-yushin_ito_exact_bc_v2",
+    "tensorboard_root": "rl/_runs/tensorboard/0003-yushin_ito_exact_bc_v2",
+    "evaluation_root": "rl/_runs/0003-yushin_ito_exact_bc_v2/evaluation/V2_card_token_fix"
+  },
+  "data": {
+    "source_experiment": "0001-yushin_ito_exact_bc_baseline",
+    "source_manifest": "data_manifest.json",
+    "summary": "data_summary.json",
+    "audit": "audit.json",
+    "audit_status": "passed",
+    "expert_team_name": "Yushin Ito",
+    "submission_id": 54773249,
+    "episodes": 1000,
+    "records": 86875,
+    "records_by_split": {
+      "train": 69270,
+      "validation": 9388,
+      "test": 8217
+    },
+    "dataset_sha256": "04f72ffeb0518e692cc5aac69b9b91fe571a36493548f3e57f2f65d02446e082",
+    "multi_expert_data": false
+  },
+  "model_contract": {
+    "feature_schema": "ptcg_features_universal",
+    "action_schema": "ptcg_action_set_v1",
+    "parameters": 5194307,
+    "state_dict_tensors": 77,
+    "state_numeric": 64,
+    "state_tokens": 40,
+    "deck_tokens": 60,
+    "deck_numeric": 18,
+    "entity_tokens": 12,
+    "entity_numeric": 28,
+    "history_tokens": 32,
+    "history_numeric": 8,
+    "candidate_count": 64,
+    "candidate_numeric": 22,
+    "expert_vocab_size": 64
+  },
+  "attempts": [
+    {
+      "attempt_id": "V1_card_token_regression",
+      "status": "invalidated_stopped",
+      "record": "V1_card_token_regression/status.json"
+    },
+    {
+      "attempt_id": "V2_card_token_fix",
+      "status": "completed_closed_loop_submitted",
+      "record": "V2_card_token_fix/status.json"
+    }
+  ],
+  "current_attempt": "V2_card_token_fix",
+  "closed_loop_evaluation": {
+    "run_id": "run-8688bfdaa9c44059a7fec383b5f64f6e",
+    "report": "evaluation/V2_card_token_fix/run-8688bfdaa9c44059a7fec383b5f64f6e/report.html",
+    "metric_profile": "auto_iteration_v8_setup_relay",
+    "metric_profile_revision": 2,
+    "games": 180,
+    "wins": 136,
+    "losses": 44,
+    "draws": 0,
+    "win_rate": 0.7555555555555555,
+    "finished_rate": 1.0,
+    "errors": 0,
+    "candidate_package_hash": "6a20623be8ae8838702c73ce19cf3cdbf8b4bf14a58e695b9b4be220a8332241",
+    "engine_cg_tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+  },
+  "promotion": {
+    "promoted": true,
+    "reason": "The self-contained V2 package passed validation and completed 180 official-engine games with 75.56% wins and zero errors.",
+    "candidate": "work/yushin_ito_exact_bc_v2",
+    "submission_source": "submission/yushin_ito_exact_bc_v2",
+    "archive": "submission/dist/yushin_ito_exact_bc_v2.tar.gz",
+    "archive_sha256": "29d109480cab947422148cb822fccbadb55e77c9e565312f8cd507529cb86fa6",
+    "archive_bytes": 21229532,
+    "model_sha256": "4b41984bed5dcbfaec2f7e12514eab25341f075703f31e39699a70af6e5a0411",
+    "kaggle_submission": {
+      "competition": "pokemon-tcg-ai-battle",
+      "ref": 54912599,
+      "submitted_at": "2026-07-22T21:16:51.397000+00:00",
+      "status_at_archive": "COMPLETE",
+      "public_score_at_archive": 713.2
+    }
+  }
+}

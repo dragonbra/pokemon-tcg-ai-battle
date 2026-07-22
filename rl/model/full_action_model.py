@@ -39,6 +39,13 @@ class FullActionPolicyValueNet(CandidatePolicyValueNet):
         action_target_ids: Tensor,
         action_numeric: Tensor,
         action_mask: Tensor,
+        deck_card_ids: Tensor | None = None,
+        deck_card_numeric: Tensor | None = None,
+        entity_card_ids: Tensor | None = None,
+        entity_numeric: Tensor | None = None,
+        history_card_ids: Tensor | None = None,
+        history_numeric: Tensor | None = None,
+        expert_ids: Tensor | None = None,
     ) -> tuple[Tensor, Tensor, Tensor]:
         if action_mask.ndim != 2:
             raise ValueError("action_mask must have shape [batch, candidate_count]")
@@ -47,7 +54,17 @@ class FullActionPolicyValueNet(CandidatePolicyValueNet):
         if action_type_ids.shape[1] != self.config.max_candidates:
             raise ValueError("candidate tensors must use ModelConfig.max_candidates")
 
-        state = self._encode_state(state_numeric, state_card_ids)
+        state = self._encode_state(
+            state_numeric,
+            state_card_ids,
+            deck_card_ids,
+            deck_card_numeric,
+            entity_card_ids,
+            entity_numeric,
+            history_card_ids,
+            history_numeric,
+            expert_ids,
+        )
         candidates = self._encode_candidates(
             action_type_ids,
             action_card_ids,

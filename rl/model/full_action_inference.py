@@ -22,10 +22,16 @@ class FullActionPolicy:
         model: FullActionPolicyValueNet,
         *,
         feature_config: PTCGFeatureConfig,
+        deck: list[int] | None = None,
+        expert_id: int = 1,
+        card_metadata: dict[str, list[float]] | None = None,
         device: str | torch.device = "cpu",
     ) -> None:
         self.model = model.to(device).eval()
         self.feature_config = feature_config
+        self.deck = list(deck or [])
+        self.expert_id = int(expert_id)
+        self.card_metadata = dict(card_metadata or {})
         self.device = torch.device(device)
         self.history: list[dict[str, int]] = []
 
@@ -46,7 +52,14 @@ class FullActionPolicy:
         max_count = int(metadata.get("max_selection_count", model_config.max_candidates))
         model = FullActionPolicyValueNet(model_config, max_selection_count=max_count)
         model.load_state_dict(payload["model"])
-        return cls(model, feature_config=feature_config, device=map_location)
+        return cls(
+            model,
+            feature_config=feature_config,
+            deck=[int(value) for value in metadata.get("deck", [])],
+            expert_id=int(metadata.get("expert_id", 1)),
+            card_metadata=metadata.get("card_metadata") or {},
+            device=map_location,
+        )
 
     def reset(self) -> None:
         self.history.clear()
@@ -65,6 +78,9 @@ class FullActionPolicy:
 
         model_observation = copy.deepcopy(observation)
         model_observation["rl_history"] = list(self.history)
+        model_observation["rl_deck"] = list(self.deck)
+        model_observation["rl_expert_id"] = self.expert_id
+        model_observation["rl_card_metadata"] = self.card_metadata
         encoded = encode_observation(model_observation, self.feature_config)
         batch = {
             "state_numeric": torch.tensor([encoded["state_numeric"]], dtype=torch.float32),
@@ -75,6 +91,18 @@ class FullActionPolicy:
             "action_numeric": torch.tensor([encoded["action_numeric"]], dtype=torch.float32),
             "action_mask": torch.tensor([encoded["action_mask"]], dtype=torch.bool),
         }
+        for key in (
+            "deck_card_ids",
+            "deck_card_numeric",
+            "entity_card_ids",
+            "entity_numeric",
+            "history_card_ids",
+            "history_numeric",
+            "expert_ids",
+        ):
+            if key in encoded:
+                dtype = torch.long if key.endswith("_ids") else torch.float32
+                batch[key] = torch.tensor([encoded[key]], dtype=dtype)
         batch = {key: value.to(self.device) for key, value in batch.items()}
         select = observation.get("select") or {}
         minimum = max(0, self._int(select.get("minCount"), 0))

@@ -13,7 +13,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-from rl.core.batch import collate_encoded
+from rl.core.batch import UNIVERSAL_INPUT_KEYS, collate_encoded
 from rl.core.checkpoint import CheckpointManager
 from rl.core.logging import TrainingLogger
 from rl.core.model import ModelConfig
@@ -21,6 +21,11 @@ from rl.core.runs import training_paths
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 
 from rl.model.full_action_model import FullActionPolicyValueNet
+
+
+SUPPORTED_DATASET_VERSIONS = frozenset(
+    {"ptcg_kaggle_bc_v1", "ptcg_kaggle_bc_universal"}
+)
 
 
 MODEL_INPUT_KEYS = (
@@ -41,7 +46,7 @@ def _load(path: Path) -> list[dict[str, Any]]:
             if not line.strip():
                 continue
             record = json.loads(line)
-            if record.get("dataset_version") != "ptcg_kaggle_bc_v1":
+            if record.get("dataset_version") not in SUPPORTED_DATASET_VERSIONS:
                 raise ValueError(f"unsupported Kaggle BC record at line {line_number}")
             targets = record.get("targets")
             encoded = record.get("encoded")
@@ -69,6 +74,16 @@ def _load(path: Path) -> list[dict[str, Any]]:
             records.append(record)
     if not records:
         raise ValueError(f"dataset contains no records: {path}")
+    expert_teams = {
+        str(record.get("expert_team_name"))
+        for record in records
+        if record.get("expert_team_name")
+    }
+    if len(expert_teams) != 1:
+        raise ValueError(
+            "behavior cloning requires exactly one expert team; "
+            f"found {sorted(expert_teams)}"
+        )
     return records
 
 
@@ -108,7 +123,8 @@ def _batch(records: list[dict[str, Any]], max_candidates: int) -> dict[str, Tens
 
 
 def _inputs(batch: dict[str, Tensor]) -> dict[str, Tensor]:
-    return {key: batch[key] for key in MODEL_INPUT_KEYS}
+    keys = MODEL_INPUT_KEYS + tuple(key for key in UNIVERSAL_INPUT_KEYS if key in batch)
+    return {key: batch[key] for key in keys}
 
 
 def _move(batch: dict[str, Tensor], device: torch.device) -> dict[str, Tensor]:
@@ -242,6 +258,12 @@ def train(
         "cuda" if device_name == "auto" and torch.cuda.is_available() else device_name
     )
     records = _load(dataset)
+    card_metadata_path = dataset.with_suffix(dataset.suffix + ".card_metadata.json")
+    card_metadata = (
+        json.loads(card_metadata_path.read_text(encoding="utf-8"))
+        if card_metadata_path.is_file()
+        else {}
+    )
     splits = _split_records(records)
     feature_config = records[0]["encoded"]
     state_numeric_dim = len(feature_config["state_numeric"])
@@ -260,6 +282,25 @@ def train(
         num_heads=num_heads,
         num_transformer_layers=transformer_layers,
         dropout=dropout,
+        deck_token_count=len(feature_config.get("deck_card_ids", [])),
+        deck_numeric_dim=(
+            len(feature_config.get("deck_card_numeric", [[]])[0])
+            if feature_config.get("deck_card_numeric")
+            else 0
+        ),
+        entity_token_count=len(feature_config.get("entity_card_ids", [])),
+        entity_numeric_dim=(
+            len(feature_config.get("entity_numeric", [[]])[0])
+            if feature_config.get("entity_numeric")
+            else 0
+        ),
+        history_token_count=len(feature_config.get("history_card_ids", [])),
+        history_numeric_dim=(
+            len(feature_config.get("history_numeric", [[]])[0])
+            if feature_config.get("history_numeric")
+            else 0
+        ),
+        expert_vocab_size=64 if "expert_ids" in feature_config else 0,
     )
     model = FullActionPolicyValueNet(model_config, max_selection_count=max_candidates).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
@@ -279,6 +320,10 @@ def train(
         "selection_contract": "single categorical CE + multi-label candidate BCE + count CE",
         "fallback": None,
         "reward_profile": "none_pure_behavior_cloning",
+        "feature_schema": "ptcg_features_universal"
+        if "deck_card_ids" in feature_config
+        else "ptcg_features_v6",
+        "card_metadata": str(card_metadata_path.resolve()) if card_metadata else None,
     }
     paths.config.write_text(
         json.dumps(config, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -320,8 +365,22 @@ def train(
                     "max_candidates": max_candidates,
                     "card_vocab_size": 4096,
                     "action_type_vocab_size": 32,
-                    "schema_version": "ptcg_features_v6",
+                    "schema_version": config["feature_schema"],
+                    "deck_token_count": model_config.deck_token_count,
+                    "deck_numeric_dim": model_config.deck_numeric_dim,
+                    "entity_token_count": model_config.entity_token_count,
+                    "entity_numeric_dim": model_config.entity_numeric_dim,
+                    "history_token_count": model_config.history_token_count,
+                    "history_numeric_dim": model_config.history_numeric_dim,
+                    "expert_vocab_size": model_config.expert_vocab_size,
                 },
+                "deck": [
+                    int(value) - 1
+                    for value in feature_config.get("deck_card_ids", [])
+                    if int(value) > 0
+                ],
+                "expert_id": int(feature_config.get("expert_ids", 1)),
+                "card_metadata": card_metadata,
                 "model_config": model_config.to_dict(),
                 "max_selection_count": max_candidates,
                 "selection_contract": config["selection_contract"],

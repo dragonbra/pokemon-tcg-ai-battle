@@ -36,7 +36,7 @@
           <a href="0001-yushin_ito_exact_bc_baseline/manifest.json">manifest</a> ·
           <a href="0001-yushin_ito_exact_bc_baseline/training_config.json">config</a> ·
           <a href="0001-yushin_ito_exact_bc_baseline/training_summary.json">training</a> ·
-          <a href="0001-yushin_ito_exact_bc_baseline/evaluation/run-873882eef9f04d74a8c76df4f680d1b0/report.html">evaluation</a>
+          <a href="0001-yushin_ito_exact_bc_baseline/evaluation/V3_18_opponents/report.html">evaluation</a>
         </td>
       </tr>
       <tr>
@@ -49,7 +49,22 @@
           <a href="0002-alakazam_bc_v1_tried_exact_2021/manifest.json">manifest</a> ·
           <a href="0002-alakazam_bc_v1_tried_exact_2021/audit.json">audit</a> ·
           <a href="0002-alakazam_bc_v1_tried_exact_2021/training_summary.json">training</a> ·
-          <a href="0002-alakazam_bc_v1_tried_exact_2021/evaluation/run-d2de0a4992f5490e874804d2901f04aa/report.html">evaluation</a>
+          <a href="0002-alakazam_bc_v1_tried_exact_2021/evaluation/V1_exact_2021_games/report.html">evaluation</a>
+        </td>
+      </tr>
+      <tr>
+        <td><code>0003-yushin_ito_exact_bc_v2</code><br><span class="subtle">current: V2_card_token_fix</span></td>
+        <td>只复用 0001 的 Yushin Ito / submission 54773249；1,000 episodes；86,875 records；通用数据 audit 通过</td>
+        <td>ptcg_features_universal；5.19M parameters；V1 invalid 63.92%；V2 validation exact 80.52%；test exact 78.37%；test legal 100%</td>
+        <td>136 / 180；0 errors；75.56%；official-engine run 完成</td>
+        <td class="keep">V2 已晋级并提交 Kaggle；ref <code>54912599</code>，public score 713.2</td>
+        <td>
+          <a href="0003-yushin_ito_exact_bc_v2/manifest.json">manifest</a> ·
+          <a href="0003-yushin_ito_exact_bc_v2/audit.json">audit</a> ·
+          <a href="0003-yushin_ito_exact_bc_v2/V1_card_token_regression/status.json">V1 status</a> ·
+          <a href="0003-yushin_ito_exact_bc_v2/V2_card_token_fix/training_summary.json">V2 training</a> ·
+          <a href="0003-yushin_ito_exact_bc_v2/evaluation/V2_card_token_fix/run-8688bfdaa9c44059a7fec383b5f64f6e/report.html">evaluation</a> ·
+          <a href="../model/DESIGN.html">model design</a>
         </td>
       </tr>
     </tbody>
@@ -57,8 +72,10 @@
 
   <h2>当前方向</h2>
   <ul>
-    <li>主 baseline：<code>0001-yushin_ito_exact_bc_baseline</code> / <code>work/alakazam_bc_v1</code>。</li>
-    <li>后续 reward 或 RL 实验继续使用新的全局编号，不覆盖 0001。</li>
+    <li>归档 baseline：<code>0001-yushin_ito_exact_bc_baseline</code> / <code>work/alakazam_bc_v1</code>。</li>
+    <li>当前通用合同：<code>0003-yushin_ito_exact_bc_v2/V2_card_token_fix</code>；单 expert BC 已通过 official-engine closed-loop 验收并提交，但尚未证明跨卡组泛化。</li>
+    <li>同一 experiment 的新尝试必须使用下一个 <code>V&lt;n&gt;_&lt;tag&gt;</code>，不得复用 TensorBoard、metrics 或 checkpoint 目录。</li>
+    <li>后续 reward 或 RL 项目继续使用新的全局编号，不覆盖 0001/0003。</li>
     <li>TensorBoard 对比入口：<code>tensorboard --logdir rl/_runs/tensorboard</code>。</li>
     <li>大文件位于 <code>rl/artifact/dataset</code> 与 <code>rl/artifact/checkpoint</code>，不进入 Git。</li>
   </ul>

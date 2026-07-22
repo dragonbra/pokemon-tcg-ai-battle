@@ -15,6 +15,7 @@ RUNS_ROOT = Path(__file__).resolve().parents[1] / "_runs"
 ARTIFACT_ROOT = Path(__file__).resolve().parents[1] / "artifact"
 NUMBERED_ARTIFACT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
 EXPERIMENT_DIR = re.compile(r"^(?P<number>\d{4})-(?P<label>[a-z0-9][a-z0-9_-]*)$")
+VERSIONED_ATTEMPT = re.compile(r"^V(?P<version>[1-9]\d*)_(?P<tag>[a-z0-9][a-z0-9_]*)$")
 
 
 @dataclass(frozen=True)
@@ -30,16 +31,42 @@ class TrainingPaths:
 
 
 def training_paths(output: Path) -> TrainingPaths:
-    """Resolve the new layout, retaining local `/tmp` smoke compatibility."""
-    if output.resolve().parent == RUNS_ROOT.resolve():
-        return TrainingPaths(
+    """Resolve one immutable version inside an experiment or a local smoke run."""
+    resolved = output.resolve()
+    runs_root = RUNS_ROOT.resolve()
+    if resolved.parent == runs_root:
+        raise ValueError(
+            "training output must be a versioned experiment child such as "
+            f"{output / 'V1_initial_contract'}"
+        )
+    if resolved.parent.parent == runs_root:
+        experiment = resolved.parent
+        if EXPERIMENT_DIR.fullmatch(experiment.name) is None:
+            raise ValueError(f"invalid experiment directory name: {experiment.name}")
+        if VERSIONED_ATTEMPT.fullmatch(resolved.name) is None:
+            raise ValueError(
+                "training attempt must match V<n>_<snake_case_tag>: "
+                f"{resolved.name}"
+            )
+        paths = TrainingPaths(
             run=output,
-            checkpoints=ARTIFACT_ROOT / "checkpoint" / output.name,
-            tensorboard=RUNS_ROOT / "tensorboard" / output.name,
+            checkpoints=ARTIFACT_ROOT / "checkpoint" / experiment.name / resolved.name,
+            tensorboard=RUNS_ROOT / "tensorboard" / experiment.name / resolved.name,
             config=output / "training_config.json",
             metrics=output / "training_metrics.jsonl",
             summary=output / "training_summary.json",
         )
+        occupied = [
+            path
+            for path in (paths.run, paths.checkpoints, paths.tensorboard)
+            if path.is_file() or (path.is_dir() and any(child.is_file() for child in path.rglob("*")))
+        ]
+        if occupied:
+            raise FileExistsError(
+                "training attempt paths are already in use; allocate the next version: "
+                + ", ".join(str(path) for path in occupied)
+            )
+        return paths
     return TrainingPaths(
         run=output,
         checkpoints=output / "checkpoints",
@@ -67,7 +94,7 @@ def numbered_artifact_path(requested: Path, group: str) -> Path:
             match = EXPERIMENT_DIR.match(child.name)
             if child.is_dir() and match is not None and match.group("label") == normalized:
                 return child / "evaluation"
-    return next_experiment_path(experiment.name) / "evaluation"
+    return next_experiment_path(experiment.name, runs_root) / "evaluation"
 
 
 def _git_value(*args: str) -> str | None:

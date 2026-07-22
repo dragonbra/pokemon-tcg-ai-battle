@@ -1,0 +1,46 @@
+{
+  "schema_version": "ptcg_training_attempt_v1",
+  "experiment_id": "0003-yushin_ito_exact_bc_v2",
+  "attempt_id": "V1_card_token_regression",
+  "status": "invalidated_stopped",
+  "started_at": "2026-07-22T20:18:37.244Z",
+  "stopped_at": "2026-07-22T20:24:56.904Z",
+  "epochs_requested": 20,
+  "epochs_completed": 12,
+  "best_epoch": 10,
+  "best_validation_exact_action_rate": 0.6392202812100554,
+  "last_validation_exact_action_rate": 0.6338943331913081,
+  "failure": {
+    "category": "feature_encoder_regression",
+    "summary": "The card ID resolver body was displaced during the universal feature patch, and the universal schema did not use visible candidate-card/target resolution.",
+    "impact": "The dataset had the correct tensor shapes but lost nearly all observation and target card identities.",
+    "nonzero_token_counts_across_86875_records": {
+      "state_card_ids": 0,
+      "entity_card_ids": 0,
+      "action_target_ids": 0,
+      "action_card_ids": 388,
+      "deck_card_ids": 5212500,
+      "history_card_ids": 4160
+    },
+    "invalid_dataset_sha256": "7244ff923ec3976351f8cf89e92f60dcaf1c08bd5570a07c820ec11129b528b6",
+    "invalid_dataset_retained": false,
+    "audit_note": "The original audit passed because it checked shapes, splits, sources, and legal labels but did not assert semantic token population."
+  },
+  "artifacts": {
+    "config": "training_config.json",
+    "metrics": "training_metrics.jsonl",
+    "shape_only_audit": "audit_shape_only.json",
+    "tensorboard": "../../tensorboard/0003-yushin_ito_exact_bc_v2/V1_card_token_regression",
+    "best_checkpoint": "../../../artifact/checkpoint/0003-yushin_ito_exact_bc_v2/V1_card_token_regression/best_validation.pt",
+    "best_checkpoint_sha256": "84f630d21799cb1af4e986a93634682dcd0a14c1688062832fc5747c537fc3ef"
+  },
+  "next_attempt": {
+    "attempt_id": "V2_card_token_fix",
+    "changes": [
+      "Restore card ID parsing before dataset generation",
+      "Use visible candidate-card and target resolution for the universal schema",
+      "Add unit assertions for non-padding state, entity, action, and deck-count features",
+      "Rebuild and re-audit the frozen 0001 corpus before restarting training"
+    ]
+  }
+}

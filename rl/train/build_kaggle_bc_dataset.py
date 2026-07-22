@@ -14,9 +14,11 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 from rl.core.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
+from rl.model.card_metadata import load_card_metadata, serialize_card_metadata
 
 from rl.model.features import (
     PTCGFeatureConfig,
+    UNIVERSAL_FEATURE_SCHEMA,
     encode_observation,
     feature_config_for_schema,
     feature_schema_for_config,
@@ -24,7 +26,16 @@ from rl.model.features import (
 
 
 DATASET_VERSION = "ptcg_kaggle_bc_v1"
+UNIVERSAL_DATASET_VERSION = "ptcg_kaggle_bc_universal"
 ACTION_SCHEMA_VERSION = "ptcg_action_set_v1"
+
+
+def _dataset_version(feature_config: PTCGFeatureConfig) -> str:
+    return (
+        UNIVERSAL_DATASET_VERSION
+        if feature_config.schema_version == UNIVERSAL_FEATURE_SCHEMA
+        else DATASET_VERSION
+    )
 
 
 def _as_int(value: Any, default: int = -1) -> int:
@@ -105,6 +116,7 @@ def iter_kaggle_records(
     feature_config: PTCGFeatureConfig,
     agent_index: int | None = None,
     expert_team_name: str | None = None,
+    expert_id: int = 1,
 ) -> Iterator[dict[str, Any]]:
     path = Path(replay_path)
     payload = _read_json(path)
@@ -116,7 +128,8 @@ def iter_kaggle_records(
         raise ValueError(f"invalid player index {agent_index} in {path}")
     episode_id = int((payload.get("info") or {}).get("EpisodeId", path.stem.split("-")[1]))
     # Validate that this is a full replay before using any action labels.
-    if len(_episode_deck(payload, agent_index)) != 60:
+    deck = _episode_deck(payload, agent_index)
+    if len(deck) != 60:
         raise ValueError(f"invalid 60-card deck in episode {episode_id}")
     reward_values = payload.get("rewards") or []
     # Some official replay exports leave the terminal reward unset (null).
@@ -156,6 +169,10 @@ def iter_kaggle_records(
             )
         model_observation = dict(observation)
         model_observation["rl_history"] = list(history)
+        model_observation["rl_deck"] = list(deck)
+        model_observation["rl_expert_id"] = expert_id
+        if feature_config.schema_version == UNIVERSAL_FEATURE_SCHEMA:
+            model_observation["rl_card_metadata"] = load_card_metadata()
         effect = select.get("effect") or {}
         effect_serial = _as_int(effect.get("serial"), -1)
         model_observation["rl_effect_step"] = effect_steps.get(effect_serial, 0)
@@ -168,21 +185,32 @@ def iter_kaggle_records(
                 raise ValueError(f"action target is outside options in episode {episode_id}")
         elif any(not encoded["action_mask"][index] for index in action):
             raise ValueError(f"action target is masked in episode {episode_id}:{step_index}")
-        if _as_int(select.get("type"), -1) == 0 and _as_int(select.get("context"), -1) == 0:
-            option = options[action[0]] if action else {}
-            if isinstance(option, dict):
-                history.append(
-                    {
-                        "type": int(option.get("type", 0) or 0),
-                        "cardId": int(option.get("cardId", 0) or 0),
-                        "attackId": int(option.get("attackId", 0) or 0),
-                    }
-                )
-                del history[:-32]
-        elif effect_serial >= 0:
+        option = options[action[0]] if action and action[0] < len(options) else {}
+        event = {
+            "type": _as_int(option.get("type"), 0) if isinstance(option, dict) else 0,
+            "cardId": _as_int(option.get("cardId"), 0) if isinstance(option, dict) else 0,
+            "attackId": _as_int(option.get("attackId"), 0) if isinstance(option, dict) else 0,
+            "targetCount": len(action),
+            "selectionType": _as_int(select.get("type"), -1),
+            "selectionContext": _as_int(select.get("context"), -1),
+            "effectStep": effect_steps.get(effect_serial, 0),
+        }
+        if feature_config.schema_version == UNIVERSAL_FEATURE_SCHEMA:
+            history.append(event)
+            del history[:-32]
+        elif _as_int(select.get("type"), -1) == 0 and _as_int(select.get("context"), -1) == 0:
+            history.append(
+                {
+                    "type": event["type"],
+                    "cardId": event["cardId"],
+                    "attackId": event["attackId"],
+                }
+            )
+            del history[:-32]
+        if effect_serial >= 0:
             effect_steps[effect_serial] = effect_steps.get(effect_serial, 0) + 1
         yield {
-            "dataset_version": DATASET_VERSION,
+            "dataset_version": _dataset_version(feature_config),
             "action_schema_version": ACTION_SCHEMA_VERSION,
             "feature_schema_version": feature_schema_for_config(feature_config),
             "source": str(path.resolve()),
@@ -235,6 +263,7 @@ def build_dataset(
                 split_map=split_map,
                 submission_id=submission_id,
                 feature_config=feature_config,
+                expert_id=1,
             ):
                 handle.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
                 decisions += 1
@@ -255,8 +284,15 @@ def build_dataset(
                 else:
                     outcome_name = "draw"
                 episode_outcomes[outcome_name] += 1
+    card_metadata_path: Path | None = None
+    if feature_config.schema_version == UNIVERSAL_FEATURE_SCHEMA:
+        card_metadata_path = output.with_suffix(output.suffix + ".card_metadata.json")
+        card_metadata_path.write_text(
+            json.dumps(serialize_card_metadata(load_card_metadata()), sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     summary = {
-        "dataset_version": DATASET_VERSION,
+        "dataset_version": _dataset_version(feature_config),
         "action_schema_version": ACTION_SCHEMA_VERSION,
         "feature_schema_version": feature_schema_for_config(feature_config),
         "replays": replay_count,
@@ -269,6 +305,7 @@ def build_dataset(
         "output": str(output.resolve()),
         "storage_path": storage.path,
         "storage_free_gib": round(storage.free_gib, 2),
+        "card_metadata": str(card_metadata_path.resolve()) if card_metadata_path else None,
     }
     (output.with_suffix(output.suffix + ".summary.json")).write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -328,6 +365,7 @@ def build_aggregate_dataset(
                     split_map={str(episode_id): split},
                     submission_id=submission_id,
                     feature_config=feature_config,
+                    expert_id=1,
                 ):
                     handle.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
                     decisions += 1
@@ -348,8 +386,15 @@ def build_aggregate_dataset(
                     )
                     episode_outcomes[outcome_name] += 1
 
+    card_metadata_path: Path | None = None
+    if feature_config.schema_version == UNIVERSAL_FEATURE_SCHEMA:
+        card_metadata_path = output.with_suffix(output.suffix + ".card_metadata.json")
+        card_metadata_path.write_text(
+            json.dumps(serialize_card_metadata(load_card_metadata()), sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     summary = {
-        "dataset_version": DATASET_VERSION,
+        "dataset_version": _dataset_version(feature_config),
         "action_schema_version": ACTION_SCHEMA_VERSION,
         "feature_schema_version": feature_schema_for_config(feature_config),
         "source_manifest_schema_version": manifest.get("schema_version"),
@@ -366,6 +411,7 @@ def build_aggregate_dataset(
         "output": str(output.resolve()),
         "storage_path": storage.path,
         "storage_free_gib": round(storage.free_gib, 2),
+        "card_metadata": str(card_metadata_path.resolve()) if card_metadata_path else None,
     }
     (output.with_suffix(output.suffix + ".summary.json")).write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",

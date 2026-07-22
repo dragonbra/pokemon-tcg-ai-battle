@@ -107,6 +107,10 @@ def build(
     (strategy / "__init__.py").write_text("", encoding="utf-8")
 
     repository_root = Path(__file__).resolve().parents[2]
+    shutil.copy2(
+        repository_root / "rl" / "model" / "card_metadata.py",
+        strategy / "card_metadata.py",
+    )
     shutil.copy2(repository_root / "rl" / "model" / "features.py", strategy / "features.py")
     shutil.copy2(repository_root / "rl" / "core" / "model.py", strategy / "core_model.py")
     full_action_model = (repository_root / "rl" / "model" / "full_action_model.py").read_text(

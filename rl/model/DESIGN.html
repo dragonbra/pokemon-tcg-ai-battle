@@ -5,46 +5,647 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PTCG RL Model Design</title>
   <style>
-    :root{--ink:#17202a;--muted:#5d6b79;--line:#d9e1e8;--paper:#f4f7fa;--surface:#fff;--navy:#17283c;--navy2:#22384f;--blue:#1769aa;--cyan:#0b8793;--green:#18794e;--greenSoft:#e6f5ed;--amber:#a35d00;--amberSoft:#fff1d6;--violet:#6746a5;--shadow:0 9px 24px rgba(23,40,60,.08)}
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:var(--paper);font:15px/1.65 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}button{font:inherit}code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
-    .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;min-height:58px;padding:0 5vw;color:#eef5fb;background:var(--navy);border-bottom:1px solid #304a63}.brand{display:flex;gap:10px;align-items:center;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}.brandMark{display:grid;width:25px;height:25px;place-items:center;color:#132235;background:#c4e6e4;border-radius:5px;font-size:12px}.navlinks{display:flex;gap:22px}.navlinks a{color:#b8cad9;font-size:12px;text-decoration:none}.navlinks a:hover{color:#fff}.print{cursor:pointer;padding:8px 12px;color:#d9eaf2;background:transparent;border:1px solid #49677f;border-radius:4px;font-size:12px}.print:hover{background:#29445d}
-    .hero{color:#f4f8fb;background:var(--navy);border-bottom:1px solid #304a63}.heroInner{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr);gap:48px;max-width:1240px;margin:auto;padding:78px 5vw 74px}.eyebrow,.kicker{margin:0 0 10px;color:#9ed9d7;font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.hero h1{max-width:760px;margin:0 0 18px;font-size:clamp(36px,5vw,66px);line-height:1.05;letter-spacing:-.03em}.heroCopy{max-width:680px;margin-bottom:26px;color:#c8d6e2;font-size:18px}.heroNote{display:flex;flex-wrap:wrap;gap:8px}.badge{display:inline-flex;align-items:center;min-height:26px;padding:2px 9px;color:#cae2f2;border:1px solid #4c6a83;border-radius:999px;font-size:12px;font-weight:700}.badge.active{color:#d0f0df;border-color:#4d9b76;background:#1d4a3a}.badge.next{color:#ffe4aa;border-color:#a4773e;background:#4a3920}.heroAside{align-self:end;padding:20px;border-left:2px solid #65b8b4;background:#1c3148}.heroAside strong{display:block;margin-bottom:10px;font-size:20px}.heroAside p{margin:0 0 8px;color:#c2d2de;font-size:13px}
-    main{max-width:1240px;margin:auto}section{padding:68px 5vw;scroll-margin-top:58px}.sectionHead{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:28px}.kicker{color:var(--blue)}h2{margin:0 0 8px;font-size:clamp(26px,3.2vw,42px);line-height:1.15;letter-spacing:-.025em}h3{margin:0 0 7px;font-size:18px;line-height:1.25}.lede{max-width:740px;color:var(--muted);font-size:16px}.rule{height:1px;margin:0 5vw;background:var(--line)}
-    .summaryGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.summary{min-height:132px;padding:18px;background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--blue);box-shadow:var(--shadow)}.summary:nth-child(2){border-top-color:var(--cyan)}.summary:nth-child(3){border-top-color:var(--green)}.summary:nth-child(4){border-top-color:var(--amber)}.summaryLabel{margin-bottom:10px;color:var(--muted);font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.summaryValue{margin-bottom:3px;font-size:25px;font-weight:900;line-height:1.1}.summaryDetail{color:var(--muted);font-size:13px}
-    .flowWrap{overflow-x:auto;padding-bottom:8px}.flow{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 34px 1fr 34px 1fr;align-items:stretch;min-width:980px;margin-top:28px}.flowBox{display:flex;flex-direction:column;justify-content:space-between;min-height:188px;padding:18px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--blue);box-shadow:var(--shadow)}.flowBox:nth-of-type(3){border-top-color:var(--cyan)}.flowBox:nth-of-type(5){border-top-color:var(--violet)}.flowBox:nth-of-type(7){border-top-color:var(--amber)}.flowBox:nth-of-type(9){border-top-color:var(--green)}.flowNum{color:var(--muted);font-size:11px;font-weight:900;letter-spacing:.08em}.flowTitle{margin:28px 0 5px;font-size:17px;font-weight:850}.flowText{color:var(--muted);font-size:13px}.flowDim{margin-top:18px;color:var(--blue);font:700 12px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace}.arrow{display:grid;place-items:center;color:var(--blue);font-size:23px;font-weight:800}.callout{display:grid;grid-template-columns:115px 1fr;gap:18px;margin-top:20px;padding:17px 20px;background:var(--greenSoft);border:1px solid #b9dfca;border-left:4px solid var(--green)}.callout strong{color:var(--green)}.callout p{margin:0;color:#315d48}
-    .inputLayout,.modelGrid,.lossLayout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(280px,.9fr);gap:28px;align-items:start}.inputGroups{display:grid;gap:8px}details{background:var(--surface);border:1px solid var(--line)}details[open]{border-color:#aabfce}summary{cursor:pointer;list-style:none;padding:16px 18px;font-weight:800}summary::-webkit-details-marker{display:none}summary:after{float:right;color:var(--blue);content:"+";font-size:20px;line-height:1}details[open] summary:after{content:"−"}.detailBody{padding:0 18px 18px;border-top:1px solid var(--line)}.detailBody p{margin:14px 0 0;color:var(--muted);font-size:13px}.dimChip,.fieldChip{display:inline-flex;align-items:center;margin:5px 4px 0 0;padding:3px 8px;border:1px solid var(--line);border-radius:4px;color:var(--ink);background:#f7fafc;font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace}.dimChip{color:var(--blue);border-color:#b8d1e3;background:#edf6fc;font-weight:800}.inputSide{padding:22px;color:#eaf2f7;background:var(--navy2)}.inputSide h3{color:#fff}.inputSide p{color:#c3d3df;font-size:13px}.sideList{margin:16px 0 0;padding:0;list-style:none}.sideList li{padding:10px 0;border-bottom:1px solid #456078;color:#d4e0e8;font-size:13px}.sideList li:last-child{border-bottom:0}.sideList b{color:#a9e0dc}
-    .schemaTable{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}.schemaTable th,.schemaTable td{padding:11px 13px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.schemaTable th{color:var(--muted);background:#f7fafc;font-size:12px;font-weight:850;letter-spacing:.04em;text-transform:uppercase}.schemaTable td{font-size:13px}.schemaTable tr:last-child td{border-bottom:0}
-    .modelStack{display:grid;gap:9px}.modelRow{display:grid;grid-template-columns:165px minmax(0,1fr) 120px;gap:12px;align-items:center;min-height:56px;padding:11px 14px;background:var(--surface);border:1px solid var(--line)}.modelRow .name{font-weight:850}.modelRow .desc{color:var(--muted);font-size:13px}.modelRow .shape{color:var(--blue);text-align:right;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace}.weightPanel{padding:21px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}.weightNumber{margin:17px 0 4px;font-size:38px;font-weight:900;line-height:1}.weightNote{color:var(--muted);font-size:13px}.barList{display:grid;gap:9px;margin-top:20px}.barLabel{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px}.barTrack{height:7px;margin-top:4px;overflow:hidden;background:#e6edf2}.barFill{height:100%;background:var(--blue)}.greenFill{background:var(--green)}.violetFill{background:var(--violet)}.amberFill{background:var(--amber)}
-    .formula{margin:0;padding:17px 19px;overflow-x:auto;color:#e5f1f3;background:#152d3b;font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace}.lossCopy{color:var(--muted)}.lossList{display:grid;gap:9px;margin-top:16px}.lossItem{padding:13px 15px;background:var(--surface);border:1px solid var(--line)}.lossItem strong{display:block}.lossItem span{color:var(--muted);font-size:13px}
-    .stageSwitch{display:flex;gap:6px;margin-bottom:24px}.stageSwitch button{cursor:pointer;padding:8px 13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:4px;font-weight:800}.stageSwitch button[aria-selected=true]{color:#fff;background:var(--navy);border-color:var(--navy)}.stagePanel{display:none}.stagePanel.active{display:block}.stageGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stageCard{min-height:190px;padding:20px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--blue);box-shadow:var(--shadow)}.stageCard.current{border-top-color:var(--green)}.stageCard.future{border-top-color:var(--amber)}.stageCard h3{display:flex;justify-content:space-between;gap:8px}.stageCard p,.stageCard li{color:var(--muted);font-size:13px}.stageCard ul{margin:10px 0 0;padding-left:18px}.truthGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.truth{padding:19px;border:1px solid #b9dfca;border-left:4px solid var(--green);background:var(--greenSoft)}.truth.caution{border-color:#e9cd9d;border-left-color:var(--amber);background:var(--amberSoft)}.truth h3{color:var(--green)}.truth.caution h3{color:var(--amber)}.truth p{margin:0;color:#405967;font-size:14px}.runStrip{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.run{padding:16px;background:#fff;border:1px solid var(--line)}.run small{display:block;margin-bottom:5px;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}.run strong{display:block;margin-bottom:4px}.run p{margin:0;color:var(--muted);font-size:13px}
-    footer{padding:32px 5vw 48px;color:#b6c7d4;background:var(--navy);font-size:12px}.footerInner{max-width:1240px;margin:auto}.footerInner a{color:#d2e8ef}
-    @media(max-width:930px){.heroInner,.inputLayout,.modelGrid,.lossLayout{grid-template-columns:1fr}.heroAside{max-width:580px}.summaryGrid{grid-template-columns:repeat(2,1fr)}.stageGrid{grid-template-columns:1fr}}
-    @media(max-width:640px){.topbar{padding:0 18px}.navlinks{display:none}.heroInner{padding:58px 18px 54px}section{padding:48px 18px}.rule{margin:0 18px}.hero h1{font-size:40px}.heroCopy{font-size:16px}.summaryGrid,.truthGrid,.runStrip{grid-template-columns:1fr}.sectionHead{display:block}.modelRow{grid-template-columns:1fr;gap:3px}.modelRow .shape{text-align:left}.callout{grid-template-columns:1fr;gap:2px}footer{padding:28px 18px 38px}}
-    @media print{.topbar,.stageSwitch{display:none}.hero{color:#000;background:#fff;border-bottom:1px solid #aaa}.heroCopy,.heroAside p{color:#333}.heroAside{color:#000;background:#f3f3f3;border-left-color:#555}.heroAside strong{color:#000}section{padding:28px 0}.flowWrap{overflow:visible}.flow{min-width:0}.summary,.weightPanel,.stageCard,.flowBox{box-shadow:none}}
+    :root {
+      --ink: #17202a;
+      --muted: #5d6b79;
+      --line: #d9e1e8;
+      --paper: #f4f7fa;
+      --surface: #ffffff;
+      --navy: #17283c;
+      --navy-2: #22384f;
+      --blue: #1769aa;
+      --cyan: #0b8793;
+      --green: #18794e;
+      --green-soft: #e6f5ed;
+      --amber: #a35d00;
+      --amber-soft: #fff1d6;
+      --red: #a33a3a;
+      --red-soft: #fcecec;
+      --violet: #6746a5;
+      --shadow: 0 9px 24px rgba(23, 40, 60, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 15px/1.65 Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    a { color: inherit; }
+    button { font: inherit; }
+    code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 58px;
+      padding: 0 5vw;
+      color: #eef5fb;
+      background: var(--navy);
+      border-bottom: 1px solid #304a63;
+    }
+    .brand { display: flex; gap: 10px; align-items: center; font-size: 12px; font-weight: 800; }
+    .brandMark {
+      display: grid;
+      width: 25px;
+      height: 25px;
+      place-items: center;
+      color: #132235;
+      background: #c4e6e4;
+      border-radius: 5px;
+    }
+    .navlinks { display: flex; gap: 22px; }
+    .navlinks a { color: #b8cad9; font-size: 12px; text-decoration: none; }
+    .navlinks a:hover { color: #ffffff; }
+    .print {
+      cursor: pointer;
+      padding: 8px 12px;
+      color: #d9eaf2;
+      background: transparent;
+      border: 1px solid #49677f;
+      border-radius: 4px;
+    }
+    .print:hover { background: #29445d; }
+
+    .hero { color: #f4f8fb; background: var(--navy); border-bottom: 1px solid #304a63; }
+    .heroInner {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+      gap: 48px;
+      max-width: 1240px;
+      margin: auto;
+      padding: 74px 5vw 70px;
+    }
+    .eyebrow, .kicker {
+      margin: 0 0 10px;
+      color: #9ed9d7;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+    .hero h1 { max-width: 760px; margin: 0 0 18px; font-size: 58px; line-height: 1.05; letter-spacing: 0; }
+    .heroCopy { max-width: 720px; margin: 0 0 26px; color: #c8d6e2; font-size: 18px; }
+    .heroNote { display: flex; flex-wrap: wrap; gap: 8px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 2px 9px;
+      color: #cae2f2;
+      border: 1px solid #4c6a83;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge.active { color: #d0f0df; border-color: #4d9b76; background: #1d4a3a; }
+    .badge.next { color: #ffe4aa; border-color: #a4773e; background: #4a3920; }
+    .heroAside { align-self: end; padding: 20px; border-left: 2px solid #65b8b4; background: #1c3148; }
+    .heroAside strong { display: block; margin-bottom: 10px; font-size: 20px; }
+    .heroAside p { margin: 0 0 8px; color: #c2d2de; font-size: 13px; }
+
+    main { max-width: 1240px; margin: auto; }
+    section { padding: 68px 5vw; scroll-margin-top: 58px; }
+    .sectionHead { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 28px; }
+    .kicker { color: var(--blue); }
+    h2 { margin: 0 0 8px; font-size: 38px; line-height: 1.15; letter-spacing: 0; }
+    h3 { margin: 0 0 7px; font-size: 18px; line-height: 1.25; }
+    .lede { max-width: 740px; margin: 0; color: var(--muted); font-size: 16px; }
+    .rule { height: 1px; margin: 0 5vw; background: var(--line); }
+
+    .summaryGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .summary {
+      min-height: 132px;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-top: 3px solid var(--blue);
+      box-shadow: var(--shadow);
+    }
+    .summary:nth-child(2) { border-top-color: var(--cyan); }
+    .summary:nth-child(3) { border-top-color: var(--green); }
+    .summary:nth-child(4) { border-top-color: var(--amber); }
+    .summaryLabel { margin-bottom: 10px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .summaryValue { margin-bottom: 3px; font-size: 25px; font-weight: 900; line-height: 1.1; }
+    .summaryDetail { color: var(--muted); font-size: 13px; }
+
+    .flowWrap { overflow-x: auto; padding-bottom: 8px; }
+    .flow {
+      display: grid;
+      grid-template-columns: 1fr 34px 1fr 34px 1fr 34px 1fr 34px 1fr;
+      align-items: stretch;
+      min-width: 980px;
+      margin-top: 28px;
+    }
+    .flowBox {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 188px;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--blue);
+      box-shadow: var(--shadow);
+    }
+    .flowBox.cyan { border-top-color: var(--cyan); }
+    .flowBox.violet { border-top-color: var(--violet); }
+    .flowBox.amber { border-top-color: var(--amber); }
+    .flowBox.green { border-top-color: var(--green); }
+    .flowNum { color: var(--muted); font-size: 11px; font-weight: 900; }
+    .flowTitle { margin: 28px 0 5px; font-size: 17px; font-weight: 850; }
+    .flowText { color: var(--muted); font-size: 13px; }
+    .flowDim { margin-top: 18px; color: var(--blue); font: 700 12px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .arrow { display: grid; place-items: center; color: var(--blue); font-size: 23px; font-weight: 800; }
+
+    .callout {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 18px;
+      margin-top: 20px;
+      padding: 17px 20px;
+      background: var(--green-soft);
+      border: 1px solid #b9dfca;
+      border-left: 4px solid var(--green);
+    }
+    .callout strong { color: var(--green); }
+    .callout p { margin: 0; color: #315d48; }
+
+    .inputLayout, .modelGrid, .lossLayout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 28px;
+      align-items: start;
+    }
+    .inputGroups { display: grid; gap: 8px; }
+    details { background: var(--surface); border: 1px solid var(--line); }
+    details[open] { border-color: #aabfce; }
+    summary { cursor: pointer; list-style: none; padding: 16px 18px; font-weight: 800; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { float: right; color: var(--blue); content: "+"; font-size: 20px; line-height: 1; }
+    details[open] summary::after { content: "−"; }
+    .detailBody { padding: 0 18px 18px; border-top: 1px solid var(--line); }
+    .detailBody p { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
+    .dimChip, .fieldChip {
+      display: inline-flex;
+      align-items: center;
+      margin: 5px 4px 0 0;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      color: var(--ink);
+      background: #f7fafc;
+      font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .dimChip { color: var(--blue); border-color: #b8d1e3; background: #edf6fc; font-weight: 800; }
+    .inputSide { padding: 22px; color: #eaf2f7; background: var(--navy-2); }
+    .inputSide h3 { color: #ffffff; }
+    .inputSide p { color: #c3d3df; font-size: 13px; }
+    .sideList { margin: 16px 0 0; padding: 0; list-style: none; }
+    .sideList li { padding: 10px 0; border-bottom: 1px solid #456078; color: #d4e0e8; font-size: 13px; }
+    .sideList li:last-child { border-bottom: 0; }
+    .sideList b { color: #a9e0dc; }
+
+    .schemaWrap { margin-top: 28px; overflow-x: auto; }
+    .schemaTable { width: 100%; min-width: 760px; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .schemaTable th, .schemaTable td { padding: 11px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .schemaTable th { color: var(--muted); background: #f7fafc; font-size: 12px; font-weight: 850; }
+    .schemaTable td { font-size: 13px; }
+    .schemaTable tr:last-child td { border-bottom: 0; }
+
+    .modelStack { display: grid; gap: 9px; }
+    .modelRow { display: grid; grid-template-columns: 165px minmax(0, 1fr) 140px; gap: 12px; align-items: center; min-height: 56px; padding: 11px 14px; background: var(--surface); border: 1px solid var(--line); }
+    .modelRow .name { font-weight: 850; }
+    .modelRow .desc { color: var(--muted); font-size: 13px; }
+    .modelRow .shape { color: var(--blue); text-align: right; font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .weightPanel { padding: 21px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .weightNumber { margin: 17px 0 4px; font-size: 38px; font-weight: 900; line-height: 1; }
+    .weightNote { color: var(--muted); font-size: 13px; }
+    .barList { display: grid; gap: 9px; margin-top: 20px; }
+    .barLabel { display: flex; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; }
+    .barTrack { height: 7px; margin-top: 4px; overflow: hidden; background: #e6edf2; }
+    .barFill { height: 100%; background: var(--blue); }
+    .greenFill { background: var(--green); }
+    .violetFill { background: var(--violet); }
+    .amberFill { background: var(--amber); }
+
+    .formula { margin: 0; padding: 17px 19px; overflow-x: auto; color: #e5f1f3; background: #152d3b; font: 13px/1.7 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .lossCopy { color: var(--muted); }
+    .lossList { display: grid; gap: 9px; margin-top: 16px; }
+    .lossItem { padding: 13px 15px; background: var(--surface); border: 1px solid var(--line); }
+    .lossItem strong { display: block; }
+    .lossItem span { color: var(--muted); font-size: 13px; }
+
+    .stageSwitch { display: flex; gap: 6px; margin-bottom: 24px; }
+    .stageSwitch button { cursor: pointer; padding: 8px 13px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; font-weight: 800; }
+    .stageSwitch button[aria-selected="true"] { color: #ffffff; background: var(--navy); border-color: var(--navy); }
+    .stagePanel { display: none; }
+    .stagePanel.active { display: block; }
+    .stageGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .stageCard { min-height: 190px; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--blue); box-shadow: var(--shadow); }
+    .stageCard.current { border-top-color: var(--green); }
+    .stageCard.future { border-top-color: var(--amber); }
+    .stageCard.blocked { border-top-color: var(--red); }
+    .stageCard h3 { display: flex; justify-content: space-between; gap: 8px; }
+    .stageCard p, .stageCard li { color: var(--muted); font-size: 13px; }
+    .stageCard ul { margin: 10px 0 0; padding-left: 18px; }
+    .truthGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .truth { padding: 19px; border: 1px solid #b9dfca; border-left: 4px solid var(--green); background: var(--green-soft); }
+    .truth.caution { border-color: #e9cd9d; border-left-color: var(--amber); background: var(--amber-soft); }
+    .truth h3 { color: var(--green); }
+    .truth.caution h3 { color: var(--amber); }
+    .truth p { margin: 0; color: #405967; font-size: 14px; }
+    .runStrip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+    .run { padding: 16px; background: #ffffff; border: 1px solid var(--line); }
+    .run.currentRun { border-top: 3px solid var(--green); }
+    .run small { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; font-weight: 850; }
+    .run strong { display: block; margin-bottom: 4px; }
+    .run p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .gapGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .gapCard { padding: 19px; background: var(--surface); border: 1px solid var(--line); }
+    .gapCard.done { border-top: 4px solid var(--green); }
+    .gapCard.partial { border-top: 4px solid var(--amber); }
+    .gapCard.missing { border-top: 4px solid var(--red); }
+    .gapCard p, .gapCard li { color: var(--muted); font-size: 13px; }
+    .gapCard ul { margin: 10px 0 0; padding-left: 18px; }
+
+    footer { padding: 32px 5vw 48px; color: #b6c7d4; background: var(--navy); font-size: 12px; }
+    .footerInner { max-width: 1240px; margin: auto; }
+    .footerInner a { color: #d2e8ef; }
+
+    @media (max-width: 930px) {
+      .heroInner, .inputLayout, .modelGrid, .lossLayout { grid-template-columns: 1fr; }
+      .heroAside { max-width: 580px; }
+      .summaryGrid { grid-template-columns: repeat(2, 1fr); }
+      .stageGrid, .gapGrid, .runStrip { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .topbar { padding: 0 18px; }
+      .navlinks { display: none; }
+      .heroInner { padding: 54px 18px 50px; }
+      .hero h1 { font-size: 40px; }
+      .heroCopy { font-size: 16px; }
+      section { padding: 48px 18px; }
+      .rule { margin: 0 18px; }
+      .summaryGrid, .truthGrid { grid-template-columns: 1fr; }
+      .sectionHead { display: block; }
+      h2 { font-size: 30px; }
+      .modelRow { grid-template-columns: 1fr; gap: 3px; }
+      .modelRow .shape { text-align: left; }
+      .callout { grid-template-columns: 1fr; gap: 2px; }
+      footer { padding: 28px 18px 38px; }
+    }
+    @media print {
+      .topbar, .stageSwitch { display: none; }
+      .hero { color: #000000; background: #ffffff; border-bottom: 1px solid #aaaaaa; }
+      .heroCopy, .heroAside p { color: #333333; }
+      .heroAside { color: #000000; background: #f3f3f3; border-left-color: #555555; }
+      section { padding: 28px 0; }
+      .flowWrap { overflow: visible; }
+      .flow { min-width: 0; }
+      .summary, .weightPanel, .stageCard, .flowBox { box-shadow: none; }
+    }
   </style>
 </head>
 <body>
-  <header class="topbar"><div class="brand"><span class="brandMark">RL</span><span>PTCG / Model Design</span></div><nav class="navlinks" aria-label="页面导航"><a href="#overview">总览</a><a href="#inputs">Observation</a><a href="#model">模型</a><a href="#stages">BC → RL</a></nav><button class="print" type="button" onclick="window.print()">打印页面</button></header>
-  <div class="hero"><div class="heroInner"><div><p class="eyebrow">ptcg_features_v6 · full_action_set_v1</p><h1>从公开 observation<br>到合法动作</h1><p class="heroCopy">这是当前模型、输入字段和训练阶段的事实合同。重点不是把牌局压成一个动作编号，而是让网络在 simulator 提供的合法候选集合中完成排序和选取。</p><div class="heroNote"><span class="badge active">当前：纯 BC</span><span class="badge next">下一步：rollout + reward + RL</span><span class="badge">46 numeric · 40 card tokens · 64 candidates</span></div></div><aside class="heroAside"><strong>先记住这一点</strong><p>BC checkpoint 可以作为 RL rollout policy 的起点，但当前 value head 没有被 BC loss 训练，不能直接当成可靠的 value function。</p><p>因此“接口能衔接”是对的，“训练结果已经自动衔接完成”还需要补上 rollout、reward、advantage/value 和合法 action mask 的工程合同。</p></aside></div></div>
+  <header class="topbar">
+    <div class="brand"><span class="brandMark">RL</span><span>PTCG / Model Design</span></div>
+    <nav class="navlinks" aria-label="页面导航">
+      <a href="#overview">总览</a>
+      <a href="#inputs">Observation</a>
+      <a href="#model">模型</a>
+      <a href="#stages">BC → RL</a>
+      <a href="#gaps">边界</a>
+    </nav>
+    <button class="print" type="button" onclick="window.print()">打印</button>
+  </header>
+
+  <div class="hero">
+    <div class="heroInner">
+      <div>
+        <p class="eyebrow">ptcg_features_universal · ptcg_action_set_v1</p>
+        <h1>通用候选策略模型</h1>
+        <p class="heroCopy">当前实现把公开牌局状态、完整己方牌组、场上实体、短期历史、专家来源和 simulator 给出的合法动作放进同一个 BC 合同。0003 只使用冻结的 Yushin Ito 数据验证通用表达，并已通过 180 局官方引擎闭环验收；下一批 Top 20 来源已经完成单局审计与隔离 staging，但尚未构建完整训练 corpus。</p>
+        <div class="heroNote">
+          <span class="badge active">当前阶段：纯 Behavior Cloning</span>
+          <span class="badge">0003 / V2 · evaluated + submitted</span>
+          <span class="badge">64 state · 40 cards · 64 candidates</span>
+          <span class="badge">Top 20 staging · 8 archetypes</span>
+          <span class="badge next">下一阶段尚未实现：RL rollout</span>
+        </div>
+      </div>
+      <aside class="heroAside">
+        <strong>关于“能否无缝衔接 RL”</strong>
+        <p>模型和 action mask 接口可以直接复用，BC checkpoint 也可以作为 rollout policy 的初始化。</p>
+        <p>但当前 value head 没有进入 BC loss，rollout schema、reward、old log-prob、return/GAE 和 PPO update 都尚未实现。因此这是结构连续，不是 RL 已经自动完成。</p>
+      </aside>
+    </div>
+  </div>
+
   <main>
-    <section id="overview"><div class="sectionHead"><div><p class="kicker">01 / Executive read</p><h2>当前实现一眼看懂</h2></div><p class="lede">输入来自官方 simulator 的公开 observation 和当前合法 options。模型只负责 scoring；不会发明 simulator 不认识的动作。</p></div><div class="summaryGrid"><article class="summary"><div class="summaryLabel">状态合同</div><div class="summaryValue">46 + 40</div><div class="summaryDetail">46 个归一化数值，40 个卡牌 ID token</div></article><article class="summary"><div class="summaryLabel">动作合同</div><div class="summaryValue">64 × 10</div><div class="summaryDetail">最多 64 个 option，每个 10 个 numeric 字段</div></article><article class="summary"><div class="summaryLabel">网络</div><div class="summaryValue">4.80M</div><div class="summaryDetail">256-d state，2 层 Transformer，4 heads</div></article><article class="summary"><div class="summaryLabel">训练目标</div><div class="summaryValue">2 heads</div><div class="summaryDetail">policy candidate scoring + selection count</div></article></div><div class="flowWrap"><div class="flow"><div class="flowBox"><span class="flowNum">SOURCE</span><div><div class="flowTitle">官方 observation</div><div class="flowText">current、players、select、logs、公开 zones</div></div><div class="flowDim">JSON / public state</div></div><div class="arrow">→</div><div class="flowBox"><span class="flowNum">ENCODE</span><div><div class="flowTitle">v6 feature encoder</div><div class="flowText">数值、卡牌 token、action candidate fields</div></div><div class="flowDim">46 + 40 + 64×10</div></div><div class="arrow">→</div><div class="flowBox"><span class="flowNum">REPRESENT</span><div><div class="flowTitle">State Transformer</div><div class="flowText">卡牌 token pooled with numeric state</div></div><div class="flowDim">state h ∈ R^256</div></div><div class="arrow">→</div><div class="flowBox"><span class="flowNum">SCORE</span><div><div class="flowTitle">Candidate scorer</div><div class="flowText">state 与每个 option 拼接打分</div></div><div class="flowDim">logits [64]</div></div><div class="arrow">→</div><div class="flowBox"><span class="flowNum">DECIDE</span><div><div class="flowTitle">Count + top-k</div><div class="flowText">数量先 mask，再取合法候选 top-k</div></div><div class="flowDim">action list</div></div></div></div><div class="callout"><strong>观察是否全面？</strong><p>对“当前合法动作”和“可见资源/时序”来说，输入覆盖是比较完整的；对隐藏信息、长期规划、规则语义和反事实收益来说，仍然不完整。下面把这四类边界拆开。</p></div></section>
+    <section id="overview">
+      <div class="sectionHead">
+        <div><p class="kicker">01 / Current contract</p><h2>当前实现一眼看懂</h2></div>
+        <p class="lede">模型不生成全局动作编号，而是在每一步 simulator 给出的合法 options 内做 scoring、预测选择数量并返回 index set。</p>
+      </div>
+      <div class="summaryGrid">
+        <article class="summary"><div class="summaryLabel">状态输入</div><div class="summaryValue">5 × 256</div><div class="summaryDetail">基础状态、牌组、实体、历史、expert 五路融合</div></article>
+        <article class="summary"><div class="summaryLabel">动作输入</div><div class="summaryValue">64 × 22</div><div class="summaryDetail">最多 64 个候选；另有 type/card/target IDs</div></article>
+        <article class="summary"><div class="summaryLabel">网络权重</div><div class="summaryValue">5.19M</div><div class="summaryDetail">5,194,307 parameters · 77 tensors</div></article>
+        <article class="summary"><div class="summaryLabel">0003 数据</div><div class="summaryValue">86,875</div><div class="summaryDetail">1,000 局单一专家数据，audit 已通过</div></article>
+      </div>
+
+      <div class="flowWrap">
+        <div class="flow">
+          <div class="flowBox"><span class="flowNum">SOURCE</span><div><div class="flowTitle">公开牌局 + 牌组</div><div class="flowText">observation、合法 options、己方 60 张初始牌组</div></div><div class="flowDim">JSON / public state</div></div>
+          <div class="arrow">→</div>
+          <div class="flowBox cyan"><span class="flowNum">ENCODE</span><div><div class="flowTitle">通用特征合同</div><div class="flowText">state / deck / entities / history / expert / actions</div></div><div class="flowDim">fixed tensor shapes</div></div>
+          <div class="arrow">→</div>
+          <div class="flowBox violet"><span class="flowNum">REPRESENT</span><div><div class="flowTitle">五路状态融合</div><div class="flowText">每一路变成 256-d，再拼接压回 256-d</div></div><div class="flowDim">5×256 → h_state[256]</div></div>
+          <div class="arrow">→</div>
+          <div class="flowBox amber"><span class="flowNum">SCORE</span><div><div class="flowTitle">候选动作编码</div><div class="flowText">type/card/target embeddings + 22 numeric</div></div><div class="flowDim">logits [64]</div></div>
+          <div class="arrow">→</div>
+          <div class="flowBox green"><span class="flowNum">DECIDE</span><div><div class="flowTitle">Count + masked top-k</div><div class="flowText">先限制 min/max 数量，再只选合法 option</div></div><div class="flowDim">sorted action index set</div></div>
+        </div>
+      </div>
+
+      <div class="callout"><strong>当前判断</strong><p>相比旧模型，输入已经从“当前场面摘要”扩展到“牌组构成 + 实体状态 + 时序 + expert 条件 + 结构化卡牌属性”。0003 在同一强专家牌组上完成 180 局官方引擎验证，取得 75.56% 胜率且没有运行错误；这证明合同能真实闭环运行，但不等于已经证明跨卡组泛化。Top 20 快照已确认 20 个独立来源、14 个 exact deck hash 和 8 个主牌型。后续必须一位专家一个 dataset/run，不能按相同 deck hash 无条件混合标签。</p></div>
+    </section>
+
     <div class="rule"></div>
-    <section id="inputs"><div class="sectionHead"><div><p class="kicker">02 / Input contract</p><h2>模型究竟看到了什么</h2></div><p class="lede">字段不是原始 JSON 的简单复制，而是一个固定 versioned encoder。卡牌 ID 使用 embedding，连续量统一做简单归一化。</p></div><div class="inputLayout"><div class="inputGroups">
-      <details open><summary>状态数值：46 维</summary><div class="detailBody"><span class="dimChip">14 · resources / board</span><span class="dimChip">10 · turn / selection</span><span class="dimChip">8 · logs</span><span class="dimChip">4 · action history</span><span class="dimChip">4 · effect context</span><span class="dimChip">6 · timing</span><p>包含双方 Prize、牌库数量、手牌数量、弃牌数量、Bench 数、Active HP/能量；当前回合、先后手、Supporter/Energy/Retreat 状态；select type/context/min/max；最近日志；最近 32 个 main action 的最后摘要；effect/context card；<code>turnActionCount</code>、<code>appearThisTurn</code> 等合法时机信号。</p></div></details>
-      <details open><summary>卡牌状态 token：40 个 ID</summary><div class="detailBody"><span class="fieldChip">己方 Active + Bench · 6</span><span class="fieldChip">对方 Active + Bench · 6</span><span class="fieldChip">己方手牌 · 16</span><span class="fieldChip">己方弃牌 · 8</span><span class="fieldChip">对方弃牌 · 4</span><p>所有 token 都是 card ID，不是卡牌文本或图像。0 是 padding，真实 ID 会加 1。对方手牌内容不可见，所以不编码具体 opponent-hand cards，只保留公开的 handCount。</p></div></details>
-      <details open><summary>候选动作：每个 option 的 13 个输入字段</summary><div class="detailBody"><span class="fieldChip">type id</span><span class="fieldChip">visible card id</span><span class="fieldChip">target card id</span><span class="fieldChip">10 numeric</span><p>numeric 字段是候选 index、area、inPlayArea、index、inPlayIndex、attackId、number、select type、select context、maxCount。v6 会从公开手牌/场上/弃牌/搜索区域解析 <code>action_card_ids</code> 和 <code>action_target_ids</code>。</p></div></details>
-      <details><summary>最近动作和 effect memory：有限状态，不是 RNN</summary><div class="detailBody"><p>数据构建器会把同一玩家最近最多 32 个 main action 的 type/card/attack 摘要放进 <code>rl_history</code>；effect selection 使用 effect serial 计步。运行时由 policy 自己维护这段 history，所以它不是 Transformer 跨整局记忆。</p></div></details>
-      <details><summary>合法性边界：mask 来自 simulator</summary><div class="detailBody"><p>真实 options 的位置标记为 true，补齐到 64 的 padding 标记为 false。训练和推理都只能在这组 options 上选；模型本身不会产生全局 action ID，也不会绕过 minCount/maxCount。</p></div></details>
-      <details><summary>明确没有输入的东西</summary><div class="detailBody"><span class="fieldChip">对手隐藏手牌内容</span><span class="fieldChip">牌库顺序</span><span class="fieldChip">未知 Prize 内容</span><span class="fieldChip">卡牌文本语义</span><span class="fieldChip">反事实 outcome</span><p>这不是缺陷清单，而是信息边界。若训练目标需要判断隐藏牌分布或动作的未来收益，必须通过 belief/determinization、value/advantage 或额外的搜索数据补充。</p></div></details>
-    </div><aside class="inputSide"><h3>覆盖性判断</h3><p>把输入按模型能否回答的问题分成三层：</p><ul class="sideList"><li><b>已覆盖</b><br>当前场面、资源、可见卡牌、回合合法性、当前合法候选动作。</li><li><b>部分覆盖</b><br>短期时序：最近动作摘要和 effect step 有，但不是完整事件/长期记忆。</li><li><b>未覆盖</b><br>对手隐藏信息、动作之后的反事实收益、卡牌文本组合语义。</li></ul></aside></div><table class="schemaTable" style="margin-top:28px"><thead><tr><th>输入张量</th><th>shape</th><th>dtype</th><th>用途</th></tr></thead><tbody><tr><td><code>state_numeric</code></td><td><code>[B, 46]</code></td><td>float32</td><td>资源、时序、日志、effect 上下文</td></tr><tr><td><code>state_card_ids</code></td><td><code>[B, 40]</code></td><td>int64</td><td>双方场面、己方手牌/弃牌、对方弃牌的 card IDs</td></tr><tr><td><code>action_type_ids</code></td><td><code>[B, 64]</code></td><td>int64</td><td>candidate option type embedding</td></tr><tr><td><code>action_card_ids / target_ids</code></td><td><code>[B, 64]</code></td><td>int64</td><td>candidate 对应的可见卡与目标卡</td></tr><tr><td><code>action_numeric</code></td><td><code>[B, 64, 10]</code></td><td>float32</td><td>option 的位置、区域、攻击和 selection context</td></tr><tr><td><code>action_mask</code></td><td><code>[B, 64]</code></td><td>bool</td><td>屏蔽 padding / 不可用 candidate</td></tr></tbody></table></section>
+
+    <section id="inputs">
+      <div class="sectionHead">
+        <div><p class="kicker">02 / Input contract</p><h2>模型究竟看到了什么</h2></div>
+        <p class="lede">以下 shape 来自当前 `ptcg_features_universal` 编码器，并已在 0003 的 86,875 条记录上通过一致性审计。</p>
+      </div>
+
+      <div class="inputLayout">
+        <div class="inputGroups">
+          <details open>
+            <summary>基础状态：64 numeric + 40 card IDs</summary>
+            <div class="detailBody">
+              <span class="dimChip">46 · board / turn / logs / timing</span>
+              <span class="dimChip">18 · universal context</span>
+              <span class="dimChip">40 · visible card tokens</span>
+              <p>前 46 维包含双方 Prize/牌库/手牌/弃牌数量、Bench、Active HP 与能量数、回合与先后手、Supporter/手填能量/Retreat 标志、selection min/max/context、日志摘要、effect context 和 `appearThisTurn` 等时机。新增 18 维补充牌组规模与已知资源、双方场面规模与状态计数、历史长度、effect step、候选数及对手公开资源。</p>
+              <p>40 个卡牌 token 固定为：双方 Active + Bench 各 6、己方手牌 16、己方弃牌 8、对方弃牌 4。超过槽位会截断；隐藏手牌不会被猜测。</p>
+            </div>
+          </details>
+
+          <details open>
+            <summary>完整己方牌组：60 × (card ID + 18 numeric)</summary>
+            <div class="detailBody">
+              <span class="fieldChip">initial copies</span><span class="fieldChip">in hand</span><span class="fieldChip">in discard</span><span class="fieldChip">on field</span><span class="fieldChip">estimated remaining</span><span class="fieldChip">remaining ratio</span>
+              <p>每张初始牌都保留为一个 token，因此模型知道本局使用的确切 60 张己方牌组。每个 token 的前 6 维是资源账本，后 12 维是卡牌结构元数据。`estimated remaining` 只根据可见己方区域计算，不表示真实牌库顺序或 Prize 内容。</p>
+            </div>
+          </details>
+
+          <details open>
+            <summary>场上实体：12 × (card ID + 28 numeric)</summary>
+            <div class="detailBody">
+              <span class="fieldChip">双方 Active + 5 Bench</span><span class="fieldChip">owner / zone / slot</span><span class="fieldChip">HP / max HP / damage</span><span class="fieldChip">Energy / Tool count</span><span class="fieldChip">5 status flags</span><span class="fieldChip">timing / serial / evolution depth</span>
+              <p>12 个固定槽位分别对应双方的 Active 与 Bench。前 16 维描述实例状态，后 12 维描述卡牌结构。当前只编码附着 Energy 和 Tool 的数量，不编码它们各自的 card ID；进化链也只有深度，没有完整 stack IDs。</p>
+            </div>
+          </details>
+
+          <details open>
+            <summary>短期历史与 expert 条件：32 × 8 + 1 ID</summary>
+            <div class="detailBody">
+              <span class="fieldChip">action type</span><span class="fieldChip">card / attack ID</span><span class="fieldChip">target count</span><span class="fieldChip">selection type / context</span><span class="fieldChip">relative position</span><span class="fieldChip">effect step</span>
+              <p>历史保留最近 32 个 decision 的压缩事件，不是跨整局的 recurrent memory。`expert_ids` 给模型一个来源 embedding；0003 为了保持策略一致性，所有记录固定为 Yushin Ito 的 expert ID 1。多 expert 映射与评测尚未验证。</p>
+            </div>
+          </details>
+
+          <details open>
+            <summary>候选动作：64 × (3 IDs + 22 numeric)</summary>
+            <div class="detailBody">
+              <span class="fieldChip">action type ID</span><span class="fieldChip">visible card ID</span><span class="fieldChip">target card ID</span><span class="fieldChip">10 option fields</span><span class="fieldChip">12 card metadata</span>
+              <p>10 个 option 字段是候选位置、area、in-play area/index、attack ID、number 和 selection context。可见候选卡会从手牌、场上、弃牌或搜索区域解析；再附加它的 12 维结构元数据。padding 与非法位置由 `action_mask` 屏蔽。</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>卡牌结构元数据：12 维，不等于理解卡文</summary>
+            <div class="detailBody">
+              <span class="fieldChip">Pokémon / Trainer / Energy</span><span class="fieldChip">Basic / Stage 1 / Stage 2</span><span class="fieldChip">HP</span><span class="fieldChip">Retreat</span><span class="fieldChip">has weakness / resistance</span><span class="fieldChip">move count</span><span class="fieldChip">effect text length</span>
+              <p>元数据由官方 `EN_Card_Data.csv` 解析，能帮助模型在未见牌组中理解基础类别与身材，但没有编码攻击费用、伤害、弱点类型、Resistance 类型或 effect 的实际语义。`effect text length` 只是复杂度代理，不是文本 embedding。</p>
+            </div>
+          </details>
+
+          <details>
+            <summary>合法性边界：完全由 simulator options 决定</summary>
+            <div class="detailBody"><p>模型只对 simulator 当前给出的 options 排序；训练和推理都使用同一 `action_mask`，选择数量还受 `minCount..maxCount` 限制。模型不会自行构造规则外动作。这个合同保证输出合法，但不能保证策略正确。</p></div>
+          </details>
+        </div>
+
+        <aside class="inputSide">
+          <h3>Observation 覆盖性</h3>
+          <p>按模型现在能回答的问题分层：</p>
+          <ul class="sideList">
+            <li><b>已覆盖</b><br>己方确切牌组、公开资源、双方场面位置与伤害/状态、回合时机、近期决策、合法候选。</li>
+            <li><b>部分覆盖</b><br>卡牌语义、资源账本、附着物、进化链、长程历史。都有摘要，但不是完整表达。</li>
+            <li><b>没有覆盖</b><br>对手隐藏手牌、牌库顺序、未知 Prize、对手 deck list、隐藏信息 belief、动作反事实收益。</li>
+            <li><b>重要结论</b><br>当前输入比旧合同全面很多，并已在 Yushin Ito 牌组上完成 closed-loop 验证；是否足以成为强通用 agent，仍必须靠跨卡组 BC、held-out deck 与 Arena 对战实证。</li>
+          </ul>
+        </aside>
+      </div>
+
+      <div class="schemaWrap">
+        <table class="schemaTable">
+          <thead><tr><th>输入张量</th><th>Shape</th><th>Dtype</th><th>实际含义</th></tr></thead>
+          <tbody>
+            <tr><td><code>state_numeric</code></td><td><code>[B, 64]</code></td><td>float32</td><td>资源、回合、selection、日志、effect、时机与通用摘要</td></tr>
+            <tr><td><code>state_card_ids</code></td><td><code>[B, 40]</code></td><td>int64</td><td>场面、己方手牌/弃牌、对方弃牌的固定槽位</td></tr>
+            <tr><td><code>deck_card_ids</code></td><td><code>[B, 60]</code></td><td>int64</td><td>己方完整初始牌组</td></tr>
+            <tr><td><code>deck_card_numeric</code></td><td><code>[B, 60, 18]</code></td><td>float32</td><td>6 个区域/剩余统计 + 12 个卡牌元数据</td></tr>
+            <tr><td><code>entity_card_ids</code></td><td><code>[B, 12]</code></td><td>int64</td><td>双方 Active 与 Bench 实体卡牌</td></tr>
+            <tr><td><code>entity_numeric</code></td><td><code>[B, 12, 28]</code></td><td>float32</td><td>16 个实例状态 + 12 个卡牌元数据</td></tr>
+            <tr><td><code>history_card_ids</code></td><td><code>[B, 32]</code></td><td>int64</td><td>最近决策中可解析的卡牌 ID</td></tr>
+            <tr><td><code>history_numeric</code></td><td><code>[B, 32, 8]</code></td><td>float32</td><td>动作、攻击、selection 与 effect 时序摘要</td></tr>
+            <tr><td><code>expert_ids</code></td><td><code>[B]</code></td><td>int64</td><td>专家/策略来源；0003 固定为 1</td></tr>
+            <tr><td><code>action_type_ids</code></td><td><code>[B, 64]</code></td><td>int64</td><td>候选 option type</td></tr>
+            <tr><td><code>action_card_ids / action_target_ids</code></td><td><code>[B, 64]</code></td><td>int64</td><td>候选对应的可见卡与目标卡</td></tr>
+            <tr><td><code>action_numeric</code></td><td><code>[B, 64, 22]</code></td><td>float32</td><td>10 个 option 字段 + 12 个候选卡元数据</td></tr>
+            <tr><td><code>action_mask</code></td><td><code>[B, 64]</code></td><td>bool</td><td>真实合法候选为 true，padding 为 false</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <div class="rule"></div>
-    <section id="model"><div class="sectionHead"><div><p class="kicker">03 / Network and weights</p><h2>模型结构与权重组成</h2></div><p class="lede">这是一个小型、结构化的 candidate scorer，不是语言模型。它的容量主要花在 card embeddings 和 state Transformer 上。</p></div><div class="modelGrid"><div class="modelStack"><div class="modelRow"><div class="name">State embeddings</div><div class="desc">card ID + position ID</div><div class="shape">4097×256 + 40×256</div></div><div class="modelRow"><div class="name">State Transformer</div><div class="desc">post-norm, GELU FFN</div><div class="shape">2 layers · 4 heads</div></div><div class="modelRow"><div class="name">Numeric state MLP</div><div class="desc">numeric features → state space</div><div class="shape">46 → 256</div></div><div class="modelRow"><div class="name">Candidate encoder</div><div class="desc">type/card/target/numeric 相加</div><div class="shape">64×256</div></div><div class="modelRow"><div class="name">Policy head</div><div class="desc">每个 candidate 单独打分</div><div class="shape">512 → 512 → 1</div></div><div class="modelRow"><div class="name">Count head</div><div class="desc">选择数量，推理时套 min/max mask</div><div class="shape">256 → 512 → 65</div></div><div class="modelRow"><div class="name">Value head</div><div class="desc">结构保留，但当前 BC 不训练</div><div class="shape">256 → 512 → 1</div></div></div><aside class="weightPanel"><h3>实际 checkpoint</h3><div class="weightNumber">4.80M</div><div class="weightNote">4,799,043 个 float32 参数 · 57 个 tensor</div><div class="barList"><div><div class="barLabel"><span>Embeddings</span><b>3.18M</b></div><div class="barTrack"><div class="barFill" style="width:100%"></div></div></div><div><div class="barLabel"><span>Transformer</span><b>1.05M</b></div><div class="barTrack"><div class="barFill violetFill" style="width:33%"></div></div></div><div><div class="barLabel"><span>Policy head</span><b>264K</b></div><div class="barTrack"><div class="barFill greenFill" style="width:8.3%"></div></div></div><div><div class="barLabel"><span>Count head</span><b>166K</b></div><div class="barTrack"><div class="barFill amberFill" style="width:5.2%"></div></div></div><div><div class="barLabel"><span>Value head</span><b>133K</b></div><div class="barTrack"><div class="barFill" style="width:4.2%"></div></div></div></div><p class="weightNote" style="margin:19px 0 0">模型包：<code>work/alakazam_bc_v1/strategy/model.bin</code>。完整 <code>.pt</code> 还包含 optimizer 和 RNG state。</p></aside></div></section>
-    <section id="training-objective" style="padding-top:0"><div class="lossLayout"><div><p class="kicker">04 / BC objective</p><h2>当前 BC 学的是什么</h2><p class="lossCopy">每条样本的 label 是当前 options 中的 index set，不是跨牌局固定的 action ID。single、multi 和 empty selection 使用同一个候选集合合同。</p><div class="lossList"><div class="lossItem"><strong>单选：masked CE</strong><span>target_count = 1 时，在合法 logits 上分类。</span></div><div class="lossItem"><strong>多选：candidate BCE</strong><span>对合法 candidates 做 multi-label binary loss。</span></div><div class="lossItem"><strong>数量：count CE</strong><span>预测 0..64，训练和推理都限制在 minCount..maxCount。</span></div></div></div><div class="formula">h_state = LayerNorm(pool(Transformer(card_tokens)) + MLP(state_numeric))<br>h_i = E_type + E_card + E_target + MLP(action_numeric_i)<br>logit_i = Policy([h_state ; h_i])<br>count = CountHead(h_state)<br><br>L_policy = CE(logits, target) if |target| = 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= BCE(logits, target_mask) otherwise<br>L_total = L_policy + CE(count_logits, target_count)<br><br># 当前纯 BC：terminal_outcome 不进入 L_total<br># 当前纯 BC：value_head 没有梯度</div></div></section>
+
+    <section id="model">
+      <div class="sectionHead">
+        <div><p class="kicker">03 / Network and weights</p><h2>五路状态编码，再给候选打分</h2></div>
+        <p class="lede">这仍是一个紧凑的结构化 policy/value 网络，不是语言模型。参数主要在共享 card embeddings、两层 Transformer 和 policy/count/value heads。</p>
+      </div>
+
+      <div class="modelGrid">
+        <div class="modelStack">
+          <div class="modelRow"><div class="name">Base state</div><div class="desc">40 card tokens 经 Transformer，与 64 numeric MLP 相加</div><div class="shape">→ 256</div></div>
+          <div class="modelRow"><div class="name">Deck branch</div><div class="desc">card + position + 18 numeric，masked mean pool</div><div class="shape">60×256 → 256</div></div>
+          <div class="modelRow"><div class="name">Entity branch</div><div class="desc">card + position + 28 numeric，masked mean pool</div><div class="shape">12×256 → 256</div></div>
+          <div class="modelRow"><div class="name">History branch</div><div class="desc">card + position + 8 numeric，masked mean pool</div><div class="shape">32×256 → 256</div></div>
+          <div class="modelRow"><div class="name">Expert branch</div><div class="desc">来源 ID embedding；当前 run 固定 Yushin Ito</div><div class="shape">ID → 256</div></div>
+          <div class="modelRow"><div class="name">Universal fusion</div><div class="desc">五路拼接，Linear + LayerNorm + GELU</div><div class="shape">1280 → 256</div></div>
+          <div class="modelRow"><div class="name">Candidate encoder</div><div class="desc">type/card/target embeddings 与 22 numeric MLP 相加</div><div class="shape">64×256</div></div>
+          <div class="modelRow"><div class="name">Policy head</div><div class="desc">每个候选与共享 state 拼接后独立 scoring</div><div class="shape">512 → 512 → 1</div></div>
+          <div class="modelRow"><div class="name">Count head</div><div class="desc">预测选择 0..64 个，推理时再套 min/max mask</div><div class="shape">256 → 512 → 65</div></div>
+          <div class="modelRow"><div class="name">Value head</div><div class="desc">结构已保留；当前 BC loss 不训练它</div><div class="shape">256 → 512 → 1</div></div>
+        </div>
+
+        <aside class="weightPanel">
+          <h3>当前 0003 模型配置</h3>
+          <div class="weightNumber">5.19M</div>
+          <div class="weightNote">5,194,307 个参数 · 77 个 state-dict tensor · d_model 256 · hidden 512</div>
+          <div class="barList">
+            <div><div class="barLabel"><span>Embeddings</span><b>3.208M</b></div><div class="barTrack"><div class="barFill" style="width: 100%"></div></div></div>
+            <div><div class="barLabel"><span>State Transformer</span><b>1.054M</b></div><div class="barTrack"><div class="barFill violetFill" style="width: 33%"></div></div></div>
+            <div><div class="barLabel"><span>State encoders + fusion</span><b>362K</b></div><div class="barTrack"><div class="barFill greenFill" style="width: 11.3%"></div></div></div>
+            <div><div class="barLabel"><span>Policy head</span><b>264K</b></div><div class="barTrack"><div class="barFill greenFill" style="width: 8.2%"></div></div></div>
+            <div><div class="barLabel"><span>Count head</span><b>166K</b></div><div class="barTrack"><div class="barFill amberFill" style="width: 5.2%"></div></div></div>
+            <div><div class="barLabel"><span>Value head</span><b>133K</b></div><div class="barTrack"><div class="barFill" style="width: 4.1%"></div></div></div>
+          </div>
+          <p class="weightNote" style="margin: 19px 0 0">0001/0002 的旧 checkpoint 仍可通过 optional dimensions 以原合同加载；它们不会自动获得新增分支的能力。</p>
+        </aside>
+      </div>
+    </section>
+
+    <section id="training-objective" style="padding-top: 0">
+      <div class="lossLayout">
+        <div>
+          <p class="kicker">04 / BC objective</p>
+          <h2>当前 BC 实际优化什么</h2>
+          <p class="lossCopy">label 是当前 simulator option list 中的 index set，而不是跨场景固定 action ID。单选、多选和空选共用同一合同。</p>
+          <div class="lossList">
+            <div class="lossItem"><strong>单选：masked categorical CE</strong><span>只在合法候选 logits 内学习专家选择。</span></div>
+            <div class="lossItem"><strong>空选 / 多选：candidate BCE</strong><span>把每个合法候选当作独立 binary label。</span></div>
+            <div class="lossItem"><strong>数量：count CE</strong><span>学习 target count，并限制在 simulator 的 min/max 范围。</span></div>
+            <div class="lossItem"><strong>没有 reward / value loss</strong><span>terminal outcome 不进入总 loss，value head 当前没有可靠训练信号。</span></div>
+          </div>
+        </div>
+        <div class="formula">base = Norm(pool(Transformer(state_cards)) + MLP(state_64))<br>
+deck = pool(E_card + E_pos + MLP(deck_18))<br>
+entity = pool(E_card + E_pos + MLP(entity_28))<br>
+history = pool(E_card + E_pos + MLP(history_8))<br>
+expert = E_expert(expert_id)<br>
+h_state = Fusion([base; deck; entity; history; expert])<br><br>
+h_i = E_type + E_card + E_target + MLP(action_22_i)<br>
+logit_i = Policy([h_state; h_i])<br>
+count = CountHead(h_state)<br><br>
+L_policy = CE(logits, target)          if |target| = 1<br>
+         = BCE(logits, target_mask)    otherwise<br>
+L_total = L_policy + CE(count_logits, target_count)<br><br>
+# terminal_outcome does not enter L_total<br>
+# value_head is not reliable yet</div>
+      </div>
+    </section>
+
     <div class="rule"></div>
-    <section id="stages"><div class="sectionHead"><div><p class="kicker">05 / Training stage</p><h2>BC → RL：你的理解哪里正确</h2></div><p class="lede">用按钮切换两个阶段。页面把“接口连续性”和“训练目标变化”分开，避免把 BC checkpoint 误称成已经完成 RL。</p></div><div class="stageSwitch" role="tablist" aria-label="训练阶段"><button type="button" role="tab" aria-selected="true" data-stage="bc">当前 BC</button><button type="button" role="tab" aria-selected="false" data-stage="rl">下一阶段 RL</button></div><div class="stagePanel active" data-panel="bc"><div class="stageGrid"><article class="stageCard current"><h3>数据 <span class="badge" style="color:var(--green);border-color:#91c4a8;background:var(--greenSoft)">已完成合同</span></h3><p>Kaggle replay 的 <code>observation[i]</code> 与下一行的 action 对齐，编码成 v6 JSONL。</p><ul><li>完整 episode 切分 train/validation/test</li><li>保留合法 options 和 target index set</li><li>当前最新 exact-deck pool：173,251 records</li></ul></article><article class="stageCard current"><h3>训练 <span class="badge" style="color:var(--green);border-color:#91c4a8;background:var(--greenSoft)">当前</span></h3><p>随机初始化的 full-action policy 训练 20 epochs，AdamW，batch 256，learning rate 3e-4。</p><ul><li>policy + count loss</li><li>无 reward shaping</li><li>无 teacher fallback / search fallback</li></ul></article><article class="stageCard"><h3>产物 <span class="badge" style="color:var(--blue);border-color:#9fc4de;background:#edf6fc">可 rollout</span></h3><p>checkpoint 能加载同一 feature/model contract，并对真实 observation 执行 deterministic inference。</p><ul><li>输出仍受 simulator candidate mask 约束</li><li>可用于生成候选 agent rollout</li><li>value head 尚不是可信的 value function</li></ul></article></div></div><div class="stagePanel" data-panel="rl"><div class="stageGrid"><article class="stageCard future"><h3>Rollout</h3><p>用 BC policy 在 simulator 中真实推进对局，保存每个 decision 的 state、合法 options、action、log-prob、mask 和 next state。</p><ul><li>必须在同一 action contract 内采样</li><li>不能只保留最终胜负</li></ul></article><article class="stageCard future"><h3>Reward / advantage</h3><p>根据终局胜负、可见势能或经过验证的 transition reward 计算 return，再用 value baseline 得到 advantage。</p><ul><li>terminal reward 可以很稀疏</li><li>需要处理 hidden information 与 episode perspective</li></ul></article><article class="stageCard future"><h3>PPO update</h3><p>冻结 old policy 计算 old log-prob，在合法 candidate mask 内做 clipped ratio 更新，同时训练 value head。</p><ul><li>rollout policy 与更新模型必须 shape 对齐</li><li>更新后回到固定 evaluation 护栏</li></ul></article></div></div><div class="truthGrid" style="margin-top:22px"><article class="truth"><h3>你的理解：核心方向正确</h3><p>BC checkpoint 确实可以作为下一阶段 RL 的 policy 初始化。它可以加载后在官方 simulator 中做真实推理、生成 rollout，然后用 rollout 中的状态转移和结果构造 reward，再进行 PPO-style policy/value 优化。</p></article><article class="truth caution"><h3>需要补上的条件：不是“直接无缝”</h3><p>当前 BC 的 value head 没有训练，BC 数据也没有 old log-prob、advantage 或可靠的 transition return。进入 PPO 前，需要补齐 rollout schema、reward profile、value calibration/训练、masked log-prob、GAE/return 和 checkpoint 评测护栏。</p></article></div><div class="runStrip"><div class="run"><small>正式工作包</small><strong>0001 · Yushin-only BC</strong><p><code>work/alakazam_bc_v1</code> 当前仍使用这组权重。它是可加载、可推理的 policy checkpoint，但不是 RL checkpoint。</p></div><div class="run"><small>最新研究实验</small><strong>0002 · 2,021 exact-deck episodes</strong><p>架构相同、数据更多，已有训练 checkpoint 和评测结果，但尚未替换正式 work 包。它适合作为后续 rollout 起点候选。</p></div></div></section>
-    <section style="padding-top:0"><div class="callout" style="background:var(--amberSoft);border-color:#e9cd9d;border-left-color:var(--amber)"><strong style="color:var(--amber)">下一步讨论重点</strong><p style="color:#6c542e">如果目标是判断 observation 是否够用，优先看三件事：哪些失败来自缺少隐藏信息、哪些失败来自没有长期记忆、哪些失败来自没有反事实收益。只增加字段不能自动解决后两类问题；它们分别需要 memory/state design 与 value/advantage/search data。</p></div></section>
+
+    <section id="stages">
+      <div class="sectionHead">
+        <div><p class="kicker">05 / Project stage</p><h2>BC → RL：结构连续，训练任务不同</h2></div>
+        <p class="lede">切换查看当前已经落地的 BC 工程与下一阶段仍需实现的 RL 合同。</p>
+      </div>
+
+      <div class="stageSwitch" role="tablist" aria-label="训练阶段">
+        <button type="button" role="tab" aria-selected="true" data-stage="bc">当前 BC</button>
+        <button type="button" role="tab" aria-selected="false" data-stage="rl">下一阶段 RL</button>
+      </div>
+
+      <div class="stagePanel active" data-panel="bc">
+        <div class="stageGrid">
+          <article class="stageCard current">
+            <h3>0003 数据 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">audit passed</span></h3>
+            <p>只重用 0001 冻结的 Yushin Ito corpus，不增加新 replay，不混入其他 team。</p>
+            <ul><li>1,000 episodes / trajectories</li><li>86,875 decisions</li><li>train 69,270 · validation 9,388 · test 8,217</li><li>唯一来源：submission 54773249</li></ul>
+          </article>
+          <article class="stageCard current">
+            <h3>V2 训练 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">20 epochs complete</span></h3>
+            <p>修正卡牌 token 解析并重建同一数据后，从头完成 20 epoch 训练。</p>
+            <ul><li>best epoch 13</li><li>validation exact 80.52%</li><li>test exact 78.37%</li><li>test multi exact 76.34%</li></ul>
+          </article>
+          <article class="stageCard">
+            <h3>BC 产物 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">closed-loop passed</span></h3>
+            <p><code>V2_card_token_fix</code> best checkpoint 已形成自包含 candidate，并完成固定 opponent catalog 的官方引擎评测。</p>
+            <ul><li>180/180 finished · 0 errors</li><li>136 胜 44 负 · 75.56%</li><li>Kaggle ref 54912599 · public score 713.2</li><li>可作为 rollout policy 初始化；value head 仍不可信</li></ul>
+          </article>
+        </div>
+      </div>
+
+      <div class="stagePanel" data-panel="rl">
+        <div class="stageGrid">
+          <article class="stageCard future"><h3>Rollout <span class="badge">未实现</span></h3><p>用 BC policy 在 simulator 中采样完整对局，并保存 state、mask、action、old log-prob、reward 与 next state。</p><ul><li>必须沿用当前 candidate contract</li><li>需要处理多选动作的联合概率</li></ul></article>
+          <article class="stageCard future"><h3>Reward / value <span class="badge">未实现</span></h3><p>根据终局胜负和经过验证的 shaping 计算 return/GAE，同时真正训练并校准 value head。</p><ul><li>terminal reward 可以很稀疏</li><li>需要固定 perspective 与 reward profile</li></ul></article>
+          <article class="stageCard future"><h3>PPO update <span class="badge">未实现</span></h3><p>冻结 old policy，在同一合法 mask 内计算 ratio 与 clipped objective，再回到固定评测护栏。</p><ul><li>不能把独立 BCE 直接当联合 action log-prob</li><li>更新前后必须保持 schema/checkpoint 对齐</li></ul></article>
+        </div>
+      </div>
+
+      <div class="truthGrid" style="margin-top: 22px">
+        <article class="truth"><h3>你的理解：核心方向正确</h3><p>BC checkpoint 可以直接成为 RL policy 的初始化，并在真实 simulator 中推理和产生对战数据。随后用这些 transition 与终局结果定义 reward，再以 PPO 一类算法优化 policy/value，是合理的路线。</p></article>
+        <article class="truth caution"><h3>“无缝”的准确边界</h3><p>无缝的是模型输入、候选动作和 checkpoint 初始化接口；不无缝的是训练数据合同。PPO 还需要 old log-prob、联合动作概率、reward/return/GAE、可靠 value 与 on-policy rollout，这些当前都不存在。</p></article>
+      </div>
+
+      <div class="runStrip">
+        <div class="run currentRun"><small>当前验证实验</small><strong>0003 · yushin_ito_exact_bc_v2</strong><p><code>V1_card_token_regression</code> 因卡牌 token 退化在 epoch 12 停止；<code>V2_card_token_fix</code> 达到 validation 80.52% / test 78.37%，并在 180 局官方引擎评测中取得 75.56% 胜率、0 errors。候选、dist 与 Kaggle ref 54912599 已归档，两个训练版本仍独立保留。</p></div>
+        <div class="run"><small>归档基线</small><strong>0001 · Yushin exact BC baseline</strong><p>旧输入合同的正式基线；保留 checkpoint、测试和 closed-loop 结果，用于比较而不覆盖历史。</p></div>
+        <div class="run"><small>归档研究实验</small><strong>0002 · exact-deck expanded BC</strong><p>旧模型上的 2,021 trajectories 扩展实验。它不是 0003 的数据来源，也不代表当前通用合同。</p></div>
+        <div class="run"><small>下一批 source staging</small><strong>Top 20 · 2026-07-23 snapshot</strong><p>20 个 team/submission source slot、19 个唯一样本 replay、14 个 exact deck hash；当前状态仅为 sample-only，不是 train-ready run。</p></div>
+      </div>
+    </section>
+
+    <div class="rule"></div>
+
+    <section id="gaps">
+      <div class="sectionHead">
+        <div><p class="kicker">06 / What is still missing</p><h2>距离强通用 agent 还缺什么</h2></div>
+        <p class="lede">这里严格区分“张量已经存在”和“能力已经被验证”。新增输入只提供表达能力，不自动产生跨卡组泛化、隐藏信息推断或长程规划。</p>
+      </div>
+      <div class="gapGrid">
+        <article class="gapCard done"><h3>已实现</h3><p>能进入当前模型、数据和 checkpoint 的合同。</p><ul><li>完整己方 deck conditioning</li><li>双方场上实体与公开资源</li><li>短期 action/effect history</li><li>expert source embedding</li><li>结构化 card metadata</li><li>simulator legal action mask</li></ul></article>
+        <article class="gapCard partial"><h3>只有部分表达 / 数据准备</h3><p>有摘要或 source staging，但仍未形成被验证的能力。</p><ul><li>Energy/Tool 只有数量，没有附着卡身份</li><li>进化链只有深度，没有 stack IDs</li><li>弃牌与手牌固定槽位可能截断</li><li>卡牌效果只有结构代理，没有规则语义</li><li>32 步压缩历史不是完整事件流</li><li>known Prize 与 Stadium 身份未显式编码</li><li>Top 20 已采样，完整 corpus / 20 个 checkpoint / Arena 对战尚未执行</li></ul></article>
+        <article class="gapCard missing"><h3>尚未实现</h3><p>不能把这些能力写成当前模型已经具备。</p><ul><li>opponent deck / hidden-hand belief</li><li>determinization 或搜索</li><li>多选动作的可靠联合 log-prob</li><li>训练过并校准的 value function</li><li>RL rollout / reward / GAE / PPO</li><li>多 expert 映射、跨卡组 BC 与 held-out deck 测试</li></ul></article>
+      </div>
+      <div class="callout" style="background: var(--amber-soft); border-color: #e9cd9d; border-left-color: var(--amber)"><strong style="color: var(--amber)">下一步判断标准</strong><p style="color: #6c542e">0003 已经通过单专家 BC promotion gate：新表达提升了 validation/test exact 指标，test legal action 为 100%，标准 package 验证通过，并在官方引擎闭环对战中取得 136/180、0 errors。这个结果只覆盖 Yushin Ito 牌组。Top 20 已完成来源冻结和一局样本审计；后续每个替身仍要分别通过 source audit、held-out imitation、标准 package validate 和固定 evaluation，才可进入 Arena。</p></div>
+    </section>
   </main>
-  <footer><div class="footerInner">事实来源：<a href="features.py">features.py</a> · <a href="../core/model.py">core/model.py</a> · <a href="full_action_model.py">full_action_model.py</a> · <a href="../train/train_full_action_bc.py">train_full_action_bc.py</a> · <a href="../train/build_kaggle_bc_dataset.py">build_kaggle_bc_dataset.py</a><br>页面定位：模型与训练合同的可视化审阅，不替代固定 evaluation 报告。</div></footer>
-  <script>const stageButtons=document.querySelectorAll('[data-stage]');const stagePanels=document.querySelectorAll('[data-panel]');stageButtons.forEach(button=>button.addEventListener('click',()=>{const selected=button.dataset.stage;stageButtons.forEach(item=>item.setAttribute('aria-selected',String(item===button)));stagePanels.forEach(panel=>panel.classList.toggle('active',panel.dataset.panel===selected));}));</script>
+
+  <footer>
+    <div class="footerInner">
+      当前事实来源：
+      <a href="features.py">features.py</a> ·
+      <a href="card_metadata.py">card_metadata.py</a> ·
+      <a href="../core/model.py">core/model.py</a> ·
+      <a href="../train/train_full_action_bc.py">train_full_action_bc.py</a> ·
+      <a href="../train/audit_kaggle_bc_dataset.py">audit_kaggle_bc_dataset.py</a> ·
+      <a href="../train/prepare_top_ladder_bc.py">prepare_top_ladder_bc.py</a> ·
+      <a href="../_runs/0003-yushin_ito_exact_bc_v2/data_manifest.json">0003 data manifest</a> ·
+      <a href="../_runs/0003-yushin_ito_exact_bc_v2/audit.json">0003 audit</a> ·
+      <a href="../_runs/0003-yushin_ito_exact_bc_v2/V1_card_token_regression/status.json">V1 status</a> ·
+      <a href="../_runs/0003-yushin_ito_exact_bc_v2/V2_card_token_fix/training_summary.json">V2 training</a> ·
+      <a href="../_runs/0003-yushin_ito_exact_bc_v2/evaluation/V2_card_token_fix/run-8688bfdaa9c44059a7fec383b5f64f6e/report.html">V2 evaluation</a> ·
+      <a href="../../docs/reports/rl/top20-bc-arena-design-and-source-audit-20260723.md">Top 20 source audit</a><br>
+      更新于 2026-07-23。历史通过 Git 和归档 run 追溯；本页只描述当前最先进实现与阶段。
+    </div>
+  </footer>
+
+  <script>
+    const stageButtons = document.querySelectorAll("[data-stage]");
+    const stagePanels = document.querySelectorAll("[data-panel]");
+    stageButtons.forEach((button) => button.addEventListener("click", () => {
+      const selected = button.dataset.stage;
+      stageButtons.forEach((item) => item.setAttribute("aria-selected", String(item === button)));
+      stagePanels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === selected));
+    }));
+  </script>
 </body>
 </html>
