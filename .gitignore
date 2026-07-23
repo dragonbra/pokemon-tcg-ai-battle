@@ -22,10 +22,10 @@ logs/
 
 # RL artifacts: large supervised datasets and checkpoints stay local.
 # Run metadata, metrics, evaluation reports, and TensorBoard events are tracked.
-rl/_runs/dataset/*
-!rl/_runs/dataset/README.md
-rl/_runs/checkpoint/*
-!rl/_runs/checkpoint/README.md
+rl_runs/dataset/*
+!rl_runs/dataset/README.md
+rl_runs/checkpoint/*
+!rl_runs/checkpoint/README.md
 *.egg-info/
 
 # Official card data and Card ID PDFs are local reference downloads only.

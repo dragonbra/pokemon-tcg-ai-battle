@@ -10,7 +10,7 @@
 
 每个完成的超参 trial 都必须用它自己的 `best_validation.pt` 构建纯模型 Agent，并立即通过
 仓库正式 `evaluation` 运行全部 18 个 opponent × 10 games。离线 BC 与真实对局结果随后写入
-`rl/_runs/INDEX.html` 和 campaign HTML 报告，供用户明早自行决定最终模型结构。
+`rl_runs/INDEX.html` 和 campaign HTML 报告，供用户明早自行决定最终模型结构。
 
 这不是为了机械地寻找最高的单个 `validation/exact_action_rate` 数字，而是回答三个问题：
 
@@ -32,10 +32,10 @@ opponent。若这些内容在实验过程中变化，所有跨 trial 比较失�
 - 每个完成的 trial 都从 `best_validation.pt` 构建 `fallback: None` 的临时纯模型 Agent；
 - 每个完成的 trial 都有独立的仓库正式 evaluation（18 opponents × 10 games）和
   `report.html`；
-- `rl/_runs/INDEX.html` 逐 trial 展示模型差异，并以 evaluation 核心结果为视觉重点；
+- `rl_runs/INDEX.html` 逐 trial 展示模型差异，并以 evaluation 核心结果为视觉重点；
 - 生成一个独立、可直接打开的 HTML 总报告，既展示 BC loss/validation action accuracy，
   也展示每个 trial 的真实对局结果；
-- 同步 `rl/model/DESIGN.html`、实验 decisions/status 和 `rl/_runs/INDEX.html`。
+- 同步 `train/alakazam_bc_rl/DESIGN.html`、实验 decisions/status 和 `rl_runs/INDEX.html`。
 
 本 campaign 不替用户给出“哪个模型最好”或自动晋级结论。执行 Session 可以按本文预先定义的
 validation 规则分配剩余训练预算，但不得用已经看到的 evaluation 或 test 结果决定下一组超参。
@@ -83,7 +83,7 @@ validation 规则分配剩余训练预算，但不得用已经看到的 evaluati
 新的全局 experiment id，不在本文中硬编码 `0004`：
 
 ```bash
-PYTHONPATH=. python3.11 -m rl.core.runs create bc_capacity_search_210m \
+PYTHONPATH=. python3.11 -m rl_environment.runs create bc_capacity_search_210m \
   --objective "Measure BC capacity and evaluation behavior under a 210-minute training budget"
 ```
 
@@ -91,9 +91,9 @@ PYTHONPATH=. python3.11 -m rl.core.runs create bc_capacity_search_210m \
 `V<n>_<tag>`，并在下面三个位置保持同名：
 
 ```text
-rl/_runs/<experiment-id>/V<n>_<tag>/
-rl/_runs/tensorboard/<experiment-id>/V<n>_<tag>/
-rl/artifact/checkpoint/<experiment-id>/V<n>_<tag>/
+rl_runs/<experiment-id>/V<n>_<tag>/
+rl_runs/tensorboard/<experiment-id>/V<n>_<tag>/
+rl_runs/checkpoint/<experiment-id>/V<n>_<tag>/
 ```
 
 ### 4.2 冻结证据
@@ -104,7 +104,7 @@ rl/artifact/checkpoint/<experiment-id>/V<n>_<tag>/
 - data manifest/audit 路径与 SHA-256；
 - train/validation/test 的 episodes 和 records 数；
 - Git commit、`git status --porcelain` 和影响本实验源码的 diff/patch；
-- `rl/model/`、`rl/train/train_full_action_bc.py`、`rl/core/` 的源码 hash；
+- `train/alakazam_bc_rl/`、`train/alakazam_bc_rl/training/train_full_action_bc.py`、`rl_environment/` 的源码 hash；
 - Python、PyTorch、CUDA、GPU 型号；
 - 训练预算 `12,600` 秒、停止发车阈值 `11,700` 秒；
 - 本文档路径和 revision；
@@ -116,9 +116,9 @@ Session 若仍会改动模型或数据，先等待其明确冻结；不得一边
 本 campaign 的正式输入必须是 0003 在修复完成后冻结的下列人类专家数据资产：
 
 ```text
-rl/artifact/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl
-rl/artifact/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl.card_metadata.json
-rl/artifact/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl.summary.json
+rl_runs/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl
+rl_runs/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl.card_metadata.json
+rl_runs/dataset/0003-yushin_ito_exact_bc_v2/dataset.jsonl.summary.json
 ```
 
 它继续使用同一个 Yushin Ito 人类 expert corpus 和同一组 episode-level split；不得重新下载、
@@ -277,9 +277,9 @@ scheduler。若剩余预算不足就明确标记 seed 不确定性，不挤占 1
 每个 trial 都从随机初始化开始，不从其他 checkpoint warm start。示例：
 
 ```bash
-PYTHONPATH=. python3.11 -m rl.train.train_full_action_bc \
+PYTHONPATH=. python3.11 -m train.alakazam_bc_rl.training.train_full_action_bc \
   <frozen-dataset.jsonl> \
-  --output rl/_runs/<experiment-id>/<Vn_tag> \
+  --output rl_runs/<experiment-id>/<Vn_tag> \
   --epochs 20 \
   --batch-size 256 \
   --learning-rate <lr> \
@@ -414,8 +414,8 @@ evaluation，搜索控制不得用 evaluation 选择后续 trial。test 也不�
 在用户尚未选择最终结构前，不把每个搜索 candidate 污染到长期 `work/`。使用唯一临时目录：
 
 ```bash
-PYTHONPATH=. python3.11 -m rl.train.build_full_action_candidate \
-  --checkpoint rl/artifact/checkpoint/<experiment-id>/<trial-version>/best_validation.pt \
+PYTHONPATH=. python3.11 -m train.alakazam_bc_rl.training.build_full_action_candidate \
+  --checkpoint rl_runs/checkpoint/<experiment-id>/<trial-version>/best_validation.pt \
   --source-package <validated-source-package> \
   --output /tmp/<experiment-id>-candidates/<trial-version>
 
@@ -457,12 +457,12 @@ python3 -m evaluation run \
   --games 10 \
   --metric-profile auto_iteration_v8_setup_relay \
   --no-visualize \
-  --output rl/_runs/<experiment-id>/evaluation/<trial-version>
+  --output rl_runs/<experiment-id>/evaluation/<trial-version>
 ```
 
 每轮 evaluation 完成后立即读取实际生成目录中的 `manifest.json`、`summary.json`、
 `metrics.json` 和 `report.html`，写回该 trial 的 `trial_result.json`，然后更新
-`rl/_runs/INDEX.html`。不得等所有训练结束后才补一批无法核对来源的手工数字。
+`rl_runs/INDEX.html`。不得等所有训练结束后才补一批无法核对来源的手工数字。
 
 ### 12.3 每个 trial 必须提取的指标
 
@@ -483,9 +483,9 @@ python3 -m evaluation run \
 
 ## 13. HTML 展示与 INDEX 重构
 
-### 13.1 `rl/_runs/INDEX.html` 是首要入口
+### 13.1 `rl_runs/INDEX.html` 是首要入口
 
-用户首先从 `rl/_runs/INDEX.html` 查看实验，因此每个 completed trial 的 evaluation 完成后都要
+用户首先从 `rl_runs/INDEX.html` 查看实验，因此每个 completed trial 的 evaluation 完成后都要
 立即刷新 INDEX，而不是只在 campaign 结束时生成一个孤立报告。
 
 现有 INDEX 以“模型/离线指标”为主、evaluation 只占一列，并带有 keep/reject 结论。本次应
@@ -522,12 +522,12 @@ INDEX 中的数字必须从 `training_summary.json`、`trial_result.json`、eval
 同时生成：
 
 ```text
-rl/_runs/<experiment-id>/bc_capacity_search_report.html
+rl_runs/<experiment-id>/bc_capacity_search_report.html
 ```
 
 报告必须是独立 HTML，可直接从文件系统打开；CSS 和图表使用内联 CSS/SVG，不依赖 CDN、
 网络 JavaScript 或外部字体。数字从 run JSON、checkpoint metadata 和 evaluation artifacts
-读取。如果需要新增生成器，应放在 `rl/train/` 或合适的 RL 模块中，不放回通用 `scripts/`。
+读取。如果需要新增生成器，应放在 `train/alakazam_bc_rl/training/` 或合适的 RL 模块中，不放回通用 `scripts/`。
 
 ### 13.3 Campaign 报告必须展示的内容
 
@@ -584,23 +584,23 @@ HTML 中不得只贴总胜率；必须同时展示错误/未完成、opponent �
 
 实验结束后同步：
 
-- `rl/model/DESIGN.html`：当前输入/shape 未变化的事实、仍使用 0003 人类数据的边界、搜索过的
+- `train/alakazam_bc_rl/DESIGN.html`：当前输入/shape 未变化的事实、仍使用 0003 人类数据的边界、搜索过的
   结构、真实参数量、BC 训练目标、各 trial evaluation、当前处于“等待用户选择最终结构”的
   阶段；用户未决定前不得把任一 trial 写成正式最终结构；
-- `rl/_runs/<experiment-id>/decisions.md`：自适应分支、训练停止原因、未执行 trial 及原因；
+- `rl_runs/<experiment-id>/decisions.md`：自适应分支、训练停止原因、未执行 trial 及原因；
 - 每个 trial 的 `status.json`；
-- `rl/_runs/INDEX.html`：按第 13.1 节改成 evaluation-first，并逐 trial 展示核心指标、BC 辅助
+- `rl_runs/INDEX.html`：按第 13.1 节改成 evaluation-first，并逐 trial 展示核心指标、BC 辅助
   指标和 HTML 链接；
 - 必要时补 `commands.md`，保证每次训练、临时打包和每轮 evaluation 可复现。
 
-更新 `rl/model/DESIGN.html` 时必须用训练 config、dataset audit、checkpoint metadata 和
+更新 `train/alakazam_bc_rl/DESIGN.html` 时必须用训练 config、dataset audit、checkpoint metadata 和
 evaluation manifest 交叉核对，不能根据旧报告推测 shape、参数量或阶段结论。
 
 ## 15. 最终执行清单
 
 ### Freeze
 
-- [ ] 新 experiment id 已通过 `rl.core.runs create` 分配；
+- [ ] 新 experiment id 已通过 `rl_environment.runs create` 分配；
 - [ ] 其他 Session 已停止修改本 campaign 的 dataset/model/train 源码；
 - [ ] 已确认继续使用 0003 Yushin Ito 人类专家 dataset，不续训旧 checkpoint、不混新数据；
 - [ ] 0003 dataset、metadata、split、source、deck、cg、Git/diff 已 hash 并归档；
@@ -633,7 +633,7 @@ evaluation manifest 交叉核对，不能根据旧报告推测 shape、参数量
 - [ ] INDEX 以 evaluation W-L-D/胜率/错误为重点，BC loss/validation exact 为辅助；
 - [ ] INDEX 展示每个 trial 的超参差异和原始 report 链接；
 - [ ] `bc_capacity_search_report.html` 包含完整离线和真实对局结果；
-- [ ] `rl/model/DESIGN.html` 与 `rl/_runs/INDEX.html` 已同步；
+- [ ] `train/alakazam_bc_rl/DESIGN.html` 与 `rl_runs/INDEX.html` 已同步；
 - [ ] 没有替用户选择 Winner、promote 或 reject；
 - [ ] 没有自动 Kaggle submission、commit 或 push。
 

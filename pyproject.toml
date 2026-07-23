@@ -22,4 +22,9 @@ rl = [
 line-length = 100
 
 [tool.setuptools.packages.find]
-include = ["rl*", "evaluation*", "visualization*"]
+include = [
+  "rl_environment*",
+  "train*",
+  "evaluation*",
+  "visualization*",
+]

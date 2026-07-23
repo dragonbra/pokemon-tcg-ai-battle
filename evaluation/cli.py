@@ -15,7 +15,7 @@ from evaluation.packages.loader import (
 from evaluation.metrics.profiles import available_metric_profiles
 from evaluation.runner.batch import BatchConfig, run_batch
 from evaluation.runtime import assert_cg_compatible
-from rl.core.runs import numbered_artifact_path
+from rl_environment.runs import numbered_artifact_path
 
 
 EXPECTED_FIELDS = frozenset({"name", "package", "enabled", "tags"})
@@ -178,7 +178,7 @@ def _validate_positive(value: int, argument: str) -> None:
 
 
 def _numbered_research_output_root(requested: Path) -> Path:
-    """Allocate a globally numbered report below ``rl/_runs``."""
+    """Allocate a globally numbered report below ``rl_runs``."""
     return numbered_artifact_path(requested, "evaluation")
 
 

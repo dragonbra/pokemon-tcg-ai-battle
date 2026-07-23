@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-log_dir="${TENSORBOARD_LOGDIR:-$repo_root/rl/_runs/tensorboard}"
+log_dir="${TENSORBOARD_LOGDIR:-$repo_root/rl_runs/tensorboard}"
 host="${TENSORBOARD_HOST:-127.0.0.1}"
 port="${TENSORBOARD_PORT:-6006}"
 python_bin="${PYTHON:-python3}"

@@ -169,7 +169,7 @@ class EvaluationCatalogTests(unittest.TestCase):
             root = Path(temporary) / "_runs"
             (root / "0003-previous").mkdir(parents=True)
             (root / "tensorboard").mkdir()
-            with patch("rl.core.runs.RUNS_ROOT", root):
+            with patch("rl_environment.runs.RUNS_ROOT", root):
                 allocated = _numbered_research_output_root(root / "new_candidate" / "evaluation")
             self.assertEqual(allocated, root / "0004-new_candidate" / "evaluation")
 

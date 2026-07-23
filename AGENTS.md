@@ -3,7 +3,7 @@
 ## 项目结构与模块组织
 
 - `work/<name>/` 是当前可打包候选，必须包含 `main.py`、60 行 `deck.csv` 和 `cg/` 运行时；策略说明放在 `work/docs/`。`submission/<name>/` 保留历史提交源目录。
-- `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；常用基建必须放在所属的 Python package（如 `rl/`、`evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。
+- `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；通用训练基建放在 `rl_environment/`，具体训练项目放在 `train/<project>/`；其他基建必须放在所属的 Python package（如 `evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。
 - `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。
 - `evaluation/` 是仓库内的评测运行入口：`configs/opponents.json` 固定 catalog，`opponents/<name>/` 下每个对手都是独立标准 package（`main.py`、60 行 `deck.csv`、物理复制的 `cg/`），不是 adapter。官方 engine runtime 是唯一运行时来源；评测代码不得修改 `engine/source/`，也不得依赖隔壁评测仓库。
 - 评测 CLI 使用 `python3 -m evaluation list-opponents`、`validate <package>` 和 `run --candidate <package> --opponents all --output <report-root>`。每次 `run` 在指定报告根目录下创建独立 `run_id/`，写入 manifest、逐局记录、指标、case 及 Markdown/HTML 报告；`evaluation/opponents/` 不属于 Kaggle 正式 submission 输出目录。
@@ -20,18 +20,18 @@
 
 ## RL 设计文档同步约定
 
-- [`rl/model/DESIGN.html`](rl/model/DESIGN.html) 是 RL 模型输入、网络结构、训练目标和项目阶段的项目级可视化现状文档，不是一次性说明或历史快照。
-- 后续任何改动只要涉及模型输入或 feature schema、模型结构或输出 head、action contract、训练 loss/reward/value/PPO 接口，或者项目从 BC、rollout、value calibration、RL fine-tuning 等阶段推进到新阶段，都必须在同一项工作中同步更新 `rl/model/DESIGN.html`。
+- [`train/alakazam_bc_rl/DESIGN.html`](train/alakazam_bc_rl/DESIGN.html) 是 RL 模型输入、网络结构、训练目标和项目阶段的项目级可视化现状文档，不是一次性说明或历史快照。
+- 后续任何改动只要涉及模型输入或 feature schema、模型结构或输出 head、action contract、训练 loss/reward/value/PPO 接口，或者项目从 BC、rollout、value calibration、RL fine-tuning 等阶段推进到新阶段，都必须在同一项工作中同步更新 `train/alakazam_bc_rl/DESIGN.html`。
 - 同步内容至少覆盖受影响的字段与张量 shape、模型数据流与参数结构、训练目标、当前/下一阶段、正式工作包与研究 checkpoint 的边界；不得让页面继续展示已经失效的 schema、数字或阶段结论。
-- 实现或配置已经变化但 `rl/model/DESIGN.html` 尚未同步时，该项工作视为未完成。交付前必须用当前代码、数据 audit、checkpoint metadata 和 run manifest 交叉核对页面内容；不能只根据旧报告手工推断。
+- 实现或配置已经变化但 `train/alakazam_bc_rl/DESIGN.html` 尚未同步时，该项工作视为未完成。交付前必须用当前代码、数据 audit、checkpoint metadata 和 run manifest 交叉核对页面内容；不能只根据旧报告手工推断。
 - 纯粹的内部重构、文件移动或不改变模型/训练语义的修复不要求制造文档改动；但如果路径发生变化，页面中的事实来源链接也必须保持可用。
 - BC 数据默认只允许来自同一个明确的 team/agent policy；manifest、dataset summary 和 run record 必须记录并校验该来源。不得把不同 team、不同实现逻辑的动作标签直接混成一个无条件 BC policy；只有在模型显式加入可审计的 expert/source conditioning、并单独设计冲突标签与分来源评测时，才可以开启多来源训练。
 
 ## RL 实验内迭代版本硬约束
 
-- `rl/_runs/<000N-experiment>/` 表示一个项目级实验，根目录只保存共享的 manifest、数据 manifest/audit、决策与命令记录；同一实验内每次实际训练、校准或策略更新都必须新建 `V<序号>_<tag>/` 子目录，例如 `V1_initial_contract`、`V2_card_token_fix`。
+- `rl_runs/<000N-experiment>/` 表示一个项目级实验，根目录只保存共享的 manifest、数据 manifest/audit、决策与命令记录；同一实验内每次实际训练、校准或策略更新都必须新建 `V<序号>_<tag>/` 子目录，例如 `V1_initial_contract`、`V2_card_token_fix`。
 - 序号从 `V1` 开始，在同一实验内严格单调递增；`tag` 使用能说明本次假设或修复的 ASCII 小写 `snake_case`。不得复用旧序号、覆盖旧目录、向旧 metrics 追加新 run，或因为结果失败而删除旧版本。
-- 每个版本的 tracked 训练产物必须写到 `rl/_runs/<experiment>/V<n>_<tag>/`，至少包含独立的 training config、metrics、summary/status；TensorBoard event 必须写到 `rl/_runs/tensorboard/<experiment>/V<n>_<tag>/`，checkpoint 必须写到 `rl/artifact/checkpoint/<experiment>/V<n>_<tag>/`。三处版本名必须完全一致，禁止直接把 event 或 checkpoint 写在 experiment 根目录。
+- 每个版本的 tracked 训练产物必须写到 `rl_runs/<experiment>/V<n>_<tag>/`，至少包含独立的 training config、metrics、summary/status；TensorBoard event 必须写到 `rl_runs/tensorboard/<experiment>/V<n>_<tag>/`，checkpoint 必须写到 `rl_runs/checkpoint/<experiment>/V<n>_<tag>/`。三处版本名必须完全一致，禁止直接把 event 或 checkpoint 写在 experiment 根目录。
 - 评测同样使用 `evaluation/V<n>_<tag>/`，并与产生 candidate 的训练版本对应；仅评测解析器或 opponent catalog 变化时也要新建版本并在 tag/决策记录中说明变量，不得混写已有报告。
 - 失败、被中止或确认存在数据/编码缺陷的版本仍然是正式迭代记录：必须保留可恢复产物，在 version status 或 experiment decisions 中记录失败原因、发现证据和下一版本具体改进。后续版本的价值需要能从这些记录和 TensorBoard 曲线中被追溯。
 - 启动新 run 前必须先检查目标 version 的 run、TensorBoard 和 checkpoint 三个目录均未被使用；若任一路径已有文件，必须分配下一个 `V<n>_<tag>`，不得依赖 TensorBoard 新建 event 文件来区分逻辑 run。
@@ -77,7 +77,7 @@ python3 -m evaluation list-opponents
 python3 -m evaluation validate work/alakazam_bc_v1
 ```
 
-TensorBoard 默认读取 `rl/_runs/tensorboard`，监听 `127.0.0.1:6006`；可通过 `TENSORBOARD_LOGDIR`、`TENSORBOARD_HOST`、`TENSORBOARD_PORT` 和 `PYTHON` 覆盖。评测、可视化和训练分别使用各自的模块入口，不在 `scripts/` 中增加兼容 wrapper。官方真实对局仍以 Kaggle submission/episode/replay 为主要分析依据。
+TensorBoard 默认读取 `rl_runs/tensorboard`，监听 `127.0.0.1:6006`；可通过 `TENSORBOARD_LOGDIR`、`TENSORBOARD_HOST`、`TENSORBOARD_PORT` 和 `PYTHON` 覆盖。评测、可视化和训练分别使用各自的模块入口，不在 `scripts/` 中增加兼容 wrapper。官方真实对局仍以 Kaggle submission/episode/replay 为主要分析依据。
 
 新增 evaluation opponent 时，先建立自包含标准 package，保证 `main.py` 从同目录读取 deck、`deck.csv` 恰为 60 行且 `cg/` 与基线 hash 一致；然后添加 catalog 条目、补充资产/策略测试，并运行 `python3 -m unittest -v tests.test_evaluation_assets`。不要把 opponent adapter、共享 cg 目录、symlink 或其他仓库的绝对路径带入运行时。
 
@@ -94,7 +94,7 @@ Python 使用 4 个空格、类型注解和清晰的小函数；遵守 Ruff 的 
 
 ## 测试指南
 
-测试使用标准库 `unittest`。提交前运行 `python3 -m unittest discover -s tests -p 'test_*.py'`；evaluation 资产改动还必须单独运行 `python3 -m unittest -v tests.test_evaluation_assets`。评测 smoke 输出写到 `/tmp`，不要提交生成的 trace 或报告。策略或引擎改动应优先记录 Kaggle 官方 Episode，并在说明中记录对手、步数和结果。必要时使用 `python3 -m compileall -q evaluation visualization rl` 检查语法，并用 `bash -n scripts/start_tensorboard.sh` 检查唯一的 shell 入口。
+测试使用标准库 `unittest`。提交前运行 `python3 -m unittest discover -s tests -p 'test_*.py'`；evaluation 资产改动还必须单独运行 `python3 -m unittest -v tests.test_evaluation_assets`。评测 smoke 和临时验证 report 输出写到仓库根目录 `.tmp/evaluation/`，不要提交生成的 trace 或报告；其他不需要在 VS Code 查看且不是 report 的 simulator 临时数据仍可写到 `/tmp`。策略或引擎改动应优先记录 Kaggle 官方 Episode，并在说明中记录对手、步数和结果。必要时使用 `python3 -m compileall -q evaluation visualization rl_environment train` 检查语法，并用 `bash -n scripts/start_tensorboard.sh` 检查唯一的 shell 入口。
 
 ## 提交与 Pull Request
 
