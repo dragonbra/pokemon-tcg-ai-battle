@@ -6,7 +6,7 @@
 - 优先级：正确性和可审计性优先；高吞吐优化见独立路线图
 
 配套文档：固定评测改造见
-[`../evaluation/evaluation-framework-improvements-20260724.md`](../evaluation/evaluation-framework-improvements-20260724.md)，
+[`../../../evaluation/README.md`](../../../evaluation/README.md)，
 未来训练吞吐方案见
 [`rl-throughput-optimization-roadmap-20260724.md`](rl-throughput-optimization-roadmap-20260724.md)。
 
@@ -26,7 +26,7 @@
 ```
 
 只在静态 BC dataset 上重算 logits、对旧标签做 clipped loss，不能称为在线 PPO。当前
-`rl/train/train_ppo.py` 属于旧的离线过渡实验：它使用 legacy
+`train/alakazam_bc_rl/training/train_ppo.py` 属于旧的离线过渡实验：它使用 legacy
 `CandidatePolicyValueNet`、静态记录和单目标动作，不直接兼容本次 BC V4 的
 `FullActionPolicyValueNet`、count head 与完整多选动作合同。历史文件保留用于审计，
 今晚新增独立在线入口，不静默改变旧实验语义。
@@ -52,7 +52,7 @@ work/yushin_ito_bc_capacity_v4/strategy/model.bin
 | package checkpoint SHA-256 | `cb2aa2b5c03d9fe0ac9718cd29342799dfaaa9b2a4125f764dab3f093ab81788` |
 
 共享配置记录的原始路径
-`rl/artifact/checkpoint/0004-bc_capacity_search_210m/V4_s_d192_l2_lr5e4_s7/best_validation.pt`
+`rl_runs/checkpoint/0004-bc_capacity_search_210m/V4_s_d192_l2_lr5e4_s7/best_validation.pt`
 当前不在本地。因此 RL manifest 必须把 package `model.bin` 作为真实 source checkpoint，
 保存其 SHA-256 和 metadata 快照，不能记录一个不存在的源文件。
 
@@ -87,7 +87,7 @@ rl/
     └── train_online_ppo.py      # 配置、collect/update 循环和产物写入
 ```
 
-可复用 `rl/model/features.py`、`rl/model/full_action_model.py`、checkpoint、run、logging 和
+可复用 `train/alakazam_bc_rl/features.py`、`train/alakazam_bc_rl/full_action_model.py`、checkpoint、run、logging 和
 storage 工具。Evaluation 只负责训练后固定评测，不作为在线训练器内部组件。
 
 ## 5. 环境与 episode 合同
@@ -263,17 +263,17 @@ rollout 胜率用于训练健康观察，不能替代固定 Evaluation，也不�
 先由工具分配新的项目级实验，不能写回 BC004：
 
 ```bash
-python3 -m rl.core.runs create yushin_ito_bc_v4_online_ppo \
+python3 -m rl_environment.runs create yushin_ito_bc_v4_online_ppo \
   --objective "Online PPO initialized from the selected BC V4 checkpoint"
 ```
 
 假设工具返回 `<experiment>`，首版使用类似 `V1_online_ppo_smoke` 的严格版本名：
 
 ```text
-rl/_runs/<experiment>/V1_online_ppo_smoke/
-rl/_runs/tensorboard/<experiment>/V1_online_ppo_smoke/
-rl/artifact/checkpoint/<experiment>/V1_online_ppo_smoke/
-rl/_runs/<experiment>/evaluation/V1_online_ppo_smoke/
+rl_runs/<experiment>/V1_online_ppo_smoke/
+rl_runs/tensorboard/<experiment>/V1_online_ppo_smoke/
+rl_runs/checkpoint/<experiment>/V1_online_ppo_smoke/
+rl_runs/<experiment>/evaluation/V1_online_ppo_smoke/
 ```
 
 启动前检查四个目标目录没有旧文件。失败版本保留 status、错误证据和恢复说明，不覆盖、
@@ -326,7 +326,7 @@ python3 -m evaluation run \
   --worker-cpu-threads 1 \
   --metric-profile auto_iteration_v8_setup_relay \
   --no-visualize \
-  --output rl/_runs/<experiment>/evaluation/V1_online_ppo_smoke
+  --output rl_runs/<experiment>/evaluation/V1_online_ppo_smoke
 ```
 
 必须 180/180 completed、0 error。结果交给用户审核；不因训练指标、一次 rollout 胜率或
@@ -334,7 +334,7 @@ python3 -m evaluation run \
 
 ## 14. 必须同步的设计文档
 
-实现过程中同步更新 `rl/model/DESIGN.html`，至少包括：
+实现过程中同步更新 `train/alakazam_bc_rl/DESIGN.html`，至少包括：
 
 - stochastic full-action distribution 和联合 log-prob；
 - rollout record 字段和 tensor shape；

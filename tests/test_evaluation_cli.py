@@ -44,6 +44,24 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertIn("--metric-profile", output.getvalue())
         self.assertIn("auto_iteration_v8_setup_relay", output.getvalue())
 
+    def test_run_defaults_to_fast_report_only_execution_inputs(self) -> None:
+        args = cli._parser().parse_args(
+            [
+                "run",
+                "--candidate",
+                str(self.candidate.root),
+                "--opponents",
+                "all",
+                "--output",
+                str(self.root / "reports"),
+            ]
+        )
+
+        self.assertEqual(args.games, 10)
+        self.assertFalse(args.visualize)
+        self.assertIsNone(args.workers)
+        self.assertEqual(args.worker_cpu_threads, 1)
+
     def test_validate_prints_standard_package_fingerprints(self) -> None:
         output = io.StringIO()
         with (
@@ -105,6 +123,8 @@ class EvaluationCliTests(unittest.TestCase):
                     "77",
                     "--workers",
                     "4",
+                    "--worker-cpu-threads",
+                    "1",
                     "--metric-profile",
                     "auto_iteration_v8_setup_relay",
                     "--metric-module",
@@ -123,11 +143,46 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertTrue(config.keep_temp)
         self.assertEqual(config.max_steps, 77)
         self.assertEqual(config.workers, 4)
+        self.assertEqual(config.worker_cpu_threads, 1)
         self.assertEqual(config.metric_profile_id, "auto_iteration_v8_setup_relay")
         self.assertEqual(config.metric_module_paths, ("metrics/custom.py:CustomPlugin",))
         self.assertIn("run-cli-test", output.getvalue())
         self.assertNotIn("promotion", output.getvalue().lower())
         self.assertNotIn("reject", output.getvalue().lower())
+
+    def test_run_resolves_automatic_worker_default_before_batch(self) -> None:
+        result = SimpleNamespace(run_id="run-default-workers")
+        output = io.StringIO()
+        opponents = tuple(
+            package(f"opponent_{index}", self.root / f"opponent_{index}")
+            for index in range(18)
+        )
+        with (
+            patch.object(cli, "_load_official_card_ids", return_value={1}),
+            patch.object(cli, "load_submission_package", return_value=self.candidate),
+            patch.object(cli, "load_opponent_catalog", return_value=list(opponents)),
+            patch.object(cli, "default_worker_count", return_value=7),
+            patch.object(cli, "run_batch", return_value=result) as run_batch,
+            redirect_stdout(output),
+        ):
+            exit_code = cli.main(
+                [
+                    "run",
+                    "--candidate",
+                    str(self.candidate.root),
+                    "--opponents",
+                    "all",
+                    "--output",
+                    str(self.root / "reports"),
+                ]
+            )
+
+        self.assertEqual(exit_code, 0)
+        config = run_batch.call_args.args[0]
+        self.assertEqual(config.games_per_opponent, 10)
+        self.assertEqual(config.workers, 7)
+        self.assertEqual(config.worker_cpu_threads, 1)
+        self.assertFalse(config.visualize)
 
     def test_run_stops_before_batch_when_candidate_validation_fails(self) -> None:
         stderr = io.StringIO()

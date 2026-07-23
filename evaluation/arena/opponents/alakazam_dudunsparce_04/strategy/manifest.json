@@ -1,0 +1,11 @@
+{
+  "action_contract": "full_action_set_v1",
+  "checkpoint_step": 11,
+  "experiment_id": "0004-bc_capacity_search_210m/V4_s_d192_l2_lr5e4_s7",
+  "fallback": null,
+  "feature_schema": "ptcg_features_universal",
+  "model_bytes": 14347798,
+  "model_sha256": "cb2aa2b5c03d9fe0ac9718cd42799dfaaa9b2a4125f764dab3f093ab81788",
+  "name": "Yushin Ito BC Capacity V4",
+  "schema_version": "ptcg_pure_model_submission_v1"
+}

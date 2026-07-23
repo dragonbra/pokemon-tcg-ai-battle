@@ -2,3 +2,7 @@
 *.pt filter=lfs diff=lfs merge=lfs -text
 *.ckpt filter=lfs diff=lfs merge=lfs -text
 submission/dist/*.tar.gz filter=lfs diff=lfs merge=lfs -text
+*.so filter=lfs diff=lfs merge=lfs -text
+evaluation/arena/opponents/*/cg/*.dll filter=lfs diff=lfs merge=lfs -text
+evaluation/arena/opponents/*/cg/*.so filter=lfs diff=lfs merge=lfs -text
+evaluation/arena/opponents/*/cg/*.dylib filter=lfs diff=lfs merge=lfs -text

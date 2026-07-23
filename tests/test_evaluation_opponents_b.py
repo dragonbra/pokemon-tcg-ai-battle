@@ -13,17 +13,17 @@ from evaluation.runtime.loader import compute_cg_manifest
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DECK_FIXTURE = REPOSITORY_ROOT / "tests" / "fixtures" / "evaluation_opponent_decks.json"
-OPPONENTS_ROOT = REPOSITORY_ROOT / "evaluation" / "opponents"
+OPPONENTS_ROOT = REPOSITORY_ROOT / "evaluation" / "arena" / "opponents"
 CG_SOURCE_ROOT = (
     REPOSITORY_ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
 )
 OPPONENT_NAMES = (
-    "kiyotah_lucario",
-    "kiyotah_dragapult",
-    "kiyotah_iono",
-    "kiyotah_abomasnow",
-    "kacchan_anti_wall",
-    "nursrijan_lucario",
+    "mega_lucario_ex_solrock_05",
+    "dragapult_ex_01",
+    "ionos_bellibolt_ex_kilowattrel_01",
+    "mega_abomasnow_ex_kyogre_01",
+    "mega_lucario_ex_solrock_06",
+    "mega_lucario_ex_solrock_07",
 )
 
 

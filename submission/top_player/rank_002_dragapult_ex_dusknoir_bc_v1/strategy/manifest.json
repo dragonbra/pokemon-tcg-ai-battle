@@ -1,7 +1,7 @@
 {
   "action_contract": "full_action_set_v1",
   "cg_tree_sha256": "ac563b9adf595cae7fc7e51b72e97e6781a76ac165410d96a3bc8d76c3bcc40e",
-  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/checkpoint/0005-rank_002_dragapult_ex_dusknoir_bc/V1_shared_config/best_validation.pt",
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0005-rank_002_dragapult_ex_dusknoir_bc/V1_shared_config/best_validation.pt",
   "checkpoint_sha256": "8e99f42ace6fe961d1327c7578bf2bf4148ec28981bf22614accff55340cfe54",
   "checkpoint_step": 11,
   "deck_file_sha256": "98d92a7fefbb0511edb30b2cd2f944835b9b5ce8b9e989c939c719c2a2f40959",
@@ -34,7 +34,7 @@
   "name": "LumenLiquidity BC V1",
   "schema_version": "ptcg_pure_model_submission_v1",
   "selection_contract": "single categorical CE + multi-label candidate BCE + count CE",
-  "shared_model_config": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/model/shared_model_config.json",
+  "shared_model_config": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/train/alakazam_bc_rl/shared_model_config.json",
   "shared_model_config_sha256": "9151dc866e3852e4280dd43296a6c3defd14ec58231dd386a45b75b4b5a4ab90",
   "source_files_sha256": {
     "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

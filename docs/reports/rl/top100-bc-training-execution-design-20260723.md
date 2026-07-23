@@ -20,7 +20,7 @@
 
 - `docs/reports/rl/top100_bc_candidate_research-20260723.html`
 - `docs/reports/rl/top100_static_rank_index-20260723.csv`
-- `rl/artifact/dataset/top100_research_20260723/campaign.json`
+- `rl_runs/dataset/top100_research_20260723/campaign.json`
 - `data/replays/kaggle_top100_research_20260723/manifest.json`
 
 ## 2. 20 人选择规则
@@ -200,14 +200,14 @@ source + 下一个预取 source”的完整 replay。不得并行启动两个训
 Capacity search 可能先占用 `0004`，所以不能硬编码编号。每个专家开始时调用：
 
 ```bash
-python3 -m rl.core.runs create <package-name> \
+python3 -m rl_environment.runs create <package-name> \
   --objective "Train one exact Top-100 expert BC surrogate"
 ```
 
 实际返回值可能是 `0005-...`、`0006-...`，必须原样作为 `<experiment-id>`。目录：
 
 ```text
-rl/_runs/<experiment-id>/
+rl_runs/<experiment-id>/
 ├── manifest.json
 ├── source_manifest.json
 ├── pretrain_refresh.json
@@ -219,9 +219,9 @@ rl/_runs/<experiment-id>/
 ├── V3_lr_other_side/            # 仅需要时
 └── evaluation/<attempt-id>/
 
-rl/artifact/dataset/<experiment-id>/
-rl/artifact/checkpoint/<experiment-id>/<attempt-id>/
-rl/_runs/tensorboard/<experiment-id>/<attempt-id>/
+rl_runs/dataset/<experiment-id>/
+rl_runs/checkpoint/<experiment-id>/<attempt-id>/
+rl_runs/tensorboard/<experiment-id>/<attempt-id>/
 submission/top_player/<package-name>/
 ```
 
@@ -236,9 +236,9 @@ rank_<三位静态Rank>_<核心pokemon_slug>_bc
 参数从用户最终选定的 `shared_model_config.json` 展开，不能抄本文中的假设值：
 
 ```bash
-python3 -m rl.train.train_full_action_bc \
-  rl/artifact/dataset/<experiment-id>/dataset.jsonl \
-  --output rl/_runs/<experiment-id>/V1_shared_config \
+python3 -m train.alakazam_bc_rl.training.train_full_action_bc \
+  rl_runs/dataset/<experiment-id>/dataset.jsonl \
+  --output rl_runs/<experiment-id>/V1_shared_config \
   --epochs <shared.epochs> \
   --batch-size <shared.batch_size> \
   --learning-rate <shared.base_learning_rate> \
@@ -293,7 +293,7 @@ python3 -m evaluation run \
   --games 10 \
   --metric-profile auto_iteration_v8_setup_relay \
   --no-visualize \
-  --output rl/_runs/<experiment-id>/evaluation/<attempt-id>
+  --output rl_runs/<experiment-id>/evaluation/<attempt-id>
 ```
 
 必须报告：180 局完成性、W-L-D、总胜率、先后手、每对手胜率、errors/unfinished、legal action、

@@ -1,7 +1,7 @@
 {
   "action_contract": "full_action_set_v1",
   "cg_tree_sha256": "ac563b9adf595cae7fc7e51b72e97e6781a76ac165410d96a3bc8d76c3bcc40e",
-  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/checkpoint/0006-rank_008_team_rockets_mewtwo_ex_bc/V1_shared_config/best_validation.pt",
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0006-rank_008_team_rockets_mewtwo_ex_bc/V1_shared_config/best_validation.pt",
   "checkpoint_sha256": "3ce4dd4571516159affdc3b709b0fe5e48c82931f17149335366877b0cc5330e",
   "checkpoint_step": 6,
   "deck_file_sha256": "2a1e4a4db5aca5f3ca586706ecb8ca24b2dac4f266d0ab9afce5b500d947c156",
@@ -34,7 +34,7 @@
   "name": "THIRD PTCG Club BC V1",
   "schema_version": "ptcg_pure_model_submission_v1",
   "selection_contract": "single categorical CE + multi-label candidate BCE + count CE",
-  "shared_model_config": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/model/shared_model_config.json",
+  "shared_model_config": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/train/alakazam_bc_rl/shared_model_config.json",
   "shared_model_config_sha256": "9151dc866e3852e4280dd43296a6c3defd14ec58231dd386a45b75b4b5a4ab90",
   "source_files_sha256": {
     "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
