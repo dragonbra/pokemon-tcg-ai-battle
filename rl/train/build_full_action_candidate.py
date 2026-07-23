@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -33,6 +34,14 @@ def agent(observation):
 '''
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def build(output: Path, checkpoint: Path, source_package: Path) -> Path:
     output = output.resolve()
     checkpoint = checkpoint.resolve()
@@ -45,7 +54,11 @@ def build(output: Path, checkpoint: Path, source_package: Path) -> Path:
         raise FileNotFoundError(f"source package is missing deck.csv or cg: {source_package}")
     output.mkdir(parents=True)
     shutil.copy2(source_package / "deck.csv", output / "deck.csv")
-    shutil.copytree(source_package / "cg", output / "cg")
+    shutil.copytree(
+        source_package / "cg",
+        output / "cg",
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
+    )
     (output / "main.py").write_text(
         MAIN_TEMPLATE.replace("__CHECKPOINT__", repr(str(checkpoint))).lstrip(),
         encoding="utf-8",
@@ -53,7 +66,10 @@ def build(output: Path, checkpoint: Path, source_package: Path) -> Path:
     manifest = {
         "schema_version": "ptcg_pure_model_candidate_v1",
         "checkpoint": str(checkpoint),
+        "checkpoint_sha256": _sha256(checkpoint),
+        "checkpoint_bytes": checkpoint.stat().st_size,
         "source_package": str(source_package),
+        "deck_sha256": _sha256(output / "deck.csv"),
         "fallback": None,
         "action_contract": "full_action_set_v1",
     }

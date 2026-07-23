@@ -6,6 +6,7 @@ import argparse
 import collections
 import json
 import random
+import time
 from pathlib import Path
 from typing import Any
 
@@ -251,6 +252,7 @@ def train(
     storage_path: Path,
     min_free_gib: float,
 ) -> dict[str, Any]:
+    training_started = time.monotonic()
     random.seed(seed)
     torch.manual_seed(seed)
     storage = assert_storage_safe(storage_path, min_free_gib)
@@ -304,6 +306,8 @@ def train(
     )
     model = FullActionPolicyValueNet(model_config, max_selection_count=max_candidates).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
     paths = training_paths(output)
     manager = CheckpointManager(paths.checkpoints)
     paths.run.mkdir(parents=True, exist_ok=True)
@@ -333,6 +337,7 @@ def train(
     last_summary: dict[str, Any] = {}
     with TrainingLogger(paths.metrics, paths.tensorboard) as logger:
         for epoch in range(1, epochs + 1):
+            epoch_started = time.monotonic()
             model.train()
             order = list(range(len(splits["train"])))
             random.Random(seed + epoch).shuffle(order)
@@ -353,6 +358,7 @@ def train(
                 "train/loss": sum(train_losses) / max(1, len(train_losses)),
                 **{f"train/{key}": value for key, value in train_metrics.items()},
                 **{f"validation/{key}": value for key, value in validation_metrics.items()},
+                "runtime/epoch_seconds": time.monotonic() - epoch_started,
             }
             logger.log(epoch, last_summary)
             metadata = {
@@ -406,6 +412,14 @@ def train(
         "last_epoch": last_summary,
         "config": config,
         "checkpoint": str((paths.checkpoints / "best_validation.pt").resolve()),
+        "runtime": {
+            "train_function_seconds": time.monotonic() - training_started,
+            "peak_gpu_memory_bytes": (
+                int(torch.cuda.max_memory_allocated(device)) if device.type == "cuda" else 0
+            ),
+            "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+            "state_dict_tensors": len(model.state_dict()),
+        },
     }
     paths.summary.write_text(
         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"

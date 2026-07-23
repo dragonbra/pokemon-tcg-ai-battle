@@ -12,6 +12,7 @@ from rl.model.features import PTCGFeatureConfig, feature_config_for_schema
 from rl.model.features import feature_schema_for_config
 from rl.model.full_action_inference import FullActionPolicy
 from rl.model.full_action_model import FullActionPolicyValueNet
+from rl.train.build_full_action_candidate import build as build_candidate
 from rl.train.build_full_action_submission import build as build_submission
 from rl.train.build_kaggle_bc_dataset import iter_kaggle_records
 
@@ -251,6 +252,25 @@ class FullActionBCMiniTests(unittest.TestCase):
             )
         self.assertEqual(set(exported), {"step", "model", "metadata"})
         self.assertEqual(exported["step"], 3)
+
+    def test_candidate_builder_records_checkpoint_identity(self) -> None:
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            (source / "deck.csv").write_text("5\n" * 60, encoding="utf-8")
+            (source / "cg").mkdir()
+            (source / "cg" / "libcg.so").write_bytes(b"test")
+            checkpoint = root / "checkpoint.pt"
+            checkpoint.write_bytes(b"checkpoint")
+            package = build_candidate(root / "candidate", checkpoint, source)
+            manifest = json.loads((package / "manifest.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(manifest["schema_version"], "ptcg_pure_model_candidate_v1")
+        self.assertIsNone(manifest["fallback"])
+        self.assertEqual(manifest["checkpoint_bytes"], 10)
+        self.assertEqual(len(manifest["checkpoint_sha256"]), 64)
+        self.assertEqual(len(manifest["deck_sha256"]), 64)
 
 
 if __name__ == "__main__":

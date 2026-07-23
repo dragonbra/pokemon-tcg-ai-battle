@@ -321,6 +321,7 @@
       <a href="#overview">总览</a>
       <a href="#inputs">Observation</a>
       <a href="#model">模型</a>
+      <a href="#capacity">容量搜索</a>
       <a href="#stages">BC → RL</a>
       <a href="#gaps">边界</a>
     </nav>
@@ -332,12 +333,13 @@
       <div>
         <p class="eyebrow">ptcg_features_universal · ptcg_action_set_v1</p>
         <h1>通用候选策略模型</h1>
-        <p class="heroCopy">当前实现把公开牌局状态、完整己方牌组、场上实体、短期历史、专家来源和 simulator 给出的合法动作放进同一个 BC 合同。0003 只使用冻结的 Yushin Ito 数据验证通用表达，并已通过 180 局官方引擎闭环验收；下一批 Top 20 来源已经完成单局审计与隔离 staging，但尚未构建完整训练 corpus。</p>
+        <p class="heroCopy">当前实现把公开牌局状态、完整己方牌组、场上实体、短期历史、专家来源和 simulator 给出的合法动作放进同一个 BC 合同。0004 沿用 0003 冻结的 Yushin Ito 数据与输入编码，完成 9 个模型容量/优化 trial 和 1,620 局官方引擎评测；搜索冻结后，用户选择闭环胜率最高且容量最小的 V4 作为当前 BC 模型。项目尚未进入 RL。</p>
         <div class="heroNote">
           <span class="badge active">当前阶段：纯 Behavior Cloning</span>
-          <span class="badge">0003 / V2 · evaluated + submitted</span>
+          <span class="badge">0004 / V4 · selected + submitted</span>
+          <span class="badge">9 trials · 1,620 eval games</span>
           <span class="badge">64 state · 40 cards · 64 candidates</span>
-          <span class="badge">Top 20 staging · 8 archetypes</span>
+          <span class="badge">3.54M parameters · d192 · L2</span>
           <span class="badge next">下一阶段尚未实现：RL rollout</span>
         </div>
       </div>
@@ -356,9 +358,9 @@
         <p class="lede">模型不生成全局动作编号，而是在每一步 simulator 给出的合法 options 内做 scoring、预测选择数量并返回 index set。</p>
       </div>
       <div class="summaryGrid">
-        <article class="summary"><div class="summaryLabel">状态输入</div><div class="summaryValue">5 × 256</div><div class="summaryDetail">基础状态、牌组、实体、历史、expert 五路融合</div></article>
+        <article class="summary"><div class="summaryLabel">状态输入</div><div class="summaryValue">5 × 192</div><div class="summaryDetail">基础状态、牌组、实体、历史、expert 五路融合</div></article>
         <article class="summary"><div class="summaryLabel">动作输入</div><div class="summaryValue">64 × 22</div><div class="summaryDetail">最多 64 个候选；另有 type/card/target IDs</div></article>
-        <article class="summary"><div class="summaryLabel">网络权重</div><div class="summaryValue">5.19M</div><div class="summaryDetail">5,194,307 parameters · 77 tensors</div></article>
+        <article class="summary"><div class="summaryLabel">0004 容量范围</div><div class="summaryValue">3.54–11.58M</div><div class="summaryDetail">d=192/256/384 · layers=2/4</div></article>
         <article class="summary"><div class="summaryLabel">0003 数据</div><div class="summaryValue">86,875</div><div class="summaryDetail">1,000 局单一专家数据，audit 已通过</div></article>
       </div>
 
@@ -368,7 +370,7 @@
           <div class="arrow">→</div>
           <div class="flowBox cyan"><span class="flowNum">ENCODE</span><div><div class="flowTitle">通用特征合同</div><div class="flowText">state / deck / entities / history / expert / actions</div></div><div class="flowDim">fixed tensor shapes</div></div>
           <div class="arrow">→</div>
-          <div class="flowBox violet"><span class="flowNum">REPRESENT</span><div><div class="flowTitle">五路状态融合</div><div class="flowText">每一路变成 256-d，再拼接压回 256-d</div></div><div class="flowDim">5×256 → h_state[256]</div></div>
+          <div class="flowBox violet"><span class="flowNum">REPRESENT</span><div><div class="flowTitle">五路状态融合</div><div class="flowText">每一路变成 192-d，再拼接压回 192-d</div></div><div class="flowDim">5×192 → h_state[192]</div></div>
           <div class="arrow">→</div>
           <div class="flowBox amber"><span class="flowNum">SCORE</span><div><div class="flowTitle">候选动作编码</div><div class="flowText">type/card/target embeddings + 22 numeric</div></div><div class="flowDim">logits [64]</div></div>
           <div class="arrow">→</div>
@@ -376,7 +378,7 @@
         </div>
       </div>
 
-      <div class="callout"><strong>当前判断</strong><p>相比旧模型，输入已经从“当前场面摘要”扩展到“牌组构成 + 实体状态 + 时序 + expert 条件 + 结构化卡牌属性”。0003 在同一强专家牌组上完成 180 局官方引擎验证，取得 75.56% 胜率且没有运行错误；这证明合同能真实闭环运行，但不等于已经证明跨卡组泛化。Top 20 快照已确认 20 个独立来源、14 个 exact deck hash 和 8 个主牌型。后续必须一位专家一个 dataset/run，不能按相同 deck hash 无条件混合标签。</p></div>
+      <div class="callout"><strong>当前判断</strong><p>输入合同已从“当前场面摘要”扩展到“牌组构成 + 实体状态 + 时序 + expert 条件 + 结构化卡牌属性”。0004 证明同一合同能承载 3.54M–11.58M 的多种网络，并让 9 个纯模型 candidate 全部完成 180/180、0 errors 的真实闭环；结果同时表明 validation imitation fit 与 closed-loop 胜率不能互相替代。当前证据仍只覆盖 Yushin Ito 单一专家/牌组，不能据此宣称跨卡组泛化。</p></div>
     </section>
 
     <div class="rule"></div>
@@ -384,7 +386,7 @@
     <section id="inputs">
       <div class="sectionHead">
         <div><p class="kicker">02 / Input contract</p><h2>模型究竟看到了什么</h2></div>
-        <p class="lede">以下 shape 来自当前 `ptcg_features_universal` 编码器，并已在 0003 的 86,875 条记录上通过一致性审计。</p>
+        <p class="lede">以下 shape 来自当前 `ptcg_features_universal` 编码器，已在 0003 的 86,875 条记录上通过一致性审计，并被 0004 的全部 9 个 trial 原样复用。</p>
       </div>
 
       <div class="inputLayout">
@@ -420,7 +422,7 @@
             <summary>短期历史与 expert 条件：32 × 8 + 1 ID</summary>
             <div class="detailBody">
               <span class="fieldChip">action type</span><span class="fieldChip">card / attack ID</span><span class="fieldChip">target count</span><span class="fieldChip">selection type / context</span><span class="fieldChip">relative position</span><span class="fieldChip">effect step</span>
-              <p>历史保留最近 32 个 decision 的压缩事件，不是跨整局的 recurrent memory。`expert_ids` 给模型一个来源 embedding；0003 为了保持策略一致性，所有记录固定为 Yushin Ito 的 expert ID 1。多 expert 映射与评测尚未验证。</p>
+              <p>历史保留最近 32 个 decision 的压缩事件，不是跨整局的 recurrent memory。`expert_ids` 给模型一个来源 embedding；0003/0004 为了保持策略一致性，所有记录固定为 Yushin Ito 的 expert ID 1。多 expert 映射与评测尚未验证。</p>
             </div>
           </details>
 
@@ -485,44 +487,72 @@
     <section id="model">
       <div class="sectionHead">
         <div><p class="kicker">03 / Network and weights</p><h2>五路状态编码，再给候选打分</h2></div>
-        <p class="lede">这仍是一个紧凑的结构化 policy/value 网络，不是语言模型。参数主要在共享 card embeddings、两层 Transformer 和 policy/count/value heads。</p>
+        <p class="lede">这仍是一个紧凑的结构化 policy/value 网络，不是语言模型。0004 保持输入与 heads 语义不变，只搜索表示宽度 d、Transformer 层数、学习率与一次确认 seed。</p>
       </div>
 
       <div class="modelGrid">
         <div class="modelStack">
-          <div class="modelRow"><div class="name">Base state</div><div class="desc">40 card tokens 经 Transformer，与 64 numeric MLP 相加</div><div class="shape">→ 256</div></div>
-          <div class="modelRow"><div class="name">Deck branch</div><div class="desc">card + position + 18 numeric，masked mean pool</div><div class="shape">60×256 → 256</div></div>
-          <div class="modelRow"><div class="name">Entity branch</div><div class="desc">card + position + 28 numeric，masked mean pool</div><div class="shape">12×256 → 256</div></div>
-          <div class="modelRow"><div class="name">History branch</div><div class="desc">card + position + 8 numeric，masked mean pool</div><div class="shape">32×256 → 256</div></div>
-          <div class="modelRow"><div class="name">Expert branch</div><div class="desc">来源 ID embedding；当前 run 固定 Yushin Ito</div><div class="shape">ID → 256</div></div>
-          <div class="modelRow"><div class="name">Universal fusion</div><div class="desc">五路拼接，Linear + LayerNorm + GELU</div><div class="shape">1280 → 256</div></div>
-          <div class="modelRow"><div class="name">Candidate encoder</div><div class="desc">type/card/target embeddings 与 22 numeric MLP 相加</div><div class="shape">64×256</div></div>
-          <div class="modelRow"><div class="name">Policy head</div><div class="desc">每个候选与共享 state 拼接后独立 scoring</div><div class="shape">512 → 512 → 1</div></div>
-          <div class="modelRow"><div class="name">Count head</div><div class="desc">预测选择 0..64 个，推理时再套 min/max mask</div><div class="shape">256 → 512 → 65</div></div>
-          <div class="modelRow"><div class="name">Value head</div><div class="desc">结构已保留；当前 BC loss 不训练它</div><div class="shape">256 → 512 → 1</div></div>
+          <div class="modelRow"><div class="name">Base state</div><div class="desc">40 card tokens 经 L 层 Transformer，与 64 numeric MLP 相加</div><div class="shape">→ d</div></div>
+          <div class="modelRow"><div class="name">Deck branch</div><div class="desc">card + position + 18 numeric，masked mean pool</div><div class="shape">60×d → d</div></div>
+          <div class="modelRow"><div class="name">Entity branch</div><div class="desc">card + position + 28 numeric，masked mean pool</div><div class="shape">12×d → d</div></div>
+          <div class="modelRow"><div class="name">History branch</div><div class="desc">card + position + 8 numeric，masked mean pool</div><div class="shape">32×d → d</div></div>
+          <div class="modelRow"><div class="name">Expert branch</div><div class="desc">来源 ID embedding；当前数据固定 Yushin Ito</div><div class="shape">ID → d</div></div>
+          <div class="modelRow"><div class="name">Universal fusion</div><div class="desc">五路拼接，Linear + LayerNorm + GELU</div><div class="shape">5d → d</div></div>
+          <div class="modelRow"><div class="name">Candidate encoder</div><div class="desc">type/card/target embeddings 与 22 numeric MLP 相加</div><div class="shape">64×d</div></div>
+          <div class="modelRow"><div class="name">Policy head</div><div class="desc">每个候选与共享 state 拼接后独立 scoring</div><div class="shape">2d → 2d → 1</div></div>
+          <div class="modelRow"><div class="name">Count head</div><div class="desc">预测选择 0..64 个，推理时再套 min/max mask</div><div class="shape">d → 2d → 65</div></div>
+          <div class="modelRow"><div class="name">Value head</div><div class="desc">结构已保留；当前 BC loss 不训练它</div><div class="shape">d → 2d → 1</div></div>
         </div>
 
         <aside class="weightPanel">
-          <h3>当前 0003 模型配置</h3>
-          <div class="weightNumber">5.19M</div>
-          <div class="weightNote">5,194,307 个参数 · 77 个 state-dict tensor · d_model 256 · hidden 512</div>
+          <h3>当前正式 package：0004 / V4</h3>
+          <div class="weightNumber">3.54M</div>
+          <div class="weightNote">3,539,395 个参数 · 77 个 state-dict tensor · d_model 192 · hidden 384 · 2 layers</div>
           <div class="barList">
-            <div><div class="barLabel"><span>Embeddings</span><b>3.208M</b></div><div class="barTrack"><div class="barFill" style="width: 100%"></div></div></div>
-            <div><div class="barLabel"><span>State Transformer</span><b>1.054M</b></div><div class="barTrack"><div class="barFill violetFill" style="width: 33%"></div></div></div>
-            <div><div class="barLabel"><span>State encoders + fusion</span><b>362K</b></div><div class="barTrack"><div class="barFill greenFill" style="width: 11.3%"></div></div></div>
-            <div><div class="barLabel"><span>Policy head</span><b>264K</b></div><div class="barTrack"><div class="barFill greenFill" style="width: 8.2%"></div></div></div>
-            <div><div class="barLabel"><span>Count head</span><b>166K</b></div><div class="barTrack"><div class="barFill amberFill" style="width: 5.2%"></div></div></div>
-            <div><div class="barLabel"><span>Value head</span><b>133K</b></div><div class="barTrack"><div class="barFill" style="width: 4.1%"></div></div></div>
+            <div><div class="barLabel"><span>Embeddings</span><b>2.406M</b></div><div class="barTrack"><div class="barFill" style="width: 100%"></div></div></div>
+            <div><div class="barLabel"><span>State Transformer</span><b>594K</b></div><div class="barTrack"><div class="barFill violetFill" style="width: 24.7%"></div></div></div>
+            <div><div class="barLabel"><span>State encoders + fusion</span><b>215K</b></div><div class="barTrack"><div class="barFill greenFill" style="width: 8.9%"></div></div></div>
+            <div><div class="barLabel"><span>Policy head</span><b>149K</b></div><div class="barTrack"><div class="barFill greenFill" style="width: 6.2%"></div></div></div>
+            <div><div class="barLabel"><span>Count head</span><b>100K</b></div><div class="barTrack"><div class="barFill amberFill" style="width: 4.2%"></div></div></div>
+            <div><div class="barLabel"><span>Value head</span><b>75K</b></div><div class="barTrack"><div class="barFill" style="width: 3.1%"></div></div></div>
           </div>
-          <p class="weightNote" style="margin: 19px 0 0">0001/0002 的旧 checkpoint 仍可通过 optional dimensions 以原合同加载；它们不会自动获得新增分支的能力。</p>
+          <p class="weightNote" style="margin: 19px 0 0">V4 的 validation exact 为 80.87%，不是搜索最高值；它以 145-35、80.56% 赢下本轮闭环评测，同时也是测试容量最小的结构。用户在完整搜索冻结后将它选为当前模型，0003 / V2 保留为历史正式归档。</p>
         </aside>
       </div>
+    </section>
+
+    <section id="capacity" style="padding-top: 0">
+      <div class="sectionHead">
+        <div><p class="kicker">04 / Capacity search</p><h2>0004 已完成，V4 已由用户选择并晋升</h2></div>
+        <p class="lede">所有 trial 使用同一份 0003 Yushin Ito dataset、episode split、输入/action/BC loss，从随机初始化训练 20 epochs；搜索分支只读取 train/validation。全部证据冻结后，用户再依据闭环表现与容量选择 V4，未把 evaluation 回灌为搜索分支。</p>
+      </div>
+      <div class="schemaWrap">
+        <table class="schemaTable">
+          <thead><tr><th>Trial</th><th>结构 / 优化</th><th>参数</th><th>Validation exact / gap</th><th>Official evaluation</th><th>训练成本</th></tr></thead>
+          <tbody>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V1_b_d256_l2_lr1e4_s7/trial_result.json"><code>V1 · B</code></a></td><td>d256 · L2 · lr1e-4 · s7</td><td>5,194,307</td><td>81.07% / 7.67pp</td><td>127-53 · 70.56% · 0 errors</td><td>10.7 min · 0.58 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V2_b_d256_l2_lr3e4_s7/trial_result.json"><code>V2 · B</code></a></td><td>d256 · L2 · lr3e-4 · s7</td><td>5,194,307</td><td>80.81% / 13.37pp</td><td>122-58 · 67.78% · 0 errors</td><td>11.1 min · 0.58 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V3_b_d256_l2_lr5e4_s7/trial_result.json"><code>V3 · B</code></a></td><td>d256 · L2 · lr5e-4 · s7</td><td>5,194,307</td><td>81.58% / 10.33pp</td><td>128-52 · 71.11% · 0 errors</td><td>10.7 min · 0.58 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V4_s_d192_l2_lr5e4_s7/trial_result.json"><code>V4 · S</code></a><br><span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">user selected</span></td><td>d192 · L2 · lr5e-4 · s7</td><td>3,539,395</td><td>80.87% / 9.01pp</td><td>145-35 · 80.56% · 0 errors</td><td>10.5 min · 0.44 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V5_w_d384_l2_lr5e4_s7/trial_result.json"><code>V5 · W</code></a></td><td>d384 · L2 · lr5e-4 · s7</td><td>9,216,835</td><td>82.45% / 9.04pp</td><td>128-52 · 71.11% · 0 errors</td><td>11.4 min · 0.88 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V6_d_d256_l4_lr5e4_s7/trial_result.json"><code>V6 · D</code></a></td><td>d256 · L4 · lr5e-4 · s7</td><td>6,248,515</td><td>81.39% / 4.76pp</td><td>130-50 · 72.22% · 0 errors</td><td>11.2 min · 0.85 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V7_l_d384_l4_lr5e4_s7/trial_result.json"><code>V7 · L</code></a></td><td>d384 · L4 · lr5e-4 · s7</td><td>11,584,579</td><td>80.78% / 5.50pp</td><td>134-46 · 74.44% · 0 errors</td><td>12.3 min · 1.30 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V8_l_d384_l4_lr3e4_s7/trial_result.json"><code>V8 · L rescue</code></a></td><td>d384 · L4 · lr3e-4 · s7</td><td>11,584,579</td><td>81.05% / 11.44pp</td><td>134-46 · 74.44% · 0 errors</td><td>12.3 min · 1.30 GiB</td></tr>
+            <tr><td><a href="../_runs/0004-bc_capacity_search_210m/V9_w_d384_l2_lr5e4_s17/trial_result.json"><code>V9 · W seed</code></a></td><td>d384 · L2 · lr5e-4 · s17</td><td>9,216,835</td><td>81.87% / 5.67pp</td><td>134-46 · 74.44% · 0 errors</td><td>11.3 min · 0.88 GiB</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="truthGrid" style="margin-top: 22px">
+        <article class="truth"><h3>可观察到的容量/优化现象</h3><p>Phase A 仅按 validation 选出 5e-4。seed 7 下，Wide 的 validation exact 为 82.45%；Deep 的 gap 最小，为 4.76pp；Large 降到 3e-4 后 validation 波动和 gap 没有改善。Wide 的 seed 17 validation exact 为 81.87%，说明仍有可见 seed 方差。</p></article>
+        <article class="truth caution"><h3>为什么选择 V4，而不是 exact 最高的 V5</h3><p>Small 的 validation exact 为 80.87%，却在本轮 180 局取得 145 胜；Wide 的 imitation fit 更高，但 seed 7 对战为 128 胜。用户因此将闭环胜率与较小容量作为当前 BC 决策依据。这个结果支持“动作更像”不等于“对局更强”，但 180 局与不完整 seed 覆盖仍不足以证明普遍因果。</p></article>
+      </div>
+      <div class="callout"><strong>完成性与晋升</strong><p>9/9 trial 均为 20 epochs、纯模型 <code>fallback=null</code>、180/180 official-engine games、0 errors、0 unfinished；共 1,620 局。V4 已固化为 <code>yushin_ito_bc_capacity_v4</code>，归档 SHA-256 为 <code>ba8f1368…d0490</code>，并进行唯一一次 Kaggle submission（ref <code>54916884</code>，public score 727.8）。完整证据见 <a href="../_runs/0004-bc_capacity_search_210m/bc_capacity_search_report.html">0004 campaign 报告</a>与 <a href="../_runs/0004-bc_capacity_search_210m/promotion.json">promotion record</a>。</p></div>
     </section>
 
     <section id="training-objective" style="padding-top: 0">
       <div class="lossLayout">
         <div>
-          <p class="kicker">04 / BC objective</p>
+          <p class="kicker">05 / BC objective</p>
           <h2>当前 BC 实际优化什么</h2>
           <p class="lossCopy">label 是当前 simulator option list 中的 index set，而不是跨场景固定 action ID。单选、多选和空选共用同一合同。</p>
           <div class="lossList">
@@ -553,7 +583,7 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
 
     <section id="stages">
       <div class="sectionHead">
-        <div><p class="kicker">05 / Project stage</p><h2>BC → RL：结构连续，训练任务不同</h2></div>
+        <div><p class="kicker">06 / Project stage</p><h2>BC → RL：结构连续，训练任务不同</h2></div>
         <p class="lede">切换查看当前已经落地的 BC 工程与下一阶段仍需实现的 RL 合同。</p>
       </div>
 
@@ -570,14 +600,19 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
             <ul><li>1,000 episodes / trajectories</li><li>86,875 decisions</li><li>train 69,270 · validation 9,388 · test 8,217</li><li>唯一来源：submission 54773249</li></ul>
           </article>
           <article class="stageCard current">
-            <h3>V2 训练 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">20 epochs complete</span></h3>
-            <p>修正卡牌 token 解析并重建同一数据后，从头完成 20 epoch 训练。</p>
-            <ul><li>best epoch 13</li><li>validation exact 80.52%</li><li>test exact 78.37%</li><li>test multi exact 76.34%</li></ul>
+            <h3>0004 容量搜索 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">V4 selected</span></h3>
+            <p>输入/数据不变，9 个随机初始化 trial 已完成训练、纯模型打包和 18×10 官方评测。</p>
+            <ul><li>学习率标定 + S/W/D/L</li><li>1 次 Large LR rescue</li><li>1 次 Wide seed 17 确认</li><li>搜索冻结后由用户选择 V4</li></ul>
+          </article>
+          <article class="stageCard current">
+            <h3>V4 训练 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">current BC</span></h3>
+            <p>在同一冻结数据和输入合同上从头训练 20 epochs；best-validation checkpoint 位于 epoch 11。</p>
+            <ul><li>validation exact 80.87%</li><li>test exact 78.22%</li><li>3,539,395 parameters</li><li>d192 · hidden384 · L2 · lr5e-4</li></ul>
           </article>
           <article class="stageCard">
-            <h3>BC 产物 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">closed-loop passed</span></h3>
-            <p><code>V2_card_token_fix</code> best checkpoint 已形成自包含 candidate，并完成固定 opponent catalog 的官方引擎评测。</p>
-            <ul><li>180/180 finished · 0 errors</li><li>136 胜 44 负 · 75.56%</li><li>Kaggle ref 54912599 · public score 713.2</li><li>可作为 rollout policy 初始化；value head 仍不可信</li></ul>
+            <h3>V4 BC 产物 <span class="badge" style="color: var(--green); border-color: #91c4a8; background: var(--green-soft)">archived + submitted</span></h3>
+            <p><code>V4_s_d192_l2_lr5e4_s7</code> best checkpoint 已形成自包含正式 package，并完成固定 opponent catalog 的官方引擎评测。</p>
+            <ul><li>180/180 finished · 0 errors</li><li>145 胜 35 负 · 80.56%</li><li>Kaggle ref 54916884 · public score 727.8</li><li>可作为 rollout policy 初始化；value head 仍不可信</li></ul>
           </article>
         </div>
       </div>
@@ -596,7 +631,8 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
       </div>
 
       <div class="runStrip">
-        <div class="run currentRun"><small>当前验证实验</small><strong>0003 · yushin_ito_exact_bc_v2</strong><p><code>V1_card_token_regression</code> 因卡牌 token 退化在 epoch 12 停止；<code>V2_card_token_fix</code> 达到 validation 80.52% / test 78.37%，并在 180 局官方引擎评测中取得 75.56% 胜率、0 errors。候选、dist 与 Kaggle ref 54912599 已归档，两个训练版本仍独立保留。</p></div>
+        <div class="run currentRun"><small>当前正式 package</small><strong>0004 · yushin_ito_bc_capacity_v4</strong><p><code>V4_s_d192_l2_lr5e4_s7</code> 达到 validation 80.87% / test 78.22%，并在 180 局官方引擎评测中取得 80.56% 胜率、0 errors。source、dist 与 Kaggle ref 54916884 已归档。</p></div>
+        <div class="run"><small>上一代正式归档</small><strong>0003 · yushin_ito_exact_bc_v2</strong><p><code>V2_card_token_fix</code> 保留原 checkpoint、source、dist、评测与 Kaggle ref 54912599，不被 0004 覆盖。</p></div>
         <div class="run"><small>归档基线</small><strong>0001 · Yushin exact BC baseline</strong><p>旧输入合同的正式基线；保留 checkpoint、测试和 closed-loop 结果，用于比较而不覆盖历史。</p></div>
         <div class="run"><small>归档研究实验</small><strong>0002 · exact-deck expanded BC</strong><p>旧模型上的 2,021 trajectories 扩展实验。它不是 0003 的数据来源，也不代表当前通用合同。</p></div>
         <div class="run"><small>下一批 source staging</small><strong>Top 20 · 2026-07-23 snapshot</strong><p>20 个 team/submission source slot、19 个唯一样本 replay、14 个 exact deck hash；当前状态仅为 sample-only，不是 train-ready run。</p></div>
@@ -607,7 +643,7 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
 
     <section id="gaps">
       <div class="sectionHead">
-        <div><p class="kicker">06 / What is still missing</p><h2>距离强通用 agent 还缺什么</h2></div>
+        <div><p class="kicker">07 / What is still missing</p><h2>距离强通用 agent 还缺什么</h2></div>
         <p class="lede">这里严格区分“张量已经存在”和“能力已经被验证”。新增输入只提供表达能力，不自动产生跨卡组泛化、隐藏信息推断或长程规划。</p>
       </div>
       <div class="gapGrid">
@@ -615,7 +651,7 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
         <article class="gapCard partial"><h3>只有部分表达 / 数据准备</h3><p>有摘要或 source staging，但仍未形成被验证的能力。</p><ul><li>Energy/Tool 只有数量，没有附着卡身份</li><li>进化链只有深度，没有 stack IDs</li><li>弃牌与手牌固定槽位可能截断</li><li>卡牌效果只有结构代理，没有规则语义</li><li>32 步压缩历史不是完整事件流</li><li>known Prize 与 Stadium 身份未显式编码</li><li>Top 20 已采样，完整 corpus / 20 个 checkpoint / Arena 对战尚未执行</li></ul></article>
         <article class="gapCard missing"><h3>尚未实现</h3><p>不能把这些能力写成当前模型已经具备。</p><ul><li>opponent deck / hidden-hand belief</li><li>determinization 或搜索</li><li>多选动作的可靠联合 log-prob</li><li>训练过并校准的 value function</li><li>RL rollout / reward / GAE / PPO</li><li>多 expert 映射、跨卡组 BC 与 held-out deck 测试</li></ul></article>
       </div>
-      <div class="callout" style="background: var(--amber-soft); border-color: #e9cd9d; border-left-color: var(--amber)"><strong style="color: var(--amber)">下一步判断标准</strong><p style="color: #6c542e">0003 已经通过单专家 BC promotion gate：新表达提升了 validation/test exact 指标，test legal action 为 100%，标准 package 验证通过，并在官方引擎闭环对战中取得 136/180、0 errors。这个结果只覆盖 Yushin Ito 牌组。Top 20 已完成来源冻结和一局样本审计；后续每个替身仍要分别通过 source audit、held-out imitation、标准 package validate 和固定 evaluation，才可进入 Arena。</p></div>
+      <div class="callout" style="background: var(--amber-soft); border-color: #e9cd9d; border-left-color: var(--amber)"><strong style="color: var(--amber)">下一步判断标准</strong><p style="color: #6c542e">V4 已是当前 BC 结构，但 0004 仍只覆盖 Yushin Ito 单一来源；它验证了容量选择流程，不等于跨卡组能力已经成立。后续每个排行榜专家必须保持一位 team/agent 一个 dataset/run，并分别通过 source audit、held-out imitation、标准 package validate 和固定 evaluation，才可进入 Arena。</p></div>
     </section>
   </main>
 
@@ -633,6 +669,11 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
       <a href="../_runs/0003-yushin_ito_exact_bc_v2/V1_card_token_regression/status.json">V1 status</a> ·
       <a href="../_runs/0003-yushin_ito_exact_bc_v2/V2_card_token_fix/training_summary.json">V2 training</a> ·
       <a href="../_runs/0003-yushin_ito_exact_bc_v2/evaluation/V2_card_token_fix/run-8688bfdaa9c44059a7fec383b5f64f6e/report.html">V2 evaluation</a> ·
+      <a href="../_runs/0004-bc_capacity_search_210m/search_manifest.json">0004 freeze</a> ·
+      <a href="../_runs/0004-bc_capacity_search_210m/comparison_manifest.json">0004 comparison</a> ·
+      <a href="../_runs/0004-bc_capacity_search_210m/bc_capacity_search_report.html">0004 report</a> ·
+      <a href="../_runs/0004-bc_capacity_search_210m/decisions.md">0004 decisions</a> ·
+      <a href="../_runs/0004-bc_capacity_search_210m/promotion.json">V4 promotion</a> ·
       <a href="../../docs/reports/rl/top20-bc-arena-design-and-source-audit-20260723.md">Top 20 source audit</a><br>
       更新于 2026-07-23。历史通过 Git 和归档 run 追溯；本页只描述当前最先进实现与阶段。
     </div>

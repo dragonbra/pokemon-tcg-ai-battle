@@ -1,0 +1,111 @@
+diff --git a/rl/train/build_full_action_candidate.py b/rl/train/build_full_action_candidate.py
+index da32d1b..2a03841 100644
+--- a/rl/train/build_full_action_candidate.py
++++ b/rl/train/build_full_action_candidate.py
+@@ -3,6 +3,7 @@
+ from __future__ import annotations
+ 
+ import argparse
++import hashlib
+ import json
+ import shutil
+ from pathlib import Path
+@@ -33,6 +34,14 @@ def agent(observation):
+ '''
+ 
+ 
++def _sha256(path: Path) -> str:
++    digest = hashlib.sha256()
++    with path.open("rb") as handle:
++        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
++            digest.update(chunk)
++    return digest.hexdigest()
++
++
+ def build(output: Path, checkpoint: Path, source_package: Path) -> Path:
+     output = output.resolve()
+     checkpoint = checkpoint.resolve()
+@@ -45,7 +54,11 @@ def build(output: Path, checkpoint: Path, source_package: Path) -> Path:
+         raise FileNotFoundError(f"source package is missing deck.csv or cg: {source_package}")
+     output.mkdir(parents=True)
+     shutil.copy2(source_package / "deck.csv", output / "deck.csv")
+-    shutil.copytree(source_package / "cg", output / "cg")
++    shutil.copytree(
++        source_package / "cg",
++        output / "cg",
++        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
++    )
+     (output / "main.py").write_text(
+         MAIN_TEMPLATE.replace("__CHECKPOINT__", repr(str(checkpoint))).lstrip(),
+         encoding="utf-8",
+@@ -53,7 +66,10 @@ def build(output: Path, checkpoint: Path, source_package: Path) -> Path:
+     manifest = {
+         "schema_version": "ptcg_pure_model_candidate_v1",
+         "checkpoint": str(checkpoint),
++        "checkpoint_sha256": _sha256(checkpoint),
++        "checkpoint_bytes": checkpoint.stat().st_size,
+         "source_package": str(source_package),
++        "deck_sha256": _sha256(output / "deck.csv"),
+         "fallback": None,
+         "action_contract": "full_action_set_v1",
+     }
+diff --git a/rl/train/train_full_action_bc.py b/rl/train/train_full_action_bc.py
+index 5b02a5a..cf9baa3 100644
+--- a/rl/train/train_full_action_bc.py
++++ b/rl/train/train_full_action_bc.py
+@@ -6,6 +6,7 @@ import argparse
+ import collections
+ import json
+ import random
++import time
+ from pathlib import Path
+ from typing import Any
+ 
+@@ -251,6 +252,7 @@ def train(
+     storage_path: Path,
+     min_free_gib: float,
+ ) -> dict[str, Any]:
++    training_started = time.monotonic()
+     random.seed(seed)
+     torch.manual_seed(seed)
+     storage = assert_storage_safe(storage_path, min_free_gib)
+@@ -304,6 +306,8 @@ def train(
+     )
+     model = FullActionPolicyValueNet(model_config, max_selection_count=max_candidates).to(device)
+     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
++    if device.type == "cuda":
++        torch.cuda.reset_peak_memory_stats(device)
+     paths = training_paths(output)
+     manager = CheckpointManager(paths.checkpoints)
+     paths.run.mkdir(parents=True, exist_ok=True)
+@@ -333,6 +337,7 @@ def train(
+     last_summary: dict[str, Any] = {}
+     with TrainingLogger(paths.metrics, paths.tensorboard) as logger:
+         for epoch in range(1, epochs + 1):
++            epoch_started = time.monotonic()
+             model.train()
+             order = list(range(len(splits["train"])))
+             random.Random(seed + epoch).shuffle(order)
+@@ -353,6 +358,7 @@ def train(
+                 "train/loss": sum(train_losses) / max(1, len(train_losses)),
+                 **{f"train/{key}": value for key, value in train_metrics.items()},
+                 **{f"validation/{key}": value for key, value in validation_metrics.items()},
++                "runtime/epoch_seconds": time.monotonic() - epoch_started,
+             }
+             logger.log(epoch, last_summary)
+             metadata = {
+@@ -406,6 +412,14 @@ def train(
+         "last_epoch": last_summary,
+         "config": config,
+         "checkpoint": str((paths.checkpoints / "best_validation.pt").resolve()),
++        "runtime": {
++            "train_function_seconds": time.monotonic() - training_started,
++            "peak_gpu_memory_bytes": (
++                int(torch.cuda.max_memory_allocated(device)) if device.type == "cuda" else 0
++            ),
++            "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
++            "state_dict_tensors": len(model.state_dict()),
++        },
+     }
+     paths.summary.write_text(
+         json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
