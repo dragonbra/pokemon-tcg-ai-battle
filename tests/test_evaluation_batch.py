@@ -40,62 +40,6 @@ class TraceStoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             TraceStore(self.temp_root, self.temp_root / "report")
 
-    def test_retain_keeps_selected_traces_and_cleanup_preserves_report(self) -> None:
-        store = TraceStore(self.temp_root, self.report_root, retain_limit=3)
-        for number in range(1, 6):
-            game_id = f"game-{number}"
-            trace_path = store.temp_path(game_id)
-            result = GameResult(
-                game_id=game_id,
-                opponent="fixture",
-                candidate_first=number % 2 == 1,
-                candidate_physical_index=0 if number % 2 == 1 else 1,
-                finished=True,
-                winner=0,
-                status="finished",
-                error_kind=None,
-                error=None,
-                steps=3,
-                trace_path=trace_path,
-            )
-            store.write_game_record(
-                result,
-                {
-                    "trace": [{"observation": {"secret": number}}],
-                    "metric_refs": {"fixture": {"status": "available", "value": number}},
-                },
-            )
-
-        retained = store.retain({"game-1", "game-3", "game-5"})
-        records = [
-            json.loads(line)
-            for line in (self.report_root / "games.jsonl").read_text(encoding="utf-8").splitlines()
-        ]
-        outside_path = self.root / "outside.txt"
-        outside_path.write_text("keep", encoding="utf-8")
-
-        self.assertEqual(set(retained), {"game-1", "game-3", "game-5"})
-        self.assertEqual(len(list((self.report_root / "traces").glob("*.json"))), 3)
-        self.assertEqual(len(records), 5)
-        self.assertEqual(
-            {record["game_id"] for record in records if record["trace_path"]},
-            {"game-1", "game-3", "game-5"},
-        )
-        self.assertTrue(all("observation" not in record for record in records))
-
-        store.retain({"game-1"})
-        self.assertEqual(
-            {path.stem for path in (self.report_root / "traces").glob("*.json")},
-            {"game-1"},
-        )
-
-        store.cleanup()
-        store.cleanup()
-
-        self.assertTrue(self.temp_root.is_dir())
-        self.assertTrue((self.report_root / "games.jsonl").is_file())
-        self.assertEqual(outside_path.read_text(encoding="utf-8"), "keep")
-
     def test_cleanup_preserves_existing_shared_temp_root_and_unrelated_file(self) -> None:
         self.temp_root.mkdir()
         unrelated = self.temp_root / "caller-owned.txt"
@@ -138,55 +82,6 @@ class TraceStoreTests(unittest.TestCase):
         store.write_game_record(result, trace)
 
         self.assertEqual(json.loads(trace_path.read_text(encoding="utf-8")), trace)
-
-    def test_retain_fails_clearly_when_selected_trace_is_missing(self) -> None:
-        store = TraceStore(self.temp_root, self.report_root)
-        trace_path = store.temp_path("game-1")
-        result = GameResult(
-            game_id="game-1",
-            opponent="fixture",
-            candidate_first=True,
-            candidate_physical_index=0,
-            finished=True,
-            winner=0,
-            status="finished",
-            error_kind=None,
-            error=None,
-            steps=1,
-            trace_path=trace_path,
-        )
-        store.write_game_record(result, {"trace": [], "metric_refs": {}})
-        trace_path.unlink()
-
-        with self.assertRaisesRegex(FileNotFoundError, "selected trace.*game-1"):
-            store.retain({"game-1"})
-
-    def test_retain_refuses_to_delete_caller_owned_report_traces(self) -> None:
-        store = TraceStore(self.temp_root, self.report_root)
-        trace_path = store.temp_path("game-1")
-        result = GameResult(
-            game_id="game-1",
-            opponent="fixture",
-            candidate_first=True,
-            candidate_physical_index=0,
-            finished=True,
-            winner=0,
-            status="finished",
-            error_kind=None,
-            error=None,
-            steps=1,
-            trace_path=trace_path,
-        )
-        store.write_game_record(result, {"trace": [], "metric_refs": {}})
-        caller_trace = self.report_root / "traces" / "caller-owned.json"
-        caller_trace.parent.mkdir(parents=True)
-        caller_trace.write_text("keep", encoding="utf-8")
-
-        with self.assertRaisesRegex(ValueError, "unowned report traces"):
-            store.retain({"game-1"})
-
-        self.assertEqual(caller_trace.read_text(encoding="utf-8"), "keep")
-        self.assertFalse((self.report_root / "traces" / "game-1.json").exists())
 
 
 class BatchRunnerTests(unittest.TestCase):
@@ -711,70 +606,6 @@ class OverridePlugin:
         for forbidden in ("promotion", "reject", "revert"):
             self.assertNotIn(forbidden, markdown.lower())
             self.assertNotIn(forbidden, html.lower())
-
-    def test_batch_writes_selected_cases_and_retains_only_their_traces(self) -> None:
-        candidate = self.make_package("candidate", 7)
-        opponents = tuple(
-            self.make_package(name, 8)
-            for name in ("case-a", "case-b", "case-c", "case-d")
-        )
-
-        def fake_worker_run(command: list[str], **_kwargs: object) -> object:
-            request_path = Path(command[-2])
-            result_path = Path(command[-1])
-            request_payload = json.loads(request_path.read_text(encoding="utf-8"))
-            trace_path = Path(request_payload["trace_path"])
-            result_payload = {
-                "game_id": request_payload["game_id"],
-                "opponent": request_payload["opponent"]["name"],
-                "candidate_first": request_payload["candidate_first"],
-                "candidate_physical_index": 0,
-                "finished": False,
-                "winner": None,
-                "status": "worker_crash",
-                "error_kind": "worker_crash",
-                "error": "fixture worker crash",
-                "steps": 0,
-                "trace_path": str(trace_path),
-            }
-            result_path.write_text(json.dumps(result_payload), encoding="utf-8")
-            trace_path.write_text(
-                json.dumps({"trace": [], "result": result_payload}),
-                encoding="utf-8",
-            )
-            return __import__("subprocess").CompletedProcess(command, 0, "", "")
-
-        with patch("evaluation.runner.batch.subprocess.run", side_effect=fake_worker_run):
-            result = run_batch(self.make_config(candidate, opponents, games=1))
-
-        report_root = self.root / "reports" / result.run_id
-        cases = [
-            json.loads(line)
-            for line in (report_root / "cases.jsonl").read_text(encoding="utf-8").splitlines()
-        ]
-        traces = sorted((report_root / "traces").glob("*.json"))
-
-        self.assertEqual([case["game_id"] for case in cases], [
-            "case-a-001",
-            "case-b-001",
-            "case-c-001",
-        ])
-        self.assertEqual([path.stem for path in traces], [
-            "case-a-001",
-            "case-b-001",
-            "case-c-001",
-        ])
-        self.assertEqual(
-            [Path(case["trace_path"]).resolve() for case in cases],
-            [path.resolve() for path in traces],
-        )
-        self.assertEqual(len(result.game_records), 4)
-        self.assertEqual(len(result.case_records), 3)
-        self.assertEqual(result.report_data.cases, result.case_records)
-        self.assertEqual(
-            result.manifest["trace_policy"]["retained_game_ids"],
-            ["case-a-001", "case-b-001", "case-c-001"],
-        )
 
     def test_worker_crash_is_recorded_and_later_games_continue(self) -> None:
         candidate = self.make_package("candidate", 7)

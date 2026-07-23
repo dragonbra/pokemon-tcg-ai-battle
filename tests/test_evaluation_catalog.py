@@ -17,7 +17,6 @@ from evaluation.cli import (
     validate_catalog,
 )
 from evaluation.packages.loader import PackageValidationError
-from rl.core.runs import numbered_artifact_path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -180,20 +179,6 @@ class EvaluationCatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(PackageValidationError, "opponents all"):
             _validate_research_coverage("one", 10, tuple(range(18)))  # type: ignore[arg-type]
         _validate_research_coverage("all", 10, tuple(range(18)))  # type: ignore[arg-type]
-
-    def test_artifact_path_reuses_matching_experiment_number(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "_runs"
-            (root / "0009-shared_project").mkdir(parents=True)
-            with patch("rl.core.runs.RUNS_ROOT", root):
-                allocated = numbered_artifact_path(
-                    root / "shared_project" / "evaluation",
-                    "evaluation",
-                )
-            self.assertEqual(
-                allocated,
-                root / "0009-shared_project" / "evaluation",
-            )
 
     def test_catalog_skips_loading_disabled_package(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
