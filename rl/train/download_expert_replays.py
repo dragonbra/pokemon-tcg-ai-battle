@@ -1,8 +1,10 @@
-"""Download and audit a Kaggle expert submission's public replays.
+"""Download and audit one exact Kaggle expert source's public replays.
 
 The Kaggle API currently exposes at most the latest 1,000 episodes for a
 submission.  The manifest records that limit explicitly instead of implying
-that the result is the expert's complete lifetime history.
+that the result is the expert's complete lifetime history.  The command only
+accepts a frozen single-expert source manifest and identifies the player by
+submission ID; display names are retained for audit but never used as identity.
 """
 
 from __future__ import annotations
@@ -16,6 +18,8 @@ import os
 import tempfile
 import threading
 import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +30,9 @@ from kagglesdk.competitions.types.competition_api_service import ApiGetEpisodeRe
 _THREAD_LOCAL = threading.local()
 _RATE_LOCK = threading.Lock()
 _NEXT_REQUEST_AT = 0.0
+SOURCE_SCHEMA_VERSION = "ptcg_single_expert_bc_source_v1"
+EXACT_SOURCE_SCHEMA_VERSION = "ptcg_single_expert_bc_source_v2"
+REPLAY_SCHEMA_VERSION = "ptcg_single_expert_exact_replays_v2"
 
 
 def _api() -> KaggleApi:
@@ -37,14 +44,23 @@ def _api() -> KaggleApi:
     return client
 
 
+def _discard_thread_api_client() -> None:
+    """Force the next request in this worker to authenticate a fresh SDK client."""
+    if hasattr(_THREAD_LOCAL, "client"):
+        delattr(_THREAD_LOCAL, "client")
+
+
 def _wait_for_request_slot(interval_seconds: float) -> None:
     global _NEXT_REQUEST_AT
-    with _RATE_LOCK:
-        now = time.monotonic()
-        ready_at = max(now, _NEXT_REQUEST_AT)
-        _NEXT_REQUEST_AT = ready_at + interval_seconds
-    delay = ready_at - now
-    if delay > 0:
+    while True:
+        with _RATE_LOCK:
+            now = time.monotonic()
+            delay = _NEXT_REQUEST_AT - now
+            if delay <= 0:
+                _NEXT_REQUEST_AT = now + interval_seconds
+                return
+        # A concurrent 429 may extend the shared deadline while this thread
+        # sleeps.  Recheck after waking instead of using a stale reservation.
         time.sleep(delay)
 
 
@@ -54,12 +70,156 @@ def _defer_requests(seconds: float) -> None:
         _NEXT_REQUEST_AT = max(_NEXT_REQUEST_AT, time.monotonic() + seconds)
 
 
+def _retry_after_seconds(exc: Exception, *, now: datetime | None = None) -> float | None:
+    """Return a server-requested retry delay without depending on requests internals."""
+    response = getattr(exc, "response", None)
+    headers = getattr(response, "headers", None)
+    if headers is None:
+        return None
+    value = headers.get("Retry-After")
+    if value is None:
+        return None
+    try:
+        return max(0.0, float(value))
+    except (TypeError, ValueError):
+        try:
+            retry_at = parsedate_to_datetime(str(value))
+        except (TypeError, ValueError, OverflowError):
+            return None
+        if retry_at.tzinfo is None:
+            retry_at = retry_at.replace(tzinfo=timezone.utc)
+        current = now or datetime.now(timezone.utc)
+        return max(0.0, (retry_at - current).total_seconds())
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def canonical_deck_sha256(deck: list[int]) -> str:
+    """Hash an exact 60-card multiset independent of source-file order."""
+    normalized = ",".join(str(card_id) for card_id in sorted(int(card) for card in deck))
+    return hashlib.sha256(normalized.encode("ascii")).hexdigest()
+
+
+def _model_value(model: Any, *names: str, default: Any = None) -> Any:
+    for name in names:
+        value = getattr(model, name, None)
+        if value is not None:
+            return value
+    return default
+
+
+def _timestamp(value: Any) -> str:
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc).isoformat()
+    return str(value)
+
+
+def _episode_agents(episode: Any) -> list[dict[str, Any]]:
+    agents: list[dict[str, Any]] = []
+    for fallback_index, agent in enumerate(_model_value(episode, "agents", default=[]) or []):
+        agents.append(
+            {
+                "index": int(_model_value(agent, "index", default=fallback_index) or 0),
+                "submission_id": int(
+                    _model_value(agent, "submission_id", "submissionId", default=0) or 0
+                ),
+                "team_id": int(_model_value(agent, "team_id", "teamId", default=0) or 0),
+                "team_name": str(
+                    _model_value(agent, "team_name", "teamName", default="") or ""
+                ),
+                "reward": _model_value(agent, "reward"),
+            }
+        )
+    return agents
+
+
+def episode_player_index(episode: Any, submission_id: int) -> int:
+    matches = [
+        int(agent["index"])
+        for agent in _episode_agents(episode)
+        if int(agent["submission_id"]) == submission_id
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"submission {submission_id} is not unique in episode "
+            f"{_model_value(episode, 'id')}: {matches}"
+        )
+    return matches[0]
+
+
+def load_exact_source_manifest(path: Path) -> dict[str, Any]:
+    """Load and fail closed on a sampled single-policy source identity."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") not in {
+        SOURCE_SCHEMA_VERSION,
+        EXACT_SOURCE_SCHEMA_VERSION,
+    }:
+        raise ValueError(f"unsupported source manifest schema: {path}")
+    if payload.get("single_policy_constraint") is not True:
+        raise ValueError(f"source manifest does not freeze one policy: {path}")
+    policy = payload.get("source_policy")
+    if not isinstance(policy, dict):
+        raise ValueError(f"source manifest is missing source_policy: {path}")
+    for field in ("team_id", "submission_id", "team_name"):
+        if policy.get(field) in {None, ""}:
+            raise ValueError(f"source manifest is missing source_policy.{field}: {path}")
+    deck_file = payload.get("deck_file")
+    if not isinstance(deck_file, str) or not deck_file:
+        raise ValueError(f"source manifest is missing deck_file: {path}")
+    deck_path = (path.parent / deck_file).resolve()
+    deck = [
+        int(line.strip())
+        for line in deck_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if len(deck) != 60:
+        raise ValueError(f"source deck must contain exactly 60 cards: {deck_path}")
+    expected_hash = str((payload.get("deck_profile") or {}).get("deck_sha256", ""))
+    actual_hash = canonical_deck_sha256(deck)
+    if not expected_hash or actual_hash != expected_hash:
+        raise ValueError(
+            f"source deck hash mismatch: manifest={expected_hash!r}, actual={actual_hash}"
+        )
+    return {
+        **payload,
+        "_manifest_path": str(path.resolve()),
+        "_manifest_sha256": _sha256(path),
+        "_deck_path": str(deck_path),
+        "_deck": deck,
+        "_deck_sha256": actual_hash,
+    }
+
+
+def eligible_episode_rows(episodes: list[Any], submission_id: int) -> list[dict[str, Any]]:
+    """Return only completed public episodes containing the exact submission once."""
+    rows: list[dict[str, Any]] = []
+    for episode in episodes:
+        episode_type = str(_model_value(episode, "type", default=""))
+        episode_state = str(_model_value(episode, "state", default=""))
+        if "PUBLIC" not in episode_type or "COMPLETED" not in episode_state:
+            continue
+        player_index = episode_player_index(episode, submission_id)
+        rows.append(
+            {
+                "episode_id": int(_model_value(episode, "id")),
+                "create_time": _timestamp(
+                    _model_value(episode, "create_time", "createTime")
+                ),
+                "end_time": _timestamp(_model_value(episode, "end_time", "endTime")),
+                "state": episode_state,
+                "type": episode_type,
+                "player_index": player_index,
+                "agents": _episode_agents(episode),
+            }
+        )
+    rows.sort(key=lambda row: (row["create_time"], row["episode_id"]))
+    return rows
 
 
 def _download_one(
@@ -114,7 +274,17 @@ def _download_one(
         except Exception as exc:  # noqa: BLE001 - retry network/API errors
             last_error = exc
             message = str(exc)
-            backoff = min(60.0, (15.0 if "429" in message else 2.0) * (2**attempt))
+            status_code = getattr(getattr(exc, "response", None), "status_code", None)
+            if status_code == 401 or "401 Client Error" in message:
+                # Long replay campaigns can outlive the SDK client's access
+                # token.  Reusing that client makes every retry unauthorized.
+                _discard_thread_api_client()
+            fallback = min(60.0, (15.0 if "429" in message else 2.0) * (2**attempt))
+            retry_after = _retry_after_seconds(exc)
+            # Kaggle currently returns Retry-After values greater than the old
+            # 60-second local cap.  Retrying below that boundary perpetuates the
+            # throttle, so give the server deadline a one-second safety margin.
+            backoff = max(fallback, (retry_after + 1.0) if retry_after is not None else 0.0)
             _defer_requests(backoff)
         finally:
             try:
@@ -150,7 +320,10 @@ def _audit_replay(
     path: Path,
     *,
     expected_episode_id: int,
-    agent_name: str,
+    player_index: int,
+    submission_id: int,
+    team_id: int,
+    team_name: str,
     expected_deck: list[int],
 ) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -159,13 +332,15 @@ def _audit_replay(
         raise ValueError(f"episode ID mismatch in {path}: {episode_id} != {expected_episode_id}")
     agents = ((payload.get("info") or {}).get("Agents") or [])
     names = [str(agent.get("Name", "")) for agent in agents if isinstance(agent, dict)]
-    matches = [index for index, name in enumerate(names) if name == agent_name]
-    if len(matches) != 1:
-        raise ValueError(f"{agent_name!r} is not unique in episode {episode_id}: {names}")
-    agent_index = matches[0]
-    deck = _deck_from_replay(payload, agent_index)
-    if collections.Counter(deck) != collections.Counter(expected_deck):
-        raise ValueError(f"exact deck mismatch in episode {episode_id}")
+    if player_index < 0 or player_index >= len(names):
+        raise ValueError(f"player index {player_index} is absent in episode {episode_id}")
+    deck = _deck_from_replay(payload, player_index)
+    actual_hash = canonical_deck_sha256(deck)
+    expected_hash = canonical_deck_sha256(expected_deck)
+    if actual_hash != expected_hash:
+        raise ValueError(
+            f"exact deck mismatch in episode {episode_id}: {actual_hash} != {expected_hash}"
+        )
     if len(payload.get("steps") or []) < 2:
         raise ValueError(f"episode {episode_id} has no action steps")
     return {
@@ -173,57 +348,128 @@ def _audit_replay(
         "file": path.name,
         "sha256": _sha256(path),
         "bytes": path.stat().st_size,
-        "agent_index": agent_index,
+        "agent_index": player_index,
         "agents": names,
-        "reward": (payload.get("rewards") or [None, None])[agent_index],
+        "reward": (payload.get("rewards") or [None, None])[player_index],
         "steps": len(payload["steps"]),
+        "deck_sha256": actual_hash,
+        "expert_players": [
+            {
+                "player_index": player_index,
+                "submission_id": submission_id,
+                "team_id": team_id,
+                "team_name": team_name,
+            }
+        ],
     }
 
 
 def download(
     output_root: Path,
     *,
-    submission_id: int,
-    agent_name: str,
-    expected_deck: list[int],
+    source_manifest: Path,
     workers: int = 2,
     retries: int = 12,
     request_interval: float = 1.0,
+    network_timeout: float = 60.0,
 ) -> dict[str, Any]:
+    if workers < 1 or workers > 2:
+        raise ValueError("workers must be between 1 and 2")
+    if request_interval < 1.0:
+        raise ValueError("request_interval must be at least 1 second")
+    source = load_exact_source_manifest(source_manifest)
+    policy = source["source_policy"]
+    submission_id = int(policy["submission_id"])
+    team_id = int(policy["team_id"])
+    team_name = str(policy["team_name"])
+    expected_deck = list(source["_deck"])
     output_root.mkdir(parents=True, exist_ok=True)
-    episodes = _api().competition_list_episodes(submission_id)
-    episode_rows = [
-        {
-            "episode_id": int(episode.id),
-            "create_time": str(episode.create_time),
-            "end_time": str(episode.end_time),
-            "state": str(episode.state),
-            "type": str(episode.type),
-        }
-        for episode in episodes
-    ]
+    frozen_rows = source.get("episodes")
+    if frozen_rows is not None:
+        if source.get("schema_version") != EXACT_SOURCE_SCHEMA_VERSION:
+            raise ValueError("only an exact v2 source manifest may freeze Episode rows")
+        episode_rows = []
+        for row in frozen_rows:
+            agents = row.get("agents") or []
+            matches = [
+                int(agent["index"])
+                for agent in agents
+                if int(agent.get("submission_id", 0)) == submission_id
+            ]
+            if (
+                "PUBLIC" not in str(row.get("type", ""))
+                or "COMPLETED" not in str(row.get("state", ""))
+                or matches != [int(row.get("player_index", -1))]
+            ):
+                raise ValueError(
+                    f"frozen Episode row violates exact source contract: {row.get('episode_id')}"
+                )
+            episode_rows.append(dict(row))
+        episode_rows.sort(key=lambda row: (row["create_time"], int(row["episode_id"])))
+    else:
+        episode_rows = eligible_episode_rows(
+            list(_api().competition_list_episodes(submission_id) or []), submission_id
+        )
     if not episode_rows:
-        raise RuntimeError(f"submission {submission_id} has no public episodes")
+        raise RuntimeError(f"submission {submission_id} has no completed public episodes")
     episode_rows_by_id = {row["episode_id"]: row for row in episode_rows}
+    download_failures: list[dict[str, Any]] = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
-        futures = [
-            pool.submit(_download_one, episode_id, output_root, retries, request_interval)
+        futures = {
+            pool.submit(
+                _download_one,
+                episode_id,
+                output_root,
+                retries,
+                request_interval,
+                network_timeout,
+            ): episode_id
             for episode_id in sorted(episode_rows_by_id)
-        ]
+        }
         for index, future in enumerate(concurrent.futures.as_completed(futures), 1):
-            future.result()
+            try:
+                future.result()
+            except Exception as exc:  # noqa: BLE001 - persist exact failed Episode
+                episode_id = int(futures[future])
+                download_failures.append(
+                    {
+                        "episode_id": episode_id,
+                        "error": f"{type(exc).__name__}: {exc}",
+                    }
+                )
+                for pending in futures:
+                    pending.cancel()
+                break
             if index % 50 == 0 or index == len(futures):
                 print(f"downloaded {index}/{len(futures)} replays", flush=True)
+    failure_path = output_root / "download_failures.json"
+    if download_failures:
+        failure_path.write_text(
+            json.dumps(download_failures, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        raise RuntimeError(
+            f"replay download failed closed; inspect and resume from {failure_path}"
+        )
+    if failure_path.is_file():
+        failure_path.unlink()
 
     audited: list[dict[str, Any]] = []
     for episode_id in sorted(episode_rows_by_id):
         path = output_root / f"episode-{episode_id}-replay.json"
-        row = {**episode_rows_by_id[episode_id], **_audit_replay(
-            path,
-            expected_episode_id=episode_id,
-            agent_name=agent_name,
-            expected_deck=expected_deck,
-        )}
+        episode_row = episode_rows_by_id[episode_id]
+        row = {
+            **episode_row,
+            **_audit_replay(
+                path,
+                expected_episode_id=episode_id,
+                player_index=int(episode_row["player_index"]),
+                submission_id=submission_id,
+                team_id=team_id,
+                team_name=team_name,
+                expected_deck=expected_deck,
+            ),
+        }
         audited.append(row)
     # Older episodes are useful as held-out data, while the newest public games
     # remain the natural test slice for a current submission policy.
@@ -239,14 +485,28 @@ def download(
         else:
             row["split"] = "test"
     manifest = {
-        "schema_version": "yushin_exact_replay_manifest_v1",
+        "schema_version": REPLAY_SCHEMA_VERSION,
+        "captured_at": datetime.now(timezone.utc).isoformat(),
+        "source_manifest": str(source_manifest.resolve()),
+        "source_manifest_sha256": source["_manifest_sha256"],
+        "source_identity": {
+            "team_id": team_id,
+            "submission_id": submission_id,
+            "deck_sha256": source["_deck_sha256"],
+        },
+        "team_id": team_id,
         "submission_id": submission_id,
-        "agent_name": agent_name,
+        "team_name": team_name,
         "deck": expected_deck,
         "deck_counts": dict(sorted(collections.Counter(expected_deck).items())),
+        "deck_hash_algorithm": "sha256(comma-separated sorted integer card IDs)",
+        "deck_sha256": source["_deck_sha256"],
         "episode_api_limit": 1000,
         "episode_count": total,
-        "episode_type": "public",
+        "episode_type": "PUBLIC",
+        "episode_state": "COMPLETED",
+        "player_resolution": "exact submission_id from Kaggle Episode agents",
+        "single_policy_constraint": True,
         "api_note": (
             "competition_list_episodes exposes the latest 1000 episodes for this submission"
         ),
@@ -268,29 +528,20 @@ def download(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--submission-id", type=int, required=True)
-    parser.add_argument("--agent-name", default="Yushin Ito")
+    parser.add_argument("--source-manifest", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--deck", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--retries", type=int, default=12)
     parser.add_argument("--request-interval", type=float, default=1.0)
+    parser.add_argument("--network-timeout", type=float, default=60.0)
     args = parser.parse_args()
-    deck = [
-        int(line.strip())
-        for line in args.deck.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
-    if len(deck) != 60:
-        parser.error("--deck must contain exactly 60 card IDs")
     print(json.dumps(download(
         args.output,
-        submission_id=args.submission_id,
-        agent_name=args.agent_name,
-        expected_deck=deck,
+        source_manifest=args.source_manifest,
         workers=args.workers,
         retries=args.retries,
         request_interval=args.request_interval,
+        network_timeout=args.network_timeout,
     ), ensure_ascii=False, sort_keys=True))
 
 

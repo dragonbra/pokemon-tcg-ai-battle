@@ -238,6 +238,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--max-steps", type=int, default=DEFAULT_MAX_STEPS)
     run.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="并行对局 worker 数；每局仍使用独立进程（默认 1）",
+    )
+    run.add_argument(
         "--metric-profile",
         choices=available_metric_profiles(),
         default="core",
@@ -258,6 +264,7 @@ def _run(args: argparse.Namespace) -> str:
     official_card_ids = _load_official_card_ids(evaluation_root)
     _validate_positive(args.games, "--games")
     _validate_positive(args.max_steps, "--max-steps")
+    _validate_positive(args.workers, "--workers")
 
     candidate = load_submission_package(args.candidate, official_card_ids)
     control = (
@@ -285,6 +292,7 @@ def _run(args: argparse.Namespace) -> str:
             metric_module_paths=_metric_modules(args.metric_module),
             metric_profile_id=args.metric_profile,
             keep_temp=args.keep_temp,
+            workers=args.workers,
         )
     )
     return result.run_id

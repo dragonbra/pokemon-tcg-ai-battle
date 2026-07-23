@@ -251,6 +251,7 @@ def train(
     dropout: float,
     storage_path: Path,
     min_free_gib: float,
+    evaluate_test: bool = True,
 ) -> dict[str, Any]:
     training_started = time.monotonic()
     random.seed(seed)
@@ -334,6 +335,7 @@ def train(
     )
     best_score = -1.0
     best_epoch = 0
+    best_epoch_metrics: dict[str, Any] = {}
     last_summary: dict[str, Any] = {}
     with TrainingLogger(paths.metrics, paths.tensorboard) as logger:
         for epoch in range(1, epochs + 1):
@@ -400,14 +402,20 @@ def train(
             if score > best_score:
                 best_score = score
                 best_epoch = epoch
+                best_epoch_metrics = dict(last_summary)
                 manager.save(
                     "best_validation", model, optimizer=optimizer, step=epoch, metadata=metadata
                 )
     manager.load(paths.checkpoints / "best_validation.pt", model, map_location=device)
-    test_metrics = _evaluate(model, splits["test"], device, batch_size) if splits["test"] else {}
+    test_metrics = (
+        _evaluate(model, splits["test"], device, batch_size)
+        if evaluate_test and splits["test"]
+        else {}
+    )
     summary = {
         "best_validation_exact_action_rate": best_score,
         "best_epoch": best_epoch,
+        "best_epoch_metrics": best_epoch_metrics,
         "final_test": test_metrics,
         "last_epoch": last_summary,
         "config": config,
@@ -427,10 +435,47 @@ def train(
     return summary
 
 
+def evaluate_checkpoint(
+    dataset: Path,
+    checkpoint: Path,
+    *,
+    batch_size: int,
+    device_name: str,
+    split: str = "test",
+) -> dict[str, Any]:
+    """Evaluate one already-frozen checkpoint without mutating training state."""
+    if split not in {"train", "validation", "test"}:
+        raise ValueError(f"unsupported evaluation split: {split}")
+    records = _load(dataset)
+    splits = _split_records(records)
+    if not splits[split]:
+        return {}
+    try:
+        payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    except TypeError:  # Compatibility with PyTorch releases before weights_only.
+        payload = torch.load(checkpoint, map_location="cpu")
+    metadata = payload.get("metadata") or {}
+    model_config = ModelConfig(**metadata["model_config"])
+    max_count = int(metadata.get("max_selection_count", model_config.max_candidates))
+    device = torch.device(
+        "cuda" if device_name == "auto" and torch.cuda.is_available() else device_name
+    )
+    model = FullActionPolicyValueNet(model_config, max_selection_count=max_count).to(device)
+    model.load_state_dict(payload["model"])
+    return _evaluate(model, splits[split], device, batch_size)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("dataset", type=Path)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--evaluate-only-checkpoint", type=Path)
+    parser.add_argument(
+        "--evaluation-split",
+        choices=("train", "validation", "test"),
+        default="test",
+    )
+    parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--learning-rate", type=float, default=3e-4)
@@ -444,6 +489,18 @@ def main() -> None:
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
     args = parser.parse_args()
+    if args.evaluate_only_checkpoint is not None:
+        result = evaluate_checkpoint(
+            args.dataset,
+            args.evaluate_only_checkpoint,
+            batch_size=args.batch_size,
+            device_name=args.device,
+            split=args.evaluation_split,
+        )
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return
+    if args.output is None:
+        parser.error("--output is required for training")
     result = train(
         args.dataset,
         args.output,
@@ -459,6 +516,7 @@ def main() -> None:
         dropout=args.dropout,
         storage_path=args.storage_path,
         min_free_gib=args.min_free_gib,
+        evaluate_test=not args.skip_test,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 

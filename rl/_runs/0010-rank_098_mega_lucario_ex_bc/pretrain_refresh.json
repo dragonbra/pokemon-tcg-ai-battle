@@ -1,0 +1,50 @@
+{
+  "added_episode_ids": [
+    87538100,
+    87540363,
+    87542370,
+    87542393,
+    87543031,
+    87545028,
+    87545413,
+    87546058,
+    87546757,
+    87553800,
+    87555866,
+    87560403,
+    87561464,
+    87573144
+  ],
+  "current_deck_sha256": "798608188147ee6641b079f320dfeb03a329452bc1cbc51cc3f8eedb8d53ef2d",
+  "current_submission_id": 54411920,
+  "deck_changed": false,
+  "final_source_identity": {
+    "deck_sha256": "798608188147ee6641b079f320dfeb03a329452bc1cbc51cc3f8eedb8d53ef2d",
+    "submission_id": 54411920,
+    "team_id": 16471628
+  },
+  "original_deck_sha256": "798608188147ee6641b079f320dfeb03a329452bc1cbc51cc3f8eedb8d53ef2d",
+  "original_episode_count": 1000,
+  "original_submission_id": 54411920,
+  "refreshed_at": "2026-07-23T02:39:31.087744+00:00",
+  "refreshed_episode_count": 1000,
+  "removed_from_current_api_window_episode_ids": [
+    85447858,
+    85448471,
+    85448473,
+    85449899,
+    85451954,
+    85452344,
+    85454558,
+    85456442,
+    85457483,
+    85457883,
+    85459595,
+    85460592,
+    85461432,
+    85461606
+  ],
+  "schema_version": "ptcg_pretrain_refresh_v1",
+  "source_choice": "continue frozen original exact submission",
+  "submission_changed": false
+}

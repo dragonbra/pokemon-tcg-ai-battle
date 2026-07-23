@@ -8,6 +8,7 @@ action against that observation's ``select.option`` before emitting a record.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from collections import Counter
 from pathlib import Path
@@ -28,6 +29,14 @@ from rl.model.features import (
 DATASET_VERSION = "ptcg_kaggle_bc_v1"
 UNIVERSAL_DATASET_VERSION = "ptcg_kaggle_bc_universal"
 ACTION_SCHEMA_VERSION = "ptcg_action_set_v1"
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _dataset_version(feature_config: PTCGFeatureConfig) -> str:
@@ -334,6 +343,7 @@ def build_aggregate_dataset(
     source_records: Counter[str] = Counter()
     episode_splits: dict[int, str] = {}
     seen_trajectories: set[tuple[int, int]] = set()
+    trajectory_decisions: Counter[tuple[int, int]] = Counter()
     decisions = 0
 
     with output.open("w", encoding="utf-8") as handle:
@@ -369,6 +379,7 @@ def build_aggregate_dataset(
                 ):
                     handle.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
                     decisions += 1
+                    trajectory_decisions[trajectory_key] += 1
                     counts[split] += 1
                     source_records[source_key] += 1
                     trajectory_outcome = float(record["terminal_outcome"])
@@ -412,7 +423,69 @@ def build_aggregate_dataset(
         "storage_path": storage.path,
         "storage_free_gib": round(storage.free_gib, 2),
         "card_metadata": str(card_metadata_path.resolve()) if card_metadata_path else None,
+        "dataset_sha256": _sha256(output),
+        "card_metadata_sha256": _sha256(card_metadata_path) if card_metadata_path else None,
     }
+    data_episodes: list[dict[str, Any]] = []
+    zero_decision_trajectories: list[dict[str, Any]] = []
+    for episode in manifest.get("episodes") or []:
+        experts: list[dict[str, Any]] = []
+        for expert in episode.get("expert_players") or []:
+            key = (int(episode["episode_id"]), int(expert["player_index"]))
+            decision_records = int(trajectory_decisions[key])
+            expert_row = {**expert, "decision_records": decision_records}
+            if decision_records:
+                experts.append(expert_row)
+            else:
+                zero_decision_trajectories.append(
+                    {
+                        "episode_id": key[0],
+                        "player_index": key[1],
+                        "reason": "replay contains no supervised ACTIVE observation + next action",
+                    }
+                )
+        if experts:
+            data_episodes.append(
+                {
+                    "episode_id": int(episode["episode_id"]),
+                    "file": str(episode["file"]),
+                    "split": str(episode["split"]),
+                    "create_time": episode.get("create_time"),
+                    "sha256": episode.get("sha256"),
+                    "deck_sha256": episode.get("deck_sha256"),
+                    "expert_players": experts,
+                }
+            )
+    data_manifest_path = output.with_suffix(output.suffix + ".data_manifest.json")
+    data_manifest = {
+        "schema_version": "ptcg_bc_data_manifest_v1",
+        "source_manifest_schema_version": manifest.get("schema_version"),
+        "source_manifest": manifest.get("source_manifest"),
+        "source_manifest_sha256": manifest.get("source_manifest_sha256"),
+        "source_identity": manifest.get("source_identity"),
+        "feature_schema": feature_schema_for_config(feature_config),
+        "action_contract": "full_action_set_v1",
+        "action_schema_version": ACTION_SCHEMA_VERSION,
+        "dataset": str(output.resolve()),
+        "dataset_sha256": summary["dataset_sha256"],
+        "card_metadata": summary["card_metadata"],
+        "card_metadata_sha256": summary["card_metadata_sha256"],
+        "raw_episode_count": len(manifest.get("episodes") or []),
+        "dataset_episode_count": len(data_episodes),
+        "expert_trajectory_count": len(seen_trajectories),
+        "dataset_trajectory_count": len(seen_trajectories) - len(zero_decision_trajectories),
+        "zero_decision_trajectories": zero_decision_trajectories,
+        "records": decisions,
+        "records_by_split": summary["records_by_split"],
+        "episodes": data_episodes,
+    }
+    data_manifest_path.write_text(
+        json.dumps(data_manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    summary["data_manifest"] = str(data_manifest_path.resolve())
+    summary["data_manifest_sha256"] = _sha256(data_manifest_path)
+    summary["zero_decision_trajectories"] = len(zero_decision_trajectories)
     (output.with_suffix(output.suffix + ".summary.json")).write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
@@ -431,7 +504,7 @@ def main() -> None:
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") == "ptcg_top_ladder_exact_deck_replays_v1":
+    if any((row.get("expert_players") or []) for row in manifest.get("episodes") or []):
         result = build_aggregate_dataset(
             args.replay_root,
             manifest,

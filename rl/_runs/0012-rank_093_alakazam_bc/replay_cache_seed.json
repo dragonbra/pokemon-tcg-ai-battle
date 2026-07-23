@@ -1,0 +1,19 @@
+{
+  "already_present": 0,
+  "expected_episode_count": 592,
+  "remaining_download_count": 590,
+  "reused": [
+    {
+      "episode_id": 86847718,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86847718-replay.json"
+    },
+    {
+      "episode_id": 87535114,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_research_20260723/episodes/episode-87535114-replay.json"
+    }
+  ],
+  "reused_episode_count": 2,
+  "seeded_at": "2026-07-23T07:25:52.979700+00:00"
+}

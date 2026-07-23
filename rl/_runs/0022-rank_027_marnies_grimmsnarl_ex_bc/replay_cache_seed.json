@@ -1,0 +1,124 @@
+{
+  "already_present": 0,
+  "expected_episode_count": 375,
+  "remaining_download_count": 352,
+  "reused": [
+    {
+      "episode_id": 87568343,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87568343-replay.json"
+    },
+    {
+      "episode_id": 87451329,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87451329-replay.json"
+    },
+    {
+      "episode_id": 87483252,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87483252-replay.json"
+    },
+    {
+      "episode_id": 87565679,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87565679-replay.json"
+    },
+    {
+      "episode_id": 87547681,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87547681-replay.json"
+    },
+    {
+      "episode_id": 87564590,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87564590-replay.json"
+    },
+    {
+      "episode_id": 87551540,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87551540-replay.json"
+    },
+    {
+      "episode_id": 87320335,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87320335-replay.json"
+    },
+    {
+      "episode_id": 87341607,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87341607-replay.json"
+    },
+    {
+      "episode_id": 87402122,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87402122-replay.json"
+    },
+    {
+      "episode_id": 87456148,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87456148-replay.json"
+    },
+    {
+      "episode_id": 87343372,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87343372-replay.json"
+    },
+    {
+      "episode_id": 87346359,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87346359-replay.json"
+    },
+    {
+      "episode_id": 87331947,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87331947-replay.json"
+    },
+    {
+      "episode_id": 87319406,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87319406-replay.json"
+    },
+    {
+      "episode_id": 87534506,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_026_marnies_grimmsnarl_ex_bc/episode-87534506-replay.json"
+    },
+    {
+      "episode_id": 87280035,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87280035-replay.json"
+    },
+    {
+      "episode_id": 87268590,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87268590-replay.json"
+    },
+    {
+      "episode_id": 87357538,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87357538-replay.json"
+    },
+    {
+      "episode_id": 87278864,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87278864-replay.json"
+    },
+    {
+      "episode_id": 87325057,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87325057-replay.json"
+    },
+    {
+      "episode_id": 87275237,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87275237-replay.json"
+    },
+    {
+      "episode_id": 87534514,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_research_20260723/episodes/episode-87534514-replay.json"
+    }
+  ],
+  "reused_episode_count": 23,
+  "seeded_at": "2026-07-23T07:31:03.126749+00:00"
+}

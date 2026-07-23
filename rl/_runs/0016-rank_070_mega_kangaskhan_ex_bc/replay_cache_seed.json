@@ -1,0 +1,59 @@
+{
+  "already_present": 0,
+  "expected_episode_count": 469,
+  "remaining_download_count": 459,
+  "reused": [
+    {
+      "episode_id": 87503237,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-87503237-replay.json"
+    },
+    {
+      "episode_id": 87164359,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87164359-replay.json"
+    },
+    {
+      "episode_id": 87216419,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87216419-replay.json"
+    },
+    {
+      "episode_id": 87265007,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87265007-replay.json"
+    },
+    {
+      "episode_id": 87139945,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87139945-replay.json"
+    },
+    {
+      "episode_id": 87236772,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87236772-replay.json"
+    },
+    {
+      "episode_id": 87344541,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87344541-replay.json"
+    },
+    {
+      "episode_id": 87153631,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87153631-replay.json"
+    },
+    {
+      "episode_id": 87331951,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87331951-replay.json"
+    },
+    {
+      "episode_id": 87533449,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_research_20260723/episodes/episode-87533449-replay.json"
+    }
+  ],
+  "reused_episode_count": 10,
+  "seeded_at": "2026-07-23T07:31:01.015611+00:00"
+}

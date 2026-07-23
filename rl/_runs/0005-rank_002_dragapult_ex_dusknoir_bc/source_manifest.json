@@ -1,0 +1,6060 @@
+{
+  "deck_file": "source_deck.csv",
+  "deck_profile": {
+    "card_count": 60,
+    "cards": [
+      {
+        "card_id": 2,
+        "count": 4,
+        "name": "Basic {R} Energy",
+        "stage_or_type": "Basic Energy"
+      },
+      {
+        "card_id": 5,
+        "count": 3,
+        "name": "Basic {P} Energy",
+        "stage_or_type": "Basic Energy"
+      },
+      {
+        "card_id": 7,
+        "count": 1,
+        "name": "Basic {D} Energy",
+        "stage_or_type": "Basic Energy"
+      },
+      {
+        "card_id": 112,
+        "count": 1,
+        "name": "Munkidori",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 119,
+        "count": 4,
+        "name": "Dreepy",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 120,
+        "count": 4,
+        "name": "Drakloak",
+        "stage_or_type": "Stage 1 Pokémon"
+      },
+      {
+        "card_id": 121,
+        "count": 3,
+        "name": "Dragapult ex",
+        "stage_or_type": "Stage 2 Pokémon"
+      },
+      {
+        "card_id": 131,
+        "count": 2,
+        "name": "Duskull",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 132,
+        "count": 2,
+        "name": "Dusclops",
+        "stage_or_type": "Stage 1 Pokémon"
+      },
+      {
+        "card_id": 133,
+        "count": 1,
+        "name": "Dusknoir",
+        "stage_or_type": "Stage 2 Pokémon"
+      },
+      {
+        "card_id": 140,
+        "count": 1,
+        "name": "Fezandipiti ex",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 235,
+        "count": 1,
+        "name": "Budew",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 791,
+        "count": 1,
+        "name": "Moltres",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 1071,
+        "count": 1,
+        "name": "Meowth ex",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 1080,
+        "count": 1,
+        "name": "Unfair Stamp",
+        "stage_or_type": "Item"
+      },
+      {
+        "card_id": 1086,
+        "count": 4,
+        "name": "Buddy-Buddy Poffin",
+        "stage_or_type": "Item"
+      },
+      {
+        "card_id": 1097,
+        "count": 2,
+        "name": "Night Stretcher",
+        "stage_or_type": "Item"
+      },
+      {
+        "card_id": 1120,
+        "count": 3,
+        "name": "Crushing Hammer",
+        "stage_or_type": "Item"
+      },
+      {
+        "card_id": 1121,
+        "count": 4,
+        "name": "Ultra Ball",
+        "stage_or_type": "Item"
+      },
+      {
+        "card_id": 1152,
+        "count": 4,
+        "name": "Poké Pad",
+        "stage_or_type": "Item"
+      },
+      {
+        "card_id": 1182,
+        "count": 3,
+        "name": "Boss’s Orders",
+        "stage_or_type": "Supporter"
+      },
+      {
+        "card_id": 1198,
+        "count": 3,
+        "name": "Crispin",
+        "stage_or_type": "Supporter"
+      },
+      {
+        "card_id": 1227,
+        "count": 4,
+        "name": "Lillie's Determination",
+        "stage_or_type": "Supporter"
+      },
+      {
+        "card_id": 1231,
+        "count": 1,
+        "name": "Dawn",
+        "stage_or_type": "Supporter"
+      },
+      {
+        "card_id": 1256,
+        "count": 2,
+        "name": "Team Rocket's Watchtower",
+        "stage_or_type": "Stadium"
+      }
+    ],
+    "deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+    "pokemon": [
+      {
+        "card_id": 112,
+        "count": 1,
+        "name": "Munkidori",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 119,
+        "count": 4,
+        "name": "Dreepy",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 120,
+        "count": 4,
+        "name": "Drakloak",
+        "stage_or_type": "Stage 1 Pokémon"
+      },
+      {
+        "card_id": 121,
+        "count": 3,
+        "name": "Dragapult ex",
+        "stage_or_type": "Stage 2 Pokémon"
+      },
+      {
+        "card_id": 131,
+        "count": 2,
+        "name": "Duskull",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 132,
+        "count": 2,
+        "name": "Dusclops",
+        "stage_or_type": "Stage 1 Pokémon"
+      },
+      {
+        "card_id": 133,
+        "count": 1,
+        "name": "Dusknoir",
+        "stage_or_type": "Stage 2 Pokémon"
+      },
+      {
+        "card_id": 140,
+        "count": 1,
+        "name": "Fezandipiti ex",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 235,
+        "count": 1,
+        "name": "Budew",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 791,
+        "count": 1,
+        "name": "Moltres",
+        "stage_or_type": "Basic Pokémon"
+      },
+      {
+        "card_id": 1071,
+        "count": 1,
+        "name": "Meowth ex",
+        "stage_or_type": "Basic Pokémon"
+      }
+    ],
+    "pokemon_summary": "Munkidori x1, Dreepy x4, Drakloak x4, Dragapult ex x3, Duskull x2, Dusclops x2, Dusknoir x1, Fezandipiti ex x1, Budew x1, Moltres x1, Meowth ex x1",
+    "unique_card_count": 25
+  },
+  "episode_contract": "PUBLIC + COMPLETED + exact submission_id player index",
+  "episodes": [
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54078186,
+          "team_id": 16382620,
+          "team_name": "Kazato Takahashi"
+        }
+      ],
+      "create_time": "2026-07-21T23:48:52.828000+00:00",
+      "end_time": "2026-07-21T23:49:55.220000+00:00",
+      "episode_id": 87425220,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54809718,
+          "team_id": 16514109,
+          "team_name": "James Cann"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-21T23:52:52.535000+00:00",
+      "end_time": "2026-07-21T23:53:40.704000+00:00",
+      "episode_id": 87425769,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54241976,
+          "team_id": 16422470,
+          "team_name": "Bensonli7777"
+        }
+      ],
+      "create_time": "2026-07-21T23:56:51.580000+00:00",
+      "end_time": "2026-07-21T23:57:36.020000+00:00",
+      "episode_id": 87426315,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 53928729,
+          "team_id": 16386749,
+          "team_name": "史永刚"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:00:50.004000+00:00",
+      "end_time": "2026-07-22T00:01:45.107000+00:00",
+      "episode_id": 87426845,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54592322,
+          "team_id": 16435961,
+          "team_name": "ezreal77"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:04:49.177000+00:00",
+      "end_time": "2026-07-22T00:05:58.204000+00:00",
+      "episode_id": 87427383,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54721533,
+          "team_id": 16386182,
+          "team_name": "Choruru"
+        }
+      ],
+      "create_time": "2026-07-22T00:08:49.263000+00:00",
+      "end_time": "2026-07-22T00:10:13.729000+00:00",
+      "episode_id": 87427913,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54892867,
+          "team_id": 16373379,
+          "team_name": "Mogja J"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:12:49.125000+00:00",
+      "end_time": "2026-07-22T00:13:50.334000+00:00",
+      "episode_id": 87428440,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 53966765,
+          "team_id": 16391736,
+          "team_name": "Akira-Ninth"
+        }
+      ],
+      "create_time": "2026-07-22T00:16:50.006000+00:00",
+      "end_time": "2026-07-22T00:17:41.628000+00:00",
+      "episode_id": 87428966,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54808807,
+          "team_id": 16381560,
+          "team_name": "aknomura"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:20:49.107000+00:00",
+      "end_time": "2026-07-22T00:21:57.482000+00:00",
+      "episode_id": 87429505,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54454637,
+          "team_id": 16425598,
+          "team_name": "rmoooi"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:24:48.911000+00:00",
+      "end_time": "2026-07-22T00:27:03.169000+00:00",
+      "episode_id": 87430030,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54889419,
+          "team_id": 16541487,
+          "team_name": "pacific_diesel"
+        }
+      ],
+      "create_time": "2026-07-22T00:28:49.151000+00:00",
+      "end_time": "2026-07-22T00:30:24.457000+00:00",
+      "episode_id": 87430565,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54564058,
+          "team_id": 16515712,
+          "team_name": "tomo11111"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:32:49.090000+00:00",
+      "end_time": "2026-07-22T00:33:32.708000+00:00",
+      "episode_id": 87431099,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54131054,
+          "team_id": 16381422,
+          "team_name": "Yasuo 0/10/0"
+        }
+      ],
+      "create_time": "2026-07-22T00:36:49.022000+00:00",
+      "end_time": "2026-07-22T00:37:44.923000+00:00",
+      "episode_id": 87431629,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54895735,
+          "team_id": 16424485,
+          "team_name": "Ezra #2"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:36:49.265000+00:00",
+      "end_time": "2026-07-22T00:38:15.570000+00:00",
+      "episode_id": 87431778,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54888605,
+          "team_id": 16384794,
+          "team_name": "suguuuuu & hiehie"
+        }
+      ],
+      "create_time": "2026-07-22T00:41:04.231000+00:00",
+      "end_time": "2026-07-22T00:45:47.315000+00:00",
+      "episode_id": 87432168,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 53756756,
+          "team_id": 16373761,
+          "team_name": "mage03"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:44:54.136000+00:00",
+      "end_time": "2026-07-22T00:46:06.002000+00:00",
+      "episode_id": 87432689,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54892703,
+          "team_id": 16381904,
+          "team_name": "NguyenThanhNhan"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:48:55.285000+00:00",
+      "end_time": "2026-07-22T00:50:41.674000+00:00",
+      "episode_id": 87433228,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54830574,
+          "team_id": 16384514,
+          "team_name": "Biubiu"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:52:54.268000+00:00",
+      "end_time": "2026-07-22T00:54:54.945000+00:00",
+      "episode_id": 87433773,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54774448,
+          "team_id": 16381375,
+          "team_name": "KHira"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T00:56:53.641000+00:00",
+      "end_time": "2026-07-22T00:57:40.190000+00:00",
+      "episode_id": 87434289,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54557427,
+          "team_id": 16445366,
+          "team_name": "渡邊征央"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:00:53.059000+00:00",
+      "end_time": "2026-07-22T01:01:44.192000+00:00",
+      "episode_id": 87434823,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54896401,
+          "team_id": 16482300,
+          "team_name": "The Blos"
+        }
+      ],
+      "create_time": "2026-07-22T01:04:59.972000+00:00",
+      "end_time": "2026-07-22T01:05:51.500000+00:00",
+      "episode_id": 87435358,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54704634,
+          "team_id": 16498967,
+          "team_name": "Twe Dyo"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:08:48.865000+00:00",
+      "end_time": "2026-07-22T01:09:50.649000+00:00",
+      "episode_id": 87435897,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54888605,
+          "team_id": 16384794,
+          "team_name": "suguuuuu & hiehie"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:12:48.918000+00:00",
+      "end_time": "2026-07-22T01:18:04.690000+00:00",
+      "episode_id": 87436440,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54860911,
+          "team_id": 16511578,
+          "team_name": "Erik van de Ven"
+        }
+      ],
+      "create_time": "2026-07-22T01:16:49.245000+00:00",
+      "end_time": "2026-07-22T01:17:39.737000+00:00",
+      "episode_id": 87436973,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54867264,
+          "team_id": 16501184,
+          "team_name": "takayosi"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:20:48.815000+00:00",
+      "end_time": "2026-07-22T01:21:54.937000+00:00",
+      "episode_id": 87437501,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54891064,
+          "team_id": 16446941,
+          "team_name": "pikachu"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:24:49.652000+00:00",
+      "end_time": "2026-07-22T01:25:49.431000+00:00",
+      "episode_id": 87438043,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54863283,
+          "team_id": 16487924,
+          "team_name": "lmaffei"
+        }
+      ],
+      "create_time": "2026-07-22T01:28:49.678000+00:00",
+      "end_time": "2026-07-22T01:29:57.296000+00:00",
+      "episode_id": 87438574,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54898329,
+          "team_id": 16377557,
+          "team_name": "ポケカ前線"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:32:49.258000+00:00",
+      "end_time": "2026-07-22T01:33:53.201000+00:00",
+      "episode_id": 87439105,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54883858,
+          "team_id": 16533373,
+          "team_name": "Roman Stupin"
+        }
+      ],
+      "create_time": "2026-07-22T01:36:49.045000+00:00",
+      "end_time": "2026-07-22T01:38:00.786000+00:00",
+      "episode_id": 87439627,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54873361,
+          "team_id": 16372782,
+          "team_name": "Pokemon Siuuuu"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:40:48.994000+00:00",
+      "end_time": "2026-07-22T01:41:58.802000+00:00",
+      "episode_id": 87440155,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54891427,
+          "team_id": 16404352,
+          "team_name": "Oshbocker"
+        }
+      ],
+      "create_time": "2026-07-22T01:44:49.357000+00:00",
+      "end_time": "2026-07-22T01:45:57.237000+00:00",
+      "episode_id": 87440699,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54895002,
+          "team_id": 16559285,
+          "team_name": "Fususu"
+        }
+      ],
+      "create_time": "2026-07-22T01:48:54.466000+00:00",
+      "end_time": "2026-07-22T01:49:45.623000+00:00",
+      "episode_id": 87441230,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54895414,
+          "team_id": 16463316,
+          "team_name": "LiamK"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:48:54.675000+00:00",
+      "end_time": "2026-07-22T01:49:59.293000+00:00",
+      "episode_id": 87441383,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54886629,
+          "team_id": 16391123,
+          "team_name": "Iliamna"
+        }
+      ],
+      "create_time": "2026-07-22T01:52:49.070000+00:00",
+      "end_time": "2026-07-22T01:53:51.588000+00:00",
+      "episode_id": 87441670,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54877018,
+          "team_id": 16401021,
+          "team_name": "msd0110"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T01:56:49.859000+00:00",
+      "end_time": "2026-07-22T01:58:08.437000+00:00",
+      "episode_id": 87442300,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54896031,
+          "team_id": 16371427,
+          "team_name": "bono"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:00:50.478000+00:00",
+      "end_time": "2026-07-22T02:01:42.324000+00:00",
+      "episode_id": 87442837,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54748313,
+          "team_id": 16373946,
+          "team_name": "KawattaTaido"
+        }
+      ],
+      "create_time": "2026-07-22T02:04:49.888000+00:00",
+      "end_time": "2026-07-22T02:06:02.243000+00:00",
+      "episode_id": 87443370,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54873361,
+          "team_id": 16372782,
+          "team_name": "Pokemon Siuuuu"
+        }
+      ],
+      "create_time": "2026-07-22T02:08:48.809000+00:00",
+      "end_time": "2026-07-22T02:09:44.235000+00:00",
+      "episode_id": 87443904,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54877575,
+          "team_id": 16424674,
+          "team_name": "Timmy Juicehouse"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:12:49.356000+00:00",
+      "end_time": "2026-07-22T02:14:14.885000+00:00",
+      "episode_id": 87444426,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54886350,
+          "team_id": 16391939,
+          "team_name": "pippi EX"
+        }
+      ],
+      "create_time": "2026-07-22T02:16:49.257000+00:00",
+      "end_time": "2026-07-22T02:17:39.670000+00:00",
+      "episode_id": 87444960,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54866812,
+          "team_id": 16462943,
+          "team_name": "Ghleii"
+        }
+      ],
+      "create_time": "2026-07-22T02:20:50.335000+00:00",
+      "end_time": "2026-07-22T02:21:56.256000+00:00",
+      "episode_id": 87445505,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54791976,
+          "team_id": 16531877,
+          "team_name": "Vadim Vasilenko"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:24:54.695000+00:00",
+      "end_time": "2026-07-22T02:26:04.521000+00:00",
+      "episode_id": 87446039,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54894292,
+          "team_id": 16442659,
+          "team_name": "cununn"
+        }
+      ],
+      "create_time": "2026-07-22T02:28:49.339000+00:00",
+      "end_time": "2026-07-22T02:29:56.503000+00:00",
+      "episode_id": 87446561,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54895414,
+          "team_id": 16463316,
+          "team_name": "LiamK"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:28:49.460000+00:00",
+      "end_time": "2026-07-22T02:29:57.249000+00:00",
+      "episode_id": 87446640,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54868188,
+          "team_id": 16372307,
+          "team_name": "Team KASA."
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:32:52.763000+00:00",
+      "end_time": "2026-07-22T02:33:56.151000+00:00",
+      "episode_id": 87447094,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54791976,
+          "team_id": 16531877,
+          "team_name": "Vadim Vasilenko"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:36:52.190000+00:00",
+      "end_time": "2026-07-22T02:38:02.232000+00:00",
+      "episode_id": 87447625,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        }
+      ],
+      "create_time": "2026-07-22T02:40:49.795000+00:00",
+      "end_time": "2026-07-22T02:41:53.146000+00:00",
+      "episode_id": 87448150,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54869249,
+          "team_id": 16386246,
+          "team_name": "懒惰的金枪鱼"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:40:49.873000+00:00",
+      "end_time": "2026-07-22T02:42:28.789000+00:00",
+      "episode_id": 87448212,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54882702,
+          "team_id": 16445525,
+          "team_name": "齐乐"
+        }
+      ],
+      "create_time": "2026-07-22T02:44:52.749000+00:00",
+      "end_time": "2026-07-22T02:45:52.459000+00:00",
+      "episode_id": 87448685,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54869249,
+          "team_id": 16386246,
+          "team_name": "懒惰的金枪鱼"
+        }
+      ],
+      "create_time": "2026-07-22T02:48:49.784000+00:00",
+      "end_time": "2026-07-22T02:49:52.863000+00:00",
+      "episode_id": 87449201,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54891244,
+          "team_id": 16393835,
+          "team_name": "TorNoz"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T02:52:50.655000+00:00",
+      "end_time": "2026-07-22T02:53:58.303000+00:00",
+      "episode_id": 87449740,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54895414,
+          "team_id": 16463316,
+          "team_name": "LiamK"
+        }
+      ],
+      "create_time": "2026-07-22T02:56:49.950000+00:00",
+      "end_time": "2026-07-22T02:57:53.740000+00:00",
+      "episode_id": 87450283,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54899762,
+          "team_id": 16430842,
+          "team_name": "Rotation Theory"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:00:52.556000+00:00",
+      "end_time": "2026-07-22T03:02:15.699000+00:00",
+      "episode_id": 87450804,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54875820,
+          "team_id": 16407282,
+          "team_name": "SQUIRTLE (prime)"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:04:49.580000+00:00",
+      "end_time": "2026-07-22T03:05:53.175000+00:00",
+      "episode_id": 87451329,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        }
+      ],
+      "create_time": "2026-07-22T03:04:49.665000+00:00",
+      "end_time": "2026-07-22T03:05:57.694000+00:00",
+      "episode_id": 87451366,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54879564,
+          "team_id": 16385296,
+          "team_name": "Javier Arturo Gutierrez Sanchez "
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:08:49.154000+00:00",
+      "end_time": "2026-07-22T03:09:48.854000+00:00",
+      "episode_id": 87451873,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54834745,
+          "team_id": 16372380,
+          "team_name": "THIRD PTCG Club"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:08:49.196000+00:00",
+      "end_time": "2026-07-22T03:09:59.977000+00:00",
+      "episode_id": 87451910,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54896186,
+          "team_id": 16375066,
+          "team_name": "youtube.com/@BigBugginnings"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:08:49.199000+00:00",
+      "end_time": "2026-07-22T03:10:01.085000+00:00",
+      "episode_id": 87451909,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54810263,
+          "team_id": 16406979,
+          "team_name": "palsystem"
+        }
+      ],
+      "create_time": "2026-07-22T03:12:49.264000+00:00",
+      "end_time": "2026-07-22T03:13:48.549000+00:00",
+      "episode_id": 87452431,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897208,
+          "team_id": 16555789,
+          "team_name": "gisgisgis"
+        }
+      ],
+      "create_time": "2026-07-22T03:16:49.339000+00:00",
+      "end_time": "2026-07-22T03:18:10.459000+00:00",
+      "episode_id": 87452964,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54899938,
+          "team_id": 16401021,
+          "team_name": "msd0110"
+        }
+      ],
+      "create_time": "2026-07-22T03:20:49.334000+00:00",
+      "end_time": "2026-07-22T03:22:02.338000+00:00",
+      "episode_id": 87453506,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54895063,
+          "team_id": 16418623,
+          "team_name": "Yudai Ueno"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:20:49.357000+00:00",
+      "end_time": "2026-07-22T03:21:41.297000+00:00",
+      "episode_id": 87453532,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54834745,
+          "team_id": 16372380,
+          "team_name": "THIRD PTCG Club"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:24:49.299000+00:00",
+      "end_time": "2026-07-22T03:26:09.407000+00:00",
+      "episode_id": 87454040,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54895414,
+          "team_id": 16463316,
+          "team_name": "LiamK"
+        }
+      ],
+      "create_time": "2026-07-22T03:24:49.300000+00:00",
+      "end_time": "2026-07-22T03:26:01.992000+00:00",
+      "episode_id": 87454041,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54899223,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:28:49.295000+00:00",
+      "end_time": "2026-07-22T03:30:03.434000+00:00",
+      "episode_id": 87454443,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        }
+      ],
+      "create_time": "2026-07-22T03:28:49.493000+00:00",
+      "end_time": "2026-07-22T03:30:01.797000+00:00",
+      "episode_id": 87454567,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54895558,
+          "team_id": 16378476,
+          "team_name": "aaa"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:28:49.554000+00:00",
+      "end_time": "2026-07-22T03:29:45.682000+00:00",
+      "episode_id": 87454591,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54775633,
+          "team_id": 16422150,
+          "team_name": "junlee789"
+        }
+      ],
+      "create_time": "2026-07-22T03:32:49.080000+00:00",
+      "end_time": "2026-07-22T03:36:40.221000+00:00",
+      "episode_id": 87455113,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        }
+      ],
+      "create_time": "2026-07-22T03:36:50.935000+00:00",
+      "end_time": "2026-07-22T03:37:51.409000+00:00",
+      "episode_id": 87455652,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        }
+      ],
+      "create_time": "2026-07-22T03:40:49.797000+00:00",
+      "end_time": "2026-07-22T03:42:06.587000+00:00",
+      "episode_id": 87456144,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54834313,
+          "team_id": 16379968,
+          "team_name": "Kotaro OKUYAMA"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:40:49.886000+00:00",
+      "end_time": "2026-07-22T03:42:11.872000+00:00",
+      "episode_id": 87456202,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        }
+      ],
+      "create_time": "2026-07-22T03:44:50.365000+00:00",
+      "end_time": "2026-07-22T03:45:41.781000+00:00",
+      "episode_id": 87456684,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54777250,
+          "team_id": 16514212,
+          "team_name": "Dieter"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T03:44:50.446000+00:00",
+      "end_time": "2026-07-22T03:45:57.546000+00:00",
+      "episode_id": 87456728,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        }
+      ],
+      "create_time": "2026-07-22T03:48:49.688000+00:00",
+      "end_time": "2026-07-22T03:50:01.946000+00:00",
+      "episode_id": 87457196,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54882702,
+          "team_id": 16445525,
+          "team_name": "齐乐"
+        }
+      ],
+      "create_time": "2026-07-22T03:48:49.776000+00:00",
+      "end_time": "2026-07-22T03:49:47.725000+00:00",
+      "episode_id": 87457251,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54899938,
+          "team_id": 16401021,
+          "team_name": "msd0110"
+        }
+      ],
+      "create_time": "2026-07-22T04:00:49.467000+00:00",
+      "end_time": "2026-07-22T04:01:55.866000+00:00",
+      "episode_id": 87458660,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54775633,
+          "team_id": 16422150,
+          "team_name": "junlee789"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T04:20:49.331000+00:00",
+      "end_time": "2026-07-22T04:24:37.036000+00:00",
+      "episode_id": 87461435,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54899223,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T04:20:49.464000+00:00",
+      "end_time": "2026-07-22T04:21:46.881000+00:00",
+      "episode_id": 87461529,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 53814350,
+          "team_id": 16389168,
+          "team_name": "bakata"
+        }
+      ],
+      "create_time": "2026-07-22T04:40:49.839000+00:00",
+      "end_time": "2026-07-22T04:41:38.366000+00:00",
+      "episode_id": 87464196,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54901602,
+          "team_id": 16555678,
+          "team_name": "binghua_123"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T04:44:49.187000+00:00",
+      "end_time": "2026-07-22T04:45:45.285000+00:00",
+      "episode_id": 87464469,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54901619,
+          "team_id": 16382207,
+          "team_name": "Lunariz"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T05:04:49.233000+00:00",
+      "end_time": "2026-07-22T05:06:44.172000+00:00",
+      "episode_id": 87467110,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54901198,
+          "team_id": 16371427,
+          "team_name": "bono"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T05:20:49.197000+00:00",
+      "end_time": "2026-07-22T05:21:42.913000+00:00",
+      "episode_id": 87469290,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54901619,
+          "team_id": 16382207,
+          "team_name": "Lunariz"
+        }
+      ],
+      "create_time": "2026-07-22T05:24:50.448000+00:00",
+      "end_time": "2026-07-22T05:26:35.490000+00:00",
+      "episode_id": 87469769,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T05:32:51.760000+00:00",
+      "end_time": "2026-07-22T05:34:13.592000+00:00",
+      "episode_id": 87471015,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54871507,
+          "team_id": 16464938,
+          "team_name": "Xyrhen"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T06:20:51.978000+00:00",
+      "end_time": "2026-07-22T06:21:41.463000+00:00",
+      "episode_id": 87477354,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T06:24:51.268000+00:00",
+      "end_time": "2026-07-22T06:26:07.992000+00:00",
+      "episode_id": 87477699,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54875820,
+          "team_id": 16407282,
+          "team_name": "SQUIRTLE (prime)"
+        }
+      ],
+      "create_time": "2026-07-22T07:04:52.634000+00:00",
+      "end_time": "2026-07-22T07:06:10.312000+00:00",
+      "episode_id": 87483252,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54899223,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T07:44:51.867000+00:00",
+      "end_time": "2026-07-22T07:46:05.122000+00:00",
+      "episode_id": 87488538,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54901645,
+          "team_id": 16374469,
+          "team_name": "西松大祐"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T08:44:54.542000+00:00",
+      "end_time": "2026-07-22T08:46:16.991000+00:00",
+      "episode_id": 87496479,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        }
+      ],
+      "create_time": "2026-07-22T09:28:52.253000+00:00",
+      "end_time": "2026-07-22T09:30:09.191000+00:00",
+      "episode_id": 87502899,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54905592,
+          "team_id": 16555678,
+          "team_name": "binghua_123"
+        }
+      ],
+      "create_time": "2026-07-22T09:44:51.472000+00:00",
+      "end_time": "2026-07-22T09:45:53.369000+00:00",
+      "episode_id": 87505116,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54899223,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T09:52:51.659000+00:00",
+      "end_time": "2026-07-22T09:53:54.087000+00:00",
+      "episode_id": 87506456,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54650324,
+          "team_id": 16500571,
+          "team_name": "iaai"
+        }
+      ],
+      "create_time": "2026-07-22T10:20:54.956000+00:00",
+      "end_time": "2026-07-22T10:21:43.361000+00:00",
+      "episode_id": 87510455,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T10:32:51.789000+00:00",
+      "end_time": "2026-07-22T10:34:33.028000+00:00",
+      "episode_id": 87512209,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T10:32:51.850000+00:00",
+      "end_time": "2026-07-22T10:34:17.323000+00:00",
+      "episode_id": 87512239,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54844722,
+          "team_id": 16473179,
+          "team_name": "ei ei ei yikuso"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T10:44:51.756000+00:00",
+      "end_time": "2026-07-22T10:45:38.455000+00:00",
+      "episode_id": 87513964,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54480357,
+          "team_id": 16376176,
+          "team_name": "Kakeru"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T10:48:51.756000+00:00",
+      "end_time": "2026-07-22T10:49:48.172000+00:00",
+      "episode_id": 87514516,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T10:52:51.270000+00:00",
+      "end_time": "2026-07-22T10:54:05.161000+00:00",
+      "episode_id": 87515066,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54896186,
+          "team_id": 16375066,
+          "team_name": "youtube.com/@BigBugginnings"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T10:56:52.508000+00:00",
+      "end_time": "2026-07-22T10:57:50.490000+00:00",
+      "episode_id": 87515639,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54899788,
+          "team_id": 16464757,
+          "team_name": "wwwwwwwwwwwwwwwwwwwwwwwwwwwwww"
+        }
+      ],
+      "create_time": "2026-07-22T11:00:54.930000+00:00",
+      "end_time": "2026-07-22T11:01:45.291000+00:00",
+      "episode_id": 87516217,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54858381,
+          "team_id": 16372828,
+          "team_name": "iwashi"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:00:55.130000+00:00",
+      "end_time": "2026-07-22T11:06:06.138000+00:00",
+      "episode_id": 87516281,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:04:51.835000+00:00",
+      "end_time": "2026-07-22T11:05:50.869000+00:00",
+      "episode_id": 87516766,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:08:51.575000+00:00",
+      "end_time": "2026-07-22T11:10:32.393000+00:00",
+      "episode_id": 87517347,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54878242,
+          "team_id": 16461850,
+          "team_name": "Eduardo Rocha de Andrade"
+        }
+      ],
+      "create_time": "2026-07-22T11:12:51.736000+00:00",
+      "end_time": "2026-07-22T11:13:42.639000+00:00",
+      "episode_id": 87517921,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54889078,
+          "team_id": 16445292,
+          "team_name": "GUOHAOYANG"
+        }
+      ],
+      "create_time": "2026-07-22T11:12:51.756000+00:00",
+      "end_time": "2026-07-22T11:14:00.293000+00:00",
+      "episode_id": 87517935,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54906723,
+          "team_id": 16555679,
+          "team_name": "HowardLeeTW"
+        }
+      ],
+      "create_time": "2026-07-22T11:16:52.278000+00:00",
+      "end_time": "2026-07-22T11:17:45.298000+00:00",
+      "episode_id": 87518523,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:20:52.543000+00:00",
+      "end_time": "2026-07-22T11:21:57.955000+00:00",
+      "episode_id": 87519098,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54838693,
+          "team_id": 16401597,
+          "team_name": "Benarg"
+        }
+      ],
+      "create_time": "2026-07-22T11:20:52.548000+00:00",
+      "end_time": "2026-07-22T11:21:46.260000+00:00",
+      "episode_id": 87519102,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 53933220,
+          "team_id": 16411638,
+          "team_name": "kosuke-shimizu"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:20:52.577000+00:00",
+      "end_time": "2026-07-22T11:21:58.158000+00:00",
+      "episode_id": 87519125,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:24:53.535000+00:00",
+      "end_time": "2026-07-22T11:26:15.761000+00:00",
+      "episode_id": 87519653,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54877018,
+          "team_id": 16401021,
+          "team_name": "msd0110"
+        }
+      ],
+      "create_time": "2026-07-22T11:28:53.158000+00:00",
+      "end_time": "2026-07-22T11:30:08.518000+00:00",
+      "episode_id": 87520247,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        }
+      ],
+      "create_time": "2026-07-22T11:32:52.578000+00:00",
+      "end_time": "2026-07-22T11:33:46.950000+00:00",
+      "episode_id": 87520807,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        }
+      ],
+      "create_time": "2026-07-22T11:36:52.257000+00:00",
+      "end_time": "2026-07-22T11:37:59.563000+00:00",
+      "episode_id": 87521359,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54896167,
+          "team_id": 16531269,
+          "team_name": "Dries @ Tufa Labs"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:40:51.587000+00:00",
+      "end_time": "2026-07-22T11:41:50.357000+00:00",
+      "episode_id": 87521936,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54907441,
+          "team_id": 16485125,
+          "team_name": "simmons1025"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:44:52.053000+00:00",
+      "end_time": "2026-07-22T11:45:49.521000+00:00",
+      "episode_id": 87522497,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:48:51.770000+00:00",
+      "end_time": "2026-07-22T11:50:03.958000+00:00",
+      "episode_id": 87523045,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54905702,
+          "team_id": 16440585,
+          "team_name": "Brahim"
+        }
+      ],
+      "create_time": "2026-07-22T11:48:51.777000+00:00",
+      "end_time": "2026-07-22T11:49:57.842000+00:00",
+      "episode_id": 87523056,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54899223,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        }
+      ],
+      "create_time": "2026-07-22T11:52:51.249000+00:00",
+      "end_time": "2026-07-22T11:53:55.043000+00:00",
+      "episode_id": 87523598,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54879579,
+          "team_id": 16376465,
+          "team_name": "monnosuke"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T11:56:51.481000+00:00",
+      "end_time": "2026-07-22T11:57:47.113000+00:00",
+      "episode_id": 87524138,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54486275,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:00:54.237000+00:00",
+      "end_time": "2026-07-22T12:03:21.976000+00:00",
+      "episode_id": 87524722,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54863177,
+          "team_id": 16388364,
+          "team_name": "miya"
+        }
+      ],
+      "create_time": "2026-07-22T12:04:52.229000+00:00",
+      "end_time": "2026-07-22T12:05:38.105000+00:00",
+      "episode_id": 87525272,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54870663,
+          "team_id": 16536318,
+          "team_name": "李秉叡（ntumlnoob）"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:08:51.764000+00:00",
+      "end_time": "2026-07-22T12:09:41.161000+00:00",
+      "episode_id": 87525819,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        }
+      ],
+      "create_time": "2026-07-22T12:12:51.741000+00:00",
+      "end_time": "2026-07-22T12:13:49.085000+00:00",
+      "episode_id": 87526366,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        }
+      ],
+      "create_time": "2026-07-22T12:16:51.642000+00:00",
+      "end_time": "2026-07-22T12:17:59.347000+00:00",
+      "episode_id": 87526917,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54858381,
+          "team_id": 16372828,
+          "team_name": "iwashi"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:16:51.648000+00:00",
+      "end_time": "2026-07-22T12:22:51.476000+00:00",
+      "episode_id": 87526927,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54840044,
+          "team_id": 16372380,
+          "team_name": "THIRD PTCG Club"
+        }
+      ],
+      "create_time": "2026-07-22T12:20:51.442000+00:00",
+      "end_time": "2026-07-22T12:21:57.777000+00:00",
+      "episode_id": 87527471,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54896186,
+          "team_id": 16375066,
+          "team_name": "youtube.com/@BigBugginnings"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:20:51.463000+00:00",
+      "end_time": "2026-07-22T12:22:06.564000+00:00",
+      "episode_id": 87527489,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54899223,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        }
+      ],
+      "create_time": "2026-07-22T12:24:51.434000+00:00",
+      "end_time": "2026-07-22T12:26:13.801000+00:00",
+      "episode_id": 87528049,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 53862043,
+          "team_id": 16394598,
+          "team_name": "sunnariwakaru"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:28:51.278000+00:00",
+      "end_time": "2026-07-22T12:30:15.794000+00:00",
+      "episode_id": 87528585,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        }
+      ],
+      "create_time": "2026-07-22T12:32:51.591000+00:00",
+      "end_time": "2026-07-22T12:34:06.518000+00:00",
+      "episode_id": 87529127,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54901602,
+          "team_id": 16555678,
+          "team_name": "binghua_123"
+        }
+      ],
+      "create_time": "2026-07-22T12:36:51.735000+00:00",
+      "end_time": "2026-07-22T12:37:56.642000+00:00",
+      "episode_id": 87529666,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54895257,
+          "team_id": 16454068,
+          "team_name": "Where is my orbit"
+        }
+      ],
+      "create_time": "2026-07-22T12:40:53.347000+00:00",
+      "end_time": "2026-07-22T12:42:08.149000+00:00",
+      "episode_id": 87530241,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:44:50.994000+00:00",
+      "end_time": "2026-07-22T12:45:59.110000+00:00",
+      "episode_id": 87530711,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54840044,
+          "team_id": 16372380,
+          "team_name": "THIRD PTCG Club"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:44:51.090000+00:00",
+      "end_time": "2026-07-22T12:45:51.964000+00:00",
+      "episode_id": 87530772,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54906723,
+          "team_id": 16555679,
+          "team_name": "HowardLeeTW"
+        }
+      ],
+      "create_time": "2026-07-22T12:48:50.842000+00:00",
+      "end_time": "2026-07-22T12:49:42.667000+00:00",
+      "episode_id": 87531291,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:52:51.142000+00:00",
+      "end_time": "2026-07-22T12:53:42.128000+00:00",
+      "episode_id": 87531764,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 53901191,
+          "team_id": 16405050,
+          "team_name": "HarukiArai"
+        }
+      ],
+      "create_time": "2026-07-22T12:52:51.231000+00:00",
+      "end_time": "2026-07-22T12:53:26.409000+00:00",
+      "episode_id": 87531804,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54671548,
+          "team_id": 16495746,
+          "team_name": "alkoxy42"
+        }
+      ],
+      "create_time": "2026-07-22T12:56:52.789000+00:00",
+      "end_time": "2026-07-22T12:57:34.088000+00:00",
+      "episode_id": 87532338,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T12:56:52.793000+00:00",
+      "end_time": "2026-07-22T12:57:53.158000+00:00",
+      "episode_id": 87532341,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54786669,
+          "team_id": 16371722,
+          "team_name": "nasuo445"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:00:50.965000+00:00",
+      "end_time": "2026-07-22T13:01:42.349000+00:00",
+      "episode_id": 87532825,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54858381,
+          "team_id": 16372828,
+          "team_name": "iwashi"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:04:51.067000+00:00",
+      "end_time": "2026-07-22T13:10:26.811000+00:00",
+      "episode_id": 87533371,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54834745,
+          "team_id": 16372380,
+          "team_name": "THIRD PTCG Club"
+        }
+      ],
+      "create_time": "2026-07-22T13:08:50.877000+00:00",
+      "end_time": "2026-07-22T13:10:03.590000+00:00",
+      "episode_id": 87533895,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        }
+      ],
+      "create_time": "2026-07-22T13:12:51.076000+00:00",
+      "end_time": "2026-07-22T13:13:54.047000+00:00",
+      "episode_id": 87534435,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54880580,
+          "team_id": 16384059,
+          "team_name": "ankounabe114"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:12:51.148000+00:00",
+      "end_time": "2026-07-22T13:13:31.512000+00:00",
+      "episode_id": 87534465,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:16:51.304000+00:00",
+      "end_time": "2026-07-22T13:18:35.240000+00:00",
+      "episode_id": 87534962,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54898840,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:16:51.356000+00:00",
+      "end_time": "2026-07-22T13:17:44.018000+00:00",
+      "episode_id": 87534993,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:20:51.137000+00:00",
+      "end_time": "2026-07-22T13:21:48.150000+00:00",
+      "episode_id": 87535523,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:24:51.555000+00:00",
+      "end_time": "2026-07-22T13:26:18.349000+00:00",
+      "episode_id": 87536040,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        }
+      ],
+      "create_time": "2026-07-22T13:24:51.560000+00:00",
+      "end_time": "2026-07-22T13:26:24.234000+00:00",
+      "episode_id": 87536044,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 53780960,
+          "team_id": 16382121,
+          "team_name": "yiyi"
+        }
+      ],
+      "create_time": "2026-07-22T13:28:51.859000+00:00",
+      "end_time": "2026-07-22T13:29:38.915000+00:00",
+      "episode_id": 87536560,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897135,
+          "team_id": 16422150,
+          "team_name": "junlee789"
+        }
+      ],
+      "create_time": "2026-07-22T13:32:52.834000+00:00",
+      "end_time": "2026-07-22T13:35:26.157000+00:00",
+      "episode_id": 87537090,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54910145,
+          "team_id": 16389043,
+          "team_name": "Pushu?"
+        }
+      ],
+      "create_time": "2026-07-22T13:36:52.965000+00:00",
+      "end_time": "2026-07-22T13:38:00.355000+00:00",
+      "episode_id": 87537612,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54905592,
+          "team_id": 16555678,
+          "team_name": "binghua_123"
+        }
+      ],
+      "create_time": "2026-07-22T13:40:58.282000+00:00",
+      "end_time": "2026-07-22T13:42:16.273000+00:00",
+      "episode_id": 87538147,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54910145,
+          "team_id": 16389043,
+          "team_name": "Pushu?"
+        }
+      ],
+      "create_time": "2026-07-22T13:44:52.182000+00:00",
+      "end_time": "2026-07-22T13:45:56.136000+00:00",
+      "episode_id": 87538672,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54905592,
+          "team_id": 16555678,
+          "team_name": "binghua_123"
+        }
+      ],
+      "create_time": "2026-07-22T13:44:52.395000+00:00",
+      "end_time": "2026-07-22T13:45:52.442000+00:00",
+      "episode_id": 87538708,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:48:52.257000+00:00",
+      "end_time": "2026-07-22T13:49:52.897000+00:00",
+      "episode_id": 87539189,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54895063,
+          "team_id": 16418623,
+          "team_name": "Yudai Ueno"
+        }
+      ],
+      "create_time": "2026-07-22T13:48:52.263000+00:00",
+      "end_time": "2026-07-22T13:49:34.153000+00:00",
+      "episode_id": 87539195,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54896186,
+          "team_id": 16375066,
+          "team_name": "youtube.com/@BigBugginnings"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:52:55.640000+00:00",
+      "end_time": "2026-07-22T13:53:48.685000+00:00",
+      "episode_id": 87539723,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54886942,
+          "team_id": 16441077,
+          "team_name": "haggle"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T13:52:55.678000+00:00",
+      "end_time": "2026-07-22T13:53:44.663000+00:00",
+      "episode_id": 87539761,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54862707,
+          "team_id": 16375173,
+          "team_name": "pztriatomic"
+        }
+      ],
+      "create_time": "2026-07-22T13:56:52.744000+00:00",
+      "end_time": "2026-07-22T13:59:14.838000+00:00",
+      "episode_id": 87540258,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54908578,
+          "team_id": 16411724,
+          "team_name": "me and the lads"
+        }
+      ],
+      "create_time": "2026-07-22T13:56:53.040000+00:00",
+      "end_time": "2026-07-22T13:58:48.797000+00:00",
+      "episode_id": 87540419,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54848550,
+          "team_id": 16540111,
+          "team_name": "Irabala"
+        }
+      ],
+      "create_time": "2026-07-22T14:00:51.572000+00:00",
+      "end_time": "2026-07-22T14:02:14.440000+00:00",
+      "episode_id": 87540771,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 53807925,
+          "team_id": 16373858,
+          "team_name": "strayuru"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:04:52.276000+00:00",
+      "end_time": "2026-07-22T14:05:36.073000+00:00",
+      "episode_id": 87541292,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54775633,
+          "team_id": 16422150,
+          "team_name": "junlee789"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:08:53.350000+00:00",
+      "end_time": "2026-07-22T14:11:37.477000+00:00",
+      "episode_id": 87541808,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54826859,
+          "team_id": 16397524,
+          "team_name": "jiatu.l"
+        }
+      ],
+      "create_time": "2026-07-22T14:12:55.468000+00:00",
+      "end_time": "2026-07-22T14:14:10.311000+00:00",
+      "episode_id": 87542336,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54840044,
+          "team_id": 16372380,
+          "team_name": "THIRD PTCG Club"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:12:55.469000+00:00",
+      "end_time": "2026-07-22T14:14:16.981000+00:00",
+      "episode_id": 87542338,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54909193,
+          "team_id": 16382914,
+          "team_name": "vibechu"
+        }
+      ],
+      "create_time": "2026-07-22T14:16:53.061000+00:00",
+      "end_time": "2026-07-22T14:17:50.077000+00:00",
+      "episode_id": 87542858,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54898840,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        }
+      ],
+      "create_time": "2026-07-22T14:16:53.063000+00:00",
+      "end_time": "2026-07-22T14:17:58.951000+00:00",
+      "episode_id": 87542859,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54901632,
+          "team_id": 16382207,
+          "team_name": "Lunariz"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:20:51.542000+00:00",
+      "end_time": "2026-07-22T14:23:05.044000+00:00",
+      "episode_id": 87543386,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54899223,
+          "team_id": 16425135,
+          "team_name": "Rmy"
+        }
+      ],
+      "create_time": "2026-07-22T14:24:54.274000+00:00",
+      "end_time": "2026-07-22T14:25:48.458000+00:00",
+      "episode_id": 87543915,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54896167,
+          "team_id": 16531269,
+          "team_name": "Dries @ Tufa Labs"
+        }
+      ],
+      "create_time": "2026-07-22T14:24:54.334000+00:00",
+      "end_time": "2026-07-22T14:26:19.685000+00:00",
+      "episode_id": 87543927,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54821705,
+          "team_id": 16475022,
+          "team_name": "Jose Angel Jude Telan"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:28:51.854000+00:00",
+      "end_time": "2026-07-22T14:29:41.097000+00:00",
+      "episode_id": 87544434,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54858381,
+          "team_id": 16372828,
+          "team_name": "iwashi"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:32:51.539000+00:00",
+      "end_time": "2026-07-22T14:39:20.786000+00:00",
+      "episode_id": 87544963,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54833933,
+          "team_id": 16411029,
+          "team_name": "rick & shikitora"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:36:52.664000+00:00",
+      "end_time": "2026-07-22T14:38:19.045000+00:00",
+      "episode_id": 87545469,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54862707,
+          "team_id": 16375173,
+          "team_name": "pztriatomic"
+        }
+      ],
+      "create_time": "2026-07-22T14:40:52.746000+00:00",
+      "end_time": "2026-07-22T14:42:10.209000+00:00",
+      "episode_id": 87546010,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54879579,
+          "team_id": 16376465,
+          "team_name": "monnosuke"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T14:46:25.194000+00:00",
+      "end_time": "2026-07-22T14:47:24.768000+00:00",
+      "episode_id": 87546569,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        }
+      ],
+      "create_time": "2026-07-22T14:50:05.427000+00:00",
+      "end_time": "2026-07-22T14:51:39.794000+00:00",
+      "episode_id": 87547101,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54890659,
+          "team_id": 16376598,
+          "team_name": "Kohecchi"
+        }
+      ],
+      "create_time": "2026-07-22T14:50:05.484000+00:00",
+      "end_time": "2026-07-22T14:51:00.034000+00:00",
+      "episode_id": 87547121,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54883862,
+          "team_id": 16400014,
+          "team_name": "__Taichicchi__"
+        }
+      ],
+      "create_time": "2026-07-22T14:54:05.297000+00:00",
+      "end_time": "2026-07-22T14:55:00.538000+00:00",
+      "episode_id": 87547656,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54875820,
+          "team_id": 16407282,
+          "team_name": "SQUIRTLE (prime)"
+        }
+      ],
+      "create_time": "2026-07-22T14:54:05.328000+00:00",
+      "end_time": "2026-07-22T14:55:12.398000+00:00",
+      "episode_id": 87547681,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54878242,
+          "team_id": 16461850,
+          "team_name": "Eduardo Rocha de Andrade"
+        }
+      ],
+      "create_time": "2026-07-22T14:58:05.030000+00:00",
+      "end_time": "2026-07-22T14:58:52.655000+00:00",
+      "episode_id": 87548219,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        }
+      ],
+      "create_time": "2026-07-22T15:02:04.722000+00:00",
+      "end_time": "2026-07-22T15:03:01.994000+00:00",
+      "episode_id": 87548775,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54895063,
+          "team_id": 16418623,
+          "team_name": "Yudai Ueno"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:02:04.726000+00:00",
+      "end_time": "2026-07-22T15:02:58.031000+00:00",
+      "episode_id": 87548779,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54901047,
+          "team_id": 16408528,
+          "team_name": "MtN"
+        }
+      ],
+      "create_time": "2026-07-22T15:06:05.027000+00:00",
+      "end_time": "2026-07-22T15:07:31.488000+00:00",
+      "episode_id": 87549327,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54886942,
+          "team_id": 16441077,
+          "team_name": "haggle"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:10:04.785000+00:00",
+      "end_time": "2026-07-22T15:10:57.707000+00:00",
+      "episode_id": 87549876,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        }
+      ],
+      "create_time": "2026-07-22T15:14:04.507000+00:00",
+      "end_time": "2026-07-22T15:15:15.700000+00:00",
+      "episode_id": 87550416,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54895515,
+          "team_id": 16555746,
+          "team_name": "william950615"
+        }
+      ],
+      "create_time": "2026-07-22T15:14:04.525000+00:00",
+      "end_time": "2026-07-22T15:15:06.770000+00:00",
+      "episode_id": 87550432,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54862707,
+          "team_id": 16375173,
+          "team_name": "pztriatomic"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:18:04.831000+00:00",
+      "end_time": "2026-07-22T15:19:18.345000+00:00",
+      "episode_id": 87550986,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54875820,
+          "team_id": 16407282,
+          "team_name": "SQUIRTLE (prime)"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:22:05.292000+00:00",
+      "end_time": "2026-07-22T15:23:15.803000+00:00",
+      "episode_id": 87551540,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 53990102,
+          "team_id": 16372102,
+          "team_name": "TTT Is All You Need"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:26:04.989000+00:00",
+      "end_time": "2026-07-22T15:26:59.612000+00:00",
+      "episode_id": 87552092,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:30:04.988000+00:00",
+      "end_time": "2026-07-22T15:30:56.636000+00:00",
+      "episode_id": 87552642,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54896186,
+          "team_id": 16375066,
+          "team_name": "youtube.com/@BigBugginnings"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:30:05.003000+00:00",
+      "end_time": "2026-07-22T15:31:00.288000+00:00",
+      "episode_id": 87552657,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54899938,
+          "team_id": 16401021,
+          "team_name": "msd0110"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:30:05.033000+00:00",
+      "end_time": "2026-07-22T15:31:15.701000+00:00",
+      "episode_id": 87552689,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54798842,
+          "team_id": 16379968,
+          "team_name": "Kotaro OKUYAMA"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:34:04.743000+00:00",
+      "end_time": "2026-07-22T15:34:55.699000+00:00",
+      "episode_id": 87553153,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54896186,
+          "team_id": 16375066,
+          "team_name": "youtube.com/@BigBugginnings"
+        }
+      ],
+      "create_time": "2026-07-22T15:38:05.535000+00:00",
+      "end_time": "2026-07-22T15:38:55.236000+00:00",
+      "episode_id": 87553673,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54901619,
+          "team_id": 16382207,
+          "team_name": "Lunariz"
+        }
+      ],
+      "create_time": "2026-07-22T15:38:05.537000+00:00",
+      "end_time": "2026-07-22T15:40:08.952000+00:00",
+      "episode_id": 87553675,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54908597,
+          "team_id": 16555789,
+          "team_name": "gisgisgis"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:38:05.781000+00:00",
+      "end_time": "2026-07-22T15:39:08.220000+00:00",
+      "episode_id": 87553831,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54857797,
+          "team_id": 16417358,
+          "team_name": "NoOne"
+        }
+      ],
+      "create_time": "2026-07-22T15:42:05.219000+00:00",
+      "end_time": "2026-07-22T15:44:32.632000+00:00",
+      "episode_id": 87554195,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54895257,
+          "team_id": 16454068,
+          "team_name": "Where is my orbit"
+        }
+      ],
+      "create_time": "2026-07-22T15:46:05.587000+00:00",
+      "end_time": "2026-07-22T15:47:17.197000+00:00",
+      "episode_id": 87554720,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54910697,
+          "team_id": 16499803,
+          "team_name": "Team Rot-Weiß"
+        }
+      ],
+      "create_time": "2026-07-22T15:50:05.431000+00:00",
+      "end_time": "2026-07-22T16:00:33.227000+00:00",
+      "episode_id": 87555234,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        }
+      ],
+      "create_time": "2026-07-22T15:54:04.724000+00:00",
+      "end_time": "2026-07-22T15:54:51.024000+00:00",
+      "episode_id": 87555771,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T15:58:05.016000+00:00",
+      "end_time": "2026-07-22T15:59:09.561000+00:00",
+      "episode_id": 87556303,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54889101,
+          "team_id": 16445292,
+          "team_name": "GUOHAOYANG"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:02:05.744000+00:00",
+      "end_time": "2026-07-22T16:03:29.381000+00:00",
+      "episode_id": 87556857,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54834313,
+          "team_id": 16379968,
+          "team_name": "Kotaro OKUYAMA"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:06:05.531000+00:00",
+      "end_time": "2026-07-22T16:06:58.747000+00:00",
+      "episode_id": 87557435,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        }
+      ],
+      "create_time": "2026-07-22T16:10:10.198000+00:00",
+      "end_time": "2026-07-22T16:10:56.514000+00:00",
+      "episode_id": 87558004,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54909711,
+          "team_id": 16374395,
+          "team_name": "Majkel1337"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:14:05.313000+00:00",
+      "end_time": "2026-07-22T16:15:18.689000+00:00",
+      "episode_id": 87558573,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:14:05.314000+00:00",
+      "end_time": "2026-07-22T16:15:18.394000+00:00",
+      "episode_id": 87558574,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54906465,
+          "team_id": 16378002,
+          "team_name": "Battle Data Base"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:18:07.941000+00:00",
+      "end_time": "2026-07-22T16:19:24.101000+00:00",
+      "episode_id": 87559145,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54883872,
+          "team_id": 16400014,
+          "team_name": "__Taichicchi__"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:22:05.137000+00:00",
+      "end_time": "2026-07-22T16:22:57.590000+00:00",
+      "episode_id": 87559712,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54529939,
+          "team_id": 16433831,
+          "team_name": "SIGOTO"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:26:04.627000+00:00",
+      "end_time": "2026-07-22T16:27:08.255000+00:00",
+      "episode_id": 87560248,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54775633,
+          "team_id": 16422150,
+          "team_name": "junlee789"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:26:04.688000+00:00",
+      "end_time": "2026-07-22T16:29:03.624000+00:00",
+      "episode_id": 87560291,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54892664,
+          "team_id": 16381904,
+          "team_name": "NguyenThanhNhan"
+        }
+      ],
+      "create_time": "2026-07-22T16:30:04.919000+00:00",
+      "end_time": "2026-07-22T16:31:48.273000+00:00",
+      "episode_id": 87560829,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:34:06.318000+00:00",
+      "end_time": "2026-07-22T16:35:18.849000+00:00",
+      "episode_id": 87561395,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54896186,
+          "team_id": 16375066,
+          "team_name": "youtube.com/@BigBugginnings"
+        }
+      ],
+      "create_time": "2026-07-22T16:38:08.756000+00:00",
+      "end_time": "2026-07-22T16:38:57.961000+00:00",
+      "episode_id": 87561928,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54838693,
+          "team_id": 16401597,
+          "team_name": "Benarg"
+        }
+      ],
+      "create_time": "2026-07-22T16:42:07.755000+00:00",
+      "end_time": "2026-07-22T16:43:14.098000+00:00",
+      "episode_id": 87562458,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54903537,
+          "team_id": 16414053,
+          "team_name": "タニシ"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T16:46:05.378000+00:00",
+      "end_time": "2026-07-22T16:47:28.100000+00:00",
+      "episode_id": 87562991,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54858381,
+          "team_id": 16372828,
+          "team_name": "iwashi"
+        }
+      ],
+      "create_time": "2026-07-22T16:50:04.999000+00:00",
+      "end_time": "2026-07-22T16:55:21.367000+00:00",
+      "episode_id": 87563522,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54901619,
+          "team_id": 16382207,
+          "team_name": "Lunariz"
+        }
+      ],
+      "create_time": "2026-07-22T16:54:05.284000+00:00",
+      "end_time": "2026-07-22T16:55:24.694000+00:00",
+      "episode_id": 87564052,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54875820,
+          "team_id": 16407282,
+          "team_name": "SQUIRTLE (prime)"
+        }
+      ],
+      "create_time": "2026-07-22T16:58:04.849000+00:00",
+      "end_time": "2026-07-22T16:59:18.883000+00:00",
+      "episode_id": 87564590,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54775633,
+          "team_id": 16422150,
+          "team_name": "junlee789"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:02:05.895000+00:00",
+      "end_time": "2026-07-22T17:05:22.131000+00:00",
+      "episode_id": 87565110,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54875820,
+          "team_id": 16407282,
+          "team_name": "SQUIRTLE (prime)"
+        }
+      ],
+      "create_time": "2026-07-22T17:06:05.392000+00:00",
+      "end_time": "2026-07-22T17:07:02.456000+00:00",
+      "episode_id": 87565679,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54889101,
+          "team_id": 16445292,
+          "team_name": "GUOHAOYANG"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:10:05.340000+00:00",
+      "end_time": "2026-07-22T17:11:08.176000+00:00",
+      "episode_id": 87566209,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:14:05.781000+00:00",
+      "end_time": "2026-07-22T17:15:25.080000+00:00",
+      "episode_id": 87566734,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54867692,
+          "team_id": 16378357,
+          "team_name": "kash2031"
+        }
+      ],
+      "create_time": "2026-07-22T17:14:05.793000+00:00",
+      "end_time": "2026-07-22T17:14:55.019000+00:00",
+      "episode_id": 87566747,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54899732,
+          "team_id": 16407428,
+          "team_name": "{{ team_name }}"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:18:04.883000+00:00",
+      "end_time": "2026-07-22T17:19:24.283000+00:00",
+      "episode_id": 87567274,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54773249,
+          "team_id": 16381823,
+          "team_name": "Yushin Ito"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:18:04.887000+00:00",
+      "end_time": "2026-07-22T17:19:13.188000+00:00",
+      "episode_id": 87567278,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54775633,
+          "team_id": 16422150,
+          "team_name": "junlee789"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:22:05.344000+00:00",
+      "end_time": "2026-07-22T17:24:24.480000+00:00",
+      "episode_id": 87567802,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54875820,
+          "team_id": 16407282,
+          "team_name": "SQUIRTLE (prime)"
+        }
+      ],
+      "create_time": "2026-07-22T17:26:05.098000+00:00",
+      "end_time": "2026-07-22T17:27:02.515000+00:00",
+      "episode_id": 87568343,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54834313,
+          "team_id": 16379968,
+          "team_name": "Kotaro OKUYAMA"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:30:05.198000+00:00",
+      "end_time": "2026-07-22T17:30:56.871000+00:00",
+      "episode_id": 87568862,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54886942,
+          "team_id": 16441077,
+          "team_name": "haggle"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:34:05.700000+00:00",
+      "end_time": "2026-07-22T17:35:06.225000+00:00",
+      "episode_id": 87569384,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54909624,
+          "team_id": 16461850,
+          "team_name": "Eduardo Rocha de Andrade"
+        }
+      ],
+      "create_time": "2026-07-22T17:38:05.703000+00:00",
+      "end_time": "2026-07-22T17:38:52.728000+00:00",
+      "episode_id": 87569903,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54809294,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        }
+      ],
+      "create_time": "2026-07-22T17:42:05.835000+00:00",
+      "end_time": "2026-07-22T17:43:03.358000+00:00",
+      "episode_id": 87570444,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54834313,
+          "team_id": 16379968,
+          "team_name": "Kotaro OKUYAMA"
+        }
+      ],
+      "create_time": "2026-07-22T17:46:06.821000+00:00",
+      "end_time": "2026-07-22T17:47:21.444000+00:00",
+      "episode_id": 87570996,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54906723,
+          "team_id": 16555679,
+          "team_name": "HowardLeeTW"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:50:05.628000+00:00",
+      "end_time": "2026-07-22T17:50:59.486000+00:00",
+      "episode_id": 87571515,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        }
+      ],
+      "create_time": "2026-07-22T17:54:06.980000+00:00",
+      "end_time": "2026-07-22T17:55:12.798000+00:00",
+      "episode_id": 87572030,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54906723,
+          "team_id": 16555679,
+          "team_name": "HowardLeeTW"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T17:54:07+00:00",
+      "end_time": "2026-07-22T17:55:27.560000+00:00",
+      "episode_id": 87572047,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54889101,
+          "team_id": 16445292,
+          "team_name": "GUOHAOYANG"
+        }
+      ],
+      "create_time": "2026-07-22T17:54:07.084000+00:00",
+      "end_time": "2026-07-22T17:55:31.177000+00:00",
+      "episode_id": 87572080,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54912052,
+          "team_id": 16406057,
+          "team_name": "amaotone"
+        }
+      ],
+      "create_time": "2026-07-22T17:58:05.584000+00:00",
+      "end_time": "2026-07-22T17:58:58.510000+00:00",
+      "episode_id": 87572578,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54902221,
+          "team_id": 16385372,
+          "team_name": "kashiwashira"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        }
+      ],
+      "create_time": "2026-07-22T18:02:05.920000+00:00",
+      "end_time": "2026-07-22T18:02:49.271000+00:00",
+      "episode_id": 87573115,
+      "player_index": 1,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54809279,
+          "team_id": 16387915,
+          "team_name": "tw_shin"
+        }
+      ],
+      "create_time": "2026-07-22T18:06:08.332000+00:00",
+      "end_time": "2026-07-22T18:06:52.076000+00:00",
+      "episode_id": 87573692,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": 1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": -1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        }
+      ],
+      "create_time": "2026-07-22T18:14:05.631000+00:00",
+      "end_time": "2026-07-22T18:15:26.907000+00:00",
+      "episode_id": 87574658,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    },
+    {
+      "agents": [
+        {
+          "index": 0,
+          "reward": -1,
+          "submission_id": 54897360,
+          "team_id": 16381624,
+          "team_name": "LumenLiquidity"
+        },
+        {
+          "index": 1,
+          "reward": 1,
+          "submission_id": 54863653,
+          "team_id": 16448747,
+          "team_name": "Luca"
+        }
+      ],
+      "create_time": "2026-07-22T18:34:03.999000+00:00",
+      "end_time": "2026-07-22T18:35:24.966000+00:00",
+      "episode_id": 87577411,
+      "player_index": 0,
+      "state": "EpisodeState.COMPLETED",
+      "type": "EpisodeType.EPISODE_TYPE_PUBLIC"
+    }
+  ],
+  "package_name": "rank_002_dragapult_ex_dusknoir_bc",
+  "refreshed_at": "2026-07-23T02:39:20.976841+00:00",
+  "schema_version": "ptcg_single_expert_bc_source_v2",
+  "selected_roster_order": 1,
+  "single_policy_constraint": true,
+  "source_id": "0002-rank-02-lumenliquidity",
+  "source_identity": {
+    "deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+    "submission_id": 54897360,
+    "team_id": 16381624
+  },
+  "source_policy": {
+    "leaderboard_rank": 2,
+    "leaderboard_score": "1159.5",
+    "submission_id": 54897360,
+    "team_id": 16381624,
+    "team_name": "LumenLiquidity"
+  },
+  "static_rank": 2,
+  "status": "refreshed_exact_train_source"
+}

@@ -1,0 +1,86 @@
+{
+  "action_schemas": {
+    "ptcg_action_set_v1": 68218
+  },
+  "dataset": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/dataset/0006-rank_008_team_rockets_mewtwo_ex_bc/dataset.jsonl",
+  "dataset_sha256": "d1f34593a5d80aef699c442c1c4ed0f88ed6d534b2af9fbe9dccdcb5fdbfe247",
+  "empty_selections": 1733,
+  "expert_trajectories": 982,
+  "feature_dimensions": {
+    "candidate_numeric": 22,
+    "deck_numeric": 18,
+    "deck_tokens": 60,
+    "entity_numeric": 28,
+    "entity_tokens": 12,
+    "history_numeric": 8,
+    "history_tokens": 32,
+    "max_candidates": 64,
+    "state_numeric": 64,
+    "state_tokens": 40
+  },
+  "feature_schemas": {
+    "ptcg_features_universal": 68218
+  },
+  "manifest": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0006-rank_008_team_rockets_mewtwo_ex_bc/data_manifest.json",
+  "max_target_count": 27,
+  "multi_by_selection": {
+    "type=1,context=2": 194,
+    "type=1,context=7": 3364,
+    "type=1,context=8": 651,
+    "type=2,context=26": 770,
+    "type=4,context=30": 6,
+    "type=5,context=34": 254
+  },
+  "positive_multi_selections": 3506,
+  "records": 68218,
+  "records_by_selection": {
+    "type=0,context=0": 42852,
+    "type=1,context=1": 982,
+    "type=1,context=16": 21,
+    "type=1,context=18": 2,
+    "type=1,context=19": 2,
+    "type=1,context=2": 500,
+    "type=1,context=22": 2903,
+    "type=1,context=3": 2057,
+    "type=1,context=4": 2108,
+    "type=1,context=7": 12349,
+    "type=1,context=8": 772,
+    "type=2,context=26": 1373,
+    "type=4,context=30": 1320,
+    "type=5,context=34": 254,
+    "type=6,context=36": 3,
+    "type=8,context=38": 252,
+    "type=9,context=41": 468
+  },
+  "records_by_source": {
+    "54840044:THIRD PTCG Club": 68218
+  },
+  "records_by_split": {
+    "test": 6443,
+    "train": 54970,
+    "validation": 6805
+  },
+  "risk_flags": [],
+  "status": "failed",
+  "target_count_distribution": {
+    "0": 1733,
+    "1": 62979,
+    "10": 2,
+    "11": 1,
+    "19": 1,
+    "2": 1933,
+    "27": 1,
+    "3": 1188,
+    "4": 161,
+    "5": 123,
+    "6": 63,
+    "7": 21,
+    "8": 5,
+    "9": 7
+  },
+  "unique_decision_keys": 68218,
+  "unique_episodes": 982,
+  "violations": {
+    "invalid_nonzero_entity_tokens": 49
+  }
+}

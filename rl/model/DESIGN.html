@@ -333,10 +333,11 @@
       <div>
         <p class="eyebrow">ptcg_features_universal · ptcg_action_set_v1</p>
         <h1>通用候选策略模型</h1>
-        <p class="heroCopy">当前实现把公开牌局状态、完整己方牌组、场上实体、短期历史、专家来源和 simulator 给出的合法动作放进同一个 BC 合同。0004 沿用 0003 冻结的 Yushin Ito 数据与输入编码，完成 9 个模型容量/优化 trial 和 1,620 局官方引擎评测；搜索冻结后，用户选择闭环胜率最高且容量最小的 V4 作为当前 BC 模型。项目尚未进入 RL。</p>
+        <p class="heroCopy">当前实现把公开牌局状态、完整己方牌组、场上实体、短期历史、专家来源和 simulator 给出的合法动作放进同一个 BC 合同。0004 沿用 0003 冻结的 Yushin Ito 数据与输入编码，完成 9 个模型容量/优化 trial 和 1,620 局官方引擎评测；搜索冻结后，用户选择闭环胜率最高且容量最小的 V4 作为当前 BC 模型。现在已冻结同一结构，进入 Top 20 独立单专家 BC campaign；项目尚未进入 RL。</p>
         <div class="heroNote">
           <span class="badge active">当前阶段：纯 Behavior Cloning</span>
           <span class="badge">0004 / V4 · selected + submitted</span>
+          <span class="badge active">Top 20 单专家 BC · executing</span>
           <span class="badge">9 trials · 1,620 eval games</span>
           <span class="badge">64 state · 40 cards · 64 candidates</span>
           <span class="badge">3.54M parameters · d192 · L2</span>
@@ -414,7 +415,7 @@
             <summary>场上实体：12 × (card ID + 28 numeric)</summary>
             <div class="detailBody">
               <span class="fieldChip">双方 Active + 5 Bench</span><span class="fieldChip">owner / zone / slot</span><span class="fieldChip">HP / max HP / damage</span><span class="fieldChip">Energy / Tool count</span><span class="fieldChip">5 status flags</span><span class="fieldChip">timing / serial / evolution depth</span>
-              <p>12 个固定槽位分别对应双方的 Active 与 Bench。前 16 维描述实例状态，后 12 维描述卡牌结构。当前只编码附着 Energy 和 Tool 的数量，不编码它们各自的 card ID；进化链也只有深度，没有完整 stack IDs。</p>
+              <p>12 个固定槽位分别对应双方的 Active 与 Bench。前 3 维是 owner / zone / slot；HP、伤害、Energy/Tool 数量以及 appear/serial/进化深度是 card-specific 字段，必须伴随非零 card token。中间 5 个特殊状态位来自该 player 的 Active condition，会重复到这个 player 的固定 entity slots，因此空 slot 可以是“token=0、只有状态位非零”。后 12 维描述卡牌结构。当前不编码附着 Energy 和 Tool 各自的 card ID；进化链也只有深度，没有完整 stack IDs。</p>
             </div>
           </details>
 
@@ -516,7 +517,7 @@
             <div><div class="barLabel"><span>Count head</span><b>100K</b></div><div class="barTrack"><div class="barFill amberFill" style="width: 4.2%"></div></div></div>
             <div><div class="barLabel"><span>Value head</span><b>75K</b></div><div class="barTrack"><div class="barFill" style="width: 3.1%"></div></div></div>
           </div>
-          <p class="weightNote" style="margin: 19px 0 0">V4 的 validation exact 为 80.87%，不是搜索最高值；它以 145-35、80.56% 赢下本轮闭环评测，同时也是测试容量最小的结构。用户在完整搜索冻结后将它选为当前模型，0003 / V2 保留为历史正式归档。</p>
+          <p class="weightNote" style="margin: 19px 0 0">V4 的 validation exact 为 80.87%，不是搜索最高值；它以 145-35、80.56% 赢下本轮闭环评测，同时也是测试容量最小的结构。Top 20 campaign 的唯一配置已冻结在 <a href="shared_model_config.json"><code>shared_model_config.json</code></a>：AdamW、20 epochs、batch 256、base LR 5e-4、seed 7；每个专家重新随机初始化，禁止从该 V4 checkpoint warm start。</p>
         </aside>
       </div>
     </section>
@@ -635,7 +636,7 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
         <div class="run"><small>上一代正式归档</small><strong>0003 · yushin_ito_exact_bc_v2</strong><p><code>V2_card_token_fix</code> 保留原 checkpoint、source、dist、评测与 Kaggle ref 54912599，不被 0004 覆盖。</p></div>
         <div class="run"><small>归档基线</small><strong>0001 · Yushin exact BC baseline</strong><p>旧输入合同的正式基线；保留 checkpoint、测试和 closed-loop 结果，用于比较而不覆盖历史。</p></div>
         <div class="run"><small>归档研究实验</small><strong>0002 · exact-deck expanded BC</strong><p>旧模型上的 2,021 trajectories 扩展实验。它不是 0003 的数据来源，也不代表当前通用合同。</p></div>
-        <div class="run"><small>下一批 source staging</small><strong>Top 20 · 2026-07-23 snapshot</strong><p>20 个 team/submission source slot、19 个唯一样本 replay、14 个 exact deck hash；当前状态仅为 sample-only，不是 train-ready run。</p></div>
+        <div class="run currentRun"><small>当前执行阶段</small><strong>Top 20 · 独立单专家 BC campaign</strong><p>按 2026-07-23 静态 roster 排程；每位专家独立 source identity、dataset、随机初始化权重、optimizer、checkpoint、run 与 package。共享的只有 <code>ptcg_features_universal</code>、<code>full_action_set_v1</code>、V4 网络结构和冻结超参数。每个 V1/V2/V3 attempt 只读取 train/validation；先按 validation 冻结最终 attempt，再且仅再读取一次 test 完成离线 gate，test 不参与救援 LR 选择。实时完成数与风险见 Top 20 汇总报告。</p></div>
       </div>
     </section>
 
@@ -648,10 +649,10 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
       </div>
       <div class="gapGrid">
         <article class="gapCard done"><h3>已实现</h3><p>能进入当前模型、数据和 checkpoint 的合同。</p><ul><li>完整己方 deck conditioning</li><li>双方场上实体与公开资源</li><li>短期 action/effect history</li><li>expert source embedding</li><li>结构化 card metadata</li><li>simulator legal action mask</li></ul></article>
-        <article class="gapCard partial"><h3>只有部分表达 / 数据准备</h3><p>有摘要或 source staging，但仍未形成被验证的能力。</p><ul><li>Energy/Tool 只有数量，没有附着卡身份</li><li>进化链只有深度，没有 stack IDs</li><li>弃牌与手牌固定槽位可能截断</li><li>卡牌效果只有结构代理，没有规则语义</li><li>32 步压缩历史不是完整事件流</li><li>known Prize 与 Stadium 身份未显式编码</li><li>Top 20 已采样，完整 corpus / 20 个 checkpoint / Arena 对战尚未执行</li></ul></article>
+        <article class="gapCard partial"><h3>只有部分表达 / 数据准备</h3><p>有摘要或 source staging，但仍未形成被验证的能力。</p><ul><li>Energy/Tool 只有数量，没有附着卡身份</li><li>进化链只有深度，没有 stack IDs</li><li>弃牌与手牌固定槽位可能截断</li><li>卡牌效果只有结构代理，没有规则语义</li><li>32 步压缩历史不是完整事件流</li><li>known Prize 与 Stadium 身份未显式编码</li><li>Top 20 完整 corpus、20 个 V1 checkpoint 与固定 evaluation 正在执行，尚不能宣称完成</li></ul></article>
         <article class="gapCard missing"><h3>尚未实现</h3><p>不能把这些能力写成当前模型已经具备。</p><ul><li>opponent deck / hidden-hand belief</li><li>determinization 或搜索</li><li>多选动作的可靠联合 log-prob</li><li>训练过并校准的 value function</li><li>RL rollout / reward / GAE / PPO</li><li>多 expert 映射、跨卡组 BC 与 held-out deck 测试</li></ul></article>
       </div>
-      <div class="callout" style="background: var(--amber-soft); border-color: #e9cd9d; border-left-color: var(--amber)"><strong style="color: var(--amber)">下一步判断标准</strong><p style="color: #6c542e">V4 已是当前 BC 结构，但 0004 仍只覆盖 Yushin Ito 单一来源；它验证了容量选择流程，不等于跨卡组能力已经成立。后续每个排行榜专家必须保持一位 team/agent 一个 dataset/run，并分别通过 source audit、held-out imitation、标准 package validate 和固定 evaluation，才可进入 Arena。</p></div>
+      <div class="callout" style="background: var(--amber-soft); border-color: #e9cd9d; border-left-color: var(--amber)"><strong style="color: var(--amber)">当前阶段与下一步判断标准</strong><p style="color: #6c542e">Top 20 单专家 BC campaign 已启动，但这不等于跨卡组能力已经成立。先优先完成全部 20 个 <code>V1_shared_config</code>，再只按 validation gate 执行必要救援；每位专家必须保持一位 team/submission/deck identity 一个 dataset/run，并分别通过 source audit、held-out imitation、标准 package validate 和固定 180 局 evaluation。训练 attempt 不读取 test；最终 checkpoint 冻结后才读取一次 test。完成后由用户审核哪些模型进入 opponent pool；再下一阶段才是 RL rollout/reward/PPO。</p></div>
     </section>
   </main>
 

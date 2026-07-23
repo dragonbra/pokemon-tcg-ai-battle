@@ -253,6 +253,90 @@ class FullActionBCMiniTests(unittest.TestCase):
         self.assertEqual(set(exported), {"step", "model", "metadata"})
         self.assertEqual(exported["step"], 3)
 
+    def test_submission_builder_accepts_independent_deck_and_cg_sources(self) -> None:
+        feature_config = feature_config_for_schema("ptcg_features_universal")
+        model = FullActionPolicyValueNet(
+            ModelConfig(
+                state_numeric_dim=64,
+                state_token_count=40,
+                candidate_numeric_dim=22,
+                max_candidates=64,
+                card_vocab_size=4096,
+                action_type_vocab_size=32,
+                d_model=16,
+                hidden_dim=32,
+                num_heads=2,
+                num_transformer_layers=1,
+                deck_token_count=60,
+                deck_numeric_dim=18,
+                entity_token_count=12,
+                entity_numeric_dim=28,
+                history_token_count=32,
+                history_numeric_dim=8,
+                expert_vocab_size=64,
+            ),
+            max_selection_count=64,
+        )
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            deck = root / "expert-deck.csv"
+            deck.write_text("5\n" * 60, encoding="utf-8")
+            cg = root / "official-cg"
+            cg.mkdir()
+            (cg / "libcg.so").write_bytes(b"runtime")
+            checkpoint = root / "checkpoint.pt"
+            torch.save(
+                {
+                    "step": 2,
+                    "model": model.state_dict(),
+                    "metadata": {
+                        "model_config": model.config.to_dict(),
+                        "feature_config": {
+                            **feature_config.__dict__,
+                            "schema_version": "ptcg_features_universal",
+                        },
+                        "deck": [5] * 60,
+                        "selection_contract": "single + multi + count",
+                    },
+                },
+                checkpoint,
+            )
+            shared = root / "shared.json"
+            shared.write_text(
+                json.dumps(
+                    {
+                        "d_model": 16,
+                        "hidden_dim": 32,
+                        "num_heads": 2,
+                        "transformer_layers": 1,
+                        "dropout": 0.0,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            source_identity = {
+                "team_id": 11,
+                "submission_id": 22,
+                "deck_sha256": __import__("hashlib").sha256(
+                    ",".join(["5"] * 60).encode("ascii")
+                ).hexdigest(),
+            }
+            output = build_submission(
+                root / "package",
+                checkpoint,
+                experiment_id="0005-test",
+                deck=deck,
+                cg_source=cg,
+                source_identity=source_identity,
+                shared_model_config=shared,
+            )
+            manifest = json.loads(
+                (output / "strategy" / "manifest.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(manifest["source_identity"], source_identity)
+        self.assertEqual(manifest["model_config"]["d_model"], 16)
+        self.assertTrue(manifest["cg_tree_sha256"])
+
     def test_candidate_builder_records_checkpoint_identity(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)

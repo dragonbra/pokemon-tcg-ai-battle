@@ -1,0 +1,38 @@
+{
+  "attempt_id": "V1_shared_config",
+  "best_epoch": 6,
+  "checkpoint": "rl/artifact/checkpoint/0006-rank_008_team_rockets_mewtwo_ex_bc/V1_shared_config/best_validation.pt",
+  "checkpoint_sha256": "3ce4dd4571516159affdc3b709b0fe5e48c82931f17149335366877b0cc5330e",
+  "checks": {
+    "test_legal_action_rate": null,
+    "validation_exact_action_rate": false,
+    "validation_legal_action_rate": true,
+    "validation_multi_action_exact_rate": false,
+    "validation_selection_count_accuracy": false
+  },
+  "decided_at": "2026-07-23T06:12:26.860242+00:00",
+  "metrics": {
+    "test_exact_action_rate": 0.0,
+    "test_legal_action_rate": null,
+    "test_multi_action_exact_rate": 0.0,
+    "test_selection_count_accuracy": 0.0,
+    "train_exact_action_rate": 0.7034018555575768,
+    "validation_exact_action_rate": 0.6692138133725202,
+    "validation_legal_action_rate": 1.0,
+    "validation_multi_action_exact_rate": 0.5175600739371534,
+    "validation_policy_loss": 0.8821418417824639,
+    "validation_selection_count_accuracy": 0.9753122703894196
+  },
+  "offline_gate_passed": false,
+  "parameter_count": 3539395,
+  "peak_gpu_memory_bytes": 470045184,
+  "schema_version": "ptcg_single_expert_bc_gate_v2",
+  "selection_inputs": [
+    "train",
+    "validation"
+  ],
+  "test_evaluated": false,
+  "test_used_for_lr_selection": false,
+  "validation_gate_passed": false,
+  "wall_seconds": 521.6683731360026
+}

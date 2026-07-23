@@ -1,0 +1,419 @@
+{
+  "already_present": 0,
+  "expected_episode_count": 507,
+  "remaining_download_count": 425,
+  "reused": [
+    {
+      "episode_id": 86830472,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86830472-replay.json"
+    },
+    {
+      "episode_id": 87498578,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-87498578-replay.json"
+    },
+    {
+      "episode_id": 86845554,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86845554-replay.json"
+    },
+    {
+      "episode_id": 86854225,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86854225-replay.json"
+    },
+    {
+      "episode_id": 86831469,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86831469-replay.json"
+    },
+    {
+      "episode_id": 86846080,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86846080-replay.json"
+    },
+    {
+      "episode_id": 86859219,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86859219-replay.json"
+    },
+    {
+      "episode_id": 86849364,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86849364-replay.json"
+    },
+    {
+      "episode_id": 86856430,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86856430-replay.json"
+    },
+    {
+      "episode_id": 86853712,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86853712-replay.json"
+    },
+    {
+      "episode_id": 86854745,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86854745-replay.json"
+    },
+    {
+      "episode_id": 86844647,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86844647-replay.json"
+    },
+    {
+      "episode_id": 86870240,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86870240-replay.json"
+    },
+    {
+      "episode_id": 86837931,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86837931-replay.json"
+    },
+    {
+      "episode_id": 86830669,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86830669-replay.json"
+    },
+    {
+      "episode_id": 86830109,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86830109-replay.json"
+    },
+    {
+      "episode_id": 86836863,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86836863-replay.json"
+    },
+    {
+      "episode_id": 86855850,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86855850-replay.json"
+    },
+    {
+      "episode_id": 86847718,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86847718-replay.json"
+    },
+    {
+      "episode_id": 86840159,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86840159-replay.json"
+    },
+    {
+      "episode_id": 86858056,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86858056-replay.json"
+    },
+    {
+      "episode_id": 86839034,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86839034-replay.json"
+    },
+    {
+      "episode_id": 86839572,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86839572-replay.json"
+    },
+    {
+      "episode_id": 86865591,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86865591-replay.json"
+    },
+    {
+      "episode_id": 86848256,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86848256-replay.json"
+    },
+    {
+      "episode_id": 86827873,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86827873-replay.json"
+    },
+    {
+      "episode_id": 86856968,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86856968-replay.json"
+    },
+    {
+      "episode_id": 86841751,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86841751-replay.json"
+    },
+    {
+      "episode_id": 86857486,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86857486-replay.json"
+    },
+    {
+      "episode_id": 86844445,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86844445-replay.json"
+    },
+    {
+      "episode_id": 86843498,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86843498-replay.json"
+    },
+    {
+      "episode_id": 86863395,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86863395-replay.json"
+    },
+    {
+      "episode_id": 86845032,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86845032-replay.json"
+    },
+    {
+      "episode_id": 86846655,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86846655-replay.json"
+    },
+    {
+      "episode_id": 86873722,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86873722-replay.json"
+    },
+    {
+      "episode_id": 86858017,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86858017-replay.json"
+    },
+    {
+      "episode_id": 86850951,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86850951-replay.json"
+    },
+    {
+      "episode_id": 86862911,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86862911-replay.json"
+    },
+    {
+      "episode_id": 86847196,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86847196-replay.json"
+    },
+    {
+      "episode_id": 86843905,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86843905-replay.json"
+    },
+    {
+      "episode_id": 86848789,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86848789-replay.json"
+    },
+    {
+      "episode_id": 86829531,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86829531-replay.json"
+    },
+    {
+      "episode_id": 86831778,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86831778-replay.json"
+    },
+    {
+      "episode_id": 86833994,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86833994-replay.json"
+    },
+    {
+      "episode_id": 86850428,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86850428-replay.json"
+    },
+    {
+      "episode_id": 86837574,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86837574-replay.json"
+    },
+    {
+      "episode_id": 86827329,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86827329-replay.json"
+    },
+    {
+      "episode_id": 86828420,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86828420-replay.json"
+    },
+    {
+      "episode_id": 86852575,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86852575-replay.json"
+    },
+    {
+      "episode_id": 86832098,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86832098-replay.json"
+    },
+    {
+      "episode_id": 86830913,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86830913-replay.json"
+    },
+    {
+      "episode_id": 86867790,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86867790-replay.json"
+    },
+    {
+      "episode_id": 86833425,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86833425-replay.json"
+    },
+    {
+      "episode_id": 86842838,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86842838-replay.json"
+    },
+    {
+      "episode_id": 86837390,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86837390-replay.json"
+    },
+    {
+      "episode_id": 86869411,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86869411-replay.json"
+    },
+    {
+      "episode_id": 86832864,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86832864-replay.json"
+    },
+    {
+      "episode_id": 86853120,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86853120-replay.json"
+    },
+    {
+      "episode_id": 86841218,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86841218-replay.json"
+    },
+    {
+      "episode_id": 86852018,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86852018-replay.json"
+    },
+    {
+      "episode_id": 86845746,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86845746-replay.json"
+    },
+    {
+      "episode_id": 86842296,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86842296-replay.json"
+    },
+    {
+      "episode_id": 86828985,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86828985-replay.json"
+    },
+    {
+      "episode_id": 86851478,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86851478-replay.json"
+    },
+    {
+      "episode_id": 86838463,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86838463-replay.json"
+    },
+    {
+      "episode_id": 86835135,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86835135-replay.json"
+    },
+    {
+      "episode_id": 86835711,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86835711-replay.json"
+    },
+    {
+      "episode_id": 86832319,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86832319-replay.json"
+    },
+    {
+      "episode_id": 86869799,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86869799-replay.json"
+    },
+    {
+      "episode_id": 86855318,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86855318-replay.json"
+    },
+    {
+      "episode_id": 86843371,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86843371-replay.json"
+    },
+    {
+      "episode_id": 86831233,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86831233-replay.json"
+    },
+    {
+      "episode_id": 86836325,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86836325-replay.json"
+    },
+    {
+      "episode_id": 86847814,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86847814-replay.json"
+    },
+    {
+      "episode_id": 86834561,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86834561-replay.json"
+    },
+    {
+      "episode_id": 86850018,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86850018-replay.json"
+    },
+    {
+      "episode_id": 86840685,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86840685-replay.json"
+    },
+    {
+      "episode_id": 86866251,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86866251-replay.json"
+    },
+    {
+      "episode_id": 86854275,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86854275-replay.json"
+    },
+    {
+      "episode_id": 86867782,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_exact_deck_20260723/episodes/episode-86867782-replay.json"
+    },
+    {
+      "episode_id": 87131554,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87131554-replay.json"
+    },
+    {
+      "episode_id": 87535135,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_research_20260723/episodes/episode-87535135-replay.json"
+    }
+  ],
+  "reused_episode_count": 82,
+  "seeded_at": "2026-07-23T07:30:59.971339+00:00"
+}

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import tempfile
+import threading
+import time
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -474,6 +476,63 @@ class OverridePlugin:
         self.assertEqual(result.report_data.metrics, result.metric_results)
         self.assertEqual((report_root / "cases.jsonl").read_text(encoding="utf-8"), "")
         self.assertEqual(len(list((report_root / "traces").glob("*.json"))), 0)
+
+    def test_parallel_workers_bound_concurrency_and_preserve_record_order(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponents = (
+            self.make_package("opponent-a", 8),
+            self.make_package("opponent-b", 8),
+        )
+        active = 0
+        peak = 0
+        lock = threading.Lock()
+
+        def fake_worker(request, trace_path, _temp_root, _timeout_seconds):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.03)
+            with lock:
+                active -= 1
+            result = GameResult(
+                game_id=request.game_id,
+                opponent=request.opponent.name,
+                candidate_first=request.candidate_first,
+                candidate_physical_index=0 if request.candidate_first else 1,
+                finished=True,
+                winner=0,
+                status="finished",
+                error_kind=None,
+                error=None,
+                steps=3,
+                trace_path=trace_path,
+            )
+            payload = {
+                "game_id": result.game_id,
+                "opponent": result.opponent,
+                "candidate_first": result.candidate_first,
+                "candidate_physical_index": result.candidate_physical_index,
+                "finished": result.finished,
+                "winner": result.winner,
+                "status": result.status,
+                "error_kind": result.error_kind,
+                "error": result.error,
+                "steps": result.steps,
+            }
+            trace_path.write_text(json.dumps({"trace": [], "result": payload}), encoding="utf-8")
+            return result
+
+        config = replace(self.make_config(candidate, opponents, games=2), workers=2)
+        with patch("evaluation.runner.batch._run_worker", side_effect=fake_worker):
+            result = run_batch(config)
+
+        self.assertEqual(peak, 2)
+        self.assertEqual(
+            [record["game_id"] for record in result.game_records],
+            ["opponent-a-001", "opponent-a-002", "opponent-b-001", "opponent-b-002"],
+        )
+        self.assertEqual(result.manifest["workers"], 2)
 
     def test_auto_iteration_profile_writes_payloads_and_presentations(self) -> None:
         candidate = self.make_package("candidate", 7)

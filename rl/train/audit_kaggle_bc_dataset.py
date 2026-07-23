@@ -4,9 +4,38 @@ from __future__ import annotations
 
 import argparse
 import collections
+import hashlib
 import json
+import math
 from pathlib import Path
 from typing import Any
+
+
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _all_finite(value: Any) -> bool:
+    if isinstance(value, list):
+        return all(_all_finite(item) for item in value)
+    if isinstance(value, (int, float)):
+        return math.isfinite(float(value))
+    return True
+
+
+def _entity_has_card_specific_values(numeric: list[Any]) -> bool:
+    """Distinguish card fields from player-level status flags repeated by the encoder."""
+    # 0:3 identify owner/zone/slot.  8:13 are the owning player's Active
+    # condition flags and remain meaningful even when this particular slot is
+    # empty.  HP through tools (3:8), appear/serial/evolution (13:16), and card
+    # metadata (16:) require an actual entity card token.
+    return any(float(value) != 0.0 for value in numeric[3:8]) or any(
+        float(value) != 0.0 for value in numeric[13:]
+    )
 
 
 def audit(
@@ -36,6 +65,8 @@ def audit(
     selection_counts: collections.Counter[str] = collections.Counter()
     multi_by_selection: collections.Counter[str] = collections.Counter()
     source_records: collections.Counter[str] = collections.Counter()
+    feature_schemas: collections.Counter[str] = collections.Counter()
+    action_schemas: collections.Counter[str] = collections.Counter()
     dimension_contract: tuple[int, ...] | None = None
     max_target_count = 0
     records = 0
@@ -108,6 +139,66 @@ def audit(
             source_records[
                 f"{record.get('submission_id')}:{record.get('expert_team_name')}"
             ] += 1
+            feature_schemas[str(record.get("feature_schema_version"))] += 1
+            action_schemas[str(record.get("action_schema_version"))] += 1
+
+            required_feature_schema = source.get("feature_schema")
+            if (
+                required_feature_schema
+                and record.get("feature_schema_version") != required_feature_schema
+            ):
+                violations["unexpected_feature_schema"] += 1
+            if record.get("action_schema_version") != "ptcg_action_set_v1":
+                violations["unexpected_action_schema"] += 1
+            if int(record.get("selection_type", -1)) < 0:
+                violations["invalid_selection_type"] += 1
+            if int(record.get("selection_context", -1)) < 0:
+                violations["invalid_selection_context"] += 1
+
+            universal = record.get("feature_schema_version") == "ptcg_features_universal"
+            card_token_fields = [
+                "state_card_ids",
+                "action_card_ids",
+                "action_target_ids",
+            ]
+            if universal:
+                card_token_fields.extend(
+                    ["deck_card_ids", "entity_card_ids", "history_card_ids"]
+                )
+            for field in card_token_fields:
+                tokens = encoded.get(field)
+                if not isinstance(tokens, list) or any(
+                    not isinstance(token, int) or token < 0 or token >= 4096
+                    for token in tokens
+                ):
+                    violations[f"invalid_{field}"] += 1
+            deck_tokens = encoded.get("deck_card_ids") or []
+            if universal and (
+                len(deck_tokens) != 60 or any(int(token) <= 0 for token in deck_tokens)
+            ):
+                violations["invalid_nonzero_deck_tokens"] += 1
+            action_types = encoded.get("action_type_ids")
+            if not isinstance(action_types, list) or len(action_types) != len(mask):
+                violations["invalid_action_type_tokens"] += 1
+            elif any(
+                bool(mask[index]) and (not isinstance(token, int) or token <= 0 or token >= 32)
+                for index, token in enumerate(action_types)
+            ):
+                violations["invalid_nonzero_legal_action_tokens"] += 1
+            if universal:
+                entity_tokens = encoded.get("entity_card_ids") or []
+                entity_numeric = encoded.get("entity_numeric") or []
+                if len(entity_tokens) != len(entity_numeric) or any(
+                    _entity_has_card_specific_values(numeric)
+                    and int(entity_tokens[index]) <= 0
+                    for index, numeric in enumerate(entity_numeric)
+                ):
+                    violations["invalid_nonzero_entity_tokens"] += 1
+                expert_id = encoded.get("expert_ids")
+                if not isinstance(expert_id, int) or not 0 < expert_id < 64:
+                    violations["invalid_expert_token"] += 1
+            if not _all_finite(encoded):
+                violations["non_finite_feature_value"] += 1
 
             current_dimensions = (
                 len(encoded.get("state_numeric") or []),
@@ -135,6 +226,21 @@ def audit(
         violations["manifest_trajectory_coverage_mismatch"] += 1
     if require_single_expert and len(source_records) != 1:
         violations["multiple_expert_sources"] += 1
+    identity = source.get("source_identity") or {}
+    if identity:
+        expected_submission = int(identity.get("submission_id", 0) or 0)
+        observed_submissions = {
+            int(key.split(":", 1)[0]) for key in source_records
+        }
+        if observed_submissions != {expected_submission}:
+            violations["source_identity_submission_mismatch"] += 1
+    dataset_hash = _sha256(dataset)
+    if source.get("dataset_sha256") and source["dataset_sha256"] != dataset_hash:
+        violations["dataset_hash_mismatch"] += 1
+    risk_flags: list[str] = []
+    recommended = {"train": 15000, "validation": 1500, "test": 1500}
+    if any(split_records[split] < minimum for split, minimum in recommended.items()):
+        risk_flags.append("low_decision_density")
     report = {
         "status": "passed" if not violations else "failed",
         "dataset": str(dataset.resolve()),
@@ -145,6 +251,8 @@ def audit(
         "expert_trajectories": len(trajectories),
         "records_by_split": dict(sorted(split_records.items())),
         "records_by_source": dict(sorted(source_records.items())),
+        "feature_schemas": dict(sorted(feature_schemas.items())),
+        "action_schemas": dict(sorted(action_schemas.items())),
         "records_by_selection": dict(sorted(selection_counts.items())),
         "target_count_distribution": dict(sorted(target_counts.items())),
         "empty_selections": empty_selections,
@@ -164,6 +272,8 @@ def audit(
             "history_numeric": dimension_contract[9] if dimension_contract else 0,
         },
         "violations": dict(sorted(violations.items())),
+        "risk_flags": risk_flags,
+        "dataset_sha256": dataset_hash,
     }
     if violations:
         raise ValueError(json.dumps(report, ensure_ascii=False, sort_keys=True))

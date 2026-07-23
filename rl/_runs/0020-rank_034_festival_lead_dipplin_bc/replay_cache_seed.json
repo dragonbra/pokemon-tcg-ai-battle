@@ -1,0 +1,29 @@
+{
+  "already_present": 0,
+  "expected_episode_count": 377,
+  "remaining_download_count": 373,
+  "reused": [
+    {
+      "episode_id": 87447625,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87447625-replay.json"
+    },
+    {
+      "episode_id": 87446039,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_002_dragapult_ex_dusknoir_bc/episode-87446039-replay.json"
+    },
+    {
+      "episode_id": 87464107,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_010_alakazam_bc/episode-87464107-replay.json"
+    },
+    {
+      "episode_id": 87534515,
+      "method": "hardlink",
+      "source": "data/replays/kaggle_top100_research_20260723/episodes/episode-87534515-replay.json"
+    }
+  ],
+  "reused_episode_count": 4,
+  "seeded_at": "2026-07-23T07:31:02.460936+00:00"
+}

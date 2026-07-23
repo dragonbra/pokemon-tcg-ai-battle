@@ -1,0 +1,14 @@
+{
+  "already_present": 15,
+  "expected_episode_count": 545,
+  "remaining_download_count": 529,
+  "reused": [
+    {
+      "episode_id": 87555800,
+      "method": "hardlink",
+      "source": "data/replays/top20_single_expert_bc_20260723/rank_008_team_rockets_mewtwo_ex_bc/episode-87555800-replay.json"
+    }
+  ],
+  "reused_episode_count": 1,
+  "seeded_at": "2026-07-23T07:12:16.919486+00:00"
+}

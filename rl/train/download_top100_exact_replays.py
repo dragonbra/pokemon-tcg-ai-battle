@@ -49,6 +49,17 @@ def _timestamp(value: Any) -> str:
     return str(value)
 
 
+def _utc_datetime(value: Any) -> datetime | None:
+    if isinstance(value, datetime):
+        parsed = value
+    else:
+        try:
+            parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    return parsed.astimezone(timezone.utc)
+
+
 def select_leaderboard_submission(leaderboard_row: Any, submissions: list[Any]) -> tuple[Any, str]:
     """Resolve the submission represented by one leaderboard row.
 
@@ -66,6 +77,28 @@ def select_leaderboard_submission(leaderboard_row: Any, submissions: list[Any]) 
     ]
     if len(exact_dates) == 1:
         return exact_dates[0], "submission_date"
+
+    # Kaggle has emitted leaderboard submission timestamps one millisecond away
+    # from the team-submission endpoint. Accept only a uniquely nearest row in a
+    # narrow window, preserving the date-first identity contract.
+    leaderboard_datetime = _utc_datetime(leaderboard_date)
+    dated_rows: list[tuple[float, Any]] = []
+    if leaderboard_datetime is not None:
+        for row in submissions:
+            submitted_at = _utc_datetime(
+                _model_value(row, "date_submitted", "dateSubmitted")
+            )
+            if submitted_at is not None:
+                dated_rows.append(
+                    (abs((submitted_at - leaderboard_datetime).total_seconds()), row)
+                )
+    dated_rows.sort(key=lambda item: item[0])
+    if (
+        dated_rows
+        and dated_rows[0][0] <= 2.0
+        and (len(dated_rows) == 1 or dated_rows[0][0] < dated_rows[1][0])
+    ):
+        return dated_rows[0][1], "submission_date_nearest_2s"
 
     leaderboard_score = str(_model_value(leaderboard_row, "score"))
     exact_scores = [

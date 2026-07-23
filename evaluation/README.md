@@ -24,6 +24,10 @@ python3 -m evaluation run \
 不会触发 promotion、reject 或其他自动晋级决定。动态模块必须是独立的 `MetricPlugin`，
 只能追加统计，不能使用任何核心 metric ID。
 
+`--workers N` 可以并行执行多局；默认值为 `1`。无论并行度如何，每局仍在独立 worker
+进程中加载双方策略和官方 engine runtime，指标分析与报告写入保持 catalog/game 的固定
+顺序。实际使用的并行度记录在 `manifest.json` 的 `workers` 字段中。
+
 AutoIteration V8 使用内置的 `auto_iteration_v8_setup_relay` profile，当前为
 `revision 2`：
 

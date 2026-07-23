@@ -1,0 +1,36 @@
+{
+  "attempt_id": "V1_shared_config",
+  "best_epoch": 11,
+  "checkpoint": "rl/artifact/checkpoint/0005-rank_002_dragapult_ex_dusknoir_bc/V1_shared_config/best_validation.pt",
+  "checkpoint_sha256": "8e99f42ace6fe961d1327c7578bf2bf4148ec28981bf22614accff55340cfe54",
+  "checks": {
+    "test_legal_action_rate": true,
+    "validation_exact_action_rate": false,
+    "validation_legal_action_rate": true,
+    "validation_multi_action_exact_rate": false,
+    "validation_selection_count_accuracy": true
+  },
+  "decided_at": "2026-07-23T02:50:05.958902+00:00",
+  "metrics": {
+    "test_exact_action_rate": 0.6322397731875253,
+    "test_legal_action_rate": 1.0,
+    "test_multi_action_exact_rate": 0.4266666666666667,
+    "test_selection_count_accuracy": 1.0,
+    "train_exact_action_rate": 0.8148517757557969,
+    "validation_exact_action_rate": 0.6125581395348837,
+    "validation_legal_action_rate": 1.0,
+    "validation_multi_action_exact_rate": 0.4457831325301205,
+    "validation_policy_loss": 1.1854661173290677,
+    "validation_selection_count_accuracy": 1.0
+  },
+  "offline_gate_passed": false,
+  "parameter_count": 3539395,
+  "peak_gpu_memory_bytes": 470045184,
+  "schema_version": "ptcg_single_expert_bc_gate_v1",
+  "selection_inputs": [
+    "train",
+    "validation"
+  ],
+  "test_used_for_lr_selection": false,
+  "wall_seconds": 165.55861343799916
+}

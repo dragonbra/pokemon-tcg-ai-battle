@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -35,6 +36,7 @@ class BatchConfig:
     metric_profile_id: str = "core"
     keep_temp: bool = False
     worker_timeout_seconds: float = 30.0
+    workers: int = 1
 
 
 @dataclass(frozen=True)
@@ -54,6 +56,8 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("max_steps must be at least one")
     if config.worker_timeout_seconds <= 0:
         raise ValueError("worker_timeout_seconds must be greater than zero")
+    if config.workers < 1:
+        raise ValueError("workers must be at least one")
 
     run_id = f"run-{uuid.uuid4().hex}"
     report_root = config.output_root.resolve() / run_id
@@ -71,40 +75,22 @@ def run_batch(config: BatchConfig) -> BatchResult:
     case_candidates: list[CaseCandidate] = []
 
     try:
-        for opponent in config.opponents:
-            for game_number in range(1, config.games_per_opponent + 1):
-                candidate_first = game_number % 2 == 1
-                game_id = f"{opponent.name}-{game_number:03d}"
-                trace_path = store.temp_path(game_id)
-                request = GameRequest(
-                    run_id=run_id,
-                    game_id=game_id,
-                    candidate=config.candidate,
-                    opponent=opponent,
-                    candidate_first=candidate_first,
-                    max_steps=config.max_steps,
-                    visualize=config.visualize,
-                )
-                result = _run_worker(
-                    request,
-                    trace_path,
-                    store.temp_root,
-                    config.worker_timeout_seconds,
-                )
-                result, trace = _read_or_create_trace(request, result, trace_path)
-                context = GameContext(
-                    game_id=result.game_id,
-                    candidate_name=config.candidate.name,
-                    opponent_name=opponent.name,
-                    candidate_physical_index=result.candidate_physical_index,
-                    candidate_first=result.candidate_first,
-                )
-                game_metrics = registry.analyze(_trace_for_metrics(trace, result), context)
-                for metric_id, metric in game_metrics.items():
-                    metric_values[metric_id].append(metric)
-                trace["metric_refs"] = _metric_refs(game_metrics)
-                store.write_game_record(result, trace)
-                case_candidates.append(_case_candidate(result, game_metrics))
+        jobs = _game_jobs(config, run_id, store)
+        for request, trace_path, result in _run_workers(config, jobs, store.temp_root):
+            result, trace = _read_or_create_trace(request, result, trace_path)
+            context = GameContext(
+                game_id=result.game_id,
+                candidate_name=config.candidate.name,
+                opponent_name=request.opponent.name,
+                candidate_physical_index=result.candidate_physical_index,
+                candidate_first=result.candidate_first,
+            )
+            game_metrics = registry.analyze(_trace_for_metrics(trace, result), context)
+            for metric_id, metric in game_metrics.items():
+                metric_values[metric_id].append(metric)
+            trace["metric_refs"] = _metric_refs(game_metrics)
+            store.write_game_record(result, trace)
+            case_candidates.append(_case_candidate(result, game_metrics))
 
         aggregate_metrics = registry.aggregate(metric_values)
         metric_results = {
@@ -185,6 +171,58 @@ def _metric_registry(
             "use metric_module_paths for extra plugins"
         )
     return create_metric_registry(metric_module_paths, metric_profile_id)
+
+
+def _game_jobs(
+    config: BatchConfig,
+    run_id: str,
+    store: TraceStore,
+) -> list[tuple[GameRequest, Path]]:
+    jobs: list[tuple[GameRequest, Path]] = []
+    for opponent in config.opponents:
+        for game_number in range(1, config.games_per_opponent + 1):
+            game_id = f"{opponent.name}-{game_number:03d}"
+            request = GameRequest(
+                run_id=run_id,
+                game_id=game_id,
+                candidate=config.candidate,
+                opponent=opponent,
+                candidate_first=game_number % 2 == 1,
+                max_steps=config.max_steps,
+                visualize=config.visualize,
+            )
+            jobs.append((request, store.temp_path(game_id)))
+    return jobs
+
+
+def _run_workers(
+    config: BatchConfig,
+    jobs: list[tuple[GameRequest, Path]],
+    temp_root: Path,
+):
+    if config.workers == 1:
+        for request, trace_path in jobs:
+            yield request, trace_path, _run_worker(
+                request,
+                trace_path,
+                temp_root,
+                config.worker_timeout_seconds,
+            )
+        return
+
+    with ThreadPoolExecutor(max_workers=config.workers) as executor:
+        futures: list[Future[GameResult]] = [
+            executor.submit(
+                _run_worker,
+                request,
+                trace_path,
+                temp_root,
+                config.worker_timeout_seconds,
+            )
+            for request, trace_path in jobs
+        ]
+        for (request, trace_path), future in zip(jobs, futures, strict=True):
+            yield request, trace_path, future.result()
 
 
 def _run_worker(
@@ -576,6 +614,7 @@ def _manifest(
         "opponents": [_manifest_package(opponent) for opponent in config.opponents],
         "control": _manifest_package(config.control) if config.control else None,
         "games": len(config.opponents) * config.games_per_opponent,
+        "workers": config.workers,
         "swap_policy": "alternate_candidate_first",
         "plugins": list(metric_ids),
         "metric_profile": profile.manifest(),

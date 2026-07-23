@@ -103,6 +103,8 @@ class EvaluationCliTests(unittest.TestCase):
                     "--keep-temp",
                     "--max-steps",
                     "77",
+                    "--workers",
+                    "4",
                     "--metric-profile",
                     "auto_iteration_v8_setup_relay",
                     "--metric-module",
@@ -120,6 +122,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertFalse(config.visualize)
         self.assertTrue(config.keep_temp)
         self.assertEqual(config.max_steps, 77)
+        self.assertEqual(config.workers, 4)
         self.assertEqual(config.metric_profile_id, "auto_iteration_v8_setup_relay")
         self.assertEqual(config.metric_module_paths, ("metrics/custom.py:CustomPlugin",))
         self.assertIn("run-cli-test", output.getvalue())
