@@ -387,6 +387,7 @@ class EvaluationMetricsTests(unittest.TestCase):
         )
 
         self.assertEqual(length.value, 3)
+        self.assertEqual(length.payload["turns"], 13)
         for result in (length, outcome, correctness):
             self.assertEqual(result.evidence[0]["step"], 3)
             self.assertEqual(result.evidence[0]["turn"], 13)
@@ -499,6 +500,11 @@ class EvaluationMetricsTests(unittest.TestCase):
         self.assertEqual(aggregate.numerator, 6)
         self.assertEqual(aggregate.denominator, 2)
         self.assertEqual(aggregate.value, 3.0)
+        self.assertEqual(aggregate.payload["turns"]["value"], 3.0)
+        self.assertEqual(
+            aggregate.payload["turns"]["by_opponent"]["opponent-a"]["value"],
+            3.0,
+        )
 
     def test_correctness_attributes_candidate_and_opponent_errors(self) -> None:
         plugin = CorrectnessPlugin()

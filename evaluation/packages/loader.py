@@ -28,6 +28,8 @@ class SubmissionPackage:
     package_hash: str
     deck_hash: str
     cg_manifest: dict[str, object]
+    display_name: str | None = None
+    representative_cards: tuple[dict[str, object], ...] = ()
 
 
 def _clear_cg_modules() -> None:

@@ -1,0 +1,8 @@
+{
+  "archive_sha256": "02d2c3e51287066b7f4d5700842674e6e74942723a009c421f2cf795d8eeb00f",
+  "cloud_cg_tree_hash": "d6ed81f7fdf58b18c5583cdb5be60ec827a82dff325aa43f0697778c37270ddd",
+  "deck_and_model_unchanged": true,
+  "evaluation_cg_tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+  "schema_version": "ptcg_local_evaluation_runtime_normalization_v1",
+  "scope": "local evaluation working copy only"
+}

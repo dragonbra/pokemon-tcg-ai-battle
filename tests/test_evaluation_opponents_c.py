@@ -14,17 +14,17 @@ from evaluation.runtime.loader import compute_cg_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 DECK_FIXTURE = ROOT / "tests" / "fixtures" / "evaluation_opponent_decks.json"
-OPPONENTS_ROOT = ROOT / "evaluation" / "opponents"
+OPPONENTS_ROOT = ROOT / "evaluation" / "arena" / "opponents"
 CG_SOURCE_ROOT = ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
 OPPONENT_NAMES = (
-    "zoli_dragapult",
-    "sue_alakazam",
-    "maktha_1084",
-    "yanxiaohan",
-    "Agent_Lucario",
-    "Agent_Aluxian",
+    "dragapult_ex_02",
+    "alakazam_dudunsparce_01",
+    "mega_lucario_ex_solrock_08",
+    "mega_lucario_ex_solrock_09",
+    "mega_lucario_ex_solrock_10",
+    "alakazam_dudunsparce_02",
 )
-YANXIAOHAN_FORBIDDEN_REFERENCES = (
+YAN_N_Z_FORBIDDEN_REFERENCES = (
     "ptcg-agent-kaggle",
     "AGENT_DIR",
     "AGENT_MAIN",
@@ -133,10 +133,12 @@ class EvaluationOpponentPoolCTests(unittest.TestCase):
                 self.assertFalse(any(path.is_symlink() for path in cg_root.rglob("*")))
                 self.assertEqual(compute_cg_manifest(cg_root)["tree_hash"], self.expected_cg_tree_hash)
 
-    def test_yanxiaohan_is_self_contained(self) -> None:
-        main_source = (self.package_root("yanxiaohan") / "main.py").read_text(encoding="utf-8")
+    def test_renamed_lucario_package_is_self_contained(self) -> None:
+        main_source = (
+            self.package_root("mega_lucario_ex_solrock_09") / "main.py"
+        ).read_text(encoding="utf-8")
 
-        for forbidden in YANXIAOHAN_FORBIDDEN_REFERENCES:
+        for forbidden in YAN_N_Z_FORBIDDEN_REFERENCES:
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, main_source)
 

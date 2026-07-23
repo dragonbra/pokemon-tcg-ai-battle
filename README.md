@@ -9,10 +9,11 @@
 
 ## 当前状态
 
-项目已经从规则代理迭代进入单专家纯 BC 验证阶段。当前可运行候选是
-[`work/yushin_ito_exact_bc_v2`](work/yushin_ito_exact_bc_v2)，归档 baseline 是
-[`work/alakazam_bc_v1`](work/alakazam_bc_v1)。两者都是标准 package，独立包含 `main.py`、
-60 行 `deck.csv` 和官方 `cg/` runtime。
+项目已经从规则代理和单专家 BC 验证继续转向 RL 训练。仓库不再维护 `work/`；待评估的
+标准 package 统一进入 [`evaluation/arena/candidates/`](evaluation/arena/candidates/)，正式固定
+对手进入 [`evaluation/arena/opponents/`](evaluation/arena/opponents/)。两类 package 都独立包含
+`main.py`、60 行 `deck.csv` 和官方 `cg/` runtime。通用训练基础设施、具体训练项目与
+版本产物分别由 `rl_environment/`、`train/<project>/` 和 `rl_runs/` 管理。
 
 当前主实验 [`0003-yushin_ito_exact_bc_v2`](rl_runs/0003-yushin_ito_exact_bc_v2/) 的
 `V2_card_token_fix` 使用同一位 Yushin Ito 专家的 1,000 场 replay、86,875 条决策记录：
@@ -46,7 +47,8 @@ Kaggle expert replay
   → 标准 candidate package（main.py + deck.csv + cg/）
   → 固定 18-opponent 官方引擎 evaluation
   → rl_runs 中的 config、metrics、case 和 HTML 报告
-  → 验收后进入 work/；历史正式 payload 进入 submission/
+  → 待验收 package 进入 evaluation/arena/candidates/
+  → 获准后按 archetype 编号进入 evaluation/arena/opponents/
 ```
 
 关键边界：
@@ -54,21 +56,20 @@ Kaggle expert replay
 - 一个 BC dataset 默认只包含一个明确的 team/agent policy；不同专家不能无条件混合标签。
 - 同一 experiment 的每次训练使用新的 `V<n>_<tag>`，run、checkpoint、TensorBoard 和
   evaluation 版本名保持一致，失败版本也不覆盖或删除。
-- `work/` 只保存当前候选，`submission/` 保存历史正式 payload；训练 checkpoint 和研究
-  candidate 不是 Kaggle submission。
+- `evaluation/arena/candidates/` 保存待验收 package，`submission/` 保存历史正式 payload；
+  训练 checkpoint 和研究 candidate 不是 Kaggle submission。
 - `evaluation/` 负责测量和报告，不自动执行 promote/reject，也不替代 Kaggle 官方成绩。
 
 ## 仓库结构
 
 | 路径 | 职责 |
 |---|---|
-| [`work/`](work/) | 当前标准候选 package；候选目录只放可运行/可打包内容 |
 | [`submission/`](submission/) | 历史提交源目录、规则代理归档和正式 BC payload |
 | [`rl_environment/`](rl_environment/) | 与卡组无关的训练基础设施、run 分配和存储保护 |
 | [`train/alakazam_bc_rl/`](train/alakazam_bc_rl/) | 胡地 BC/RL 的特征、模型、reward/loss 与训练入口 |
 | [`train/kaggle_bc_top20/`](train/kaggle_bc_top20/) | Top-20 单专家 BC 数据与 Kaggle worker 归档项目 |
 | [`rl_runs/`](rl_runs/) | 可审计的 config、metrics、status、TensorBoard 索引和 evaluation 报告 |
-| [`evaluation/`](evaluation/) | 固定 opponent catalog、独立 worker、指标插件和 Markdown/HTML 报告 |
+| [`evaluation/`](evaluation/) | arena candidates/opponents、独立 worker、指标插件和独立 HTML 报告 |
 | [`visualization/`](visualization/) | Kaggle replay 与 engine `visualize` 帧的统一 viewer launcher |
 | [`engine/`](engine/) | 官方引擎只读源码和本地构建边界；构建产物只写 `engine/build/` |
 | [`data/official/`](data/official/) | 官方卡牌参考数据，只读使用，不直接打包 |
@@ -113,7 +114,7 @@ GPU/CUDA 版本应根据训练机环境选择兼容的 PyTorch wheel。
 
 ```bash
 python3 -m evaluation list-opponents
-python3 -m evaluation validate work/yushin_ito_exact_bc_v2
+python3 -m evaluation validate evaluation/arena/candidates/yushin_ito_bc_capacity_v4
 ```
 
 `validate` 会检查 package 布局、60 张 deck、deck hash、`cg/` tree hash 和官方 card ID。
@@ -122,25 +123,20 @@ python3 -m evaluation validate work/yushin_ito_exact_bc_v2
 
 ```bash
 python3 -m evaluation run \
-  --candidate work/yushin_ito_exact_bc_v2 \
+  --candidate evaluation/arena/candidates/yushin_ito_bc_capacity_v4 \
   --opponents all \
   --games 10 \
   --metric-profile auto_iteration_v8_setup_relay \
-  --no-visualize \
-  --output /tmp/ptcg-yushin-v2-evaluation
+  --output .tmp/evaluation/yushin_ito_bc_capacity_v4
 ```
 
-正式入口固定使用全部 18 个 opponent，每个至少 10 局。每次 run 会建立独立目录并写入：
+正式入口固定使用完整启用 catalog（当前 23 个 opponent），每个至少 10 局。每次 run 建立独立 `run_id/`，长期只
+写入 `report.html`；manifest、summary、逐局轻量记录、metrics 和 case 摘要均内嵌其中，完整
+trace 默认在运行结束后删除。
 
-- `manifest.json`：candidate、catalog、profile、hash 和运行参数；
-- `summary.json` / `games.jsonl`：总体与逐局事实；
-- `metrics.json` / `cases.jsonl`：聚合指标和证据 case；
-- `report.md` / `report.html`：可直接审阅的语义报告；
-- `traces/`：默认最多长期保留三份被选中的完整 trace。
-
-`auto_iteration_v8_setup_relay` 当前为 revision 2，除胜负和正确性外，还展示二回合 setup、
-Powerful Hand、Post-KO relay、攻击质量和牌库健康等指标。完整调用边界见
-[`evaluation/HANDOFF.md`](evaluation/HANDOFF.md)。`--control` 目前只记录对比包信息，不会替你
+`auto_iteration_v8_setup_relay`（兼容 ID）当前为 revision 3，除胜负和正确性外，还展示二回合 setup、
+Powerful Hand、Post-KO relay、攻击质量和牌库健康等指标。它只定义指标与报告展示；
+`--control` 目前只记录对比包信息，不会替你
 执行第二批 control 对局；真实比较需要分别运行两个 candidate。
 
 ### 查看 replay
@@ -231,7 +227,6 @@ python3 -m unittest -v tests.test_evaluation_assets
 - [RL 基础设施](rl_environment/README.md)
 - [模型设计](train/alakazam_bc_rl/DESIGN.html)
 - [Evaluation 使用说明](evaluation/README.md)
-- [Evaluation 交接契约](evaluation/HANDOFF.md)
 - [Replay 可视化](visualization/README.md)
 - [官方引擎边界](engine/README.md)
 - [研究报告索引](docs/reports/README.md)

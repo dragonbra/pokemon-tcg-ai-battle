@@ -1,0 +1,17 @@
+{
+  "name": "meta20260704_mega_starmie_ex_707179f3",
+  "rank": 4,
+  "agent_dir": "arena_agents\\meta20260704_mega_starmie_ex_707179f3",
+  "archetype": "Mega Starmie ex",
+  "deck_hash": "707179f3704d",
+  "latest_date": "2026-07-04",
+  "latest_games": 624,
+  "latest_share": 0.06271356783919597,
+  "covered_share": 0.06698872785829307,
+  "three_day_games": 1145,
+  "three_day_win_rate": 0.5336244541484716,
+  "example_teams": "WinDecks; pokeka_ryo",
+  "base_agent": "arena_agents\\agent_v68_starmie_policy_repair",
+  "source_exact_csv": "tmp\\kaggle_recent_top_ladder_audit_output_v4\\recent_top_ladder_deck_archetype_audit\\exact_deck_hashes.csv",
+  "created_at": "2026-07-05T23:35:01"
+}

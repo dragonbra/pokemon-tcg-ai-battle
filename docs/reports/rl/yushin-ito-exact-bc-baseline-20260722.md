@@ -1,6 +1,6 @@
 # Yushin Ito Exact BC Baseline
 
-实验目录：`rl/_runs/0001-yushin_ito_exact_bc_baseline/`
+实验目录：`rl_runs/0001-yushin_ito_exact_bc_baseline/`
 
 ## 数据与模型
 

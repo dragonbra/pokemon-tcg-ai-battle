@@ -1,0 +1,17 @@
+{
+  "name": "meta20260704_great_tusk_lo_d3e4d16c",
+  "rank": 8,
+  "agent_dir": "arena_agents\\meta20260704_great_tusk_lo_d3e4d16c",
+  "archetype": "Great Tusk LO",
+  "deck_hash": "d3e4d16ced81",
+  "latest_date": "2026-07-04",
+  "latest_games": 268,
+  "latest_share": 0.02693467336683417,
+  "covered_share": 0.02877079978529254,
+  "three_day_games": 765,
+  "three_day_win_rate": 0.42091503267973857,
+  "example_teams": "ykuroka; MR.h; Team BlackBox; atom1231; Ryo Ochi; RicardoLópez; Pilkwang Kim; HechtJP",
+  "base_agent": "arena_agents\\public_great_tusk_lo_koushikrudra",
+  "source_exact_csv": "tmp\\kaggle_recent_top_ladder_audit_output_v4\\recent_top_ladder_deck_archetype_audit\\exact_deck_hashes.csv",
+  "created_at": "2026-07-05T23:35:01"
+}

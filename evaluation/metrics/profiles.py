@@ -148,8 +148,8 @@ CORE_PROFILE = MetricProfile(
 
 AUTO_ITERATION_PROFILE = MetricProfile(
     profile_id=AUTO_ITERATION_PROFILE_ID,
-    revision=2,
-    description="V8 Setup and Relay AutoIteration metric profile",
+    revision=3,
+    description="V8 setup and relay semantic metric profile",
     priorities=(
         MetricPriority("outcome", "result_guardrail", "higher"),
         MetricPriority("powerful_hand", "target", "higher"),
@@ -171,7 +171,7 @@ AUTO_ITERATION_PROFILE = MetricProfile(
         SemanticGroup(
             "stage_1_setup",
             "阶段一：二回合基础能力",
-            "观察二回合实际提交 Powerful Hand、起手四组件、Dunsparce 替代路线和额外过牌。",
+            "观察二回合实际提交 Powerful Hand、Dunsparce 替代路线和额外过牌。",
         ),
         SemanticGroup(
             "stage_2_post_ko_relay",
@@ -221,17 +221,6 @@ AUTO_ITERATION_PROFILE = MetricProfile(
             "aggregate.value",
             "实际选择 attackId=1072 的对局数 / 全部评测对局数；同时展示到达二回合分母。",
             "powerful_hand_turn_order",
-        ),
-        MetricSemantic(
-            "opening_components",
-            "setup_relay",
-            "stage_1_setup",
-            "第一回合起始四组件状态",
-            "diagnostic",
-            "diagnostic",
-            "payload.opening_four_components",
-            "Active Abra、Rare Candy、Alakazam/检索路线、Psychic Energy/Hilda 的出现次数。",
-            "component_summary",
         ),
         MetricSemantic(
             "dunsparce_bridge",
