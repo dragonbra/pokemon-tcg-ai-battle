@@ -2,15 +2,18 @@
 
 ## 项目结构与模块组织
 
-- `work/<name>/` 是当前可打包候选，必须包含 `main.py`、60 行 `deck.csv` 和 `cg/` 运行时；策略说明放在 `work/docs/`。`submission/<name>/` 保留历史提交源目录。
-- `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；通用训练基建放在 `rl_environment/`，具体训练项目放在 `train/<project>/`；其他基建必须放在所属的 Python package（如 `evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。
+- 仓库不再使用 `work/`；可运行待评估 package 统一放入 `evaluation/arena/candidates/<name>/`。通用训练基础设施放在 `rl_environment/`，具体训练项目放在根目录 `train/<project>/`，checkpoint 和版本记录放在 `rl_runs/`。`submission/<name>/` 只保留历史提交源目录。
+- `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；常用基建必须放在所属的 Python package（如 `rl_environment/`、`train/<project>/`、`evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。
 - `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。
-- `evaluation/` 是仓库内的评测运行入口：`configs/opponents.json` 固定 catalog，`opponents/<name>/` 下每个对手都是独立标准 package（`main.py`、60 行 `deck.csv`、物理复制的 `cg/`），不是 adapter。官方 engine runtime 是唯一运行时来源；评测代码不得修改 `engine/source/`，也不得依赖隔壁评测仓库。
-- 评测 CLI 使用 `python3 -m evaluation list-opponents`、`validate <package>` 和 `run --candidate <package> --opponents all --output <report-root>`。每次 `run` 在指定报告根目录下创建独立 `run_id/`，写入 manifest、逐局记录、指标、case 及 Markdown/HTML 报告；`evaluation/opponents/` 不属于 Kaggle 正式 submission 输出目录。
-- 每场评测在独立 worker 进程中运行，隔离双方策略的模块级状态、导入缓存和 cg 状态。完整 trace 仅在当前 run 的临时目录保留，结束时默认删除；长期报告最多保留三份被选中的完整 trace，只有调试时才使用 `--keep-temp`。
-- AutoIteration 使用 `--metric-profile auto_iteration_v8_setup_relay`（当前 revision 2）生成语义化完整报告；报告按结果护栏、阶段一二回合基础能力、阶段二 Post-KO 接力、阶段三攻击质量和辅助审计分组，同时保留原始 metric payload。使用步骤、产物和调用边界见 [`evaluation/HANDOFF.md`](evaluation/HANDOFF.md)。
+- `evaluation/` 是仓库内的评测运行入口：`configs/opponents.json` 固定 catalog，`arena/opponents/<archetype>_<NN>/` 是正式固定对手池，每个对手都是独立标准 package（`main.py`、60 行 `deck.csv`、物理复制的 `cg/`），不是 adapter；正式名称按关键宝可梦组合使用 ASCII `snake_case` 和两位序号，例如 `alakazam_dudunsparce_01`。catalog 同时维护页面显示名和 1–2 张代表宝可梦卡 ID，用于胜率图缩略图。`arena/candidates/<name>/` 只暂存待准入 package，不参与 `--opponents all`，在用户确认收编前保持候选原名。官方 engine runtime 是唯一运行时来源；评测代码不得修改 `engine/source/`，也不得依赖隔壁评测仓库。
+- 评测 CLI 使用 `python3 -m evaluation list-opponents`、`validate <package>` 和 `run --candidate <package> --opponents all --output <report-root>`。每次正式“评测”都只对 `evaluation/arena/opponents/` 固定池运行；这里的 `arena/candidates/` 是候选 opponent 准入区，不是 CLI `--candidate` 所指的被评测卡组。每次 `run` 在指定报告根目录下创建独立 `run_id/`，默认只长期写入独立 `report.html`；manifest、逐局轻量记录、指标和 case 摘要都内嵌在报告中。`evaluation/arena/` 不属于 Kaggle 正式 submission 输出目录。
+- 每场评测在独立 worker 进程中运行，隔离双方策略的模块级状态、导入缓存和 cg 状态。完整 trace 仅在当前 run 的临时目录保留，结束时默认删除，不再长期复制三份 trace；只有调试时才使用 `--keep-temp`，需要卡面帧时再显式使用 `--visualize`。
+- evaluation 支持用 `--workers N` 并行调度多局，但不得因此复用同一局的 engine 或策略进程；指标分析和报告仍须按 catalog/game 固定顺序落盘，并在 manifest 中记录实际并行度。包含 PyTorch、OpenMP、MKL 或 OpenBLAS CPU 推理的候选，并行时必须同时用 `--worker-cpu-threads N` 限制每个 worker 的内部线程，避免进程乘线程造成 CPU 过度订阅。本机 8 核 BC004 的 18×10 实测为：串行 234.41 秒，`--workers 4 --worker-cpu-threads 1` 为 60.29 秒，`--workers 8 --worker-cpu-threads 1` 为 40.23 秒；未限制内部线程的 4-worker 反而耗时 488.41 秒并出现 worker error。因此本机 CPU-only BC evaluation 默认优先使用 `--workers 8 --worker-cpu-threads 1`，其他硬件先把小规模 benchmark report 写到 `.tmp/evaluation/benchmarks/` 校准，不得盲目按逻辑 CPU 数放大 worker。并行只优化吞吐，不构成策略强度证据；不同 run 的随机胜负不可用于验证并行语义一致性。
+- 需要 setup/relay 语义指标时使用 `--metric-profile auto_iteration_v8_setup_relay`（兼容 ID，当前 revision 3）生成完整报告；报告按结果护栏、阶段一二回合基础能力、阶段二 Post-KO 接力、阶段三攻击质量和辅助审计分组，同时保留原始 metric payload。该 profile 只定义指标与展示合同，不代表或触发任何自动迭代、规则策略修改、晋级或淘汰流程。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
-- `notes/`、`docs/reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 输出写到 `/tmp`，不纳入仓库。
+- `notes/`、`docs/reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 的非报告临时输出写到 `/tmp`，不纳入仓库。
+- Agent 为验证、smoke、benchmark 或临时验收生成的 Evaluation report 必须写到仓库根目录 `.tmp/evaluation/<purpose>/`，不得写到系统 `/tmp`；保留 Evaluation 自动创建的 `run_id/`，并在交付时给出仓库内可点击的 `report.html` 路径，方便直接用 VS Code 查看。`.tmp/` 只用于可删除的本机临时产物，必须保持 Git ignore，禁止提交。正式实验评测仍写入对应 `rl_runs/<experiment>/evaluation/V<n>_<tag>/`，不得用 `.tmp/` 代替可审计的正式版本产物。
+- `evaluation/arena/combat_mat.html` 是正式 opponents 池的全量循环评测页面。每次更新正式池后，必须让 catalog 中每个启用 package 作为 candidate，对完整启用 catalog（包含自身）逐项运行至少 10 局，形成有向 N×N 矩阵；单 package report 和聚合源数据统一写入 `.tmp/evaluation/combat_mat/`，只提交重新生成的聚合 HTML。页面必须同时展示 package 与按关键宝可梦归类的 archetype 胜率热力图、两级平均总回合数热力图、代表卡图、总局数、累计耗时和逐 package 耗时。平均总回合数必须来自官方 engine 的最终 turn 字段，禁止用 action selection steps 冒充。
 
 ## 官方引擎与评测硬约束
 
@@ -74,12 +77,12 @@
 ```bash
 ./scripts/start_tensorboard.sh
 python3 -m evaluation list-opponents
-python3 -m evaluation validate work/alakazam_bc_v1
+python3 -m evaluation validate evaluation/arena/candidates/<candidate>
 ```
 
 TensorBoard 默认读取 `rl_runs/tensorboard`，监听 `127.0.0.1:6006`；可通过 `TENSORBOARD_LOGDIR`、`TENSORBOARD_HOST`、`TENSORBOARD_PORT` 和 `PYTHON` 覆盖。评测、可视化和训练分别使用各自的模块入口，不在 `scripts/` 中增加兼容 wrapper。官方真实对局仍以 Kaggle submission/episode/replay 为主要分析依据。
 
-新增 evaluation opponent 时，先建立自包含标准 package，保证 `main.py` 从同目录读取 deck、`deck.csv` 恰为 60 行且 `cg/` 与基线 hash 一致；然后添加 catalog 条目、补充资产/策略测试，并运行 `python3 -m unittest -v tests.test_evaluation_assets`。不要把 opponent adapter、共享 cg 目录、symlink 或其他仓库的绝对路径带入运行时。
+新增 evaluation opponent 时，先在 `evaluation/arena/candidates/<name>/` 建立自包含标准 package，保证 `main.py` 从同目录读取 deck、`deck.csv` 恰为 60 行且 `cg/` 与基线 hash 一致；完成独立验证后由用户确认是否准入。只有获得确认才可按关键宝可梦组合分配正式 `<archetype>_<NN>` 名称、迁入 `evaluation/arena/opponents/`、添加 display name 与代表卡 ID、更新 catalog 和资产测试，并运行 `python3 -m unittest -v tests.test_evaluation_assets`。catalog 只能引用 `arena/opponents/`，不得引用 `arena/candidates/`；不要把 opponent adapter、共享 cg 目录、symlink 或其他仓库的绝对路径带入运行时。
 
 ### Replay 可视化工具
 

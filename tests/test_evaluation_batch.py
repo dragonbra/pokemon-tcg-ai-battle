@@ -333,18 +333,15 @@ class OverridePlugin:
         self.assertEqual(visualization_case.failure_class, "visualization_error")
         self.assertFalse(visualization_case.is_loss)
 
-    def test_batch_alternates_side_writes_compact_records_and_manifest(self) -> None:
+    def test_batch_alternates_side_and_embeds_compact_records_in_report(self) -> None:
         candidate = self.make_package("candidate", 7)
         opponent = self.make_package("opponent", 8)
 
         result = run_batch(self.make_config(candidate, (opponent,), games=5))
 
         report_root = self.root / "reports" / result.run_id
-        records = [
-            json.loads(line)
-            for line in (report_root / "games.jsonl").read_text(encoding="utf-8").splitlines()
-        ]
-        manifest = json.loads((report_root / "manifest.json").read_text(encoding="utf-8"))
+        records = result.game_records
+        manifest = result.manifest
 
         self.assertEqual(
             [record["swap"] for record in records],
@@ -366,11 +363,13 @@ class OverridePlugin:
         )
         self.assertTrue(manifest["started_at"])
         self.assertTrue(manifest["finished_at"])
-        self.assertEqual(manifest["trace_policy"]["retain_limit"], 3)
+        self.assertEqual(manifest["trace_policy"]["retain_limit"], 0)
+        self.assertEqual(manifest["artifact_policy"]["retained_files"], ["report.html"])
+        self.assertGreater(manifest["wall_time_seconds"], 0)
+        self.assertGreater(result.report_data.summary["performance"]["games_per_second"], 0)
         self.assertEqual(set(result.metric_results), set(CORE_METRIC_IDS))
         self.assertEqual(result.report_data.metrics, result.metric_results)
-        self.assertEqual((report_root / "cases.jsonl").read_text(encoding="utf-8"), "")
-        self.assertEqual(len(list((report_root / "traces").glob("*.json"))), 0)
+        self.assertEqual({path.name for path in report_root.iterdir()}, {"report.html"})
 
     def test_parallel_workers_bound_concurrency_and_preserve_record_order(self) -> None:
         candidate = self.make_package("candidate", 7)
@@ -382,7 +381,7 @@ class OverridePlugin:
         peak = 0
         lock = threading.Lock()
 
-        def fake_worker(request, trace_path, _temp_root, _timeout_seconds):
+        def fake_worker(request, trace_path, _temp_root, _timeout_seconds, _cpu_threads):
             nonlocal active, peak
             with lock:
                 active += 1
@@ -418,7 +417,11 @@ class OverridePlugin:
             trace_path.write_text(json.dumps({"trace": [], "result": payload}), encoding="utf-8")
             return result
 
-        config = replace(self.make_config(candidate, opponents, games=2), workers=2)
+        config = replace(
+            self.make_config(candidate, opponents, games=2),
+            workers=2,
+            worker_cpu_threads=1,
+        )
         with patch("evaluation.runner.batch._run_worker", side_effect=fake_worker):
             result = run_batch(config)
 
@@ -428,6 +431,7 @@ class OverridePlugin:
             ["opponent-a-001", "opponent-a-002", "opponent-b-001", "opponent-b-002"],
         )
         self.assertEqual(result.manifest["workers"], 2)
+        self.assertEqual(result.manifest["worker_cpu_threads"], 1)
 
     def test_auto_iteration_profile_writes_payloads_and_presentations(self) -> None:
         candidate = self.make_package("candidate", 7)
@@ -439,21 +443,17 @@ class OverridePlugin:
 
         result = run_batch(config)
         report_root = self.root / "reports" / result.run_id
-        manifest = json.loads((report_root / "manifest.json").read_text(encoding="utf-8"))
-        games = [
-            json.loads(line)
-            for line in (report_root / "games.jsonl").read_text(encoding="utf-8").splitlines()
-        ]
-        metrics = json.loads((report_root / "metrics.json").read_text(encoding="utf-8"))
+        manifest = result.manifest
+        games = result.game_records
+        metrics = result.metric_results
 
         self.assertEqual(manifest["metric_profile"]["id"], "auto_iteration_v8_setup_relay")
-        self.assertEqual(manifest["metric_profile"]["revision"], 2)
-        self.assertEqual(result.report_data.metric_profile["revision"], 2)
+        self.assertEqual(manifest["metric_profile"]["revision"], 3)
+        self.assertEqual(result.report_data.metric_profile["revision"], 3)
         self.assertIn("setup_relay", result.report_data.presentations)
         self.assertIn("attack_quality", result.report_data.presentations)
         self.assertIn("payload", metrics["setup_relay"])
         self.assertIn("payload", games[0]["metric_refs"]["setup_relay"])
-        self.assertIn("Setup and relay", (report_root / "report.md").read_text(encoding="utf-8"))
         self.assertIn("Attack quality", (report_root / "report.html").read_text(encoding="utf-8"))
 
     def test_batch_writes_one_canonical_report_from_fake_worker_results(self) -> None:
@@ -470,7 +470,7 @@ class OverridePlugin:
             "opponent-b-002": (False, None, "worker_crash", "worker_crash"),
         }
 
-        def fake_worker(request, trace_path, _temp_root, _timeout_seconds):
+        def fake_worker(request, trace_path, _temp_root, _timeout_seconds, _cpu_threads):
             finished, winner, status, error_kind = outcomes[request.game_id]
             result = GameResult(
                 game_id=request.game_id,
@@ -512,16 +512,7 @@ class OverridePlugin:
             result = run_batch(config)
 
         report_root = self.root / "reports" / result.run_id
-        expected_files = {
-            "manifest.json",
-            "summary.json",
-            "games.jsonl",
-            "metrics.json",
-            "cases.jsonl",
-            "report.md",
-            "report.html",
-        }
-        self.assertTrue(expected_files <= {path.name for path in report_root.iterdir()})
+        self.assertEqual({path.name for path in report_root.iterdir()}, {"report.html"})
         self.assertIs(BatchReportData, ReportData)
         self.assertIsInstance(result.report_data, ReportData)
         self.assertEqual(set(result.report_data.metrics), set(CORE_METRIC_IDS))
@@ -530,17 +521,11 @@ class OverridePlugin:
             [True, False, True, False],
         )
 
-        manifest = json.loads((report_root / "manifest.json").read_text(encoding="utf-8"))
-        summary = json.loads((report_root / "summary.json").read_text(encoding="utf-8"))
-        metrics = json.loads((report_root / "metrics.json").read_text(encoding="utf-8"))
-        games = tuple(
-            json.loads(line)
-            for line in (report_root / "games.jsonl").read_text(encoding="utf-8").splitlines()
-        )
-        cases = tuple(
-            json.loads(line)
-            for line in (report_root / "cases.jsonl").read_text(encoding="utf-8").splitlines()
-        )
+        manifest = result.manifest
+        summary = result.report_data.summary
+        metrics = result.metric_results
+        games = result.game_records
+        cases = result.case_records
         self.assertEqual(manifest, result.report_data.manifest)
         self.assertEqual(summary, result.report_data.summary)
         self.assertEqual(games, result.report_data.games)
@@ -593,18 +578,14 @@ class OverridePlugin:
         )
         self.assertEqual(len(cases), 1)
         self.assertEqual(cases[0]["game_id"], "opponent-b-002")
-        self.assertTrue(Path(cases[0]["trace_path"]).is_file())
+        self.assertIsNone(cases[0]["trace_path"])
 
-        markdown = (report_root / "report.md").read_text(encoding="utf-8")
         html = (report_root / "report.html").read_text(encoding="utf-8")
         for expected in (*CORE_METRIC_IDS, *[package.name for package in opponents]):
-            self.assertIn(expected, markdown)
             self.assertIn(expected, html)
         for expected in ("worker_crash", "opponent-b-002", "candidate", "control", "unavailable"):
-            self.assertIn(expected, markdown)
             self.assertIn(expected, html)
         for forbidden in ("promotion", "reject", "revert"):
-            self.assertNotIn(forbidden, markdown.lower())
             self.assertNotIn(forbidden, html.lower())
 
     def test_worker_crash_is_recorded_and_later_games_continue(self) -> None:
@@ -641,16 +622,10 @@ class OverridePlugin:
         )
         self.assertEqual(result.game_records[0]["error_kind"], "worker_crash")
         self.assertEqual(result.game_records[1]["winner"], 0)
-        timeout_trace = json.loads(
-            (
-                self.root
-                / "reports"
-                / result.run_id
-                / "traces"
-                / "hanging-001.json"
-            ).read_text(encoding="utf-8")
+        self.assertEqual(
+            {path.name for path in (self.root / "reports" / result.run_id).iterdir()},
+            {"report.html"},
         )
-        self.assertIn("timed out", timeout_trace["result"]["error"])
 
     def test_invalid_worker_trace_becomes_worker_crash_and_later_games_continue(self) -> None:
         candidate = self.make_package("candidate", 7)
@@ -755,12 +730,10 @@ class OverridePlugin:
             [record["error_kind"] for record in result.game_records[:8]],
             ["worker_crash"] * 8,
         )
-        error_traces = self.root / "reports" / result.run_id / "traces"
-        for trace_path in error_traces.glob("*.json"):
-            trace = json.loads(trace_path.read_text(encoding="utf-8"))
-            self.assertEqual(trace["result"]["status"], "worker_crash")
-            self.assertFalse(trace["result"]["finished"])
-            self.assertNotIn("trace_path", trace["result"])
+        self.assertEqual(
+            {path.name for path in (self.root / "reports" / result.run_id).iterdir()},
+            {"report.html"},
+        )
         self.assertEqual(result.game_records[-1]["winner"], 0)
 
     def test_batch_cleanup_removes_empty_run_specific_temp_parent(self) -> None:

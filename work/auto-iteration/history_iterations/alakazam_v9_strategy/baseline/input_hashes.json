@@ -1,7 +1,0 @@
-{
-  "candidate": "work/alakazam_v9",
-  "main_py_sha256": "8e2ab06705368f789d09fa97bcb4de5d7171fd3dce109da6750e1b3ff5cdaab6",
-  "deck_csv_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
-  "baseline_run_id": "run-837ae45f0b944adc8202f8157cdb5f13",
-  "baseline_package_sha256": "5f6b8df51e1a6cb93e0bd88d8281cd347ac518dbb23fcd4406aa626bf6117300"
-}

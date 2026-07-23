@@ -4,6 +4,7 @@ import argparse
 import csv
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -12,18 +13,21 @@ from evaluation.packages.loader import (
     SubmissionPackage,
     load_submission_package,
 )
+from evaluation.cards import card_image_url, load_card_catalog
 from evaluation.metrics.profiles import available_metric_profiles
-from evaluation.runner.batch import BatchConfig, run_batch
+from evaluation.runner.batch import BatchConfig, default_worker_count, run_batch
 from evaluation.runtime import assert_cg_compatible
 from rl_environment.runs import numbered_artifact_path
 
 
-EXPECTED_FIELDS = frozenset({"name", "package", "enabled", "tags"})
+EXPECTED_FIELDS = frozenset(
+    {"name", "package", "display_name", "representative_card_ids", "enabled", "tags"}
+)
 DEFAULT_CATALOG = Path(__file__).resolve().parent / "configs" / "opponents.json"
+ARENA_OPPONENTS_RELATIVE = Path("arena") / "opponents"
 DEFAULT_MAX_STEPS = 1_000
 MIN_RESEARCH_GAMES = 10
-REQUIRED_RESEARCH_OPPONENTS = 18
-RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl" / "_runs"
+RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl_runs"
 _NUMBERED_OUTPUT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
 
 
@@ -56,6 +60,20 @@ def _read_catalog_entries(path: Path) -> list[dict[str, Any]]:
             raise PackageValidationError(f"catalog entry {index} name must be a non-empty string")
         if not isinstance(entry["package"], str):
             raise PackageValidationError(f"catalog entry {index} package must be a string")
+        if not isinstance(entry["display_name"], str) or not entry["display_name"]:
+            raise PackageValidationError(
+                f"catalog entry {index} display_name must be a non-empty string"
+            )
+        representative_card_ids = entry["representative_card_ids"]
+        if (
+            not isinstance(representative_card_ids, list)
+            or not 1 <= len(representative_card_ids) <= 2
+            or not all(type(card_id) is int and card_id > 0 for card_id in representative_card_ids)
+            or len(set(representative_card_ids)) != len(representative_card_ids)
+        ):
+            raise PackageValidationError(
+                f"catalog entry {index} representative_card_ids must contain 1-2 unique card IDs"
+            )
         if type(entry["enabled"]) is not bool:
             raise PackageValidationError(f"catalog entry {index} enabled must be a boolean")
         if not isinstance(entry["tags"], list) or not all(
@@ -72,10 +90,13 @@ def _package_path(package_value: str, evaluation_root: Path) -> Path:
         raise PackageValidationError("catalog package path must be inside evaluation root")
     package_root = (evaluation_root / relative_package).resolve()
     resolved_evaluation_root = evaluation_root.resolve()
+    arena_opponents_root = (resolved_evaluation_root / ARENA_OPPONENTS_RELATIVE).resolve()
     try:
-        package_root.relative_to(resolved_evaluation_root)
+        package_root.relative_to(arena_opponents_root)
     except ValueError as exc:
-        raise PackageValidationError("catalog package path must be inside evaluation root") from exc
+        raise PackageValidationError(
+            "catalog package path must be inside evaluation/arena/opponents"
+        ) from exc
     if not package_root.is_dir():
         raise PackageValidationError(f"catalog package does not exist: {package_root}")
     return package_root
@@ -115,10 +136,40 @@ def _load_catalog(
 ) -> list[SubmissionPackage]:
     packages: list[SubmissionPackage] = []
     entries = _validate_catalog_entries(_read_catalog_entries(path), evaluation_root)
+    card_catalog = load_card_catalog(
+        evaluation_root.parent / "data" / "official" / "EN_Card_Data.csv"
+    )
     for entry, package_root in entries:
         if not entry["enabled"]:
             continue
-        packages.append(load_submission_package(package_root, official_card_ids, name=entry["name"]))
+        package = load_submission_package(package_root, official_card_ids, name=entry["name"])
+        representative_cards = []
+        for card_id in entry["representative_card_ids"]:
+            if card_id not in package.deck:
+                raise PackageValidationError(
+                    f"representative card ID {card_id} is not in opponent deck: {entry['name']}"
+                )
+            metadata = card_catalog.get(card_id)
+            if metadata is None or "Pokémon" not in metadata["stage_or_type"]:
+                raise PackageValidationError(
+                    f"representative card ID {card_id} must be an official Pokémon card"
+                )
+            representative_cards.append(
+                {
+                    "card_id": card_id,
+                    "name": metadata["name"],
+                    "image_url": card_image_url(
+                        metadata["expansion"], metadata["collection_number"]
+                    ),
+                }
+            )
+        packages.append(
+            replace(
+                package,
+                display_name=entry["display_name"],
+                representative_cards=tuple(representative_cards),
+            )
+        )
     return packages
 
 
@@ -187,18 +238,16 @@ def _validate_research_coverage(
     games: int,
     opponents: tuple[SubmissionPackage, ...],
 ) -> None:
-    """Enforce the project-level 18×10 evaluation contract at the CLI."""
-    minimum_total_games = REQUIRED_RESEARCH_OPPONENTS * MIN_RESEARCH_GAMES
+    """Enforce full-catalog evaluation with at least ten games per opponent."""
+    minimum_total_games = len(opponents) * MIN_RESEARCH_GAMES
     if games < MIN_RESEARCH_GAMES:
         raise PackageValidationError(
             f"repo evaluation requires at least {MIN_RESEARCH_GAMES} games per opponent "
-            f"({REQUIRED_RESEARCH_OPPONENTS}×{MIN_RESEARCH_GAMES}="
+            f"({len(opponents)}×{MIN_RESEARCH_GAMES}="
             f"{minimum_total_games}); got {games}"
         )
-    if requested_opponents.strip() != "all" or len(opponents) != REQUIRED_RESEARCH_OPPONENTS:
-        raise PackageValidationError(
-            "repo evaluation requires --opponents all and the fixed 18-opponent catalog"
-        )
+    if requested_opponents.strip() != "all":
+        raise PackageValidationError("repo evaluation requires --opponents all")
 
 
 def _write_validation(package: SubmissionPackage) -> None:
@@ -223,11 +272,17 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument(
         "--games",
         type=int,
-        default=30,
-        help="每个 opponent 的对局数（至少 10；固定 18 opponent catalog）",
+        default=10,
+        help="每个 opponent 的对局数（默认且至少 10；固定 18 opponent catalog）",
     )
     run.add_argument("--output", type=Path, required=True, help="评测报告根目录；RL 路径自动编号")
     run.add_argument("--control", type=Path, help="仅用于报告对比展示的标准 package")
+    run.add_argument(
+        "--visualize",
+        dest="visualize",
+        action="store_true",
+        help="调试时在临时 trace 中生成可视化帧（默认关闭）",
+    )
     run.add_argument("--no-visualize", dest="visualize", action="store_false")
     run.add_argument("--keep-temp", action="store_true")
     run.add_argument(
@@ -240,8 +295,14 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument(
         "--workers",
         type=int,
+        default=None,
+        help="并行对局 worker 数；默认按 CPU affinity 自动选择，最多 8",
+    )
+    run.add_argument(
+        "--worker-cpu-threads",
+        type=int,
         default=1,
-        help="并行对局 worker 数；每局仍使用独立进程（默认 1）",
+        help="限制每个 worker 的 OMP/MKL CPU 线程数",
     )
     run.add_argument(
         "--metric-profile",
@@ -255,7 +316,7 @@ def _parser() -> argparse.ArgumentParser:
         default=[],
         help="额外指标插件模块路径，可写 MODULE[:Class]；可重复或以逗号分隔",
     )
-    run.set_defaults(visualize=True)
+    run.set_defaults(visualize=False)
     return parser
 
 
@@ -264,7 +325,10 @@ def _run(args: argparse.Namespace) -> str:
     official_card_ids = _load_official_card_ids(evaluation_root)
     _validate_positive(args.games, "--games")
     _validate_positive(args.max_steps, "--max-steps")
-    _validate_positive(args.workers, "--workers")
+    if args.workers is not None:
+        _validate_positive(args.workers, "--workers")
+    if args.worker_cpu_threads is not None:
+        _validate_positive(args.worker_cpu_threads, "--worker-cpu-threads")
 
     candidate = load_submission_package(args.candidate, official_card_ids)
     control = (
@@ -292,7 +356,8 @@ def _run(args: argparse.Namespace) -> str:
             metric_module_paths=_metric_modules(args.metric_module),
             metric_profile_id=args.metric_profile,
             keep_temp=args.keep_temp,
-            workers=args.workers,
+            workers=args.workers if args.workers is not None else default_worker_count(),
+            worker_cpu_threads=args.worker_cpu_threads,
         )
     )
     return result.run_id

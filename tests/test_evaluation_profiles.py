@@ -15,7 +15,7 @@ class EvaluationProfileTests(unittest.TestCase):
     def test_auto_iteration_profile_declares_revision_priorities_and_metrics(self) -> None:
         profile = get_metric_profile(AUTO_ITERATION_PROFILE_ID)
 
-        self.assertEqual(profile.revision, 2)
+        self.assertEqual(profile.revision, 3)
         self.assertEqual(
             profile.metric_ids,
             (
@@ -52,6 +52,7 @@ class EvaluationProfileTests(unittest.TestCase):
         semantics = {
             item["semantic_id"]: item for item in manifest["metric_semantics"]
         }
+        self.assertNotIn("opening_components", semantics)
         self.assertEqual(semantics["powerful_hand"]["title"], "二回合 Alakazam 实际攻击")
         self.assertEqual(semantics["powerful_hand"]["direction"], "higher")
         self.assertEqual(semantics["post_ko_success"]["value_source"], "payload.success_rate")
@@ -71,17 +72,17 @@ class EvaluationProfileTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown metric profile"):
             get_metric_profile("missing")
 
-    def test_readme_documents_auto_iteration_profile_contract(self) -> None:
+    def test_readme_documents_setup_relay_profile_contract(self) -> None:
         readme = (Path(__file__).parents[1] / "evaluation" / "README.md").read_text(
             encoding="utf-8"
         )
 
         for value in (
             "auto_iteration_v8_setup_relay",
-            "revision 2",
-            "metrics.json",
+            "revision 3",
+            "report_only",
             "report.html",
-            "不负责晋级决策",
+            "不执行自动迭代",
         ):
             self.assertIn(value, readme)
 

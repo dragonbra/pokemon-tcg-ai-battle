@@ -1,0 +1,17 @@
+{
+  "name": "meta20260704_marnie_s_grimmsnarl_ex_be5107ce",
+  "rank": 1,
+  "agent_dir": "arena_agents\\meta20260704_marnie_s_grimmsnarl_ex_be5107ce",
+  "archetype": "Marnie's Grimmsnarl ex",
+  "deck_hash": "be5107ce4e96",
+  "latest_date": "2026-07-04",
+  "latest_games": 1831,
+  "latest_share": 0.18402010050251255,
+  "covered_share": 0.19656468062265164,
+  "three_day_games": 4166,
+  "three_day_win_rate": 0.5811329812770043,
+  "example_teams": "tonakaiiii; 渡邊征央; S4nkurero; iwashi; Ars Noveau; 213tubo; XIAODOUZI; Hiro Nomo",
+  "base_agent": "arena_agents\\agent_kazuki_marnie_grimmsnarl_proxy_v0",
+  "source_exact_csv": "tmp\\kaggle_recent_top_ladder_audit_output_v4\\recent_top_ladder_deck_archetype_audit\\exact_deck_hashes.csv",
+  "created_at": "2026-07-05T23:35:01"
+}

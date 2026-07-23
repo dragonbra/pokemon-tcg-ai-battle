@@ -5,14 +5,16 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 import uuid
+from collections.abc import Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from evaluation.cases import CaseCandidate, case_record, select_cases, write_case_records
+from evaluation.cases import CaseCandidate, case_record, select_cases
 from evaluation.metrics import GameContext, GameMetric
 from evaluation.metrics.profiles import get_metric_profile
 from evaluation.metrics.registry import MetricRegistry, create_metric_registry
@@ -20,6 +22,15 @@ from evaluation.packages.loader import SubmissionPackage
 from evaluation.reporting import ReportData, json_ready, write_report
 from evaluation.runner.models import GameRequest, GameResult
 from evaluation.traces.store import TraceStore
+
+
+def default_worker_count() -> int:
+    """Use the calibrated local preset without exceeding available CPU affinity."""
+    try:
+        available_cpus = len(os.sched_getaffinity(0))
+    except (AttributeError, OSError):
+        available_cpus = os.cpu_count() or 1
+    return max(1, min(8, available_cpus))
 
 
 @dataclass(frozen=True)
@@ -36,7 +47,8 @@ class BatchConfig:
     metric_profile_id: str = "core"
     keep_temp: bool = False
     worker_timeout_seconds: float = 30.0
-    workers: int = 1
+    workers: int = field(default_factory=default_worker_count)
+    worker_cpu_threads: int | None = 1
 
 
 @dataclass(frozen=True)
@@ -58,6 +70,8 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("worker_timeout_seconds must be greater than zero")
     if config.workers < 1:
         raise ValueError("workers must be at least one")
+    if config.worker_cpu_threads is not None and config.worker_cpu_threads < 1:
+        raise ValueError("worker_cpu_threads must be at least one")
 
     run_id = f"run-{uuid.uuid4().hex}"
     report_root = config.output_root.resolve() / run_id
@@ -69,6 +83,7 @@ def run_batch(config: BatchConfig) -> BatchResult:
         config.metric_profile_id,
     )
     started_at = _timestamp()
+    wall_started = time.perf_counter()
     metric_values: dict[str, list[GameMetric]] = {
         plugin.metric_id: [] for plugin in registry.plugins
     }
@@ -76,6 +91,7 @@ def run_batch(config: BatchConfig) -> BatchResult:
 
     try:
         jobs = _game_jobs(config, run_id, store)
+        actual_workers = min(config.workers, len(jobs))
         for request, trace_path, result in _run_workers(config, jobs, store.temp_root):
             result, trace = _read_or_create_trace(request, result, trace_path)
             context = GameContext(
@@ -100,30 +116,31 @@ def run_batch(config: BatchConfig) -> BatchResult:
         _add_metric_diagnostics(metric_results, metric_values)
         presentations = registry.present(aggregate_metrics, metric_values)
         presentation_errors = registry.presentation_errors
-        selected_cases = select_cases(case_candidates, limit=store.retain_limit)
-        retained = store.retain({candidate.game_id for candidate in selected_cases})
-        retained_cases = tuple(
-            replace(candidate, trace_path=retained[candidate.game_id])
-            for candidate in selected_cases
-        )
-        write_case_records(retained_cases, report_root / "cases.jsonl")
-        case_records = tuple(case_record(candidate) for candidate in retained_cases)
+        selected_cases = select_cases(case_candidates)
+        case_records = tuple(_report_case_record(candidate) for candidate in selected_cases)
         summary = _summary(store.game_records)
         if config.control is not None:
             summary["control"] = _control_summary(config.candidate, config.control)
         finished_at = _timestamp()
+        wall_time_seconds = time.perf_counter() - wall_started
+        total_selections = sum(int(record["steps"]) for record in store.game_records)
+        summary["performance"] = {
+            "wall_time_seconds": wall_time_seconds,
+            "games_per_second": len(store.game_records) / wall_time_seconds,
+            "engine_selections": total_selections,
+            "selections_per_second": total_selections / wall_time_seconds,
+            "workers": actual_workers,
+            "worker_cpu_threads": config.worker_cpu_threads,
+        }
         manifest = _manifest(
             config,
             run_id=run_id,
             started_at=started_at,
             finished_at=finished_at,
-            retained=retained,
+            wall_time_seconds=wall_time_seconds,
+            actual_workers=actual_workers,
             metric_ids=tuple(plugin.metric_id for plugin in registry.plugins),
             presentation_errors=presentation_errors,
-        )
-        (report_root / "manifest.json").write_text(
-            json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True),
-            encoding="utf-8",
         )
         report_data = ReportData(
             manifest=manifest,
@@ -134,14 +151,6 @@ def run_batch(config: BatchConfig) -> BatchResult:
             metric_profile=manifest["metric_profile"],
             presentations=presentations,
             presentation_errors=presentation_errors,
-        )
-        (report_root / "summary.json").write_text(
-            json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True),
-            encoding="utf-8",
-        )
-        (report_root / "metrics.json").write_text(
-            json.dumps(metric_results, ensure_ascii=False, indent=2, sort_keys=True),
-            encoding="utf-8",
         )
         write_report(report_data, report_root)
         return BatchResult(
@@ -199,7 +208,7 @@ def _run_workers(
     config: BatchConfig,
     jobs: list[tuple[GameRequest, Path]],
     temp_root: Path,
-):
+) -> Iterator[tuple[GameRequest, Path, GameResult]]:
     if config.workers == 1:
         for request, trace_path in jobs:
             yield request, trace_path, _run_worker(
@@ -207,6 +216,7 @@ def _run_workers(
                 trace_path,
                 temp_root,
                 config.worker_timeout_seconds,
+                config.worker_cpu_threads,
             )
         return
 
@@ -218,6 +228,7 @@ def _run_workers(
                 trace_path,
                 temp_root,
                 config.worker_timeout_seconds,
+                config.worker_cpu_threads,
             )
             for request, trace_path in jobs
         ]
@@ -230,6 +241,7 @@ def _run_worker(
     trace_path: Path,
     temp_root: Path,
     timeout_seconds: float,
+    cpu_threads: int | None = None,
 ) -> GameResult:
     request_path = temp_root / f"{request.game_id}.request.json"
     result_path = temp_root / f"{request.game_id}.result.json"
@@ -243,6 +255,16 @@ def _run_worker(
     if environment.get("PYTHONPATH"):
         python_path.append(environment["PYTHONPATH"])
     environment["PYTHONPATH"] = os.pathsep.join(python_path)
+    if cpu_threads is not None:
+        thread_count = str(cpu_threads)
+        environment.update(
+            {
+                "OMP_NUM_THREADS": thread_count,
+                "MKL_NUM_THREADS": thread_count,
+                "OPENBLAS_NUM_THREADS": thread_count,
+                "NUMEXPR_NUM_THREADS": thread_count,
+            }
+        )
     try:
         completed = subprocess.run(
             [
@@ -603,7 +625,8 @@ def _manifest(
     run_id: str,
     started_at: str,
     finished_at: str,
-    retained: dict[str, Path],
+    wall_time_seconds: float,
+    actual_workers: int,
     metric_ids: tuple[str, ...],
     presentation_errors: tuple[dict[str, object], ...] = (),
 ) -> dict[str, object]:
@@ -614,7 +637,9 @@ def _manifest(
         "opponents": [_manifest_package(opponent) for opponent in config.opponents],
         "control": _manifest_package(config.control) if config.control else None,
         "games": len(config.opponents) * config.games_per_opponent,
-        "workers": config.workers,
+        "workers": actual_workers,
+        "requested_workers": config.workers,
+        "worker_cpu_threads": config.worker_cpu_threads,
         "swap_policy": "alternate_candidate_first",
         "plugins": list(metric_ids),
         "metric_profile": profile.manifest(),
@@ -626,9 +651,14 @@ def _manifest(
         },
         "started_at": started_at,
         "finished_at": finished_at,
+        "wall_time_seconds": wall_time_seconds,
+        "artifact_policy": {
+            "mode": "report_only",
+            "retained_files": ["report.html"],
+        },
         "trace_policy": {
-            "retain_limit": 3,
-            "retained_game_ids": sorted(retained),
+            "retain_limit": 0,
+            "retained_game_ids": [],
             "keep_temp": config.keep_temp,
         },
     }
@@ -637,6 +667,8 @@ def _manifest(
 def _manifest_package(package: SubmissionPackage) -> dict[str, object]:
     return {
         "name": package.name,
+        "display_name": package.display_name or package.name,
+        "representative_cards": list(package.representative_cards),
         "package_hash": package.package_hash,
         "deck_hash": package.deck_hash,
         "cg_hash": package.cg_manifest.get("tree_hash"),
@@ -701,6 +733,12 @@ def _result_payload(result: GameResult) -> dict[str, object]:
     payload = asdict(result)
     payload["trace_path"] = str(result.trace_path)
     return payload
+
+
+def _report_case_record(candidate: CaseCandidate) -> dict[str, object]:
+    record = case_record(candidate)
+    record["trace_path"] = None
+    return record
 
 
 def _timestamp() -> str:

@@ -7,7 +7,7 @@
 
 配套文档：今晚在线 PPO 合同见
 [`online-ppo-training-design-20260724.md`](online-ppo-training-design-20260724.md)，固定评测改造见
-[`../evaluation/evaluation-framework-improvements-20260724.md`](../evaluation/evaluation-framework-improvements-20260724.md)。
+[`../../../evaluation/README.md`](../../../evaluation/README.md)。
 
 ## 1. 决策原则
 
@@ -148,7 +148,7 @@ wrapper 只能调用官方公开 runtime ABI，构建产物写到 `engine/build/
 2. 先做 Python 侧预分配、pinned memory 和 batch tensor reuse；
 3. 再考虑 C++/PyBind codec，把 observation 直接写进固定 PolicyCodec tensor；
 4. codec 输出必须逐字段和 Python reference 对比；
-5. feature schema 或 shape 改动同步更新 checkpoint metadata 和 `rl/model/DESIGN.html`。
+5. feature schema 或 shape 改动同步更新 checkpoint metadata 和 `train/alakazam_bc_rl/DESIGN.html`。
 
 不修改官方 engine 意味着无法假设能消除 engine 内部的 state copy、hidden-info removal、
 Base64 或 JSON 生成。Native codec 主要优化 engine 输出之后的训练数据路径。

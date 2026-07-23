@@ -10,7 +10,7 @@
   完整官方 replay。20 位选手有一局彼此对战，因此实际保存 19 个唯一 replay，约 77 MB。
 - 20 位选手对应 **14 个精确 60 张 deck hash、8 个主牌型**。相同精确构筑仍可能来自不同
   policy；BC 数据必须按 team/submission 分开，不能按 deck hash 合并动作标签。
-- 已在本地 `rl/artifact/dataset/top20_arena_20260723/` 建立 `0001`–`0020` 的单专家
+- 已在本地 `rl_runs/dataset/top20_arena_20260723/` 建立 `0001`–`0020` 的单专家
   source slot。它们目前只有一局审计样本，均明确标为 `sample_only_not_train_ready`。
 - Episode metadata 足以计算“当前排行榜 submission 的已公开对局窗口胜率”。本次共观察
   5,642 局；`junlee789` 和 `Yushin Ito` 都触及 API 最近 1,000 局上限，因此不是生涯总样本。
@@ -27,21 +27,21 @@ data/replays/kaggle_top20_bc_20260723/       # Git 忽略；可重建的官方�
 ├── metadata/<source-id>.json                # 每个 submission 最多最近 1,000 局 metadata
 └── episodes/episode-<id>-replay.json        # 一人一局；跨选手按 Episode ID 去重
 
-rl/artifact/dataset/top20_arena_20260723/    # Git 忽略；本地 source staging
+rl_runs/dataset/top20_arena_20260723/    # Git 忽略；本地 source staging
 ├── campaign.json
 ├── 0001-rank-01-lumenliquidity/
 │   ├── source_manifest.json                 # 单一 team/submission policy 边界
 │   └── deck.csv                             # 样本中审计出的原版 60 张牌
 └── ... 0020-rank-20-guohaoyang/
 
-rl/artifact/dataset/<global-run-id>/         # 后续每个专家的正式 BC dataset
+rl_runs/dataset/<global-run-id>/         # 后续每个专家的正式 BC dataset
 ├── dataset.jsonl
 ├── dataset.jsonl.card_metadata.json
 └── dataset.jsonl.summary.json
 
-rl/artifact/checkpoint/<global-run-id>/      # best_validation.pt / latest.pt
-rl/_runs/tensorboard/<global-run-id>/        # TensorBoard events
-rl/_runs/<global-run-id>/                    # 可提交、可比较的实验事实
+rl_runs/checkpoint/<global-run-id>/      # best_validation.pt / latest.pt
+rl_runs/tensorboard/<global-run-id>/        # TensorBoard events
+rl_runs/<global-run-id>/                    # 可提交、可比较的实验事实
 ├── manifest.json
 ├── data_manifest.json
 ├── data_summary.json
@@ -54,25 +54,25 @@ rl/_runs/<global-run-id>/                    # 可提交、可比较的实验事
 ```
 
 Source slot 的 `0001`–`0020` 只是本次排行榜快照中的稳定索引，不是全局 RL run ID。
-真正开始构建完整 corpus 时，用 `python3 -m rl.core.runs create ...` 顺序分配全局编号；按
+真正开始构建完整 corpus 时，用 `python3 -m rl_environment.runs create ...` 顺序分配全局编号；按
 当前状态预计从 `0004` 开始，但不能在命令或代码里硬编码，避免与并行实验争用编号。
 
-### 为什么不把 20 个模型直接放进 `evaluation/opponents/`
+### 为什么不把 20 个模型直接放进 `evaluation/arena/opponents/`
 
-现有 `evaluation/opponents/` 是固定回归 catalog，职责是提供跨实验不变的验收护栏。Top 20
+现有 `evaluation/arena/opponents/` 是固定回归 catalog，职责是提供跨实验不变的验收护栏。Top 20
 替身属于会迭代、会冻结多个版本的 Arena league；直接替换固定 catalog 会让前后 run 的
 胜率不可比较。
 
 建议保留以下边界：
 
-1. 权重的 canonical copy 永远是 `rl/artifact/checkpoint/<run-id>/best_validation.pt`。
+1. 权重的 canonical copy 永远是 `rl_runs/checkpoint/<run-id>/best_validation.pt`。
 2. 原版 deck、submission ID、模型 schema、源码 revision 和 hash 写入对应 run manifest。
 3. 评测或 RL rollout 时，从 checkpoint + deck + 官方 cg 临时 materialize 标准 package；
-   只把需要人工验收的候选放进 `work/<name>/`。
+   只把需要人工验收的 package 放进 `evaluation/arena/candidates/<name>/`。
 4. 一个 RL/Arena run 用自己的 `arena_manifest.json` 固定 opponent run ID、checkpoint hash、
    deck hash、采样权重和 package hash；不修改历史 Arena 快照。
-5. 只有明确要把某个替身升级为长期固定回归对手时，才复制成自包含
-   `evaluation/opponents/<name>/` package 并更新 catalog。
+5. 准备准入的替身先复制为 `evaluation/arena/candidates/<name>/` 自包含 package；完成评估并
+   经用户确认后，才迁入 `evaluation/arena/opponents/<name>/` 并更新 catalog。
 
 ## 2. 一天项目的执行设计
 
@@ -114,7 +114,7 @@ official replay
   split 泄漏或 shape mismatch 都直接停止该 run。
 - 当前 universal tensor 合同为：`state [64,40]`、`deck [60,18]`、`entity [12,28]`、
   `history [32,8]`、`action [64,22]` 和单个 `expert_id`。详情以
-  `rl/model/DESIGN.html` 和 checkpoint metadata 为准。
+  `train/alakazam_bc_rl/DESIGN.html` 和 checkpoint metadata 为准。
 - 少于 100 局的 submission 仍可训练探索模型，但标为 `provisional_low_data`；本次
   `Majkel1337`（43 局）和 `Eduardo Rocha de Andrade`（41 局）属于这一类，其 held-out
   模仿率置信区间会很宽，不应和 1,000 局来源同等解读。
@@ -139,7 +139,7 @@ official replay
 
 ### 2.4 标准 Agent 复刻
 
-现有 `rl.train.build_full_action_submission` 已能把 checkpoint、通用推理源码、`main.py` 和
+现有 `train.kaggle_bc_top20.training.build_full_action_submission` 已能把 checkpoint、通用推理源码、`main.py` 和
 官方 `cg/` 组装为标准 package，但当前参数把 `deck.csv` 与 `--source-package` 耦合。批量
 Arena 前应做一个小改造：
 
@@ -169,7 +169,7 @@ builder 必须交叉校验 checkpoint metadata 中的 deck、source、feature sc
    completion 100%。任何引擎/对手错误必须单独归因，不能算作模型胜利。
 3. **对战能力**：与当前固定 18-opponent catalog 每个至少 10 局，先后手交替；报告总胜率、
    每对手胜率、错误率及 semantic metrics。结果写回同一
-   `rl/_runs/<run-id>/evaluation/`。
+   `rl_runs/<run-id>/evaluation/`。
 
 离线 action accuracy 衡量“像不像该专家”，本地胜率衡量“这个替身是否足够强”；两者都需要，
 不能互相替代。Arena tier 建议：
@@ -247,11 +247,11 @@ submission identity 不稳定或需要逐局策略细节时，才下载该 submi
 
 已完成：
 
-- 可复现 Top-N source 准备器 `rl.train.prepare_top_ladder_bc` 及单元测试。
+- 可复现 Top-N source 准备器 `train.kaggle_bc_top20.training.prepare_top_ladder_bc` 及单元测试。
 - 实时 Top 20 快照、20 个 metadata 窗口、19 个唯一完整 replay。
 - 20 个单专家 dataset source slot、原版 60 张 deck 和 source manifest。
 - 牌组识别、窗口总胜率和 12.57% 覆盖的局部 matchup 尝试。
-- `rl/model/DESIGN.html` 已同步 universal schema 与 Top 20 → Arena 阶段边界。
+- `train/alakazam_bc_rl/DESIGN.html` 已同步 universal schema 与 Top 20 → Arena 阶段边界。
 
 尚未执行：
 

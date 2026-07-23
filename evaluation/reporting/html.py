@@ -7,14 +7,165 @@ from collections.abc import Mapping
 from .models import (
     ReportData,
     as_mapping,
-    case_evidence_steps,
     control_differences,
     display_value,
-    failure_class_distribution,
     json_ready,
     ordered_mapping,
     percentage,
 )
+
+
+REPORT_STYLES = """
+:root{
+  color-scheme:light;
+  --bg:#f3f7f5;
+  --surface:#ffffff;
+  --surface-soft:#f7faf8;
+  --ink:#172b25;
+  --muted:#60736c;
+  --line:#dce7e2;
+  --brand:#217a58;
+  --brand-dark:#14563d;
+  --brand-soft:#e4f3ec;
+  --shadow:0 12px 32px rgba(26,71,55,.08);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 12% 0%,rgba(58,155,112,.12),transparent 32rem),
+    linear-gradient(180deg,#f8fbf9 0,var(--bg) 24rem);
+  color:var(--ink);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;
+}
+main{max-width:1240px;margin:0 auto;padding:36px 28px 64px}
+.hero{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+  margin-bottom:22px;
+  padding:30px 32px;
+  border-radius:18px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--brand-dark),#23835d 68%,#3b9c71);
+  box-shadow:0 18px 44px rgba(20,86,61,.2);
+}
+.eyebrow{margin:0 0 6px;color:#c8eadb;font-size:12px;font-weight:700;letter-spacing:.12em}
+h1{margin:0;font-size:32px;line-height:1.2;letter-spacing:-.02em}
+h2{margin:0 0 6px;font-size:20px;line-height:1.35;letter-spacing:-.01em}
+h3{margin:0 0 10px}
+.run-id{
+  max-width:48%;
+  padding:8px 12px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:999px;
+  background:rgba(255,255,255,.1);
+  color:#eaf7f1;
+  font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;
+  overflow-wrap:anywhere;
+}
+section{
+  margin:18px 0;
+  padding:22px;
+  overflow-x:auto;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(255,255,255,.96);
+  box-shadow:var(--shadow);
+}
+.profile-grid{display:grid;grid-template-columns:1fr 110px 2fr;gap:12px}
+.profile-item{padding:12px 14px;border-radius:10px;background:var(--surface-soft)}
+.profile-item .label{display:block;margin-bottom:3px}
+.profile-value{font-weight:650;overflow-wrap:anywhere}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.card{
+  min-height:92px;
+  padding:15px 16px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:linear-gradient(180deg,#fff,var(--surface-soft));
+}
+.label{color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.02em}
+.value{margin-top:5px;font-size:23px;font-weight:750;letter-spacing:-.02em}
+.matchup-section{padding:18px 20px}
+.matchup-chart{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:2px 20px;
+  margin-top:8px;
+  font-size:12px;
+}
+.chart-row{
+  display:grid;
+  grid-template-columns:minmax(190px,250px) 1fr 56px;
+  gap:8px;
+  align-items:center;
+  padding:3px 5px;
+  border-radius:6px;
+}
+.chart-row:hover{background:var(--surface-soft)}
+.opponent-identity{display:flex;align-items:center;min-width:0;gap:7px}
+.opponent-thumbnails{display:flex;flex:0 0 auto;padding-left:3px}
+.opponent-thumb{
+  width:29px;
+  height:38px;
+  margin-left:-3px;
+  object-fit:cover;
+  border:1px solid rgba(23,43,37,.2);
+  border-radius:4px;
+  background:#e6eee9;
+  box-shadow:0 2px 5px rgba(23,43,37,.12);
+}
+.opponent-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chart-rate{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.bar-track{height:7px;overflow:hidden;border-radius:999px;background:#e4ece8}
+.bar{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2a8d65,#54b184)}
+table{width:100%;min-width:820px;margin-top:14px;border-collapse:separate;border-spacing:0}
+th,td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{
+  background:var(--surface-soft);
+  color:#496159;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  white-space:nowrap;
+}
+th:first-child{border-radius:9px 0 0 9px}
+th:last-child{border-radius:0 9px 9px 0}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:#fbfdfc}
+td:first-child{font-weight:600}
+.muted{margin:0;color:var(--muted)}
+.metric-id{
+  color:#286d54;
+  background:transparent;
+  font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;
+}
+.tag{
+  display:inline-flex;
+  align-items:center;
+  padding:3px 8px;
+  border-radius:999px;
+  color:#315f50;
+  background:var(--brand-soft);
+  font-size:12px;
+  white-space:nowrap;
+}
+.metric-value{color:var(--brand-dark);font-size:15px}
+.semantic-detail{margin-top:5px;color:#354b43}
+.tracking-target{margin-top:5px;color:var(--muted);font-size:12px}
+@media (max-width:760px){
+  main{padding:18px 12px 40px}
+  .hero{align-items:flex-start;flex-direction:column;padding:24px 20px;border-radius:14px}
+  .run-id{max-width:100%}
+  section{padding:17px 14px;border-radius:12px}
+  .profile-grid{grid-template-columns:1fr}
+  .matchup-chart{grid-template-columns:1fr}
+  .chart-row{grid-template-columns:minmax(170px,1fr) 1fr 54px;gap:7px;padding:4px 0}
+  .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+""".strip()
 
 
 def render_html(data: ReportData) -> str:
@@ -53,6 +204,8 @@ def render_html(data: ReportData) -> str:
         allow_nan=False,
         default=str,
     ).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    semantic_metrics = _semantic_metrics_html(data.metric_profile, data.metrics)
+    visible_metrics = semantic_metrics or _metrics_html(data.metrics)
     return "\n".join(
         (
             "<!doctype html>",
@@ -61,27 +214,17 @@ def render_html(data: ReportData) -> str:
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
             f"<title>评测报告 - {run_id}</title>",
-            "<style>"
-            "body{margin:0;background:#f5f7f7;color:#172321;font:14px/1.5 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}"
-            "main{max-width:1120px;margin:0 auto;padding:24px}h1,h2,h3{margin:0 0 12px}"
-            "section{margin:24px 0}table{width:100%;border-collapse:collapse;background:#fff}"
-            "th,td{padding:8px 10px;border:1px solid #d7dfdc;text-align:left;vertical-align:top}th{background:#e9f0ed}"
-            ".summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}"
-            ".card,.case{background:#fff;border:1px solid #d7dfdc;padding:12px;border-radius:6px}"
-            ".label{color:#52615d;font-size:12px}.value{font-size:21px;font-weight:700}.chart-row{display:grid;grid-template-columns:minmax(140px,220px) 1fr 70px;gap:10px;align-items:center;margin:6px 0}.bar-track{height:14px;background:#dce6e1}.bar{display:block;height:100%;background:#27885d}.case-list{display:grid;gap:10px}.semantic-detail{margin-top:4px}.muted{color:#52615d}"
-            "</style>",
+            f"<style>{REPORT_STYLES}</style>",
             "</head>",
             "<body><main>",
-            f"<h1>评测报告</h1><p class=\"muted\">运行 ID：{run_id}</p>",
+            '<header class="hero"><div>'
+            '<p class="eyebrow">POKÉMON TCG · EVALUATION</p>'
+            '<h1>评测报告</h1></div>'
+            f'<div class="run-id">{run_id}</div></header>',
             _profile_html(data.metric_profile),
             _summary_html(summary),
-            _matchup_html(summary),
-            _semantic_metrics_html(data.metric_profile, data.metrics),
-            _metrics_html(data.metrics),
-            _failure_html(data.metrics),
-            _cases_html(data.cases),
-            _control_html(summary),
-            _presentations_html(data),
+            _matchup_html(summary, manifest),
+            visible_metrics,
             f'<script id="report-data" type="application/json">{document_data}</script>',
             "</main></body></html>",
         )
@@ -92,34 +235,17 @@ def _profile_html(profile: Mapping[str, object]) -> str:
     if not profile:
         return ""
     values = as_mapping(profile)
-    rows = "".join(
-        f"<tr><th>{_text(label)}</th><td>{_text(value)}</td></tr>"
+    items = "".join(
+        '<div class="profile-item">'
+        f'<span class="label">{_text(label)}</span>'
+        f'<div class="profile-value">{_text(value)}</div></div>'
         for label, value in (
-            ("profile", values.get("id", "-")),
-            ("revision", values.get("revision", "-")),
-            ("metrics", ", ".join(str(item) for item in values.get("metric_ids", ()) if item)),
+            ("Metric profile", values.get("id", "-")),
+            ("Revision", values.get("revision", "-")),
+            ("Metrics", ", ".join(str(item) for item in values.get("metric_ids", ()) if item)),
         )
     )
-    return f"<section><h2>Metric profile</h2><table>{rows}</table></section>"
-
-
-def _presentations_html(data: ReportData) -> str:
-    semantic_profile = bool(as_mapping(data.metric_profile).get("semantic_groups"))
-    presentations = tuple(
-        presentation
-        for presentation in data.presentations.values()
-        if not semantic_profile or not presentation.title.startswith("指标：")
-    )
-    sections = "".join(presentation.html for presentation in presentations)
-    if semantic_profile and presentations:
-        sections = f"<section><h2>插件审计明细</h2></section>{sections}"
-    if data.presentation_errors:
-        diagnostics = "".join(
-            f"<li>{_text(item.get('metric_id', 'unknown'))}: {_text(item.get('error', 'unknown'))}</li>"
-            for item in data.presentation_errors
-        )
-        sections += f"<section><h2>Presentation diagnostics</h2><ul>{diagnostics}</ul></section>"
-    return sections
+    return f'<section><div class="profile-grid">{items}</div></section>'
 
 
 def _summary_html(summary: Mapping[str, object]) -> str:
@@ -136,27 +262,44 @@ def _summary_html(summary: Mapping[str, object]) -> str:
     ) + "</div></section>"
 
 
-def _matchup_html(summary: Mapping[str, object]) -> str:
-    rows = []
+def _matchup_html(
+    summary: Mapping[str, object], manifest: Mapping[str, object]
+) -> str:
+    opponent_visuals = {
+        str(item.get("name")): item
+        for item in manifest.get("opponents", ())
+        if isinstance(item, Mapping) and item.get("name")
+    }
     chart_rows = []
     for opponent, result in ordered_mapping(summary.get("by_opponent")):
         values = as_mapping(result)
         rate = values.get("win_rate")
-        rows.append(
-            "<tr>"
-            f"<td>{_text(opponent)}</td><td>{_text(display_value(values.get('wins')))}</td>"
-            f"<td>{_text(display_value(values.get('losses')))}</td><td>{_text(display_value(values.get('draws')))}</td>"
-            f"<td>{_text(display_value(values.get('errors')))}</td><td>{_text(display_value(values.get('unfinished')))}</td>"
-            f"<td>{_text(percentage(rate))}</td></tr>"
+        visual = as_mapping(opponent_visuals.get(opponent))
+        display_name = visual.get("display_name") or opponent
+        thumbnails = []
+        for card in visual.get("representative_cards", ()):
+            card_values = as_mapping(card)
+            image_url = card_values.get("image_url")
+            if not image_url:
+                continue
+            thumbnails.append(
+                f'<img class="opponent-thumb" src="{_text(image_url)}" '
+                f'alt="{_text(card_values.get("name", "代表宝可梦"))}" loading="lazy" '
+                'onerror="this.hidden=true">'
+            )
+        identity = (
+            '<span class="opponent-identity">'
+            f'<span class="opponent-thumbnails">{"".join(thumbnails)}</span>'
+            f'<span class="opponent-name" title="{_text(display_name)}">'
+            f'{_text(display_name)}</span></span>'
         )
         chart_rows.append(
-            f'<div class="chart-row"><span>{_text(opponent)}</span><span class="bar-track"><span class="bar" style="width:{_width(rate)}"></span></span><span>{_text(percentage(rate))}</span></div>'
+            f'<div class="chart-row">{identity}<span class="bar-track">'
+            f'<span class="bar" style="width:{_width(rate)}"></span></span>'
+            f'<span class="chart-rate">{_text(percentage(rate))}</span></div>'
         )
     return (
-        "<section><h2>对局矩阵</h2><table><thead><tr><th>对手</th><th>胜</th><th>负</th><th>平</th><th>错误</th><th>未完成</th><th>胜率</th></tr></thead><tbody>"
-        + "".join(rows)
-        + "</tbody></table></section>"
-        + '<section><h2>对局胜率图</h2><div class="matchup-chart">'
+        '<section class="matchup-section"><h2>对局胜率图</h2><div class="matchup-chart">'
         + "".join(chart_rows)
         + "</div></section>"
     )
@@ -192,13 +335,13 @@ def _semantic_metrics_html(
                 continue
             rows.append(_semantic_metric_row(semantic, metric))
         if not rows:
-            rows.append('<tr><td colspan="6" class="muted">本轮未产出该组指标。</td></tr>')
+            rows.append('<tr><td colspan="5" class="muted">本轮未产出该组指标。</td></tr>')
         sections.append(
             "<section class=\"semantic-metric-group\">"
             f"<h2>{_text(title)}</h2>"
             f"<p class=\"muted\">{_text(description)}</p>"
             '<table><thead><tr><th>语义指标</th><th>metric_id</th><th>角色</th>'
-            "<th>方向</th><th>分子 / 分母</th><th>语义值与追踪目标</th></tr></thead>"
+            "<th>方向</th><th>语义值与追踪目标</th></tr></thead>"
             f"<tbody>{''.join(rows)}</tbody></table></section>"
         )
     return "".join(sections)
@@ -210,8 +353,6 @@ def _semantic_metric_row(
     metric_id = str(semantic.get("metric_id", ""))
     role = _role_text(semantic.get("role"))
     direction = _direction_text(semantic.get("direction"))
-    numerator = metric.get("numerator")
-    denominator = metric.get("denominator")
     value, detail = _semantic_metric_value(semantic, metric)
     tracking_target = semantic.get("tracking_target", "")
     target = _text(tracking_target)
@@ -219,11 +360,11 @@ def _semantic_metric_row(
     return (
         "<tr>"
         f"<td><strong>{_text(semantic.get('title', metric_id))}</strong></td>"
-        f"<td><code>{_text(metric_id)}</code></td>"
-        f"<td>{_text(role)}</td>"
-        f"<td>{_text(direction)}</td>"
-        f"<td>{_text(_semantic_fraction(semantic, metric))}</td>"
-        f"<td><strong>{_text(value)}</strong>{detail_html}<div class=\"muted\">追踪目标：{target}</div></td>"
+        f'<td><span class="metric-id">{_text(metric_id)}</span></td>'
+        f'<td><span class="tag">{_text(role)}</span></td>'
+        f'<td><span class="tag">{_text(direction)}</span></td>'
+        f'<td><strong class="metric-value">{_text(value)}</strong>{detail_html}'
+        f'<div class="tracking-target">追踪目标：{target}</div></td>'
         "</tr>"
     )
 
@@ -252,6 +393,13 @@ def _semantic_metric_value(
         raw_value = _value_at_path(payload, str(semantic.get("value_source", "")))
         if isinstance(raw_value, Mapping):
             return _ratio(raw_value.get("numerator"), raw_value.get("denominator")), ""
+        if semantic.get("semantic_id") == "attack_quality":
+            value_source = str(semantic.get("value_source", ""))
+            parent = _value_at_path(payload, value_source.rsplit(".", 1)[0])
+            if isinstance(parent, Mapping):
+                denominator = parent.get("denominator")
+                detail = "无有效攻击" if _is_zero(denominator) else ""
+                return _ratio(parent.get("numerator"), denominator), detail
         if raw_value is None:
             value_source = str(semantic.get("value_source", ""))
             parent = _value_at_path(payload, value_source.rsplit(".", 1)[0])
@@ -263,7 +411,7 @@ def _semantic_metric_value(
         successes = payload.get("successes")
         rate = _value_at_path(payload, str(semantic.get("value_source", "")))
         if rate is None or _is_zero(opportunities):
-            value = _ratio(successes, opportunities)
+            value = _ratio(successes, opportunities, empty_label="无机会")
         else:
             value = f"{_fraction(successes, opportunities)} = {percentage(rate)}"
         detail = _turn_order_detail(
@@ -304,71 +452,11 @@ def _semantic_metric_value(
         denominator = int(powerful.get("resolved_attacks", 0)) - int(
             powerful.get("unknown_prize_attacks", 0)
         )
-        return _ratio(numerator, denominator), ""
+        detail = "无有效攻击" if not denominator else ""
+        return _ratio(numerator, denominator), detail
     if kind == "scalar":
         return display_value(_value_at_path(metric, str(semantic.get("value_source", "")))), ""
     return _ratio(metric.get("numerator"), metric.get("denominator")), ""
-
-
-def _semantic_fraction(
-    semantic: Mapping[str, object], metric: Mapping[str, object]
-) -> str:
-    payload = as_mapping(metric.get("payload"))
-    kind = str(semantic.get("display_kind", "aggregate_ratio"))
-    if kind in {"outcome_turn_order", "powerful_hand_turn_order", "aggregate_ratio"}:
-        return _fraction(
-            metric.get("numerator"), metric.get("denominator"), empty_label="无有效样本"
-        )
-    if kind == "component_summary":
-        return "多项观察"
-    if kind == "payload_ratio":
-        value_source = str(semantic.get("value_source", ""))
-        raw_value = _value_at_path(payload, value_source)
-        if isinstance(raw_value, Mapping):
-            return _fraction(
-                raw_value.get("numerator"),
-                raw_value.get("denominator"),
-                empty_label=_empty_fraction_label(semantic),
-            )
-        parent_path = value_source.rsplit(".", 1)[0]
-        parent = _value_at_path(payload, parent_path)
-        if isinstance(parent, Mapping):
-            return _fraction(
-                parent.get("numerator"),
-                parent.get("denominator"),
-                empty_label=_empty_fraction_label(semantic),
-            )
-        return "-"
-    if kind == "payload_success_ratio":
-        return _fraction(
-            payload.get("successes"), payload.get("opportunities"), empty_label="无机会"
-        )
-    if kind == "draw_summary":
-        draws = as_mapping(payload.get("second_turn_draws"))
-        all_games = as_mapping(draws.get("all_games"))
-        return _fraction(
-            all_games.get("total"), all_games.get("games"), empty_label="无有效样本"
-        )
-    if kind == "powerful_hand_attack_ratio":
-        powerful = as_mapping(payload.get("powerful_hand"))
-        denominator = int(powerful.get("resolved_attacks", 0)) - int(
-            powerful.get("unknown_prize_attacks", 0)
-        )
-        return _fraction(
-            powerful.get("non_prize_attacks"), denominator, empty_label="无有效攻击"
-        )
-    if kind == "payload_scalar":
-        return display_value(
-            _value_at_path(payload, str(semantic.get("value_source", "")))
-        )
-    return _fraction(metric.get("numerator"), metric.get("denominator"))
-
-
-def _empty_fraction_label(semantic: Mapping[str, object]) -> str:
-    return {
-        "dunsparce_bridge": "无机会",
-        "attack_quality": "无有效攻击",
-    }.get(str(semantic.get("semantic_id")), "无有效样本")
 
 
 def _value_at_path(value: object, path: str) -> object:
@@ -483,48 +571,6 @@ def _metrics_html(metrics: Mapping[str, object]) -> str:
         + "".join(rows)
         + "</tbody></table></section>"
     )
-
-
-def _failure_html(metrics: Mapping[str, object]) -> str:
-    rows = "".join(
-        f"<tr><td>{_text(failure_class)}</td><td>{_text(display_value(count))}</td></tr>"
-        for failure_class, count in ordered_mapping(failure_class_distribution(metrics))
-    )
-    return (
-        "<section><h2>failure_class 分布</h2><table><thead><tr><th>failure_class</th><th>数量</th></tr></thead><tbody>"
-        + rows
-        + "</tbody></table></section>"
-    )
-
-
-def _cases_html(cases: tuple) -> str:
-    cards = []
-    for index, raw_case in enumerate(cases[:3], start=1):
-        case = as_mapping(raw_case)
-        evidence = "".join(
-            f"<li>步骤 {_text(display_value(item.get('step')))}：{_text(item.get('expected_reason', item.get('detail', '')))}</li>"
-            for item in case_evidence_steps(case)
-        )
-        cards.append(
-            '<article class="case">'
-            f"<h3>案例 {index}：{_text(case.get('game_id', '-'))}</h3>"
-            f"<p>对手：{_text(case.get('opponent', '-'))}</p>"
-            f"<p>failure_class：{_text(case.get('failure_class', '-'))}</p>"
-            f"<p>trace：<code>{_text(case.get('trace_path', '-'))}</code></p>"
-            f"<ul>{evidence}</ul></article>"
-        )
-    content = "".join(cards) if cards else "<p>无重点案例。</p>"
-    return f'<section><h2>重点案例</h2><div class="case-list">{content}</div></section>'
-
-
-def _control_html(summary: Mapping[str, object]) -> str:
-    differences = control_differences(summary)
-    if not differences:
-        return ""
-    items = "".join(
-        f"<li>{_text(key)}：{_text(value)}</li>" for key, value in ordered_mapping(differences)
-    )
-    return f"<section><h2>对照差异</h2><ul>{items}</ul></section>"
 
 
 def _record(summary: Mapping[str, object]) -> str:

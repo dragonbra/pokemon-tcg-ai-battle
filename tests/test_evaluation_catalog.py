@@ -16,31 +16,36 @@ from evaluation.cli import (
     load_opponent_catalog,
     validate_catalog,
 )
-from evaluation.packages.loader import PackageValidationError
+from evaluation.packages.loader import PackageValidationError, load_submission_package
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "evaluation" / "configs" / "opponents.json"
 EVALUATION_ROOT = ROOT / "evaluation"
 EXPECTED_NAMES = [
-    "romanrozen_v9",
-    "pilkwang_v2",
-    "kokinn_search",
-    "penguin_915",
-    "crustle_wall",
-    "crustle_v1",
-    "kiyotah_lucario",
-    "kiyotah_dragapult",
-    "kiyotah_iono",
-    "kiyotah_abomasnow",
-    "kacchan_anti_wall",
-    "nursrijan_lucario",
-    "zoli_dragapult",
-    "sue_alakazam",
-    "maktha_1084",
-    "yanxiaohan",
-    "Agent_Lucario",
-    "Agent_Aluxian",
+    "alakazam_dudunsparce_01",
+    "alakazam_dudunsparce_02",
+    "alakazam_dudunsparce_03",
+    "alakazam_dudunsparce_04",
+    "crustle_01",
+    "crustle_02",
+    "dragapult_ex_01",
+    "dragapult_ex_02",
+    "dragapult_ex_03",
+    "ionos_bellibolt_ex_kilowattrel_01",
+    "marnies_grimmsnarl_ex_dudunsparce_01",
+    "marnies_grimmsnarl_ex_froslass_01",
+    "mega_abomasnow_ex_kyogre_01",
+    "mega_lucario_ex_solrock_01",
+    "mega_lucario_ex_solrock_02",
+    "mega_lucario_ex_solrock_03",
+    "mega_lucario_ex_solrock_04",
+    "mega_lucario_ex_solrock_05",
+    "mega_lucario_ex_solrock_06",
+    "mega_lucario_ex_solrock_07",
+    "mega_lucario_ex_solrock_08",
+    "mega_lucario_ex_solrock_09",
+    "mega_lucario_ex_solrock_10",
 ]
 
 
@@ -62,7 +67,19 @@ class EvaluationCatalogTests(unittest.TestCase):
 
         self.assertEqual([package.name for package in packages], EXPECTED_NAMES)
         self.assertTrue(
-            all(package.root.parent == EVALUATION_ROOT / "opponents" for package in packages)
+            all(
+                package.root.parent == EVALUATION_ROOT / "arena" / "opponents"
+                for package in packages
+            )
+        )
+        self.assertTrue(all(package.display_name for package in packages))
+        self.assertTrue(all(package.representative_cards for package in packages))
+        self.assertTrue(
+            all(
+                str(card["image_url"]).startswith("https://images.")
+                for package in packages
+                for card in package.representative_cards
+            )
         )
 
     def test_validate_catalog_checks_all_packages_and_card_ids(self) -> None:
@@ -142,7 +159,7 @@ class EvaluationCatalogTests(unittest.TestCase):
             with self.assertRaisesRegex(PackageValidationError, "inside"):
                 load_opponent_catalog(path, EVALUATION_ROOT)
 
-            payload["opponents"][0]["package"] = "opponents/does_not_exist"
+            payload["opponents"][0]["package"] = "arena/opponents/does_not_exist"
             path.write_text(json.dumps(payload), encoding="utf-8")
             with self.assertRaisesRegex(PackageValidationError, "does not exist"):
                 load_opponent_catalog(path, EVALUATION_ROOT)
@@ -158,10 +175,20 @@ class EvaluationCatalogTests(unittest.TestCase):
             with self.assertRaisesRegex(PackageValidationError, "inside"):
                 load_opponent_catalog(path, EVALUATION_ROOT)
 
-            payload["opponents"][0]["package"] = "opponents/does_not_exist"
+            payload["opponents"][0]["package"] = "arena/opponents/does_not_exist"
             path.write_text(json.dumps(payload), encoding="utf-8")
 
             with self.assertRaisesRegex(PackageValidationError, "does not exist"):
+                load_opponent_catalog(path, EVALUATION_ROOT)
+
+    def test_catalog_rejects_arena_candidate_packages(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "opponents.json"
+            payload = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+            payload["opponents"][0]["package"] = "arena/candidates/staged_opponent"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+
+            with self.assertRaisesRegex(PackageValidationError, "arena/opponents"):
                 load_opponent_catalog(path, EVALUATION_ROOT)
 
     def test_research_output_root_allocates_after_numbered_runs(self) -> None:
@@ -173,12 +200,12 @@ class EvaluationCatalogTests(unittest.TestCase):
                 allocated = _numbered_research_output_root(root / "new_candidate" / "evaluation")
             self.assertEqual(allocated, root / "0004-new_candidate" / "evaluation")
 
-    def test_research_coverage_requires_fixed_catalog_and_ten_games(self) -> None:
-        with self.assertRaisesRegex(PackageValidationError, "180"):
-            _validate_research_coverage("all", 2, tuple(range(18)))  # type: ignore[arg-type]
+    def test_research_coverage_requires_full_catalog_and_ten_games(self) -> None:
+        with self.assertRaisesRegex(PackageValidationError, "230"):
+            _validate_research_coverage("all", 2, tuple(range(23)))  # type: ignore[arg-type]
         with self.assertRaisesRegex(PackageValidationError, "opponents all"):
-            _validate_research_coverage("one", 10, tuple(range(18)))  # type: ignore[arg-type]
-        _validate_research_coverage("all", 10, tuple(range(18)))  # type: ignore[arg-type]
+            _validate_research_coverage("one", 10, tuple(range(23)))  # type: ignore[arg-type]
+        _validate_research_coverage("all", 10, tuple(range(23)))  # type: ignore[arg-type]
 
     def test_catalog_skips_loading_disabled_package(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -187,7 +214,9 @@ class EvaluationCatalogTests(unittest.TestCase):
             payload["opponents"][0]["enabled"] = False
             path.write_text(json.dumps(payload), encoding="utf-8")
 
-            with patch("evaluation.cli.load_submission_package") as load_package:
+            with patch(
+                "evaluation.cli.load_submission_package", wraps=load_submission_package
+            ) as load_package:
                 load_opponent_catalog(path, EVALUATION_ROOT)
 
             self.assertEqual(load_package.call_count, len(EXPECTED_NAMES) - 1)

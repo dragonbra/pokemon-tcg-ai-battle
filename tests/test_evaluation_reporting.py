@@ -11,23 +11,23 @@ from evaluation.reporting import ReportData, render_html, render_markdown, write
 
 
 OPPONENTS = (
-    "romanrozen_v9",
-    "pilkwang_v2",
-    "kokinn_search",
-    "penguin_915",
-    "crustle_wall",
-    "crustle_v1",
-    "kiyotah_lucario",
-    "kiyotah_dragapult",
-    "kiyotah_iono",
-    "kiyotah_abomasnow",
-    "kacchan_anti_wall",
-    "nursrijan_lucario",
-    "Agent_Lucario",
-    'zoli_dragapult <&"',
-    "sue_alakazam",
-    "maktha_1084",
-    "yanxiaohan",
+    "mega_lucario_ex_solrock_01",
+    "mega_lucario_ex_solrock_02",
+    "mega_lucario_ex_solrock_03",
+    "mega_lucario_ex_solrock_04",
+    "crustle_01",
+    "crustle_02",
+    "mega_lucario_ex_solrock_05",
+    "dragapult_ex_01",
+    "ionos_bellibolt_ex_kilowattrel_01",
+    "mega_abomasnow_ex_kyogre_01",
+    "mega_lucario_ex_solrock_06",
+    "mega_lucario_ex_solrock_07",
+    "mega_lucario_ex_solrock_10",
+    'dragapult_ex_02 <&"',
+    "alakazam_dudunsparce_01",
+    "mega_lucario_ex_solrock_08",
+    "mega_lucario_ex_solrock_09",
 )
 
 
@@ -99,6 +99,10 @@ def report_data() -> ReportData:
             },
         ),
     )
+
+
+def visible_html(html: str) -> str:
+    return html.split('<script id="report-data" type="application/json">', 1)[0]
 
 
 class EvaluationReportingTests(unittest.TestCase):
@@ -238,10 +242,26 @@ class EvaluationReportingTests(unittest.TestCase):
         self.assertLess(html.index("阶段一：二回合基础能力"), html.index("阶段二：Post-KO 接力能力"))
         self.assertLess(html.index("阶段二：Post-KO 接力能力"), html.index("阶段三：攻击质量惩罚项"))
         self.assertLess(html.index("阶段三：攻击质量惩罚项"), html.index("辅助健康与审计指标"))
+        visible = visible_html(html)
+        self.assertEqual(visible.rsplit("<h2>", 1)[1].split("</h2>", 1)[0], "辅助健康与审计指标")
+        for hidden_section in (
+            "<h2>指标</h2>",
+            "failure_class 分布",
+            "重点案例",
+            "对照差异",
+            "插件审计明细",
+            "Presentation diagnostics",
+        ):
+            self.assertNotIn(hidden_section, visible)
         stage_two = html[html.index("阶段二：Post-KO 接力能力") : html.index("阶段三：攻击质量惩罚项")]
         self.assertIn("116/455 = 30.00%", stage_two)
         self.assertNotIn("339/455 = 74.51%", stage_two)
         self.assertNotIn("331.76%", html)
+        visible = visible_html(html)
+        self.assertNotIn("第一回合起始四组件状态", visible)
+        self.assertNotIn("<th>分子 / 分母</th>", visible)
+        self.assertIn("139/458 = 30.35%", visible)
+        self.assertIn("54/367 = 14.71%", visible)
 
     def test_auto_iteration_html_marks_empty_event_rates_as_undefined(self) -> None:
         data = ReportData(
@@ -283,14 +303,14 @@ class EvaluationReportingTests(unittest.TestCase):
         self.assertNotIn("0/0", html)
         self.assertNotIn("0/0 =", html)
 
-    def test_plugin_presentations_and_profile_metadata_are_rendered(self) -> None:
+    def test_plugin_presentations_remain_embedded_but_are_not_visible_after_semantic_metrics(self) -> None:
         base = report_data()
         data = ReportData(
             manifest={
                 **base.manifest,
                 "metric_profile": {
                     "id": "auto_iteration_v8_setup_relay",
-                    "revision": 2,
+                    "revision": 3,
                 },
             },
             summary=base.summary,
@@ -299,7 +319,7 @@ class EvaluationReportingTests(unittest.TestCase):
             cases=base.cases,
             metric_profile={
                 "id": "auto_iteration_v8_setup_relay",
-                "revision": 2,
+                "revision": 3,
                 "metric_ids": ["setup_relay", "attack_quality"],
             },
             presentations={
@@ -324,6 +344,9 @@ class EvaluationReportingTests(unittest.TestCase):
         for value in ("auto_iteration_v8_setup_relay", "revision", "Setup and relay", "Attack quality"):
             self.assertIn(value, markdown)
             self.assertIn(value, html)
+        visible = visible_html(html)
+        self.assertNotIn("Setup and relay", visible)
+        self.assertNotIn("Attack quality", visible)
         self.assertIn('"presentations"', html)
 
     def test_generic_html_keeps_legacy_metric_table_title(self) -> None:
@@ -331,6 +354,48 @@ class EvaluationReportingTests(unittest.TestCase):
 
         self.assertIn("<h2>指标</h2>", html)
         self.assertIn("<th>达成值</th>", html)
+
+    def test_html_keeps_only_win_rate_chart_and_uses_plain_metric_ids(self) -> None:
+        data = report_data()
+        first_opponent = OPPONENTS[0]
+        data = ReportData(
+            manifest={
+                **data.manifest,
+                "opponents": [
+                    {
+                        "name": first_opponent,
+                        "display_name": "Mega Lucario ex / Solrock 01",
+                        "representative_cards": [
+                            {
+                                "card_id": 678,
+                                "name": "Mega Lucario ex",
+                                "image_url": "https://images.pokemontcg.io/me1/77.png",
+                            }
+                        ],
+                    }
+                ],
+            },
+            summary=data.summary,
+            games=data.games,
+            metrics=data.metrics,
+            cases=data.cases,
+            metric_profile=get_metric_profile(AUTO_ITERATION_PROFILE_ID).manifest(),
+        )
+
+        html = render_html(data)
+
+        self.assertNotIn("<h2>对局矩阵</h2>", html)
+        self.assertIn("<h2>对局胜率图</h2>", html)
+        self.assertIn('<span class="metric-id">powerful_hand</span>', html)
+        self.assertNotIn("<code>powerful_hand</code>", html)
+        self.assertIn('class="hero"', html)
+        self.assertIn("--brand:#217a58", html)
+        self.assertIn("@media (max-width:760px)", html)
+        self.assertIn("grid-template-columns:repeat(2,minmax(0,1fr))", html)
+        self.assertIn("height:7px", html)
+        self.assertIn("Mega Lucario ex / Solrock 01", html)
+        self.assertIn('class="opponent-thumb"', html)
+        self.assertIn("https://images.pokemontcg.io/me1/77.png", html)
 
     def test_markdown_and_html_render_the_same_aggregated_fixture(self) -> None:
         data = report_data()
@@ -344,11 +409,11 @@ class EvaluationReportingTests(unittest.TestCase):
         for opponent in OPPONENTS:
             self.assertIn(opponent, markdown)
         for opponent in OPPONENTS:
-            if opponent == 'zoli_dragapult <&"':
+            if opponent == 'dragapult_ex_02 <&"':
                 continue
             self.assertIn(opponent, html)
-        self.assertIn("zoli_dragapult &lt;&amp;&quot;", html)
-        self.assertNotIn('zoli_dragapult <&"', html)
+        self.assertIn("dragapult_ex_02 &lt;&amp;&quot;", html)
+        self.assertNotIn('dragapult_ex_02 <&"', html)
         self.assertIn("12.50%", markdown)
         self.assertIn("12.50%", html)
         self.assertIn("31.42%", markdown)
@@ -397,16 +462,16 @@ class EvaluationReportingTests(unittest.TestCase):
 
         self.assertIsNone(decoded["summary"]["win_rate"])
 
-    def test_write_report_creates_both_standalone_outputs(self) -> None:
+    def test_write_report_creates_only_standalone_html(self) -> None:
         data = report_data()
         with tempfile.TemporaryDirectory() as temporary:
             output_dir = Path(temporary) / "nested" / "report"
             write_report(data, output_dir)
 
-            markdown = (output_dir / "report.md").read_text(encoding="utf-8")
             html = (output_dir / "report.html").read_text(encoding="utf-8")
 
-        self.assertIn("总体结果", markdown)
+            self.assertEqual({path.name for path in output_dir.iterdir()}, {"report.html"})
+
         self.assertIn("matchup-chart", html)
         self.assertNotIn("https://", html)
         self.assertNotIn("http://", html)

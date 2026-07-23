@@ -17,12 +17,12 @@ CG_SOURCE_ROOT = (
     REPOSITORY_ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
 )
 OPPONENT_NAMES = (
-    "romanrozen_v9",
-    "pilkwang_v2",
-    "kokinn_search",
-    "penguin_915",
-    "crustle_wall",
-    "crustle_v1",
+    "mega_lucario_ex_solrock_01",
+    "mega_lucario_ex_solrock_02",
+    "mega_lucario_ex_solrock_03",
+    "mega_lucario_ex_solrock_04",
+    "crustle_01",
+    "crustle_02",
 )
 
 
@@ -60,7 +60,7 @@ class EvaluationOpponentPoolATests(unittest.TestCase):
         cls.expected_cg_tree_hash = compute_cg_manifest(CG_SOURCE_ROOT)["tree_hash"]
 
     def package_root(self, name: str) -> Path:
-        return REPOSITORY_ROOT / "evaluation" / "opponents" / name
+        return REPOSITORY_ROOT / "evaluation" / "arena" / "opponents" / name
 
     def test_fixture_contains_all_ordered_60_card_decks(self) -> None:
         self.assertEqual(tuple(self.decks), OPPONENT_NAMES)
