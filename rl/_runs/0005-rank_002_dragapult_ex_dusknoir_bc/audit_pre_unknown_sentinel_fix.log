@@ -1,9 +1,0 @@
-command: /home/dragon_bra/anaconda3-wsl/envs/py311/bin/python3 -m rl.train.audit_kaggle_bc_dataset /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/artifact/dataset/0005-rank_002_dragapult_ex_dusknoir_bc/dataset.jsonl --manifest /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0005-rank_002_dragapult_ex_dusknoir_bc/data_manifest.json --output /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0005-rank_002_dragapult_ex_dusknoir_bc/audit.json
-exit_code: 1
-wall_seconds: 3.852
-
-stdout:
-
-
-stderr:
-

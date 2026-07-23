@@ -1,4 +1,0 @@
-{
-  "failed_at": "2026-07-23T07:31:01.508851+00:00",
-  "error": "RuntimeError: command failed (1); see /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0017-rank_023_marnies_grimmsnarl_ex_bc/download.log"
-}

@@ -1,4 +1,0 @@
-{
-  "failed_at": "2026-07-23T07:05:24.110016+00:00",
-  "error": "RuntimeError: command failed (1); see /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0007-rank_006_mega_lopunny_ex_bc/download.log"
-}

@@ -1,4 +1,0 @@
-{
-  "failed_at": "2026-07-23T05:57:30.440957+00:00",
-  "error": "RuntimeError: command failed (1); see /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0006-rank_008_team_rockets_mewtwo_ex_bc/audit.log"
-}

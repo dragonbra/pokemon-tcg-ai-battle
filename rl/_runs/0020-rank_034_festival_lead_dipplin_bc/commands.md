@@ -1,2 +1,0 @@
-- `kaggle-api list-episodes 54791976` — metadata refresh; PUBLIC/COMPLETED filter and exact submission_id lookup
-- `/home/dragon_bra/anaconda3-wsl/envs/py311/bin/python3 -m rl.train.download_expert_replays --source-manifest /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0020-rank_034_festival_lead_dipplin_bc/source_manifest.json --output /home/dragon_bra/repos/pokemon-tcg-ai-battle/data/replays/top20_single_expert_bc_20260723/rank_034_festival_lead_dipplin_bc --workers 2 --retries 6 --request-interval 2.0`

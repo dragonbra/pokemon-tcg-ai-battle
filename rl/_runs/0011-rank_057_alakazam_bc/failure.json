@@ -1,4 +1,0 @@
-{
-  "failed_at": "2026-07-23T07:25:52.808546+00:00",
-  "error": "RuntimeError: command failed (1); see /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0011-rank_057_alakazam_bc/download.log"
-}

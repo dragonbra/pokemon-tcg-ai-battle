@@ -1,2 +1,0 @@
-- `kaggle-api list-episodes 54810263` — metadata refresh; PUBLIC/COMPLETED filter and exact submission_id lookup
-- `/home/dragon_bra/anaconda3-wsl/envs/py311/bin/python3 -m rl.train.download_expert_replays --source-manifest /home/dragon_bra/repos/pokemon-tcg-ai-battle/rl/_runs/0014-rank_058_team_rockets_mewtwo_ex_bc/source_manifest.json --output /home/dragon_bra/repos/pokemon-tcg-ai-battle/data/replays/top20_single_expert_bc_20260723/rank_058_team_rockets_mewtwo_ex_bc --workers 2 --retries 6 --request-interval 2.0`
