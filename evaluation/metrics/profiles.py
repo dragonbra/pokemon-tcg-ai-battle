@@ -139,7 +139,7 @@ def _core_factories() -> tuple[Callable[[], MetricPlugin], ...]:
 
 CORE_PROFILE = MetricProfile(
     profile_id=CORE_PROFILE_ID,
-    revision=1,
+    revision=4,
     description="Evaluation framework core metrics",
     priorities=(),
     metric_ids=CORE_METRIC_IDS,
@@ -148,7 +148,7 @@ CORE_PROFILE = MetricProfile(
 
 AUTO_ITERATION_PROFILE = MetricProfile(
     profile_id=AUTO_ITERATION_PROFILE_ID,
-    revision=3,
+    revision=7,
     description="V8 setup and relay semantic metric profile",
     priorities=(
         MetricPriority("outcome", "result_guardrail", "higher"),
@@ -230,7 +230,8 @@ AUTO_ITERATION_PROFILE = MetricProfile(
             "diagnostic",
             "higher",
             "payload.dunsparce_bridge",
-            "在机会样本中完成 Dudunsparce 接力并于二回合实际提交 Powerful Hand。",
+            "起手无 Abra、Active Dunsparce 且首回合 Bench Abra 的样本中，按顺序完成 "
+            "Dudunsparce、Run Away Draw、Abra 接任、Alakazam 进化与 Powerful Hand。",
             "payload_ratio",
         ),
         MetricSemantic(
@@ -324,12 +325,13 @@ AUTO_ITERATION_PROFILE = MetricProfile(
             "length",
             "length",
             "auxiliary_health_audit",
-            "平均对局长度",
+            "对局结束回合数",
             "audit",
             "diagnostic",
             "aggregate.value",
-            "用于发现异常过长、过早结束或运行时行为变化。",
-            "scalar",
+            "先手与后手玩家阶段合为一个完整回合；分别展示获胜和失败对局的平均结束回合及分布，"
+            "并按我们在该局是先攻还是后攻分色。错误和未完成局不进入统计。",
+            "length_outcome_distribution",
         ),
     ),
 )

@@ -386,8 +386,11 @@ class EvaluationMetricsTests(unittest.TestCase):
             context(candidate_physical_index=1),
         )
 
-        self.assertEqual(length.value, 3)
-        self.assertEqual(length.payload["turns"], 13)
+        self.assertEqual(length.value, 7)
+        self.assertEqual(length.payload["round"], 7)
+        self.assertEqual(length.payload["engine_turn"], 13)
+        self.assertEqual(length.payload["ending_phase"], "first_player")
+        self.assertEqual(length.payload["action_selections"], 3)
         for result in (length, outcome, correctness):
             self.assertEqual(result.evidence[0]["step"], 3)
             self.assertEqual(result.evidence[0]["turn"], 13)
@@ -412,6 +415,36 @@ class EvaluationMetricsTests(unittest.TestCase):
         self.assertEqual(result.numerator, 0)
         self.assertEqual(result.denominator, 1)
         self.assertEqual(result.value, 0)
+
+    def test_length_excludes_error_stop_turn_from_completed_game_average(self) -> None:
+        completed = LengthPlugin().analyze_game(
+            worker_trace(
+                steps=[strategy_step(step_index=0, turn=13, your_index=0, first_player=0)],
+                result_steps=30,
+            ),
+            context(game_id="completed"),
+        )
+        errored = LengthPlugin().analyze_game(
+            worker_trace(
+                winner=None,
+                finished=False,
+                status="game_error",
+                error_kind="game_error",
+                steps=[strategy_step(step_index=0, turn=7, your_index=0, first_player=0)],
+                result_steps=20,
+            ),
+            context(game_id="errored"),
+        )
+
+        aggregate = LengthPlugin().aggregate([completed, errored])
+
+        self.assertEqual(errored.status, "error")
+        self.assertEqual(errored.denominator, 0)
+        self.assertEqual(errored.payload["observed_engine_turn"], 7)
+        self.assertEqual(errored.payload["observed_round"], 4)
+        self.assertEqual(aggregate.denominator, 1)
+        self.assertEqual(aggregate.value, 7.0)
+        self.assertEqual(aggregate.payload["action_selections"]["value"], 25.0)
 
     def test_worker_payload_reads_nested_candidate_error(self) -> None:
         raw_trace = worker_trace(
@@ -480,7 +513,7 @@ class EvaluationMetricsTests(unittest.TestCase):
         self.assertEqual(aggregate.by_opponent["opponent-a"]["errors"], 2)
         self.assertEqual(aggregate.by_opponent["opponent-a"]["unfinished"], 1)
 
-    def test_length_reports_average_steps_and_empty_trace_is_unavailable(self) -> None:
+    def test_length_reports_engine_turns_and_audits_action_selections(self) -> None:
         plugin = LengthPlugin()
         empty = plugin.analyze_game({}, context())
         aggregate = plugin.aggregate(
@@ -497,14 +530,58 @@ class EvaluationMetricsTests(unittest.TestCase):
         self.assertEqual(empty.status, "unavailable")
         self.assertEqual(empty.denominator, 0)
         self.assertTrue({"step", "turn", "role", "action"} <= set(empty.evidence[0]))
-        self.assertEqual(aggregate.numerator, 6)
+        self.assertEqual(aggregate.numerator, 4)
         self.assertEqual(aggregate.denominator, 2)
-        self.assertEqual(aggregate.value, 3.0)
-        self.assertEqual(aggregate.payload["turns"]["value"], 3.0)
+        self.assertEqual(aggregate.value, 2.0)
+        self.assertEqual(aggregate.payload["rounds"]["value"], 2.0)
+        self.assertEqual(aggregate.payload["turns"]["value"], 2.0)
         self.assertEqual(
             aggregate.payload["turns"]["by_opponent"]["opponent-a"]["value"],
-            3.0,
+            2.0,
         )
+        self.assertEqual(aggregate.payload["action_selections"]["value"], 3.0)
+
+    def test_length_separates_win_loss_rounds_by_candidate_turn_order(self) -> None:
+        plugin = LengthPlugin()
+
+        def finished_game(
+            game_id: str,
+            winner: int,
+            engine_turn: int,
+            *,
+            candidate_first: bool = True,
+        ) -> GameMetric:
+            return plugin.analyze_game(
+                worker_trace(
+                    winner=winner,
+                    steps=[
+                        strategy_step(
+                            step_index=0,
+                            turn=engine_turn,
+                            your_index=0,
+                            first_player=0,
+                        )
+                    ],
+                ),
+                context(game_id=game_id, candidate_first=candidate_first),
+            )
+
+        aggregate = plugin.aggregate(
+            [
+                finished_game("win-first-phase", 0, 5),
+                finished_game("win-candidate-second", 0, 6, candidate_first=False),
+                finished_game("loss-second-phase", 1, 10),
+            ]
+        )
+
+        wins = aggregate.payload["by_outcome"]["win"]
+        losses = aggregate.payload["by_outcome"]["loss"]
+        self.assertEqual(wins["average"], 3.0)
+        self.assertEqual(wins["distribution"]["3"]["candidate_first"], 1)
+        self.assertEqual(wins["distribution"]["3"]["candidate_second"], 1)
+        self.assertEqual(losses["average"], 5.0)
+        self.assertEqual(losses["distribution"]["5"]["candidate_first"], 1)
+        self.assertEqual(losses["distribution"]["5"]["candidate_second"], 0)
 
     def test_correctness_attributes_candidate_and_opponent_errors(self) -> None:
         plugin = CorrectnessPlugin()

@@ -19,10 +19,10 @@ CG_SOURCE_ROOT = (
 OPPONENT_NAMES = (
     "mega_lucario_ex_solrock_01",
     "mega_lucario_ex_solrock_02",
-    "mega_lucario_ex_solrock_03",
-    "mega_lucario_ex_solrock_04",
     "crustle_01",
     "crustle_02",
+    "mega_lucario_ex_solrock_03",
+    "mega_lucario_ex_solrock_04",
 )
 
 

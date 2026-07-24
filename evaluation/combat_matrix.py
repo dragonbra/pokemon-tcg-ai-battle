@@ -40,13 +40,16 @@ def build_combat_matrix_data(catalog_path: Path, reports_root: Path) -> dict[str
         manifest = _mapping(report.get("manifest"))
         summary = _mapping(report.get("summary"))
         metrics = _mapping(report.get("metrics"))
+        games = _mapping_sequence(report.get("games"))
         _validate_report_identity(name, names, manifest, summary)
         by_opponent = _mapping(summary.get("by_opponent"))
         turns_by_opponent = _turns_by_opponent(metrics)
+        turn_order_by_opponent = _turn_order_by_opponent(games, names)
         row: dict[str, dict[str, object]] = {}
         for opponent in names:
             outcome = _mapping(by_opponent.get(opponent))
             turns = _mapping(turns_by_opponent.get(opponent))
+            turn_order = _mapping(turn_order_by_opponent.get(opponent))
             cell = {
                 "games": _integer(outcome.get("games")),
                 "wins": _integer(outcome.get("wins")),
@@ -58,6 +61,12 @@ def build_combat_matrix_data(catalog_path: Path, reports_root: Path) -> dict[str
                 "turn_numerator": _integer(turns.get("numerator")),
                 "turn_denominator": _integer(turns.get("denominator")),
                 "average_turns": _number(turns.get("value")),
+                "first_games": _integer(turn_order.get("first_games")),
+                "first_wins": _integer(turn_order.get("first_wins")),
+                "first_win_rate": _number(turn_order.get("first_win_rate")),
+                "second_games": _integer(turn_order.get("second_games")),
+                "second_wins": _integer(turn_order.get("second_wins")),
+                "second_win_rate": _number(turn_order.get("second_win_rate")),
             }
             row[opponent] = cell
             total_games += int(cell["games"])
@@ -68,6 +77,10 @@ def build_combat_matrix_data(catalog_path: Path, reports_root: Path) -> dict[str
         matrix[name] = row
         wall_time = _number(manifest.get("wall_time_seconds")) or 0.0
         total_wall_time += wall_time
+        first_games = sum(_integer(cell.get("first_games")) for cell in row.values())
+        first_wins = sum(_integer(cell.get("first_wins")) for cell in row.values())
+        second_games = sum(_integer(cell.get("second_games")) for cell in row.values())
+        second_wins = sum(_integer(cell.get("second_wins")) for cell in row.values())
         candidate_runs.append(
             {
                 "name": name,
@@ -79,9 +92,15 @@ def build_combat_matrix_data(catalog_path: Path, reports_root: Path) -> dict[str
                 "errors": _integer(summary.get("errors")),
                 "unfinished": _integer(summary.get("unfinished")),
                 "win_rate": _number(summary.get("win_rate")),
+                "first_games": first_games,
+                "first_wins": first_wins,
+                "first_win_rate": first_wins / first_games if first_games else None,
+                "second_games": second_games,
+                "second_wins": second_wins,
+                "second_win_rate": second_wins / second_games if second_games else None,
                 "wall_time_seconds": wall_time,
                 "run_id": str(manifest.get("run_id", "")),
-                "report_path": str(report_path.resolve()),
+                "report_path": report_path.relative_to(reports_root.parent).as_posix(),
             }
         )
 
@@ -150,15 +169,20 @@ def render_combat_matrix(data: Mapping[str, object], output_root: Path) -> str:
 {_summary_card('卡组类别', protocol.get('archetypes'))}
 {_summary_card('总对局', summary.get('total_games'))}
 {_summary_card('累计评测耗时', _duration(summary.get('total_wall_time_seconds')))}
-{_summary_card('平均总回合数', _decimal(summary.get('average_turns')))}
+{_summary_card('平均完整回合数', _decimal(summary.get('average_turns')))}
 {_summary_card('错误 / 未完成', f"{summary.get('errors', 0)} / {summary.get('unfinished', 0)}")}
 </div><p class="note">每个有向单元格固定 10 局，包含每个 package 对自己的 10 局；
-胜率以行卡组为 candidate、列卡组为 opponent。累计耗时为各完整评测 wall time 之和。</p></section>
+胜率以行卡组为 candidate、列卡组为 opponent。累计耗时为各完整评测 wall time 之和。<br>
+完整回合定义：先攻玩家阶段与紧随其后的后攻玩家阶段共同组成 1 个完整回合；结束回合数按
+<code>ceil(engine_turn / 2)</code> 计算，不使用 action selection 次数。</p></section>
 {_run_table(data, output_root)}
 {_matrix_section('Package 对局胜率', 'N×N · 行 candidate 对列 opponent', packages, packages, package_matrix, 'win_rate')}
+{_matrix_section('Package 先攻胜率', 'N×N · 每格 5 局，candidate 被分配为先攻', packages, packages, package_matrix, 'first_win_rate')}
+{_matrix_section('Package 后攻胜率', 'N×N · 每格 5 局，candidate 被分配为后攻', packages, packages, package_matrix, 'second_win_rate')}
 {_matrix_section('Archetype 对局胜率', 'M×M · 按关键宝可梦类别加权聚合', archetypes, archetypes, archetype_matrix, 'win_rate')}
-{_matrix_section('Package 平均对战总回合数', 'N×N · 最终 engine turn 的样本均值', packages, packages, package_matrix, 'average_turns')}
-{_matrix_section('Archetype 平均对战总回合数', 'M×M · 所有底层对局按样本数加权', archetypes, archetypes, archetype_matrix, 'average_turns')}
+{_matrix_section('Package 平均完整回合数', 'N×N · 先后手 phase 合并后的结束回合均值', packages, packages, package_matrix, 'average_turns')}
+{_matrix_section('Archetype 平均完整回合数', 'M×M · 所有底层对局按样本数加权', archetypes, archetypes, archetype_matrix, 'average_turns')}
+<script>{_sort_script()}</script>
 <script id="combat-mat-data" type="application/json">{embedded}</script>
 </main></body></html>"""
 
@@ -238,11 +262,42 @@ def _validate_report_identity(
 def _turns_by_opponent(metrics: Mapping[str, object]) -> Mapping[str, object]:
     length = _mapping(metrics.get("length"))
     payload = _mapping(length.get("payload"))
-    turns = _mapping(payload.get("turns"))
+    turns = _mapping(payload.get("rounds", payload.get("turns")))
     by_opponent = turns.get("by_opponent")
     if not isinstance(by_opponent, Mapping):
         raise ValueError("length metric is missing turn aggregation")
     return by_opponent
+
+
+def _turn_order_by_opponent(
+    games: list[Mapping[str, Any]], opponent_names: list[str]
+) -> dict[str, dict[str, object]]:
+    counts = {
+        name: {"first_games": 0, "first_wins": 0, "second_games": 0, "second_wins": 0}
+        for name in opponent_names
+    }
+    for game in games:
+        opponent = str(game.get("opponent", ""))
+        if opponent not in counts or not isinstance(game.get("candidate_first"), bool):
+            continue
+        prefix = "first" if game["candidate_first"] else "second"
+        counts[opponent][f"{prefix}_games"] += 1
+        metric_refs = _mapping(game.get("metric_refs"))
+        outcome = _mapping(metric_refs.get("outcome"))
+        if outcome.get("value") == "win":
+            counts[opponent][f"{prefix}_wins"] += 1
+    result = {}
+    for opponent, values in counts.items():
+        first_games = values["first_games"]
+        second_games = values["second_games"]
+        result[opponent] = {
+            **values,
+            "first_win_rate": values["first_wins"] / first_games if first_games else None,
+            "second_win_rate": (
+                values["second_wins"] / second_games if second_games else None
+            ),
+        }
+    return result
 
 
 def _archetypes(entries: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -276,6 +331,10 @@ def _aggregate_archetypes(
             wins = sum(_integer(cell.get("wins")) for cell in cells)
             turns = sum(_integer(cell.get("turn_numerator")) for cell in cells)
             turn_samples = sum(_integer(cell.get("turn_denominator")) for cell in cells)
+            first_games = sum(_integer(cell.get("first_games")) for cell in cells)
+            first_wins = sum(_integer(cell.get("first_wins")) for cell in cells)
+            second_games = sum(_integer(cell.get("second_games")) for cell in cells)
+            second_wins = sum(_integer(cell.get("second_wins")) for cell in cells)
             row[str(opponent_group["name"])] = {
                 "games": games,
                 "wins": wins,
@@ -287,6 +346,14 @@ def _aggregate_archetypes(
                 "turn_numerator": turns,
                 "turn_denominator": turn_samples,
                 "average_turns": turns / turn_samples if turn_samples else None,
+                "first_games": first_games,
+                "first_wins": first_wins,
+                "first_win_rate": first_wins / first_games if first_games else None,
+                "second_games": second_games,
+                "second_wins": second_wins,
+                "second_win_rate": (
+                    second_wins / second_games if second_games else None
+                ),
             }
         result[str(candidate_group["name"])] = row
     return result
@@ -294,23 +361,38 @@ def _aggregate_archetypes(
 
 def _run_table(data: Mapping[str, object], output_root: Path) -> str:
     rows = []
-    for run in _mapping_sequence(data.get("candidate_runs")):
+    for order, run in enumerate(_mapping_sequence(data.get("candidate_runs"))):
         report_path = Path(str(run["report_path"]))
-        href = os.path.relpath(report_path, output_root)
+        href = (
+            os.path.relpath(report_path, output_root)
+            if report_path.is_absolute()
+            else report_path.as_posix()
+        )
+        win_rate = _number(run.get("win_rate"))
         rows.append(
-            "<tr>"
+            f'<tr data-default-order="{order}" data-win-rate="{win_rate or 0}" '
+            f'data-wall-time="{_number(run.get("wall_time_seconds")) or 0}">'
             f"<td>{_escape(run.get('display_name'))}</td>"
             f"<td>{run.get('wins', 0)}–{run.get('losses', 0)}–{run.get('draws', 0)}</td>"
-            f"<td>{_percentage(run.get('win_rate'))}</td>"
-            f"<td>{_escape(run.get('games'))}</td>"
+            f'<td><span class="win-rate-pill" style="{_win_heat(win_rate)}">'
+            f"{_percentage(win_rate)}</span></td>"
+            f"<td>{_percentage(run.get('first_win_rate'))} "
+            f"<span class=\"sample\">({run.get('first_wins', 0)}/{run.get('first_games', 0)})</span></td>"
+            f"<td>{_percentage(run.get('second_win_rate'))} "
+            f"<span class=\"sample\">({run.get('second_wins', 0)}/{run.get('second_games', 0)})</span></td>"
             f"<td>{_duration(run.get('wall_time_seconds'))}</td>"
             f'<td><a href="{_escape(href)}">Report</a></td></tr>'
         )
     return (
-        '<section><h2>每个卡组的完整评测</h2><p class="section-note">'
-        "每行对应一次面对全 catalog 的完整 run。</p><div class=\"table-scroll\"><table "
-        'class="runs"><thead><tr><th>卡组</th><th>W–L–D</th><th>胜率</th>'
-        "<th>对局</th><th>耗时</th><th>本机源报告</th></tr></thead><tbody>"
+        '<section><div class="run-table-heading"><div><h2>每个卡组的完整评测</h2>'
+        '<p class="section-note">每行对应一次面对全 catalog 的完整 run；点击按钮切换排序。</p>'
+        '</div><div class="sort-controls"><span>排序</span>'
+        '<button type="button" data-sort="default">默认</button>'
+        '<button type="button" data-sort="win_rate">胜率</button>'
+        '<button type="button" data-sort="wall_time">耗时</button></div></div>'
+        '<div class="table-scroll"><table class="runs" id="candidate-runs">'
+        '<thead><tr><th>卡组</th><th>W–L–D</th><th>胜率</th>'
+        "<th>先攻胜率</th><th>后攻胜率</th><th>耗时</th><th>源报告</th></tr></thead><tbody>"
         + "".join(rows)
         + "</tbody></table></div></section>"
     )
@@ -340,7 +422,7 @@ def _matrix_section(
         for column in columns:
             cell = _mapping(matrix_row.get(str(column["name"])))
             value = _number(cell.get(metric))
-            if metric == "win_rate":
+            if metric.endswith("win_rate"):
                 display = _percentage(value)
                 style = _win_heat(value)
             else:
@@ -356,7 +438,7 @@ def _matrix_section(
         body.append(f"<tr><th>{_identity(row)}</th>{''.join(cells)}</tr>")
     legend = (
         '<div class="legend"><span>低</span><i class="gradient win"></i><span>高</span></div>'
-        if metric == "win_rate"
+        if metric.endswith("win_rate")
         else '<div class="legend"><span>短</span><i class="gradient turns"></i><span>长</span></div>'
     )
     return (
@@ -366,6 +448,33 @@ def _matrix_section(
         f"Candidate ↓ / Opponent →</th>{headers}</tr></thead><tbody>{''.join(body)}"
         "</tbody></table></div></section>"
     )
+
+
+def _sort_script() -> str:
+    return """
+(() => {
+  const table = document.getElementById('candidate-runs');
+  if (!table) return;
+  const body = table.tBodies[0];
+  const buttons = document.querySelectorAll('.sort-controls button[data-sort]');
+  let active = 'default';
+  let direction = 1;
+  const defaults = {default: 1, win_rate: -1, wall_time: 1};
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      const key = button.dataset.sort;
+      direction = active === key ? -direction : defaults[key];
+      active = key;
+      const attribute = key === 'default' ? 'defaultOrder' : key === 'win_rate' ? 'winRate' : 'wallTime';
+      const rows = Array.from(body.rows);
+      rows.sort((left, right) => direction * (Number(left.dataset[attribute]) - Number(right.dataset[attribute])));
+      for (const row of rows) body.appendChild(row);
+      for (const item of buttons) item.classList.toggle('active', item === button);
+    });
+  }
+  buttons[0]?.classList.add('active');
+})();
+""".strip()
 
 
 def _identity(item: Mapping[str, object], compact: bool = False) -> str:
@@ -394,7 +503,7 @@ def _styles() -> str:
     return """
 :root{--bg:#f3f7f5;--surface:#fff;--soft:#f7faf8;--ink:#172b25;--muted:#60736c;
 --line:#dce7e2;--brand:#217a58;--brand-dark:#14563d;--shadow:0 12px 32px rgba(26,71,55,.08)}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,rgba(58,155,112,.12),transparent 32rem),linear-gradient(180deg,#f8fbf9 0,var(--bg) 24rem);color:var(--ink);font:14px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC",sans-serif}main{max-width:1680px;margin:auto;padding:36px 28px 64px}.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;padding:30px 32px;border-radius:18px;color:#fff;background:linear-gradient(135deg,var(--brand-dark),#23835d 68%,#3b9c71);box-shadow:0 18px 44px rgba(20,86,61,.2)}.hero h1{margin:0;font-size:34px}.hero p{margin:4px 0 0;color:#d9f0e6}.eyebrow{font-size:12px!important;font-weight:700;letter-spacing:.12em}.run-id{padding:8px 12px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.1);font:12px ui-monospace,monospace}section{margin:18px 0;padding:22px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.97);box-shadow:var(--shadow)}h2{margin:0 0 6px;font-size:20px}.note,.section-note{margin:4px 0;color:var(--muted)}.summary-grid{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:12px;margin-top:14px}.summary-card{padding:15px 16px;border:1px solid var(--line);border-radius:11px;background:linear-gradient(180deg,#fff,var(--soft))}.summary-card .label{display:block;color:var(--muted);font-size:12px}.summary-card strong{display:block;margin-top:5px;font-size:22px}.table-scroll,.matrix-scroll{overflow:auto;margin-top:14px;border:1px solid var(--line);border-radius:10px}table{border-collapse:separate;border-spacing:0;background:#fff}.runs{width:100%}.runs th,.runs td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left}.runs th{background:var(--soft);color:#496159}.runs tr:last-child td{border-bottom:0}a{color:var(--brand);font-weight:700;text-decoration:none}.section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.matrix{min-width:max-content;font-size:11px}.matrix th,.matrix td{width:62px;min-width:62px;height:48px;padding:4px;border-right:1px solid rgba(220,231,226,.8);border-bottom:1px solid rgba(220,231,226,.8);text-align:center;font-variant-numeric:tabular-nums}.matrix thead th{position:sticky;top:0;z-index:3;height:128px;background:var(--soft);vertical-align:bottom}.matrix tbody th{position:sticky;left:0;z-index:2;width:210px;min-width:210px;background:var(--soft);text-align:left}.matrix .corner{left:0;z-index:4;width:210px;min-width:210px}.identity{display:flex;align-items:center;gap:7px;min-width:0}.identity.compact{width:54px;flex-direction:column;gap:3px}.identity.compact>span:last-child{width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transform:rotate(-55deg);transform-origin:50% 50%;font-size:9px}.card-stack{display:flex;flex:none;padding-left:3px}.card-stack img{width:25px;height:34px;margin-left:-3px;object-fit:cover;border:1px solid rgba(23,43,37,.2);border-radius:3px;background:#e6eee9;box-shadow:0 2px 4px rgba(23,43,37,.12)}.identity.compact .card-stack img{width:22px;height:30px}.legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}.gradient{display:block;width:120px;height:8px;border-radius:999px}.gradient.win{background:linear-gradient(90deg,hsl(8 62% 58%),hsl(74 56% 76%),hsl(140 55% 48%))}.gradient.turns{background:linear-gradient(90deg,hsl(165 45% 94%),hsl(222 55% 45%))}@media(max-width:900px){main{padding:18px 12px 40px}.hero{align-items:flex-start;flex-direction:column;padding:24px 20px}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.section-heading{align-items:flex-start;flex-direction:column}}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 12% 0%,rgba(58,155,112,.12),transparent 32rem),linear-gradient(180deg,#f8fbf9 0,var(--bg) 24rem);color:var(--ink);font:14px/1.55 system-ui,-apple-system,"Segoe UI","PingFang SC",sans-serif}main{max-width:1680px;margin:auto;padding:36px 28px 64px}.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;padding:30px 32px;border-radius:18px;color:#fff;background:linear-gradient(135deg,var(--brand-dark),#23835d 68%,#3b9c71);box-shadow:0 18px 44px rgba(20,86,61,.2)}.hero h1{margin:0;font-size:34px}.hero p{margin:4px 0 0;color:#d9f0e6}.eyebrow{font-size:12px!important;font-weight:700;letter-spacing:.12em}.run-id{padding:8px 12px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(255,255,255,.1);font:12px ui-monospace,monospace}section{margin:18px 0;padding:22px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.97);box-shadow:var(--shadow)}h2{margin:0 0 6px;font-size:20px}.note,.section-note{margin:4px 0;color:var(--muted)}.summary-grid{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:12px;margin-top:14px}.summary-card{padding:15px 16px;border:1px solid var(--line);border-radius:11px;background:linear-gradient(180deg,#fff,var(--soft))}.summary-card .label{display:block;color:var(--muted);font-size:12px}.summary-card strong{display:block;margin-top:5px;font-size:22px}.table-scroll,.matrix-scroll{overflow:auto;margin-top:14px;border:1px solid var(--line);border-radius:10px}table{border-collapse:separate;border-spacing:0;background:#fff}.runs{width:100%}.runs th,.runs td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left}.runs th{background:var(--soft);color:#496159}.runs tr:last-child td{border-bottom:0}.sample{color:var(--muted);font-size:11px}.win-rate-pill{display:inline-block;min-width:66px;padding:4px 8px;border-radius:999px;text-align:center}.run-table-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.sort-controls{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12px}.sort-controls button{padding:6px 10px;border:1px solid var(--line);border-radius:999px;color:var(--brand-dark);background:#fff;cursor:pointer}.sort-controls button:hover,.sort-controls button.active{border-color:#70ad91;background:#e8f5ee}a{color:var(--brand);font-weight:700;text-decoration:none}.section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}.matrix{min-width:max-content;font-size:11px}.matrix th,.matrix td{width:62px;min-width:62px;height:48px;padding:4px;border-right:1px solid rgba(220,231,226,.8);border-bottom:1px solid rgba(220,231,226,.8);text-align:center;font-variant-numeric:tabular-nums}.matrix thead th{position:sticky;top:0;z-index:3;height:128px;background:var(--soft);vertical-align:bottom}.matrix tbody th{position:sticky;left:0;z-index:2;width:210px;min-width:210px;background:var(--soft);text-align:left}.matrix .corner{left:0;z-index:4;width:210px;min-width:210px}.identity{display:flex;align-items:center;gap:7px;min-width:0}.identity.compact{width:54px;flex-direction:column;gap:3px}.identity.compact>span:last-child{width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transform:rotate(-55deg);transform-origin:50% 50%;font-size:9px}.card-stack{display:flex;flex:none;padding-left:3px}.card-stack img{width:25px;height:34px;margin-left:-3px;object-fit:cover;border:1px solid rgba(23,43,37,.2);border-radius:3px;background:#e6eee9;box-shadow:0 2px 4px rgba(23,43,37,.12)}.identity.compact .card-stack img{width:22px;height:30px}.legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}.gradient{display:block;width:120px;height:8px;border-radius:999px}.gradient.win{background:linear-gradient(90deg,hsl(8 62% 58%),hsl(74 56% 76%),hsl(140 55% 48%))}.gradient.turns{background:linear-gradient(90deg,hsl(165 45% 94%),hsl(222 55% 45%))}@media(max-width:900px){main{padding:18px 12px 40px}.hero{align-items:flex-start;flex-direction:column;padding:24px 20px}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.section-heading,.run-table-heading{align-items:flex-start;flex-direction:column}}
 """
 
 

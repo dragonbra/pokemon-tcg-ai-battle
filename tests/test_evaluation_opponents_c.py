@@ -17,11 +17,7 @@ DECK_FIXTURE = ROOT / "tests" / "fixtures" / "evaluation_opponent_decks.json"
 OPPONENTS_ROOT = ROOT / "evaluation" / "arena" / "opponents"
 CG_SOURCE_ROOT = ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
 OPPONENT_NAMES = (
-    "dragapult_ex_02",
     "alakazam_dudunsparce_01",
-    "mega_lucario_ex_solrock_08",
-    "mega_lucario_ex_solrock_09",
-    "mega_lucario_ex_solrock_10",
     "alakazam_dudunsparce_02",
 )
 YAN_N_Z_FORBIDDEN_REFERENCES = (
@@ -135,7 +131,7 @@ class EvaluationOpponentPoolCTests(unittest.TestCase):
 
     def test_renamed_lucario_package_is_self_contained(self) -> None:
         main_source = (
-            self.package_root("mega_lucario_ex_solrock_09") / "main.py"
+            self.package_root("mega_lucario_ex_solrock_05") / "main.py"
         ).read_text(encoding="utf-8")
 
         for forbidden in YAN_N_Z_FORBIDDEN_REFERENCES:

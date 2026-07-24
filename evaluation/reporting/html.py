@@ -155,6 +155,23 @@ td:first-child{font-weight:600}
 .metric-value{color:var(--brand-dark);font-size:15px}
 .semantic-detail{margin-top:5px;color:#354b43}
 .tracking-target{margin-top:5px;color:var(--muted);font-size:12px}
+.length-distribution-cell{padding:18px 12px 8px}
+.length-distribution-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.length-chart{min-width:0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--surface-soft)}
+.length-chart-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+.length-chart-summary{color:var(--muted);font-size:12px;text-align:right}
+.length-bars{display:flex;align-items:flex-end;gap:6px;min-height:205px;padding:14px 8px 0;overflow-x:auto;border-bottom:1px solid #b9c9c1}
+.length-bin{display:grid;grid-template-rows:20px 150px 24px;flex:1 0 34px;min-width:34px;align-items:end;text-align:center}
+.length-count{align-self:center;color:#41564f;font-size:11px;font-variant-numeric:tabular-nums}
+.length-bar-space{display:flex;height:150px;align-items:flex-end;justify-content:center}
+.length-bar{display:flex;width:25px;min-height:2px;overflow:hidden;flex-direction:column-reverse;border-radius:5px 5px 0 0;box-shadow:0 2px 5px rgba(23,43,37,.12)}
+.length-chart.win .candidate-first{background:#187a55}.length-chart.win .candidate-second{background:#65bd96}
+.length-chart.loss .candidate-first{background:#b84b4b}.length-chart.loss .candidate-second{background:#e69b8f}
+.length-round{align-self:center;color:var(--muted);font-size:11px;white-space:nowrap}
+.length-legend{display:flex;gap:14px;margin-top:10px;color:var(--muted);font-size:11px}
+.length-legend span{display:inline-flex;align-items:center;gap:5px}
+.length-legend i{width:9px;height:9px;border-radius:2px;background:#526e64}
+.length-legend .second i{opacity:.48}
 @media (max-width:760px){
   main{padding:18px 12px 40px}
   .hero{align-items:flex-start;flex-direction:column;padding:24px 20px;border-radius:14px}
@@ -164,6 +181,7 @@ td:first-child{font-weight:600}
   .matchup-chart{grid-template-columns:1fr}
   .chart-row{grid-template-columns:minmax(170px,1fr) 1fr 54px;gap:7px;padding:4px 0}
   .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .length-distribution-grid{grid-template-columns:1fr}
 }
 """.strip()
 
@@ -357,7 +375,7 @@ def _semantic_metric_row(
     tracking_target = semantic.get("tracking_target", "")
     target = _text(tracking_target)
     detail_html = f"<div class=\"semantic-detail\">{_text(detail)}</div>" if detail else ""
-    return (
+    row = (
         "<tr>"
         f"<td><strong>{_text(semantic.get('title', metric_id))}</strong></td>"
         f'<td><span class="metric-id">{_text(metric_id)}</span></td>'
@@ -367,6 +385,9 @@ def _semantic_metric_row(
         f'<div class="tracking-target">追踪目标：{target}</div></td>'
         "</tr>"
     )
+    if semantic.get("display_kind") == "length_outcome_distribution":
+        return row + _length_distribution_row(metric)
+    return row
 
 
 def _semantic_metric_value(
@@ -446,6 +467,20 @@ def _semantic_metric_value(
             f"{display_value(all_games.get('average'))} 张/局",
             "；".join(details),
         )
+    if kind == "length_outcome_distribution":
+        outcomes = as_mapping(payload.get("by_outcome"))
+        win = as_mapping(outcomes.get("win"))
+        loss = as_mapping(outcomes.get("loss"))
+        value = (
+            f"胜利平均 {display_value(win.get('average'))} 回合；"
+            f"失败平均 {display_value(loss.get('average'))} 回合"
+        )
+        detail = (
+            f"胜利样本 {display_value(win.get('denominator'))} 局；"
+            f"失败样本 {display_value(loss.get('denominator'))} 局；"
+            f"正常完成总体平均 {display_value(metric.get('value'))} 回合"
+        )
+        return value, detail
     if kind == "powerful_hand_attack_ratio":
         powerful = as_mapping(payload.get("powerful_hand"))
         numerator = powerful.get("non_prize_attacks")
@@ -457,6 +492,71 @@ def _semantic_metric_value(
     if kind == "scalar":
         return display_value(_value_at_path(metric, str(semantic.get("value_source", "")))), ""
     return _ratio(metric.get("numerator"), metric.get("denominator")), ""
+
+
+def _length_distribution_row(metric: Mapping[str, object]) -> str:
+    payload = as_mapping(metric.get("payload"))
+    outcomes = as_mapping(payload.get("by_outcome"))
+    charts = "".join(
+        _length_distribution_chart(
+            outcome,
+            "胜利对局分布" if outcome == "win" else "失败对局分布",
+            as_mapping(outcomes.get(outcome)),
+        )
+        for outcome in ("win", "loss")
+    )
+    return (
+        '<tr class="length-distribution-row"><td colspan="5" '
+        f'class="length-distribution-cell"><div class="length-distribution-grid">{charts}'
+        "</div></td></tr>"
+    )
+
+
+def _length_distribution_chart(
+    outcome: str,
+    title: str,
+    summary: Mapping[str, object],
+) -> str:
+    distribution = as_mapping(summary.get("distribution"))
+    buckets = sorted(
+        (
+            (int(round_number), as_mapping(values))
+            for round_number, values in distribution.items()
+            if str(round_number).isdigit()
+        ),
+        key=lambda item: item[0],
+    )
+    max_count = max((int(values.get("count", 0)) for _, values in buckets), default=0)
+    bars = []
+    for round_number, values in buckets:
+        count = int(values.get("count", 0))
+        first = int(values.get("candidate_first", 0))
+        second = int(values.get("candidate_second", 0))
+        total_height = count / max_count * 100 if max_count else 0
+        first_height = first / count * 100 if count else 0
+        second_height = second / count * 100 if count else 0
+        tooltip = (
+            f"第 {round_number} 回合：{count} 局；"
+            f"我们先攻 {first}；我们后攻 {second}"
+        )
+        bars.append(
+            '<div class="length-bin">'
+            f'<span class="length-count">{count}</span><div class="length-bar-space">'
+            f'<div class="length-bar" title="{_text(tooltip)}" style="height:{total_height:.2f}%">'
+            f'<span class="candidate-first" style="height:{first_height:.2f}%"></span>'
+            f'<span class="candidate-second" style="height:{second_height:.2f}%"></span>'
+            f'</div></div><span class="length-round">第{round_number}回合</span></div>'
+        )
+    empty = '<p class="muted">本轮没有可统计样本。</p>' if not bars else ""
+    return (
+        f'<div class="length-chart {_text(outcome)}"><div class="length-chart-head">'
+        f'<strong>{_text(title)}</strong><span class="length-chart-summary">'
+        f'平均 {_text(display_value(summary.get("average")))} 回合 · '
+        f'{_text(display_value(summary.get("denominator")))} 局</span></div>'
+        f'{empty}<div class="length-bars">{"".join(bars)}</div>'
+        '<div class="length-legend"><span><i></i>我们先攻</span>'
+        '<span class="second"><i></i>我们后攻</span></div></div>'
+    )
 
 
 def _value_at_path(value: object, path: str) -> object:
