@@ -34,6 +34,14 @@
     "kaggle_ref": 54940647,
     "status_at_archive": "PENDING"
   },
+  "metric_history": {
+    "validation_epochs": "1-20",
+    "train_loss_epochs": "1-20",
+    "full_train_evaluation_epochs": [5, 10, 12, 15, 20],
+    "epoch_12_source": "post-training evaluation of the frozen best checkpoint",
+    "limitation": "The original run skipped full train evaluation on other epochs; missing historical values were not interpolated or fabricated.",
+    "future_contract": "Every epoch must evaluate and log aligned train and validation metrics."
+  },
   "observation": "Training fit continued to improve after the held-out peak; the revision 3 Alakazam semantic evaluation completed with zero errors.",
   "next_version": "V2_wide_capacity",
   "tensorboard": "rl_runs/tensorboard/0008-rank_010_alakazam_bc/V1_shared_config_streaming/"

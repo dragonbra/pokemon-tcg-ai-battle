@@ -29,6 +29,7 @@ from train.kaggle_bc_top20.training.build_daily_winner_bc_dataset import (
 from train.alakazam_bc_rl.training.train_full_action_bc import (
     _iter_split,
     _shuffle_buffer,
+    _validate_metric_logging_contract,
 )
 
 
@@ -119,6 +120,11 @@ class KaggleBCGateTests(unittest.TestCase):
 
 
 class KaggleBCInputTests(unittest.TestCase):
+    def test_training_requires_aligned_metrics_every_epoch(self) -> None:
+        _validate_metric_logging_contract(train_eval_interval=1, progress_batches=100)
+        with self.assertRaisesRegex(ValueError, "every epoch"):
+            _validate_metric_logging_contract(train_eval_interval=5, progress_batches=100)
+
     def test_streaming_split_reader_and_shuffle_are_deterministic(self) -> None:
         with tempfile.TemporaryDirectory(prefix="ptcg-streaming-bc-test-") as temporary:
             dataset = Path(temporary) / "dataset.jsonl"
