@@ -1,0 +1,19 @@
+{
+  "id": "tommycyd/pokemon-tcg-single-expert-bc-worker",
+  "title": "Pokemon TCG Single Expert BC Worker",
+  "code_file": "ptcg_single_expert_bc.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "tommycyd/pokemon-tcg-bc-cloud-input"
+  ],
+  "competition_sources": [
+    "pokemon-tcg-ai-battle"
+  ],
+  "kernel_sources": [],
+  "model_sources": []
+}
