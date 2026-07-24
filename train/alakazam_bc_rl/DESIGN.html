@@ -638,6 +638,7 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
         <div class="run"><small>归档研究实验</small><strong>0002 · exact-deck expanded BC</strong><p>旧模型上的 2,021 trajectories 扩展实验。它不是 0003 的数据来源，也不代表当前通用合同。</p></div>
         <div class="run currentRun"><small>当前执行阶段</small><strong>Top 20 · 独立单专家 BC campaign</strong><p>按 2026-07-23 静态 roster 排程；每位专家独立 source identity、dataset、随机初始化权重、optimizer、checkpoint、run 与 package。共享的只有 <code>ptcg_features_universal</code>、<code>full_action_set_v1</code>、V4 网络结构和冻结超参数。每个 V1/V2/V3 attempt 只读取 train/validation；先按 validation 冻结最终 attempt，再且仅再读取一次 test 完成离线 gate，test 不参与救援 LR 选择。实时完成数与风险见 Top 20 汇总报告。</p></div>
         <div class="run currentRun"><small>已完成并提交</small><strong>0008 · Yushin daily winner-only · Big Data BC V1</strong><p>本地已审计 2026-07-13 至 2026-07-22 十个官方日包：规范化 <code>TeamNames == Yushin Ito</code>、winner-only、最长 <code>visualize</code> trace、合法 selected 过滤和最大日期 validation，与参考 Notebook 对齐为 47,337 Episodes / 5,843 team matches / 3,104 wins / 238,356 decisions（221,289 train、17,067 validation）。<code>V1_shared_config_streaming</code> 使用当前 <code>ptcg_features_universal</code> 的 64 state / 40 card / 60 deck / 12 entity / 32 history / 64 candidate 合同，以及 3,539,395 参数的冻结 V4 网络和 full-action loss；best epoch 12 的 validation exact 为 80.08%。标准 candidate <code>rank_010_alakazam_bc_0008_v1</code> 以主胡地 deck 做可审计 runtime-deck override；revision 3 <code>auto_iteration_v8_setup_relay</code> 官方引擎评测为 167-63、0 errors，setup 37.39%、Post-KO 59.23%、未拿 Prize 攻击率 24.87%。归档 <code>submission/alakazam_bc_v1_Big_Data</code> 已提交 Kaggle（ref 54940647）；0008 训练至此冻结，不再继续 V2/V3。V1 历史完整 train 评测只有 epoch 5/10/12/15/20，未执行的点不插值；后续训练器强制每个 epoch 同时评测并记录完整 train/validation 标量。</p></div>
+        <div class="run currentRun"><small>独立模型复刻 · V2 待正式训练</small><strong>0010 · Alakazam SOTA Model</strong><p><code>train/alakazam_sota_model/</code> 独立忠实复刻 Kaggle <code>ptcg-yushin-id-only-bc-v1</code>：ID-only entity Transformer + GRU autoregressive pointer，7,154,562 参数。它沿用 0009 冻结的 221,289 / 17,067 decision identity，但从原 replay 重编码为完全不同的输入合同；V1 在第 2 个 batch 暴露空 entity collate 缺陷后失败保留，V2 仅修复被 mask 的 padding 边界。项目不使用本页的 card metadata、deck/history/expert conditioning 或 reward weighting，也不修改当前 universal BC baseline。完整字段和阶段边界见 <a href="../alakazam_sota_model/DESIGN.html">0010 Design</a>。</p></div>
       </div>
     </section>
 
@@ -678,7 +679,8 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
       <a href="../../rl_runs/0004-bc_capacity_search_210m/decisions.md">0004 decisions</a> ·
       <a href="../../rl_runs/0004-bc_capacity_search_210m/promotion.json">V4 promotion</a> ·
       <a href="../../docs/reports/rl/top20-bc-arena-design-and-source-audit-20260723.md">Top 20 source audit</a><br>
-      更新于 2026-07-24。源码已迁入 <code>train/alakazam_bc_rl/</code>，通用基础设施位于
+      <a href="../alakazam_sota_model/DESIGN.html">0010 independent ID-only reproduction</a><br>
+      更新于 2026-07-25。源码已迁入 <code>train/alakazam_bc_rl/</code>，通用基础设施位于
       <code>rl_environment/</code>，实验产物位于 <code>rl_runs/</code>；模型 schema、网络参数和
       当前训练阶段没有因本次结构迁移而改变。历史通过 Git 和归档 run 追溯。
     </div>

@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alakazam SOTA Model · 0010 Design</title>
+  <style>
+    :root {
+      --ink: #171914;
+      --muted: #64695f;
+      --paper: #f5f6f1;
+      --panel: #ffffff;
+      --line: #d8dcd1;
+      --green: #196b48;
+      --green-soft: #e5f2e9;
+      --red: #a33832;
+      --red-soft: #f8e9e6;
+      --yellow: #f0c64d;
+      --blue: #25628f;
+      --code: #20241f;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      letter-spacing: 0;
+    }
+    a { color: inherit; }
+    code { font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 54px;
+      padding: 0 5vw;
+      border-bottom: 1px solid #343a32;
+      color: #fff;
+      background: #171b17;
+    }
+    .brand { font-size: 13px; font-weight: 750; }
+    .nav { display: flex; gap: 18px; font-size: 12px; color: #cdd4ca; }
+    .nav a { text-decoration: none; }
+    .hero {
+      min-height: min(680px, calc(100vh - 54px));
+      display: grid;
+      align-items: end;
+      color: #fff;
+      background:
+        url("https://images.pokemontcg.io/me1/56.png") right 8vw center / min(38vw, 430px) auto no-repeat,
+        #20261f;
+      border-bottom: 8px solid var(--yellow);
+    }
+    .heroInner { width: min(1180px, 90vw); margin: 0 auto; padding: 74px 0 66px; }
+    .eyebrow { margin: 0 0 12px; color: #a9d7ba; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    h1 { max-width: 760px; margin: 0; font-size: clamp(42px, 7vw, 88px); line-height: .97; letter-spacing: 0; }
+    .heroCopy { max-width: 720px; margin: 24px 0 22px; color: #dce2db; font-size: 18px; }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; max-width: 800px; }
+    .badge { padding: 6px 9px; border: 1px solid #6f7a6d; border-radius: 4px; background: rgba(15,18,15,.72); font-size: 12px; }
+    main { width: min(1180px, 90vw); margin: 0 auto; }
+    section { padding: 72px 0; border-bottom: 1px solid var(--line); }
+    .sectionHead { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, .75fr); gap: 42px; align-items: end; margin-bottom: 28px; }
+    .kicker { margin: 0 0 7px; color: var(--green); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    h2 { margin: 0; font-size: clamp(29px, 4vw, 48px); line-height: 1.08; letter-spacing: 0; }
+    h3 { margin: 0 0 8px; font-size: 17px; letter-spacing: 0; }
+    p { margin: 0; }
+    .lede { color: var(--muted); font-size: 15px; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); background: var(--panel); }
+    .stat { min-height: 118px; padding: 20px; border-right: 1px solid var(--line); }
+    .stat:last-child { border-right: 0; }
+    .stat strong { display: block; font-size: 27px; }
+    .stat span { display: block; margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .flow { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); margin-top: 26px; border: 1px solid var(--line); background: var(--panel); overflow-x: auto; }
+    .node { position: relative; min-height: 150px; padding: 20px; border-right: 1px solid var(--line); }
+    .node:last-child { border-right: 0; }
+    .node b { display: block; margin-bottom: 10px; color: var(--green); font-size: 12px; }
+    .node code { display: block; margin-top: 14px; color: var(--blue); }
+    .node:not(:last-child)::after { content: "\2192"; position: absolute; right: -10px; top: 56px; z-index: 2; padding: 0 3px; background: #fff; }
+    .schema { width: 100%; border-collapse: collapse; background: var(--panel); font-size: 13px; }
+    .schema th, .schema td { padding: 11px 13px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .schema th { color: #fff; background: var(--code); font-size: 11px; text-transform: uppercase; }
+    .schema td:first-child { width: 19%; font-weight: 750; }
+    .schema td:nth-child(2) { width: 18%; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .tensorTitle { display: flex; justify-content: space-between; gap: 20px; margin: 32px 0 10px; align-items: baseline; }
+    .tensorTitle span { color: var(--muted); font-size: 12px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .card { min-height: 170px; padding: 20px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+    .card.green { border-top: 5px solid var(--green); }
+    .card.red { border-top: 5px solid var(--red); }
+    .card.yellow { border-top: 5px solid var(--yellow); }
+    .card p, .card li { color: var(--muted); font-size: 13px; }
+    ul { margin: 10px 0 0; padding-left: 19px; }
+    .formula { margin-top: 24px; padding: 24px; overflow-x: auto; color: #d9e9dc; background: var(--code); border-left: 5px solid var(--green); font: 13px/1.8 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre; }
+    .compare td:nth-child(2), .compare td:nth-child(3) { width: 35%; font-family: inherit; color: inherit; }
+    .callout { margin-top: 22px; padding: 20px; border: 1px solid #deb9b3; border-left: 5px solid var(--red); background: var(--red-soft); }
+    .callout strong { display: block; margin-bottom: 5px; color: var(--red); }
+    footer { padding: 32px 5vw 46px; color: #aeb7ac; background: #171b17; font-size: 12px; }
+    footer div { width: min(1180px, 100%); margin: 0 auto; }
+    @media (max-width: 800px) {
+      .nav { display: none; }
+      .hero { min-height: 700px; background-size: auto, 260px auto, auto; background-position: center, right -25px top 38px, center; }
+      .heroInner { padding-top: 320px; }
+      h1 { font-size: 43px; }
+      .sectionHead { grid-template-columns: 1fr; gap: 14px; }
+      .stats, .cards { grid-template-columns: 1fr; }
+      .stat { border-right: 0; border-bottom: 1px solid var(--line); }
+      .stat:last-child { border-bottom: 0; }
+      .flow { grid-template-columns: repeat(5, 230px); }
+      .schema { min-width: 760px; }
+      .tableWrap { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">PTCG / 0010</div>
+    <nav class="nav" aria-label="页面导航">
+      <a href="#contract">合同</a><a href="#inputs">输入</a><a href="#model">模型</a><a href="#compare">对照</a><a href="#stage">阶段</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <div class="heroInner">
+      <p class="eyebrow">0010 · Reference Notebook Reproduction</p>
+      <h1>Alakazam SOTA Model</h1>
+      <p class="heroCopy">忠实复刻 <code>horizen12/ptcg-yushin-id-only-bc-v1</code> 的 ID-only Transformer + autoregressive pointer policy。这里的 SOTA 是项目名与研究目标；在官方 engine 固定池评测前，不构成强度结论。</p>
+      <div class="badges">
+        <span class="badge">纯 Behavior Cloning</span><span class="badge">7,154,562 parameters</span><span class="badge">d320 · 8 heads · 4 layers</span><span class="badge">V2_empty_entity_fix</span>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <section id="contract">
+      <div class="sectionHead"><div><p class="kicker">01 / Frozen contract</p><h2>同一数据，只替换表示与模型</h2></div><p class="lede">0010 沿用 0009 冻结的 Yushin Ito winner-only decision identity、split 与动作标签；从原 replay observation 严格重编码。actor、action、数量或 source hash 任一不一致都会失败。</p></div>
+      <div class="stats">
+        <div class="stat"><strong>221,289</strong><span>train decisions · 2,875 episodes</span></div>
+        <div class="stat"><strong>17,067</strong><span>validation decisions · 229 episodes</span></div>
+        <div class="stat"><strong>0</strong><span>actor mismatch · action-order difference</span></div>
+        <div class="stat"><strong>30.8 MB</strong><span>WSL-local gzip shards · no /mnt/d read during training</span></div>
+      </div>
+      <div class="flow">
+        <div class="node"><b>PUBLIC STATE</b><span>当前公开 observation 与 simulator legal options</span><code>JSON replay frame</code></div>
+        <div class="node"><b>ENTITY TOKENS</b><span>卡牌 ID、区域、拥有者、父实体与公开数值</span><code>[B, N, 7+5]</code></div>
+        <div class="node"><b>TRANSFORMER</b><span>CLS + entity sequence，4 层 pre-norm encoder</span><code>[B, N+1, 320]</code></div>
+        <div class="node"><b>OPTION TOKENS</b><span>合法 option 关联 source / target entity，再 cross-attend state</span><code>[B, M, 320]</code></div>
+        <div class="node"><b>GRU POINTER</b><span>逐步选择 option，禁止重复，满足 minCount 后预测 STOP</span><code>[B, T, M+1]</code></div>
+      </div>
+    </section>
+
+    <section id="inputs">
+      <div class="sectionHead"><div><p class="kicker">02 / Input schema</p><h2>每一个输入字段</h2></div><p class="lede"><code>N <= 192</code> 为实体数，<code>M <= 128</code> 为合法 option 数，<code>T <= 17</code> 包含最多 16 个选择与一个 STOP。batch 内按实际最大长度 padding。</p></div>
+
+      <div class="tensorTitle"><h3><code>global_cat [B, 4]</code></h3><span>离散全局上下文，分别 embedding 后求和</span></div>
+      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>编码</th><th>含义</th></tr></thead><tbody>
+        <tr><td>select_type</td><td>select.type + 1</td><td>当前 simulator 选择请求的类型；0 保留给 unknown / padding。</td></tr>
+        <tr><td>select_context</td><td>select.context + 1</td><td>选择请求的上下文枚举，区分相同 option 结构所处的交互语义。</td></tr>
+        <tr><td>first_player</td><td>firstPlayer + 1</td><td>对局先手方索引；unknown 映射为 0。</td></tr>
+        <tr><td>turn_flags</td><td>5-bit bitset</td><td><code>supporterPlayed</code>、<code>stadiumPlayed</code>、<code>energyAttached</code>、<code>retreated</code>、<code>turnEnd</code>。</td></tr>
+      </tbody></table></div>
+
+      <div class="tensorTitle"><h3><code>global_num [B, 12]</code></h3><span>归一化连续量，经 12→320→320 MLP</span></div>
+      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>归一化</th><th>含义</th></tr></thead><tbody>
+        <tr><td>turn</td><td>turn / 20, cap 2</td><td>当前全局回合编号。</td></tr><tr><td>turn_action_count</td><td>count / 50, cap 2</td><td>当前回合已经执行的 action 数。</td></tr>
+        <tr><td>own_deck_count</td><td>count / 60</td><td>己方剩余牌库张数。</td></tr><tr><td>opp_deck_count</td><td>count / 60</td><td>对手剩余牌库张数。</td></tr>
+        <tr><td>own_hand_count</td><td>count / 20, cap 2</td><td>己方手牌数。</td></tr><tr><td>opp_hand_count</td><td>count / 20, cap 2</td><td>对手公开手牌数量。</td></tr>
+        <tr><td>own_prize_count</td><td>count / 6</td><td>己方剩余 Prize 数。</td></tr><tr><td>opp_prize_count</td><td>count / 6</td><td>对手剩余 Prize 数。</td></tr>
+        <tr><td>option_count</td><td>M / 128, cap 2</td><td>当前合法 option 数量。</td></tr><tr><td>remain_damage_counter</td><td>value / 300, cap 2</td><td>伤害指示物分配请求的剩余量。</td></tr>
+        <tr><td>remain_energy_cost</td><td>value / 10, cap 2</td><td>能量支付请求的剩余 cost。</td></tr><tr><td>bench_occupancy</td><td>(双方 Bench 数) / 10</td><td>双方 Bench 合计占用率。</td></tr>
+      </tbody></table></div>
+
+      <div class="tensorTitle"><h3><code>entity_cat [B, N, 7]</code> + <code>entity_num [B, N, 5]</code></h3><span>公开卡实体；附着卡与进化 stack 作为有 parent 引用的独立 token</span></div>
+      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>编码</th><th>含义</th></tr></thead><tbody>
+        <tr><td>card_id</td><td>0..2048</td><td>公开 card ID；只学 ID embedding，不查询官方 CSV category 或卡文。</td></tr><tr><td>owner</td><td>none / self / opp</td><td>实体相对当前 actor 的拥有者。</td></tr>
+        <tr><td>zone</td><td>1..16</td><td>己方/对手 Active、Bench、Discard，己方 Hand，Stadium、Looking、select.deck，以及 Energy、Tool、Evolution 子区。</td></tr><tr><td>slot</td><td>index + 1</td><td>实体在所属区域内的位置。</td></tr>
+        <tr><td>kind</td><td>1..7</td><td>普通卡、场上 Pokémon、Energy、Tool、Evolution、Stadium、Looking 的结构种类。</td></tr><tr><td>status_bits</td><td>5-bit bitset</td><td>Active 的 Asleep、Burned、Confused、Paralyzed、Poisoned。</td></tr>
+        <tr><td>parent_entity</td><td>entity index + 1</td><td>Energy / Tool / preEvolution 所附属的场上 Pokémon；0 表示无 parent。</td></tr>
+        <tr><td>damage_ratio</td><td>(maxHP - HP) / 400</td><td>当前已承受伤害的归一化值。</td></tr><tr><td>energy_count</td><td>count / 10</td><td>该 Pokémon 上附着的 Energy 数。</td></tr>
+        <tr><td>tool_count</td><td>count / 4</td><td>该 Pokémon 上附着的 Tool 数。</td></tr><tr><td>evolution_depth</td><td>count / 4</td><td>preEvolution stack 深度。</td></tr><tr><td>appear_this_turn</td><td>0 / 1</td><td>该实体是否本回合刚进入场上。</td></tr>
+      </tbody></table></div>
+
+      <div class="tensorTitle"><h3><code>option_cat [B, M, 12]</code></h3><span>simulator 给出的完整合法候选，不生成全局 action ID</span></div>
+      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>编码</th><th>含义</th></tr></thead><tbody>
+        <tr><td>option_type</td><td>type + 1</td><td>候选动作类型。</td></tr><tr><td>source_area</td><td>area + 1</td><td>动作来源区域。</td></tr><tr><td>target_area</td><td>inPlayArea + 1</td><td>动作目标区域。</td></tr>
+        <tr><td>source_owner</td><td>none / self / opp</td><td>来源相对 actor 的拥有者。</td></tr><tr><td>source_card_id</td><td>0..2048</td><td>来源卡 ID；缺失时从 source entity 回填。</td></tr><tr><td>target_card_id</td><td>0..2048</td><td>目标实体的 card ID。</td></tr>
+        <tr><td>number</td><td>number + 1</td><td>option 中的离散 number 参数。</td></tr><tr><td>source_slot</td><td>index + 1</td><td>来源在区域内的 slot。</td></tr><tr><td>target_slot</td><td>inPlayIndex + 1</td><td>目标在区域内的 slot。</td></tr>
+        <tr><td>source_entity_ref</td><td>entity index + 1</td><td>关联到编码后 source entity 表示，0 表示无关联。</td></tr><tr><td>target_entity_ref</td><td>entity index + 1</td><td>关联到编码后 target entity 表示，0 表示无关联。</td></tr><tr><td>option_position</td><td>option index + 1</td><td>候选在本次 simulator option list 中的位置。</td></tr>
+      </tbody></table></div>
+
+      <div class="tensorTitle"><h3>Mask、label 与 STOP</h3><span>padding 不参与 attention 或 loss</span></div>
+      <div class="cards">
+        <article class="card green"><h3><code>entity_mask [B,N]</code></h3><p>标记真实 entity token；Transformer 的 CLS 始终有效，padding entity 被 <code>src_key_padding_mask</code> 屏蔽。</p></article>
+        <article class="card green"><h3><code>option_mask [B,M]</code></h3><p>标记真实合法 option；pointer 还会屏蔽本序列中已经选过的 option，禁止重复选择。</p></article>
+        <article class="card yellow"><h3><code>targets [B,T]</code></h3><p>专家选择的 option index 序列，末尾追加当前 batch 的 <code>option_count</code> 作为 STOP class；padding 为 <code>-100</code>。</p></article>
+        <article class="card yellow"><h3><code>min_count [B]</code></h3><p>来自 <code>select.minCount</code>。解码步数未达到它以前，STOP logit 被硬 mask。</p></article>
+        <article class="card green"><h3><code>max_count [B]</code></h3><p>来自 <code>select.maxCount</code>。teacher-forcing loss 不需要它；live greedy pointer 达到该步数时强制结束，避免返回超长动作。</p></article>
+        <article class="card red"><h3>隐藏信息边界</h3><p>没有对手手牌内容、Prize card IDs、完整初始牌组、卡牌 category、卡文、expert ID、reward 或 value target。</p></article>
+      </div>
+    </section>
+
+    <section id="model">
+      <div class="sectionHead"><div><p class="kicker">03 / Architecture</p><h2>实体编码，再做自回归选择</h2></div><p class="lede">模型参数为 7,154,562，FP32 权重约 27.29 MiB。state encoder 和 option encoder 共享 card embedding；option 通过 entity reference 读取编码后的来源与目标表示。</p></div>
+      <div class="cards">
+        <article class="card green"><h3>State encoder</h3><p>全局 4 路 embedding + 12 维数值 MLP 注入 CLS；entity 的 7 路 embedding + 5 维数值 MLP 形成 token。4 层、8 heads、FFN 960 的 pre-norm Transformer 编码联合序列。</p></article>
+        <article class="card yellow"><h3>Option encoder</h3><p>12 个 option 字段求和，并 gather source / target entity token；随后以 option 为 query 对完整 state sequence 做 8-head cross-attention，再通过 2× hidden FFN。</p></article>
+        <article class="card red"><h3>Pointer decoder</h3><p>CLS 初始化 320 维 GRU hidden。每一步对尚未选择的 options 计算 scaled dot-product pointer logit，同时计算 STOP logit；teacher forcing 用专家上一选择更新 GRU。</p></article>
+      </div>
+      <div class="formula">state, entities = Transformer([CLS(global); entity_tokens])
+options = FFN(option_tokens + CrossAttention(option_tokens, [state; entities]))
+h_0 = tanh(W_init · state)
+logit(option_i, t) = &lt;W_q h_t, W_k option_i&gt; / sqrt(320) + bias(option_i)
+logit(STOP, t) = MLP_stop(h_t), masked while t &lt; min_count
+h_(t+1) = GRU(selected_option_t, h_t)
+
+L_BC = CrossEntropy(pointer_logits, target_sequence, ignore_index=-100)
+# no category feature · no reward weight · no value head · no PPO objective</div>
+    </section>
+
+    <section id="compare">
+      <div class="sectionHead"><div><p class="kicker">04 / Controlled comparison</p><h2>与现有 universal BC 的区别</h2></div><p class="lede">这不是对 0008/0009 baseline 的原地升级。0010 是独立项目，目标是先忠实复刻 notebook，再以同一冻结 corpus 做可比较评测。</p></div>
+      <div class="tableWrap"><table class="schema compare"><thead><tr><th>维度</th><th>0010 · ID-only pointer</th><th>现有 universal BC / 0009</th></tr></thead><tbody>
+        <tr><td>数据身份</td><td>同一 Yushin Ito winner-only corpus、split、decision 与 label。</td><td>同一 corpus；0009 另有 reward annotations 用于 weighted BC。</td></tr>
+        <tr><td>牌表示</td><td>card ID + owner / zone / slot / parent；无官方 CSV metadata。</td><td>结构化 card metadata、deck、entity、history、expert 等多路特征。</td></tr>
+        <tr><td>状态序列</td><td>动态公开 entity sequence，最多 192。</td><td>固定 state / cards / deck / entities / history 张量。</td></tr>
+        <tr><td>动作建模</td><td>GRU 自回归 pointer；显式 STOP；有序多选序列。</td><td>候选 score + count head；单选 CE，多/空选 BCE。</td></tr>
+        <tr><td>参数规模</td><td>7.15M · d320 · L4 · 8 heads。</td><td>当前 V4 约 3.54M · d192 · L2。</td></tr>
+        <tr><td>训练目标</td><td>未加权 token CE，最低 validation token loss 选 checkpoint。</td><td>baseline 为纯 BC；0009 可用轨迹 reward 权重调整 BC 样本关注度。</td></tr>
+        <tr><td>当前结论</td><td>模型/codec 与冻结 reference 一致；V1 暴露空 entity collate 缺陷后保留失败记录，正式 V2 待训练与官方评测。</td><td>已有离线曲线和官方 engine 固定池结果。</td></tr>
+      </tbody></table></div>
+      <div class="callout"><strong>研究纪律</strong><p>首次 V1 不开启 category、card metadata、deck/expert conditioning 或 reward weighting，也不从 0008/0009 checkpoint warm-start。只有完成 V1 的离线选择、标准 package 导出和官方 engine 固定池评测后，才能讨论哪套输入/模型更强。</p></div>
+    </section>
+
+    <section id="stage">
+      <div class="sectionHead"><div><p class="kicker">05 / Current stage</p><h2>六轮复刻完成，继续训练找拐点</h2></div><p class="lede"><code>V1_reference_notebook_reproduction</code> 在第 2 个 batch 因空 public-entity collate 缺陷失败并保留；<code>V2_empty_entity_fix</code> 完成 notebook 默认 6 epochs，epoch 6 validation exact 为 82.55%、loss 为 0.24070，仍在改善。V2 官方评测为 183-42、4 errors、1 unfinished；V3 在 batch 前暴露 RNG device restore 缺陷，V4 修复后恢复 model、optimizer 与 RNG，validation exact 连续 5 轮未刷新历史最佳时停止。</p></div>
+      <div class="cards">
+        <article class="card green"><h3>已完成</h3><ul><li>reference codec / model 等价测试</li><li>同一 decision identity 重编码</li><li>221,289 / 17,067 本地 streaming shards</li><li>单一 expert 与 hash audit</li></ul></article>
+        <article class="card yellow"><h3>当前工作包 · V4</h3><ul><li>V2 六轮与固定池评测已完成</li><li>V3 resume startup failure 已保留</li><li>V4 最多追加 30 epochs</li><li>exact early-stop patience = 5</li></ul></article>
+        <article class="card red"><h3>训练后 gate</h3><ul><li>maxCount-safe inference / export 已实现</li><li>标准 package validation</li><li>官方 engine 23×10 固定池评测</li><li>与 0008/0009 分离比较，不再提交 0009</li></ul></article>
+      </div>
+    </section>
+  </main>
+
+  <footer><div>事实来源：<a href="model.py">model.py</a> · <a href="dataset.py">dataset.py</a> · <a href="training.py">training.py</a> · <a href="configs/reference_notebook.json">reference_notebook.json</a> · <a href="../../rl_runs/dataset/0010-alakazam_sota_model/dataset_audit.json">dataset audit</a> · <a href="../../rl_runs/artifact/0010-alakazam_sota_model/manifest.json">experiment manifest</a><br>更新于 2026-07-25。项目仍处于纯 BC reproduction；没有 reward、value、rollout 或 PPO。</div></footer>
+</body>
+</html>
