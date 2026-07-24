@@ -13,7 +13,8 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 RUNS_ROOT = REPOSITORY_ROOT / "rl_runs"
-ARTIFACT_ROOT = RUNS_ROOT
+EXPERIMENT_ROOT = RUNS_ROOT / "artifact"
+CHECKPOINT_ROOT = RUNS_ROOT / "checkpoint"
 NUMBERED_ARTIFACT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
 EXPERIMENT_DIR = re.compile(r"^(?P<number>\d{4})-(?P<label>[a-z0-9][a-z0-9_-]*)$")
 VERSIONED_ATTEMPT = re.compile(r"^V(?P<version>[1-9]\d*)_(?P<tag>[a-z0-9][a-z0-9_]*)$")
@@ -35,12 +36,13 @@ def training_paths(output: Path) -> TrainingPaths:
     """Resolve one immutable version inside an experiment or a local smoke run."""
     resolved = output.resolve()
     runs_root = RUNS_ROOT.resolve()
-    if resolved.parent == runs_root:
+    experiment_root = EXPERIMENT_ROOT.resolve()
+    if resolved.parent == experiment_root:
         raise ValueError(
             "training output must be a versioned experiment child such as "
             f"{output / 'V1_initial_contract'}"
         )
-    if resolved.parent.parent == runs_root:
+    if resolved.parent.parent == experiment_root:
         experiment = resolved.parent
         if EXPERIMENT_DIR.fullmatch(experiment.name) is None:
             raise ValueError(f"invalid experiment directory name: {experiment.name}")
@@ -51,7 +53,7 @@ def training_paths(output: Path) -> TrainingPaths:
             )
         paths = TrainingPaths(
             run=output,
-            checkpoints=ARTIFACT_ROOT / "checkpoint" / experiment.name / resolved.name,
+            checkpoints=CHECKPOINT_ROOT / experiment.name / resolved.name,
             tensorboard=RUNS_ROOT / "tensorboard" / experiment.name / resolved.name,
             config=output / "training_config.json",
             metrics=output / "training_metrics.jsonl",
@@ -79,7 +81,7 @@ def training_paths(output: Path) -> TrainingPaths:
 
 
 def numbered_artifact_path(requested: Path, group: str) -> Path:
-    """Number ``rl_runs/<label>/evaluation`` using the global run sequence."""
+    """Map legacy ``rl_runs/<label>/evaluation`` into the separated archive tree."""
     if group != "evaluation":
         raise ValueError(f"unknown RL artifact group: {group}")
     resolved = requested.resolve()
@@ -88,14 +90,15 @@ def numbered_artifact_path(requested: Path, group: str) -> Path:
         return requested
     experiment = resolved.parent
     if NUMBERED_ARTIFACT.match(experiment.name):
-        return requested
+        return RUNS_ROOT / "evaluation" / experiment.name
     normalized = re.sub(r"[^a-z0-9_-]+", "-", experiment.name.lower()).strip("-")
-    if RUNS_ROOT.is_dir():
-        for child in RUNS_ROOT.iterdir():
+    if EXPERIMENT_ROOT.is_dir():
+        for child in EXPERIMENT_ROOT.iterdir():
             match = EXPERIMENT_DIR.match(child.name)
             if child.is_dir() and match is not None and match.group("label") == normalized:
-                return child / "evaluation"
-    return next_experiment_path(experiment.name, runs_root) / "evaluation"
+                return RUNS_ROOT / "evaluation" / child.name
+    allocated = next_experiment_path(experiment.name, EXPERIMENT_ROOT)
+    return RUNS_ROOT / "evaluation" / allocated.name
 
 
 def _git_value(*args: str) -> str | None:
@@ -113,7 +116,7 @@ def _git_value(*args: str) -> str | None:
     return value or None
 
 
-def next_experiment_path(label: str, runs_root: Path = RUNS_ROOT) -> Path:
+def next_experiment_path(label: str, runs_root: Path = EXPERIMENT_ROOT) -> Path:
     """Return the next globally numbered experiment directory."""
     normalized = re.sub(r"[^a-z0-9_-]+", "-", label.lower()).strip("-")
     if not normalized:
@@ -130,16 +133,17 @@ def initialize_experiment(
     label: str,
     *,
     objective: str,
-    runs_root: Path = RUNS_ROOT,
+    runs_root: Path = EXPERIMENT_ROOT,
     metadata: dict[str, object] | None = None,
 ) -> Path:
     """Create a tracked run record without creating a supervised dataset."""
     root = next_experiment_path(label, runs_root)
     root.mkdir(parents=True)
-    (root / "evaluation").mkdir()
-    tensorboard = runs_root / "tensorboard" / root.name
+    evaluation = RUNS_ROOT / "evaluation" / root.name
+    evaluation.mkdir(parents=True)
+    tensorboard = RUNS_ROOT / "tensorboard" / root.name
     tensorboard.mkdir(parents=True)
-    checkpoint = runs_root / "checkpoint" / root.name
+    checkpoint = CHECKPOINT_ROOT / root.name
     checkpoint.mkdir(parents=True)
     manifest = {
         "schema_version": "ptcg_experiment_v2",
@@ -151,9 +155,10 @@ def initialize_experiment(
         "git_commit": _git_value("rev-parse", "HEAD"),
         "git_status_porcelain": _git_value("status", "--short"),
         "paths": {
-            "run": str(root.relative_to(runs_root.parent)),
-            "tensorboard": str(tensorboard.relative_to(runs_root.parent)),
-            "checkpoint": str(checkpoint.relative_to(runs_root.parent)),
+            "run": str(root.relative_to(RUNS_ROOT.parent)),
+            "tensorboard": str(tensorboard.relative_to(RUNS_ROOT.parent)),
+            "checkpoint": str(checkpoint.relative_to(RUNS_ROOT.parent)),
+            "evaluation": str(evaluation.relative_to(RUNS_ROOT.parent)),
             "dataset": None,
         },
         **(metadata or {}),

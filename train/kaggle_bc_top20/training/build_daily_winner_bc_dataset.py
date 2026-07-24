@@ -17,8 +17,9 @@ import hashlib
 import json
 import re
 from collections import Counter
+from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Iterable, Iterator
+from typing import Any, Iterable, Iterator, TextIO
 
 from rl_environment.storage import DEFAULT_MIN_FREE_GIB, DEFAULT_STORAGE_PATH, assert_storage_safe
 from train.alakazam_bc_rl.card_metadata import load_card_metadata, serialize_card_metadata
@@ -233,11 +234,13 @@ def build_dataset(
     feature_config: PTCGFeatureConfig,
     storage_path: Path = DEFAULT_STORAGE_PATH,
     min_free_gib: float = DEFAULT_MIN_FREE_GIB,
+    write_split_files: bool = False,
+    require_train_validation: bool = True,
 ) -> dict[str, Any]:
     if feature_config.schema_version != UNIVERSAL_FEATURE_SCHEMA:
         raise ValueError("daily winner comparison requires ptcg_features_universal")
-    if not dates or not valid_dates or not valid_dates <= dates:
-        raise ValueError("dates and a validation subset are required")
+    if not dates or not valid_dates <= dates:
+        raise ValueError("dates are required and valid_dates must be a subset")
     roots = [path.resolve() for path in roots]
     if not roots or any(not path.is_dir() for path in roots):
         raise FileNotFoundError("all daily Episode roots must exist")
@@ -264,7 +267,18 @@ def build_dataset(
     deck_counts: Counter[str] = Counter()
     deck_values: dict[str, list[int]] = {}
     seen_decision_keys: set[tuple[int, int, int]] = set()
-    with output.open("w", encoding="utf-8") as handle:
+    split_paths = {
+        split: output.with_name(f"{output.stem}.{split}{output.suffix}")
+        for split in ("train", "validation", "test")
+    }
+    with ExitStack() as stack:
+        handle = stack.enter_context(output.open("w", encoding="utf-8"))
+        split_handles: dict[str, TextIO] = {}
+        if write_split_files:
+            split_handles = {
+                split: stack.enter_context(path.open("w", encoding="utf-8"))
+                for split, path in split_paths.items()
+            }
         for path in _episode_files(roots, dates):
             report["episodes_seen"] += 1
             if report["episodes_seen"] == 1 or report["episodes_seen"] % 500 == 0:
@@ -404,7 +418,10 @@ def build_dataset(
                         "split": split,
                         "encoded": encoded,
                     }
-                    handle.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
+                    line = json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n"
+                    handle.write(line)
+                    if write_split_files:
+                        split_handles[split].write(line)
                     decision_count += 1
                     report["records"] += 1
                     records_by_split[split] += 1
@@ -430,7 +447,11 @@ def build_dataset(
                             ],
                         }
                     )
-    if not records_by_split["train"] or not records_by_split["validation"]:
+    if not report["records"]:
+        raise ValueError("reference corpus produced no records")
+    if require_train_validation and (
+        not records_by_split["train"] or not records_by_split["validation"]
+    ):
         raise ValueError("reference corpus produced no train or validation records")
     card_metadata_path = output.with_suffix(output.suffix + ".card_metadata.json")
     card_metadata_path.write_text(
@@ -469,6 +490,16 @@ def build_dataset(
         "records_by_split": dict(sorted(records_by_split.items())),
         "episodes": episodes,
     }
+    if write_split_files:
+        manifest["split_datasets"] = {
+            split: {
+                "path": str(path.resolve()),
+                "records": records_by_split[split],
+                "bytes": path.stat().st_size,
+                "sha256": _sha256(path),
+            }
+            for split, path in split_paths.items()
+        }
     manifest_path = output.with_suffix(output.suffix + ".data_manifest.json")
     manifest_path.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -490,6 +521,7 @@ def build_dataset(
             "dominant_deck_sha256": _sha256(deck_path),
             "data_manifest": str(manifest_path.resolve()),
             "data_manifest_sha256": _sha256(manifest_path),
+            "split_datasets": manifest.get("split_datasets", {}),
             "storage_path": storage.path,
             "storage_free_gib": round(storage.free_gib, 2),
         }
@@ -510,11 +542,23 @@ def main() -> None:
     parser.add_argument("--valid-dates", default="")
     parser.add_argument("--storage-path", type=Path, default=DEFAULT_STORAGE_PATH)
     parser.add_argument("--min-free-gib", type=float, default=DEFAULT_MIN_FREE_GIB)
+    parser.add_argument(
+        "--write-split-files",
+        action="store_true",
+        help="also write dataset.train/validation/test.jsonl for bounded-memory training",
+    )
+    parser.add_argument(
+        "--allow-single-split",
+        action="store_true",
+        help="allow one daily shard to contain only train or only validation records",
+    )
     args = parser.parse_args()
     dates = {value.strip() for value in args.run_dates.split(",") if value.strip()}
     valid_dates = {
         value.strip() for value in args.valid_dates.split(",") if value.strip()
-    } or {max(dates)}
+    }
+    if not valid_dates and not args.allow_single_split:
+        valid_dates = {max(dates)}
     result = build_dataset(
         args.input_root,
         args.output,
@@ -524,6 +568,8 @@ def main() -> None:
         feature_config=feature_config_for_schema(UNIVERSAL_FEATURE_SCHEMA),
         storage_path=args.storage_path,
         min_free_gib=args.min_free_gib,
+        write_split_files=args.write_split_files,
+        require_train_validation=not args.allow_single_split,
     )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
 
