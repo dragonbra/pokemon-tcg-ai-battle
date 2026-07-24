@@ -31,10 +31,10 @@ EXPECTED_NAMES = [
     "crustle_02",
     "dragapult_ex_01",
     "dragapult_ex_02",
-    "dragapult_ex_03",
     "ionos_bellibolt_ex_kilowattrel_01",
     "marnies_grimmsnarl_ex_dudunsparce_01",
     "marnies_grimmsnarl_ex_froslass_01",
+    "marnies_grimmsnarl_ex_froslass_02",
     "mega_abomasnow_ex_kyogre_01",
     "mega_lucario_ex_solrock_01",
     "mega_lucario_ex_solrock_02",
@@ -42,10 +42,7 @@ EXPECTED_NAMES = [
     "mega_lucario_ex_solrock_04",
     "mega_lucario_ex_solrock_05",
     "mega_lucario_ex_solrock_06",
-    "mega_lucario_ex_solrock_07",
-    "mega_lucario_ex_solrock_08",
-    "mega_lucario_ex_solrock_09",
-    "mega_lucario_ex_solrock_10",
+    "team_rockets_mewtwo_ex_spidops_01",
 ]
 
 

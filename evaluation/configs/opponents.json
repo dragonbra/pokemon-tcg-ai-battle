@@ -65,14 +65,6 @@
       "tags": ["dragapult_ex"]
     },
     {
-      "name": "dragapult_ex_03",
-      "package": "arena/opponents/dragapult_ex_03",
-      "display_name": "Dragapult ex 03",
-      "representative_card_ids": [121],
-      "enabled": true,
-      "tags": ["dragapult_ex"]
-    },
-    {
       "name": "ionos_bellibolt_ex_kilowattrel_01",
       "package": "arena/opponents/ionos_bellibolt_ex_kilowattrel_01",
       "display_name": "Iono’s Bellibolt ex / Kilowattrel 01",
@@ -92,6 +84,14 @@
       "name": "marnies_grimmsnarl_ex_froslass_01",
       "package": "arena/opponents/marnies_grimmsnarl_ex_froslass_01",
       "display_name": "Marnie’s Grimmsnarl ex / Froslass 01",
+      "representative_card_ids": [648, 104],
+      "enabled": true,
+      "tags": ["marnies_grimmsnarl_ex", "froslass"]
+    },
+    {
+      "name": "marnies_grimmsnarl_ex_froslass_02",
+      "package": "arena/opponents/marnies_grimmsnarl_ex_froslass_02",
+      "display_name": "Marnie’s Grimmsnarl ex / Froslass 02",
       "representative_card_ids": [648, 104],
       "enabled": true,
       "tags": ["marnies_grimmsnarl_ex", "froslass"]
@@ -153,36 +153,12 @@
       "tags": ["mega_lucario_ex", "solrock"]
     },
     {
-      "name": "mega_lucario_ex_solrock_07",
-      "package": "arena/opponents/mega_lucario_ex_solrock_07",
-      "display_name": "Mega Lucario ex / Solrock 07",
-      "representative_card_ids": [678, 676],
+      "name": "team_rockets_mewtwo_ex_spidops_01",
+      "package": "arena/opponents/team_rockets_mewtwo_ex_spidops_01",
+      "display_name": "Team Rocket’s Mewtwo ex / Spidops 01",
+      "representative_card_ids": [431, 401],
       "enabled": true,
-      "tags": ["mega_lucario_ex", "solrock"]
-    },
-    {
-      "name": "mega_lucario_ex_solrock_08",
-      "package": "arena/opponents/mega_lucario_ex_solrock_08",
-      "display_name": "Mega Lucario ex / Solrock 08",
-      "representative_card_ids": [678, 676],
-      "enabled": true,
-      "tags": ["mega_lucario_ex", "solrock"]
-    },
-    {
-      "name": "mega_lucario_ex_solrock_09",
-      "package": "arena/opponents/mega_lucario_ex_solrock_09",
-      "display_name": "Mega Lucario ex / Solrock 09",
-      "representative_card_ids": [678, 676],
-      "enabled": true,
-      "tags": ["mega_lucario_ex", "solrock"]
-    },
-    {
-      "name": "mega_lucario_ex_solrock_10",
-      "package": "arena/opponents/mega_lucario_ex_solrock_10",
-      "display_name": "Mega Lucario ex / Solrock 10",
-      "representative_card_ids": [678, 676],
-      "enabled": true,
-      "tags": ["mega_lucario_ex", "solrock"]
+      "tags": ["team_rockets_mewtwo_ex", "spidops"]
     }
   ]
 }

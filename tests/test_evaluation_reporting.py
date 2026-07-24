@@ -198,6 +198,44 @@ class EvaluationReportingTests(unittest.TestCase):
                 "value": 564 / 170,
                 "payload": {},
             },
+            "length": {
+                "numerator": 15,
+                "denominator": 4,
+                "value": 3.75,
+                "payload": {
+                    "by_outcome": {
+                        "win": {
+                            "numerator": 6,
+                            "denominator": 2,
+                            "average": 3.0,
+                            "distribution": {
+                                "3": {
+                                    "count": 2,
+                                    "candidate_first": 1,
+                                    "candidate_second": 1,
+                                }
+                            },
+                        },
+                        "loss": {
+                            "numerator": 9,
+                            "denominator": 2,
+                            "average": 4.5,
+                            "distribution": {
+                                "4": {
+                                    "count": 1,
+                                    "candidate_first": 1,
+                                    "candidate_second": 0,
+                                },
+                                "5": {
+                                    "count": 1,
+                                    "candidate_first": 0,
+                                    "candidate_second": 1,
+                                },
+                            },
+                        },
+                    }
+                },
+            },
         }
         data = ReportData(
             manifest={"run_id": "semantic-fixture"},
@@ -233,6 +271,14 @@ class EvaluationReportingTests(unittest.TestCase):
             "先手额外过牌：3.03529 张/局",
             "后手额外过牌：2.50588 张/局",
             "正常回合抽牌审计：1.98235 张/局",
+            "对局结束回合数",
+            "胜利平均 3 回合；失败平均 4.5 回合",
+            "胜利对局分布",
+            "失败对局分布",
+            "第3回合",
+            "第5回合",
+            "我们先攻",
+            "我们后攻",
             "追踪目标",
         )
         for value in expected:

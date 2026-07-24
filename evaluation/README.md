@@ -16,7 +16,7 @@ python3 -m evaluation run \
 
 `run` 也支持 `--control PACKAGE`（只在报告中展示对比）、调试用 `--visualize` / `--keep-temp`、
 `--max-steps N` 和可重复的 `--metric-module MODULE[:Class]`。默认不生成可视化帧。每次 CLI
-评测固定使用完整启用 catalog（当前 23 个 opponent）、每个至少 10 局；小于 10 局或指定 opponent 子集会被
+评测固定使用完整启用 catalog（当前 20 个 opponent）、每个至少 10 局；小于 10 局或指定 opponent 子集会被
 拒绝。输出到 `rl_runs/<label>/evaluation` 时，实验目录会自动获得 `0001-` 形式的
 顺序前缀。训练记录与 evaluation 放在 `rl_runs/0001-<label>/`，checkpoint 放在
 `rl_runs/checkpoint/0001-<label>/`，TensorBoard 放在
@@ -47,7 +47,7 @@ GPU 动态 batch 原型曾达到 24.01 秒，但尚未具备通用 checkpoint �
 等价性验收，因此不是正式 Evaluation 路径。
 
 需要 V8 setup/relay 语义指标时使用内置的 `auto_iteration_v8_setup_relay` profile
-（保留该名称作为兼容 ID），当前为 `revision 3`：
+（保留该名称作为兼容 ID），当前为 `revision 7`：
 
 ```bash
 python3 -m evaluation run \
@@ -64,6 +64,18 @@ Powerful Hand、post-KO relay 和 attack quality 的结构化 payload。Powerful
 才计为成功；未到达目标回合、未完成对局和未知 Prize 状态会保留在审计字段及相应
 分母中，不会被静默删除。profile 的 id、revision、metric ids、聚合 payload、单局轻量
 `metric_refs` 和专属语义展示全部内嵌在独立 `report.html` 中。
+
+`length` 把官方 engine 的先手玩家 phase turn 与紧随其后的后手玩家 phase turn 合成一个完整
+回合，使用 `ceil(engine_turn / 2)` 作为结束回合。页面分别展示获胜和失败对局的平均结束回合与
+分布图，并按 candidate 在该局是先攻还是后攻分色。终局先后手 phase 仍保留在单局 payload 中，
+但不作为可见图表分组。error/unfinished 不进入胜负回合统计，
+observed engine turn 仍保留在单局 payload 中；action selection 次数只用于性能与异常审计。
+
+正式 opponents 全量循环评测长期保存在 `arena/combat_mat/`：`index.html` 是矩阵入口，
+`reports/<package>/<run_id>/report.html` 保留每个 package 面对完整 catalog 的源报告，
+`matrix.json` 保存聚合数据。正式池变化后需要按新 catalog 重新运行所有 package（包含自身，
+每个有向单元格 10 局）；这些重要结果不得放在 `.tmp/`。页面展示总体、先攻和后攻胜率，
+并将先攻与后攻玩家阶段按 `ceil(engine_turn / 2)` 合成完整回合。
 
 该 profile 的 `report.html` 会按语义分组展示：结果与正确性护栏、
 阶段一二回合基础能力、阶段二 Post-KO 接力能力、阶段三攻击质量惩罚项，以及辅助健康与审计
