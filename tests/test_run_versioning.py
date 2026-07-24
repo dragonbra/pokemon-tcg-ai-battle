@@ -13,12 +13,14 @@ class RunVersioningTests(unittest.TestCase):
         with TemporaryDirectory() as directory:
             root = Path(directory)
             runs_root = root / "rl_runs"
-            artifact_root = root / "rl_runs"
-            experiment = runs_root / "0003-example"
+            experiment_root = runs_root / "artifact"
+            checkpoint_root = runs_root / "checkpoint"
+            experiment = experiment_root / "0003-example"
             experiment.mkdir(parents=True)
             with (
                 patch("rl_environment.runs.RUNS_ROOT", runs_root),
-                patch("rl_environment.runs.ARTIFACT_ROOT", artifact_root),
+                patch("rl_environment.runs.EXPERIMENT_ROOT", experiment_root),
+                patch("rl_environment.runs.CHECKPOINT_ROOT", checkpoint_root),
             ):
                 paths = training_paths(experiment / "V1_initial_contract")
 
@@ -29,21 +31,23 @@ class RunVersioningTests(unittest.TestCase):
             )
             self.assertEqual(
                 paths.checkpoints,
-                artifact_root / "checkpoint" / experiment.name / "V1_initial_contract",
+                checkpoint_root / experiment.name / "V1_initial_contract",
             )
 
     def test_experiment_root_and_reused_version_fail_closed(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)
             runs_root = root / "rl_runs"
-            artifact_root = root / "rl_runs"
-            experiment = runs_root / "0003-example"
+            experiment_root = runs_root / "artifact"
+            checkpoint_root = runs_root / "checkpoint"
+            experiment = experiment_root / "0003-example"
             attempt = experiment / "V1_initial_contract"
             attempt.mkdir(parents=True)
             (attempt / "training_config.json").write_text("{}\n", encoding="utf-8")
             with (
                 patch("rl_environment.runs.RUNS_ROOT", runs_root),
-                patch("rl_environment.runs.ARTIFACT_ROOT", artifact_root),
+                patch("rl_environment.runs.EXPERIMENT_ROOT", experiment_root),
+                patch("rl_environment.runs.CHECKPOINT_ROOT", checkpoint_root),
             ):
                 with self.assertRaises(ValueError):
                     training_paths(experiment)

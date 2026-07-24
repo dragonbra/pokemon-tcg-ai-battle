@@ -155,10 +155,10 @@ observation/action 的旧 trace 无法事后还原卡面。详细格式和 viewe
 RL 子系统的目录关系如下：
 
 ```text
-rl_runs/<000N-experiment>/<Vn_tag>/                 # config、metrics、summary/status
+rl_runs/artifact/<000N-experiment>/<Vn_tag>/        # config、metrics、summary/status
 rl_runs/tensorboard/<000N-experiment>/<Vn_tag>/     # TensorBoard event
-rl_runs/checkpoint/<000N-experiment>/<Vn_tag>/   # 大模型文件，Git 忽略
-rl_runs/<000N-experiment>/evaluation/<Vn_tag>/      # 对应版本的真实对局报告
+rl_runs/checkpoint/<000N-experiment>/<Vn_tag>/      # 大模型文件，Git 忽略
+rl_runs/evaluation/<000N-experiment>/<Vn_tag>/      # 对应版本的真实对局报告
 ```
 
 新项目先通过 `rl_environment.runs create` 分配全局编号；同一项目的新尝试严格递增 `V<n>`，不能把

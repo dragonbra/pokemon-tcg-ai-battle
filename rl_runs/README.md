@@ -7,11 +7,12 @@
 rl_runs/dataset/0001-label/       # 仅 BC；Git 忽略
 rl_runs/checkpoint/0001-label/V1_initial_contract/ # Git 忽略
 rl_runs/tensorboard/0001-label/V1_initial_contract/   # Git 跟踪
-rl_runs/0001-label/V1_initial_contract/               # Git 跟踪
-rl_runs/0001-label/evaluation/V1_initial_contract/    # Git 跟踪
+rl_runs/artifact/0001-label/V1_initial_contract/      # Git 跟踪
+rl_runs/evaluation/0001-label/V1_initial_contract/    # Git 跟踪
 ```
 
-experiment 根目录保存共享的 manifest、data manifest/audit、commands 和 decisions。每个
+`artifact/<experiment>` 根目录保存共享的 manifest、data manifest/audit、commands 和
+decisions。每个
 `V<n>_<tag>` tracked version 至少保存：
 
 - `training_config.json`：模型结构参数、seed、优化器与训练超参数。

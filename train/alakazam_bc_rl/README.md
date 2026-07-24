@@ -21,7 +21,7 @@ train/alakazam_bc_rl/
 ```bash
 PYTHONPATH=. python3.11 -m train.alakazam_bc_rl.training.train_full_action_bc \
   rl_runs/dataset/<experiment>/dataset.jsonl \
-  --output rl_runs/<experiment>/V<n>_<tag> \
+  --output rl_runs/artifact/<experiment>/V<n>_<tag> \
   --device cuda
 ```
 

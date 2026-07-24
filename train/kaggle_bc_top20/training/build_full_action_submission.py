@@ -106,6 +106,7 @@ def build(
     cg_source: Path | None = None,
     source_identity: dict[str, Any] | None = None,
     shared_model_config: Path | None = None,
+    runtime_deck_override: bool = False,
 ) -> Path:
     output = output.resolve()
     checkpoint = checkpoint.resolve()
@@ -142,11 +143,15 @@ def build(
     payload = _load_checkpoint(checkpoint)
     metadata = payload.get("metadata") or {}
     checkpoint_deck = [int(card_id) for card_id in metadata.get("deck") or []]
-    if checkpoint_deck and (
+    checkpoint_deck_mismatch = bool(checkpoint_deck) and (
         len(checkpoint_deck) != 60
         or _canonical_deck_sha256(checkpoint_deck) != deck_sha256
-    ):
-        raise ValueError("checkpoint deck metadata does not match --deck")
+    )
+    if checkpoint_deck_mismatch and not runtime_deck_override:
+        raise ValueError(
+            "checkpoint deck metadata does not match --deck; "
+            "use --runtime-deck-override only for an audited multi-deck corpus"
+        )
     if (source_identity or shared_model_config) and len(checkpoint_deck) != 60:
         raise ValueError("audited package checkpoint is missing exact deck metadata")
     feature_schema = (metadata.get("feature_config") or {}).get("schema_version")
@@ -209,11 +214,21 @@ def build(
     (strategy / "full_action_inference.py").write_text(inference, encoding="utf-8")
 
     model_path = strategy / "model.bin"
+    exported_metadata = dict(payload["metadata"])
+    runtime_deck_override_record = None
+    if checkpoint_deck_mismatch:
+        runtime_deck_override_record = {
+            "reason": "audited_multi_deck_corpus_runtime_deck_selection",
+            "checkpoint_deck_sha256": _canonical_deck_sha256(checkpoint_deck),
+            "runtime_deck_sha256": deck_sha256,
+        }
+        exported_metadata["deck"] = deck_cards
+        exported_metadata["runtime_deck_override"] = runtime_deck_override_record
     torch.save(
         {
             "step": int(payload.get("step", 0)),
             "model": payload["model"],
-            "metadata": payload["metadata"],
+            "metadata": exported_metadata,
         },
         model_path,
     )
@@ -237,6 +252,7 @@ def build(
         "source_identity": source_identity,
         "deck_sha256": deck_sha256,
         "deck_file_sha256": _sha256(output / "deck.csv"),
+        "runtime_deck_override": runtime_deck_override_record,
         "cg_tree_sha256": _cg_tree_hash(output / "cg"),
         "source_files_sha256": source_files,
         "shared_model_config": (
@@ -263,6 +279,7 @@ def main() -> None:
     parser.add_argument("--cg-source", type=Path)
     parser.add_argument("--source-identity", type=Path)
     parser.add_argument("--shared-model-config", type=Path)
+    parser.add_argument("--runtime-deck-override", action="store_true")
     parser.add_argument("--experiment-id", required=True)
     parser.add_argument("--name", default="Alakazam BC v1")
     args = parser.parse_args()
@@ -284,6 +301,7 @@ def main() -> None:
             cg_source=args.cg_source,
             source_identity=source_identity,
             shared_model_config=args.shared_model_config,
+            runtime_deck_override=args.runtime_deck_override,
         )
     )
 

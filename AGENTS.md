@@ -12,7 +12,7 @@
 - 需要 setup/relay 语义指标时使用 `--metric-profile auto_iteration_v8_setup_relay`（兼容 ID，当前 revision 3）生成完整报告；报告按结果护栏、阶段一二回合基础能力、阶段二 Post-KO 接力、阶段三攻击质量和辅助审计分组，同时保留原始 metric payload。该 profile 只定义指标与展示合同，不代表或触发任何自动迭代、规则策略修改、晋级或淘汰流程。
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
 - `notes/`、`docs/reports/`、`experiments/` 保存事实、研究结论和实验记录，`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 的非报告临时输出写到 `/tmp`，不纳入仓库。
-- Agent 为验证、smoke、benchmark 或临时验收生成的 Evaluation report 必须写到仓库根目录 `.tmp/evaluation/<purpose>/`，不得写到系统 `/tmp`；保留 Evaluation 自动创建的 `run_id/`，并在交付时给出仓库内可点击的 `report.html` 路径，方便直接用 VS Code 查看。`.tmp/` 只用于可删除的本机临时产物，必须保持 Git ignore，禁止提交。正式实验评测仍写入对应 `rl_runs/<experiment>/evaluation/V<n>_<tag>/`，不得用 `.tmp/` 代替可审计的正式版本产物。
+- Agent 为验证、smoke、benchmark 或临时验收生成的 Evaluation report 必须写到仓库根目录 `.tmp/evaluation/<purpose>/`，不得写到系统 `/tmp`；保留 Evaluation 自动创建的 `run_id/`，并在交付时给出仓库内可点击的 `report.html` 路径，方便直接用 VS Code 查看。`.tmp/` 只用于可删除的本机临时产物，必须保持 Git ignore，禁止提交。正式实验评测仍写入对应 `rl_runs/evaluation/<experiment>/V<n>_<tag>/`，不得用 `.tmp/` 代替可审计的正式版本产物。
 - `evaluation/arena/combat_mat.html` 是正式 opponents 池的全量循环评测页面。每次更新正式池后，必须让 catalog 中每个启用 package 作为 candidate，对完整启用 catalog（包含自身）逐项运行至少 10 局，形成有向 N×N 矩阵；单 package report 和聚合源数据统一写入 `.tmp/evaluation/combat_mat/`，只提交重新生成的聚合 HTML。页面必须同时展示 package 与按关键宝可梦归类的 archetype 胜率热力图、两级平均总回合数热力图、代表卡图、总局数、累计耗时和逐 package 耗时。平均总回合数必须来自官方 engine 的最终 turn 字段，禁止用 action selection steps 冒充。
 
 ## 官方引擎与评测硬约束
@@ -32,9 +32,9 @@
 
 ## RL 实验内迭代版本硬约束
 
-- `rl_runs/<000N-experiment>/` 表示一个项目级实验，根目录只保存共享的 manifest、数据 manifest/audit、决策与命令记录；同一实验内每次实际训练、校准或策略更新都必须新建 `V<序号>_<tag>/` 子目录，例如 `V1_initial_contract`、`V2_card_token_fix`。
+- `rl_runs/artifact/<000N-experiment>/` 表示一个项目级实验，根目录只保存共享的 manifest、数据 manifest/audit、决策与命令记录；同一实验内每次实际训练、校准或策略更新都必须新建 `V<序号>_<tag>/` 子目录，例如 `V1_initial_contract`、`V2_card_token_fix`。编号实验不得直接出现在 `rl_runs/` 顶层。
 - 序号从 `V1` 开始，在同一实验内严格单调递增；`tag` 使用能说明本次假设或修复的 ASCII 小写 `snake_case`。不得复用旧序号、覆盖旧目录、向旧 metrics 追加新 run，或因为结果失败而删除旧版本。
-- 每个版本的 tracked 训练产物必须写到 `rl_runs/<experiment>/V<n>_<tag>/`，至少包含独立的 training config、metrics、summary/status；TensorBoard event 必须写到 `rl_runs/tensorboard/<experiment>/V<n>_<tag>/`，checkpoint 必须写到 `rl_runs/checkpoint/<experiment>/V<n>_<tag>/`。三处版本名必须完全一致，禁止直接把 event 或 checkpoint 写在 experiment 根目录。
+- 每个版本的 tracked 训练产物必须写到 `rl_runs/artifact/<experiment>/V<n>_<tag>/`，至少包含独立的 training config、metrics、summary/status；TensorBoard event 必须写到 `rl_runs/tensorboard/<experiment>/V<n>_<tag>/`，checkpoint 必须写到 `rl_runs/checkpoint/<experiment>/V<n>_<tag>/`。三处版本名必须完全一致，禁止直接把 event 或 checkpoint 写在 experiment 根目录。
 - 评测同样使用 `evaluation/V<n>_<tag>/`，并与产生 candidate 的训练版本对应；仅评测解析器或 opponent catalog 变化时也要新建版本并在 tag/决策记录中说明变量，不得混写已有报告。
 - 失败、被中止或确认存在数据/编码缺陷的版本仍然是正式迭代记录：必须保留可恢复产物，在 version status 或 experiment decisions 中记录失败原因、发现证据和下一版本具体改进。后续版本的价值需要能从这些记录和 TensorBoard 曲线中被追溯。
 - 启动新 run 前必须先检查目标 version 的 run、TensorBoard 和 checkpoint 三个目录均未被使用；若任一路径已有文件，必须分配下一个 `V<n>_<tag>`，不得依赖 TensorBoard 新建 event 文件来区分逻辑 run。

@@ -26,6 +26,6 @@ PYTHONPATH=. python3.11 -m rl_environment.runs create next_rl \
   --objective "Online RL with the official engine runtime"
 ```
 
-同一实验的训练版本必须写入 `rl_runs/<experiment>/V<n>_<tag>/`；checkpoint 和
+同一实验的训练版本必须写入 `rl_runs/artifact/<experiment>/V<n>_<tag>/`；checkpoint 和
 TensorBoard 会分别写入 `rl_runs/checkpoint/` 与 `rl_runs/tensorboard/` 的同名版本。
 已有任一路径包含文件时，基础设施会拒绝复用。

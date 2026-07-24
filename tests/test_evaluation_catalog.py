@@ -194,11 +194,15 @@ class EvaluationCatalogTests(unittest.TestCase):
     def test_research_output_root_allocates_after_numbered_runs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "_runs"
-            (root / "0003-previous").mkdir(parents=True)
+            artifact_root = root / "artifact"
+            (artifact_root / "0003-previous").mkdir(parents=True)
             (root / "tensorboard").mkdir()
-            with patch("rl_environment.runs.RUNS_ROOT", root):
+            with (
+                patch("rl_environment.runs.RUNS_ROOT", root),
+                patch("rl_environment.runs.EXPERIMENT_ROOT", artifact_root),
+            ):
                 allocated = _numbered_research_output_root(root / "new_candidate" / "evaluation")
-            self.assertEqual(allocated, root / "0004-new_candidate" / "evaluation")
+            self.assertEqual(allocated, root / "evaluation" / "0004-new_candidate")
 
     def test_research_coverage_requires_full_catalog_and_ten_games(self) -> None:
         with self.assertRaisesRegex(PackageValidationError, "230"):
