@@ -20,6 +20,10 @@ decisions。每个
 - `status.json` 或版本决策记录：完成/中止/失败状态、原因与下一版本改进。
 - 同名 `evaluation/V<n>_<tag>/`：运行 manifest、逐局记录、metrics、case 和报告。
 
+每个 epoch 必须记录完整 train 与 validation split 的同口径标量，并同步写入 TensorBoard；
+禁止通过 `train_eval_interval > 1` 跳过中间 epoch。历史 run 若没有实际执行某个评测，只能保留
+缺口并在 status 中说明，不能插值或伪造。
+
 每次启动前必须确认 run、TensorBoard 和 checkpoint 三个同名版本目录均没有文件；训练路径
 解析会拒绝 experiment 根目录、非法版本名和任何已使用版本。TensorBoard 新建 event 文件
 不代表新逻辑 run，禁止依赖它在同一 logdir 中区分尝试。

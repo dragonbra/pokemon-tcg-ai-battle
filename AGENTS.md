@@ -35,6 +35,7 @@
 - `rl_runs/artifact/<000N-experiment>/` 表示一个项目级实验，根目录只保存共享的 manifest、数据 manifest/audit、决策与命令记录；同一实验内每次实际训练、校准或策略更新都必须新建 `V<序号>_<tag>/` 子目录，例如 `V1_initial_contract`、`V2_card_token_fix`。编号实验不得直接出现在 `rl_runs/` 顶层。
 - 序号从 `V1` 开始，在同一实验内严格单调递增；`tag` 使用能说明本次假设或修复的 ASCII 小写 `snake_case`。不得复用旧序号、覆盖旧目录、向旧 metrics 追加新 run，或因为结果失败而删除旧版本。
 - 每个版本的 tracked 训练产物必须写到 `rl_runs/artifact/<experiment>/V<n>_<tag>/`，至少包含独立的 training config、metrics、summary/status；TensorBoard event 必须写到 `rl_runs/tensorboard/<experiment>/V<n>_<tag>/`，checkpoint 必须写到 `rl_runs/checkpoint/<experiment>/V<n>_<tag>/`。三处版本名必须完全一致，禁止直接把 event 或 checkpoint 写在 experiment 根目录。
+- 每个训练 epoch 都必须对完整 train 与 validation split 执行同口径评测，并把同名标量同时写入 `training_metrics.jsonl` 和 TensorBoard；不得用间隔评测、缺失值、插值或仅有 console progress 代替逐 epoch 曲线。训练成本需要优化时应优化评测实现，不能跳过 epoch 指标。
 - 评测同样使用 `evaluation/V<n>_<tag>/`，并与产生 candidate 的训练版本对应；仅评测解析器或 opponent catalog 变化时也要新建版本并在 tag/决策记录中说明变量，不得混写已有报告。
 - 失败、被中止或确认存在数据/编码缺陷的版本仍然是正式迭代记录：必须保留可恢复产物，在 version status 或 experiment decisions 中记录失败原因、发现证据和下一版本具体改进。后续版本的价值需要能从这些记录和 TensorBoard 曲线中被追溯。
 - 启动新 run 前必须先检查目标 version 的 run、TensorBoard 和 checkpoint 三个目录均未被使用；若任一路径已有文件，必须分配下一个 `V<n>_<tag>`，不得依赖 TensorBoard 新建 event 文件来区分逻辑 run。
