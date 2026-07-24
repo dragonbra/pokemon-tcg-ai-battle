@@ -6,6 +6,10 @@
   "learning_rate": 1e-05,
   "weight_decay": 0.01,
   "max_grad_norm": 1.0,
+  "streaming": true,
+  "shuffle_buffer_size": 8192,
+  "progress_batches": 100,
+  "train_eval_interval": 0,
   "device": "auto",
   "storage_path": "/mnt/c",
   "min_free_gib": 20.0,
@@ -15,7 +19,6 @@
   "freeze_backbone_during_value_warmup": true,
   "card_category_embedding": {
     "enabled": false,
-    "source_csv": "data/official/EN_Card_Data.csv",
     "scale": 1.0
   },
   "reward": {

@@ -1,0 +1,94 @@
+{
+  "best_epoch": 2,
+  "best_validation_exact_action_rate": 0.8081678092224761,
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0009-reward_weighted_bc/V1_control_finetune/best_validation.pt",
+  "config": {
+    "batch_size": 256,
+    "card_category_embedding": {
+      "enabled": false,
+      "scale": 1.0
+    },
+    "dataset": "/mnt/d/pokemon-tcg-ai-battle-data/rl_runs_dataset_0008/dataset.jsonl",
+    "dataset_records": {
+      "test": 0,
+      "train": 221289,
+      "validation": 17067
+    },
+    "dataset_reward_mean": 0.0,
+    "device": "cuda",
+    "epochs": 6,
+    "evaluate_test": false,
+    "expert_team": "Yushin Ito",
+    "freeze_backbone_during_value_warmup": true,
+    "learning_rate": 2e-05,
+    "loss": {
+      "count": 1.0,
+      "policy": 1.0,
+      "value": 0.0
+    },
+    "max_grad_norm": 1.0,
+    "min_free_gib": 20.0,
+    "progress_batches": 100,
+    "reset_value_output": false,
+    "reward": {
+      "clip_max": null,
+      "clip_min": null,
+      "components": []
+    },
+    "reward_sidecar": null,
+    "reward_sidecar_sha256": null,
+    "schema_version": "alakazam_reward_weighted_bc_v1",
+    "seed": 7,
+    "shuffle_buffer_size": 8192,
+    "source_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0008-rank_010_alakazam_bc/V1_shared_config_streaming/best_validation.pt",
+    "source_checkpoint_sha256": "8141faf9ad65bd3fd75e53b489bb794a03e9636b79b222fc537daba8e0e6cd7c",
+    "storage": {
+      "free_bytes": 232230080512,
+      "free_gib": 216.2811164855957,
+      "path": "/mnt/d",
+      "total_bytes": 536870907904,
+      "used_bytes": 304640827392
+    },
+    "storage_path": "/mnt/d",
+    "streaming": true,
+    "train_eval_interval": 0,
+    "value_warmup_epochs": 0,
+    "weight_decay": 0.01,
+    "weighting": {
+      "baseline": "zero",
+      "linear_scale": 1.0,
+      "max_weight": 1.0,
+      "min_weight": 1.0,
+      "mode": "uniform",
+      "temperature": 1.0
+    }
+  },
+  "final_test": {},
+  "last_epoch": {
+    "phase/value_warmup": 0.0,
+    "runtime/epoch_seconds": 308.0923669680051,
+    "train/advantage_mean": 0.0,
+    "train/count_loss": 0.001738885458154584,
+    "train/effective_sample_ratio": 1.0,
+    "train/loss": 0.24488890745706882,
+    "train/policy_loss": 0.2431500219630343,
+    "train/reward_mean": 0.0,
+    "train/value_loss": 0.04755548094071148,
+    "train/weight_max": 1.0,
+    "train/weight_mean": 1.0,
+    "train/weight_min": 1.0,
+    "validation/count_loss": 0.0059547782774347115,
+    "validation/effective_sample_ratio": 1.0,
+    "validation/exact_action_rate": 0.8050038085193648,
+    "validation/loss": 0.6534896434879599,
+    "validation/policy_loss": 0.6475348660416027,
+    "validation/reward_mean": 0.0,
+    "validation/selection_count_accuracy": 0.9988281478877366,
+    "validation/value_loss": 0.05436265417302913,
+    "validation/value_mae": 0.27392593256833647,
+    "validation/weight_mean": 1.0
+  },
+  "runtime_seconds": 1810.3404269090097,
+  "status": "completed",
+  "test_evaluated": false
+}

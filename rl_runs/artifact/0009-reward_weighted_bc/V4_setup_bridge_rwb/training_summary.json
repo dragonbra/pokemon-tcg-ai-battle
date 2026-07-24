@@ -1,0 +1,135 @@
+{
+  "best_epoch": 2,
+  "best_validation_exact_action_rate": 0.8082849944337025,
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0009-reward_weighted_bc/V4_setup_bridge_rwb/best_validation.pt",
+  "config": {
+    "batch_size": 256,
+    "card_category_embedding": {
+      "enabled": false,
+      "scale": 1.0
+    },
+    "dataset": "/mnt/d/pokemon-tcg-ai-battle-data/rl_runs_dataset_0008/dataset.jsonl",
+    "dataset_records": {
+      "test": 0,
+      "train": 221289,
+      "validation": 17067
+    },
+    "dataset_reward_mean": 0.015297868398338825,
+    "device": "cuda",
+    "epochs": 2,
+    "evaluate_test": false,
+    "expert_team": "Yushin Ito",
+    "freeze_backbone_during_value_warmup": true,
+    "learning_rate": 2e-05,
+    "loss": {
+      "count": 1.0,
+      "policy": 1.0,
+      "value": 0.0
+    },
+    "max_grad_norm": 1.0,
+    "min_free_gib": 20.0,
+    "progress_batches": 100,
+    "reset_value_output": false,
+    "reward": {
+      "clip_max": 1.5,
+      "clip_min": -1.5,
+      "components": [
+        {
+          "clip_max": null,
+          "clip_min": null,
+          "default": null,
+          "enabled": true,
+          "field": "reward_metrics.decision.opening_active_abra_credit",
+          "name": "opening_active_abra",
+          "weight": 0.5
+        },
+        {
+          "clip_max": null,
+          "clip_min": null,
+          "default": null,
+          "enabled": true,
+          "field": "reward_metrics.decision.second_turn_setup_credit",
+          "name": "second_turn_setup",
+          "weight": 0.25
+        },
+        {
+          "clip_max": null,
+          "clip_min": null,
+          "default": null,
+          "enabled": true,
+          "field": "reward_metrics.decision.dunsparce_first_turn_setup_credit",
+          "name": "dunsparce_first_turn_setup",
+          "weight": 0.25
+        },
+        {
+          "clip_max": null,
+          "clip_min": null,
+          "default": null,
+          "enabled": true,
+          "field": "reward_metrics.decision.dunsparce_second_turn_execution_credit",
+          "name": "dunsparce_second_turn_execution",
+          "weight": 0.5
+        }
+      ]
+    },
+    "reward_sidecar": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/dataset/0009-reward_weighted_bc/reward_sidecar.jsonl",
+    "reward_sidecar_sha256": "97a43da7fef29c7d9b7045cb7a7ae1c4d1efeaeb797238807b5aa5ddce59c2bd",
+    "schema_version": "alakazam_reward_weighted_bc_v1",
+    "seed": 7,
+    "shuffle_buffer_size": 8192,
+    "source_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0008-rank_010_alakazam_bc/V1_shared_config_streaming/best_validation.pt",
+    "source_checkpoint_sha256": "8141faf9ad65bd3fd75e53b489bb794a03e9636b79b222fc537daba8e0e6cd7c",
+    "storage": {
+      "free_bytes": 232207007744,
+      "free_gib": 216.25962829589844,
+      "path": "/mnt/d",
+      "total_bytes": 536870907904,
+      "used_bytes": 304663900160
+    },
+    "storage_path": "/mnt/d",
+    "streaming": true,
+    "train_eval_interval": 0,
+    "value_warmup_epochs": 0,
+    "weight_decay": 0.01,
+    "weighting": {
+      "baseline": "dataset_mean",
+      "linear_scale": 1.0,
+      "max_weight": 3.0,
+      "min_weight": 0.25,
+      "mode": "exponential",
+      "temperature": 1.0
+    }
+  },
+  "final_test": {},
+  "last_epoch": {
+    "phase/value_warmup": 0.0,
+    "runtime/epoch_seconds": 315.5182599039981,
+    "train/advantage_mean": -3.5282761117517758e-09,
+    "train/count_loss": 0.0021335139652929303,
+    "train/effective_sample_ratio": 0.931804906149441,
+    "train/loss": 0.2828705506354284,
+    "train/policy_loss": 0.2807370369062888,
+    "train/reward_component/dunsparce_first_turn_setup": 0.004701996032380941,
+    "train/reward_component/dunsparce_second_turn_execution": -0.014415538052222137,
+    "train/reward_component/opening_active_abra": 0.021695610717282664,
+    "train/reward_component/second_turn_setup": 0.0033157997016012458,
+    "train/reward_mean": 0.015297868400257958,
+    "train/value_loss": 0.07558926374287964,
+    "train/weight_max": 2.0848610401153564,
+    "train/weight_mean": 1.0308520698052401,
+    "train/weight_min": 0.4653385214090118,
+    "validation/count_loss": 0.005217671689879834,
+    "validation/effective_sample_ratio": 0.9217542494175677,
+    "validation/exact_action_rate": 0.8082849944337025,
+    "validation/loss": 0.5997586099067165,
+    "validation/policy_loss": 0.5945409380828042,
+    "validation/reward_mean": 0.03382258159435053,
+    "validation/selection_count_accuracy": 0.9987695552821234,
+    "validation/value_loss": 0.08613180999777302,
+    "validation/value_mae": 0.34163060073463625,
+    "validation/weight_mean": 1.0554459589244458
+  },
+  "runtime_seconds": 612.304323888995,
+  "status": "completed",
+  "test_evaluated": false
+}
