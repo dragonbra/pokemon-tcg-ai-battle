@@ -221,7 +221,9 @@ def train(
     best_loss = float(baseline_validation.get("loss", math.inf))
     best_exact = float(baseline_validation.get("exact_action_accuracy", -math.inf))
     best_epoch = start_epoch
+    best_exact_epoch = start_epoch
     best_validation: dict[str, float] = dict(baseline_validation)
+    best_exact_validation: dict[str, float] = dict(baseline_validation)
     last_metrics: dict[str, float] = {}
     no_exact_improvement = 0
     stopped_early = False
@@ -231,6 +233,13 @@ def train(
     if resume_payload is not None:
         manager.save(
             "best_validation",
+            model,
+            optimizer=optimizer,
+            step=start_epoch,
+            metadata=resume_payload.get("metadata") or {},
+        )
+        manager.save(
+            "best_exact",
             model,
             optimizer=optimizer,
             step=start_epoch,
@@ -316,7 +325,16 @@ def train(
                 )
             if validation["exact_action_accuracy"] > best_exact:
                 best_exact = validation["exact_action_accuracy"]
+                best_exact_epoch = epoch
+                best_exact_validation = dict(validation)
                 no_exact_improvement = 0
+                manager.save(
+                    "best_exact",
+                    model,
+                    optimizer=optimizer,
+                    step=epoch,
+                    metadata=metadata,
+                )
             else:
                 no_exact_improvement += 1
             print(
@@ -361,6 +379,10 @@ def train(
         "best_validation": best_validation,
         "best_checkpoint": str((paths.checkpoints / "best_validation.pt").resolve()),
         "checkpoint_selection": "minimum validation token cross-entropy",
+        "best_exact_epoch": best_exact_epoch,
+        "best_exact_validation": best_exact_validation,
+        "best_exact_checkpoint": str((paths.checkpoints / "best_exact.pt").resolve()),
+        "best_exact_checkpoint_selection": "maximum validation exact-action accuracy",
         "last_epoch": last_metrics,
         "runtime_seconds": time.monotonic() - started,
         "parameter_count": parameter_count,

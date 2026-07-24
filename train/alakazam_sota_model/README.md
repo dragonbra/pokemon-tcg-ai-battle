@@ -2,8 +2,8 @@
 
 这是一个独立的训练项目，用于忠实复刻 Kaggle Notebook
 [`horizen12/ptcg-yushin-id-only-bc-v1`](https://www.kaggle.com/code/horizen12/ptcg-yushin-id-only-bc-v1)
-的 ID-only pointer policy。`SOTA model` 是项目名和研究目标；在官方 engine 固定池评测完成前，
-不代表策略强度结论。
+的 ID-only pointer policy。`SOTA model` 是项目名；V4 已完成长曲线、官方 engine 固定池评测
+与双 checkpoint Kaggle 提交，具体强度证据以归档报告和 submission record 为准。
 
 模型、输入字段、现有 universal BC 对照和阶段状态见 [`DESIGN.html`](DESIGN.html)。
 
@@ -16,7 +16,8 @@
   dropout `0.1`、GRU pointer decoder。
 - 训练保持 Notebook 默认：batch 96、6 epochs、AdamW、LR `3e-4`、weight decay `0.02`、
   gradient clip `1.0`、seed `20260723`、AMP。
-- checkpoint 仍按最低 validation token cross-entropy 选择。
+- 同时保留最低 validation token cross-entropy 的 `best_validation.pt` 和最高
+  validation exact-action accuracy 的 `best_exact.pt`，再用官方 engine 评测决定策略版本。
 
 仓库版只增加不改变梯度的工程观测：每个 epoch 写 TensorBoard，并额外执行完整 train-eval，
 以便同时看到拟合和泛化曲线。
@@ -78,6 +79,15 @@ python3 -m train.alakazam_sota_model train \
 
 V3 在任何 batch 开始前暴露 resume RNG device restore 缺陷并保留失败记录；V4 只把保存的
 RNG ByteTensor 转回 CPU 后再恢复，仍从 V2 epoch 6 权重、optimizer 与 RNG 开始。
+
+V4 在 epoch 21 刷新最高 validation exact 后，epoch 22–26 连续五轮未刷新，于 epoch 26
+自然停止。最终并列保留并提交两类 checkpoint：
+
+- loss-best：epoch 9，validation loss `0.232557`，Kaggle ref `54958731`，public score `944.2`；
+- exact-best：epoch 21，validation exact `84.2562%`，Kaggle ref `54958951`，public score `600.0`。
+
+虽然 exact-best 的本地固定池结果更高，但 Kaggle 结果显著更差；后续 0011 reward-weighted BC
+以 loss-best 的训练阶段与强度证据作为 baseline，不以 teacher-forced exact 单独选策略。
 
 ## 模块
 
