@@ -41,6 +41,18 @@ MODEL_INPUT_KEYS = (
 )
 
 
+def _validate_metric_logging_contract(
+    *, train_eval_interval: int, progress_batches: int
+) -> None:
+    if train_eval_interval != 1:
+        raise ValueError(
+            "train_eval_interval must be 1: every epoch must record aligned "
+            "train and validation metrics"
+        )
+    if progress_batches < 1:
+        raise ValueError("progress_batches must be positive")
+
+
 def _validate_record(record: dict[str, Any], location: str) -> None:
     if record.get("dataset_version") not in SUPPORTED_DATASET_VERSIONS:
         raise ValueError(f"unsupported Kaggle BC record at {location}")
@@ -334,8 +346,10 @@ def train(
     training_started = time.monotonic()
     random.seed(seed)
     torch.manual_seed(seed)
-    if train_eval_interval < 0 or progress_batches < 1:
-        raise ValueError("train_eval_interval must be non-negative and progress_batches positive")
+    _validate_metric_logging_contract(
+        train_eval_interval=train_eval_interval,
+        progress_batches=progress_batches,
+    )
     storage = assert_storage_safe(storage_path, min_free_gib)
     device = torch.device(
         "cuda" if device_name == "auto" and torch.cuda.is_available() else device_name
@@ -486,10 +500,7 @@ def train(
                         ),
                         flush=True,
                     )
-            evaluate_train_epoch = (
-                train_eval_interval > 0
-                and (epoch % train_eval_interval == 0 or epoch == epochs)
-            )
+            evaluate_train_epoch = True
             train_eval_records = (
                 _iter_split(dataset, "train") if streaming else splits["train"]
             ) if evaluate_train_epoch else ()
@@ -682,7 +693,13 @@ def main() -> None:
     parser.add_argument("--skip-test", action="store_true")
     parser.add_argument("--streaming", action="store_true")
     parser.add_argument("--shuffle-buffer-size", type=int, default=8192)
-    parser.add_argument("--train-eval-interval", type=int, default=1)
+    parser.add_argument(
+        "--train-eval-interval",
+        type=int,
+        choices=(1,),
+        default=1,
+        help="fixed at 1 so every epoch records aligned train/validation metrics",
+    )
     parser.add_argument("--progress-batches", type=int, default=100)
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=256)
