@@ -9,6 +9,11 @@ policy/value 接口、checkpoint、日志、存储保护、reward 基础类型�
 和合法 options；具体项目只提供 policy、reward profile 与训练算法。真实能力结论仍必须来自
 官方 engine runtime 的完整对局。
 
+大规模训练语料的通用流式原语位于 `rl_environment.streaming`：JSONL 顺序读取、固定内存
+shuffle buffer、batch 分块，以及主数据与轻量 sidecar 的 identity 对齐护栏。共享层只保证
+有界内存、确定性和错位时 fail closed；具体训练项目仍负责自己的 schema、动作合法性和
+reward 字段语义。
+
 ## 边界
 
 ```text
