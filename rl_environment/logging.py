@@ -37,7 +37,13 @@ class TrainingLogger:
             except ImportError:
                 self._writer = None
 
-    def log(self, step: int, metrics: dict[str, Any]) -> dict[str, Any]:
+    def log(
+        self,
+        step: int,
+        metrics: dict[str, Any],
+        *,
+        tensorboard_metrics: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         record = {
             "timestamp": time.time(),
             "step": int(step),
@@ -46,8 +52,12 @@ class TrainingLogger:
         self._file.write(json.dumps(record, ensure_ascii=True, sort_keys=True) + "\n")
         self._file.flush()
         if self._writer is not None:
-            for key, value in metrics.items():
-                if isinstance(value, (int, float)) and math.isfinite(float(value)):
+            for key, value in (tensorboard_metrics or metrics).items():
+                if (
+                    not isinstance(value, bool)
+                    and isinstance(value, (int, float))
+                    and math.isfinite(float(value))
+                ):
                     self._writer.add_scalar(key, value, step)
             self._writer.flush()
         return record

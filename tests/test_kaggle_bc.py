@@ -26,6 +26,10 @@ from train.kaggle_bc_top20.training.build_daily_winner_bc_dataset import (
     _valid_action,
     _visual_frames,
 )
+from train.alakazam_bc_rl.training.train_full_action_bc import (
+    _iter_split,
+    _shuffle_buffer,
+)
 
 
 def _summary(
@@ -115,6 +119,40 @@ class KaggleBCGateTests(unittest.TestCase):
 
 
 class KaggleBCInputTests(unittest.TestCase):
+    def test_streaming_split_reader_and_shuffle_are_deterministic(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="ptcg-streaming-bc-test-") as temporary:
+            dataset = Path(temporary) / "dataset.jsonl"
+            split_path = Path(temporary) / "dataset.train.jsonl"
+            records = [
+                {
+                    "dataset_version": "ptcg_kaggle_bc_universal",
+                    "expert_team_name": "Yushin Ito",
+                    "split": "train",
+                    "targets": [0],
+                    "target_count": 1,
+                    "selection_min_count": 1,
+                    "selection_max_count": 1,
+                    "encoded": {"action_mask": [True]},
+                    "record_id": index,
+                }
+                for index in range(10)
+            ]
+            dataset.write_text("", encoding="utf-8")
+            split_path.write_text(
+                "".join(json.dumps(record) + "\n" for record in records),
+                encoding="utf-8",
+            )
+            first = list(_shuffle_buffer(_iter_split(dataset, "train"), seed=7, buffer_size=3))
+            second = list(_shuffle_buffer(_iter_split(dataset, "train"), seed=7, buffer_size=3))
+            self.assertEqual(
+                [record["record_id"] for record in first],
+                [record["record_id"] for record in second],
+            )
+            self.assertEqual(
+                sorted(record["record_id"] for record in first),
+                list(range(10)),
+            )
+
     def test_daily_winner_selector_matches_reference_contract(self) -> None:
         self.assertEqual(_normalize_team("  YUSHIN   Ito "), "yushin ito")
         self.assertTrue(_is_winner([-1, 1], 1))

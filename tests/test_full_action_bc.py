@@ -337,6 +337,57 @@ class FullActionBCMiniTests(unittest.TestCase):
         self.assertEqual(manifest["model_config"]["d_model"], 16)
         self.assertTrue(manifest["cg_tree_sha256"])
 
+    def test_submission_builder_requires_explicit_runtime_deck_override(self) -> None:
+        model = self._model()
+        feature_config = PTCGFeatureConfig()
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source"
+            source.mkdir()
+            (source / "deck.csv").write_text("6\n" * 60, encoding="utf-8")
+            (source / "cg").mkdir()
+            (source / "cg" / "libcg.so").write_bytes(b"test")
+            checkpoint = root / "checkpoint.pt"
+            torch.save(
+                {
+                    "step": 3,
+                    "model": model.state_dict(),
+                    "metadata": {
+                        "model_config": model.config.to_dict(),
+                        "feature_config": {
+                            **feature_config.__dict__,
+                            "schema_version": "ptcg_features_v6",
+                        },
+                        "deck": [5] * 60,
+                    },
+                },
+                checkpoint,
+            )
+            with self.assertRaisesRegex(ValueError, "runtime-deck-override"):
+                build_submission(
+                    root / "rejected",
+                    checkpoint,
+                    source,
+                    experiment_id="0008-test",
+                )
+            output = build_submission(
+                root / "accepted",
+                checkpoint,
+                source,
+                experiment_id="0008-test",
+                runtime_deck_override=True,
+            )
+            exported = torch.load(
+                output / "strategy" / "model.bin",
+                map_location="cpu",
+                weights_only=False,
+            )
+            manifest = json.loads(
+                (output / "strategy" / "manifest.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(exported["metadata"]["deck"], [6] * 60)
+        self.assertIsNotNone(manifest["runtime_deck_override"])
+
     def test_candidate_builder_records_checkpoint_identity(self) -> None:
         with TemporaryDirectory() as directory:
             root = Path(directory)

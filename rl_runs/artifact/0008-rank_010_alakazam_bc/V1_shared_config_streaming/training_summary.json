@@ -1,0 +1,436 @@
+{
+  "best_checkpoint_train": {
+    "by_selection": {
+      "type=0,context=0": {
+        "exact_action_rate": 0.8282596023058488,
+        "records": 123512
+      },
+      "type=1,context=1": {
+        "exact_action_rate": 0.8980869565217391,
+        "records": 2875
+      },
+      "type=1,context=13": {
+        "exact_action_rate": 0.7405940594059406,
+        "records": 1010
+      },
+      "type=1,context=15": {
+        "exact_action_rate": 0.8458904109589042,
+        "records": 1168
+      },
+      "type=1,context=16": {
+        "exact_action_rate": 0.8405940594059406,
+        "records": 1010
+      },
+      "type=1,context=18": {
+        "exact_action_rate": 1.0,
+        "records": 1
+      },
+      "type=1,context=19": {
+        "exact_action_rate": 1.0,
+        "records": 1
+      },
+      "type=1,context=2": {
+        "exact_action_rate": 0.9738260200153964,
+        "records": 1299
+      },
+      "type=1,context=21": {
+        "exact_action_rate": 0.7879282218597063,
+        "records": 1226
+      },
+      "type=1,context=22": {
+        "exact_action_rate": 0.8536155202821869,
+        "records": 567
+      },
+      "type=1,context=3": {
+        "exact_action_rate": 0.8310006266973052,
+        "records": 4787
+      },
+      "type=1,context=4": {
+        "exact_action_rate": 0.9098083427282976,
+        "records": 7983
+      },
+      "type=1,context=5": {
+        "exact_action_rate": 0.9391825917143256,
+        "records": 7169
+      },
+      "type=1,context=7": {
+        "exact_action_rate": 0.9327768256951738,
+        "records": 36178
+      },
+      "type=1,context=8": {
+        "exact_action_rate": 0.041781874039938556,
+        "records": 3255
+      },
+      "type=1,context=9": {
+        "exact_action_rate": 0.745396317053643,
+        "records": 1249
+      },
+      "type=2,context=27": {
+        "exact_action_rate": 0.9459459459459459,
+        "records": 37
+      },
+      "type=4,context=30": {
+        "exact_action_rate": 0.9265580553400569,
+        "records": 3867
+      },
+      "type=5,context=34": {
+        "exact_action_rate": 1.0,
+        "records": 190
+      },
+      "type=7,context=37": {
+        "exact_action_rate": 0.9841897233201581,
+        "records": 3036
+      },
+      "type=8,context=38": {
+        "exact_action_rate": 1.0,
+        "records": 741
+      },
+      "type=8,context=40": {
+        "exact_action_rate": 1.0,
+        "records": 981
+      },
+      "type=9,context=41": {
+        "exact_action_rate": 1.0,
+        "records": 1550
+      },
+      "type=9,context=43": {
+        "exact_action_rate": 0.9848269591407627,
+        "records": 17597
+      }
+    },
+    "count_loss": 0.00307929679149473,
+    "exact_action_rate": 0.8602732173763721,
+    "legal_action_rate": 1.0,
+    "multi_action_exact_rate": 0.6895893702735175,
+    "policy_loss": 0.37667748793701217,
+    "records": 221289.0,
+    "selection_count_accuracy": 0.9988521797287709,
+    "single_action_accuracy": 0.8719320266486434
+  },
+  "best_epoch": 12,
+  "best_epoch_metrics": {
+    "runtime/epoch_seconds": 315.43094771099277,
+    "train/evaluation_skipped": true,
+    "train/loss": 0.3837664637951493,
+    "train/records": 221289.0,
+    "validation/by_selection": {
+      "type=0,context=0": {
+        "exact_action_rate": 0.7260616153205662,
+        "records": 9608
+      },
+      "type=1,context=1": {
+        "exact_action_rate": 0.9126637554585153,
+        "records": 229
+      },
+      "type=1,context=18": {
+        "exact_action_rate": 1.0,
+        "records": 2
+      },
+      "type=1,context=19": {
+        "exact_action_rate": 1.0,
+        "records": 2
+      },
+      "type=1,context=2": {
+        "exact_action_rate": 0.9072164948453608,
+        "records": 97
+      },
+      "type=1,context=3": {
+        "exact_action_rate": 0.8238805970149253,
+        "records": 335
+      },
+      "type=1,context=4": {
+        "exact_action_rate": 0.884493670886076,
+        "records": 632
+      },
+      "type=1,context=5": {
+        "exact_action_rate": 0.9507389162561576,
+        "records": 609
+      },
+      "type=1,context=7": {
+        "exact_action_rate": 0.8935676392572944,
+        "records": 3016
+      },
+      "type=1,context=8": {
+        "exact_action_rate": 0.04060913705583756,
+        "records": 197
+      },
+      "type=1,context=9": {
+        "exact_action_rate": 0.8181818181818182,
+        "records": 110
+      },
+      "type=4,context=30": {
+        "exact_action_rate": 0.9401993355481728,
+        "records": 301
+      },
+      "type=5,context=34": {
+        "exact_action_rate": 1.0,
+        "records": 19
+      },
+      "type=7,context=37": {
+        "exact_action_rate": 0.9957805907172996,
+        "records": 237
+      },
+      "type=8,context=38": {
+        "exact_action_rate": 1.0,
+        "records": 61
+      },
+      "type=9,context=41": {
+        "exact_action_rate": 1.0,
+        "records": 130
+      },
+      "type=9,context=43": {
+        "exact_action_rate": 0.9817813765182186,
+        "records": 1482
+      }
+    },
+    "validation/count_loss": 0.006265365180460417,
+    "validation/exact_action_rate": 0.8008437335208297,
+    "validation/legal_action_rate": 1.0,
+    "validation/multi_action_exact_rate": 0.7423698384201077,
+    "validation/policy_loss": 0.6292355291878999,
+    "validation/records": 17067.0,
+    "validation/selection_count_accuracy": 0.998652370070897,
+    "validation/single_action_accuracy": 0.804926972983138
+  },
+  "best_validation_exact_action_rate": 0.8008437335208297,
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0008-rank_010_alakazam_bc/V1_shared_config_streaming/best_validation.pt",
+  "config": {
+    "batch_size": 256,
+    "card_metadata": "/mnt/d/pokemon-tcg-ai-battle-data/rl_runs_dataset_0008/dataset.jsonl.card_metadata.json",
+    "dataset": "/mnt/d/pokemon-tcg-ai-battle-data/rl_runs_dataset_0008/dataset.jsonl",
+    "dataset_records": {
+      "test": 0,
+      "train": 221289,
+      "validation": 17067
+    },
+    "device": "cuda",
+    "epochs": 20,
+    "expert_team": "Yushin Ito",
+    "fallback": null,
+    "feature_schema": "ptcg_features_universal",
+    "learning_rate": 0.0005,
+    "max_selection_count": 64,
+    "model_config": {
+      "action_type_vocab_size": 32,
+      "candidate_numeric_dim": 22,
+      "card_vocab_size": 4096,
+      "d_model": 192,
+      "deck_numeric_dim": 18,
+      "deck_token_count": 60,
+      "dropout": 0.0,
+      "entity_numeric_dim": 28,
+      "entity_token_count": 12,
+      "expert_vocab_size": 64,
+      "hidden_dim": 384,
+      "history_numeric_dim": 8,
+      "history_token_count": 32,
+      "max_candidates": 64,
+      "num_heads": 4,
+      "num_transformer_layers": 2,
+      "state_numeric_dim": 64,
+      "state_token_count": 40
+    },
+    "progress_batches": 100,
+    "reward_profile": "none_pure_behavior_cloning",
+    "seed": 7,
+    "selection_contract": "single categorical CE + multi-label candidate BCE + count CE",
+    "shuffle_buffer_size": 8192,
+    "streaming": true,
+    "train_eval_interval": 5
+  },
+  "final_test": {},
+  "last_epoch": {
+    "runtime/epoch_seconds": 606.051158746006,
+    "train/by_selection": {
+      "type=0,context=0": {
+        "exact_action_rate": 0.878060431375089,
+        "records": 123512
+      },
+      "type=1,context=1": {
+        "exact_action_rate": 0.9304347826086956,
+        "records": 2875
+      },
+      "type=1,context=13": {
+        "exact_action_rate": 0.7871287128712872,
+        "records": 1010
+      },
+      "type=1,context=15": {
+        "exact_action_rate": 0.8827054794520548,
+        "records": 1168
+      },
+      "type=1,context=16": {
+        "exact_action_rate": 0.9089108910891089,
+        "records": 1010
+      },
+      "type=1,context=18": {
+        "exact_action_rate": 1.0,
+        "records": 1
+      },
+      "type=1,context=19": {
+        "exact_action_rate": 1.0,
+        "records": 1
+      },
+      "type=1,context=2": {
+        "exact_action_rate": 0.9753656658968437,
+        "records": 1299
+      },
+      "type=1,context=21": {
+        "exact_action_rate": 0.833605220228385,
+        "records": 1226
+      },
+      "type=1,context=22": {
+        "exact_action_rate": 0.9541446208112875,
+        "records": 567
+      },
+      "type=1,context=3": {
+        "exact_action_rate": 0.857113014414038,
+        "records": 4787
+      },
+      "type=1,context=4": {
+        "exact_action_rate": 0.9264687460854315,
+        "records": 7983
+      },
+      "type=1,context=5": {
+        "exact_action_rate": 0.9493653229181197,
+        "records": 7169
+      },
+      "type=1,context=7": {
+        "exact_action_rate": 0.9499419536735032,
+        "records": 36178
+      },
+      "type=1,context=8": {
+        "exact_action_rate": 0.04423963133640553,
+        "records": 3255
+      },
+      "type=1,context=9": {
+        "exact_action_rate": 0.7534027221777422,
+        "records": 1249
+      },
+      "type=2,context=27": {
+        "exact_action_rate": 0.972972972972973,
+        "records": 37
+      },
+      "type=4,context=30": {
+        "exact_action_rate": 0.9604344453064391,
+        "records": 3867
+      },
+      "type=5,context=34": {
+        "exact_action_rate": 1.0,
+        "records": 190
+      },
+      "type=7,context=37": {
+        "exact_action_rate": 0.9841897233201581,
+        "records": 3036
+      },
+      "type=8,context=38": {
+        "exact_action_rate": 1.0,
+        "records": 741
+      },
+      "type=8,context=40": {
+        "exact_action_rate": 1.0,
+        "records": 981
+      },
+      "type=9,context=41": {
+        "exact_action_rate": 1.0,
+        "records": 1550
+      },
+      "type=9,context=43": {
+        "exact_action_rate": 0.9898846394271751,
+        "records": 17597
+      }
+    },
+    "train/count_loss": 0.0016183053006183941,
+    "train/exact_action_rate": 0.8951100145059177,
+    "train/legal_action_rate": 1.0,
+    "train/loss": 0.25423227662295966,
+    "train/multi_action_exact_rate": 0.7002615025796876,
+    "train/policy_loss": 0.2746753676778319,
+    "train/records": 221289.0,
+    "train/selection_count_accuracy": 0.9994486847516144,
+    "train/single_action_accuracy": 0.908419426474848,
+    "validation/by_selection": {
+      "type=0,context=0": {
+        "exact_action_rate": 0.7234596169858452,
+        "records": 9608
+      },
+      "type=1,context=1": {
+        "exact_action_rate": 0.8995633187772926,
+        "records": 229
+      },
+      "type=1,context=18": {
+        "exact_action_rate": 1.0,
+        "records": 2
+      },
+      "type=1,context=19": {
+        "exact_action_rate": 0.5,
+        "records": 2
+      },
+      "type=1,context=2": {
+        "exact_action_rate": 0.9587628865979382,
+        "records": 97
+      },
+      "type=1,context=3": {
+        "exact_action_rate": 0.8597014925373134,
+        "records": 335
+      },
+      "type=1,context=4": {
+        "exact_action_rate": 0.9003164556962026,
+        "records": 632
+      },
+      "type=1,context=5": {
+        "exact_action_rate": 0.9556650246305419,
+        "records": 609
+      },
+      "type=1,context=7": {
+        "exact_action_rate": 0.8872679045092838,
+        "records": 3016
+      },
+      "type=1,context=8": {
+        "exact_action_rate": 0.04060913705583756,
+        "records": 197
+      },
+      "type=1,context=9": {
+        "exact_action_rate": 0.7818181818181819,
+        "records": 110
+      },
+      "type=4,context=30": {
+        "exact_action_rate": 0.9601328903654485,
+        "records": 301
+      },
+      "type=5,context=34": {
+        "exact_action_rate": 1.0,
+        "records": 19
+      },
+      "type=7,context=37": {
+        "exact_action_rate": 0.9957805907172996,
+        "records": 237
+      },
+      "type=8,context=38": {
+        "exact_action_rate": 1.0,
+        "records": 61
+      },
+      "type=9,context=41": {
+        "exact_action_rate": 1.0,
+        "records": 130
+      },
+      "type=9,context=43": {
+        "exact_action_rate": 0.9730094466936572,
+        "records": 1482
+      }
+    },
+    "validation/count_loss": 0.007035596210115008,
+    "validation/exact_action_rate": 0.7991445479580477,
+    "validation/legal_action_rate": 1.0,
+    "validation/multi_action_exact_rate": 0.7378815080789947,
+    "validation/policy_loss": 0.7528016144659981,
+    "validation/records": 17067.0,
+    "validation/selection_count_accuracy": 0.9985351848596707,
+    "validation/single_action_accuracy": 0.8034225537516455
+  },
+  "runtime": {
+    "parameter_count": 3539395,
+    "peak_gpu_memory_bytes": 470045184,
+    "state_dict_tensors": 77,
+    "train_function_seconds": 7872.506148157001
+  }
+}
