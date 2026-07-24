@@ -8,6 +8,8 @@ venv/
 *.7z
 *.pkl
 *.pt
+!evaluation/arena/opponents/marnies_grimmsnarl_ex_froslass_02/policy.pt
+!evaluation/arena/opponents/team_rockets_mewtwo_ex_spidops_01/policy.pt
 *.pth
 *.safetensors
 engine/build/

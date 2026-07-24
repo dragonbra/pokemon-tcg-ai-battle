@@ -11,12 +11,14 @@ from .trace_utils import (
     agent_turn_target,
     as_int,
     bench,
+    candidate_index,
     current,
     logs,
     normalized_evidence,
     option_list,
     player_at,
     selected_attack_id,
+    selected_options,
     lifecycle_status,
     trace_steps,
 )
@@ -70,10 +72,133 @@ def _snapshot(step: dict, physical_index: int) -> dict[str, object]:
         "turn": as_int(current(step).get("turn")),
         "active_id": as_int(active_card.get("id")) if active_card else None,
         "active_serial": as_int(active_card.get("serial")) if active_card else None,
+        "active_card": active_card,
+        "bench_cards": bench(player),
         "field_ids": _card_ids(field),
         "hand_ids": _card_ids(player.get("hand")),
         "discard_ids": _card_ids(player.get("discard")),
         "deck_count": as_int(player.get("deckCount"), 0) or 0,
+    }
+
+
+def _evolved_from(card: object, source_id: int, source_serial: int | None) -> bool:
+    if not isinstance(card, dict):
+        return False
+    previous_cards = [
+        previous
+        for previous in card.get("preEvolution") or []
+        if isinstance(previous, dict)
+    ]
+    if source_serial is not None:
+        return any(
+            as_int(previous.get("id")) == source_id
+            and as_int(previous.get("serial")) == source_serial
+            for previous in previous_cards
+        )
+    return any(as_int(previous.get("id")) == source_id for previous in previous_cards)
+
+
+def _has_psychic_energy(card: object) -> bool:
+    if not isinstance(card, dict):
+        return False
+    return any(
+        (
+            as_int(energy.get("id"))
+            if isinstance(energy, dict)
+            else as_int(energy)
+        )
+        in PSYCHIC_ENERGIES
+        for energy in card.get("energies") or []
+    )
+
+
+def _selected_run_away_draw(step: dict, physical_index: int) -> bool:
+    active_card = active(player_at(step, physical_index))
+    for option in selected_options(step):
+        if as_int(option.get("type")) != 10:
+            continue
+        card_id = next(
+            (
+                value
+                for key in ("cardId", "card_id", "id")
+                for value in [as_int(option.get(key))]
+                if value is not None
+            ),
+            None,
+        )
+        if card_id is None and as_int(option.get("area", option.get("inPlayArea"))) == 4:
+            card_id = as_int(active_card.get("id")) if active_card else None
+        if card_id == DUDUNSPARCE:
+            return True
+    return False
+
+
+def _bridge_route(
+    target_steps: list[dict],
+    physical_index: int,
+    opening_dunsparce_serial: int | None,
+    first_turn_abra_serials: set[int],
+) -> dict[str, object]:
+    milestone = 0
+    handoff_abra_serial: int | None = None
+    attacking_alakazam_serial: int | None = None
+    evidence_step: dict | None = None
+    components = {
+        "evolved_opening_dunsparce": False,
+        "used_run_away_draw": False,
+        "abra_active_after_ability": False,
+        "evolved_handoff_abra": False,
+        "active_psychic_at_attack": False,
+        "submitted_powerful_hand": False,
+    }
+    for step in target_steps:
+        active_card = active(player_at(step, physical_index))
+        active_id = as_int(active_card.get("id")) if active_card else None
+        active_serial = as_int(active_card.get("serial")) if active_card else None
+
+        if (
+            milestone == 0
+            and active_id == DUDUNSPARCE
+            and _evolved_from(active_card, DUNSPARCE, opening_dunsparce_serial)
+        ):
+            components["evolved_opening_dunsparce"] = True
+            milestone = 1
+        if milestone == 1 and _selected_run_away_draw(step, physical_index):
+            components["used_run_away_draw"] = True
+            milestone = 2
+        if (
+            milestone == 2
+            and active_id == ABRA
+            and active_serial in first_turn_abra_serials
+        ):
+            components["abra_active_after_ability"] = True
+            handoff_abra_serial = active_serial
+            milestone = 3
+        if (
+            milestone == 3
+            and active_id == ALAKAZAM
+            and _evolved_from(active_card, ABRA, handoff_abra_serial)
+        ):
+            components["evolved_handoff_abra"] = True
+            attacking_alakazam_serial = active_serial
+            milestone = 4
+        if (
+            milestone == 4
+            and active_id == ALAKAZAM
+            and active_serial == attacking_alakazam_serial
+            and selected_attack_id(step) == POWERFUL_HAND_ATTACK_ID
+        ):
+            components["submitted_powerful_hand"] = True
+            components["active_psychic_at_attack"] = _has_psychic_energy(active_card)
+            evidence_step = step
+            if components["active_psychic_at_attack"]:
+                milestone = 5
+                break
+
+    return {
+        "completed": milestone == 5,
+        "components": components,
+        "evidence_step": evidence_step,
     }
 
 
@@ -187,7 +312,7 @@ class SetupRelayPlugin:
 
     def analyze_game(self, trace: dict, context: GameContext) -> GameMetric:
         lifecycle = lifecycle_status(trace)
-        physical_index = context.candidate_physical_index
+        physical_index = candidate_index(trace, context.candidate_physical_index)
         first_turn = 1 if context.candidate_first else 2
         target_turn = agent_turn_target(trace, physical_index) or (
             3 if context.candidate_first else 4
@@ -199,26 +324,34 @@ class SetupRelayPlugin:
             step for step in steps if as_int(current(step).get("turn")) == target_turn
         ]
         reached = bool(target_steps)
-        target_state = _snapshot(target_steps[0], physical_index) if target_steps else None
         attack_success = any(
             selected_attack_id(step) == POWERFUL_HAND_ATTACK_ID for step in target_steps
         )
-        saw_dudunsparce = any(
-            DUDUNSPARCE in _snapshot(step, physical_index)["field_ids"]
-            for step in steps
-            if (as_int(current(step).get("turn")) or 0) <= target_turn
-        )
-        bridge_opportunity = bool(
+        opening_dunsparce_without_abra = bool(
             first_state
             and first_state["active_id"] == DUNSPARCE
+            and ABRA not in first_state["hand_ids"]
+            and ABRA not in first_state["field_ids"]
         )
-        bridge_completed = bool(
-            bridge_opportunity
-            and saw_dudunsparce
-            and target_state
-            and target_state["active_id"] == ALAKAZAM
-            and attack_success
+        first_turn_abra_serials = {
+            serial
+            for step in steps
+            if as_int(current(step).get("turn")) == first_turn
+            for card in bench(player_at(step, physical_index))
+            if as_int(card.get("id")) == ABRA
+            for serial in [as_int(card.get("serial"))]
+            if serial is not None
+        }
+        bridge_opportunity = bool(
+            opening_dunsparce_without_abra and first_turn_abra_serials
         )
+        route = _bridge_route(
+            target_steps,
+            physical_index,
+            as_int(first_state.get("active_serial")) if first_state else None,
+            first_turn_abra_serials,
+        )
+        bridge_completed = bool(bridge_opportunity and route["completed"])
         components = _opening_components(first_state)
         draws = _draws_to_second_turn(steps, physical_index, first_turn, target_turn)
         payload = {
@@ -226,17 +359,24 @@ class SetupRelayPlugin:
             "all_four": components["all_four"],
             "bridge_opportunity": bridge_opportunity,
             "bridge_completed": bridge_completed,
+            "bridge_components": {
+                "opening_dunsparce_without_abra": opening_dunsparce_without_abra,
+                "first_turn_bench_abra": bool(first_turn_abra_serials),
+                **route["components"],
+            },
             "draws_to_second_turn": draws,
             "target_turn": target_turn,
             "reached_second_turn": reached,
             "attack_success": attack_success,
-            "evidence_strength": "proxy" if bridge_completed else "observed",
+            "evidence_strength": "observed",
             "games": 1,
             "error_games": int(lifecycle == "error"),
             "unfinished_games": int(lifecycle == "unfinished"),
             "lifecycle_status": lifecycle,
         }
-        evidence_step = target_steps[0] if target_steps else (steps[-1] if steps else None)
+        evidence_step = route["evidence_step"] or (
+            target_steps[-1] if target_steps else (steps[-1] if steps else None)
+        )
         evidence_index = (
             trace_steps(trace).index(evidence_step) if evidence_step in trace_steps(trace) else 0
         )

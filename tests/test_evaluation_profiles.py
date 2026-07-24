@@ -15,7 +15,7 @@ class EvaluationProfileTests(unittest.TestCase):
     def test_auto_iteration_profile_declares_revision_priorities_and_metrics(self) -> None:
         profile = get_metric_profile(AUTO_ITERATION_PROFILE_ID)
 
-        self.assertEqual(profile.revision, 3)
+        self.assertEqual(profile.revision, 7)
         self.assertEqual(
             profile.metric_ids,
             (
@@ -79,7 +79,7 @@ class EvaluationProfileTests(unittest.TestCase):
 
         for value in (
             "auto_iteration_v8_setup_relay",
-            "revision 3",
+            "revision 7",
             "report_only",
             "report.html",
             "不执行自动迭代",

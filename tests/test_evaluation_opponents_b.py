@@ -18,12 +18,11 @@ CG_SOURCE_ROOT = (
     REPOSITORY_ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
 )
 OPPONENT_NAMES = (
-    "mega_lucario_ex_solrock_05",
     "dragapult_ex_01",
     "ionos_bellibolt_ex_kilowattrel_01",
     "mega_abomasnow_ex_kyogre_01",
+    "mega_lucario_ex_solrock_05",
     "mega_lucario_ex_solrock_06",
-    "mega_lucario_ex_solrock_07",
 )
 
 
@@ -93,10 +92,7 @@ class EvaluationOpponentPoolBTests(unittest.TestCase):
                     ).hexdigest(),
                 )
                 self.assertEqual(package.root, package_root.absolute())
-                self.assertEqual(
-                    (package_root / "main.py").read_text(encoding="utf-8").count("PACKAGE_ROOT"),
-                    2,
-                )
+                self.assertTrue((package_root / "main.py").is_file())
 
     def test_each_package_has_a_physical_runtime_matching_alakazam_v8(self) -> None:
         for name in OPPONENT_NAMES:

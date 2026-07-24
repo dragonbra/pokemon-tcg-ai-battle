@@ -448,8 +448,8 @@ class OverridePlugin:
         metrics = result.metric_results
 
         self.assertEqual(manifest["metric_profile"]["id"], "auto_iteration_v8_setup_relay")
-        self.assertEqual(manifest["metric_profile"]["revision"], 3)
-        self.assertEqual(result.report_data.metric_profile["revision"], 3)
+        self.assertEqual(manifest["metric_profile"]["revision"], 7)
+        self.assertEqual(result.report_data.metric_profile["revision"], 7)
         self.assertIn("setup_relay", result.report_data.presentations)
         self.assertIn("attack_quality", result.report_data.presentations)
         self.assertIn("payload", metrics["setup_relay"])

@@ -70,6 +70,82 @@ def _setup_trace(*, candidate_first: bool, target: bool = True) -> dict[str, obj
     )
 
 
+def _bridge_trace(
+    *,
+    opening_abra: bool = False,
+    first_turn_bench_abra: bool = True,
+    use_ability: bool = True,
+    matching_dunsparce_line: bool = True,
+    psychic_energy: bool = True,
+) -> dict[str, object]:
+    dunsparce = pokemon(305, 11)
+    abra = pokemon(741, 12)
+    dudunsparce = pokemon(66, 21)
+    dudunsparce["preEvolution"] = [pokemon(305, 11 if matching_dunsparce_line else 99)]
+    alakazam = pokemon(743, 22, energies=[5] if psychic_energy else [])
+    alakazam["preEvolution"] = [pokemon(741, 12)]
+    opening_hand = [{"id": 1079}, {"id": 743}, {"id": 5}]
+    if opening_abra:
+        opening_hand.append({"id": 741})
+    first_turn_bench = [abra] if first_turn_bench_abra else []
+    ability_options = (
+        [{"type": 10, "area": 4, "cardId": 66}]
+        if use_ability
+        else [{"type": 12}]
+    )
+    steps = [
+        strategy_step(
+            step_index=0,
+            turn=1,
+            your_index=0,
+            first_player=0,
+            players=[player(active_card=dunsparce, hand_cards=opening_hand), player()],
+            logs=[{"type": 2, "playerIndex": 0}, {"type": 4, "playerIndex": 0}],
+        ),
+        strategy_step(
+            step_index=1,
+            turn=1,
+            your_index=0,
+            first_player=0,
+            players=[player(active_card=dunsparce, bench_cards=first_turn_bench), player()],
+        ),
+        strategy_step(
+            step_index=2,
+            turn=3,
+            your_index=0,
+            first_player=0,
+            players=[player(active_card=dunsparce, bench_cards=first_turn_bench), player()],
+        ),
+        strategy_step(
+            step_index=3,
+            turn=3,
+            your_index=0,
+            first_player=0,
+            action=[0],
+            options=ability_options,
+            players=[player(active_card=dudunsparce, bench_cards=first_turn_bench), player()],
+        ),
+        strategy_step(
+            step_index=4,
+            turn=3,
+            your_index=0,
+            first_player=0,
+            players=[player(active_card=abra), player()],
+            logs=[{"type": 4, "playerIndex": 0}],
+        ),
+        strategy_step(
+            step_index=5,
+            turn=3,
+            your_index=0,
+            first_player=0,
+            action=[0],
+            options=[{"type": 13, "attackId": 1072}],
+            players=[player(active_card=alakazam), player()],
+        ),
+    ]
+    return worker_trace(steps=steps)
+
+
 class AutoIterationMetricTests(unittest.TestCase):
     def test_powerful_hand_records_target_turn_and_reached_payload(self) -> None:
         plugin = PowerfulHandPlugin()
@@ -161,13 +237,15 @@ class AutoIterationMetricTests(unittest.TestCase):
     def test_setup_relay_separates_components_bridge_and_draw_types(self) -> None:
         plugin = SetupRelayPlugin()
         result = plugin.analyze_game(
-            _setup_trace(candidate_first=False),
-            context(candidate_physical_index=1, candidate_first=False),
+            _bridge_trace(),
+            context(),
         )
 
         self.assertTrue(result.payload["opening_components"]["rare_candy"])
         self.assertTrue(result.payload["bridge_opportunity"])
         self.assertTrue(result.payload["bridge_completed"])
+        self.assertTrue(result.payload["bridge_components"]["used_run_away_draw"])
+        self.assertTrue(result.payload["bridge_components"]["active_psychic_at_attack"])
         self.assertEqual(result.payload["draws_to_second_turn"]["ability_draw_cards"], 1)
         self.assertEqual(result.payload["draws_to_second_turn"]["normal_draw_cards"], 1)
 
@@ -185,6 +263,27 @@ class AutoIterationMetricTests(unittest.TestCase):
             aggregate.payload["second_turn_draws"]["normal_draw_cards"]["all_games"]["total"],
             2,
         )
+
+    def test_setup_relay_requires_strict_opportunity_and_ordered_serial_route(self) -> None:
+        plugin = SetupRelayPlugin()
+
+        opening_abra = plugin.analyze_game(_bridge_trace(opening_abra=True), context())
+        no_bench_abra = plugin.analyze_game(
+            _bridge_trace(first_turn_bench_abra=False), context()
+        )
+        retreat = plugin.analyze_game(_bridge_trace(use_ability=False), context())
+        wrong_line = plugin.analyze_game(
+            _bridge_trace(matching_dunsparce_line=False), context()
+        )
+        no_energy = plugin.analyze_game(
+            _bridge_trace(psychic_energy=False), context()
+        )
+
+        self.assertFalse(opening_abra.payload["bridge_opportunity"])
+        self.assertFalse(no_bench_abra.payload["bridge_opportunity"])
+        for result in (retreat, wrong_line, no_energy):
+            self.assertTrue(result.payload["bridge_opportunity"])
+            self.assertFalse(result.payload["bridge_completed"])
 
     def test_attack_quality_separates_resolution_prize_and_unknown_states(self) -> None:
         plugin = AttackQualityPlugin()
