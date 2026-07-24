@@ -1,0 +1,40 @@
+{
+  "schema_version": "alakazam_reward_weighted_bc_v1",
+  "seed": 7,
+  "epochs": 2,
+  "batch_size": 256,
+  "learning_rate": 2e-05,
+  "weight_decay": 0.01,
+  "max_grad_norm": 1.0,
+  "streaming": true,
+  "shuffle_buffer_size": 8192,
+  "progress_batches": 100,
+  "train_eval_interval": 0,
+  "device": "cuda",
+  "storage_path": "/mnt/d",
+  "min_free_gib": 20.0,
+  "evaluate_test": false,
+  "reset_value_output": false,
+  "value_warmup_epochs": 0,
+  "freeze_backbone_during_value_warmup": true,
+  "card_category_embedding": {"enabled": false, "scale": 1.0},
+  "reward": {
+    "components": [
+      {"name": "opening_active_abra", "field": "reward_metrics.decision.opening_active_abra_credit", "weight": 0.5, "enabled": true},
+      {"name": "second_turn_setup", "field": "reward_metrics.decision.second_turn_setup_credit", "weight": 0.25, "enabled": true},
+      {"name": "dunsparce_first_turn_setup", "field": "reward_metrics.decision.dunsparce_first_turn_setup_credit", "weight": 0.25, "enabled": true},
+      {"name": "dunsparce_second_turn_execution", "field": "reward_metrics.decision.dunsparce_second_turn_execution_credit", "weight": 0.5, "enabled": true}
+    ],
+    "clip_min": -1.5,
+    "clip_max": 1.5
+  },
+  "weighting": {
+    "mode": "exponential",
+    "baseline": "dataset_mean",
+    "temperature": 1.0,
+    "linear_scale": 1.0,
+    "min_weight": 0.25,
+    "max_weight": 3.0
+  },
+  "loss": {"policy": 1.0, "count": 1.0, "value": 0.0}
+}

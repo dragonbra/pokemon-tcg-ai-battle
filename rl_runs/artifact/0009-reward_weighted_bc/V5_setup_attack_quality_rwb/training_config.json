@@ -1,0 +1,98 @@
+{
+  "batch_size": 256,
+  "card_category_embedding": {
+    "enabled": false,
+    "scale": 1.0
+  },
+  "dataset": "/mnt/d/pokemon-tcg-ai-battle-data/rl_runs_dataset_0008/dataset.jsonl",
+  "dataset_records": {
+    "test": 0,
+    "train": 221289,
+    "validation": 17067
+  },
+  "dataset_reward_mean": 0.03163284212048498,
+  "device": "cuda",
+  "epochs": 2,
+  "evaluate_test": false,
+  "expert_team": "Yushin Ito",
+  "freeze_backbone_during_value_warmup": true,
+  "learning_rate": 2e-05,
+  "loss": {
+    "count": 1.0,
+    "policy": 1.0,
+    "value": 0.0
+  },
+  "max_grad_norm": 1.0,
+  "min_free_gib": 20.0,
+  "progress_batches": 100,
+  "reset_value_output": false,
+  "reward": {
+    "clip_max": 1.5,
+    "clip_min": -1.5,
+    "components": [
+      {
+        "clip_max": null,
+        "clip_min": null,
+        "default": null,
+        "enabled": true,
+        "field": "reward_metrics.decision.opening_active_abra_credit",
+        "name": "opening_active_abra",
+        "weight": 0.5
+      },
+      {
+        "clip_max": null,
+        "clip_min": null,
+        "default": null,
+        "enabled": true,
+        "field": "reward_metrics.decision.second_turn_setup_credit",
+        "name": "second_turn_setup",
+        "weight": 0.25
+      },
+      {
+        "clip_max": null,
+        "clip_min": null,
+        "default": null,
+        "enabled": true,
+        "field": "reward_metrics.decision.attack_prize_delta",
+        "name": "attack_prize_delta",
+        "weight": 0.25
+      },
+      {
+        "clip_max": null,
+        "clip_min": null,
+        "default": null,
+        "enabled": true,
+        "field": "reward_metrics.decision.non_prize_attack",
+        "name": "non_prize_attack_penalty",
+        "weight": -0.25
+      }
+    ]
+  },
+  "reward_sidecar": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/dataset/0009-reward_weighted_bc/reward_sidecar.jsonl",
+  "reward_sidecar_sha256": "97a43da7fef29c7d9b7045cb7a7ae1c4d1efeaeb797238807b5aa5ddce59c2bd",
+  "schema_version": "alakazam_reward_weighted_bc_v1",
+  "seed": 7,
+  "shuffle_buffer_size": 8192,
+  "source_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0008-rank_010_alakazam_bc/V1_shared_config_streaming/best_validation.pt",
+  "source_checkpoint_sha256": "8141faf9ad65bd3fd75e53b489bb794a03e9636b79b222fc537daba8e0e6cd7c",
+  "storage": {
+    "free_bytes": 232202973184,
+    "free_gib": 216.2558708190918,
+    "path": "/mnt/d",
+    "total_bytes": 536870907904,
+    "used_bytes": 304667934720
+  },
+  "storage_path": "/mnt/d",
+  "streaming": true,
+  "train_eval_interval": 0,
+  "value_warmup_epochs": 0,
+  "weight_decay": 0.01,
+  "weighting": {
+    "baseline": "dataset_mean",
+    "linear_scale": 1.0,
+    "max_weight": 3.0,
+    "min_weight": 0.25,
+    "mode": "exponential",
+    "temperature": 1.0
+  }
+}

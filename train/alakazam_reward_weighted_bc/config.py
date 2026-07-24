@@ -81,12 +81,9 @@ class LossConfig:
 @dataclass(frozen=True)
 class CardCategoryEmbeddingConfig:
     enabled: bool = False
-    source_csv: str = "data/official/EN_Card_Data.csv"
     scale: float = 1.0
 
     def validate(self) -> None:
-        if self.enabled and not self.source_csv:
-            raise ValueError("enabled card category embedding requires source_csv")
         if self.scale < 0:
             raise ValueError("card category embedding scale must be non-negative")
 
@@ -100,6 +97,10 @@ class ExperimentConfig:
     learning_rate: float = 1e-5
     weight_decay: float = 0.01
     max_grad_norm: float = 1.0
+    streaming: bool = True
+    shuffle_buffer_size: int = 8192
+    progress_batches: int = 100
+    train_eval_interval: int = 0
     device: str = "auto"
     storage_path: str = "/mnt/c"
     min_free_gib: float = 20.0
@@ -123,6 +124,10 @@ class ExperimentConfig:
             raise ValueError("value_warmup_epochs must be in [0, epochs)")
         if self.learning_rate <= 0 or self.weight_decay < 0 or self.max_grad_norm <= 0:
             raise ValueError("invalid optimizer configuration")
+        if self.shuffle_buffer_size < 1 or self.progress_batches < 1:
+            raise ValueError("streaming buffer and progress interval must be positive")
+        if self.train_eval_interval < 0:
+            raise ValueError("train_eval_interval must be non-negative")
         if self.min_free_gib < 0:
             raise ValueError("min_free_gib must be non-negative")
         self.reward.validate()

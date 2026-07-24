@@ -28,35 +28,111 @@ def _as_int(value: object, default: int | None = None) -> int | None:
         return default
 
 
-def _current(payload: dict[str, Any], step: int, player_index: int) -> dict[str, Any]:
+def _visual_frames(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the exact visual timeline used by the Kaggle BC dataset builder."""
+    cached = payload.get("_reward_visual_frames")
+    if isinstance(cached, list):
+        return cached
+    traces: list[list[Any]] = []
+    singletons: list[Any] = []
+    for step in payload.get("steps") or []:
+        if not isinstance(step, list):
+            continue
+        for row in step:
+            if not isinstance(row, dict):
+                continue
+            raw = row.get("visualize", row.get("visual"))
+            if isinstance(raw, list) and raw:
+                traces.append(raw)
+            elif isinstance(raw, dict):
+                singletons.append(raw)
+    selected = max(traces, key=len) if traces else singletons
+    return [frame for frame in selected if isinstance(frame, dict)]
+
+
+def _timeline_length(payload: dict[str, Any]) -> int:
+    frames = _visual_frames(payload)
+    return len(frames) if frames else len(payload.get("steps") or [])
+
+
+def _fixture_observation(
+    payload: dict[str, Any], step: int, player_index: int
+) -> dict[str, Any]:
     steps = payload.get("steps") or []
     if not 0 <= step < len(steps) or not isinstance(steps[step], list):
         return {}
     rows = steps[step]
     preferred = rows[player_index] if 0 <= player_index < len(rows) else {}
-    candidates = [preferred, *rows]
-    for row in candidates:
-        if not isinstance(row, dict):
-            continue
-        observation = row.get("observation")
-        current = observation.get("current") if isinstance(observation, dict) else None
-        if isinstance(current, dict):
-            return current
+    for row in [preferred, *rows]:
+        if isinstance(row, dict) and isinstance(row.get("observation"), dict):
+            return row["observation"]
     return {}
+
+
+def _current(payload: dict[str, Any], step: int, player_index: int) -> dict[str, Any]:
+    current = _observation(payload, step, player_index).get("current")
+    return current if isinstance(current, dict) else {}
+
+
+def _first_active_current(
+    payload: dict[str, Any], start_step: int, player_index: int
+) -> dict[str, Any]:
+    """Find the earliest state after setup has produced an Active Pokemon."""
+    fallback = _current(payload, start_step, player_index)
+    for step in range(start_step, _timeline_length(payload)):
+        current = _current(payload, step, player_index)
+        if _active_id(current, player_index) is not None:
+            return current
+    return fallback
+
+
+def _first_player_index(payload: dict[str, Any], start_step: int) -> int | None:
+    for step in range(start_step, _timeline_length(payload)):
+        value = _as_int(_current(payload, step, 0).get("firstPlayer"))
+        if value in {0, 1}:
+            return value
+    return None
 
 
 def _observation(payload: dict[str, Any], step: int, player_index: int) -> dict[str, Any]:
-    rows = (payload.get("steps") or [])[step]
-    if not isinstance(rows, list):
-        return {}
-    preferred = rows[player_index] if 0 <= player_index < len(rows) else {}
-    candidates = [preferred, *rows]
-    for row in candidates:
-        if isinstance(row, dict) and isinstance(row.get("observation"), dict):
-            observation = row["observation"]
-            if isinstance(observation.get("current"), dict):
-                return observation
-    return {}
+    frames = _visual_frames(payload)
+    if frames:
+        if not 0 <= step < len(frames):
+            return {}
+        observation = frames[step].get("obs", frames[step].get("observation"))
+        return observation if isinstance(observation, dict) else {}
+    return _fixture_observation(payload, step, player_index)
+
+
+def _selected_options(
+    payload: dict[str, Any], record: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Resolve selected options against the same visual frame as the BC record."""
+    step = int(record["episode_step"])
+    player_index = int(record["player_index"])
+    observation = _observation(payload, step, player_index)
+    options = (observation.get("select") or {}).get("option") or []
+    targets = record.get("targets") or []
+    frames = _visual_frames(payload)
+    if frames and 0 <= step < len(frames):
+        frame_targets = frames[step].get("selected")
+        if isinstance(frame_targets, list):
+            normalized = sorted(
+                target for target in frame_targets if isinstance(target, int)
+            )
+            expected = sorted(target for target in targets if isinstance(target, int))
+            if normalized != expected or len(normalized) != len(frame_targets):
+                raise ValueError(
+                    "dataset targets do not match replay visual frame "
+                    f"at episode step {step}: dataset={expected}, replay={frame_targets}"
+                )
+    return [
+        options[target]
+        for target in targets
+        if isinstance(target, int)
+        and 0 <= target < len(options)
+        and isinstance(options[target], dict)
+    ]
 
 
 def _player(current: dict[str, Any], player_index: int) -> dict[str, Any]:
@@ -76,20 +152,30 @@ def _active_id(current: dict[str, Any], player_index: int) -> int | None:
     return _as_int(active[0].get("id")) if active else None
 
 
-def _active_has_psychic(current: dict[str, Any], player_index: int) -> bool:
-    active = _cards(_player(current, player_index), "active")
-    if not active:
-        return False
+def _card_has_psychic(card: dict[str, Any]) -> bool:
     return bool(
         {
             energy_id
-            for energy in active[0].get("energies") or active[0].get("energyCards") or []
+            for energy in card.get("energies") or card.get("energyCards") or []
             for energy_id in [
                 _as_int(energy.get("id")) if isinstance(energy, dict) else _as_int(energy)
             ]
             if energy_id is not None
         }
         & PSYCHIC_ENERGIES
+    )
+
+
+def _active_has_psychic(current: dict[str, Any], player_index: int) -> bool:
+    active = _cards(_player(current, player_index), "active")
+    return bool(active and _card_has_psychic(active[0]))
+
+
+def _field_has_psychic(current: dict[str, Any], player_index: int) -> bool:
+    player = _player(current, player_index)
+    return any(
+        _card_has_psychic(card)
+        for card in [*_cards(player, "active"), *_cards(player, "bench")]
     )
 
 
@@ -123,26 +209,35 @@ def _prize_count(current: dict[str, Any], player_index: int) -> int | None:
 def _selected_attack(
     payload: dict[str, Any], record: dict[str, Any]
 ) -> int | None:
+    for option in _selected_options(payload, record):
+        attack_id = _as_int(option.get("attackId"))
+        if attack_id is not None:
+            return attack_id
+    return None
+
+
+def _selected_ability(
+    payload: dict[str, Any], record: dict[str, Any], expected_active_id: int
+) -> bool:
+    """Return whether this record selected an Ability from the expected Active card."""
     step = int(record["episode_step"])
     player_index = int(record["player_index"])
-    observation = _observation(payload, step, player_index)
-    select = observation.get("select") or {}
-    options = select.get("option") or []
-    for target in record.get("targets") or []:
-        if isinstance(target, int) and 0 <= target < len(options):
-            option = options[target]
-            if isinstance(option, dict):
-                attack_id = _as_int(option.get("attackId"))
-                if attack_id is not None:
-                    return attack_id
-    return None
+    current = _current(payload, step, player_index)
+    if _active_id(current, player_index) != expected_active_id:
+        return False
+    return any(
+        _as_int(option.get("type")) == 10
+        and _as_int(option.get("area")) == 4
+        and _as_int(option.get("index")) == 0
+        for option in _selected_options(payload, record)
+    )
 
 
 def _next_prize_count(
     payload: dict[str, Any], start_step: int, player_index: int, start_turn: int
 ) -> int | None:
     observed: list[int] = []
-    for step in range(start_step + 1, len(payload.get("steps") or [])):
+    for step in range(start_step + 1, _timeline_length(payload)):
         current = _current(payload, step, player_index)
         value = _prize_count(current, player_index)
         if value is not None:
@@ -169,7 +264,7 @@ def _relay_knockout_steps(payload: dict[str, Any], player_index: int) -> list[in
     previous_field: dict[int, dict[str, Any]] = {}
     seen: set[int] = set()
     events: list[int] = []
-    for step in range(len(payload.get("steps") or [])):
+    for step in range(_timeline_length(payload)):
         observation = _observation(payload, step, player_index)
         current = observation.get("current") or {}
         player = _player(current, player_index)
@@ -223,24 +318,37 @@ def annotate_episode_records(
     """Attach auditable raw metric signals without choosing their reward weights."""
     if not records:
         return []
+    visual_frames = _visual_frames(payload)
+    if visual_frames:
+        payload = {**payload, "_reward_visual_frames": visual_frames}
     ordered = sorted(records, key=lambda record: int(record["episode_step"]))
     player_index = int(ordered[0]["player_index"])
-    first_current = _current(payload, int(ordered[0]["episode_step"]), player_index)
-    candidate_first = _as_int(first_current.get("firstPlayer")) == player_index
+    first_step = int(ordered[0]["episode_step"])
+    opening_current = _first_active_current(payload, first_step, player_index)
+    candidate_first = _first_player_index(payload, first_step) == player_index
     first_turn = 1 if candidate_first else 2
     target_turn = 3 if candidate_first else 4
-    opening = _opening_components(first_current, player_index)
-    opening_hand = _zone_ids(first_current, player_index, "hand")
+    opening = _opening_components(opening_current, player_index)
+    opening_hand = _zone_ids(opening_current, player_index, "hand")
+    opening_field = _field_ids(opening_current, player_index)
+    opening_has_abra = ABRA in opening_hand or ABRA in opening_field
+    opening_active_abra = _active_id(opening_current, player_index) == ABRA
+    if not opening_has_abra:
+        opening_active_abra_credit = 0.0
+    elif opening_active_abra:
+        opening_active_abra_credit = 1.0
+    else:
+        opening_active_abra_credit = -1.0
     opening_dunsparce_without_abra = (
-        _active_id(first_current, player_index) == DUNSPARCE
+        _active_id(opening_current, player_index) == DUNSPARCE
         and ABRA not in opening_hand
-        and ABRA not in _field_ids(first_current, player_index)
+        and ABRA not in opening_field
     )
     record_context: dict[int, dict[str, Any]] = {}
     max_turn = max(
         (
             _as_int(_current(payload, step, player_index).get("turn"), 0) or 0
-            for step in range(len(payload.get("steps") or []))
+            for step in range(_timeline_length(payload))
         ),
         default=0,
     )
@@ -254,6 +362,7 @@ def annotate_episode_records(
         current = _current(payload, step, player_index)
         turn = _as_int(current.get("turn"), 0) or 0
         attack_id = _selected_attack(payload, record)
+        dudunsparce_ability = _selected_ability(payload, record, DUDUNSPARCE)
         reached_second_turn |= turn == target_turn
         second_turn_powerful_hand |= turn == target_turn and attack_id == POWERFUL_HAND_ATTACK_ID
         target_active_alakazam |= (
@@ -269,6 +378,7 @@ def annotate_episode_records(
                     "current": current,
                     "active_id": _active_id(current, player_index),
                     "attack_id": attack_id,
+                    "dudunsparce_ability": dudunsparce_ability,
                 }
             )
         record_context[id(record)] = {
@@ -282,36 +392,40 @@ def annotate_episode_records(
         _as_int(card.get("id")) == ABRA
         for card in _cards(_player(target_first, player_index), "bench")
     )
-    target_hand_ready = all(
+    target_energy_in_hand = bool(target_hand & PSYCHIC_ENERGIES)
+    target_energy_already_attached = _field_has_psychic(target_first, player_index)
+    target_resources_ready = all(
         (
             DUDUNSPARCE in target_hand,
             RARE_CANDY in target_hand,
             ALAKAZAM in target_hand,
-            bool(target_hand & PSYCHIC_ENERGIES),
         )
     )
     milestones = (DUDUNSPARCE, ABRA, ALAKAZAM, POWERFUL_HAND_ATTACK_ID)
     milestone_position = 0
-    retreated_after_dudunsparce = False
+    used_dudunsparce_ability = False
+    switched_to_abra_after_ability = False
     active_psychic_at_attack = False
     for state in target_states:
         current = state["current"]
         if milestone_position == 0 and state["active_id"] == milestones[0]:
             milestone_position = 1
-        elif milestone_position == 1 and state["active_id"] == milestones[1]:
-            if bool(current.get("retreated", False)):
-                retreated_after_dudunsparce = True
-                milestone_position = 2
-        elif milestone_position == 2 and state["active_id"] == milestones[2]:
+        if milestone_position == 1 and state["dudunsparce_ability"]:
+            used_dudunsparce_ability = True
+            milestone_position = 2
+        if milestone_position == 2 and state["active_id"] == milestones[1]:
+            switched_to_abra_after_ability = True
             milestone_position = 3
+        if milestone_position == 3 and state["active_id"] == milestones[2]:
+            milestone_position = 4
         if (
-            milestone_position == 3
+            milestone_position == 4
             and state["active_id"] == ALAKAZAM
             and state["attack_id"] == milestones[3]
         ):
             active_psychic_at_attack = _active_has_psychic(current, player_index)
             if active_psychic_at_attack:
-                milestone_position = 4
+                milestone_position = 5
                 break
     bridge_opportunity = opening_dunsparce_without_abra
     bridge_components = {
@@ -324,12 +438,17 @@ def annotate_episode_records(
         "target_hand_dudunsparce": DUDUNSPARCE in target_hand,
         "target_hand_rare_candy": RARE_CANDY in target_hand,
         "target_hand_alakazam": ALAKAZAM in target_hand,
-        "target_hand_psychic_energy": bool(target_hand & PSYCHIC_ENERGIES),
-        "target_hand_all_four": target_hand_ready,
+        "target_energy_in_hand": target_energy_in_hand,
+        "target_energy_already_attached": target_energy_already_attached,
+        "target_resources_ready": target_resources_ready,
         "evolved_active_dudunsparce": any(
             state["active_id"] == DUDUNSPARCE for state in target_states
         ),
-        "retreated_into_abra": retreated_after_dudunsparce,
+        "used_dudunsparce_ability": used_dudunsparce_ability,
+        "switched_to_abra_after_ability": switched_to_abra_after_ability,
+        "dudunsparce_ability_handoff": (
+            used_dudunsparce_ability and switched_to_abra_after_ability
+        ),
         "evolved_active_alakazam": target_active_alakazam,
         "active_psychic_at_attack": active_psychic_at_attack,
         "submitted_powerful_hand": second_turn_powerful_hand,
@@ -338,8 +457,9 @@ def annotate_episode_records(
         bridge_opportunity
         and first_turn_bench_abra
         and target_bench_abra
-        and target_hand_ready
-        and milestone_position == 4
+        and used_dudunsparce_ability
+        and switched_to_abra_after_ability
+        and milestone_position == 5
     )
 
     relay_assignments: dict[int, tuple[float, str]] = {}
@@ -405,7 +525,7 @@ def annotate_episode_records(
         )
         relay_credit, relay_class = relay_assignments.get(id(record), (0.0, "none"))
         setup_window = turn <= target_turn
-        result["reward_schema_version"] = "alakazam_offline_reward_metrics_v1"
+        result["reward_schema_version"] = "alakazam_offline_reward_metrics_v2"
         result["reward_metrics"] = {
             "episode": {
                 "candidate_first": candidate_first,
@@ -413,12 +533,17 @@ def annotate_episode_records(
                 "target_second_turn": target_turn,
                 "reached_second_turn": reached_second_turn,
                 "second_turn_powerful_hand": second_turn_powerful_hand,
+                "opening_has_abra": opening_has_abra,
+                "opening_active_abra": opening_active_abra,
                 "dunsparce_bridge_opportunity": bridge_opportunity,
                 "dunsparce_bridge_success": bridge_success,
                 "dunsparce_bridge_components": bridge_components,
                 "opening_components": opening,
             },
             "decision": {
+                "opening_active_abra_credit": (
+                    opening_active_abra_credit if turn <= first_turn else 0.0
+                ),
                 "second_turn_setup_credit": (
                     1.0 if second_turn_powerful_hand else -1.0
                 ) if setup_window else 0.0,
@@ -465,6 +590,8 @@ def annotate_episode_records(
 def reward_metric_counts(records: Iterable[dict[str, Any]]) -> dict[str, int]:
     counts = {
         "records": 0,
+        "opening_active_abra_success_records": 0,
+        "opening_active_abra_failure_records": 0,
         "second_turn_powerful_hand_records": 0,
         "dunsparce_bridge_success_records": 0,
         "non_prize_attack_records": 0,
@@ -477,6 +604,9 @@ def reward_metric_counts(records: Iterable[dict[str, Any]]) -> dict[str, int]:
         metrics = record.get("reward_metrics") or {}
         episode = metrics.get("episode") or {}
         decision = metrics.get("decision") or {}
+        opening_credit = float(decision.get("opening_active_abra_credit", 0.0))
+        counts["opening_active_abra_success_records"] += int(opening_credit > 0)
+        counts["opening_active_abra_failure_records"] += int(opening_credit < 0)
         counts["second_turn_powerful_hand_records"] += int(
             bool(episode.get("second_turn_powerful_hand"))
         )

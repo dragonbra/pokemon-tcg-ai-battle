@@ -1,0 +1,14 @@
+{
+  "best_epoch": 2,
+  "best_validation_exact_action_rate": 0.8085779574617683,
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0009-reward_weighted_bc/V7_early_setup_long_curve/best_validation.pt",
+  "checkpoint_sha256": "93b7795070f7bcc0ffedd061b66def609d5825e6f9bcc95e201d6dfcca5ca17f",
+  "completed_epochs": 8,
+  "configured_epochs": 10,
+  "last_complete_epoch": 8,
+  "last_validation_exact_action_rate": 0.8048866233081385,
+  "runtime_complete_epoch_seconds": 4962.795030763926,
+  "selection_reason": "Epoch 2 is the maximum validation exact-action rate across eight complete epochs; train fit continues upward while validation loss rises after epoch 1.",
+  "status": "stopped_by_user_during_epoch_9_after_eight_complete_epochs",
+  "test_evaluated": false
+}

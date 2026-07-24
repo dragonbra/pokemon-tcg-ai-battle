@@ -6,6 +6,10 @@
   "learning_rate": 1e-05,
   "weight_decay": 0.01,
   "max_grad_norm": 1.0,
+  "streaming": true,
+  "shuffle_buffer_size": 8192,
+  "progress_batches": 100,
+  "train_eval_interval": 0,
   "device": "auto",
   "storage_path": "/mnt/c",
   "min_free_gib": 20.0,
@@ -15,7 +19,6 @@
   "freeze_backbone_during_value_warmup": true,
   "card_category_embedding": {
     "enabled": true,
-    "source_csv": "data/official/EN_Card_Data.csv",
     "scale": 1.0
   },
   "reward": {
@@ -27,6 +30,12 @@
         "enabled": true,
         "clip_min": -1.0,
         "clip_max": 1.0
+      },
+      {
+        "name": "opening_active_abra",
+        "field": "reward_metrics.decision.opening_active_abra_credit",
+        "weight": 0.5,
+        "enabled": false
       },
       {
         "name": "second_turn_setup",

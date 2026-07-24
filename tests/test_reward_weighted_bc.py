@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import csv
+import hashlib
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -11,8 +11,12 @@ import torch
 from rl_environment.model import ModelConfig
 from train.alakazam_bc_rl.features import PTCGFeatureConfig
 from train.alakazam_reward_weighted_bc.card_categories import (
+    CATEGORY_COUNTS,
     CATEGORY_NAMES,
-    load_card_category_lookup,
+    OFFICIAL_CARD_CATEGORY_BY_ID,
+    SOURCE_CSV_SHA256,
+    STATIC_MAPPING_SHA256,
+    build_card_category_lookup,
 )
 from train.alakazam_reward_weighted_bc.inference import RewardWeightedFullActionPolicy
 from train.alakazam_reward_weighted_bc.model import (
@@ -70,33 +74,38 @@ class RewardWeightedBCTests(unittest.TestCase):
         self.assertTrue(torch.allclose(weights, torch.tensor([0.1, 1.0, 5.0])))
 
     def test_official_card_category_becomes_a_separate_embedding(self) -> None:
-        with TemporaryDirectory() as directory:
-            path = Path(directory) / "cards.csv"
-            with path.open("w", encoding="utf-8", newline="") as handle:
-                writer = csv.DictWriter(
-                    handle,
-                    fieldnames=(
-                        "Card ID",
-                        "Stage (Pokémon)/Type (Energy and Trainer)",
-                    ),
-                )
-                writer.writeheader()
-                writer.writerow(
-                    {
-                        "Card ID": 5,
-                        "Stage (Pokémon)/Type (Energy and Trainer)": "Basic Energy",
-                    }
-                )
-                writer.writerow(
-                    {
-                        "Card ID": 741,
-                        "Stage (Pokémon)/Type (Energy and Trainer)": "Basic Pokémon",
-                    }
-                )
-            lookup, counts = load_card_category_lookup(path, card_vocab_size=1024)
+        lookup = build_card_category_lookup(card_vocab_size=1024)
         self.assertEqual(lookup[6], CATEGORY_NAMES.index("Basic Energy") + 1)
         self.assertEqual(lookup[742], CATEGORY_NAMES.index("Basic Pokémon") + 1)
-        self.assertEqual(counts, {"Basic Energy": 1, "Basic Pokémon": 1})
+        self.assertEqual(len(OFFICIAL_CARD_CATEGORY_BY_ID), 1267)
+        self.assertEqual(
+            CATEGORY_COUNTS,
+            {
+                "Basic Pokémon": 595,
+                "Stage 1 Pokémon": 345,
+                "Stage 2 Pokémon": 116,
+                "Item": 77,
+                "Supporter": 61,
+                "Pokémon Tool": 27,
+                "Stadium": 26,
+                "Special Energy": 12,
+                "Basic Energy": 8,
+            },
+        )
+        self.assertEqual(
+            SOURCE_CSV_SHA256,
+            "a0ea63cf7adcb65d35436ce0eb390de6e2e35654a7c67c065a45f4abaa00f373",
+        )
+        self.assertEqual(
+            STATIC_MAPPING_SHA256,
+            "46cd549b46bfed98dc4afff0466912ab67edf65d1e8689f50a98678c7a4b3de9",
+        )
+        mapping_payload = json.dumps(
+            OFFICIAL_CARD_CATEGORY_BY_ID,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        self.assertEqual(hashlib.sha256(mapping_payload).hexdigest(), STATIC_MAPPING_SHA256)
 
         model = CategoryAugmentedFullActionPolicyValueNet(
             ModelConfig(
@@ -148,6 +157,7 @@ class RewardWeightedBCTests(unittest.TestCase):
         *,
         hand: list[int] | None = None,
         bench: list[int] | None = None,
+        bench_energies: dict[int, list[int]] | None = None,
         retreated: bool = False,
         energies: list[int] | None = None,
     ) -> dict:
@@ -167,7 +177,12 @@ class RewardWeightedBCTests(unittest.TestCase):
                         }
                     ],
                     "bench": [
-                        {"id": card_id, "serial": index + 2, "hp": 70}
+                        {
+                            "id": card_id,
+                            "serial": index + 2,
+                            "hp": 70,
+                            "energies": list((bench_energies or {}).get(card_id, [])),
+                        }
                         for index, card_id in enumerate(bench or [])
                     ],
                     "hand": [{"id": card_id} for card_id in hand or []],
@@ -180,7 +195,12 @@ class RewardWeightedBCTests(unittest.TestCase):
         }
 
     @staticmethod
-    def _record(step: int, attack_id: int | None = None) -> dict:
+    def _record(
+        step: int,
+        attack_id: int | None = None,
+        *,
+        dudunsparce_ability: bool = False,
+    ) -> dict:
         return {
             "episode_id": 1,
             "episode_step": step,
@@ -188,19 +208,78 @@ class RewardWeightedBCTests(unittest.TestCase):
             "targets": [0],
             "terminal_outcome": 1.0,
             "_attack_id": attack_id,
+            "_dudunsparce_ability": dudunsparce_ability,
         }
+
+    def test_opening_abra_is_preferred_over_dunsparce(self) -> None:
+        cases = (
+            (self._current(1, 741, hand=[305]), 1.0, False),
+            (self._current(1, 305, hand=[741]), -1.0, False),
+        )
+        for current, expected_credit, expected_bridge in cases:
+            record = self._record(0)
+            payload = {
+                "steps": [
+                    [
+                        {
+                            "observation": {
+                                "current": current,
+                                "select": {"option": [{"type": 1}]},
+                                "logs": [],
+                            }
+                        },
+                        {"observation": {}},
+                    ]
+                ]
+            }
+            record.pop("_attack_id")
+            record.pop("_dudunsparce_ability")
+            annotated = annotate_episode_records([record], payload)[0]
+            self.assertEqual(
+                annotated["reward_metrics"]["decision"]["opening_active_abra_credit"],
+                expected_credit,
+            )
+            self.assertEqual(
+                annotated["reward_metrics"]["episode"]["dunsparce_bridge_opportunity"],
+                expected_bridge,
+            )
 
     def test_strict_dunsparce_bridge_records_every_milestone(self) -> None:
         currents = [
             self._current(1, 305, hand=[1079]),
-            self._current(1, 305, hand=[1079], bench=[741]),
-            self._current(3, 305, hand=[66, 1079, 743, 5], bench=[741]),
-            self._current(3, 66, hand=[1079, 743, 5], bench=[741]),
-            self._current(3, 741, hand=[1079, 743, 5], bench=[66], retreated=True),
-            self._current(3, 743, hand=[5], bench=[66]),
+            self._current(1, 305, hand=[1079], bench=[741], bench_energies={741: [5]}),
+            self._current(
+                3,
+                305,
+                hand=[66, 1079, 743],
+                bench=[741],
+                bench_energies={741: [5]},
+            ),
+            self._current(
+                3,
+                66,
+                hand=[1079, 743],
+                bench=[741],
+                bench_energies={741: [5]},
+            ),
+            self._current(
+                3,
+                741,
+                hand=[1079, 743],
+                bench=[66],
+                energies=[5],
+            ),
+            self._current(3, 743, hand=[], bench=[66], energies=[5]),
             self._current(3, 743, hand=[], bench=[66], energies=[5]),
         ]
-        records = [self._record(index, 1072 if index == 6 else None) for index in range(7)]
+        records = [
+            self._record(
+                index,
+                1072 if index == 6 else None,
+                dudunsparce_ability=index == 3,
+            )
+            for index in range(7)
+        ]
         payload = {
             "steps": [
                 [
@@ -210,7 +289,14 @@ class RewardWeightedBCTests(unittest.TestCase):
                             "select": {
                                 "option": [
                                     {
-                                        "type": 1,
+                                        "type": (
+                                            10 if record["_dudunsparce_ability"] else 1
+                                        ),
+                                        **(
+                                            {"area": 4, "index": 0}
+                                            if record["_dudunsparce_ability"]
+                                            else {}
+                                        ),
                                         **(
                                             {"attackId": record["_attack_id"]}
                                             if record["_attack_id"] is not None
@@ -229,12 +315,19 @@ class RewardWeightedBCTests(unittest.TestCase):
         }
         for record in records:
             record.pop("_attack_id")
+            record.pop("_dudunsparce_ability")
         annotated = annotate_episode_records(records, payload)
         episode = annotated[-1]["reward_metrics"]["episode"]
         components = episode["dunsparce_bridge_components"]
         self.assertTrue(episode["dunsparce_bridge_opportunity"])
         self.assertTrue(episode["dunsparce_bridge_success"])
-        self.assertTrue(all(components.values()))
+        self.assertFalse(components["target_energy_in_hand"])
+        self.assertTrue(components["target_energy_already_attached"])
+        self.assertTrue(components["target_resources_ready"])
+        self.assertTrue(components["used_dudunsparce_ability"])
+        self.assertTrue(components["switched_to_abra_after_ability"])
+        self.assertTrue(components["dudunsparce_ability_handoff"])
+        self.assertTrue(components["active_psychic_at_attack"])
         self.assertEqual(
             annotated[1]["reward_metrics"]["decision"]["dunsparce_first_turn_setup_credit"],
             1.0,
@@ -244,6 +337,86 @@ class RewardWeightedBCTests(unittest.TestCase):
                 "dunsparce_second_turn_execution_credit"
             ],
             1.0,
+        )
+
+        retreat_payload = json.loads(json.dumps(payload))
+        retreat_payload["steps"][3][0]["observation"]["select"]["option"][0] = {
+            "type": 13
+        }
+        retreat_payload["steps"][4][0]["observation"]["current"]["retreated"] = True
+        retreat_records = [
+            self._record(index, 1072 if index == 6 else None) for index in range(7)
+        ]
+        for record in retreat_records:
+            record.pop("_attack_id")
+            record.pop("_dudunsparce_ability")
+        retreat_episode = annotate_episode_records(
+            retreat_records, retreat_payload
+        )[-1]["reward_metrics"]["episode"]
+        self.assertFalse(retreat_episode["dunsparce_bridge_success"])
+        self.assertFalse(
+            retreat_episode["dunsparce_bridge_components"]["used_dudunsparce_ability"]
+        )
+
+    def test_official_visual_frame_contract_aligns_selected_actions(self) -> None:
+        currents = [
+            self._current(1, 305, hand=[1079]),
+            self._current(1, 305, hand=[1079], bench=[741], bench_energies={741: [5]}),
+            self._current(
+                3,
+                66,
+                hand=[1079, 743],
+                bench=[741],
+                bench_energies={741: [5]},
+            ),
+            self._current(3, 741, hand=[1079, 743], bench=[66], energies=[5]),
+            self._current(3, 743, hand=[], bench=[66], energies=[5]),
+        ]
+        records = [
+            {**self._record(index), "targets": [5 if index == 2 else 2 if index == 4 else 0]}
+            for index in range(len(currents))
+        ]
+        for record in records:
+            record.pop("_attack_id")
+            record.pop("_dudunsparce_ability")
+        frames = []
+        for index, current in enumerate(currents):
+            options = [{"type": 1} for _ in range(6)]
+            selected = [0]
+            if index == 2:
+                options[5] = {"type": 10, "area": 4, "index": 0}
+                selected = [5]
+            elif index == 4:
+                options[2] = {"type": 14, "attackId": 1072}
+                selected = [2]
+            frames.append(
+                {
+                    "obs": {
+                        "current": current,
+                        "select": {"option": options},
+                        "logs": [],
+                    },
+                    "selected": selected,
+                }
+            )
+        payload = {
+            "steps": [
+                [
+                    {"visualize": frames},
+                    {"visualize": frames[:-1]},
+                ]
+            ]
+        }
+
+        annotated = annotate_episode_records(records, payload)
+        episode = annotated[-1]["reward_metrics"]["episode"]
+        self.assertTrue(episode["dunsparce_bridge_success"])
+        self.assertTrue(
+            episode["dunsparce_bridge_components"]["used_dudunsparce_ability"]
+        )
+        self.assertEqual(
+            annotated[-1]["reward_metrics"]["audit"]["selected_attack_id"],
+            1072,
         )
 
     def test_control_training_smoke_loads_a_full_action_checkpoint(self) -> None:
@@ -323,6 +496,7 @@ class RewardWeightedBCTests(unittest.TestCase):
                     device="cpu",
                     storage_path=str(root),
                     min_free_gib=0.0,
+                    train_eval_interval=1,
                     weighting=WeightingConfig(
                         mode="uniform", min_weight=1.0, max_weight=1.0
                     ),
@@ -331,6 +505,7 @@ class RewardWeightedBCTests(unittest.TestCase):
             )
         self.assertEqual(summary["status"], "completed")
         self.assertEqual(summary["best_epoch"], 1)
+        self.assertIn("train_eval/exact_action_rate", summary["last_epoch"])
 
 
 if __name__ == "__main__":
