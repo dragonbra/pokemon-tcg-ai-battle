@@ -87,6 +87,10 @@
     .schema th { color: #fff; background: var(--code); font-size: 11px; text-transform: uppercase; }
     .schema td:first-child { width: 19%; font-weight: 750; }
     .schema td:nth-child(2) { width: 18%; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .schema.five td:first-child { width: 15%; }
+    .schema.five td:nth-child(2) { width: 12%; }
+    .schema.five td:nth-child(3) { width: 22%; color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .schema.five td:nth-child(4) { width: 23%; }
     .tensorTitle { display: flex; justify-content: space-between; gap: 20px; margin: 32px 0 10px; align-items: baseline; }
     .tensorTitle span { color: var(--muted); font-size: 12px; }
     .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
@@ -100,6 +104,32 @@
     .compare td:nth-child(2), .compare td:nth-child(3) { width: 35%; font-family: inherit; color: inherit; }
     .callout { margin-top: 22px; padding: 20px; border: 1px solid #deb9b3; border-left: 5px solid var(--red); background: var(--red-soft); }
     .callout strong { display: block; margin-bottom: 5px; color: var(--red); }
+    .fusionNote { margin: 24px 0 8px; padding: 22px; border: 1px solid #b8c9ba; border-left: 5px solid var(--green); background: var(--green-soft); }
+    .fusionNote strong { display: block; margin-bottom: 6px; color: var(--green); font-size: 17px; }
+    .typeKey { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .typeKey span { padding: 5px 8px; border: 1px solid #b9c2b6; border-radius: 4px; background: #fff; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .architecture { margin-top: 26px; padding: 24px; border: 1px solid var(--line); background: #eef0ea; }
+    .archStage { padding: 20px; border: 1px solid #bfc5ba; background: #fff; }
+    .archStage + .archStage { margin-top: 14px; }
+    .archStageTitle { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 14px; }
+    .archStageTitle strong { color: var(--green); font-size: 13px; text-transform: uppercase; }
+    .archStageTitle span { color: var(--muted); font-size: 12px; }
+    .archGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 34px; align-items: stretch; }
+    .archGrid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .archGrid.parallel .archBox::after { content: none; }
+    .archSingle { max-width: 740px; margin: 0 auto; }
+    .archBox { position: relative; min-height: 112px; padding: 15px; border: 1px solid #cdd2c8; border-top: 4px solid var(--green); background: #fafbf8; }
+    .archBox.yellow { border-top-color: var(--yellow); }
+    .archBox.red { border-top-color: var(--red); }
+    .archBox.blue { border-top-color: var(--blue); }
+    .archBox b { display: block; margin-bottom: 7px; font-size: 14px; }
+    .archBox span { display: block; color: var(--muted); font-size: 12px; }
+    .archBox code { display: block; margin-top: 9px; color: var(--blue); font-size: 11px; }
+    .archGrid .archBox:not(:last-child)::after { content: "\2192"; position: absolute; top: 43%; right: -25px; color: var(--green); font-size: 20px; font-weight: 800; }
+    .archDown { min-height: 30px; padding: 3px 0; display: grid; place-items: center; color: var(--green); font-size: 16px; font-weight: 800; text-align: center; }
+    .archMerge { margin-top: 14px; padding: 13px 15px; border: 1px dashed #8a9788; color: #314437; background: #f4f8f3; font-size: 13px; text-align: center; }
+    .archLegend { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 16px; color: var(--muted); font-size: 12px; }
+    .archLegend b { color: var(--ink); }
     footer { padding: 32px 5vw 46px; color: #aeb7ac; background: #171b17; font-size: 12px; }
     footer div { width: min(1180px, 100%); margin: 0 auto; }
     @media (max-width: 800px) {
@@ -114,6 +144,11 @@
       .flow { grid-template-columns: repeat(5, 230px); }
       .schema { min-width: 760px; }
       .tableWrap { overflow-x: auto; }
+      .architecture { padding: 14px; }
+      .archGrid, .archGrid.two { grid-template-columns: 1fr; gap: 30px; }
+      .archGrid .archBox:not(:last-child)::after { content: "\2193"; top: auto; right: 50%; bottom: -28px; }
+      .archStageTitle { display: block; }
+      .archStageTitle span { display: block; margin-top: 4px; }
     }
   </style>
 </head>
@@ -129,9 +164,9 @@
     <div class="heroInner">
       <p class="eyebrow">0010 · Reference Notebook Reproduction</p>
       <h1>Alakazam SOTA Model</h1>
-      <p class="heroCopy">忠实复刻 <code>horizen12/ptcg-yushin-id-only-bc-v1</code> 的 ID-only Transformer + autoregressive pointer policy。这里的 SOTA 是项目名与研究目标；在官方 engine 固定池评测前，不构成强度结论。</p>
+      <p class="heroCopy">忠实复刻 <code>horizen12/ptcg-yushin-id-only-bc-v1</code> 的 ID-only Transformer + autoregressive pointer policy。现已完成长曲线、双 checkpoint 官方 engine 固定池评测与 Kaggle 提交；“SOTA”仍是项目名，具体强度以 loss-best 的 Kaggle 944.2 与对应报告为准，不外推成通用架构结论。</p>
       <div class="badges">
-        <span class="badge">纯 Behavior Cloning</span><span class="badge">7,154,562 parameters</span><span class="badge">d320 · 8 heads · 4 layers</span><span class="badge">V2_empty_entity_fix</span>
+        <span class="badge">纯 Behavior Cloning</span><span class="badge">7,154,562 parameters</span><span class="badge">d320 · 8 heads · 4 layers</span><span class="badge">V4 · epoch 26 early stop</span>
       </div>
     </div>
   </div>
@@ -157,58 +192,119 @@
     <section id="inputs">
       <div class="sectionHead"><div><p class="kicker">02 / Input schema</p><h2>每一个输入字段</h2></div><p class="lede"><code>N <= 192</code> 为实体数，<code>M <= 128</code> 为合法 option 数，<code>T <= 17</code> 包含最多 16 个选择与一个 STOP。batch 内按实际最大长度 padding。</p></div>
 
+      <div class="fusionNote">
+        <strong>不是把所有字段 concatenate 成一个大向量</strong>
+        <p>同一个 global、entity 或 option token 内，各路 embedding、数值 MLP 或 entity gather 都先变成同样的 <code>320</code> 维，再做逐元素求和（elementwise sum）。唯一的 concatenate 是序列轴：<code>[CLS(global), entity_1, ..., entity_N]</code> 形成 <code>[B, N+1, 320]</code>。option 不拼进这条序列，而是在状态编码完成后，以 cross-attention 读取整条状态序列。</p>
+        <div class="typeKey"><span>categorical / label = torch.int64</span><span>continuous = torch.float32</span><span>mask = torch.bool</span><span>hidden = 320 dims</span></div>
+      </div>
+
       <div class="tensorTitle"><h3><code>global_cat [B, 4]</code></h3><span>离散全局上下文，分别 embedding 后求和</span></div>
-      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>编码</th><th>含义</th></tr></thead><tbody>
-        <tr><td>select_type</td><td>select.type + 1</td><td>当前 simulator 选择请求的类型；0 保留给 unknown / padding。</td></tr>
-        <tr><td>select_context</td><td>select.context + 1</td><td>选择请求的上下文枚举，区分相同 option 结构所处的交互语义。</td></tr>
-        <tr><td>first_player</td><td>firstPlayer + 1</td><td>对局先手方索引；unknown 映射为 0。</td></tr>
-        <tr><td>turn_flags</td><td>5-bit bitset</td><td><code>supporterPlayed</code>、<code>stadiumPlayed</code>、<code>energyAttached</code>、<code>retreated</code>、<code>turnEnd</code>。</td></tr>
+      <div class="tableWrap"><table class="schema five"><thead><tr><th>字段</th><th>运行时类型</th><th>编码 / 投影</th><th>进入模型的位置</th><th>含义</th></tr></thead><tbody>
+        <tr><td>select_type</td><td>int64</td><td>type + 1 → Embedding(65, 320)</td><td>global token 内求和</td><td>当前 simulator 选择请求的类型；0 保留给 unknown / padding。</td></tr>
+        <tr><td>select_context</td><td>int64</td><td>context + 1 → Embedding(129, 320)</td><td>global token 内求和</td><td>选择请求的上下文枚举，区分相同 option 结构所处的交互语义。</td></tr>
+        <tr><td>first_player</td><td>int64</td><td>firstPlayer + 1 → Embedding(4, 320)</td><td>global token 内求和</td><td>对局先手方索引；unknown 映射为 0。</td></tr>
+        <tr><td>turn_flags</td><td>int64</td><td>5-bit bitset → Embedding(64, 320)</td><td>global token 内求和</td><td><code>supporterPlayed</code>、<code>stadiumPlayed</code>、<code>energyAttached</code>、<code>retreated</code>、<code>turnEnd</code>。</td></tr>
       </tbody></table></div>
 
       <div class="tensorTitle"><h3><code>global_num [B, 12]</code></h3><span>归一化连续量，经 12→320→320 MLP</span></div>
-      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>归一化</th><th>含义</th></tr></thead><tbody>
-        <tr><td>turn</td><td>turn / 20, cap 2</td><td>当前全局回合编号。</td></tr><tr><td>turn_action_count</td><td>count / 50, cap 2</td><td>当前回合已经执行的 action 数。</td></tr>
-        <tr><td>own_deck_count</td><td>count / 60</td><td>己方剩余牌库张数。</td></tr><tr><td>opp_deck_count</td><td>count / 60</td><td>对手剩余牌库张数。</td></tr>
-        <tr><td>own_hand_count</td><td>count / 20, cap 2</td><td>己方手牌数。</td></tr><tr><td>opp_hand_count</td><td>count / 20, cap 2</td><td>对手公开手牌数量。</td></tr>
-        <tr><td>own_prize_count</td><td>count / 6</td><td>己方剩余 Prize 数。</td></tr><tr><td>opp_prize_count</td><td>count / 6</td><td>对手剩余 Prize 数。</td></tr>
-        <tr><td>option_count</td><td>M / 128, cap 2</td><td>当前合法 option 数量。</td></tr><tr><td>remain_damage_counter</td><td>value / 300, cap 2</td><td>伤害指示物分配请求的剩余量。</td></tr>
-        <tr><td>remain_energy_cost</td><td>value / 10, cap 2</td><td>能量支付请求的剩余 cost。</td></tr><tr><td>bench_occupancy</td><td>(双方 Bench 数) / 10</td><td>双方 Bench 合计占用率。</td></tr>
+      <div class="tableWrap"><table class="schema five"><thead><tr><th>字段</th><th>运行时类型</th><th>归一化</th><th>进入模型的位置</th><th>含义</th></tr></thead><tbody>
+        <tr><td>turn</td><td>float32</td><td>turn / 20, cap 2</td><td rowspan="12">12 维整体送入 <code>Linear(12,320) → GELU → Linear(320,320)</code>；结果与 4 路 global embedding 求和，再 LayerNorm，最后加到可学习 CLS 上。</td><td>当前全局回合编号。</td></tr>
+        <tr><td>turn_action_count</td><td>float32</td><td>count / 50, cap 2</td><td>当前回合已经执行的 action 数。</td></tr>
+        <tr><td>own_deck_count</td><td>float32</td><td>count / 60</td><td>己方剩余牌库张数。</td></tr><tr><td>opp_deck_count</td><td>float32</td><td>count / 60</td><td>对手剩余牌库张数。</td></tr>
+        <tr><td>own_hand_count</td><td>float32</td><td>count / 20, cap 2</td><td>己方手牌数。</td></tr><tr><td>opp_hand_count</td><td>float32</td><td>count / 20, cap 2</td><td>对手公开手牌数量。</td></tr>
+        <tr><td>own_prize_count</td><td>float32</td><td>count / 6</td><td>己方剩余 Prize 数。</td></tr><tr><td>opp_prize_count</td><td>float32</td><td>count / 6</td><td>对手剩余 Prize 数。</td></tr>
+        <tr><td>option_count</td><td>float32</td><td>M / 128, cap 2</td><td>当前合法 option 数量。</td></tr><tr><td>remain_damage_counter</td><td>float32</td><td>value / 300, cap 2</td><td>伤害指示物分配请求的剩余量。</td></tr>
+        <tr><td>remain_energy_cost</td><td>float32</td><td>value / 10, cap 2</td><td>能量支付请求的剩余 cost。</td></tr><tr><td>bench_occupancy</td><td>float32</td><td>(双方 Bench 数) / 10</td><td>双方 Bench 合计占用率。</td></tr>
       </tbody></table></div>
 
       <div class="tensorTitle"><h3><code>entity_cat [B, N, 7]</code> + <code>entity_num [B, N, 5]</code></h3><span>公开卡实体；附着卡与进化 stack 作为有 parent 引用的独立 token</span></div>
-      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>编码</th><th>含义</th></tr></thead><tbody>
-        <tr><td>card_id</td><td>0..2048</td><td>公开 card ID；只学 ID embedding，不查询官方 CSV category 或卡文。</td></tr><tr><td>owner</td><td>none / self / opp</td><td>实体相对当前 actor 的拥有者。</td></tr>
-        <tr><td>zone</td><td>1..16</td><td>己方/对手 Active、Bench、Discard，己方 Hand，Stadium、Looking、select.deck，以及 Energy、Tool、Evolution 子区。</td></tr><tr><td>slot</td><td>index + 1</td><td>实体在所属区域内的位置。</td></tr>
-        <tr><td>kind</td><td>1..7</td><td>普通卡、场上 Pokémon、Energy、Tool、Evolution、Stadium、Looking 的结构种类。</td></tr><tr><td>status_bits</td><td>5-bit bitset</td><td>Active 的 Asleep、Burned、Confused、Paralyzed、Poisoned。</td></tr>
-        <tr><td>parent_entity</td><td>entity index + 1</td><td>Energy / Tool / preEvolution 所附属的场上 Pokémon；0 表示无 parent。</td></tr>
-        <tr><td>damage_ratio</td><td>(maxHP - HP) / 400</td><td>当前已承受伤害的归一化值。</td></tr><tr><td>energy_count</td><td>count / 10</td><td>该 Pokémon 上附着的 Energy 数。</td></tr>
-        <tr><td>tool_count</td><td>count / 4</td><td>该 Pokémon 上附着的 Tool 数。</td></tr><tr><td>evolution_depth</td><td>count / 4</td><td>preEvolution stack 深度。</td></tr><tr><td>appear_this_turn</td><td>0 / 1</td><td>该实体是否本回合刚进入场上。</td></tr>
+      <div class="tableWrap"><table class="schema five"><thead><tr><th>字段</th><th>运行时类型</th><th>编码 / 投影</th><th>进入模型的位置</th><th>含义</th></tr></thead><tbody>
+        <tr><td>card_id</td><td>int64</td><td>Embedding(2049, 320)</td><td rowspan="7">每个实体的 7 路 embedding 逐元素求和。</td><td>公开 card ID；card embedding 与 option encoder 共享，不查询官方 CSV category 或卡文。</td></tr>
+        <tr><td>owner</td><td>int64</td><td>Embedding(3, 320)</td><td>实体相对当前 actor 的拥有者：none / self / opp。</td></tr>
+        <tr><td>zone</td><td>int64</td><td>Embedding(24, 320)</td><td>己方/对手 Active、Bench、Discard，己方 Hand，Stadium、Looking、select.deck，以及 Energy、Tool、Evolution 子区。</td></tr>
+        <tr><td>slot</td><td>int64</td><td>Embedding(129, 320)</td><td>实体在所属区域内的位置。</td></tr>
+        <tr><td>kind</td><td>int64</td><td>Embedding(8, 320)</td><td>普通卡、场上 Pokémon、Energy、Tool、Evolution、Stadium、Looking 的结构种类。</td></tr>
+        <tr><td>status_bits</td><td>int64</td><td>Embedding(32, 320)</td><td>Active 的 Asleep、Burned、Confused、Paralyzed、Poisoned。</td></tr>
+        <tr><td>parent_entity</td><td>int64</td><td>Embedding(193, 320)</td><td>Energy / Tool / preEvolution 所附属的实体 index + 1；0 表示无 parent。这是 index embedding，不是 gather。</td></tr>
+        <tr><td>damage_ratio</td><td>float32</td><td>(maxHP - HP) / 400</td><td rowspan="5">每个实体自己的 5 维向量整体送入 <code>Linear(5,320) → GELU → Linear(320,320)</code>；与 7 路 embedding 求和后 LayerNorm，形成一个 entity token。</td><td>当前已承受伤害的归一化值。</td></tr>
+        <tr><td>energy_count</td><td>float32</td><td>count / 10</td><td>该 Pokémon 上附着的 Energy 数。</td></tr>
+        <tr><td>tool_count</td><td>float32</td><td>count / 4</td><td>该 Pokémon 上附着的 Tool 数。</td></tr>
+        <tr><td>evolution_depth</td><td>float32</td><td>count / 4</td><td>preEvolution stack 深度。</td></tr>
+        <tr><td>appear_this_turn</td><td>float32</td><td>0 / 1</td><td>该实体是否本回合刚进入场上。</td></tr>
       </tbody></table></div>
 
       <div class="tensorTitle"><h3><code>option_cat [B, M, 12]</code></h3><span>simulator 给出的完整合法候选，不生成全局 action ID</span></div>
-      <div class="tableWrap"><table class="schema"><thead><tr><th>字段</th><th>编码</th><th>含义</th></tr></thead><tbody>
-        <tr><td>option_type</td><td>type + 1</td><td>候选动作类型。</td></tr><tr><td>source_area</td><td>area + 1</td><td>动作来源区域。</td></tr><tr><td>target_area</td><td>inPlayArea + 1</td><td>动作目标区域。</td></tr>
-        <tr><td>source_owner</td><td>none / self / opp</td><td>来源相对 actor 的拥有者。</td></tr><tr><td>source_card_id</td><td>0..2048</td><td>来源卡 ID；缺失时从 source entity 回填。</td></tr><tr><td>target_card_id</td><td>0..2048</td><td>目标实体的 card ID。</td></tr>
-        <tr><td>number</td><td>number + 1</td><td>option 中的离散 number 参数。</td></tr><tr><td>source_slot</td><td>index + 1</td><td>来源在区域内的 slot。</td></tr><tr><td>target_slot</td><td>inPlayIndex + 1</td><td>目标在区域内的 slot。</td></tr>
-        <tr><td>source_entity_ref</td><td>entity index + 1</td><td>关联到编码后 source entity 表示，0 表示无关联。</td></tr><tr><td>target_entity_ref</td><td>entity index + 1</td><td>关联到编码后 target entity 表示，0 表示无关联。</td></tr><tr><td>option_position</td><td>option index + 1</td><td>候选在本次 simulator option list 中的位置。</td></tr>
+      <div class="tableWrap"><table class="schema five"><thead><tr><th>字段</th><th>运行时类型</th><th>编码 / 投影</th><th>进入模型的位置</th><th>含义</th></tr></thead><tbody>
+        <tr><td>option_type</td><td>int64</td><td>Embedding(65, 320)</td><td rowspan="9">十路离散 embedding 与两路 entity gather 逐元素求和，再 LayerNorm，形成一个 option token。</td><td>候选动作类型。</td></tr>
+        <tr><td>source_area</td><td>int64</td><td>Embedding(33, 320)</td><td>动作来源区域；与 target_area 共用 area embedding。</td></tr>
+        <tr><td>target_area</td><td>int64</td><td>Embedding(33, 320)</td><td>动作目标区域。</td></tr>
+        <tr><td>source_owner</td><td>int64</td><td>Embedding(3, 320)</td><td>来源相对 actor 的拥有者；使用独立 option_owner table。</td></tr>
+        <tr><td>source_card_id</td><td>int64</td><td>Embedding(2049, 320)</td><td>来源卡 ID；与 entity encoder 共用 card embedding。</td></tr>
+        <tr><td>target_card_id</td><td>int64</td><td>Embedding(2049, 320)</td><td>目标实体的 card ID；与 source_card_id 共用 card embedding。</td></tr>
+        <tr><td>number</td><td>int64</td><td>Embedding(129, 320)</td><td>option 中的离散 number 参数。</td></tr>
+        <tr><td>source_slot</td><td>int64</td><td>Embedding(129, 320)</td><td>来源在区域内的 slot；与 entity slot、target_slot 共用 slot embedding。</td></tr>
+        <tr><td>target_slot</td><td>int64</td><td>Embedding(129, 320)</td><td>目标在区域内的 slot。</td></tr>
+        <tr><td>source_entity_ref</td><td>int64</td><td>gather encoded_entities[index]</td><td rowspan="2">不是 embedding table：直接取 Transformer 编码后的对应实体表示；0 返回全零向量。</td><td>将合法动作来源和当前局面里的具体卡实体绑定。</td></tr>
+        <tr><td>target_entity_ref</td><td>int64</td><td>gather encoded_entities[index]</td><td>将合法动作目标和当前局面里的具体卡实体绑定。</td></tr>
+        <tr><td>option_position</td><td>int64</td><td>Embedding(129, 320)</td><td>加入 option token 的逐元素求和。</td><td>候选在本次 simulator option list 中的位置。</td></tr>
       </tbody></table></div>
 
       <div class="tensorTitle"><h3>Mask、label 与 STOP</h3><span>padding 不参与 attention 或 loss</span></div>
       <div class="cards">
-        <article class="card green"><h3><code>entity_mask [B,N]</code></h3><p>标记真实 entity token；Transformer 的 CLS 始终有效，padding entity 被 <code>src_key_padding_mask</code> 屏蔽。</p></article>
-        <article class="card green"><h3><code>option_mask [B,M]</code></h3><p>标记真实合法 option；pointer 还会屏蔽本序列中已经选过的 option，禁止重复选择。</p></article>
-        <article class="card yellow"><h3><code>targets [B,T]</code></h3><p>专家选择的 option index 序列，末尾追加当前 batch 的 <code>option_count</code> 作为 STOP class；padding 为 <code>-100</code>。</p></article>
-        <article class="card yellow"><h3><code>min_count [B]</code></h3><p>来自 <code>select.minCount</code>。解码步数未达到它以前，STOP logit 被硬 mask。</p></article>
-        <article class="card green"><h3><code>max_count [B]</code></h3><p>来自 <code>select.maxCount</code>。teacher-forcing loss 不需要它；live greedy pointer 达到该步数时强制结束，避免返回超长动作。</p></article>
+        <article class="card green"><h3><code>entity_mask [B,N] · bool</code></h3><p>标记真实 entity token；Transformer 的 CLS 始终有效，padding entity 被 <code>src_key_padding_mask</code> 屏蔽。它控制 attention，不作为可学习特征输入。</p></article>
+        <article class="card green"><h3><code>option_mask [B,M] · bool</code></h3><p>标记真实合法 option；pointer 还会屏蔽本序列中已经选过的 option。它只控制可选 logits，不进入 token 表示。</p></article>
+        <article class="card yellow"><h3><code>targets [B,T] · int64</code></h3><p>专家选择的 option index 序列，末尾追加当前 batch 的 <code>option_count</code> 作为 STOP class；padding 为 <code>-100</code>。只进入 teacher forcing 与 loss。</p></article>
+        <article class="card yellow"><h3><code>min_count [B] · int64</code></h3><p>来自 <code>select.minCount</code>。解码步数未达到它以前，STOP logit 被硬 mask；不进入 state encoder。</p></article>
+        <article class="card green"><h3><code>max_count [B] · int64</code></h3><p>来自 <code>select.maxCount</code>。teacher-forcing loss 不需要它；live greedy pointer 达到该步数时强制结束；不进入 state encoder。</p></article>
         <article class="card red"><h3>隐藏信息边界</h3><p>没有对手手牌内容、Prize card IDs、完整初始牌组、卡牌 category、卡文、expert ID、reward 或 value target。</p></article>
       </div>
     </section>
 
     <section id="model">
       <div class="sectionHead"><div><p class="kicker">03 / Architecture</p><h2>实体编码，再做自回归选择</h2></div><p class="lede">模型参数为 7,154,562，FP32 权重约 27.29 MiB。state encoder 和 option encoder 共享 card embedding；option 通过 entity reference 读取编码后的来源与目标表示。</p></div>
+      <div class="architecture" role="img" aria-label="Alakazam SOTA model 从全局字段与实体字段，经 Transformer、option cross-attention 到 GRU pointer 输出动作序列的数据流图">
+        <div class="archStage">
+          <div class="archStageTitle"><strong>A · State tokenization</strong><span>字段先投影到共同的 d_model = 320，再在 token 内求和</span></div>
+          <div class="archGrid two parallel">
+            <div class="archBox"><b>Global branches</b><span>4 × int64 categorical embedding<br>12 × float32 normalized values → MLP</span><code>sum + LayerNorm → [B,320]</code></div>
+            <div class="archBox blue"><b>Entity branches</b><span>每个实体：7 × int64 embedding<br>5 × float32 values → MLP</span><code>sum + LayerNorm → [B,N,320]</code></div>
+          </div>
+          <div class="archMerge"><b>CLS injection + 唯一的 concatenate：</b> 可学习 CLS 参数先与 global representation 相加；再沿 sequence 轴形成 <code>[CLS(global); entity_1; ...; entity_N] → [B, N+1, 320]</code>。</div>
+        </div>
+        <div class="archDown">↓</div>
+        <div class="archStage">
+          <div class="archStageTitle"><strong>B · Public-state encoder</strong><span>实体之间和全局上下文在这里交换信息</span></div>
+          <div class="archSingle"><div class="archBox"><b>Pre-norm Transformer</b><span>4 layers · 8 heads · FFN 960 · dropout 0.10</span><code>[B,N+1,320] → [B,N+1,320]</code></div></div>
+          <div class="archDown">↓ split by sequence position</div>
+          <div class="archGrid two parallel">
+            <div class="archBox yellow"><b>Encoded CLS</b><span>整局公开状态摘要，用于初始化 decoder hidden</span><code>state_repr [B,320]</code></div>
+            <div class="archBox blue"><b>Encoded entities</b><span>带有全局与实体间上下文的具体卡表示</span><code>entity_repr [B,N,320]</code></div>
+          </div>
+        </div>
+        <div class="archDown">↓</div>
+        <div class="archStage">
+          <div class="archStageTitle"><strong>C · Legal-option encoder</strong><span>模型只在 simulator 已给出的合法候选中选择</span></div>
+          <div class="archGrid two parallel">
+            <div class="archBox"><b>Option field embeddings</b><span>10 路 int64 embedding：type / area / owner / card / number / slot / position</span><code>[B,M,320]</code></div>
+            <div class="archBox blue"><b>Entity-reference gather</b><span>source 与 target 两路直接读取 encoded entity；缺失引用为零向量</span><code>2 × [B,M,320]</code></div>
+          </div>
+          <div class="archMerge"><b>Option token sum：</b>10 路 embedding + 2 路 gather 逐元素求和并 LayerNorm，得到 <code>option_query [B,M,320]</code>。随后做 <b>8-head cross-attention</b>：option 是 Query，完整 encoded state sequence 是 Key / Value；再经过 residual + LayerNorm + <code>320→640→320</code> FFN。</div>
+        </div>
+        <div class="archDown">↓</div>
+        <div class="archStage">
+          <div class="archStageTitle"><strong>D · Autoregressive pointer decoder</strong><span>输出有顺序的多选动作，而不是一次性独立打分</span></div>
+          <div class="archGrid">
+            <div class="archBox"><b>Initialize</b><span>encoded CLS 经 Linear + tanh 变成 320 维 GRU hidden</span><code>h₀ = tanh(W state)</code></div>
+            <div class="archBox yellow"><b>Pointer + STOP logits</b><span>hidden 对每个 option 做 scaled dot product，另由 MLP 预测 STOP</span><code>[B,M+1] per step</code></div>
+            <div class="archBox red"><b>Hard legality gates</b><span>屏蔽 padding、已选 option；minCount 前禁 STOP；maxCount 到达后结束</span><code>selected indices [B,T]</code></div>
+          </div>
+          <div class="archMerge">每选中一个 option，就把它的 320 维表示送入 <code>GRUCell(selected_option, h_t)</code> 更新下一步 hidden；训练时用专家上一选择 teacher forcing，推理时用当前最高合法 logit。</div>
+        </div>
+        <div class="archLegend"><span><b>sum</b>：保留固定 320 维，不增加宽度</span><span><b>concat</b>：只增加 token 数 N+1</span><span><b>gather</b>：把动作与具体场上实体绑定</span><span><b>cross-attention</b>：让每个合法动作读取全局局面</span></div>
+      </div>
       <div class="cards">
         <article class="card green"><h3>State encoder</h3><p>全局 4 路 embedding + 12 维数值 MLP 注入 CLS；entity 的 7 路 embedding + 5 维数值 MLP 形成 token。4 层、8 heads、FFN 960 的 pre-norm Transformer 编码联合序列。</p></article>
-        <article class="card yellow"><h3>Option encoder</h3><p>12 个 option 字段求和，并 gather source / target entity token；随后以 option 为 query 对完整 state sequence 做 8-head cross-attention，再通过 2× hidden FFN。</p></article>
+        <article class="card yellow"><h3>Option encoder</h3><p>10 路 option embedding 与 2 路 source / target entity gather 求和；随后以 option 为 query 对完整 state sequence 做 8-head cross-attention，再通过 2× hidden FFN。</p></article>
         <article class="card red"><h3>Pointer decoder</h3><p>CLS 初始化 320 维 GRU hidden。每一步对尚未选择的 options 计算 scaled dot-product pointer logit，同时计算 STOP logit；teacher forcing 用专家上一选择更新 GRU。</p></article>
       </div>
       <div class="formula">state, entities = Transformer([CLS(global); entity_tokens])
@@ -220,6 +316,10 @@ h_(t+1) = GRU(selected_option_t, h_t)
 
 L_BC = CrossEntropy(pointer_logits, target_sequence, ignore_index=-100)
 # no category feature · no reward weight · no value head · no PPO objective</div>
+      <div class="fusionNote">
+        <strong>为什么 validation loss 与 exact-action accuracy 会分叉</strong>
+        <p><code>loss</code> 是 teacher forcing 下按全部有效 option / STOP token 加总、再除以 token 数的交叉熵；它关心正确答案的完整概率，长动作也会贡献更多 token。<code>exact_action_accuracy</code> 则按 decision 计 0/1：该行所有 token 的 argmax 全对才记 1，但不区分正确答案概率是 51% 还是 99%。因此少量高置信错误可以推高 loss，同时更多边界样本刚好翻到正确 argmax 又会让 exact 上升。二者都不是自由解码或官方 engine 胜率，故分别保留 checkpoint，再用真实对局选择。</p>
+      </div>
     </section>
 
     <section id="compare">
@@ -230,18 +330,18 @@ L_BC = CrossEntropy(pointer_logits, target_sequence, ignore_index=-100)
         <tr><td>状态序列</td><td>动态公开 entity sequence，最多 192。</td><td>固定 state / cards / deck / entities / history 张量。</td></tr>
         <tr><td>动作建模</td><td>GRU 自回归 pointer；显式 STOP；有序多选序列。</td><td>候选 score + count head；单选 CE，多/空选 BCE。</td></tr>
         <tr><td>参数规模</td><td>7.15M · d320 · L4 · 8 heads。</td><td>当前 V4 约 3.54M · d192 · L2。</td></tr>
-        <tr><td>训练目标</td><td>未加权 token CE，最低 validation token loss 选 checkpoint。</td><td>baseline 为纯 BC；0009 可用轨迹 reward 权重调整 BC 样本关注度。</td></tr>
-        <tr><td>当前结论</td><td>模型/codec 与冻结 reference 一致；V1 暴露空 entity collate 缺陷后保留失败记录，正式 V2 待训练与官方评测。</td><td>已有离线曲线和官方 engine 固定池结果。</td></tr>
+        <tr><td>训练目标</td><td>未加权 token CE；同时保留最低 validation token loss 的 <code>best_validation.pt</code> 与最高 validation exact 的 <code>best_exact.pt</code>，正式 engine 评测后再决定策略 checkpoint。</td><td>baseline 为纯 BC；0009 可用轨迹 reward 权重调整 BC 样本关注度。</td></tr>
+        <tr><td>当前结论</td><td>模型/codec 与冻结 reference 一致；V4 在 epoch 26 早停。epoch 9 loss-best 的 Kaggle public score 为 944.2，显著高于 epoch 21 exact-best 的 600.0，说明 teacher-forced exact 不能替代真实强度选择。</td><td>已有离线曲线和官方 engine 固定池结果；下一步由 0011 在本模型上独立验证 reward weighting。</td></tr>
       </tbody></table></div>
       <div class="callout"><strong>研究纪律</strong><p>首次 V1 不开启 category、card metadata、deck/expert conditioning 或 reward weighting，也不从 0008/0009 checkpoint warm-start。只有完成 V1 的离线选择、标准 package 导出和官方 engine 固定池评测后，才能讨论哪套输入/模型更强。</p></div>
     </section>
 
     <section id="stage">
-      <div class="sectionHead"><div><p class="kicker">05 / Current stage</p><h2>六轮复刻完成，继续训练找拐点</h2></div><p class="lede"><code>V1_reference_notebook_reproduction</code> 在第 2 个 batch 因空 public-entity collate 缺陷失败并保留；<code>V2_empty_entity_fix</code> 完成 notebook 默认 6 epochs，epoch 6 validation exact 为 82.55%、loss 为 0.24070，仍在改善。V2 官方评测为 183-42、4 errors、1 unfinished；V3 在 batch 前暴露 RNG device restore 缺陷，V4 修复后恢复 model、optimizer 与 RNG，validation exact 连续 5 轮未刷新历史最佳时停止。</p></div>
+      <div class="sectionHead"><div><p class="kicker">05 / Current stage</p><h2>V4 在 epoch 26 找到过拟合边界</h2></div><p class="lede"><code>V1</code> 的空 entity collate 缺陷与 <code>V3</code> 的 RNG device restore 启动失败均作为失败版本保留。<code>V4_resume_rng_fix</code> 从 V2 epoch 6 完整恢复，epoch 21 刷新最高 validation exact 后，epoch 22–26 连续五轮未刷新并自然停止。loss-best 与 exact-best 已分别完成标准 package、23×10 官方固定池评测和一次 Kaggle 提交；两次提交机会均已用完。</p></div>
       <div class="cards">
-        <article class="card green"><h3>已完成</h3><ul><li>reference codec / model 等价测试</li><li>同一 decision identity 重编码</li><li>221,289 / 17,067 本地 streaming shards</li><li>单一 expert 与 hash audit</li></ul></article>
-        <article class="card yellow"><h3>当前工作包 · V4</h3><ul><li>V2 六轮与固定池评测已完成</li><li>V3 resume startup failure 已保留</li><li>V4 最多追加 30 epochs</li><li>exact early-stop patience = 5</li></ul></article>
-        <article class="card red"><h3>训练后 gate</h3><ul><li>maxCount-safe inference / export 已实现</li><li>标准 package validation</li><li>官方 engine 23×10 固定池评测</li><li>与 0008/0009 分离比较，不再提交 0009</li></ul></article>
+        <article class="card green"><h3>Loss-best · epoch 9</h3><ul><li>validation loss 0.232557</li><li>validation exact 83.0199%</li><li>本地 186-38，6 errors</li><li>Kaggle ref 54958731 · 944.2</li></ul></article>
+        <article class="card yellow"><h3>Exact-best · epoch 21</h3><ul><li>validation exact 84.2562%</li><li>validation loss 0.284786</li><li>本地 193-36，1 error</li><li>Kaggle ref 54958951 · 600.0</li></ul></article>
+        <article class="card red"><h3>下一阶段 · 0011</h3><ul><li>以 loss-best 作为强度 baseline</li><li>保持同一 corpus / split / model</li><li>加入可审计 reward weighting</li><li>全集奖励起步，再逐项消融</li></ul></article>
       </div>
     </section>
   </main>
