@@ -1,0 +1,29 @@
+{
+  "best_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0010-alakazam_sota_model/V2_empty_entity_fix/best_validation.pt",
+  "best_epoch": 6,
+  "best_validation": {
+    "decisions": 17067.0,
+    "exact_action_accuracy": 0.8254526278783617,
+    "loss": 0.2406993592668511,
+    "token_accuracy": 0.9156636393478499
+  },
+  "checkpoint_selection": "minimum validation token cross-entropy",
+  "fp32_model_mib": 27.29248809814453,
+  "last_epoch": {
+    "runtime/epoch_seconds": 270.2633209459891,
+    "train/loss": 0.20261134446662402,
+    "train/tokens": 477022.0,
+    "train_eval/decisions": 221289.0,
+    "train_eval/exact_action_accuracy": 0.8427576607965149,
+    "train_eval/loss": 0.2125635186207065,
+    "train_eval/token_accuracy": 0.9250432894080357,
+    "validation/decisions": 17067.0,
+    "validation/exact_action_accuracy": 0.8254526278783617,
+    "validation/loss": 0.2406993592668511,
+    "validation/token_accuracy": 0.9156636393478499
+  },
+  "parameter_count": 7154562,
+  "runtime_seconds": 1592.7701401340018,
+  "status": "completed",
+  "test_evaluated": false
+}

@@ -1,0 +1,48 @@
+{
+  "amp": true,
+  "batch_size": 96,
+  "dataset_audit": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/dataset/0010-alakazam_sota_model/dataset_audit.json",
+  "dataset_audit_sha256": "43b48079b2016eeb3a6e125cafa86bf3c4265a949b66f3853aaca8da55173fd2",
+  "dataset_records": {
+    "test": 0,
+    "train": 221289,
+    "validation": 17067
+  },
+  "dataset_root": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/dataset/0010-alakazam_sota_model",
+  "device": "cuda",
+  "device_resolved": "cuda",
+  "epochs": 6,
+  "fp32_model_mib": 27.29248809814453,
+  "grad_clip": 1.0,
+  "learning_rate": 0.0003,
+  "log_every_batches": 100,
+  "max_model_mib": 50.0,
+  "min_free_gib": 20.0,
+  "model": {
+    "d_model": 320,
+    "dropout": 0.1,
+    "encoder_layers": 4,
+    "ffn_multiplier": 3,
+    "heads": 8,
+    "max_action_steps": 16,
+    "max_card_id": 2048,
+    "max_entities": 192,
+    "max_options": 128
+  },
+  "parameter_count": 7154562,
+  "reference_notebook_id": "horizen12/ptcg-yushin-id-only-bc-v1",
+  "reference_notebook_url": "https://www.kaggle.com/code/horizen12/ptcg-yushin-id-only-bc-v1",
+  "schema_version": "alakazam_sota_id_only_bc_v1",
+  "seed": 20260723,
+  "shuffle_buffer_size": 4096,
+  "storage": {
+    "free_bytes": 951827099648,
+    "free_gib": 886.458065032959,
+    "path": ".",
+    "total_bytes": 1081101176832,
+    "used_bytes": 74281721856
+  },
+  "storage_path": ".",
+  "train_eval_interval": 1,
+  "weight_decay": 0.02
+}
