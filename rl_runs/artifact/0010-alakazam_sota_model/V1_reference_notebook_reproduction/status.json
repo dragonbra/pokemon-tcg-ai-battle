@@ -1,0 +1,13 @@
+{
+  "completed_epochs": 0,
+  "failed_at": "2026-07-24T17:40:31Z",
+  "failure": {
+    "batch": 2,
+    "epoch": 1,
+    "error": "RuntimeError: empty entity_cat row could not be assigned to the [0, 7] collate slice",
+    "evidence": "1,550 of 221,289 training records have zero public card entities"
+  },
+  "next_version": "V2_empty_entity_fix",
+  "status": "failed",
+  "version": "V1_reference_notebook_reproduction"
+}
