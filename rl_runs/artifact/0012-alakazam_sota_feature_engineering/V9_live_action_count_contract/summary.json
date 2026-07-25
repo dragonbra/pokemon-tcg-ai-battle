@@ -1,0 +1,23 @@
+{
+  "evidence": {
+    "baseline_probe": {
+      "errors": 4,
+      "games": 200,
+      "status": "diagnostic_only",
+      "wins": 153
+    },
+    "fixed_probe": {
+      "errors": 0,
+      "games": 200,
+      "report_sha256": "9f4f3f27d5f898be3ee570c93a6b748f0c8524604a6fde5fdf23785ad984e13f",
+      "status": "diagnostic_only",
+      "wins": 157
+    }
+  },
+  "inference_sha256": "2702a6ef22df4607f09a618d5ac89c4295b793f8ac1e928383d4740f6dcc3477",
+  "model_sha256": "c3f55c428df94acd61ae13cf320c5968e120a5ba7412bbe90c9feaab13b8e291",
+  "model_weights_changed": false,
+  "schema_version": "ptcg_policy_update_summary_v1",
+  "status": "implemented_probe_validated_formal_evaluation_pending",
+  "tests": "11/11 tests.test_alakazam_sota_feature_engineering passed"
+}

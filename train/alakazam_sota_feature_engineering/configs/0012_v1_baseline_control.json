@@ -1,0 +1,17 @@
+{
+  "experiment_name": "baseline_control",
+  "model": {
+    "d_model": 320,
+    "dropout": 0.1,
+    "encoder_layers": 4,
+    "ffn_multiplier": 3,
+    "heads": 8,
+    "max_action_steps": 16,
+    "max_card_id": 2048,
+    "max_entities": 192,
+    "max_options": 128,
+    "remove_option_position": false,
+    "role_separated_action": false
+  },
+  "seed": 20260723
+}
