@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from train.alakazam_bc_rl.mcts import PUCTSearch
+from archive.train_legacy.alakazam_bc_rl.mcts import PUCTSearch
 
 
 class PUCTSearchTests(unittest.TestCase):

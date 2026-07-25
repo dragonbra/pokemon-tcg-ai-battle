@@ -8,21 +8,21 @@ from pathlib import Path
 
 import torch
 
-from train.alakazam_sota_model.model import IDOnlyConfig, IDOnlyPointerPolicy
-from train.alakazam_sota_reward_weighted_bc.config import (
+from train.project_0010_alakazam_sota_model.model import IDOnlyConfig, IDOnlyPointerPolicy
+from train.project_0011_alakazam_sota_reward_weighted_bc.config import (
     ExperimentConfig,
     RewardComponent,
     RewardConfig,
     WeightingConfig,
 )
-from train.alakazam_sota_reward_weighted_bc.dataset import build_reward_dataset
-from train.alakazam_sota_reward_weighted_bc.export_candidate import export_candidate
-from train.alakazam_sota_reward_weighted_bc.rewards import (
+from train.project_0011_alakazam_sota_reward_weighted_bc.dataset import build_reward_dataset
+from train.project_0011_alakazam_sota_reward_weighted_bc.export_candidate import export_candidate
+from train.project_0011_alakazam_sota_reward_weighted_bc.rewards import (
     compose_reward,
     imitation_weights,
     weighted_token_cross_entropy,
 )
-from train.alakazam_sota_reward_weighted_bc.training import train
+from train.project_0011_alakazam_sota_reward_weighted_bc.training import train
 
 
 def _encoded_row(episode_id: int = 1) -> dict:
@@ -97,7 +97,7 @@ class AlakazamSotaRewardWeightedBCTests(unittest.TestCase):
 
     def test_all_rewards_config_loads_and_blocks_two_epoch_runs(self) -> None:
         config = ExperimentConfig.load(
-            "train/alakazam_sota_reward_weighted_bc/configs/0011_v1_all_rewards.json"
+            "train/project_0011_alakazam_sota_reward_weighted_bc/configs/0011_v1_all_rewards.json"
         )
         self.assertEqual(config.model.d_model, 320)
         self.assertEqual(config.minimum_epochs_before_stop, 8)
