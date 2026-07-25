@@ -137,7 +137,7 @@
 
     mkdir -p codex/index codex/design work/docs/decisions work/auto-iteration/templates
 
-- [ ] Step 2: 编写 codex/index/。RULES.md 链接 docs/reports/rules/；EVALUATION.md 链接 docs/reports/kaggle/；CHANGELOG.md 按 V1 至 V8 记录卡组变化、策略变化、评测结论和来源；CURRENT_STATE.md 记录当前候选、基线和下一目标。
+- [ ] Step 2: 编写 codex/index/。RULES.md 链接 docs/rules/；EVALUATION.md 链接 docs/history/kaggle/；CHANGELOG.md 按 V1 至 V8 记录卡组变化、策略变化、评测结论和来源；CURRENT_STATE.md 记录当前候选、基线和下一目标。
 
 - [ ] Step 3: 编写 work/docs/。DECK_NOTES.md 和 STRATEGY.md 只描述当前候选的设计，CURRENT_OBJECTIVES.md 记录本轮目标；这些文件不进入打包包体。
 

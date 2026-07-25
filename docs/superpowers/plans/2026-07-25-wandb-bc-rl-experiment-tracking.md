@@ -98,7 +98,7 @@ Expected: all tests pass, including the injected network failure case.
 
 **Interfaces:**
 - Consumes: existing trainer metric dictionaries.
-- Produces: `normalize_training_metrics(stage: str, axes: dict[str, int], metrics: dict[str, Any]) -> dict[str, Any]` using the schema documented in `docs/reports/rl/wandb-bc-rl-experiment-tracking-design-20260725.html`.
+- Produces: `normalize_training_metrics(stage: str, axes: dict[str, int], metrics: dict[str, Any]) -> dict[str, Any]` using the schema documented in `docs/training/rl/wandb-bc-rl-experiment-tracking-design-20260725.html`.
 
 - [ ] **Step 1: Write schema tests**
 
