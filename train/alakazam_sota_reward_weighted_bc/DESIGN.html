@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>0011 · Alakazam SOTA Reward-Weighted BC</title>
+  <style>
+    :root { --ink:#172019; --muted:#647067; --paper:#f3f5ef; --panel:#fff; --line:#d3d9cf; --green:#176b47; --amber:#d18a17; --red:#a43b35; --blue:#285f89; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.55 Inter,system-ui,sans-serif; }
+    header { padding:64px 6vw 54px; color:#fff; background:#19251d; border-bottom:7px solid #e8bf49; }
+    header div, main { width:min(1160px,88vw); margin:auto; }
+    .eyebrow { color:#98cdae; font-size:12px; font-weight:800; text-transform:uppercase; }
+    h1 { margin:8px 0 16px; font-size:clamp(38px,6vw,72px); line-height:1; }
+    h2 { margin:0 0 12px; font-size:32px; }
+    h3 { margin:0 0 7px; font-size:17px; }
+    p { margin:0; }
+    header p { max-width:800px; color:#d8e1da; font-size:17px; }
+    main section { padding:55px 0; border-bottom:1px solid var(--line); }
+    .lede { max-width:850px; color:var(--muted); }
+    .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:22px; }
+    .card { padding:18px; border:1px solid var(--line); border-top:5px solid var(--green); background:var(--panel); }
+    .card.amber { border-top-color:var(--amber); }
+    .card.red { border-top-color:var(--red); }
+    .card p,.card li { color:var(--muted); font-size:13px; }
+    table { width:100%; margin-top:20px; border-collapse:collapse; background:var(--panel); font-size:13px; }
+    th,td { padding:10px 12px; border:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { color:#fff; background:#202820; font-size:11px; text-transform:uppercase; }
+    td:first-child { font-weight:750; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--blue); }
+    a { color:var(--blue); text-decoration-thickness:1px; text-underline-offset:3px; }
+    .flow { display:grid; grid-template-columns:repeat(5,1fr); gap:26px; margin-top:24px; }
+    .node { position:relative; min-height:128px; padding:15px; border:1px solid var(--line); background:#fff; }
+    .node:not(:last-child)::after { content:"→"; position:absolute; right:-21px; top:43%; color:var(--green); font-size:21px; font-weight:800; }
+    .node b { display:block; margin-bottom:8px; color:var(--green); font-size:12px; }
+    .node span { color:var(--muted); font-size:12px; }
+    .callout { margin-top:22px; padding:18px; border-left:5px solid var(--amber); background:#fff8e6; }
+    .pill { display:inline-block; min-width:42px; padding:2px 7px; text-align:center; font-size:11px; font-weight:800; border-radius:3px; }
+    .pill.on { color:#176b47; background:#dff1e5; }
+    .pill.off { color:#a43b35; background:#f8e1de; }
+    .pill.running { color:#8a5a00; background:#fff0c9; }
+    .formula { margin-top:20px; padding:20px; overflow:auto; color:#dce9df; background:#202820; white-space:pre; font:13px/1.8 ui-monospace,monospace; }
+    ul { margin:8px 0 0; padding-left:18px; }
+    footer { padding:30px 6vw; color:#b5c0b7; background:#19251d; font-size:12px; }
+    @media(max-width:820px){ .cards{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.node:not(:last-child)::after{content:"↓";right:50%;top:auto;bottom:-28px}table{min-width:850px}.tableWrap{overflow:auto} }
+  </style>
+</head>
+<body>
+  <header><div><p class="eyebrow">0011 · Offline RWB experiment</p><h1>SOTA + Reward Weighting</h1><p>保持 0010 的输入、网络、动作合同与单一 expert 数据，只让可开关 reward 改变 BC 样本关注度。先跑全集，再用有方向的逐项消融判断哪些指标帮助 BC、哪些会错误引导。</p></div></header>
+  <main>
+    <section><h2>固定基线与研究边界</h2><p class="lede">0010 loss-best epoch 9 的 Kaggle public score 为 944.2，高于 exact-best 的 600.0。0011 不 warm-start，保持相同随机初始化范式与 7,154,562 参数模型，从头比较 weighted objective；未加权 validation loss 是主 checkpoint 和早停指标。</p>
+      <div class="cards"><article class="card"><h3>不变</h3><p>ID-only codec、d320 / 8 heads / 4 layers、GRU pointer、221,289 / 17,067 split。</p></article><article class="card amber"><h3>唯一主变量</h3><p>reward component 开关、系数和 reward→weight 映射；V1 学习率由 3e-4 调到 4e-4。</p></article><article class="card red"><h3>不声称</h3><p>没有 value head、PPO、rollout 或在线奖励；这是 trajectory-informed weighted BC。</p></article></div>
+    </section>
+
+    <section><h2>数据与模型流</h2><div class="flow"><div class="node"><b>0010 INPUT</b><span>global/entity/option tensors 与专家 action sequence</span></div><div class="node"><b>REWARD SIDECAR</b><span>按 episode/player/step 严格一一 join</span></div><div class="node"><b>REWARD COMPOSER</b><span>启用组件线性组合并裁剪</span></div><div class="node"><b>IMITATION WEIGHT</b><span>减 train mean 后 exponential / linear / uniform</span></div><div class="node"><b>POINTER TOKEN CE</b><span>每个 decision 的全部 option/STOP token 共用一个 weight</span></div></div>
+      <div class="formula">advantage_i = reward_i - mean_train_reward
+weight_i = clip(exp(advantage_i / temperature), 0.2, 4.0)
+L_train = Σ(i,t) weight_i · CE(logits_i,t, target_i,t) / Σ(i,t) weight_i · valid_i,t
+L_validation = unweighted token CE   # 与 0010 直接可比</div>
+    </section>
+
+    <section><h2>V1 全集开关</h2><p class="lede">terminal outcome 在 winner-only corpus 中恒为 +1；因为使用 dataset-mean baseline，它严格抵消，只保留合同完整性。其他组件是实际实验变量。</p><div class="tableWrap"><table><thead><tr><th>开关</th><th>权重</th><th>信号语义</th><th>主要风险</th></tr></thead><tbody>
+      <tr><td>opening_active_abra</td><td>+0.30</td><td>起手有 Abra 时正确放 Active。</td><td>只应影响 setup window，不能奖励故意制造 Dunsparce 路线。</td></tr>
+      <tr><td>second_turn_setup</td><td>+0.20</td><td>目标二回合实际提交 Powerful Hand。</td><td>episode hindsight 会给一段早期动作共同权重。</td></tr>
+      <tr><td>dunsparce_first_turn_setup</td><td>+0.40</td><td>仅在起手无 Abra 且 Active Dunsparce 时，首回合 Bench Abra。</td><td>样本较稀疏。</td></tr>
+      <tr><td>dunsparce_second_turn_execution</td><td>+0.60</td><td>Dudunsparce ability 换位后由 Alakazam 攻击的完整链。</td><td>成功链极稀疏，可能产生高方差。</td></tr>
+      <tr><td>attack_prize_delta</td><td>+0.25</td><td>攻击后实际减少 Prize。</td><td>只在 prize delta 可观察时有效。</td></tr>
+      <tr><td>non_prize_attack_penalty</td><td>-0.25</td><td>惩罚没有拿 Prize 的攻击。</td><td>可能误伤合理的铺垫攻击。</td></tr>
+      <tr><td>powerful_hand_non_prize_penalty</td><td>-0.25</td><td>单独约束 Powerful Hand 的攻击质量。</td><td>与通用 non-prize penalty 有相关性。</td></tr>
+      <tr><td>post_ko_relay</td><td>+0.40</td><td>Alakazam 被 KO 后下一回合恢复攻击。</td><td>分类依赖可见资源边界。</td></tr>
+      <tr><td>recoverable_discard_miss_penalty</td><td>-0.25</td><td>弃牌区仍有恢复路线却没有完成接力。</td><td>train 仅 591 条非零记录。</td></tr>
+      <tr><td>turn_count_penalty</td><td>-0.01</td><td>轻度偏向更短的胜局。</td><td>覆盖每条 decision，可能压过稀疏战术信号。</td></tr>
+    </tbody></table></div></section>
+
+    <section><h2>Setting 对照矩阵</h2><p class="lede">所有版本固定同一数据集、split、seed、模型容量、learning rate、weighting、batch size 和 early-stopping 合同。只有下面四个高风险/重叠组件按渐进式消融改变；未列出的组件在 V1–V5 均保持开启。</p><div class="tableWrap"><table><thead><tr><th>奖励组件</th><th>V1 全集</th><th>V2 去整局长度</th><th>V3 再去通用攻击惩罚</th><th>V4 再去 Powerful Hand 惩罚</th><th>V5 再去 recoverable discard</th><th>为什么测</th></tr></thead><tbody>
+      <tr><td><code>turn_count_penalty</code></td><td><span class="pill on">ON</span></td><td><span class="pill off">OFF</span></td><td><span class="pill off">OFF</span></td><td><span class="pill off">OFF</span></td><td><span class="pill off">OFF</span></td><td>覆盖每条 decision 的密集短胜信号，检查是否压过稀疏战术奖励。</td></tr>
+      <tr><td><code>non_prize_attack_penalty</code></td><td><span class="pill on">ON</span></td><td><span class="pill on">ON</span></td><td><span class="pill off">OFF</span></td><td><span class="pill on">ON</span></td><td><span class="pill on">ON</span></td><td>通用攻击质量约束；V3 结果支持恢复。</td></tr>
+      <tr><td><code>powerful_hand_non_prize_penalty</code></td><td><span class="pill on">ON</span></td><td><span class="pill on">ON</span></td><td><span class="pill on">ON</span></td><td><span class="pill off">OFF</span></td><td><span class="pill on">ON</span></td><td>与通用攻击惩罚可能重复；V4 结果不支持关闭，V5 恢复。</td></tr>
+      <tr><td><code>recoverable_discard_miss_penalty</code></td><td><span class="pill on">ON</span></td><td><span class="pill on">ON</span></td><td><span class="pill on">ON</span></td><td><span class="pill on">ON</span></td><td><span class="pill off">OFF</span></td><td>只有 591 条非零 decision，且与负向 Post-KO relay credit 重叠；V5 是最后一项已启动的消融。</td></tr>
+    </tbody></table></div><div class="callout"><b>固定实验合同：</b>V1–V5 都是从头训练的 trajectory-informed weighted BC，不是 PPO/value/online RL；validation 始终使用未加权 token CE，正式强度结论来自官方 engine 真实对局。</div></section>
+
+    <section><h2>最终结果速览</h2><p class="lede">离线指标来自各版本最低未加权 validation token CE checkpoint；官方结果来自相同 20 opponents × 10 games 的真实 engine 对局。exact 是 teacher-forced 完整动作准确率，不与 loss 等价。</p><div class="tableWrap"><table><thead><tr><th>版本</th><th>相对 V2 的 setting 差异</th><th>训练 epochs</th><th>best epoch</th><th>validation loss</th><th>exact</th><th>官方 W / L / E</th><th>判断</th></tr></thead><tbody>
+      <tr><td>V1</td><td>额外开启 turn-count penalty</td><td>16</td><td>11</td><td>0.228867</td><td>83.6878%</td><td>150 / 46 / 4</td><td>密集整局长度信号有害。</td></tr>
+      <tr><td>V2</td><td>参考 setting</td><td>14</td><td>9</td><td><strong>0.220601</strong></td><td>83.6116%</td><td>157 / 40 / 2</td><td><strong>综合推荐</strong>：最低 loss，官方表现和接力较均衡。</td></tr>
+      <tr><td>V3</td><td>再关闭 generic non-prize penalty</td><td>15</td><td>10</td><td>0.223942</td><td>83.3656%</td><td><strong>160 / 39 / 1</strong></td><td>一次官方胜率最高，但离线、bridge、relay 不支持直接晋升。</td></tr>
+      <tr><td>V4</td><td>再关闭 Powerful Hand non-prize penalty</td><td>15</td><td>10</td><td>0.221716</td><td>83.5179%</td><td>149 / 47 / 4</td><td>不支持关闭专项攻击质量惩罚。</td></tr>
+      <tr><td>V5</td><td>再关闭 recoverable-discard penalty</td><td>14</td><td>9</td><td>0.221684</td><td>83.4769%</td><td>153 / 40 / 7</td><td>不支持关闭稀疏 discard miss 惩罚。</td></tr>
+    </tbody></table></div></section>
+
+    <section><h2>实验 ledger</h2><p class="lede">不得盲目枚举。先看全集；若持续优于 baseline，轮流移除相关/高风险组件估计边际贡献；若变差，优先移除理论上最可能错误引导的组件。</p><div class="tableWrap"><table><thead><tr><th>版本</th><th>开关 / 假设</th><th>训练门槛</th><th>状态</th><th>结果 / 下一步</th></tr></thead><tbody>
+      <tr><td>V1_all_rewards_lr4e4</td><td>全部组件；LR 4e-4</td><td>16 epochs；loss patience 5</td><td>trained + evaluated</td><td>loss-best epoch 11：validation loss 0.228867、exact 83.6878%；优于 0010 loss-best 的 0.232557 / 83.0199%。官方 engine 200 局为 150W / 46L / 4E（75.0%）。</td></tr>
+      <tr><td>V2_no_turn_count_penalty</td><td>仅关闭 turn_count_penalty；其他配置与 V1 相同</td><td>14 epochs；loss patience 5</td><td>trained + evaluated</td><td>loss-best epoch 9：0.220601 / 83.6116%；比 V1 loss-best 改善 0.00827。官方 engine 为 157W / 40L / 2E（78.5%）；覆盖全体 decision 的整局短胜信号在 BC 权重中有害。</td></tr>
+      <tr><td>V3_no_turn_count_or_generic_non_prize</td><td>在 V2 基础上额外关闭通用 non_prize_attack_penalty；保留 Powerful Hand 专项惩罚</td><td>15 epochs；loss patience 5</td><td>trained + evaluated</td><td>loss-best epoch 10：0.223942 / 83.3656%，离线劣于 V2。官方 engine 单次为 160W / 39L / 1E（80.0%），但 bridge / relay 较弱；通用 penalty 暂时恢复，等待 V4 与后续重复证据。</td></tr>
+      <tr><td>V4_no_turn_count_or_powerful_hand_penalty</td><td>回到 V2，保留通用 non-prize penalty，仅关闭 Powerful Hand 专项惩罚</td><td>15 epochs；loss patience 5</td><td>trained + evaluated</td><td>loss-best epoch 10：0.221716 / 83.5179%，略差于 V2。官方 engine 为 149W / 47L / 4E（74.5%）；无证据支持关闭专项惩罚，后续恢复。</td></tr>
+      <tr><td>V5_no_turn_count_or_recoverable_discard_penalty</td><td>回到 V2，只关闭 recoverable discard miss penalty</td><td>14 epochs；loss patience 5</td><td>trained + evaluated</td><td>loss-best / exact-best 均为 epoch 9：0.221684 / 83.4769%，略差于 V2。官方 engine 为 153W / 40L / 7E（76.5%）；没有证据支持关闭该 penalty。</td></tr>
+      <tr><td>后续</td><td>不再启动新训练</td><td>V1–V5 已汇总</td><td>locked</td><td>综合默认采用 V2 setting；V3 的一次较高官方胜率保留为需重复验证的观察，不覆盖 V2 的离线与接力均衡证据。</td></tr>
+    </tbody></table></div></section>
+
+    <section><h2>官方 engine checkpoint 评测</h2><p class="lede">每个已结束版本均选择最低 validation loss checkpoint，面对同一 20 个正式 opponent、每个 10 局；使用 8 workers、每 worker 1 CPU thread 和 setup/relay revision 7 profile。胜率按计划总局数 200 计，error 不伪装成负局或 completed game。</p><div class="tableWrap"><table><thead><tr><th>版本</th><th>结果</th><th>二回合 Powerful Hand</th><th>Dunsparce bridge</th><th>Post-KO relay</th><th>平均 rounds</th><th>报告</th></tr></thead><tbody>
+      <tr><td>V1</td><td>150W / 46L / 4E · 75.0%</td><td>79 / 200 · 39.5%</td><td>7 / 37</td><td>208 / 552 · 37.68%</td><td>6.3724</td><td><a href="../../rl_runs/evaluation/0011-alakazam_sota_reward_weighted_bc/V1_all_rewards_lr4e4/run-0d3d955a606040eebe8e94da54290340/report.html">打开报告</a></td></tr>
+      <tr><td>V2</td><td>157W / 40L / 2E · 78.5%</td><td>85 / 200 · 42.5%</td><td>8 / 35</td><td>193 / 479 · 40.29%</td><td>6.3096</td><td><a href="../../rl_runs/evaluation/0011-alakazam_sota_reward_weighted_bc/V2_no_turn_count_penalty/run-374135f545884039b2846028d731924e/report.html">打开报告</a></td></tr>
+      <tr><td>V3</td><td>160W / 39L / 1E · 80.0%</td><td>96 / 200 · 48.0%</td><td>5 / 36</td><td>179 / 477 · 37.53%</td><td>6.2814</td><td><a href="../../rl_runs/evaluation/0011-alakazam_sota_reward_weighted_bc/V3_no_turn_count_or_generic_non_prize/run-67323af3269149bb88fb71b43e6912bf/report.html">打开报告</a></td></tr>
+      <tr><td>V4</td><td>149W / 47L / 4E · 74.5%</td><td>94 / 200 · 47.0%</td><td>11 / 39</td><td>179 / 488 · 36.68%</td><td>6.1224</td><td><a href="../../rl_runs/evaluation/0011-alakazam_sota_reward_weighted_bc/V4_no_turn_count_or_powerful_hand_penalty/run-9aba561e960e48199c807b82df6dd39f/report.html">打开报告</a></td></tr>
+      <tr><td>V5</td><td>153W / 40L / 7E · 76.5%</td><td>87 / 200 · 43.5%</td><td>7 / 34</td><td>208 / 497 · 41.85%</td><td>6.2332</td><td><a href="../../rl_runs/evaluation/0011-alakazam_sota_reward_weighted_bc/V5_no_turn_count_or_recoverable_discard_penalty/run-d1d4332dbd364e0a991d7cfd132bdfbd/report.html">打开报告</a></td></tr>
+    </tbody></table></div><div class="callout"><b>最终解释：</b>V2 的 validation loss 最低（0.220601），官方结果也较均衡（78.5%、2 errors、Post-KO 40.29%），因此作为本轮研究推荐 setting。V3 的一次官方胜率最高（80.0%）且二回合攻击率最高（48.0%），但离线 loss、bridge 和 relay 较弱。V4 / V5 均未证明移除相应专项 penalty 有益；V1 则证明密集 turn-count 信号应关闭。</div><div class="callout"><b>最终发布：</b>用户按官方对局表现指定 V3 发布。正式归档使用 epoch 10 loss-best，archive SHA-256 为 <code>b9f9c4e4a5fdb90147e48155cdd72aa3195e37d5aabc4f4f3ad8e3b6acb471ef</code>，exported model SHA-256 为 <code>573e0a0263ea199d09fb929dd9d4e0dc68e002d941c750c98deb90b88cdf6601</code>；Kaggle ref <code>54971599</code>，首次查询为 PENDING。本次只执行一次 CLI submission。</div><div class="callout"><b>选择纪律：</b>研究排序首先比较相同 epoch 区间的 unweighted validation loss，再看 exact 与 reward slices；策略能力只采用官方 engine 真实对局证据。研究推荐与用户最终发布决策分开记录，不用发布结果反向改写消融结论。</div></section>
+  </main>
+  <footer>事实来源：0010 dataset audit · 0009 reward sidecar audit · 0011 config / training code · 更新于 2026-07-25</footer>
+</body>
+</html>
