@@ -1,0 +1,62 @@
+{
+  "coverage": {
+    "actor_changed": 2216,
+    "any_observable_delta": 13318,
+    "missing_next_frame": 197,
+    "same_actor": 12944,
+    "same_turn": 13885,
+    "same_turn_any_delta": 12679,
+    "turn_advanced": 1275,
+    "zero_observable_delta": 1842
+  },
+  "decisions": 15357,
+  "delta_changed": {
+    "opp_active": 813,
+    "opp_active_same_turn": 813,
+    "opp_bench": 76,
+    "opp_bench_same_turn": 65,
+    "opp_damage": 842,
+    "opp_damage_same_turn": 677,
+    "own_active": 724,
+    "own_active_same_turn": 350,
+    "own_bench": 2451,
+    "own_bench_same_turn": 2036,
+    "own_damage": 264,
+    "own_damage_same_turn": 250,
+    "own_deck": 4460,
+    "own_deck_same_turn": 4037,
+    "own_discard": 2042,
+    "own_discard_same_turn": 2042,
+    "own_energy": 1273,
+    "own_energy_same_turn": 1273,
+    "own_hand": 10468,
+    "own_hand_same_turn": 10011,
+    "own_prize": 847,
+    "own_prize_same_turn": 819
+  },
+  "groups": 200,
+  "next_frame_available": 15160,
+  "recommended_contract": {
+    "counterfactual": false,
+    "label_scope": "chosen action and automatic engine consequences until next decision frame",
+    "same_turn_resource_delta": "supervise only when current.turn is unchanged",
+    "turn_transition": "separate classification target"
+  },
+  "schema_version": "alakazam_sota_transition_audit_v1",
+  "selected_option_types": {
+    "0": 244,
+    "1": 1072,
+    "10": 1249,
+    "12": 150,
+    "13": 1292,
+    "14": 332,
+    "15": 2,
+    "2": 33,
+    "3": 7000,
+    "4": 11,
+    "6": 296,
+    "7": 3041,
+    "8": 877,
+    "9": 1770
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "experiment_name": "chosen_transition_amp_fix",
+  "model": {
+    "action_primitive_context": true,
+    "action_primitive_dim": 48,
+    "action_transition_auxiliary": true,
+    "d_model": 320,
+    "dropout": 0.1,
+    "encoder_layers": 4,
+    "ffn_multiplier": 3,
+    "heads": 8,
+    "max_action_steps": 16,
+    "max_card_id": 2048,
+    "max_entities": 192,
+    "max_options": 128,
+    "remove_option_position": true,
+    "role_separated_action": true
+  },
+  "permutation_augmentation": true,
+  "seed": 20260723,
+  "transition_delta_weight": 0.1,
+  "transition_turn_weight": 0.05
+}
