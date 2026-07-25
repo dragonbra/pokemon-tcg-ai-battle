@@ -15,7 +15,9 @@ from evaluation.runtime.loader import compute_cg_manifest
 ROOT = Path(__file__).resolve().parents[1]
 DECK_FIXTURE = ROOT / "tests" / "fixtures" / "evaluation_opponent_decks.json"
 OPPONENTS_ROOT = ROOT / "evaluation" / "arena" / "opponents"
-CG_SOURCE_ROOT = ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
+CG_SOURCE_ROOT = (
+    ROOT / "evaluation" / "arena" / "opponents" / "alakazam_dudunsparce_01" / "cg"
+)
 OPPONENT_NAMES = (
     "alakazam_dudunsparce_01",
     "alakazam_dudunsparce_02",

@@ -10,20 +10,20 @@ from pathlib import Path
 
 import torch
 
-from train.alakazam_bc_rl.id_only_pointer import (
+from archive.train_legacy.alakazam_bc_rl.id_only_pointer import (
     IDOnlyCodec as ReferenceCodec,
     IDOnlyConfig as ReferenceConfig,
     IDOnlyPointerPolicy as ReferencePolicy,
 )
-from train.alakazam_sota_model.config import TrainingConfig
-from train.alakazam_sota_model.dataset import build_id_only_dataset
-from train.alakazam_sota_model.model import (
+from train.project_0010_alakazam_sota_model.config import TrainingConfig
+from train.project_0010_alakazam_sota_model.dataset import build_id_only_dataset
+from train.project_0010_alakazam_sota_model.model import (
     IDOnlyCodec,
     IDOnlyConfig,
     IDOnlyPointerPolicy,
     collate_id_only,
 )
-from train.alakazam_sota_model.training import train
+from train.project_0010_alakazam_sota_model.training import train
 
 
 def _observation() -> dict[str, object]:
