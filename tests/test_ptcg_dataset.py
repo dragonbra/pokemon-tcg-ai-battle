@@ -6,17 +6,17 @@ import unittest
 from pathlib import Path
 from types import ModuleType
 
-from train.alakazam_bc_rl.training.dataset import (
+from archive.train_legacy.alakazam_bc_rl.training.dataset import (
     DATASET_VERSION,
     SUPPORTED_FEATURE_SCHEMA_VERSIONS,
     iter_behavior_cloning_records,
     load_behavior_cloning_dataset,
 )
-from train.alakazam_bc_rl.features import PTCGFeatureConfig, encode_observation, feature_config_for_schema
-from train.alakazam_bc_rl.training.build_dagger_dataset import iter_dagger_records
-from train.alakazam_bc_rl.training.annotate_transition_returns import annotate_records
-from train.alakazam_bc_rl.training.rewards import observation_potential, potential_shaping
-from train.alakazam_bc_rl.training.build_mcts_dataset import (
+from archive.train_legacy.alakazam_bc_rl.features import PTCGFeatureConfig, encode_observation, feature_config_for_schema
+from archive.train_legacy.alakazam_bc_rl.training.build_dagger_dataset import iter_dagger_records
+from archive.train_legacy.alakazam_bc_rl.training.annotate_transition_returns import annotate_records
+from archive.train_legacy.alakazam_bc_rl.training.rewards import observation_potential, potential_shaping
+from archive.train_legacy.alakazam_bc_rl.training.build_mcts_dataset import (
     _aggregate_search_results,
     _action_value_soft_policy,
     _blend_teacher_policy,
@@ -398,7 +398,7 @@ class PTCGDatasetTests(unittest.TestCase):
                 encoding="utf-8",
             )
             output = root / "dataset.jsonl"
-            from train.alakazam_bc_rl.training.dataset import write_behavior_cloning_dataset
+            from archive.train_legacy.alakazam_bc_rl.training.dataset import write_behavior_cloning_dataset
 
             result = write_behavior_cloning_dataset([trace_path], output)
             self.assertEqual(result["dataset_version"], DATASET_VERSION)
@@ -438,7 +438,7 @@ class PTCGDatasetTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            from train.alakazam_bc_rl.training.dataset import write_behavior_cloning_dataset
+            from archive.train_legacy.alakazam_bc_rl.training.dataset import write_behavior_cloning_dataset
 
             result = write_behavior_cloning_dataset([trace_path], root / "dataset.jsonl")
             self.assertEqual(result["records"], 0)

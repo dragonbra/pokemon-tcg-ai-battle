@@ -9,8 +9,8 @@ import unittest
 import torch
 
 from rl_environment.model import ModelConfig
-from train.alakazam_bc_rl.features import PTCGFeatureConfig
-from train.alakazam_reward_weighted_bc.card_categories import (
+from archive.train_legacy.alakazam_bc_rl.features import PTCGFeatureConfig
+from archive.train_legacy.alakazam_reward_weighted_bc.card_categories import (
     CATEGORY_COUNTS,
     CATEGORY_NAMES,
     OFFICIAL_CARD_CATEGORY_BY_ID,
@@ -18,20 +18,20 @@ from train.alakazam_reward_weighted_bc.card_categories import (
     STATIC_MAPPING_SHA256,
     build_card_category_lookup,
 )
-from train.alakazam_reward_weighted_bc.inference import RewardWeightedFullActionPolicy
-from train.alakazam_reward_weighted_bc.model import (
+from archive.train_legacy.alakazam_reward_weighted_bc.inference import RewardWeightedFullActionPolicy
+from archive.train_legacy.alakazam_reward_weighted_bc.model import (
     CategoryAugmentedFullActionPolicyValueNet,
 )
-from train.alakazam_reward_weighted_bc.config import (
+from archive.train_legacy.alakazam_reward_weighted_bc.config import (
     ExperimentConfig,
     LossConfig,
     RewardComponentConfig,
     RewardConfig,
     WeightingConfig,
 )
-from train.alakazam_reward_weighted_bc.reward_annotations import annotate_episode_records
-from train.alakazam_reward_weighted_bc.rewards import compose_reward, imitation_weights
-from train.alakazam_reward_weighted_bc.train import train
+from archive.train_legacy.alakazam_reward_weighted_bc.reward_annotations import annotate_episode_records
+from archive.train_legacy.alakazam_reward_weighted_bc.rewards import compose_reward, imitation_weights
+from archive.train_legacy.alakazam_reward_weighted_bc.train import train
 
 
 class RewardWeightedBCTests(unittest.TestCase):
