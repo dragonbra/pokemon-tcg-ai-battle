@@ -17,23 +17,31 @@ reward 字段语义。
 ## 边界
 
 ```text
-rl_environment/              通用训练与运行基础设施
-train/alakazam_bc_rl/        胡地 feature/model/reward/loss/训练
-train/kaggle_bc_top20/       Top-20 数据与 Kaggle worker 归档
-rl_runs/                     dataset/checkpoint/TensorBoard/run/evaluation
-tests/                       全仓库回归测试
+rl_environment/                    shared infrastructure
+train/<project_id>/                project-specific implementation
+experiments/<project_id>/          project archive and authoritative DESIGN/evaluation
+rl_runs/<project_id>/              runtime assets
 ```
 
-分配实验编号：
+从 `0013` 起，使用 `create-project` 分配包含完整合同字段的新项目：
 
 ```bash
-PYTHONPATH=. python3.11 -m rl_environment.runs create next_rl \
-  --objective "Online RL with the official engine runtime"
+PYTHONPATH=. python3.11 -m rl_environment.runs create-project alakazam_rollout_value_calibration \
+  --objective "Calibrate value targets from official-engine rollouts" \
+  --deck alakazam_dudunsparce \
+  --expert-source team_policy_2026_07 \
+  --dataset-contract single_team_episode_v1 \
+  --engine-revision official-engine-2026-07-26 \
+  --opponent-pool-snapshot catalog-sha256:abc
 ```
 
-同一实验的训练版本必须写入 `rl_runs/artifact/<experiment>/V<n>_<tag>/`；checkpoint 和
-TensorBoard 会分别写入 `rl_runs/checkpoint/` 与 `rl_runs/tensorboard/` 的同名版本。
-已有任一路径包含文件时，基础设施会拒绝复用。
+它创建 `train/<project_id>/`、`experiments/<project_id>/` 和 `rl_runs/<project_id>/`。
+每个严格递增的 `V<n>_<tag>` 位于
+`rl_runs/<project_id>/versions/<V<n>_<tag>>/`，其中 `artifact/` 保存被跟踪的配置、
+metrics 与 status，`checkpoint/`、`tensorboard/` 和 `wandb/` 保存对应运行资产。正式
+engine 评测报告写入 `experiments/<project_id>/evaluation/<V<n>_<tag>.html`，并由
+`artifact/evaluation.json` 反向链接。`create` 命令只为 `0001`–`0012` 历史工具保留，
+从 `0013` 起不得使用。
 
 ## W&B 训练曲线镜像
 
@@ -79,13 +87,13 @@ W&B 必须与实际启动训练的解释器处于同一可见环境。本机正�
 只证明记录链路，不构成 policy 能力证据。
 
 现有所有使用 `TrainingLogger` 的训练入口都会读取这些环境变量。每个正式
-`<experiment>/V<n>_<tag>` 会映射成稳定 W&B run ID；同一 V 的在线断点恢复使用同一 ID，
+`<project_id>/V<n>_<tag>` 会映射成稳定 W&B run ID；同一 V 的在线断点恢复使用同一 ID，
 新训练语义仍必须分配下一个 V。默认只上传 config 和有限标量，不上传 checkpoint、dataset、
 optimizer state、trace、replay、observation 或 source patch。
 
-自动镜像只对正式 `rl_runs/artifact/<experiment>/V<n>_<tag>/` 生效，防止持久化的 online
-环境变量让单元测试或任意临时 logger 污染云端项目。`rl_environment.wandb_smoke` 会在进程内
-显式允许自己的非正式 `.tmp/wandb/` 输出；其他非正式工具不得自行打开该放行开关。
+自动镜像只对正式 `rl_runs/<project_id>/versions/<V<n>_<tag>>/artifact/` 生效，防止持久化的
+online 环境变量让单元测试或任意临时 logger 污染云端项目。`rl_environment.wandb_smoke` 会在
+进程内显式允许自己的非正式 `.tmp/wandb/` 输出；其他非正式工具不得自行打开该放行开关。
 
 后续正式 BC、value calibration 和 PPO run 默认设置 `WANDB_MODE=online`。每个版本结束时，
 在 `status.json`、`training_summary.json` 或等价版本记录中保留 W&B project、稳定 run ID 或
