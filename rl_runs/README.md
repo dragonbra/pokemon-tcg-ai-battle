@@ -8,7 +8,8 @@ rl_runs/dataset/0001-label/       # 仅 BC；Git 忽略
 rl_runs/checkpoint/0001-label/V1_initial_contract/ # Git 忽略
 rl_runs/tensorboard/0001-label/V1_initial_contract/   # Git 跟踪
 rl_runs/artifact/0001-label/V1_initial_contract/      # Git 跟踪
-rl_runs/evaluation/0001-label/V1_initial_contract/    # Git 跟踪
+rl_runs/evaluation/0001-label/index.html              # Git 跟踪，项目总览
+rl_runs/evaluation/0001-label/V1_initial_contract.html # Git 跟踪
 ```
 
 `artifact/<experiment>` 根目录保存共享的 manifest、data manifest/audit、commands 和
@@ -18,7 +19,8 @@ decisions。每个
 - `training_config.json`：模型结构参数、seed、优化器与训练超参数。
 - `training_metrics.jsonl`、`training_summary.json`：逐 epoch 指标与最佳结果。
 - `status.json` 或版本决策记录：完成/中止/失败状态、原因与下一版本改进。
-- 同名 `evaluation/V<n>_<tag>/`：运行 manifest、逐局记录、metrics、case 和报告。
+- 同名 `evaluation/V<n>_<tag>.html`：内嵌运行 manifest、逐局记录、metrics 和 case 的报告。
+- `evaluation/index.html`：自动汇总同项目全部版本并链接到对应的 `V*.html`。
 
 每个 epoch 必须记录完整 train 与 validation split 的同口径标量，并同步写入 TensorBoard；
 禁止通过 `train_eval_interval > 1` 跳过中间 epoch。历史 run 若没有实际执行某个评测，只能保留

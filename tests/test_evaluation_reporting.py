@@ -7,7 +7,13 @@ from pathlib import Path
 
 from evaluation.metrics import MetricPresentation
 from evaluation.metrics.profiles import AUTO_ITERATION_PROFILE_ID, get_metric_profile
-from evaluation.reporting import ReportData, render_html, render_markdown, write_report
+from evaluation.reporting import (
+    ReportData,
+    render_html,
+    render_markdown,
+    write_evaluation_index,
+    write_report,
+)
 
 
 OPPONENTS = (
@@ -521,6 +527,28 @@ class EvaluationReportingTests(unittest.TestCase):
         self.assertIn("matchup-chart", html)
         self.assertNotIn("https://", html)
         self.assertNotIn("http://", html)
+
+    def test_project_index_summarizes_and_links_version_reports(self) -> None:
+        data = report_data()
+        with tempfile.TemporaryDirectory() as temporary:
+            project_root = Path(temporary) / "0012-feature-test"
+            write_report(data, project_root / "V2_second")
+            write_report(data, project_root / "V1_first")
+            (project_root / "V3_broken.html").write_text("broken", encoding="utf-8")
+
+            for directory in (project_root / "V1_first", project_root / "V2_second"):
+                (directory / "report.html").replace(project_root / f"{directory.name}.html")
+                directory.rmdir()
+            index_path = write_evaluation_index(project_root)
+            index = index_path.read_text(encoding="utf-8")
+
+        self.assertIn("0012-feature-test", index)
+        self.assertLess(index.index("V1_first"), index.index("V2_second"))
+        self.assertIn('href="V1_first.html"', index)
+        self.assertIn("fixture-run", index)
+        self.assertIn("34", index)
+        self.assertIn("31.42%", index)
+        self.assertIn("无法解析", index)
 
 
 if __name__ == "__main__":
