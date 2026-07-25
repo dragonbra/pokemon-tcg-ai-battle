@@ -19,7 +19,9 @@
     "checkpoint_sha256": "983c1d633bee57ba3c33757fc07ade9e11e6704ce177427ba534422f47285be3",
     "kaggle_submission": {
       "file_name": "alakazam_sota_reward_weighted_bc_v3_loss_best.tar.gz",
+      "final_status": "COMPLETE",
       "initial_status": "PENDING",
+      "public_score": 895.4,
       "ref": 54971599,
       "submitted_at": "2026-07-25T08:50:37.160000Z"
     },
