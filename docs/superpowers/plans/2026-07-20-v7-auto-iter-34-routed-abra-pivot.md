@@ -84,10 +84,10 @@
 ### Task 3: Record iter-34 evidence without claiming an unverified win-rate gain
 
 **Files:**
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-34/decision.md`.
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-34/advisor.md`.
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-34/analysis.md`.
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-34/metrics.json`.
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-34/decision.md`.
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-34/advisor.md`.
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-34/analysis.md`.
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-34/metrics.json`.
 - Modify: `submission/alakazam_v7_auto_iter/ITER_PROCESS.md`.
 
 **Interfaces:**

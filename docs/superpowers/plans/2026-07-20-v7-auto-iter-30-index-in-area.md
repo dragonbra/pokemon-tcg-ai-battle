@@ -70,9 +70,9 @@ Expected: 测试、编译和资产校验均成功；`deck.csv` 仍为 60 张且�
 ### Task 3: 记录 iter-30 的 advisor、决策和指标状态
 
 **Files:**
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-30/decision.md`
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-30/advisor.md`
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-30/metrics.json`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-30/decision.md`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-30/advisor.md`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-30/metrics.json`
 - Modify: `submission/alakazam_v7_auto_iter/ITER_PROCESS.md`
 
 - [ ] **Step 1: 记录本轮假设和卡牌/规则核验**

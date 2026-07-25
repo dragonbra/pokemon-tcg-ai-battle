@@ -45,9 +45,9 @@
 ### Task 4: Full evaluation and iteration record
 
 **Files:**
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-21/advisor.md`
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-21/decision.md`
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-21/metrics.json`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-21/advisor.md`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-21/decision.md`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-21/metrics.json`
 - Modify: `submission/alakazam_v7_auto_iter/ITER_PROCESS.md`
 - Modify: `submission/alakazam_v7_auto_iter/STRATEGY.md` only if the accepted behavior changes the durable strategy description.
 

@@ -9,7 +9,7 @@
 策略语义的优先级保持不变：
 
 1. 官方规则与模拟器卡牌事实；
-2. `docs/reports/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`；
+2. `docs/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`；
 3. `work/docs/REFACTOR_DESIGN.md`；
 4. `work/docs/DECK_NOTES.md` 中用户补充的 V8 建议；
 5. `work/docs/CURRENT_OBJECTIVES.md` 的 V8C-01 至 V8C-10；
