@@ -101,7 +101,8 @@ V1–V5 完成后停止追加训练；本轮推荐 V2 setting，V3 的一次 80.
 - archive：`submission/dist/alakazam_sota_reward_weighted_bc_v3_loss_best.tar.gz`；
 - archive SHA-256：`b9f9c4e4a5fdb90147e48155cdd72aa3195e37d5aabc4f4f3ad8e3b6acb471ef`；
 - exported model SHA-256：`573e0a0263ea199d09fb929dd9d4e0dc68e002d941c750c98deb90b88cdf6601`；
-- Kaggle submission ref：`54971599`，提交后首次查询状态为 `PENDING`。
+- Kaggle submission ref：`54971599`；首次查询为 `PENDING`，最终状态 `COMPLETE`，
+  public score `895.4`。
 
 本次授权只执行了这一条 Kaggle CLI submission；后续状态查询不得触发重复提交。
 
