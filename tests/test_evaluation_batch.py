@@ -371,6 +371,32 @@ class OverridePlugin:
         self.assertEqual(result.report_data.metrics, result.metric_results)
         self.assertEqual({path.name for path in report_root.iterdir()}, {"report.html"})
 
+    def test_batch_writes_explicit_flat_report_without_run_directory(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        report_path = self.root / "reports" / "V1_flat_contract.html"
+        config = replace(
+            self.make_config(candidate, (opponent,), games=1),
+            report_path=report_path,
+            update_project_index=True,
+        )
+
+        result = run_batch(config)
+
+        self.assertEqual(result.report_path, report_path.resolve())
+        self.assertTrue(report_path.is_file())
+        self.assertEqual(
+            {path.name for path in report_path.parent.iterdir()},
+            {report_path.name, "index.html"},
+        )
+        self.assertIn(report_path.name, (report_path.parent / "index.html").read_text())
+        self.assertEqual(
+            result.manifest["artifact_policy"]["retained_files"],
+            [report_path.name],
+        )
+        with self.assertRaisesRegex(ValueError, "already exists"):
+            run_batch(config)
+
     def test_parallel_workers_bound_concurrency_and_preserve_record_order(self) -> None:
         candidate = self.make_package("candidate", 7)
         opponents = (

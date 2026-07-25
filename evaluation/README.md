@@ -72,7 +72,8 @@ Powerful Hand、post-KO relay 和 attack quality 的结构化 payload。Powerful
 observed engine turn 仍保留在单局 payload 中；action selection 次数只用于性能与异常审计。
 
 正式 opponents 全量循环评测长期保存在 `arena/combat_mat/`：`index.html` 是矩阵入口，
-`reports/<package>/<run_id>/report.html` 保留每个 package 面对完整 catalog 的源报告，
+`reports/<package>/<run_id>/report.html` 保留每个 package 面对完整 catalog 的源报告（这是独立的
+`arena/combat_mat` 矩阵合同，不同于 RL 正式实验报告），
 `matrix.json` 保存聚合数据。正式池变化后需要按新 catalog 重新运行所有 package（包含自身，
 每个有向单元格 10 局）；这些重要结果不得放在 `.tmp/`。页面展示总体、先攻和后攻胜率，
 并将先攻与后攻玩家阶段按 `ceil(engine_turn / 2)` 合成完整回合。
@@ -108,9 +109,13 @@ Evaluation 只负责指标测量、证据审计和可视化，不执行自动迭
 
 ## 产物和 trace 生命周期
 
-每次 `run` 由 `BatchConfig/run_batch` 在 `--output/run_id/` 只写入 `report.html`，即
+正式 RL 实验的 `run` 由 `BatchConfig/run_batch` 在
+`rl_runs/evaluation/<000N-project>/V<n>_<tag>.html` 只写入一个 HTML 文件，即
 `report_only` 默认产物契约。manifest、summary、逐局轻量记录、聚合 metrics、case 摘要和
-presentation 数据都内嵌在该独立 HTML 中。指标插件通过稳定的 metric ID 注册；
+presentation 数据都内嵌在该独立 HTML 中。每次正式报告完成后，同项目的 `index.html` 会根据
+全部 `V*.html` 自动重建，按版本号展示 candidate/run、局数、胜负、error、unfinished、胜率和
+完成率，并提供到每份完整报告的相对链接。`.tmp/evaluation/<purpose>` 等非正式输出仍在
+`run-<id>/report.html` 下隔离保存。指标插件通过稳定的 metric ID 注册；
 `--metric-module` 的模块路径由 metrics registry 动态加载，只能追加统计，不得覆盖核心
 输出；动态模块的 HTML renderer 默认不受信任，会退回安全的通用指标展示。只有内置
 profile plugin 才能提供专属 HTML section。核心指标固定为 outcome、length、correctness、powerful_hand、rare_candy、
