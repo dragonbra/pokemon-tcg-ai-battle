@@ -14,13 +14,14 @@ venv/
 *.safetensors
 engine/build/
 data/competition/
-replays/raw/
-# Large expert replay corpora are reproducible from their run manifest and
-# must not be committed with source code.
-replays/kaggle_yushin_ito_*/
-replays/kaggle_top100_exact_deck_*/
+data/raw/episodes/archives/
+data/raw/episodes/download_logs/
+data/raw/episodes/index/
+data/raw/episodes/patches/
+data/raw/episodes/source_manifest.json
 logs/
 .tmp/
+.superpowers/
 
 # RL artifacts: large supervised datasets and checkpoints stay local.
 # Run metadata, metrics, evaluation reports, and TensorBoard events are tracked.
@@ -33,12 +34,10 @@ rl_runs/wandb/
 *.egg-info/
 
 # Official card data and Card ID PDFs are local reference downloads only.
-# Track the two canonical CSV files and README; ignore the remaining resources.
+# Keep the small README tracked, but do not upload the resource files.
 data/official/*
 data/replays/*
 !data/official/README.md
-!data/official/EN_Card_Data.csv
-!data/official/JP_Card_Data.csv
 
 .DS_Store
 .claude/settings.local.json
@@ -46,8 +45,8 @@ data/replays/*
 
 # Exported model weights and packaged submissions stay local.
 evaluation/arena/candidates/**/strategy/model.bin
-submission/**/strategy/model.bin
-submission/dist/*.tar.gz
+archive/submission/**/strategy/model.bin
+archive/submission/dist/*.tar.gz
 
 # Nested runtime assets for 0013+ projects are local and reproducible.
 /rl_runs/*/dataset/
