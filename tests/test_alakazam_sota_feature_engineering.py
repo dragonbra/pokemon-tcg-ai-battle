@@ -8,19 +8,19 @@ from pathlib import Path
 
 import torch
 
-from train.alakazam_sota_feature_engineering.batching import (
+from train.project_0012_alakazam_sota_feature_engineering.batching import (
     collate_id_only,
     permute_candidates,
 )
-from train.alakazam_sota_feature_engineering.config import ExperimentConfig
-from train.alakazam_sota_feature_engineering.codec import FeatureEngineeringCodec
-from train.alakazam_sota_feature_engineering.inference import FeatureEngineeringInference
-from train.alakazam_sota_feature_engineering.model import (
+from train.project_0012_alakazam_sota_feature_engineering.config import ExperimentConfig
+from train.project_0012_alakazam_sota_feature_engineering.codec import FeatureEngineeringCodec
+from train.project_0012_alakazam_sota_feature_engineering.inference import FeatureEngineeringInference
+from train.project_0012_alakazam_sota_feature_engineering.model import (
     FeatureEngineeringPolicy,
     FeatureModelConfig,
 )
-from train.alakazam_sota_feature_engineering.training import train
-from train.alakazam_sota_model.model import IDOnlyCodec, IDOnlyConfig, IDOnlyPointerPolicy
+from train.project_0012_alakazam_sota_feature_engineering.training import train
+from train.project_0010_alakazam_sota_model.model import IDOnlyCodec, IDOnlyConfig, IDOnlyPointerPolicy
 
 
 def _observation() -> dict[str, object]:

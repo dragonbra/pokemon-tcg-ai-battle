@@ -4,7 +4,7 @@ import unittest
 
 from rl_environment.promotion import has_minimum_evaluation_coverage, is_promotable
 from rl_environment.reward import RewardProfile, potential_difference, terminal_reward
-from train.alakazam_bc_rl.features import PTCGFeatureConfig, encode_observation
+from archive.train_legacy.alakazam_bc_rl.features import PTCGFeatureConfig, encode_observation
 
 try:
     import torch
@@ -194,7 +194,7 @@ class RLFrameworkTests(unittest.TestCase):
 
     @unittest.skipUnless(torch is not None, "PyTorch is an optional RL dependency")
     def test_ptcg_inference_bridge_returns_a_legal_option(self) -> None:
-        from train.alakazam_bc_rl.inference import PTCGCandidatePolicy
+        from archive.train_legacy.alakazam_bc_rl.inference import PTCGCandidatePolicy
         from tempfile import TemporaryDirectory
 
         feature_config = PTCGFeatureConfig()
