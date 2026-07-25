@@ -31,10 +31,12 @@ rl_runs/checkpoint/*
 *.egg-info/
 
 # Official card data and Card ID PDFs are local reference downloads only.
-# Keep the small README tracked, but do not upload the resource files.
+# Track the two canonical CSV files and README; ignore the remaining resources.
 data/official/*
 data/replays/*
 !data/official/README.md
+!data/official/EN_Card_Data.csv
+!data/official/JP_Card_Data.csv
 
 .DS_Store
 .claude/settings.local.json
