@@ -1,0 +1,39 @@
+{
+  "audit_scope": "all winner-player visual decision frames for the frozen 3104 groups",
+  "effect_counts": {
+    "1087_hand_trimmer": 4,
+    "1197_xerosics_machinations": 79
+  },
+  "expert_action_length_distribution_gt_16": {
+    "17": 37,
+    "18": 21,
+    "19": 15,
+    "20": 4,
+    "21": 4,
+    "23": 1,
+    "25": 1
+  },
+  "frozen_0009_records": 238356,
+  "groups": 3104,
+  "long_action_frames": 83,
+  "long_action_frames_missing_from_0009": 83,
+  "maximum_expert_action_length": 25,
+  "reconstructed_records_by_split": {
+    "train": 221364,
+    "validation": 17075
+  },
+  "raw_winner_player_decision_frames": 238439,
+  "recommended_max_action_steps": 32,
+  "schema_version": "alakazam_sota_long_action_audit_v1",
+  "source_dataset": "rl_runs/dataset/0009-reward_weighted_bc/dataset.jsonl",
+  "source_dataset_sha256": "36415a61b93fdcdb2e1b17c0fbaebb9432f8d94ed0c203365b36cd3011b09bdf",
+  "split_effect_counts": {
+    "train_1087_hand_trimmer": 4,
+    "train_1197_xerosics_machinations": 71,
+    "validation_1197_xerosics_machinations": 8
+  },
+  "split_long_action_frames": {
+    "train": 75,
+    "validation": 8
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "best_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0012-alakazam_sota_feature_engineering/V5_action_primitive_permutation_fix/best_validation.pt",
+  "best_epoch": 11,
+  "best_exact_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0012-alakazam_sota_feature_engineering/V5_action_primitive_permutation_fix/best_exact.pt",
+  "best_exact_epoch": 18,
+  "best_exact_permuted_validation": {
+    "decisions": 17067.0,
+    "exact_action_accuracy": 0.8447881877307084,
+    "loss": 0.23796188276958538,
+    "semantic_prediction_consistency": 1.0,
+    "teacher_forced_kl": 0.0,
+    "token_accuracy": 0.9248276616697669
+  },
+  "best_exact_validation": {
+    "decisions": 17067.0,
+    "exact_action_accuracy": 0.8450225581531611,
+    "loss": 0.23796188063036627,
+    "token_accuracy": 0.9249370828318196
+  },
+  "best_validation": {
+    "decisions": 17067.0,
+    "exact_action_accuracy": 0.8438507060408976,
+    "loss": 0.21603203007658092,
+    "token_accuracy": 0.924690885217201
+  },
+  "early_stopping_patience": 5,
+  "epochs_without_exact_improvement": 5,
+  "experiment_name": "action_primitive_permutation_fix",
+  "fp32_model_mib": 28.54029083251953,
+  "last_completed_epoch": 23,
+  "last_epoch": {
+    "runtime/epoch_seconds": 310.5687216320075,
+    "train/loss": 0.085794058508835,
+    "train/policy_loss": 0.085794058508835,
+    "train/tokens": 477022.0,
+    "train/transition_delta_mse": 0.0,
+    "train/transition_turn_bce": 0.0,
+    "train_eval/decisions": 221289.0,
+    "train_eval/exact_action_accuracy": 0.9177817243514138,
+    "train_eval/loss": 0.1154873426861802,
+    "train_eval/token_accuracy": 0.9611674094695842,
+    "validation/decisions": 17067.0,
+    "validation/exact_action_accuracy": 0.84056952012656,
+    "validation/loss": 0.26580930165746747,
+    "validation/token_accuracy": 0.9229948572053835,
+    "validation_permuted/decisions": 17067.0,
+    "validation_permuted/exact_action_accuracy": 0.8403351497041074,
+    "validation_permuted/loss": 0.26580930155311533,
+    "validation_permuted/semantic_prediction_consistency": 1.0,
+    "validation_permuted/teacher_forced_kl": 0.0,
+    "validation_permuted/token_accuracy": 0.9228854360433307
+  },
+  "parameter_count": 7481666,
+  "peak_gpu_memory_mib": 848.9482421875,
+  "runtime_seconds": 7048.933295567986,
+  "status": "completed",
+  "stopped_early": true,
+  "test_evaluated": false
+}

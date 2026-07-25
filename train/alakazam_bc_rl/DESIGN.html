@@ -445,7 +445,7 @@
 
           <details>
             <summary>合法性边界：完全由 simulator options 决定</summary>
-            <div class="detailBody"><p>模型只对 simulator 当前给出的 options 排序；训练和推理都使用同一 `action_mask`，选择数量还受 `minCount..maxCount` 限制。模型不会自行构造规则外动作。这个合同保证输出合法，但不能保证策略正确。</p></div>
+            <div class="detailBody"><p>模型只对 simulator 当前给出的 options 排序；训练和推理都使用同一 `action_mask`，选择数量还受 `minCount..maxCount` 限制。模型不会自行构造规则外动作。0012 pointer audit 对同一 3,104 个 winner-player replay group 找到 238,439 个原始 decision frames；0009/0010 的 238,356 条记录恰好漏掉全部 83 条 action length&gt;16 标签，最大长度 25（Xerosic 79、Hand Trimmer 4）。当前 0012 inference 保留 observation 原始 min/max，并允许 GRU pointer 在推理时超过训练 16-step cap 解码到真实 option count；这只修复 live legality。用户指定的重训版将以 32-step schema 恢复 83 条监督。</p></div>
           </details>
         </div>
 

@@ -1,0 +1,167 @@
+{
+  "created_at": "2026-07-25T04:56:46+08:00",
+  "dataset": {
+    "audit": "rl_runs/dataset/0010-alakazam_sota_model/dataset_audit.json",
+    "audit_sha256": "43b48079b2016eeb3a6e125cafa86bf3c4265a949b66f3853aaca8da55173fd2",
+    "feature_dataset": {
+      "audit": "rl_runs/dataset/0012-alakazam_sota_feature_engineering/dataset_audit.json",
+      "audit_sha256": "a140aa5be9f89ca7066386a9a4218066af7863a6816a68f2d3d595de03dd0d76",
+      "context_nonzero": {
+        "context_card": 21289,
+        "effect_card": 52987
+      },
+      "primitive_nonzero": {
+        "attack_id": 81217,
+        "count": 4995,
+        "energy_index": 4995,
+        "tool_index": 51
+      },
+      "train_sha256": "abd027281f89d29e772afe496f597750f418e17c9d0ea2ee8d2d1becb68797d4",
+      "validation_sha256": "67b292ba80cc318953cc19951fb467f3c6fa0bcba8c60691de7c1e72aa4a0203"
+    },
+    "episode_player_groups": 3104,
+    "expert_policy": {
+      "selection": "daily winner-only",
+      "source_dates": "2026-07-13 through 2026-07-22",
+      "team_name": "Yushin Ito"
+    },
+    "records_by_split": {
+      "test": 0,
+      "train": 221289,
+      "validation": 17067
+    },
+    "source_dataset_sha256": "36415a61b93fdcdb2e1b17c0fbaebb9432f8d94ed0c203365b36cd3011b09bdf",
+    "train_sha256": "89d425b778b75ee87ffea97245d7dfc9de0bc18164bfe8823ee1d85f91b8d0c7",
+    "validation_sha256": "38ef30e88891593f0ea3870f3b8bfa486fb765d1f5c64dd41ff505768b92d622"
+  },
+  "experiment_id": "0012-alakazam_sota_feature_engineering",
+  "git_commit_at_allocation": "44453d84f80cb86b7abdc08cbb929893bb24586e",
+  "label": "alakazam_sota_feature_engineering",
+  "objective": "Fixed-corpus pure-BC ablations of action ordering, structured action roles, action semantics, state features, and reusable state-action representations",
+  "paths": {
+    "checkpoint": "rl_runs/checkpoint/0012-alakazam_sota_feature_engineering",
+    "dataset": "rl_runs/dataset/0010-alakazam_sota_model (V1-V3); rl_runs/dataset/0012-alakazam_sota_feature_engineering (V4+)",
+    "evaluation": "rl_runs/evaluation/0012-alakazam_sota_feature_engineering",
+    "run": "rl_runs/artifact/0012-alakazam_sota_feature_engineering",
+    "tensorboard": "rl_runs/tensorboard/0012-alakazam_sota_feature_engineering",
+    "train_project": "train/alakazam_sota_feature_engineering"
+  },
+  "reproducibility": {
+    "batching_sha256": "e63b21c7360198e15ac3ee05f5158dfd21737e363a9fbccdc9daa0c3a864a905",
+    "codec_sha256": "4368355d3d06abc4fb907959c73f38327f942183f1f7a5f2bfb4741b267067bd",
+    "config_source_sha256": "e6b3e212496f70c2ef42770da98a32ec3db642623124502dcfee7134953ab5ae",
+    "design_sha256": "9cb5ceb71161fc380bdc48a60eb6c7d25d6b06740f433f42fa8c6ad4cd02567e",
+    "dataset_source_sha256": "9a5ec50ce1e329ea5844422aa60627f52d6d44f656840c2b6bdccb073f4b904a",
+    "export_candidate_sha256": "2adc05a3d51c03424dc9e762cd7f0cc22fa34df4014914bfac98103e24448232",
+    "inference_sha256": "2702a6ef22df4607f09a618d5ac89c4295b793f8ac1e928383d4740f6dcc3477",
+    "long_action_audit_sha256": "785e47ff82fbdd4de0edfd9aaa8f6c112492743f60b58c6cc90259dea00b93a9",
+    "model_sha256": "c3f55c428df94acd61ae13cf320c5968e120a5ba7412bbe90c9feaab13b8e291",
+    "training_sha256": "377b13cbe39ac94d491c80a015c67dd0c9905fabe26db5ac1cb5a265c84e24d6",
+    "transition_audit_sha256": "c3af867a234bb74007f21a0a90c3caa078d233a1b5562411eeb960a4168b09ad",
+    "transition_source_sha256": "e9220cc6b5c80633dfee92a67d5313d2cbcf9aa4369adff35aac3da9bae56517"
+  },
+  "schema_version": "ptcg_experiment_v2",
+  "status": "v7_user_stopped_waiting_for_user_sota_selection",
+  "training_contract": {
+    "batch_size": 96,
+    "early_stopping_metric": "validation exact-action accuracy",
+    "early_stopping_patience": 5,
+    "learning_rate": 0.0003,
+    "maximum_epochs": 40,
+    "random_initialization_per_version": true,
+    "seed": 20260723,
+    "train_and_validation_every_epoch": true,
+    "weight_decay": 0.02
+  },
+  "versions": [
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v1_baseline_control.json",
+      "config_sha256": "d8b44c36b66f3a04a54f2dac5d9652d3d523260a3a5e6a4cad4f2a5e5684200f",
+      "best_validation_exact": 0.8389289271693913,
+      "status": "completed",
+      "tag": "baseline_control",
+      "version": 1
+    },
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v2_no_position_permutation.json",
+      "config_sha256": "8656ee43079ae95a3a124b62566d9544cf5776532f7f6cb02872a6ecb1015a21",
+      "depends_on_evidence": "V1 baseline and permutation audit",
+      "best_validation_exact": 0.8376984824515146,
+      "status": "completed",
+      "tag": "no_position_permutation",
+      "version": 2
+    },
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v3_role_separated_action.json",
+      "config_sha256": "8fe2b90394034a0a1cf290d996043f3fc64f7ca80f5c0fa70e211a7b149608df",
+      "depends_on_evidence": "V2 action-ordering foundation",
+      "best_validation_exact": 0.8437921134352845,
+      "status": "completed_current_offline_sota",
+      "tag": "role_separated_action",
+      "version": 3
+    },
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v4_action_primitive_context.json",
+      "config_sha256": "d49dd6564c4a32f2fde0b823bedb46cf96c6575d4abbaaf14168291687331125",
+      "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering",
+      "dataset_audit_sha256": "a140aa5be9f89ca7066386a9a4218066af7863a6816a68f2d3d595de03dd0d76",
+      "depends_on_evidence": "V3 role-separated action foundation",
+      "failure": "option_primitive_cat was not permuted with option_cat",
+      "status": "invalid_encoding_interrupted_after_epoch_1",
+      "tag": "action_primitive_context",
+      "version": 4
+    },
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v5_action_primitive_permutation_fix.json",
+      "config_sha256": "4d02c0f2972003ff7c5db64e728e4cceacd8be0bd94cbe280b72424bee6ed198",
+      "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering",
+      "dataset_audit_sha256": "a140aa5be9f89ca7066386a9a4218066af7863a6816a68f2d3d595de03dd0d76",
+      "depends_on_evidence": "V4 encoding failure and passing primitive permutation regression test",
+      "best_validation_exact": 0.8450225581531611,
+      "status": "completed_current_offline_exact_sota",
+      "tag": "action_primitive_permutation_fix",
+      "version": 5
+    },
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v6_chosen_transition_aux.json",
+      "config_sha256": "12508f5dc0b2b0374411497e9e17ab4ed2f463220874d27d82bc0cb49008b51d",
+      "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering/transition_v1",
+      "dataset_audit_sha256": "69f98af52e0d925af3fbfda57e30384f303ce79238417f4e13e4e82ea4800825",
+      "depends_on_evidence": "valid V5 action primitive/context result and full E4 label audit",
+      "failure": "AMP stop-mask used pointer dtype minimum and overflowed FP16 stop tensor",
+      "status": "failed_before_first_batch",
+      "tag": "chosen_transition_aux",
+      "version": 6
+    },
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v7_chosen_transition_amp_fix.json",
+      "config_sha256": "13ba9d10c6a777cff1adcc3aa083b77a76383a8124010a8aaef805e7272501dc",
+      "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering/transition_v1",
+      "dataset_audit_sha256": "69f98af52e0d925af3fbfda57e30384f303ce79238417f4e13e4e82ea4800825",
+      "depends_on_evidence": "V6 AMP failure and passing autocast mask regression test",
+      "best_validation_exact": 0.8438507060408976,
+      "last_completed_epoch": 21,
+      "status": "user_stopped_during_epoch_22",
+      "tag": "chosen_transition_amp_fix",
+      "version": 7
+    },
+    {
+      "config": "train/alakazam_sota_feature_engineering/configs/0012_v8_action_history.json",
+      "config_sha256": "8d1361852a1ae7da38cc801d80643d1b5736a9aa0d9cbd3e9861eddce88e4c3f",
+      "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering/history_v1",
+      "dataset_audit_sha256": "d02653d146704c1bae1802d8122552ef87075a30eff13a48340a929cdd8c3f20",
+      "depends_on_evidence": "V3 role-separated action result",
+      "status": "paused_not_started_by_user_direction",
+      "tag": "action_history",
+      "version": 8
+    },
+    {
+      "config": "rl_runs/artifact/0012-alakazam_sota_feature_engineering/V9_live_action_count_contract/policy_update_config.json",
+      "depends_on_evidence": "V1-V5 official game errors and V1 zero-error long-decode probe",
+      "model_parameter_update": false,
+      "status": "implemented_probe_validated_formal_evaluation_pending",
+      "tag": "live_action_count_contract",
+      "version": 9
+    }
+  ]
+}
