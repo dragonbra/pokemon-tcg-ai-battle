@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import argparse
+import hashlib
 import json
 import subprocess
 from dataclasses import dataclass
@@ -18,6 +19,8 @@ CHECKPOINT_ROOT = RUNS_ROOT / "checkpoint"
 NUMBERED_ARTIFACT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
 EXPERIMENT_DIR = re.compile(r"^(?P<number>\d{4})-(?P<label>[a-z0-9][a-z0-9_-]*)$")
 VERSIONED_ATTEMPT = re.compile(r"^V(?P<version>[1-9]\d*)_(?P<tag>[a-z0-9][a-z0-9_]*)$")
+WANDB_PROJECT = "pokemon-tcg-policy-learning"
+WANDB_METRIC_SCHEMA = "ptcg_tracking_v1"
 
 
 @dataclass(frozen=True)
@@ -30,6 +33,16 @@ class TrainingPaths:
     config: Path
     metrics: Path
     summary: Path
+
+
+def wandb_run_id(experiment_id: str, version_name: str) -> str:
+    """Return a stable W&B-safe ID for one immutable repository version."""
+    identity = f"{experiment_id}--{version_name}"
+    normalized = re.sub(r"[^a-z0-9_-]+", "-", identity.lower()).strip("-_")
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:10]
+    prefix_length = 64 - len(digest) - 1
+    prefix = normalized[:prefix_length].rstrip("-_") or "run"
+    return f"{prefix}-{digest}"
 
 
 def training_paths(output: Path) -> TrainingPaths:
@@ -160,6 +173,11 @@ def initialize_experiment(
             "checkpoint": str(checkpoint.relative_to(RUNS_ROOT.parent)),
             "evaluation": str(evaluation.relative_to(RUNS_ROOT.parent)),
             "dataset": None,
+        },
+        "tracking": {
+            "metric_schema": WANDB_METRIC_SCHEMA,
+            "wandb_mode": "disabled",
+            "wandb_project": WANDB_PROJECT,
         },
         **(metadata or {}),
     }
