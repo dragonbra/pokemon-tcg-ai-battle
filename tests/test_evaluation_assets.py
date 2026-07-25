@@ -12,9 +12,7 @@ CATALOG_PATH = ROOT / "evaluation" / "configs" / "opponents.json"
 ARENA_ROOT = ROOT / "evaluation" / "arena"
 OPPONENTS_ROOT = ARENA_ROOT / "opponents"
 CANDIDATES_ROOT = ARENA_ROOT / "candidates"
-EVALUATION_CG_BASELINE = (
-    ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
-)
+EVALUATION_CG_BASELINE = ROOT / "evaluation" / "arena" / "opponents" / "alakazam_dudunsparce_01" / "cg"
 FOREIGN_EVALUATION_REPOSITORY = "/Users/hejinyu/Documents/repos/ptcg-agent-kaggle"
 EXPECTED_NAMES = (
     "alakazam_dudunsparce_01",
