@@ -1,0 +1,114 @@
+{
+  "schema_version": "alakazam_sota_reward_weighted_bc_v1",
+  "model": {
+    "max_card_id": 2048,
+    "d_model": 320,
+    "heads": 8,
+    "encoder_layers": 4,
+    "ffn_multiplier": 3,
+    "dropout": 0.1,
+    "max_entities": 192,
+    "max_options": 128,
+    "max_action_steps": 16
+  },
+  "reward": {
+    "components": [
+      {
+        "name": "terminal_outcome",
+        "field": "terminal_outcome",
+        "weight": 1.0,
+        "enabled": true,
+        "clip_min": -1.0,
+        "clip_max": 1.0
+      },
+      {
+        "name": "opening_active_abra",
+        "field": "reward_metrics.decision.opening_active_abra_credit",
+        "weight": 0.3,
+        "enabled": true
+      },
+      {
+        "name": "second_turn_setup",
+        "field": "reward_metrics.decision.second_turn_setup_credit",
+        "weight": 0.2,
+        "enabled": true
+      },
+      {
+        "name": "dunsparce_first_turn_setup",
+        "field": "reward_metrics.decision.dunsparce_first_turn_setup_credit",
+        "weight": 0.4,
+        "enabled": true
+      },
+      {
+        "name": "dunsparce_second_turn_execution",
+        "field": "reward_metrics.decision.dunsparce_second_turn_execution_credit",
+        "weight": 0.6,
+        "enabled": true
+      },
+      {
+        "name": "attack_prize_delta",
+        "field": "reward_metrics.decision.attack_prize_delta",
+        "weight": 0.25,
+        "enabled": true
+      },
+      {
+        "name": "non_prize_attack_penalty",
+        "field": "reward_metrics.decision.non_prize_attack",
+        "weight": -0.25,
+        "enabled": true
+      },
+      {
+        "name": "powerful_hand_non_prize_penalty",
+        "field": "reward_metrics.decision.powerful_hand_non_prize_attack",
+        "weight": -0.25,
+        "enabled": true
+      },
+      {
+        "name": "post_ko_relay",
+        "field": "reward_metrics.decision.post_ko_relay_credit",
+        "weight": 0.4,
+        "enabled": true
+      },
+      {
+        "name": "recoverable_discard_miss_penalty",
+        "field": "reward_metrics.decision.recoverable_discard_miss",
+        "weight": -0.25,
+        "enabled": true
+      },
+      {
+        "name": "turn_count_penalty",
+        "field": "reward_metrics.episode.game_turn_count",
+        "weight": -0.01,
+        "enabled": false,
+        "clip_min": 0.0,
+        "clip_max": 30.0
+      }
+    ],
+    "clip_min": -2.0,
+    "clip_max": 2.0
+  },
+  "weighting": {
+    "mode": "exponential",
+    "baseline": "dataset_mean",
+    "temperature": 1.0,
+    "linear_scale": 1.0,
+    "min_weight": 0.2,
+    "max_weight": 4.0
+  },
+  "batch_size": 96,
+  "epochs": 20,
+  "learning_rate": 0.0004,
+  "weight_decay": 0.02,
+  "grad_clip": 1.0,
+  "seed": 20260725,
+  "shuffle_buffer_size": 4096,
+  "train_eval_interval": 1,
+  "minimum_epochs_before_stop": 8,
+  "early_stopping_patience": 5,
+  "log_every_batches": 100,
+  "amp": true,
+  "device": "cuda",
+  "max_model_mib": 50.0,
+  "storage_path": ".",
+  "min_free_gib": 20.0
+}

@@ -1,0 +1,74 @@
+{
+  "best_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0011-alakazam_sota_reward_weighted_bc/V3_no_turn_count_or_generic_non_prize/best_validation.pt",
+  "best_epoch": 10,
+  "best_exact_checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0011-alakazam_sota_reward_weighted_bc/V3_no_turn_count_or_generic_non_prize/best_exact.pt",
+  "best_exact_epoch": 14,
+  "best_exact_validation": {
+    "decisions": 17067.0,
+    "exact_action_accuracy": 0.8398078162535888,
+    "loss": 0.2344997234659626,
+    "token_accuracy": 0.9221468431994748
+  },
+  "best_validation": {
+    "decisions": 17067.0,
+    "exact_action_accuracy": 0.8336555926642057,
+    "loss": 0.2239417485588684,
+    "token_accuracy": 0.9198763540868804
+  },
+  "checkpoint_selection": "minimum unweighted validation token cross-entropy",
+  "early_stopping_patience": 5,
+  "epochs_without_loss_improvement": 5,
+  "fp32_model_mib": 27.29248809814453,
+  "last_epoch": {
+    "runtime/epoch_seconds": 327.2510014650179,
+    "train/mean_weight": 1.0296021108273627,
+    "train/tokens": 477022.0,
+    "train/weighted_loss": 0.1343949436527537,
+    "train_eval/decisions": 221289.0,
+    "train_eval/exact_action_accuracy": 0.8796099218668799,
+    "train_eval/loss": 0.15947952943848126,
+    "train_eval/token_accuracy": 0.9430319775607834,
+    "validation/decisions": 17067.0,
+    "validation/exact_action_accuracy": 0.8352375930157614,
+    "validation/loss": 0.23904957107621583,
+    "validation/token_accuracy": 0.9201499069920123
+  },
+  "minimum_epochs_before_stop": 8,
+  "parameter_count": 7154562,
+  "reward_distribution": {
+    "component_means": {
+      "attack_prize_delta": 0.01416586454817004,
+      "dunsparce_first_turn_setup": 0.007523193651740956,
+      "dunsparce_second_turn_execution": -0.0172986456624577,
+      "opening_active_abra": 0.01301736643032544,
+      "post_ko_relay": -0.007900980166208549,
+      "powerful_hand_non_prize_penalty": -0.005356118017614974,
+      "recoverable_discard_miss_penalty": -0.0006676789176145222,
+      "second_turn_setup": 0.002652639760674939,
+      "terminal_outcome": 1.0
+    },
+    "component_nonzero_records": {
+      "attack_prize_delta": 10101,
+      "dunsparce_first_turn_setup": 5052,
+      "dunsparce_second_turn_execution": 11424,
+      "opening_active_abra": 14706,
+      "post_ko_relay": 4769,
+      "powerful_hand_non_prize_penalty": 4741,
+      "recoverable_discard_miss_penalty": 591,
+      "second_turn_setup": 72557,
+      "terminal_outcome": 221289
+    },
+    "max": 2.0,
+    "mean": 1.0061080758645933,
+    "min": 0.20000000000000007,
+    "p05": 0.6,
+    "p50": 1.0,
+    "p95": 1.5,
+    "population_std": 0.24073410660425948,
+    "records": 221289
+  },
+  "runtime_seconds": 4855.196289168001,
+  "status": "completed",
+  "stopped_early": true,
+  "test_evaluated": false
+}

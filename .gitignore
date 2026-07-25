@@ -39,3 +39,8 @@ data/replays/*
 .DS_Store
 .claude/settings.local.json
 .hermes/
+
+# Exported model weights and packaged submissions stay local.
+evaluation/arena/candidates/**/strategy/model.bin
+submission/**/strategy/model.bin
+submission/dist/*.tar.gz
