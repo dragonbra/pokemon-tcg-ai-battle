@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pokémon TCG 对战环境日报</title>
+  <style>
+    :root { color-scheme: light; --bg:#f3f4f0; --paper:#fff; --ink:#18231f;
+      --muted:#68746e; --line:#dce3df; --green:#16785d; --soft:#dff2e9; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--bg); line-height:1.55;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    main { width:min(1080px,calc(100% - 32px)); margin:40px auto 80px; }
+    header { padding:42px; border-radius:24px; color:#effcf6;
+      background:linear-gradient(135deg,#102b24,#16785d); }
+    h1 { margin:4px 0 12px; font-size:clamp(34px,6vw,64px); line-height:1.05; }
+    header p { max-width:760px; margin:0; color:#d4eade; font-size:18px; }
+    section { margin-top:22px; padding:28px; border:1px solid var(--line); border-radius:20px;
+      background:var(--paper); box-shadow:0 12px 35px rgba(27,49,40,.07); }
+    .report { display:grid; grid-template-columns:120px 1fr auto; align-items:center; gap:20px;
+      padding:18px 0; border-top:1px solid var(--line); }
+    .report:first-of-type { border-top:0; }
+    time { color:var(--green); font-weight:800; }
+    h2,h3,p { margin-top:0; } h3 { margin-bottom:5px; }
+    .report p { margin:0; color:var(--muted); }
+    a.button { display:inline-block; padding:10px 16px; border-radius:12px; color:#fff;
+      background:var(--green); font-weight:750; text-decoration:none; white-space:nowrap; }
+    .note { color:var(--muted); }
+    @media(max-width:700px) { .report { grid-template-columns:1fr; } header,section { padding:22px; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p>Pokémon TCG AI Battle · Ladder Environment</p>
+    <h1>对战环境日报</h1>
+    <p>这里按日期索引排行榜、公开 episodes、卡组构成与 match-up 的环境分析。它描述的是竞赛对战环境，不是本项目的研发进展日报。</p>
+  </header>
+
+  <section>
+    <h2>日报归档</h2>
+    <article class="report">
+      <time datetime="2026-07-25">2026-07-25</time>
+      <div>
+        <h3>Top 100 Deck 环境与 Match-up 分析</h3>
+        <p>分析当日 Top 100 卡组环境、代表策略和对局关系。</p>
+      </div>
+      <a class="button" href="daily/2026-07-25.html">查看日报</a>
+    </article>
+    <article class="report">
+      <time datetime="2026-07-23">2026-07-23</time>
+      <div>
+        <h3>Kaggle Top 100 BC 候选调研</h3>
+        <p>早期 Top 100 环境与 BC 候选分析报告。</p>
+      </div>
+      <a class="button" href="daily/2026-07-23.html">查看日报</a>
+    </article>
+  </section>
+
+  <section>
+    <h2>目录约定</h2>
+    <p class="note">以后收到“做 Kaggle Top 100 环境日报”的任务时，最终 HTML 统一保存为 <code>daily/YYYY-MM-DD.html</code>，并在本页按日期倒序增加入口。每次分析所使用的源数据由当次任务另行指定；本目录只负责保存和索引最终报告。</p>
+  </section>
+</main>
+</body>
+</html>
