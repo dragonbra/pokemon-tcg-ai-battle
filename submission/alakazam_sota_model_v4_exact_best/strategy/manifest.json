@@ -1,9 +1,0 @@
-{
-  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0010-alakazam_sota_model/V4_resume_rng_fix/best_exact.pt",
-  "checkpoint_sha256": "5b1c4263268611459ccd88f594cd4b5782520a167e32da752e6c55bac8c13eaa",
-  "deck_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
-  "model_bytes": 28649287,
-  "model_sha256": "b61afed8bd0f4b367addf63ac8bd561554634b24c12e452ef5dfeb0f9c794680",
-  "schema_version": "alakazam_sota_candidate_v1",
-  "source_package": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/evaluation/arena/candidates/0010_v2_empty_entity_fix"
-}

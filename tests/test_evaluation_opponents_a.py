@@ -14,7 +14,7 @@ from evaluation.runtime.loader import compute_cg_manifest
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 DECK_FIXTURE = REPOSITORY_ROOT / "tests" / "fixtures" / "evaluation_opponent_decks.json"
 CG_SOURCE_ROOT = (
-    REPOSITORY_ROOT / "submission" / "alakazam_gen1_rule_based" / "alakazam_v8" / "cg"
+    REPOSITORY_ROOT / "evaluation" / "arena" / "opponents" / "alakazam_dudunsparce_01" / "cg"
 )
 OPPONENT_NAMES = (
     "mega_lucario_ex_solrock_01",

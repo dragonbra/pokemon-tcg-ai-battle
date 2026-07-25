@@ -97,7 +97,7 @@
 
 - `CURRENT_STATE.md`：当前工作候选、已确认基线、最近结果和下一步目标；
 - `DESIGN_PRINCIPLES.md`：从规则研究和历史实验中沉淀出的策略设计原则；
-- `RULES.md`：官方规则和 simulator 行为的可执行摘要，详细证据链接到 `docs/reports/rules/`；
+- `RULES.md`：官方规则和 simulator 行为的可执行摘要，详细证据链接到 `docs/rules/`；
 - `EVALUATION.md`：历史评测结果、关键指标、分母和报告链接；
 - `CHANGELOG.md`：单一 Alakazam 卡组从 V1 到当前版本的重大变化和原因。
 
@@ -131,7 +131,7 @@
 - control、candidate、focused evaluation 和 promotion 的流程；
 - iteration manifest、analysis、decision 和 case 的模板。
 
-具体迭代结果继续放入 `docs/reports/kaggle/` 或其他报告目录，精炼后的结论登记到
+具体迭代结果继续放入 `docs/history/kaggle/` 或其他报告目录，精炼后的结论登记到
 `codex/index/EVALUATION.md` 和 `codex/index/CHANGELOG.md`。
 
 #### `work/alakazam_v8_<candidate-name>/`
