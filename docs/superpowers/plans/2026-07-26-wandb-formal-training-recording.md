@@ -75,7 +75,7 @@ Require the version status or summary to retain the W&B project, stable run ID o
 
 **Files:**
 - Modify: `train/alakazam_bc_rl/DESIGN.html`
-- Modify: `docs/reports/rl/wandb-bc-rl-experiment-tracking-design-20260725.html`
+- Modify: `docs/training/rl/wandb-bc-rl-experiment-tracking-design-20260725.html`
 
 **Interfaces:**
 - Consumes: the completed online run and API verification.
@@ -100,7 +100,7 @@ from pathlib import Path
 
 for name in (
     "train/alakazam_bc_rl/DESIGN.html",
-    "docs/reports/rl/wandb-bc-rl-experiment-tracking-design-20260725.html",
+    "docs/training/rl/wandb-bc-rl-experiment-tracking-design-20260725.html",
 ):
     parser = HTMLParser()
     parser.feed(Path(name).read_text(encoding="utf-8"))

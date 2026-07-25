@@ -26,9 +26,9 @@
 ### Task 1: Record and protect the external Sample baseline
 
 **Files:**
-- Create: docs/reports/kaggle/alakazam-v8-semantic-recovery/README.md
-- Create: docs/reports/kaggle/alakazam-v8-semantic-recovery/target-baseline.md
-- Create: docs/reports/kaggle/alakazam-v8-semantic-recovery/start-baseline.md
+- Create: docs/history/kaggle/alakazam-v8-semantic-recovery/README.md
+- Create: docs/history/kaggle/alakazam-v8-semantic-recovery/target-baseline.md
+- Create: docs/history/kaggle/alakazam-v8-semantic-recovery/start-baseline.md
 - Read: /tmp/ptcg-v8-target-baseline/
 - Read: /tmp/ptcg-v8-start-baseline/
 
@@ -153,8 +153,8 @@ python3 -m compileall -q work/alakazam_v8_current
 ### Task 5: Run external Sample iterations with storage cleanup
 
 **Files:**
-- Create: docs/reports/kaggle/alakazam-v8-semantic-recovery/iteration-logs/README.md
-- Create: docs/reports/kaggle/alakazam-v8-semantic-recovery/iteration-logs/iteration-001.md
+- Create: docs/history/kaggle/alakazam-v8-semantic-recovery/iteration-logs/README.md
+- Create: docs/history/kaggle/alakazam-v8-semantic-recovery/iteration-logs/iteration-001.md
 - Read: scripts/alakazam_auto_iter.py
 - Read: /Users/hejinyu/Documents/repos/ptcg-agent-kaggle/eval/alakazam_replay.py
 

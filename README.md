@@ -56,7 +56,7 @@ Kaggle expert replay
 - 一个 BC dataset 默认只包含一个明确的 team/agent policy；不同专家不能无条件混合标签。
 - 同一 experiment 的每次训练使用新的 `V<n>_<tag>`，run、checkpoint、TensorBoard 和
   evaluation 版本名保持一致，失败版本也不覆盖或删除。
-- `evaluation/arena/candidates/` 保存待验收 package，`submission/` 保存历史正式 payload；
+- `evaluation/arena/candidates/` 保存待验收 package，`archive/submission/` 保存历史正式 payload；
   训练 checkpoint 和研究 candidate 不是 Kaggle submission。
 - `evaluation/` 负责测量和报告，不自动执行 promote/reject，也不替代 Kaggle 官方成绩。
 
@@ -64,17 +64,15 @@ Kaggle expert replay
 
 | 路径 | 职责 |
 |---|---|
-| [`submission/`](submission/) | 历史提交源目录、规则代理归档和正式 BC payload |
+| [`archive/submission/`](archive/submission/) | 项目 `0010`–`0012` 的历史正式 payload 归档 |
 | [`rl_environment/`](rl_environment/) | 与卡组无关的训练基础设施、run 分配和存储保护 |
 | [`train/alakazam_bc_rl/`](train/alakazam_bc_rl/) | 胡地 BC/RL 的特征、模型、reward/loss 与训练入口 |
-| [`train/kaggle_bc_top20/`](train/kaggle_bc_top20/) | Top-20 单专家 BC 数据与 Kaggle worker 归档项目 |
 | [`rl_runs/`](rl_runs/) | 可审计的 config、metrics、status、TensorBoard 索引和 evaluation 报告 |
 | [`evaluation/`](evaluation/) | arena candidates/opponents、独立 worker、指标插件和独立 HTML 报告 |
 | [`visualization/`](visualization/) | Kaggle replay 与 engine `visualize` 帧的统一 viewer launcher |
 | [`engine/`](engine/) | 官方引擎只读源码和本地构建边界；构建产物只写 `engine/build/` |
-| [`data/official/`](data/official/) | 官方卡牌参考数据，只读使用，不直接打包 |
-| [`docs/reports/`](docs/reports/) | 研究报告、规则证据、Kaggle 复盘和实现结论 |
-| [`scripts/`](scripts/) | 只保留 TensorBoard 启动入口，不放一次性训练/规则脚本 |
+| [`data/`](data/) | 官方卡牌参考、每日原始 episodes/排行榜快照及机器派生数据 |
+| [`docs/`](docs/) | 按环境、评测、训练、规则等主题组织的文档总入口 |
 | [`tests/`](tests/) | evaluation、资产、可视化和 RL 数据/训练回归测试 |
 
 大体积 dataset、checkpoint 和临时 replay 不进入 Git。BC 数据和 checkpoint 分别位于
@@ -83,13 +81,11 @@ Kaggle expert replay
 
 ## 环境安装
 
-项目要求 Python 3.11+：
+项目要求 Python 3.11+。依赖统一安装到宿主机 Python 环境：
 
 ```bash
-python3.11 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e '.[rl]'
+python3 -m pip install --upgrade pip
+python3 -m pip install -e '.[rl]'
 ```
 
 基础依赖包含 Kaggle 客户端和数据工具；`rl` extra 安装 PyTorch、NumPy 与 TensorBoard。
@@ -232,5 +228,6 @@ python3 -m unittest -v tests.test_evaluation_assets
 - [Evaluation 使用说明](evaluation/README.md)
 - [Replay 可视化](visualization/README.md)
 - [官方引擎边界](engine/README.md)
-- [研究报告索引](docs/reports/README.md)
-- [历史 submission 说明](submission/README.md)
+- [对战环境日报](docs/environment-daily_kaggle_top100/index.html)
+- [项目文档索引](docs/README.md)
+- [历史 submission 说明](archive/submission/README.md)

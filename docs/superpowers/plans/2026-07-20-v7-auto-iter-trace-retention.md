@@ -22,7 +22,7 @@
 
 **Files:**
 - Read: `scripts/alakazam_auto_iter.py`
-- Read: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-37/analysis.md`
+- Read: `docs/history/kaggle/alakazam-v7-auto-iter/iter-37/analysis.md`
 - Read: `/Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7_auto_iter/iter-38-second-turn-bench-insurance-20260720/`
 - Read: `/Users/hejinyu/Documents/repos/ptcg-agent-kaggle/reports/alakazam_v7_auto_iter/iter-39-fresh-bench-second-turn-20260720/`
 
@@ -33,8 +33,8 @@
 ### Task 2: 生成 iter-38/39 轻量报告
 
 **Files:**
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-38/{metrics.json,analysis.md,cases.jsonl,advisor.md,decision.md}`
-- Create: `docs/reports/kaggle/alakazam-v7-auto-iter/iter-39/{metrics.json,analysis.md,cases.jsonl,advisor.md,decision.md}`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-38/{metrics.json,analysis.md,cases.jsonl,advisor.md,decision.md}`
+- Create: `docs/history/kaggle/alakazam-v7-auto-iter/iter-39/{metrics.json,analysis.md,cases.jsonl,advisor.md,decision.md}`
 - Modify: `scripts/alakazam_auto_iter.py` only if an existing analyzer defect prevents the documented metrics from being generated.
 
 - [ ] 对 iter-38 全量 trace 运行现有 analyzer，输出统一 metrics、失败 case 和分析摘要。
@@ -46,7 +46,7 @@
 
 **Files:**
 - Modify: `submission/alakazam_v7_auto_iter/ITER_PROCESS.md`
-- Modify: `docs/reports/kaggle/alakazam-v7-auto-iter/README.md` if trace retention policy needs clarification.
+- Modify: `docs/history/kaggle/alakazam-v7-auto-iter/README.md` if trace retention policy needs clarification.
 
 - [ ] 追加 iter-38 和 iter-39 的最小改动、前后指标、随机样本说明、action error、采纳状态。
 - [ ] 明确 iter-38 因 broad Poffin gate 退回，iter-39 因 narrow fresh-bench gate 的结果和当前处理结论。
