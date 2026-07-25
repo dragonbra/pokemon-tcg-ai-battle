@@ -61,7 +61,7 @@
     "transition_source_sha256": "e9220cc6b5c80633dfee92a67d5313d2cbcf9aa4369adff35aac3da9bae56517"
   },
   "schema_version": "ptcg_experiment_v2",
-  "status": "v7_user_stopped_waiting_for_user_sota_selection",
+  "status": "v9_v1_exact_best_submitted_once_complete",
   "training_contract": {
     "batch_size": 96,
     "early_stopping_metric": "validation exact-action accuracy",
@@ -159,7 +159,13 @@
       "config": "rl_runs/artifact/0012-alakazam_sota_feature_engineering/V9_live_action_count_contract/policy_update_config.json",
       "depends_on_evidence": "V1-V5 official game errors and V1 zero-error long-decode probe",
       "model_parameter_update": false,
-      "status": "implemented_probe_validated_formal_evaluation_pending",
+      "kaggle_submission": {
+        "audit": "rl_runs/artifact/0012-alakazam_sota_feature_engineering/KAGGLE_SUBMISSION.json",
+        "public_score": 703.6,
+        "status": "SubmissionStatus.COMPLETE",
+        "submission_ref": 54971811
+      },
+      "status": "implemented_probe_validated_v1_exact_best_submitted_once",
       "tag": "live_action_count_contract",
       "version": 9
     }

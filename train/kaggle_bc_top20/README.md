@@ -163,7 +163,7 @@ python3 -m evaluation run \
   --worker-cpu-threads 1 \
   --metric-profile auto_iteration_v8_setup_relay \
   --no-visualize \
-  --output rl_runs/evaluation/<experiment>/V<n>_<tag>
+  --output rl_runs/evaluation/<000N-experiment>/V<n>_<tag>.html
 ```
 
 只有 package validation 和 18×10 official-engine evaluation 都有完整证据后，才物理复制

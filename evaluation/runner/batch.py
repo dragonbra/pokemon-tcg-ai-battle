@@ -19,7 +19,13 @@ from evaluation.metrics import GameContext, GameMetric
 from evaluation.metrics.profiles import get_metric_profile
 from evaluation.metrics.registry import MetricRegistry, create_metric_registry
 from evaluation.packages.loader import SubmissionPackage
-from evaluation.reporting import ReportData, json_ready, write_report
+from evaluation.reporting import (
+    ReportData,
+    json_ready,
+    write_evaluation_index,
+    write_report,
+    write_report_file,
+)
 from evaluation.runner.models import GameRequest, GameResult
 from evaluation.traces.store import TraceStore
 
@@ -41,6 +47,8 @@ class BatchConfig:
     output_root: Path
     visualize: bool
     max_steps: int
+    report_path: Path | None = None
+    update_project_index: bool = False
     control: SubmissionPackage | None = None
     plugin_ids: tuple[str, ...] = ()
     metric_module_paths: tuple[str, ...] = ()
@@ -59,6 +67,7 @@ class BatchResult:
     metric_results: dict[str, object]
     case_records: tuple
     report_data: ReportData
+    report_path: Path
 
 
 def run_batch(config: BatchConfig) -> BatchResult:
@@ -74,7 +83,17 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("worker_cpu_threads must be at least one")
 
     run_id = f"run-{uuid.uuid4().hex}"
-    report_root = config.output_root.resolve() / run_id
+    explicit_report_path = config.report_path.resolve() if config.report_path else None
+    if explicit_report_path is not None:
+        if explicit_report_path.suffix.lower() != ".html":
+            raise ValueError("evaluation report path must end with .html")
+        if explicit_report_path.exists():
+            raise ValueError(f"evaluation report already exists: {explicit_report_path}")
+        report_root = explicit_report_path.parent
+        final_report_path = explicit_report_path
+    else:
+        report_root = config.output_root.resolve() / run_id
+        final_report_path = report_root / "report.html"
     temp_root = Path(tempfile.gettempdir()) / "evaluation" / run_id
     store = TraceStore(temp_root, report_root)
     registry = _metric_registry(
@@ -152,7 +171,12 @@ def run_batch(config: BatchConfig) -> BatchResult:
             presentations=presentations,
             presentation_errors=presentation_errors,
         )
-        write_report(report_data, report_root)
+        if explicit_report_path is None:
+            write_report(report_data, report_root)
+        else:
+            write_report_file(report_data, explicit_report_path)
+            if config.update_project_index:
+                write_evaluation_index(explicit_report_path.parent)
         return BatchResult(
             run_id=run_id,
             manifest=manifest,
@@ -160,6 +184,7 @@ def run_batch(config: BatchConfig) -> BatchResult:
             metric_results=metric_results,
             case_records=case_records,
             report_data=report_data,
+            report_path=final_report_path,
         )
     finally:
         if not config.keep_temp:
@@ -654,7 +679,7 @@ def _manifest(
         "wall_time_seconds": wall_time_seconds,
         "artifact_policy": {
             "mode": "report_only",
-            "retained_files": ["report.html"],
+            "retained_files": [config.report_path.name if config.report_path else "report.html"],
         },
         "trace_policy": {
             "retain_limit": 0,

@@ -326,7 +326,7 @@ python3 -m evaluation run \
   --worker-cpu-threads 1 \
   --metric-profile auto_iteration_v8_setup_relay \
   --no-visualize \
-  --output rl_runs/<experiment>/evaluation/V1_online_ppo_smoke
+  --output rl_runs/evaluation/<000N-experiment>/V1_online_ppo_smoke.html
 ```
 
 必须 180/180 completed、0 error。结果交给用户审核；不因训练指标、一次 rollout 胜率或

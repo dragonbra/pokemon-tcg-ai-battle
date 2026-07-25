@@ -62,6 +62,24 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertIsNone(args.workers)
         self.assertEqual(args.worker_cpu_threads, 1)
 
+    def test_formal_output_is_one_versioned_html_in_project_root(self) -> None:
+        requested = Path(
+            "rl_runs/evaluation/0012-alakazam_sota_feature_engineering/"
+            "V10_action_contract_fix"
+        )
+
+        output_root, report_path = cli._evaluation_output_paths(requested)
+
+        expected = (Path.cwd() / requested).resolve().with_suffix(".html")
+        self.assertEqual(report_path, expected)
+        self.assertEqual(output_root, expected.parent)
+
+    def test_formal_output_rejects_missing_version_name(self) -> None:
+        requested = Path("rl_runs/evaluation/0012-alakazam_sota_feature_engineering")
+
+        with self.assertRaisesRegex(PackageValidationError, "formal evaluation output"):
+            cli._evaluation_output_paths(requested)
+
     def test_validate_prints_standard_package_fingerprints(self) -> None:
         output = io.StringIO()
         with (

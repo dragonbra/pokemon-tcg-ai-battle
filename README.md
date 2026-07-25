@@ -32,7 +32,7 @@
 - [RL 实验索引](rl_runs/INDEX.html)
 - [0003 决策记录](rl_runs/0003-yushin_ito_exact_bc_v2/decisions.md)
 - [V2 训练摘要](rl_runs/0003-yushin_ito_exact_bc_v2/V2_card_token_fix/training_summary.json)
-- [V2 官方引擎评测报告](rl_runs/0003-yushin_ito_exact_bc_v2/evaluation/V2_card_token_fix/run-8688bfdaa9c44059a7fec383b5f64f6e/report.html)
+- [V1 官方引擎评测报告](rl_runs/evaluation/0003-yushin_ito_exact_bc_v2/V1.html)
 - [当前 RL 模型设计](train/alakazam_bc_rl/DESIGN.html)
 
 这些结果验证了单 deck、单 expert 的 BC inference 和 full-action contract，不代表已经完成跨卡组
@@ -130,9 +130,11 @@ python3 -m evaluation run \
   --output .tmp/evaluation/yushin_ito_bc_capacity_v4
 ```
 
-正式入口固定使用完整启用 catalog（当前 23 个 opponent），每个至少 10 局。每次 run 建立独立 `run_id/`，长期只
-写入 `report.html`；manifest、summary、逐局轻量记录、metrics 和 case 摘要均内嵌其中，完整
-trace 默认在运行结束后删除。
+正式入口固定使用完整启用 catalog（当前 23 个 opponent），每个至少 10 局。正式实验必须把
+`--output` 指向 `rl_runs/evaluation/<000N-project>/V<n>_<tag>.html`，报告直接放在项目根目录；
+manifest、summary、逐局轻量记录、metrics 和 case 摘要均内嵌其中，完整 trace 默认在运行结束后删除。
+同一项目的 `index.html` 会在每次正式评测后自动刷新，汇总全部版本的关键结果并链接到各版本页面。
+临时 smoke/debug 输出仍可指向 `.tmp/evaluation/<purpose>`，由 CLI 创建隔离的 `run-<id>/report.html`。
 
 `auto_iteration_v8_setup_relay`（兼容 ID）当前为 revision 3，除胜负和正确性外，还展示二回合 setup、
 Powerful Hand、Post-KO relay、攻击质量和牌库健康等指标。它只定义指标与报告展示；
@@ -158,7 +160,8 @@ RL 子系统的目录关系如下：
 rl_runs/artifact/<000N-experiment>/<Vn_tag>/        # config、metrics、summary/status
 rl_runs/tensorboard/<000N-experiment>/<Vn_tag>/     # TensorBoard event
 rl_runs/checkpoint/<000N-experiment>/<Vn_tag>/      # 大模型文件，Git 忽略
-rl_runs/evaluation/<000N-experiment>/<Vn_tag>/      # 对应版本的真实对局报告
+rl_runs/evaluation/<000N-experiment>/index.html      # 项目全部版本的评测总览
+rl_runs/evaluation/<000N-experiment>/V<n>_<tag>.html # 对应版本的真实对局报告
 ```
 
 新项目先通过 `rl_environment.runs create` 分配全局编号；同一项目的新尝试严格递增 `V<n>`，不能把

@@ -29,6 +29,7 @@ DEFAULT_MAX_STEPS = 1_000
 MIN_RESEARCH_GAMES = 10
 RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl_runs"
 _NUMBERED_OUTPUT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
+_VERSION_REPORT = re.compile(r"^V[1-9]\d*(?:_[a-z0-9][a-z0-9_]*)?$", re.IGNORECASE)
 
 
 def _read_catalog_entries(path: Path) -> list[dict[str, Any]]:
@@ -233,6 +234,43 @@ def _numbered_research_output_root(requested: Path) -> Path:
     return numbered_artifact_path(requested, "evaluation")
 
 
+def _evaluation_output_paths(requested: Path) -> tuple[Path, Path | None]:
+    """Resolve formal reports to ``<project>/V<n>_<tag>.html``.
+
+    Non-formal outputs, including ``.tmp/evaluation``, retain the isolated
+    ``run-<id>/report.html`` layout used by smoke and debugging runs.
+    """
+    normalized = _numbered_research_output_root(requested)
+    evaluation_root = (Path(__file__).resolve().parents[1] / "rl_runs" / "evaluation").resolve()
+    resolved = normalized.resolve()
+    try:
+        relative = resolved.relative_to(evaluation_root)
+    except ValueError:
+        return normalized, None
+
+    if len(relative.parts) != 2:
+        raise PackageValidationError(
+            "formal evaluation output must be "
+            "rl_runs/evaluation/<000N-project>/V<n>_<snake_case_tag>[.html]"
+        )
+    project_name, requested_name = relative.parts
+    if _NUMBERED_OUTPUT.fullmatch(project_name) is None:
+        raise PackageValidationError(
+            "formal evaluation project must use a 0001-project style name"
+        )
+    version_name = (
+        Path(requested_name).stem
+        if requested_name.lower().endswith(".html")
+        else requested_name
+    )
+    if _VERSION_REPORT.fullmatch(version_name) is None:
+        raise PackageValidationError(
+            "formal evaluation report must match V<n>_<snake_case_tag>.html"
+        )
+    report_path = evaluation_root / project_name / f"{version_name}.html"
+    return report_path.parent, report_path
+
+
 def _validate_research_coverage(
     requested_opponents: str,
     games: int,
@@ -275,7 +313,15 @@ def _parser() -> argparse.ArgumentParser:
         default=10,
         help="每个 opponent 的对局数（默认且至少 10；固定 18 opponent catalog）",
     )
-    run.add_argument("--output", type=Path, required=True, help="评测报告根目录；RL 路径自动编号")
+    run.add_argument(
+        "--output",
+        type=Path,
+        required=True,
+        help=(
+            "评测输出；正式路径使用 "
+            "rl_runs/evaluation/<000N-project>/V<n>_<tag>.html，临时路径创建 run-id 目录"
+        ),
+    )
     run.add_argument("--control", type=Path, help="仅用于报告对比展示的标准 package")
     run.add_argument(
         "--visualize",
@@ -332,7 +378,9 @@ def _run(args: argparse.Namespace) -> str:
 
     candidate = load_submission_package(args.candidate, official_card_ids)
     control = (
-        load_submission_package(args.control, official_card_ids) if args.control is not None else None
+        load_submission_package(args.control, official_card_ids)
+        if args.control is not None
+        else None
     )
     opponents = _selected_opponents(
         args.opponents,
@@ -342,7 +390,7 @@ def _run(args: argparse.Namespace) -> str:
     for opponent in opponents:
         assert_cg_compatible(candidate, opponent)
 
-    args.output = _numbered_research_output_root(args.output)
+    args.output, args.report_path = _evaluation_output_paths(args.output)
 
     result = run_batch(
         BatchConfig(
@@ -350,6 +398,8 @@ def _run(args: argparse.Namespace) -> str:
             opponents=opponents,
             games_per_opponent=args.games,
             output_root=args.output,
+            report_path=args.report_path,
+            update_project_index=args.report_path is not None,
             visualize=args.visualize,
             max_steps=args.max_steps,
             control=control,
@@ -383,7 +433,8 @@ def main(argv: list[str] | None = None) -> int:
         parser.error(str(exc))
     else:
         print(f"run_id: {run_id}")
-        print(f"report: {(args.output / run_id).resolve()}")
+        report_path = args.report_path or (args.output / run_id / "report.html")
+        print(f"report: {report_path.resolve()}")
         return 0
     return 2
 
