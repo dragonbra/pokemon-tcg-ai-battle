@@ -1,0 +1,93 @@
+{
+  "created_at": "2026-07-24T17:19:25.500710+00:00",
+  "experiment_id": "0010-alakazam_sota_model",
+  "git_commit": "ed8fdbe8d39b88b97cde06bc7eb87a689e3c4b38",
+  "git_status_porcelain": "M rl_environment/README.md\n M tests/test_reward_weighted_bc.py\n M train/alakazam_bc_rl/METRICS.md\n M train/alakazam_reward_weighted_bc/DESIGN.html\n M train/alakazam_reward_weighted_bc/README.md\n M train/alakazam_reward_weighted_bc/annotate_rewards.py\n M train/alakazam_reward_weighted_bc/card_categories.py\n M train/alakazam_reward_weighted_bc/config.py\n M train/alakazam_reward_weighted_bc/configs/control.json\n M train/alakazam_reward_weighted_bc/configs/exploration_template.json\n M train/alakazam_reward_weighted_bc/data.py\n M train/alakazam_reward_weighted_bc/reward_annotations.py\n M train/alakazam_reward_weighted_bc/train.py\n?? docs/reports/kaggle/kaggle-bc-cloud-feasibility-20260723.md\n?? evaluation/arena/candidates/0009_v1_control_finetune/\n?? evaluation/arena/candidates/0009_v3_early_setup_rwb/\n?? evaluation/arena/candidates/0009_v5_setup_attack_quality_rwb/\n?? evaluation/arena/candidates/0009_v7_early_setup_long_curve/\n?? notebooks/\n?? replays/\n?? rl_environment/streaming.py\n?? rl_runs/artifact/0009-reward_weighted_bc/\n?? rl_runs/evaluation/0007-rank_006_mega_lopunny_ex_bc/\n?? rl_runs/evaluation/0009-reward_weighted_bc/\n?? rl_runs/tensorboard/0009-reward_weighted_bc/\n?? submission/alakazam_reward_weighted_bc_v7/\n?? submission/dist/alakazam_reward_weighted_bc_v7.tar.gz\n?? tests/test_alakazam_sota_model.py\n?? tests/test_rl_streaming.py\n?? train/alakazam_reward_weighted_bc/configs/0009_v1_control_finetune.json\n?? train/alakazam_reward_weighted_bc/configs/0009_v2_category_only.json\n?? train/alakazam_reward_weighted_bc/configs/0009_v3_early_setup_rwb.json\n?? train/alakazam_reward_weighted_bc/configs/0009_v4_setup_bridge_rwb.json\n?? train/alakazam_reward_weighted_bc/configs/0009_v5_setup_attack_quality_rwb.json\n?? train/alakazam_reward_weighted_bc/configs/0009_v6_setup_attack_relay_rwb.json\n?? train/alakazam_reward_weighted_bc/configs/0009_v7_early_setup_long_curve.json\n?? train/alakazam_reward_weighted_bc/evaluate_slices.py\n?? train/alakazam_reward_weighted_bc/export_candidate.py\n?? train/project_0010_alakazam_sota_model/",
+  "label": "alakazam_sota_model",
+  "objective": "Faithful reproduction of horizen12/ptcg-yushin-id-only-bc-v1 on the frozen 0009 Yushin winner-only corpus",
+  "dataset": {
+    "action_order_differences": 0,
+    "actor_mismatches": 0,
+    "audit": "rl_runs/dataset/0010-alakazam_sota_model/dataset_audit.json",
+    "episode_player_groups": 3104,
+    "episodes_by_split": {
+      "test": 0,
+      "train": 2875,
+      "validation": 229
+    },
+    "expert_policy": {
+      "selection": "daily winner-only",
+      "source_dates": "2026-07-13 through 2026-07-22",
+      "team_name": "Yushin Ito"
+    },
+    "outputs": {
+      "test_sha256": "45c413705e93bc5aceac3bc1cc0b00f532f01bcafbaff9ba26843e9c7cde8b2f",
+      "train_sha256": "89d425b778b75ee87ffea97245d7dfc9de0bc18164bfe8823ee1d85f91b8d0c7",
+      "validation_sha256": "38ef30e88891593f0ea3870f3b8bfa486fb765d1f5c64dd41ff505768b92d622"
+    },
+    "records_by_split": {
+      "test": 0,
+      "train": 221289,
+      "validation": 17067
+    },
+    "schema_version": "alakazam_sota_id_only_dataset_v1",
+    "source_dataset_sha256": "36415a61b93fdcdb2e1b17c0fbaebb9432f8d94ed0c203365b36cd3011b09bdf"
+  },
+  "paths": {
+    "checkpoint": "rl_runs/checkpoint/0010-alakazam_sota_model",
+    "dataset": "rl_runs/dataset/0010-alakazam_sota_model",
+    "evaluation": "rl_runs/evaluation/0010-alakazam_sota_model",
+    "run": "rl_runs/artifact/0010-alakazam_sota_model",
+    "tensorboard": "rl_runs/tensorboard/0010-alakazam_sota_model"
+  },
+  "schema_version": "ptcg_experiment_v2",
+  "reference": {
+    "notebook": "horizen12/ptcg-yushin-id-only-bc-v1",
+    "reproduction_boundary": "ID-only public-state codec, Transformer entity encoder, option cross-attention, GRU pointer decoder, and unweighted BC loss"
+  },
+  "status": "training_ready",
+  "versions": [
+    {
+      "artifact": "rl_runs/artifact/0010-alakazam_sota_model/V1_reference_notebook_reproduction",
+      "checkpoint": "rl_runs/checkpoint/0010-alakazam_sota_model/V1_reference_notebook_reproduction",
+      "config": "train/project_0010_alakazam_sota_model/configs/reference_notebook.json",
+      "status": "failed_empty_entity_collate",
+      "tag": "reference_notebook_reproduction",
+      "tensorboard": "rl_runs/tensorboard/0010-alakazam_sota_model/V1_reference_notebook_reproduction",
+      "version": 1
+    },
+    {
+      "artifact": "rl_runs/artifact/0010-alakazam_sota_model/V2_empty_entity_fix",
+      "checkpoint": "rl_runs/checkpoint/0010-alakazam_sota_model/V2_empty_entity_fix",
+      "config": "train/project_0010_alakazam_sota_model/configs/reference_notebook.json",
+      "delta": "Represent zero-entity rows with one fully masked padding entity slot; no non-empty encoding, attention, or objective change",
+      "status": "completed_epoch_6_pending_evaluation",
+      "tag": "empty_entity_fix",
+      "tensorboard": "rl_runs/tensorboard/0010-alakazam_sota_model/V2_empty_entity_fix",
+      "version": 2
+    },
+    {
+      "artifact": "rl_runs/artifact/0010-alakazam_sota_model/V3_continue_until_patience5",
+      "checkpoint": "rl_runs/checkpoint/0010-alakazam_sota_model/V3_continue_until_patience5",
+      "config": "train/project_0010_alakazam_sota_model/configs/continuation_until_patience5.json",
+      "resume_from": "rl_runs/checkpoint/0010-alakazam_sota_model/V2_empty_entity_fix/latest.pt",
+      "status": "startup_failed_rng_device_restore",
+      "stop_condition": "validation exact action accuracy fails to set a new historical best for 5 consecutive epochs",
+      "tag": "continue_until_patience5",
+      "tensorboard": "rl_runs/tensorboard/0010-alakazam_sota_model/V3_continue_until_patience5",
+      "version": 3
+    },
+    {
+      "artifact": "rl_runs/artifact/0010-alakazam_sota_model/V4_resume_rng_fix",
+      "checkpoint": "rl_runs/checkpoint/0010-alakazam_sota_model/V4_resume_rng_fix",
+      "config": "train/project_0010_alakazam_sota_model/configs/continuation_until_patience5.json",
+      "delta": "Restore serialized RNG ByteTensors on CPU after loading the resume checkpoint on CUDA",
+      "resume_from": "rl_runs/checkpoint/0010-alakazam_sota_model/V2_empty_entity_fix/latest.pt",
+      "status": "allocated",
+      "stop_condition": "validation exact action accuracy fails to set a new historical best for 5 consecutive epochs",
+      "tag": "resume_rng_fix",
+      "tensorboard": "rl_runs/tensorboard/0010-alakazam_sota_model/V4_resume_rng_fix",
+      "version": 4
+    }
+  ]
+}
