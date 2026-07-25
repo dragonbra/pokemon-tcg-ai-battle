@@ -324,6 +324,7 @@
       <a href="#capacity">容量搜索</a>
       <a href="#stages">BC → RL</a>
       <a href="#gaps">边界</a>
+      <a href="#tracking">记录</a>
     </nav>
     <button class="print" type="button" onclick="window.print()">打印</button>
   </header>
@@ -341,6 +342,7 @@
           <span class="badge">9 trials · 1,620 eval games</span>
           <span class="badge">64 state · 40 cards · 64 candidates</span>
           <span class="badge">3.54M parameters · d192 · L2</span>
+          <span class="badge active">W&amp;B scalar mirror · online verified</span>
           <span class="badge next">下一阶段尚未实现：RL rollout</span>
         </div>
       </div>
@@ -656,6 +658,21 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
       </div>
       <div class="callout" style="background: var(--amber-soft); border-color: #e9cd9d; border-left-color: var(--amber)"><strong style="color: var(--amber)">当前阶段与下一步判断标准</strong><p style="color: #6c542e">Top 20 单专家 BC campaign 已启动，但这不等于跨卡组能力已经成立。先优先完成全部 20 个 <code>V1_shared_config</code>，再只按 validation gate 执行必要救援；每位专家必须保持一位 team/submission/deck identity 一个 dataset/run，并分别通过 source audit、held-out imitation、标准 package validate 和固定 180 局 evaluation。训练 attempt 不读取 test；最终 checkpoint 冻结后才读取一次 test。完成后由用户审核哪些模型进入 opponent pool；再下一阶段才是 RL rollout/reward/PPO。</p></div>
     </section>
+
+    <div class="rule"></div>
+
+    <section id="tracking">
+      <div class="sectionHead">
+        <div><p class="kicker">08 / Experiment tracking</p><h2>JSONL 为事实源，W&amp;B 负责跨版本比较</h2></div>
+        <p class="lede">2026-07-26 已接入 W&amp;B scalar mirror，并用宿主机 W&amp;B 0.28.1 在 private 项目完成 5 epoch online fake-training：云端回读 5 行 history、6 条指标序列、4 个自动 metadata/config 文件，且为 0 media、0 artifact。</p>
+      </div>
+      <div class="gapGrid">
+        <article class="gapCard done"><h3>Canonical local</h3><p><code>training_metrics.jsonl</code> 先写并 flush，TensorBoard 继续提供本机实时曲线。W&amp;B 缺失、断网或 SDK 异常不影响训练与 checkpoint。</p><ul><li>JSONL：审计事实</li><li>TensorBoard：本机实时视图</li><li>evaluation HTML：冻结能力报告</li></ul></article>
+        <article class="gapCard done"><h3>W&amp;B mirror</h3><p>现有所有 <code>TrainingLogger</code> 调用点均可通过环境变量启用，不要求训练脚本绑定 W&amp;B SDK。</p><ul><li>BC：<code>trainer/epoch</code> + <code>bc/*</code></li><li>PPO：<code>trainer/update</code> + <code>ppo/*</code></li><li>stable ID：experiment + V version</li></ul></article>
+        <article class="gapCard partial"><h3>下一记录阶段</h3><p>在线 scalar 链路已经通过 synthetic smoke，后续正式 BC、value calibration 与 PPO run 默认启用。官方 evaluation 的 <code>eval/*</code> summary 与 opponent Table 尚未接入。</p><ul><li><a href="https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/local-smoke--online-smoke-20260726-8255a47c8c">已验证 online run</a></li><li>不上传 checkpoint / dataset / trace / replay</li><li>跨阶段只比较相同 evaluation contract</li></ul></article>
+      </div>
+      <div class="callout"><strong>安全与可比性边界</strong><p>API key 只通过本机交互式 <code>wandb login</code> 保存，不进入仓库。BC loss 与 PPO loss 仍不可互比；真正回答 policy state 是否更好的数据，是同一官方 engine、opponent catalog、seed/先后手与 metric profile 下的冻结胜率、完成率、错误率和对手分解。</p></div>
+    </section>
   </main>
 
   <footer>
@@ -680,7 +697,7 @@ L_total = L_policy + CE(count_logits, target_count)<br><br>
       <a href="../../rl_runs/0004-bc_capacity_search_210m/promotion.json">V4 promotion</a> ·
       <a href="../../docs/reports/rl/top20-bc-arena-design-and-source-audit-20260723.md">Top 20 source audit</a><br>
       <a href="../alakazam_sota_model/DESIGN.html">0010 independent ID-only reproduction</a><br>
-      更新于 2026-07-25。源码已迁入 <code>train/alakazam_bc_rl/</code>，通用基础设施位于
+      更新于 2026-07-26。源码已迁入 <code>train/alakazam_bc_rl/</code>，通用基础设施位于
       <code>rl_environment/</code>，实验产物位于 <code>rl_runs/</code>；模型 schema、网络参数和
       当前训练阶段没有因本次结构迁移而改变。历史通过 Git 和归档 run 追溯。
     </div>

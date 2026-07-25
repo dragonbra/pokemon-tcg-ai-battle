@@ -29,3 +29,4 @@
 - [`kaggle/alakazam-public-reference-2026-07-19.md`](kaggle/alakazam-public-reference-2026-07-19.md)：Kaggle 公开 Alakazam agent 调研报告及参考 notebook。
 - [`kaggle/alakazam-public-code-survey-2026-07-19.md`](kaggle/alakazam-public-code-survey-2026-07-19.md)：多份公开 Alakazam code、卡组和实验结果的整合调研。
 - [`kaggle/alakazam-v5-fixed-deck-strategy-research-and-v5-mixed-brief-2026-07-19.md`](kaggle/alakazam-v5-fixed-deck-strategy-research-and-v5-mixed-brief-2026-07-19.md)：固定 V5 卡组、面向 Codex 的 `v5_mixed` 策略研究与实现任务书。当前阶段的优先级是：下载 Kaggle 官方 Episode → 提取 observation/action/replay 指标 → 复盘真实对手与失败原因 → 再扩展策略。
+- [`rl/wandb-bc-rl-experiment-tracking-design-20260725.html`](rl/wandb-bc-rl-experiment-tracking-design-20260725.html)：面向免费额度的 W&B BC/RL 统一实验身份、指标、冻结评测与分阶段落地设计。

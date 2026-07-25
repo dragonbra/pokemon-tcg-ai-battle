@@ -4,7 +4,14 @@ import json
 import math
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
+import warnings
+
+
+class MetricSink(Protocol):
+    def log(self, record: dict[str, Any]) -> None: ...
+
+    def close(self, exit_code: int = 0) -> None: ...
 
 
 def _json_value(value: Any) -> Any:
@@ -24,11 +31,19 @@ def _json_value(value: Any) -> Any:
 class TrainingLogger:
     """Append canonical JSONL metrics and optionally mirror scalars to TensorBoard."""
 
-    def __init__(self, jsonl_path: str | Path, tensorboard_dir: str | Path | None = None):
+    def __init__(
+        self,
+        jsonl_path: str | Path,
+        tensorboard_dir: str | Path | None = None,
+        *,
+        wandb_sink: MetricSink | None = None,
+    ):
         self.jsonl_path = Path(jsonl_path)
         self.jsonl_path.parent.mkdir(parents=True, exist_ok=True)
         self._file = self.jsonl_path.open("a", encoding="utf-8")
         self._writer = None
+        self._wandb_sink = wandb_sink
+        self._wandb_resolved = wandb_sink is not None
         if tensorboard_dir is not None:
             try:
                 from torch.utils.tensorboard import SummaryWriter
@@ -60,9 +75,24 @@ class TrainingLogger:
                 ):
                     self._writer.add_scalar(key, value, step)
             self._writer.flush()
+        if not self._wandb_resolved:
+            from rl_environment.wandb_logging import create_wandb_sink_from_environment
+
+            self._wandb_sink = create_wandb_sink_from_environment(self.jsonl_path, metrics)
+            self._wandb_resolved = True
+        if self._wandb_sink is not None:
+            try:
+                self._wandb_sink.log(record)
+            except Exception as error:
+                warnings.warn(f"W&B mirror failed; continuing locally: {error}")
         return record
 
     def close(self) -> None:
+        if self._wandb_sink is not None:
+            try:
+                self._wandb_sink.close()
+            except Exception as error:
+                warnings.warn(f"W&B mirror close failed; local metrics are complete: {error}")
         if self._writer is not None:
             self._writer.close()
         self._file.close()
