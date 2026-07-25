@@ -1,0 +1,9 @@
+{
+  "checkpoint": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/rl_runs/checkpoint/0011-alakazam_sota_reward_weighted_bc/V3_no_turn_count_or_generic_non_prize/best_validation.pt",
+  "checkpoint_sha256": "983c1d633bee57ba3c33757fc07ade9e11e6704ce177427ba534422f47285be3",
+  "deck_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
+  "model_bytes": 28651847,
+  "model_sha256": "573e0a0263ea199d09fb929dd9d4e0dc68e002d941c750c98deb90b88cdf6601",
+  "schema_version": "alakazam_sota_reward_weighted_candidate_v1",
+  "source_package": "/home/dragon_bra/repos/pokemon-tcg-ai-battle/evaluation/arena/candidates/0010_v4_loss_best"
+}
