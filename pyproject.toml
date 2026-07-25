@@ -17,6 +17,9 @@ rl = [
   "torch>=2.2",
   "tensorboard>=2.14",
 ]
+tracking = [
+  "wandb>=0.28,<1",
+]
 
 [tool.ruff]
 line-length = 100
