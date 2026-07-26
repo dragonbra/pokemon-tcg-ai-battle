@@ -20,7 +20,7 @@ code { overflow-wrap: anywhere; }
 <body>
 <header>
 <h1>0013 Semantic Goal Policy</h1>
-<p class="status">Raw dataset v3 and source-frozen V3 model-ready tensors are published and fully validated. V1 remains failed; the next formal M0 version is ready to allocate. No checkpoint, candidate, or strength result yet.</p>
+<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V1 and V2 remain failed; atomic checkpoint selection is fixed and formal V3 M0 is next. No completed candidate or strength result yet.</p>
 <nav>
 <a href="DESIGN.md">Full Markdown contract</a>
 <a href="decisions/001_pre_run_protocol.md">Frozen protocol</a>
@@ -125,8 +125,11 @@ and causal compilation were repeated in every hot-path pass. It is preserved wit
 materializer digests, full commitment validation, raw/cache tensor parity, real optimizer
 throughput, complete untrained validation, and runtime smoke. At batch 64 the input path delivered
 5,765 decisions/s while M0 optimization delivered 638 decisions/s, so loading no longer starves the
-model. The next strictly increasing formal version will run M0 for three complete epochs with eager
-online W&amp;B and live train/train-eval/validation-eval progress. M1-M5 are paused.</p>
+model. V2 completed two full epochs but then failed because the mutable
+<code>criteria/latest.json</code> pointer incorrectly used exclusive-create semantics. Its canonical
+metrics, W&amp;B run, and two immutable checkpoints remain failure evidence. Selection pointers now
+use fsynced atomic replacement with a two-epoch regression test. Formal V3 will restart M0 from
+scratch on the same dataset and optimization contract. M1-M5 are paused.</p>
 </section>
 </body>
 </html>
