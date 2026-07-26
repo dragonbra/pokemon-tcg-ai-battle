@@ -102,6 +102,7 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
     paths = initialize_version(PROJECT_ID, args.version)
     dataset_reference = dict(source.reference)
     wandb_tags = tuple(tag.strip() for tag in args.wandb_tags.split(",") if tag.strip())
+    wandb_name = f"0013 · semantic_goal_policy · {args.version}"
     if not wandb_tags:
         raise ValueError("at least one W&B tag is required")
     wandb_notes = args.wandb_notes.strip()
@@ -155,7 +156,7 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
             "mode": "online",
             "entity": "dragon_bra",
             "project": "pokemon-tcg-policy-learning",
-            "name": args.version,
+            "name": wandb_name,
             "group": PROJECT_ID,
             "job_type": "bc_train",
             "tags": list(wandb_tags),
@@ -166,7 +167,7 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
     os.environ["WANDB_ENTITY"] = "dragon_bra"
     os.environ["WANDB_PROJECT"] = "pokemon-tcg-policy-learning"
     os.environ["WANDB_DIR"] = str(paths.wandb)
-    os.environ["WANDB_NAME"] = args.version
+    os.environ["WANDB_NAME"] = wandb_name
     os.environ["WANDB_RUN_GROUP"] = PROJECT_ID
     os.environ["WANDB_JOB_TYPE"] = "bc_train"
     os.environ["WANDB_TAGS"] = ",".join(wandb_tags)
