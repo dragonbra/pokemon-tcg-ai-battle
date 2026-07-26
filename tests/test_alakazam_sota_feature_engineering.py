@@ -1,26 +1,32 @@
 from __future__ import annotations
 
-import unittest
 import gzip
+import importlib
 import json
 import tempfile
+import unittest
 from pathlib import Path
 
 import torch
 
-from train.project_0012_alakazam_sota_feature_engineering.batching import (
-    collate_id_only,
-    permute_candidates,
-)
-from train.project_0012_alakazam_sota_feature_engineering.config import ExperimentConfig
-from train.project_0012_alakazam_sota_feature_engineering.codec import FeatureEngineeringCodec
-from train.project_0012_alakazam_sota_feature_engineering.inference import FeatureEngineeringInference
-from train.project_0012_alakazam_sota_feature_engineering.model import (
-    FeatureEngineeringPolicy,
-    FeatureModelConfig,
-)
-from train.project_0012_alakazam_sota_feature_engineering.training import train
-from train.project_0010_alakazam_sota_model.model import IDOnlyCodec, IDOnlyConfig, IDOnlyPointerPolicy
+_batching = importlib.import_module("train.0012_alakazam_sota_feature_engineering.batching")
+_config = importlib.import_module("train.0012_alakazam_sota_feature_engineering.config")
+_codec = importlib.import_module("train.0012_alakazam_sota_feature_engineering.codec")
+_inference = importlib.import_module("train.0012_alakazam_sota_feature_engineering.inference")
+_model = importlib.import_module("train.0012_alakazam_sota_feature_engineering.model")
+_training = importlib.import_module("train.0012_alakazam_sota_feature_engineering.training")
+_base_model = importlib.import_module("train.0010_alakazam_sota_model.model")
+collate_id_only = _batching.collate_id_only
+permute_candidates = _batching.permute_candidates
+ExperimentConfig = _config.ExperimentConfig
+FeatureEngineeringCodec = _codec.FeatureEngineeringCodec
+FeatureEngineeringInference = _inference.FeatureEngineeringInference
+FeatureEngineeringPolicy = _model.FeatureEngineeringPolicy
+FeatureModelConfig = _model.FeatureModelConfig
+train = _training.train
+IDOnlyCodec = _base_model.IDOnlyCodec
+IDOnlyConfig = _base_model.IDOnlyConfig
+IDOnlyPointerPolicy = _base_model.IDOnlyPointerPolicy
 
 
 def _observation() -> dict[str, object]:

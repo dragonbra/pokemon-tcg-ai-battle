@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import shutil
 from pathlib import Path
@@ -8,7 +9,7 @@ from typing import Any
 
 import torch
 
-from train.project_0010_alakazam_sota_model.export_candidate import MAIN
+MAIN = importlib.import_module("train.0010_alakazam_sota_model.export_candidate").MAIN
 
 
 MODEL_VERSION = "alakazam_sota_reward_weighted_pointer_bc_v1"
@@ -45,7 +46,7 @@ def export_candidate(checkpoint: Path, source_package: Path, output: Path) -> di
     shutil.copytree(source_package / "cg", output / "cg")
     (output / "main.py").write_text(MAIN, encoding="utf-8")
     (strategy / "__init__.py").write_text("", encoding="utf-8")
-    model_project = Path(__file__).resolve().parents[1] / "project_0010_alakazam_sota_model"
+    model_project = Path(__file__).resolve().parents[1] / "0010_alakazam_sota_model"
     shutil.copy2(model_project / "model.py", strategy / "model.py")
     shutil.copy2(model_project / "inference.py", strategy / "inference.py")
 

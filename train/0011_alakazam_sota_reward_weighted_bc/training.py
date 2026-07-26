@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import importlib
 import json
 import math
 import random
@@ -20,8 +21,11 @@ from rl_environment.checkpoint import CheckpointManager
 from rl_environment.logging import TrainingLogger
 from rl_environment.runs import training_paths
 from rl_environment.storage import assert_storage_safe
-from train.project_0010_alakazam_sota_model.dataset import JsonlShardDataset
-from train.project_0010_alakazam_sota_model.model import IDOnlyPointerPolicy, collate_id_only
+_base_dataset = importlib.import_module("train.0010_alakazam_sota_model.dataset")
+_base_model = importlib.import_module("train.0010_alakazam_sota_model.model")
+JsonlShardDataset = _base_dataset.JsonlShardDataset
+IDOnlyPointerPolicy = _base_model.IDOnlyPointerPolicy
+collate_id_only = _base_model.collate_id_only
 
 from .config import ExperimentConfig
 from .dataset import dataset_paths, load_dataset_audit

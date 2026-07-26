@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import importlib
 import json
 import tempfile
 import unittest
@@ -15,15 +16,17 @@ from archive.train_legacy.alakazam_bc_rl.id_only_pointer import (
     IDOnlyConfig as ReferenceConfig,
     IDOnlyPointerPolicy as ReferencePolicy,
 )
-from train.project_0010_alakazam_sota_model.config import TrainingConfig
-from train.project_0010_alakazam_sota_model.dataset import build_id_only_dataset
-from train.project_0010_alakazam_sota_model.model import (
-    IDOnlyCodec,
-    IDOnlyConfig,
-    IDOnlyPointerPolicy,
-    collate_id_only,
-)
-from train.project_0010_alakazam_sota_model.training import train
+_config = importlib.import_module("train.0010_alakazam_sota_model.config")
+_dataset = importlib.import_module("train.0010_alakazam_sota_model.dataset")
+_model = importlib.import_module("train.0010_alakazam_sota_model.model")
+_training = importlib.import_module("train.0010_alakazam_sota_model.training")
+TrainingConfig = _config.TrainingConfig
+build_id_only_dataset = _dataset.build_id_only_dataset
+IDOnlyCodec = _model.IDOnlyCodec
+IDOnlyConfig = _model.IDOnlyConfig
+IDOnlyPointerPolicy = _model.IDOnlyPointerPolicy
+collate_id_only = _model.collate_id_only
+train = _training.train
 
 
 def _observation() -> dict[str, object]:

@@ -2,7 +2,7 @@
 
 ## 目标
 
-在全新 WSL2 Ubuntu 22.04 机器上，为 `train/project_0011_alakazam_sota_reward_weighted_bc` 配置当前真实系统 Python 环境，并验证 CPU 与 NVIDIA GPU 执行链路。真实 0010 基础语料与 0009 reward sidecar 由另一个会话准备；本阶段不启动全量训练，不执行 Kaggle 提交。
+在全新 WSL2 Ubuntu 22.04 机器上，为 `train/0011_alakazam_sota_reward_weighted_bc` 配置当前真实系统 Python 环境，并验证 CPU 与 NVIDIA GPU 执行链路。真实 0010 基础语料与 0009 reward sidecar 由另一个会话准备；本阶段不启动全量训练，不执行 Kaggle 提交。
 
 ## 已确认的机器条件
 

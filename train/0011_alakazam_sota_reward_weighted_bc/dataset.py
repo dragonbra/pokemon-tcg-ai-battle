@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import importlib
 import json
 from contextlib import ExitStack
 from itertools import zip_longest
 from pathlib import Path
 from typing import Any, TextIO
 
-from train.project_0010_alakazam_sota_model.dataset import SPLITS, dataset_paths as base_dataset_paths
+_base_dataset = importlib.import_module("train.0010_alakazam_sota_model.dataset")
+SPLITS = _base_dataset.SPLITS
+base_dataset_paths = _base_dataset.dataset_paths
 
 
 DATASET_SCHEMA = "alakazam_sota_reward_weighted_dataset_v1"

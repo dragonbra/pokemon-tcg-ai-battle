@@ -8,7 +8,7 @@ import torch
 try:
     from .base_model import collate_id_only
 except ImportError:
-    from train.project_0010_alakazam_sota_model.model import collate_id_only
+    from train.0010_alakazam_sota_model.model import collate_id_only
 
 from .codec import FeatureEngineeringCodec
 from .model import FeatureEngineeringPolicy, FeatureModelConfig

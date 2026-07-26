@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 from dataclasses import asdict, dataclass
 
 import torch
@@ -8,7 +9,9 @@ from torch import Tensor, nn
 try:
     from .base_model import IDOnlyConfig, IDOnlyPointerPolicy
 except ImportError:  # Repository training path; candidate packages include base_model.py.
-    from train.project_0010_alakazam_sota_model.model import IDOnlyConfig, IDOnlyPointerPolicy
+    _base_model = importlib.import_module("train.0010_alakazam_sota_model.model")
+    IDOnlyConfig = _base_model.IDOnlyConfig
+    IDOnlyPointerPolicy = _base_model.IDOnlyPointerPolicy
 
 
 @dataclass(frozen=True)

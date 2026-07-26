@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import hashlib
+import importlib
 import json
 from contextlib import ExitStack
 from itertools import groupby
@@ -9,15 +10,14 @@ from pathlib import Path
 from typing import Any
 
 from rl_environment.streaming import iter_jsonl
-from train.project_0010_alakazam_sota_model.dataset import (
-    DATASET_SCHEMA as BASE_DATASET_SCHEMA,
-    JsonlShardDataset,
-    ReplayArchiveResolver,
-    _frame_observation,
-    _record_identity,
-    _visual_frames,
-    dataset_paths,
-)
+_base_dataset = importlib.import_module("train.0010_alakazam_sota_model.dataset")
+BASE_DATASET_SCHEMA = _base_dataset.DATASET_SCHEMA
+JsonlShardDataset = _base_dataset.JsonlShardDataset
+ReplayArchiveResolver = _base_dataset.ReplayArchiveResolver
+_frame_observation = _base_dataset._frame_observation
+_record_identity = _base_dataset._record_identity
+_visual_frames = _base_dataset._visual_frames
+dataset_paths = _base_dataset.dataset_paths
 
 from .codec import FeatureEngineeringCodec
 from .model import FeatureModelConfig

@@ -5,7 +5,7 @@ from typing import Any
 try:
     from .base_model import IDOnlyCodec
 except ImportError:  # Repository training path; candidate packages include base_model.py.
-    from train.project_0010_alakazam_sota_model.model import IDOnlyCodec
+    from train.0010_alakazam_sota_model.model import IDOnlyCodec
 
 from .model import FeatureModelConfig
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from collections import Counter
 from itertools import groupby
@@ -8,12 +9,11 @@ from pathlib import Path
 from typing import Any
 
 from rl_environment.streaming import iter_jsonl
-from train.project_0010_alakazam_sota_model.dataset import (
-    ReplayArchiveResolver,
-    _frame_observation,
-    _record_identity,
-    _visual_frames,
-)
+_base_dataset = importlib.import_module("train.0010_alakazam_sota_model.dataset")
+ReplayArchiveResolver = _base_dataset.ReplayArchiveResolver
+_frame_observation = _base_dataset._frame_observation
+_record_identity = _base_dataset._record_identity
+_visual_frames = _base_dataset._visual_frames
 
 
 def _list(value: Any) -> list[Any]:

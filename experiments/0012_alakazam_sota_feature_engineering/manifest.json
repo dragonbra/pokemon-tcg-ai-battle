@@ -44,7 +44,7 @@
     "evaluation": "rl_runs/evaluation/0012-alakazam_sota_feature_engineering",
     "run": "rl_runs/artifact/0012-alakazam_sota_feature_engineering",
     "tensorboard": "rl_runs/tensorboard/0012-alakazam_sota_feature_engineering",
-    "train_project": "train/project_0012_alakazam_sota_feature_engineering"
+    "train_project": "train/0012_alakazam_sota_feature_engineering"
   },
   "reproducibility": {
     "batching_sha256": "e63b21c7360198e15ac3ee05f5158dfd21737e363a9fbccdc9daa0c3a864a905",
@@ -75,7 +75,7 @@
   },
   "versions": [
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v1_baseline_control.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v1_baseline_control.json",
       "config_sha256": "d8b44c36b66f3a04a54f2dac5d9652d3d523260a3a5e6a4cad4f2a5e5684200f",
       "best_validation_exact": 0.8389289271693913,
       "status": "completed",
@@ -83,7 +83,7 @@
       "version": 1
     },
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v2_no_position_permutation.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v2_no_position_permutation.json",
       "config_sha256": "8656ee43079ae95a3a124b62566d9544cf5776532f7f6cb02872a6ecb1015a21",
       "depends_on_evidence": "V1 baseline and permutation audit",
       "best_validation_exact": 0.8376984824515146,
@@ -92,7 +92,7 @@
       "version": 2
     },
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v3_role_separated_action.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v3_role_separated_action.json",
       "config_sha256": "8fe2b90394034a0a1cf290d996043f3fc64f7ca80f5c0fa70e211a7b149608df",
       "depends_on_evidence": "V2 action-ordering foundation",
       "best_validation_exact": 0.8437921134352845,
@@ -101,7 +101,7 @@
       "version": 3
     },
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v4_action_primitive_context.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v4_action_primitive_context.json",
       "config_sha256": "d49dd6564c4a32f2fde0b823bedb46cf96c6575d4abbaaf14168291687331125",
       "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering",
       "dataset_audit_sha256": "a140aa5be9f89ca7066386a9a4218066af7863a6816a68f2d3d595de03dd0d76",
@@ -112,7 +112,7 @@
       "version": 4
     },
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v5_action_primitive_permutation_fix.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v5_action_primitive_permutation_fix.json",
       "config_sha256": "4d02c0f2972003ff7c5db64e728e4cceacd8be0bd94cbe280b72424bee6ed198",
       "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering",
       "dataset_audit_sha256": "a140aa5be9f89ca7066386a9a4218066af7863a6816a68f2d3d595de03dd0d76",
@@ -123,7 +123,7 @@
       "version": 5
     },
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v6_chosen_transition_aux.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v6_chosen_transition_aux.json",
       "config_sha256": "12508f5dc0b2b0374411497e9e17ab4ed2f463220874d27d82bc0cb49008b51d",
       "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering/transition_v1",
       "dataset_audit_sha256": "69f98af52e0d925af3fbfda57e30384f303ce79238417f4e13e4e82ea4800825",
@@ -134,7 +134,7 @@
       "version": 6
     },
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v7_chosen_transition_amp_fix.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v7_chosen_transition_amp_fix.json",
       "config_sha256": "13ba9d10c6a777cff1adcc3aa083b77a76383a8124010a8aaef805e7272501dc",
       "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering/transition_v1",
       "dataset_audit_sha256": "69f98af52e0d925af3fbfda57e30384f303ce79238417f4e13e4e82ea4800825",
@@ -146,7 +146,7 @@
       "version": 7
     },
     {
-      "config": "train/project_0012_alakazam_sota_feature_engineering/configs/0012_v8_action_history.json",
+      "config": "train/0012_alakazam_sota_feature_engineering/configs/0012_v8_action_history.json",
       "config_sha256": "8d1361852a1ae7da38cc801d80643d1b5736a9aa0d9cbd3e9861eddce88e4c3f",
       "dataset": "rl_runs/dataset/0012-alakazam_sota_feature_engineering/history_v1",
       "dataset_audit_sha256": "d02653d146704c1bae1802d8122552ef87075a30eff13a48340a929cdd8c3f20",

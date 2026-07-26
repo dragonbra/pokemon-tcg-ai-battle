@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import json
+import importlib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-from train.project_0010_alakazam_sota_model.model import IDOnlyConfig
+IDOnlyConfig = importlib.import_module(
+    "train.0010_alakazam_sota_model.model"
+).IDOnlyConfig
 
 
 @dataclass(frozen=True)

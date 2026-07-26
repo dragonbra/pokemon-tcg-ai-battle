@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import importlib
+
 import torch
 from torch import Tensor
 
-from train.project_0010_alakazam_sota_model.model import collate_id_only as _collate_id_only
+_collate_id_only = importlib.import_module(
+    "train.0010_alakazam_sota_model.model"
+).collate_id_only
 
 
 def collate_id_only(rows: list[dict[str, object]]) -> dict[str, Tensor]:

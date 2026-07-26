@@ -316,7 +316,7 @@ def train(dataset_root: Path, output: Path, config: ExperimentConfig) -> dict[st
             "model.py": _sha256(PROJECT_ROOT / "model.py"),
             "training.py": _sha256(PROJECT_ROOT / "training.py"),
             "0010_base_model.py": _sha256(
-                PROJECT_ROOT.parent / "project_0010_alakazam_sota_model" / "model.py"
+                PROJECT_ROOT.parent / "0010_alakazam_sota_model" / "model.py"
             ),
         },
     }

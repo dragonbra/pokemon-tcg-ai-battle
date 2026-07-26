@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 直接向 `/usr/local/bin/python` 的真实系统环境安装并验证 `train/project_0011_alakazam_sota_reward_weighted_bc` 所需依赖，使 RTX 5080 上的 PyTorch CUDA 训练链路和项目 smoke test 可运行。
+**Goal:** 直接向 `/usr/local/bin/python` 的真实系统环境安装并验证 `train/0011_alakazam_sota_reward_weighted_bc` 所需依赖，使 RTX 5080 上的 PyTorch CUDA 训练链路和项目 smoke test 可运行。
 
 **Architecture:** 不创建 venv、Conda 或 Docker 环境；所有包均由 `/usr/local/bin/python -m pip` 安装到该解释器的系统级 site-packages。实施过程先审计共享环境，再安装支持 Blackwell 的官方 PyTorch CUDA wheel 和仓库 RL extra，最后通过依赖一致性、真实 GPU forward/backward/AMP、项目单测与编译检查四层验证。
 
@@ -366,7 +366,7 @@ Expected: no package change occurs until the failure class is supported by evide
 
 **Files:**
 - Test: `tests/test_alakazam_sota_reward_weighted_bc.py`
-- Read: `train/project_0011_alakazam_sota_reward_weighted_bc/`
+- Read: `train/0011_alakazam_sota_reward_weighted_bc/`
 - Read: `rl_environment/`
 - No planned repository modifications
 

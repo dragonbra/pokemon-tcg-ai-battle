@@ -8,7 +8,7 @@ from torch import Tensor, nn
 try:
     from .base_model import IDOnlyConfig, IDOnlyPointerPolicy
 except ImportError:  # Repository training path; candidate packages include base_model.py.
-    from train.project_0010_alakazam_sota_model.model import IDOnlyConfig, IDOnlyPointerPolicy
+    from train.0010_alakazam_sota_model.model import IDOnlyConfig, IDOnlyPointerPolicy
 
 
 @dataclass(frozen=True)

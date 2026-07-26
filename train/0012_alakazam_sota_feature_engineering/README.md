@@ -43,7 +43,7 @@ daily winner-only corpus 上开展纯 Behavior Cloning 输入与网络结构消�
 python3 -m train.alakazam_sota_feature_engineering train \
   --dataset-root rl_runs/dataset/0010-alakazam_sota_model \
   --output rl_runs/artifact/0012-alakazam_sota_feature_engineering/V1_baseline_control \
-  --config train/project_0012_alakazam_sota_feature_engineering/configs/0012_v1_baseline_control.json
+  --config train/0012_alakazam_sota_feature_engineering/configs/0012_v1_baseline_control.json
 ```
 
 本项目不修改 `engine/source/`。离线 BC 指标只证明模仿质量；所有策略强度结论必须来自

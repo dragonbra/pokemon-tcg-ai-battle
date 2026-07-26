@@ -45,7 +45,7 @@ python3 -m train.alakazam_sota_reward_weighted_bc build-dataset \
 python3 -m train.alakazam_sota_reward_weighted_bc train \
   --dataset-root rl_runs/dataset/0011-alakazam_sota_reward_weighted_bc \
   --output rl_runs/artifact/0011-alakazam_sota_reward_weighted_bc/V1_all_rewards_lr4e4 \
-  --config train/project_0011_alakazam_sota_reward_weighted_bc/configs/0011_v1_all_rewards.json
+  --config train/0011_alakazam_sota_reward_weighted_bc/configs/0011_v1_all_rewards.json
 
 python3 -m train.alakazam_sota_reward_weighted_bc export-candidate \
   --checkpoint rl_runs/checkpoint/0011-alakazam_sota_reward_weighted_bc/<version>/best_validation.pt \

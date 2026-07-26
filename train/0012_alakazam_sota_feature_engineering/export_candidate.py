@@ -64,7 +64,7 @@ def export_candidate(checkpoint: Path, source_package: Path, output: Path) -> di
     (output / "main.py").write_text(MAIN, encoding="utf-8")
     (strategy / "__init__.py").write_text("", encoding="utf-8")
     project = Path(__file__).resolve().parent
-    base = project.parent / "project_0010_alakazam_sota_model" / "model.py"
+    base = project.parent / "0010_alakazam_sota_model" / "model.py"
     for source, name in (
         (base, "base_model.py"),
         (project / "model.py", "model.py"),

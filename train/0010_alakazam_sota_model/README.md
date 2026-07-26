@@ -49,13 +49,13 @@ python3 -m train.alakazam_sota_model build-dataset \
   --source-dataset rl_runs/dataset/0009-reward_weighted_bc/dataset.jsonl \
   --archive-root /mnt/d/pokemon-tcg-ai-battle-data/kaggle_yushin_ito_20260713_20260722 \
   --output rl_runs/dataset/0010-alakazam_sota_model \
-  --config train/project_0010_alakazam_sota_model/configs/reference_notebook.json \
+  --config train/0010_alakazam_sota_model/configs/reference_notebook.json \
   --expected-source-sha256 36415a61b93fdcdb2e1b17c0fbaebb9432f8d94ed0c203365b36cd3011b09bdf
 
 python3 -m train.alakazam_sota_model train \
   --dataset-root rl_runs/dataset/0010-alakazam_sota_model \
   --output rl_runs/artifact/0010-alakazam_sota_model/V2_empty_entity_fix \
-  --config train/project_0010_alakazam_sota_model/configs/reference_notebook.json
+  --config train/0010_alakazam_sota_model/configs/reference_notebook.json
 ```
 
 对应 TensorBoard 与 checkpoint 必须使用同一版本名：
@@ -73,7 +73,7 @@ epoch 6 官方评测完成后，续训使用独立 V3，并在 validation exact 
 python3 -m train.alakazam_sota_model train \
   --dataset-root rl_runs/dataset/0010-alakazam_sota_model \
   --output rl_runs/artifact/0010-alakazam_sota_model/V4_resume_rng_fix \
-  --config train/project_0010_alakazam_sota_model/configs/continuation_until_patience5.json \
+  --config train/0010_alakazam_sota_model/configs/continuation_until_patience5.json \
   --resume-checkpoint rl_runs/checkpoint/0010-alakazam_sota_model/V2_empty_entity_fix/latest.pt
 ```
 
