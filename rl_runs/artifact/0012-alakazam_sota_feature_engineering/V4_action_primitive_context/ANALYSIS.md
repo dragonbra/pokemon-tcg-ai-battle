@@ -32,5 +32,5 @@
 - 完成 epoch 1 和 epoch 2 的前 1600/2306 batches 后人工中止。
 - V4 checkpoint、training config、epoch-1 metrics 和 TensorBoard event 全部保留，
   仅用于失败审计，不得导出 candidate 或形成策略强度结论。
-- 根因定位到 `train/alakazam_sota_feature_engineering/batching.py`；回归测试在
+- 根因定位到 `train/project_0012_alakazam_sota_feature_engineering/batching.py`；回归测试在
   `tests/test_alakazam_sota_feature_engineering.py` 中覆盖。

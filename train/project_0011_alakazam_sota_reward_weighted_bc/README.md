@@ -98,7 +98,7 @@ V1–V5 完成后停止追加训练；本轮推荐 V2 setting，V3 的一次 80.
 上面的消融解释。归档固定使用 epoch 10 的最低 validation loss checkpoint：
 
 - submission source：`archive/submission/0011_alakazam_sota_reward_weighted_bc_v3_loss_best/`；
-- archive：`submission/dist/alakazam_sota_reward_weighted_bc_v3_loss_best.tar.gz`；
+- 原 archive 文件名：`alakazam_sota_reward_weighted_bc_v3_loss_best.tar.gz`（SHA-256 如下）；当前工作区未找到该文件，因此未在 `archive/submission/dist/` 中伪造替代归档；
 - archive SHA-256：`b9f9c4e4a5fdb90147e48155cdd72aa3195e37d5aabc4f4f3ad8e3b6acb471ef`；
 - exported model SHA-256：`573e0a0263ea199d09fb929dd9d4e0dc68e002d941c750c98deb90b88cdf6601`；
 - Kaggle submission ref：`54971599`；首次查询为 `PENDING`，最终状态 `COMPLETE`，
