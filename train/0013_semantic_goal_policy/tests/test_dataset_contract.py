@@ -22,7 +22,7 @@ def manifest(e):
     registration=e.payload["steps"][0][0].get("visualize")
     cards=registration[0]["action"][0] if registration else e.payload["steps"][1][0]["action"]
     deck=dataset.DeckManifest.from_card_ids(cards);return split.assign_groups([split.SplitGroup("2026-07-24",deck.sha256,81,0),split.SplitGroup("2026-07-24",deck.sha256,82,0)],PROTOCOL)
-def metadata(m):return {"source_manifest_sha256":dataset.SOURCE_MANIFEST_SHA256,"source_audit":{"seen":2,"eligible":2,"ineligible_noncomplete":0,"spool_bytes":1},"distribution_audit":{"group_counts_by_date":{"2026-07-24":2},"group_counts_by_deck_manifest_sha256":{},"decision_counts_by_date":{"2026-07-24":2},"decision_counts_by_deck_manifest_sha256":{},"decision_counts_by_action_type":{"1":2},"decision_counts_by_select_type":{"0":2},"cross_stratum_conflicts":{"comparable_state_groups":0,"conflicting_groups":0,"conflict_rate":0.0}},"split_private_assignments_sha256":m.private_sha256(),"split_audit_sha256":m.sha256(),"protocol_sha256":PROTOCOL.sha256(),"record_schema_version":dataset.SCHEMA_VERSION,"action_contract_version":dataset.ACTION_CONTRACT_VERSION}
+def metadata(m):return {"source_manifest_sha256":dataset.SOURCE_MANIFEST_SHA256,"source_audit":{"seen":2,"eligible":2,"ineligible_noncomplete":0,"spool_bytes":1},"distribution_audit":{"group_counts_by_date":{"2026-07-24":2},"group_counts_by_deck_manifest_sha256":{},"decision_counts_by_date":{"2026-07-24":2},"decision_counts_by_deck_manifest_sha256":{},"decision_counts_by_action_type":{"1":2},"decision_counts_by_select_type":{"0":2},"cross_stratum_conflicts":{"comparable_state_groups":0,"conflicting_groups":0,"conflict_rate":0.0}},"split_private_assignments_sha256":m.private_sha256(),"split_audit_sha256":m.sha256(),"protocol_sha256":PROTOCOL.sha256(),"record_schema_version":dataset.SCHEMA_VERSION,"action_contract_version":dataset.ACTION_CONTRACT_VERSION,"typed_input_schema_version":"semantic_goal_typed_input_v1","feature_compiler_version":"semantic_goal_feature_compiler_v1","feature_compiler_sha256":"c"*64,"ontology_sha256":"d"*64}
 class DatasetContractTest(unittest.TestCase):
     def test_sanitized_real_visual_registration_and_shifted_alignment(self):
         e=episode();record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0];payload=record.as_dict();self.assertNotIn("value_target",payload);self.assertEqual(payload["ordered_action"],[0]);self.assertEqual(payload["deck_manifest"]["counts"],[[1,30],[2,30]]);self.assertNotIn("result",payload["actor_observation"]["current"]);self.assertIn("deck",payload["actor_observation"]["select"]);self.assertEqual(payload["actor_observation"]["logs"][0]["serial"],9);self.assertEqual(payload["event_cursor"],{"visual_frame_index":1,"actor_decision_index":0,"incoming_log_count":1});self.assertNotIn("current",payload)
@@ -32,6 +32,10 @@ class DatasetContractTest(unittest.TestCase):
         e=episode(visual=False);record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0];self.assertEqual(record.ordered_action,(0,))
         e=episode(visual=False);e.payload["steps"][1][0]["observation"]["current"]["yourIndex"]=1
         with self.assertRaisesRegex(ValueError,"actor perspective"):list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))
+    def test_change_and_move_attached_log_identities_are_preserved(self):
+        e=episode();fields={"type":13,"playerIndex":0,"cardIdBefore":1,"serialBefore":2,"cardIdAfter":30,"serialAfter":3};e.payload["steps"][0][0]["visualize"][1]["obs"]["logs"]=[fields];e.payload["steps"][1][0]["observation"]["logs"]=[fields]
+        record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0]
+        self.assertEqual(dict(record.actor_observation["logs"][0]),fields)
     def test_opaque_opponent_prize_slots_preserve_count_without_identity(self):
         e=episode();opaque=[None]*6;e.payload["steps"][0][0]["visualize"][1]["obs"]["current"]["players"][1]["prize"]=opaque;e.payload["steps"][1][0]["observation"]["current"]["players"][1]["prize"]=opaque
         record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0]
@@ -134,4 +138,42 @@ class DatasetContractTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"reference"):next(shards.iter_dataset(root))
         with tempfile.TemporaryDirectory() as d:
             root=Path(d)/"dataset";writer=shards.AtomicShardWriter(root,shard_size=1);writer._release_reservation();root.mkdir();(root/"foreign").write_text("keep");writer.abort();self.assertEqual((root/"foreign").read_text(),"keep")
+
+    def test_orphan_recovery_audits_before_removing_unique_staging_pair(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "dataset"
+            diagnostic = Path(directory) / "audit" / "orphan.json"
+            writer = shards.AtomicShardWriter(root, shard_size=1)
+            source_episode = episode()
+            writer.write("train", next(dataset.iter_records(
+                source_episode,
+                manifest(source_episode),
+                frozen_unknown_option_fields=frozenset(),
+            )))
+            writer._finish("train")
+            report = shards.recover_orphan_staging(
+                root,
+                diagnostic_path=diagnostic,
+                reason="test process interruption",
+            )
+            self.assertEqual(report["schema_version"], "dataset_orphan_recovery_v1")
+            self.assertTrue(report["files"][0]["gzip_and_records_valid"])
+            self.assertEqual(json.loads(diagnostic.read_text()), report)
+            self.assertFalse(writer.stage.exists())
+            self.assertFalse(writer.reservation.exists())
+
+    def test_orphan_recovery_refuses_unknown_staging_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "dataset"
+            diagnostic = Path(directory) / "orphan.json"
+            writer = shards.AtomicShardWriter(root, shard_size=1)
+            (writer.stage / "unknown.txt").write_text("do not remove")
+            with self.assertRaisesRegex(ValueError, "unknown orphan staging entry"):
+                shards.recover_orphan_staging(
+                    root,
+                    diagnostic_path=diagnostic,
+                    reason="test process interruption",
+                )
+            self.assertTrue((writer.stage / "unknown.txt").exists())
+            writer.abort()
 if __name__=="__main__":unittest.main()

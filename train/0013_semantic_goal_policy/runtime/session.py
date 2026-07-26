@@ -7,7 +7,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from ..features.observation import encode_observation
+from ..features.card_semantics import CardSemanticRegistry
+from ..features.compiler import CompiledFeatures, compile_features, tensorize_compiled
 from ..features.schema import SCHEMA_VERSION, TypedPolicyInput
 from ..knowledge.state import CausalKnowledgeState
 
@@ -41,25 +42,47 @@ class EncodedDecision:
     decision_index: int
     typed: TypedPolicyInput
     sha256: str
+    tensors: Mapping[str, Any]
 
 
 class PolicySession:
-    def __init__(self, actor: int, deck: Sequence[int]) -> None:
+    def __init__(
+        self,
+        actor: int,
+        deck: Sequence[int],
+        *,
+        registry: CardSemanticRegistry | None = None,
+    ) -> None:
         self.actor = actor
         self.deck = tuple(deck)
+        self.registry = registry
         self.knowledge = CausalKnowledgeState.new_game(actor, deck)
         self._last: EncodedDecision | None = None
 
     @classmethod
-    def new_game(cls, actor: int, deck: Sequence[int]) -> PolicySession:
-        return cls(actor, deck)
+    def new_game(
+        cls,
+        actor: int,
+        deck: Sequence[int],
+        *,
+        registry: CardSemanticRegistry | None = None,
+    ) -> PolicySession:
+        return cls(actor, deck, registry=registry)
 
     def observe(self, observation: Mapping[str, Any]) -> EncodedDecision:
         knowledge = self.knowledge.consume(observation)
-        typed = encode_observation(observation, registered_deck=self.deck)
-        payload = {"typed": _plain(typed), "knowledge": _plain(knowledge)}
-        digest = hashlib.sha256((json.dumps(payload, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n").encode()).hexdigest()
-        self._last = EncodedDecision(knowledge.decision_index, typed, digest)
+        compiled = compile_features(
+            observation,
+            registered_deck=self.deck,
+            knowledge=knowledge,
+            registry=self.registry,
+        )
+        self._last = EncodedDecision(
+            knowledge.decision_index,
+            compiled.typed,
+            compiled.digest,
+            tensorize_compiled(compiled),
+        )
         return self._last
 
     def record_action(self, action: Sequence[int]) -> None:
@@ -68,10 +91,17 @@ class PolicySession:
         self.knowledge.record_pending(action, self._last.decision_index)
 
 
-def replay_session(actor: int, deck: Sequence[int], observations: Sequence[Mapping[str, Any]], actions: Sequence[Sequence[int]]) -> tuple[EncodedDecision, ...]:
+def replay_session(
+    actor: int,
+    deck: Sequence[int],
+    observations: Sequence[Mapping[str, Any]],
+    actions: Sequence[Sequence[int]],
+    *,
+    registry: CardSemanticRegistry | None = None,
+) -> tuple[EncodedDecision, ...]:
     if len(observations) != len(actions):
         raise ValueError("offline replay observations/actions length mismatch")
-    runtime = PolicySession.new_game(actor, deck)
+    runtime = PolicySession.new_game(actor, deck, registry=registry)
     output: list[EncodedDecision] = []
     for observation, action in zip(observations, actions):
         output.append(runtime.observe(observation))

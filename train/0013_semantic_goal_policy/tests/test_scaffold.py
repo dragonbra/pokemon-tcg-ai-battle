@@ -108,12 +108,22 @@ class SemanticGoalPolicyScaffoldTests(unittest.TestCase):
         self.assertIn("local generated runtime directories", readme)
         self.assertIn("not tracked", readme)
 
-    def test_scaffold_contains_no_obsolete_identity_or_generated_training_assets(self) -> None:
-        roots = [REPOSITORY_ROOT / "train" / PROJECT_ID, REPOSITORY_ROOT / "experiments" / PROJECT_ID, REPOSITORY_ROOT / "rl_runs" / PROJECT_ID]
-        text = "\n".join(path.read_text(encoding="utf-8", errors="ignore") for root in roots for path in root.rglob("*") if path.is_file() and "__pycache__" not in path.parts)
+    def test_scaffold_contains_no_obsolete_identity_or_tracked_training_assets(self) -> None:
+        source_roots = [
+            REPOSITORY_ROOT / "train" / PROJECT_ID,
+            REPOSITORY_ROOT / "experiments" / PROJECT_ID,
+        ]
+        text = "\n".join(
+            path.read_text(encoding="utf-8", errors="ignore")
+            for root in source_roots
+            for path in root.rglob("*")
+            if path.is_file() and "__pycache__" not in path.parts
+        )
         self.assertNotIn("0013_alakazam_rollout_" + "value_calibration", text)
         for suffix in (".pt", ".pth", ".ckpt", ".npz", ".parquet"):
-            self.assertFalse(any(path.suffix == suffix for root in roots for path in root.rglob("*")))
+            self.assertFalse(
+                any(path.suffix == suffix for root in source_roots for path in root.rglob("*"))
+            )
 
 
 if __name__ == "__main__":

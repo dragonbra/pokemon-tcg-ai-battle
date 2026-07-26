@@ -6,90 +6,127 @@
 <title>0013 Semantic Goal Policy</title>
 <style>
 :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
-body { max-width: 1100px; margin: auto; padding: 2rem; line-height: 1.55; }
-nav, .grid { display: flex; flex-wrap: wrap; gap: .75rem; }
-nav a, button { padding: .55rem .8rem; border: 1px solid #788; border-radius: .4rem; }
-button { background: transparent; color: inherit; cursor: pointer; }
-section { margin: 1.5rem 0; padding: 1rem; border: 1px solid #7888; border-radius: .6rem; }
-.grid > article { flex: 1 1 230px; padding: .8rem; border-left: 4px solid #567; }
-[data-panel] { display: none; }
-[data-panel].active { display: block; }
+body { max-width: 1180px; margin: auto; padding: 2rem; line-height: 1.55; }
+nav { display: flex; flex-wrap: wrap; gap: .75rem; }
+nav a { padding: .5rem .7rem; border: 1px solid #788; border-radius: 4px; }
+section { margin: 1.5rem 0; border-top: 1px solid #7888; padding-top: 1rem; }
+table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+th, td { border: 1px solid #7888; padding: .45rem; text-align: left; vertical-align: top; }
 .status { font-weight: 700; }
 code { overflow-wrap: anywhere; }
+.callout { border-left: 4px solid #567; padding: .7rem 1rem; }
 </style>
 </head>
 <body>
 <header>
 <h1>0013 Semantic Goal Policy</h1>
-<p class="status">Data contracts and causal semantic inputs implemented — no checkpoint or policy-strength result.</p>
+<p class="status">Raw dataset v3 published. V1 stopped with an input-pipeline defect; completed V2 model-ready assets were rejected after a source-digest race. Source-frozen V3 is next. No checkpoint, candidate, or strength result yet.</p>
 <nav>
-<a href="DESIGN.md">Markdown design</a><a href="README.md">Archive</a>
-<a href="manifest.json">Manifest</a><a href="evaluation/index.html">Evaluation index</a>
+<a href="DESIGN.md">Full Markdown contract</a>
+<a href="decisions/001_pre_run_protocol.md">Frozen protocol</a>
+<a href="data_audit/source_audit.json">Source audit</a>
+<a href="evaluation/index.html">Evaluation index</a>
 </nav>
 </header>
 <section>
-<h2>Explore the approved contract</h2>
-<div class="grid" role="tablist" aria-label="Design layers">
-<button data-target="eyes">Eyes: causal inputs</button>
-<button data-target="brain">Brain: Goal-QKV</button>
-<button data-target="hands">Hands: legal actions</button>
-<button data-target="stages">Stages: M0–M5</button>
-</div>
-<div id="eyes" data-panel class="active">
-<h3>Strict player perspective</h3>
-<p>Implemented <code>semantic_goal_typed_input_v1</code> tokens cover state, visible entities, own
-registered-deck capabilities, causal ledger/belief, recent events, official legal options, and typed
-relations. Observed, remembered, inferred-exact, bounded, unknown, missing, not-applicable, padding,
-and overflow remain distinct. The causal state treats non-null <code>select.deck</code> as the actor's
-full ordered view while options encode eligibility; Prize identities unlock only for later decisions.
-Future frames, outcomes, rewards, omniscient visualizer state, and hidden opponent construction are
-prohibited. <a href="data_audit/visibility_audit.md">Engine visibility evidence</a>.</p>
-</div>
-<div id="brain" data-panel>
-<h3>Semantic relational state</h3>
-<p>The deterministic <code>card_effect_ontology_v1</code> semantic registry and typed/causal input
-layer are implemented. The next model stage maps them into a target <code>d_model=384</code>,
-six-layer, eight-head relational backbone. Four learned goal roles query theoretical deck capability
-and live ledger knowledge: setup, attack, resource access, and tempo/survival. Model shape and
-parameter count remain targets until the M0–M5 smoke gate.</p>
-</div>
-<div id="hands" data-panel>
-<h3>One full-action probability contract</h3>
-<p>The official engine supplies legal options. The decoder plans an ordered, duplicate-free option
-sequence plus STOP. STOP is masked before <code>minCount</code>; termination at
-<code>maxCount</code> is forced with zero log-probability and entropy contribution. Teacher,
-greedy, rollout, and future PPO reevaluation must share this implementation.</p>
-</div>
-<div id="stages" data-panel>
-<h3>Falsifiable ladder</h3>
-<ol><li>M0: 0012-compatible baseline on new contracts</li><li>M1: typed masks and semantics</li>
-<li>M2: registered-deck summary</li><li>M3: Goal-QKV</li><li>M4: causal live ledger</li>
-<li>M5: relations, events, and value-ready API</li></ol>
-</div>
+<h2>Boundary</h2>
+<p>One deck-specific Alakazam-Dudunsparce policy, trained from complete unique-winning Yushin Ito
+trajectories dated 2026-07-18 through 2026-07-25. Features are limited to the actor's current
+observation, actor-visible logs, own registered deck, prior own actions, and causal player-local
+knowledge. Future frames, outcomes, rewards, hidden opponent construction, and omniscient state are
+prohibited.</p>
+<p class="callout">The frozen protocol SHA-256 is
+<code>da6482cf2d4cdc8d9e56fd4c03431e60dbf63b8327720c83185e907a039d44d3</code>.
+Formal <code>V1_m0_causal_contract</code> is preserved as failed before epoch 1; it will not be resumed or overwritten.</p>
 </section>
 <section>
-<h2>Approved source boundary</h2>
-<p>The eight-day source audit validated <code>36,700</code> canonical episode bodies and found
-<code>2,110</code> eligible complete unique Yushin-winner groups. See
-<a href="data_audit/source_audit.json">aggregate audit</a>. The formal dataset, model smoke,
-training/W&amp;B, export, and official-engine evaluation remain downstream.</p>
+<h2>Shared Compiler</h2>
+<p><code>compile_features(raw, registered_deck, knowledge, registry)</code> and
+<code>tensorize_compiled(...)</code> are the only feature path for chronological offline preparation
+and official-engine runtime. Offline state is reconstructed per episode-player before shuffle.
+Runtime resets the same causal state per game.</p>
+<p><code>dataset_reference_v3</code>, model-ready feature manifests, checkpoints, candidate packages,
+and evaluation manifests bind the typed schema, transitive compiler v2 SHA-256, ontology registry,
+protocol, source, split, record schema, and action contract. The raw dataset is the provenance
+layer. The model-ready layer compiles each episode-player once using bounded ordered workers and
+stores compact hash-committed tensor shards; training only shuffles, permutes, prefetches, and
+transfers tensors.</p>
+<p>A verified complete deck view initializes exact deck and inferred Prize counters. Actor-visible
+Draw and MoveCard logs update them across later decisions; Shuffle removes order but retains
+membership. Attached cards, pre-evolutions, Stadium, and the resolving context card participate in
+serial-deduplicated conservation. Ambiguous transitions degrade the affected hidden zone to
+unknown.</p>
 </section>
 <section>
-<h2>Current gate</h2>
-<p>The frozen protocol, source/action/split/shard contracts, visibility audit, structured card
-semantics, typed input schema, and causal ledger are implemented. Next, derive the full private
-split and publish the deterministic dataset, then complete the M0–M5 model/probability/runtime
-smoke gate. Formal training/W&amp;B, export, and official-engine evaluation remain downstream.</p>
-<p>Offline exact-action metrics cannot establish strategy strength; only a frozen formal
-official-engine evaluation can do that. No such result exists.</p>
+<h2>Token Contract</h2>
+<table>
+<thead><tr><th>Family</th><th>Shape</th><th>Maximum / overflow</th><th>Padding</th></tr></thead>
+<tbody>
+<tr><td>state</td><td><code>cat[8], num[16]</code></td><td>one; slots 5-7 count entity/event/relation overflow</td><td>none</td></tr>
+<tr><td>entity</td><td><code>cat[N,8], num[N,12], semantic[N,64]</code></td><td>128; deterministic tail omission</td><td>no entity</td></tr>
+<tr><td>deck</td><td><code>id[D], multiplicity[D], semantic[D,64]</code></td><td>60 unique identities</td><td>no identity</td></tr>
+<tr><td>option</td><td><code>cat[O,12], num[O,8], semantic[O,64]</code></td><td>64; overflow fails closed</td><td>no legal occurrence</td></tr>
+<tr><td>ledger</td><td><code>cat[L,6], num[L,12], semantic[L,64]</code></td><td>one per own deck identity</td><td>no resource</td></tr>
+<tr><td>event</td><td><code>cat[E,6], num[E,8], semantic[E,64]</code></td><td>newest 64 actor-visible logs</td><td>no event</td></tr>
+<tr><td>relation</td><td><code>type[N,N]</code></td><td>retained entity endpoints</td><td>zero means absent</td></tr>
+<tr><td>goal</td><td><code>[4,d_model]</code></td><td>four learned roles</td><td>zero when disabled</td></tr>
+<tr><td>value</td><td><code>[1]</code></td><td>M5 uncalibrated interface only</td><td>not a BC target</td></tr>
+</tbody>
+</table>
 </section>
-<script>
-for (const button of document.querySelectorAll('[data-target]')) {
-  button.addEventListener('click', () => {
-    document.querySelectorAll('[data-panel]').forEach(panel => panel.classList.remove('active'));
-    document.getElementById(button.dataset.target).classList.add('active');
-  });
-}
-</script>
+<section>
+<h2>M0-M5 Matrix</h2>
+<table>
+<thead><tr><th>Variant</th><th>Enabled delta</th><th>Goal memory</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>M0</td><td>state; categorical entity identity/context; option primitive/context</td><td>none</td><td>inactive</td></tr>
+<tr><td>M1</td><td>M0 + entity/option numeric and 64d structural semantics</td><td>none</td><td>inactive</td></tr>
+<tr><td>M2</td><td>M1 + masked registered-deck semantic mean</td><td>none</td><td>inactive</td></tr>
+<tr><td>M3</td><td>M2 + four learned retrieval slots</td><td>registered deck K/V</td><td>inactive</td></tr>
+<tr><td>M4</td><td>M3 + causal ledger tokens</td><td>deck + ledger K/V</td><td>inactive</td></tr>
+<tr><td>M5</td><td>M4 + actor-visible events and relation bias</td><td>deck + ledger K/V</td><td>finite, uncalibrated</td></tr>
+</tbody>
+</table>
+<p>All variants use <code>d_model=384</code>, six pre-norm state layers, eight heads, FFN 1536, and
+two option cross-attention layers. M0 is the new 0013-contract baseline, not a strict causal
+comparison to 0012 V5. A strict control would require a separate <code>M0_0012_matched</code> with
+0012's 320-wide, four-layer capacity and matched budget.</p>
+</section>
+<section>
+<h2>Goal And Action Decisions</h2>
+<p>M3 and M4 share one Goal-QKV module. The four latent roles are setup/board development,
+attack/Prize progress, resource access/recovery, and tempo/survival. Q is the raw state token before
+entity contextualization. A raw-state-plus-board-summary Q is reserved for an explicit future
+M3b/M4b ablation. There is no diversity regularizer in M0-M5.</p>
+<p>Training permutes every legal option occurrence and synchronously reorders categorical, numeric,
+semantic, mask, and ordered-target tensors. STOP is masked before <code>minCount</code>; reaching
+<code>maxCount</code> forces termination with zero STOP probability/entropy contribution. Teacher,
+greedy, rollout, and future PPO reevaluation share one probability implementation. Full-action
+greedy evaluation is batched. Formal runs create W&amp;B at startup and report train, train-eval, and
+validation-eval progress with iterations/s, decisions/s, completion, elapsed time, and ETA.</p>
+</section>
+<section>
+<h2>Value And Evidence</h2>
+<p>M0-M4 have no active value objective. M5's scalar only establishes a finite action-before,
+player-relative interface and is not optimized or interpreted during BC. Reward, target, discount,
+bootstrap, terminal/truncation masks, calibration, and PPO losses require a later synchronized
+design update backed by official-engine rollouts.</p>
+<p class="callout">Offline loss, exact action, legality, and permutation audits establish data and
+imitation health only. Policy strength requires a frozen candidate and official-engine arena report.
+Promotion into the opponent pool requires explicit user confirmation.</p>
+</section>
+<section>
+<h2>Current Stage</h2>
+<p>The raw dataset contains 145,961 train and 16,167 validation decisions from 2,110 eligible
+complete episode-player groups. V1 wrote no complete epoch metric or checkpoint because raw JSON
+and causal compilation were repeated in every hot-path pass. It is preserved with failure class
+<code>input_pipeline_throughput_defect</code>.</p>
+<p>A completed V2 tensor build is rejected because a format-only source edit occurred after workers
+imported the compiler but before the final manifest digest was calculated. V3 adds compiler and
+materializer start/end digest equality and will produce 143 train and 16 validation tensor shards
+with per-file SHA-256, count, dtype and shape commitments. After atomic publication, full
+validation, tensor parity, real forward/backward and throughput smokes, and the complete test suite
+must pass before the next strictly increasing M0 version is allocated. M1-M5 are paused.</p>
+</section>
 </body>
 </html>
