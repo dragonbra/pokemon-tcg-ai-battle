@@ -1,9 +1,9 @@
 # 0013 Semantic Goal Policy
 
 **Project ID:** `0013_semantic_goal_policy`
-**Status:** raw `dataset_reference_v3` published and validated; formal V1 stopped before epoch 1
-with an audited input-pipeline throughput defect; 8-worker model-ready feature materialization is
-in progress; no checkpoint, candidate, or policy-strength result exists.
+**Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors published and fully
+validated; formal V1 is preserved failed; the next strictly increasing M0 run is ready to allocate;
+no checkpoint, candidate, or policy-strength result exists.
 
 ## Purpose and boundaries
 
@@ -178,11 +178,17 @@ audited and unpublished. A complete V2 materialization is also rejected: a forma
 occurred after workers imported the compiler but before the final manifest digest was calculated,
 so its exact source provenance is invalid even though behavior did not change.
 
-The current gate is a source-frozen deterministic 8-worker build of
-`V3_model_ready_semantic_v2`. The materializer now captures compiler and materializer digests before
-reading data and refuses publication unless both are unchanged at the end. Full shard commitment
-validation, offline/runtime tensor parity, real tensor forward/backward and throughput smokes, and
-the complete 0013 test suite follow.
+The source-frozen deterministic 8-worker build `V3_model_ready_semantic_v2` is accepted. It contains
+143 train and 16 validation shards, binds unchanged compiler/materializer digests, and passed full
+commitment validation, 1,024-record raw/cache tensor parity, real forward/backward throughput,
+complete untrained validation, and single-decision runtime smokes. At batch 64 the input path
+reached 5,765 decisions/s while M0 optimization reached 638 decisions/s, so feature loading no
+longer starves the model. Full evidence is in
+`data_audit/materialized_v3_audit_2026-07-26.json`.
+
+The next gate is allocation of the strictly increasing formal M0 version with V3, batch 64, seed
+20260726, three complete epochs, full train/validation evaluation each epoch, eager online W&B, and
+throttled phase progress. M1-M5 remain paused.
 
 Only after those gates pass may the next strictly increasing formal version allocate and train M0.
 M1-M5 are paused. After M0 data/action health is established, they may advance as isolated versions

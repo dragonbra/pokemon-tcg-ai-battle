@@ -108,6 +108,8 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
         "feature_compiler_sha256": compiler_sha256(),
         "ontology_sha256": source.registry.sha256,
         "dataset_content_sha256": source.reference["content_sha256"],
+        "materializer_sha256": source.reference["materializer_sha256"],
+        "feature_dataset_schema_version": source.reference["schema_version"],
         "protocol_sha256": protocol.sha256(),
         "action_contract": "ordered_full_action_v1",
         "value_objective_active": False,
@@ -118,11 +120,16 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
         "variant": args.variant,
         "dataset": str(args.dataset),
         "dataset_content_sha256": source.reference["content_sha256"],
+        "materializer_sha256": source.reference["materializer_sha256"],
+        "feature_dataset_schema_version": source.reference["schema_version"],
         "protocol_sha256": protocol.sha256(),
         "feature_compiler_sha256": compiler_sha256(),
         "ontology_sha256": source.registry.sha256,
         "epochs": args.epochs,
         "batch_size": args.batch_size,
+        "batch_counts": {
+            split: source.batch_count(split) for split in ("train", "validation")
+        },
         "seed": args.seed,
         "learning_rate": args.learning_rate,
         "weight_decay": args.weight_decay,
@@ -141,6 +148,8 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
     os.environ["WANDB_ENTITY"] = "dragon_bra"
     os.environ["WANDB_PROJECT"] = "pokemon-tcg-policy-learning"
     os.environ["WANDB_DIR"] = str(paths.wandb)
+    os.environ["WANDB_JOB_TYPE"] = "bc_train"
+    os.environ["WANDB_TAGS"] = f"0013,{args.variant.lower()},model_ready"
     return train_version(
         paths,
         model=model,
@@ -157,6 +166,7 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
         device=device,
         max_grad_norm=args.max_grad_norm,
         amp=not args.no_amp,
+        progress_log_every=args.progress_log_every,
     )
 
 
@@ -165,7 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     smoke = subparsers.add_parser("smoke")
     smoke.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
-    smoke.add_argument("--batch-size", type=int, default=96)
+    smoke.add_argument("--batch-size", type=int, default=64)
     smoke.add_argument("--seed", type=int, default=20260726)
     smoke.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     smoke.add_argument("--decisions", type=int, default=256)
@@ -176,7 +186,8 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--version", required=True)
     train.add_argument("--variant", choices=tuple(MODEL_REGISTRY), default="M0")
     train.add_argument("--epochs", type=int, default=3)
-    train.add_argument("--batch-size", type=int, default=96)
+    train.add_argument("--batch-size", type=int, default=64)
+    train.add_argument("--progress-log-every", type=int, default=20)
     train.add_argument("--seed", type=int, default=20260726)
     train.add_argument("--learning-rate", type=float, default=3e-4)
     train.add_argument("--weight-decay", type=float, default=1e-2)
