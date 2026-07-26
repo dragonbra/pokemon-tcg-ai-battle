@@ -2,14 +2,42 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import re
+import uuid
 from pathlib import Path
 from typing import Any
+
+from .html import render_html
+from .models import ReportData
 
 
 _REPORT_DATA_START = '<script id="report-data" type="application/json">'
 _REPORT_DATA_END = "</script>"
 _VERSION_FILE = re.compile(r"^V(?P<version>[1-9]\d*)(?P<tag>.*)\.html$", re.IGNORECASE)
+
+
+def write_report_file_atomic(data: ReportData, output_path: Path) -> None:
+    """Atomically publish one immutable standalone HTML report."""
+    if output_path.suffix != ".html":
+        raise ValueError("evaluation report path must end with .html")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = output_path.with_name(
+        f".{output_path.name}.{uuid.uuid4().hex}.tmp"
+    )
+    try:
+        with temporary_path.open("x", encoding="utf-8") as report_file:
+            report_file.write(render_html(data))
+            report_file.flush()
+            os.fsync(report_file.fileno())
+        try:
+            os.link(temporary_path, output_path)
+        except FileExistsError as exc:
+            raise FileExistsError(
+                f"evaluation report already exists: {output_path}"
+            ) from exc
+    finally:
+        temporary_path.unlink(missing_ok=True)
 
 
 def write_evaluation_index(project_root: Path) -> Path:
@@ -18,8 +46,11 @@ def write_evaluation_index(project_root: Path) -> Path:
     reports = [_report_row(path) for path in _version_reports(project_root)]
     output_path = project_root / "index.html"
     temporary_path = project_root / ".index.html.tmp"
-    temporary_path.write_text(_render_index(project_root.name, reports), encoding="utf-8")
-    temporary_path.replace(output_path)
+    try:
+        temporary_path.write_text(_render_index(project_root.name, reports), encoding="utf-8")
+        temporary_path.replace(output_path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
     return output_path
 
 

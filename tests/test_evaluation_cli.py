@@ -53,7 +53,7 @@ class EvaluationCliTests(unittest.TestCase):
                 "--opponents",
                 "all",
                 "--output",
-                str(self.root / "reports"),
+                str(Path.cwd() / ".tmp" / "evaluation" / "cli-test"),
             ]
         )
 
@@ -62,9 +62,9 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertIsNone(args.workers)
         self.assertEqual(args.worker_cpu_threads, 1)
 
-    def test_formal_output_is_one_versioned_html_in_project_root(self) -> None:
+    def test_formal_output_is_one_versioned_html_in_project_evaluation_directory(self) -> None:
         requested = Path(
-            "rl_runs/evaluation/0012-alakazam_sota_feature_engineering/"
+            "experiments/0013_alakazam_sota_feature_engineering/evaluation/"
             "V10_action_contract_fix"
         )
 
@@ -74,8 +74,37 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertEqual(report_path, expected)
         self.assertEqual(output_root, expected.parent)
 
+    def test_formal_output_rejects_legacy_rl_runs_evaluation_path(self) -> None:
+        requested = Path("rl_runs/evaluation/0012-alakazam_sota_feature_engineering/V1_legacy")
+
+        with self.assertRaisesRegex(PackageValidationError, "legacy"):
+            cli._evaluation_output_paths(requested)
+
+    def test_temporary_output_retains_run_directory_layout(self) -> None:
+        requested = Path(".tmp/evaluation/path-smoke")
+
+        output_root, report_path = cli._evaluation_output_paths(requested)
+
+        self.assertEqual(output_root, requested)
+        self.assertIsNone(report_path)
+
+    def test_output_rejects_arbitrary_directory_and_explicit_flat_report(self) -> None:
+        for requested in (
+            Path("reports/path-smoke"),
+            Path(".tmp/evaluation/path-smoke/report.html"),
+        ):
+            with self.subTest(requested=requested):
+                with self.assertRaisesRegex(PackageValidationError, "temporary evaluation output"):
+                    cli._evaluation_output_paths(requested)
+
+    def test_formal_output_rejects_uppercase_or_tagless_version_before_workers(self) -> None:
+        for version_name in ("V1", "v1_lowercase", "V1_Uppercase", "V1_two__underscores"):
+            requested = Path("experiments/0013_alakazam/evaluation") / version_name
+            with self.assertRaisesRegex(PackageValidationError, "formal evaluation report"):
+                cli._evaluation_output_paths(requested)
+
     def test_formal_output_rejects_missing_version_name(self) -> None:
-        requested = Path("rl_runs/evaluation/0012-alakazam_sota_feature_engineering")
+        requested = Path("experiments/0013_alakazam_sota_feature_engineering/evaluation")
 
         with self.assertRaisesRegex(PackageValidationError, "formal evaluation output"):
             cli._evaluation_output_paths(requested)
@@ -134,7 +163,7 @@ class EvaluationCliTests(unittest.TestCase):
                     "--games",
                     "10",
                     "--output",
-                    str(self.root / "reports"),
+                    str(Path.cwd() / ".tmp" / "evaluation" / "cli-test"),
                     "--no-visualize",
                     "--keep-temp",
                     "--max-steps",
@@ -156,7 +185,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertEqual(config.opponents, opponents)
         self.assertEqual(config.control, self.control)
         self.assertEqual(config.games_per_opponent, 10)
-        self.assertEqual(config.output_root, self.root / "reports")
+        self.assertEqual(config.output_root, Path.cwd() / ".tmp" / "evaluation" / "cli-test")
         self.assertFalse(config.visualize)
         self.assertTrue(config.keep_temp)
         self.assertEqual(config.max_steps, 77)
@@ -191,7 +220,7 @@ class EvaluationCliTests(unittest.TestCase):
                     "--opponents",
                     "all",
                     "--output",
-                    str(self.root / "reports"),
+                    str(Path.cwd() / ".tmp" / "evaluation" / "cli-test"),
                 ]
             )
 
@@ -223,7 +252,7 @@ class EvaluationCliTests(unittest.TestCase):
                     "--opponents",
                     "all",
                     "--output",
-                    str(self.root / "reports"),
+                    str(Path.cwd() / ".tmp" / "evaluation" / "cli-test"),
                 ]
             )
 

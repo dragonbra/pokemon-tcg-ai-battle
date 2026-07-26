@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0013 Semantic Goal Policy</title>
+<style>
+:root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+body { max-width: 1100px; margin: auto; padding: 2rem; line-height: 1.55; }
+nav, .grid { display: flex; flex-wrap: wrap; gap: .75rem; }
+nav a, button { padding: .55rem .8rem; border: 1px solid #788; border-radius: .4rem; }
+button { background: transparent; color: inherit; cursor: pointer; }
+section { margin: 1.5rem 0; padding: 1rem; border: 1px solid #7888; border-radius: .6rem; }
+.grid > article { flex: 1 1 230px; padding: .8rem; border-left: 4px solid #567; }
+[data-panel] { display: none; }
+[data-panel].active { display: block; }
+.status { font-weight: 700; }
+code { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<header>
+<h1>0013 Semantic Goal Policy</h1>
+<p class="status">Data contracts and causal semantic inputs implemented — no checkpoint or policy-strength result.</p>
+<nav>
+<a href="DESIGN.md">Markdown design</a><a href="README.md">Archive</a>
+<a href="manifest.json">Manifest</a><a href="evaluation/index.html">Evaluation index</a>
+</nav>
+</header>
+<section>
+<h2>Explore the approved contract</h2>
+<div class="grid" role="tablist" aria-label="Design layers">
+<button data-target="eyes">Eyes: causal inputs</button>
+<button data-target="brain">Brain: Goal-QKV</button>
+<button data-target="hands">Hands: legal actions</button>
+<button data-target="stages">Stages: M0–M5</button>
+</div>
+<div id="eyes" data-panel class="active">
+<h3>Strict player perspective</h3>
+<p>Implemented <code>semantic_goal_typed_input_v1</code> tokens cover state, visible entities, own
+registered-deck capabilities, causal ledger/belief, recent events, official legal options, and typed
+relations. Observed, remembered, inferred-exact, bounded, unknown, missing, not-applicable, padding,
+and overflow remain distinct. The causal state treats non-null <code>select.deck</code> as the actor's
+full ordered view while options encode eligibility; Prize identities unlock only for later decisions.
+Future frames, outcomes, rewards, omniscient visualizer state, and hidden opponent construction are
+prohibited. <a href="data_audit/visibility_audit.md">Engine visibility evidence</a>.</p>
+</div>
+<div id="brain" data-panel>
+<h3>Semantic relational state</h3>
+<p>The deterministic <code>card_effect_ontology_v1</code> semantic registry and typed/causal input
+layer are implemented. The next model stage maps them into a target <code>d_model=384</code>,
+six-layer, eight-head relational backbone. Four learned goal roles query theoretical deck capability
+and live ledger knowledge: setup, attack, resource access, and tempo/survival. Model shape and
+parameter count remain targets until the M0–M5 smoke gate.</p>
+</div>
+<div id="hands" data-panel>
+<h3>One full-action probability contract</h3>
+<p>The official engine supplies legal options. The decoder plans an ordered, duplicate-free option
+sequence plus STOP. STOP is masked before <code>minCount</code>; termination at
+<code>maxCount</code> is forced with zero log-probability and entropy contribution. Teacher,
+greedy, rollout, and future PPO reevaluation must share this implementation.</p>
+</div>
+<div id="stages" data-panel>
+<h3>Falsifiable ladder</h3>
+<ol><li>M0: 0012-compatible baseline on new contracts</li><li>M1: typed masks and semantics</li>
+<li>M2: registered-deck summary</li><li>M3: Goal-QKV</li><li>M4: causal live ledger</li>
+<li>M5: relations, events, and value-ready API</li></ol>
+</div>
+</section>
+<section>
+<h2>Approved source boundary</h2>
+<p>The eight-day source audit validated <code>36,700</code> canonical episode bodies and found
+<code>2,110</code> eligible complete unique Yushin-winner groups. See
+<a href="data_audit/source_audit.json">aggregate audit</a>. The formal dataset, model smoke,
+training/W&amp;B, export, and official-engine evaluation remain downstream.</p>
+</section>
+<section>
+<h2>Current gate</h2>
+<p>The frozen protocol, source/action/split/shard contracts, visibility audit, structured card
+semantics, typed input schema, and causal ledger are implemented. Next, derive the full private
+split and publish the deterministic dataset, then complete the M0–M5 model/probability/runtime
+smoke gate. Formal training/W&amp;B, export, and official-engine evaluation remain downstream.</p>
+<p>Offline exact-action metrics cannot establish strategy strength; only a frozen formal
+official-engine evaluation can do that. No such result exists.</p>
+</section>
+<script>
+for (const button of document.querySelectorAll('[data-target]')) {
+  button.addEventListener('click', () => {
+    document.querySelectorAll('[data-panel]').forEach(panel => panel.classList.remove('active'));
+    document.getElementById(button.dataset.target).classList.add('active');
+  });
+}
+</script>
+</body>
+</html>

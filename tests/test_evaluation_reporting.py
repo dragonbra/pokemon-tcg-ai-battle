@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import tempfile
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from evaluation.reporting import (
     write_evaluation_index,
     write_report,
 )
+from evaluation.reporting.index import write_report_file_atomic
 
 
 OPPONENTS = (
@@ -527,6 +529,40 @@ class EvaluationReportingTests(unittest.TestCase):
         self.assertIn("matchup-chart", html)
         self.assertNotIn("https://", html)
         self.assertNotIn("http://", html)
+
+    def test_atomic_report_race_never_overwrites_concurrent_publisher(self) -> None:
+        data = report_data()
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "V1_race.html"
+
+            def concurrent_publish(_data: ReportData) -> str:
+                output.write_text("concurrent winner", encoding="utf-8")
+                return "new report"
+
+            with patch(
+                "evaluation.reporting.index.render_html",
+                side_effect=concurrent_publish,
+            ):
+                with self.assertRaises(FileExistsError):
+                    write_report_file_atomic(data, output)
+
+            self.assertEqual(output.read_text(encoding="utf-8"), "concurrent winner")
+            self.assertEqual({path.name for path in output.parent.iterdir()}, {output.name})
+
+    def test_project_index_keeps_malformed_legacy_report_visible_and_read_only(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            project_root = Path(temporary) / "legacy"
+            project_root.mkdir()
+            malformed = project_root / "V1_legacy.html"
+            original = b"legacy malformed report\n"
+            malformed.write_bytes(original)
+
+            index_path = write_evaluation_index(project_root)
+            index = index_path.read_text(encoding="utf-8")
+
+            self.assertEqual(malformed.read_bytes(), original)
+            self.assertIn('href="V1_legacy.html"', index)
+            self.assertIn("无法解析", index)
 
     def test_project_index_summarizes_and_links_version_reports(self) -> None:
         data = report_data()
