@@ -17,6 +17,18 @@ def _write_exclusive(path: Path, payload: bytes) -> None:
         handle.write(payload);handle.flush();os.fsync(handle.fileno())
 
 
+def _write_atomic(path: Path, payload: bytes) -> None:
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def save_checkpoint(root: Path, *, model: nn.Module, optimizer: torch.optim.Optimizer, epoch: int, global_step: int, metadata: dict[str, Any], criteria: Sequence[str]) -> dict[str, Any]:
     root.mkdir(parents=True, exist_ok=True);criteria_root=root/"criteria";criteria_root.mkdir(exist_ok=True)
     temporary=root/f".epoch-{epoch:04d}.tmp"
@@ -26,7 +38,7 @@ def save_checkpoint(root: Path, *, model: nn.Module, optimizer: torch.optim.Opti
     temporary.replace(final)
     manifest={"schema_version":"semantic_goal_checkpoint_v1","path":final.name,"sha256":digest,"epoch":epoch,"global_step":global_step,"metadata":metadata,"criteria":list(criteria)}
     manifest_bytes=(json.dumps(manifest,sort_keys=True,separators=(",",":"),allow_nan=False)+"\n").encode();_write_exclusive(final.with_suffix(".json"),manifest_bytes)
-    for criterion in criteria:_write_exclusive(criteria_root/f"{criterion}.json",manifest_bytes)
+    for criterion in criteria:_write_atomic(criteria_root/f"{criterion}.json",manifest_bytes)
     return manifest
 
 
