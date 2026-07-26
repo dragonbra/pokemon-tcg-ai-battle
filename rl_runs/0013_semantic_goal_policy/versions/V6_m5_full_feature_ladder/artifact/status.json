@@ -1,0 +1,25 @@
+{
+  "best_validation_exact": 0.5959052390672357,
+  "best_validation_loss": 1.040216018484503,
+  "device": "cuda",
+  "discarded_partial_epoch": 9,
+  "last_completed_epoch": 8,
+  "last_complete_checkpoint": "epoch-0008-6e3556da684eb3ee.pt",
+  "started_at": 1785068358.8028514,
+  "state": "user_stopped",
+  "stop_reason": "goal_scale_runaway_and_slow_optimization",
+  "stopped_at": 1785076534,
+  "version": "V6_m5_full_feature_ladder",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": "user_stopped",
+    "remote_state": "failed",
+    "run_id": "0013_semantic_goal_policy--0013-semantic_goal_policy-8185d96a0b",
+    "state": "closed",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0013_semantic_goal_policy--0013-semantic_goal_policy-8185d96a0b"
+  },
+  "wandb_expected_mode": "online"
+}

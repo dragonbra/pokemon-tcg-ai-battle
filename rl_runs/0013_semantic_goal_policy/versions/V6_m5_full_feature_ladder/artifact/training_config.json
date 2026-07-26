@@ -1,0 +1,54 @@
+{
+  "amp": true,
+  "batch_counts": {
+    "train": 2281,
+    "validation": 253
+  },
+  "batch_size": 64,
+  "dataset": "rl_runs/0013_semantic_goal_policy/dataset/V3_model_ready_semantic_v2",
+  "dataset_content_sha256": "a9a7f70190598dbcbaa7b12266e9997f8773fa596401a92f6e03151b9bc442f6",
+  "device": "cuda",
+  "epochs": 100,
+  "feature_compiler_sha256": "60064dffb6d2780959589a83d57596bcc41f5834cd9146c24259a55c6503cf1d",
+  "feature_dataset_schema_version": "materialized_feature_dataset_v1",
+  "initial_model_sha256": "2caaffc321679ab9bb28579b2cf5b4bc548324af519627efb9d16eb8a8a66946",
+  "learning_rate": 0.0003,
+  "m0_smoke_throughput": 156.31125838620608,
+  "materializer_sha256": "29cd3d96ac858d909060c51313789a4d02c15c41ebdf800f3175074886522101",
+  "max_grad_norm": 1.0,
+  "ontology_sha256": "67d95a256465e119a208fbf6e01efb4dfc27da25e5f7a1bf81eaf5ec4f9a9ef4",
+  "project_id": "0013_semantic_goal_policy",
+  "protocol_sha256": "da6482cf2d4cdc8d9e56fd4c03431e60dbf63b8327720c83185e907a039d44d3",
+  "reproducibility": {
+    "cublas_workspace_config": ":4096:8",
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
+    "deterministic_algorithms": true,
+    "numpy_random": true,
+    "python_random": true,
+    "seed": 20260726,
+    "torch_cpu": true,
+    "torch_cuda_all": true
+  },
+  "runtime_floor": 10.0,
+  "seed": 20260726,
+  "variant": "M5",
+  "version": "V6_m5_full_feature_ladder",
+  "wandb": {
+    "entity": "dragon_bra",
+    "group": "0013_semantic_goal_policy",
+    "job_type": "bc_train",
+    "mode": "online",
+    "name": "0013 \u00b7 semantic_goal_policy \u00b7 V6_m5_full_feature_ladder",
+    "notes": "0013 M5 \u73b0\u6709\u5b8c\u6574\u7279\u5f81\u9636\u68af\u957f\u7a0b\u8bad\u7ec3\uff1a\u6cbf\u7528\u5df2\u9a8c\u8bc1\u7684 V3 model-ready \u6570\u636e\u96c6\u3001ordered full-action contract \u548c\u56fa\u5b9a seed\uff1b\u7d2f\u8ba1\u5f00\u542f entity/option numeric+64d semantics\u3001registered deck\u3001causal ledger\u3001actor-visible events\u3001directed typed entity relation attention bias\uff0c\u4ee5\u53ca deck+ledger \u56db\u89d2\u8272 Goal-QKV\u3002batch 64\u3001\u5b66\u4e60\u7387 3e-4\u3001weight decay 1e-2\uff0c\u6700\u5927 100 epochs\uff0cBC-only\uff0cvalue loss weight \u4e3a 0\u3002\u672c run \u7528\u4e8e\u5148\u9a8c\u8bc1\u73b0\u6709 feature \u65b9\u5411\uff0c\u4e0d\u662f F1\uff0c\u4e0d\u5305\u542b\u65b0 dataset schema \u6216 board-conditioned Goal query\u3002",
+    "project": "pokemon-tcg-policy-learning",
+    "tags": [
+      "0013",
+      "m5",
+      "model_ready",
+      "full_feature_ladder",
+      "long_horizon"
+    ]
+  },
+  "weight_decay": 0.01
+}

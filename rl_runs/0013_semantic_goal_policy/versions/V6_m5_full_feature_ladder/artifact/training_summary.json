@@ -1,0 +1,33 @@
+{
+  "best_validation_exact": 0.5959052390672357,
+  "best_validation_exact_epoch": 8,
+  "best_validation_loss": 1.040216018484503,
+  "best_validation_loss_epoch": 8,
+  "completed_epochs": 8,
+  "discarded_partial_epoch": {
+    "epoch": 9,
+    "optimization_fraction": 0.5786935554581324,
+    "progress_iteration": 2013,
+    "running_loss": 1.006053378771652,
+    "stage": "train"
+  },
+  "global_step": 18248,
+  "last_complete_checkpoint": {
+    "epoch": 8,
+    "path": "epoch-0008-6e3556da684eb3ee.pt",
+    "sha256": "6e3556da684eb3eec56e4effe8b7bdcae2026d627603533b6eb8d07e8c88abd1"
+  },
+  "reason": "User stopped the formal run after diagnostics found Goal-QKV activation scale runaway, unnormalized numeric feature scales, and substantially slower optimization than M0.",
+  "requested_epochs": 100,
+  "schema_version": "semantic_goal_interrupted_training_summary_v1",
+  "state": "user_stopped",
+  "stopped_at": 1785076534,
+  "version": "V6_m5_full_feature_ladder",
+  "wandb": {
+    "remote_state": "failed",
+    "repository_state": "user_stopped",
+    "run_id": "0013_semantic_goal_policy--0013-semantic_goal_policy-8185d96a0b",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0013_semantic_goal_policy--0013-semantic_goal_policy-8185d96a0b"
+  }
+}

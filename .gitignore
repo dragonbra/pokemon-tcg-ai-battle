@@ -42,6 +42,7 @@ data/replays/*
 
 .DS_Store
 .claude/settings.local.json
+.claude/worktrees/
 .hermes/
 
 # Exported model weights and packaged submissions stay local.
