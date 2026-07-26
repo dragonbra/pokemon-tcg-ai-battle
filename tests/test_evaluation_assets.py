@@ -17,8 +17,7 @@ FOREIGN_EVALUATION_REPOSITORY = "/Users/hejinyu/Documents/repos/ptcg-agent-kaggl
 EXPECTED_NAMES = (
     "alakazam_dudunsparce_01",
     "alakazam_dudunsparce_02",
-    "alakazam_dudunsparce_03",
-    "alakazam_dudunsparce_04",
+    "alakazam_dudunsparce_03_bc",
     "crustle_01",
     "crustle_02",
     "dragapult_ex_01",
@@ -27,6 +26,7 @@ EXPECTED_NAMES = (
     "marnies_grimmsnarl_ex_dudunsparce_01",
     "marnies_grimmsnarl_ex_froslass_01",
     "marnies_grimmsnarl_ex_froslass_02",
+    "marnies_grimmsnarl_ex_froslass_03_bc",
     "mega_abomasnow_ex_kyogre_01",
     "mega_lucario_ex_solrock_01",
     "mega_lucario_ex_solrock_02",
@@ -34,7 +34,13 @@ EXPECTED_NAMES = (
     "mega_lucario_ex_solrock_04",
     "mega_lucario_ex_solrock_05",
     "mega_lucario_ex_solrock_06",
-    "team_rockets_mewtwo_ex_spidops_01",
+    "team_rockets_mewtwo_ex_spidops_01_bc",
+)
+
+BC_AGENT_NAMES = (
+    "alakazam_dudunsparce_03_bc",
+    "marnies_grimmsnarl_ex_froslass_03_bc",
+    "team_rockets_mewtwo_ex_spidops_01_bc",
 )
 
 
@@ -87,6 +93,13 @@ class EvaluationAssetTests(unittest.TestCase):
         catalog_packages = {opponent["package"] for opponent in self.catalog["opponents"]}
         self.assertTrue(all(package.startswith("arena/opponents/") for package in catalog_packages))
         self.assertFalse(any(package.startswith("arena/candidates/") for package in catalog_packages))
+
+    def test_bc_agent_opponents_are_visibly_tagged(self) -> None:
+        by_name = {opponent["name"]: opponent for opponent in self.catalog["opponents"]}
+        for name in BC_AGENT_NAMES:
+            with self.subTest(opponent=name):
+                self.assertIn("bc_agent", by_name[name]["tags"])
+                self.assertTrue(by_name[name]["display_name"].startswith("[BC] "))
 
 
 if __name__ == "__main__":

@@ -348,7 +348,28 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                         "action": action,
                     }
                 )
-                observation = game_module.battle_select(action)
+                try:
+                    observation = game_module.battle_select(action)
+                except IndexError as exc:
+                    error_side = (
+                        "candidate_error"
+                        if current_player == candidate_physical_index
+                        else "opponent_error"
+                    )
+                    result = GameResult(
+                        game_id=request.game_id,
+                        opponent=request.opponent.name,
+                        candidate_first=request.candidate_first,
+                        candidate_physical_index=candidate_physical_index,
+                        finished=True,
+                        winner=1 if error_side == "candidate_error" else 0,
+                        status="finished",
+                        error_kind=error_side,
+                        error=_exception_text(exc),
+                        steps=selection_count,
+                        trace_path=trace_path,
+                    )
+                    break
                 physical_winner = (observation.get("current") or {}).get("result")
                 if isinstance(physical_winner, int) and physical_winner >= 0:
                     trace.append(

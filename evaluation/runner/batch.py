@@ -854,7 +854,9 @@ def _summary(records: tuple[dict[str, object], ...]) -> dict[str, object]:
         record["status"] == "finished" and record["winner"] is None for record in records
     )
     errors = sum(
-        record["error_kind"] is not None and record["status"] != "unfinished"
+        record["error_kind"] is not None
+        and record["status"] != "unfinished"
+        and record["status"] != "finished"
         for record in records
     )
     unfinished = sum(record["status"] == "unfinished" for record in records)
@@ -879,7 +881,9 @@ def _summary(records: tuple[dict[str, object], ...]) -> dict[str, object]:
             record["status"] == "finished" and record["winner"] is None
         )
         values["errors"] += int(
-            record["error_kind"] is not None and record["status"] != "unfinished"
+            record["error_kind"] is not None
+            and record["status"] != "unfinished"
+            and record["status"] != "finished"
         )
         values["unfinished"] += int(record["status"] == "unfinished")
     for values in by_opponent.values():

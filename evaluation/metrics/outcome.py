@@ -17,6 +17,16 @@ def _error_text(trace: dict) -> str:
 
 
 def _category(trace: dict, context: GameContext) -> str:
+    terminal_forfeit = str(result_field(trace, "error_kind") or result_field(trace, "status") or "").lower()
+    if result_field(trace, "finished") is True and terminal_forfeit in {
+        "candidate_error",
+        "opponent_error",
+    }:
+        winner = result_field(trace, "winner")
+        if winner == 0:
+            return "win"
+        if winner == 1:
+            return "loss"
     for value in (result_field(trace, "error_kind"), result_field(trace, "status")):
         normalized = str(value).lower() if value else ""
         if normalized in {"step_limit", "step limit", "unfinished"}:

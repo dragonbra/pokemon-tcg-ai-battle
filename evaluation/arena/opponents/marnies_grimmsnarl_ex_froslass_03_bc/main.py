@@ -1,4 +1,4 @@
-"""Greedy CPU inference for the compact Yushin Ito ID-only BC checkpoint."""
+"""Greedy CPU inference for the Marnie multi-deck mean-pool BC checkpoint."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import os
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -129,6 +130,14 @@ def _decode(obs: dict[str, Any]) -> list[int]:
     row = codec.encode(obs, list(range(min_count)))
     if row is None:
         return []
+
+    counts = Counter(int(card) for card in my_deck)
+    row.update(
+        deck_ids=[int(card) for card in my_deck],
+        deck_counts=[counts[int(card)] for card in my_deck],
+        sample_weight=1.0,
+        deck_hash_code=0,
+    )
 
     batch = _load_train_module().collate_examples([row])
     with torch.inference_mode():

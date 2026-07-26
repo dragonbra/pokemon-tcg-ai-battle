@@ -92,7 +92,7 @@ class CombatMatrixTests(unittest.TestCase):
             data = build_combat_matrix_data(CATALOG, reports_root)
 
             self.assertEqual(data["protocol"]["packages"], 20)
-            self.assertEqual(data["protocol"]["archetypes"], 9)
+            self.assertEqual(data["protocol"]["archetypes"], 11)
             self.assertEqual(data["summary"]["total_games"], 20 * 20 * 10)
             first = names[0]
             second = names[1]
@@ -103,7 +103,7 @@ class CombatMatrixTests(unittest.TestCase):
             self.assertEqual(
                 data["archetype_matrix"]["alakazam_dudunsparce"]
                 ["alakazam_dudunsparce"]["games"],
-                4 * 4 * 10,
+                2 * 2 * 10,
             )
 
             html = render_combat_matrix(data, ROOT / "evaluation" / "arena")

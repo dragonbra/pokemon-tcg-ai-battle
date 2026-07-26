@@ -17,20 +17,12 @@
       "tags": ["alakazam", "dudunsparce"]
     },
     {
-      "name": "alakazam_dudunsparce_03",
-      "package": "arena/opponents/alakazam_dudunsparce_03",
-      "display_name": "Alakazam / Dudunsparce 03",
+      "name": "alakazam_dudunsparce_03_bc",
+      "package": "arena/opponents/alakazam_dudunsparce_03_bc",
+      "display_name": "[BC] Alakazam / Dudunsparce 03",
       "representative_card_ids": [743, 66],
       "enabled": true,
-      "tags": ["alakazam", "dudunsparce"]
-    },
-    {
-      "name": "alakazam_dudunsparce_04",
-      "package": "arena/opponents/alakazam_dudunsparce_04",
-      "display_name": "Alakazam / Dudunsparce 04",
-      "representative_card_ids": [743, 66],
-      "enabled": true,
-      "tags": ["alakazam", "dudunsparce"]
+      "tags": ["alakazam", "dudunsparce", "bc_agent"]
     },
     {
       "name": "crustle_01",
@@ -97,6 +89,14 @@
       "tags": ["marnies_grimmsnarl_ex", "froslass"]
     },
     {
+      "name": "marnies_grimmsnarl_ex_froslass_03_bc",
+      "package": "arena/opponents/marnies_grimmsnarl_ex_froslass_03_bc",
+      "display_name": "[BC] Marnie’s Grimmsnarl ex / Froslass 03",
+      "representative_card_ids": [648, 104],
+      "enabled": true,
+      "tags": ["marnies_grimmsnarl_ex", "froslass", "bc_agent"]
+    },
+    {
       "name": "mega_abomasnow_ex_kyogre_01",
       "package": "arena/opponents/mega_abomasnow_ex_kyogre_01",
       "display_name": "Mega Abomasnow ex / Kyogre 01",
@@ -153,12 +153,12 @@
       "tags": ["mega_lucario_ex", "solrock"]
     },
     {
-      "name": "team_rockets_mewtwo_ex_spidops_01",
-      "package": "arena/opponents/team_rockets_mewtwo_ex_spidops_01",
-      "display_name": "Team Rocket’s Mewtwo ex / Spidops 01",
+      "name": "team_rockets_mewtwo_ex_spidops_01_bc",
+      "package": "arena/opponents/team_rockets_mewtwo_ex_spidops_01_bc",
+      "display_name": "[BC] Team Rocket’s Mewtwo ex / Spidops 01",
       "representative_card_ids": [431, 401],
       "enabled": true,
-      "tags": ["team_rockets_mewtwo_ex", "spidops"]
+      "tags": ["team_rockets_mewtwo_ex", "spidops", "bc_agent"]
     }
   ]
 }

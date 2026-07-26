@@ -38,6 +38,7 @@ class EvaluationWorkerTests(unittest.TestCase):
         import_system_exit: bool = False,
         start_error: bool = False,
         select_system_exit: bool = False,
+        select_index_error: bool = False,
         finish_error: bool = False,
     ) -> SubmissionPackage:
         package_root = self.root / name
@@ -51,6 +52,7 @@ class EvaluationWorkerTests(unittest.TestCase):
                 import_system_exit=import_system_exit,
                 start_error=start_error,
                 select_system_exit=select_system_exit,
+                select_index_error=select_index_error,
                 finish_error=finish_error,
             ),
             encoding="utf-8",
@@ -184,11 +186,13 @@ class EvaluationWorkerTests(unittest.TestCase):
         import_system_exit: bool,
         start_error: bool,
         select_system_exit: bool,
+        select_index_error: bool,
         finish_error: bool,
     ) -> str:
         import_failure = "raise SystemExit('game import exit')\n" if import_system_exit else ""
         start_failure = "    raise RuntimeError('battle start boom')\n" if start_error else ""
         select_failure = "    raise SystemExit('battle select exit')\n" if select_system_exit else ""
+        select_index_failure = "    raise IndexError('invalid selected action')\n" if select_index_error else ""
         finish_failure = "    raise RuntimeError('battle finish boom')\n" if finish_error else ""
         return (
             "import json\n"
@@ -215,6 +219,7 @@ class EvaluationWorkerTests(unittest.TestCase):
             "def battle_select(select_list):\n"
             "    global STEP\n"
             f"{select_failure}"
+            f"{select_index_failure}"
             "    ACTIONS.append(list(select_list))\n"
             "    STEP += 1\n"
             "    if STEP >= 3:\n"
@@ -359,6 +364,34 @@ class EvaluationWorkerTests(unittest.TestCase):
         self.assertEqual(result.status, "game_error")
         self.assertEqual(result.error_kind, "game_error")
         self.assertIn("battle select exit", result.error or "")
+
+    def test_invalid_candidate_selection_forfeits_to_opponent(self) -> None:
+        candidate = self.make_package("candidate", 7, select_index_error=True)
+        opponent = self.make_package("opponent", 8, select_index_error=True)
+
+        result = run_game(
+            self.make_request(candidate_first=True, candidate=candidate, opponent=opponent),
+            self.root / "trace-candidate-invalid-action.json",
+        )
+
+        self.assertTrue(result.finished)
+        self.assertEqual(result.status, "finished")
+        self.assertEqual(result.error_kind, "candidate_error")
+        self.assertEqual(result.winner, 1)
+
+    def test_invalid_opponent_selection_forfeits_to_candidate(self) -> None:
+        candidate = self.make_package("candidate", 7, select_index_error=True)
+        opponent = self.make_package("opponent", 8, select_index_error=True)
+
+        result = run_game(
+            self.make_request(candidate_first=False, candidate=candidate, opponent=opponent),
+            self.root / "trace-opponent-invalid-action.json",
+        )
+
+        self.assertTrue(result.finished)
+        self.assertEqual(result.status, "finished")
+        self.assertEqual(result.error_kind, "opponent_error")
+        self.assertEqual(result.winner, 0)
 
     def test_cg_mismatch_is_serialized_without_starting_a_game(self) -> None:
         candidate = self.make_package("candidate", 7, api_value=1)

@@ -22,6 +22,7 @@ from evaluation.runner.batch import (
     _metric_refs,
     _write_evaluation_backlink_atomic,
     _metric_registry,
+    _summary,
     run_batch,
 )
 from evaluation.runner.models import GameResult
@@ -42,6 +43,24 @@ class TraceStoreTests(unittest.TestCase):
     def test_rejects_report_root_inside_temp_root(self) -> None:
         with self.assertRaises(ValueError):
             TraceStore(self.temp_root, self.temp_root / "report")
+
+    def test_summary_counts_finished_invalid_action_forfeit_as_completed(self) -> None:
+        summary = _summary(
+            (
+                {
+                    "opponent": "opponent",
+                    "winner": 0,
+                    "status": "finished",
+                    "finished": True,
+                    "error_kind": "opponent_error",
+                },
+            )
+        )
+
+        self.assertEqual(summary["wins"], 1)
+        self.assertEqual(summary["errors"], 0)
+        self.assertEqual(summary["completed_games"], 1)
+        self.assertEqual(summary["completion_rate"], 1.0)
 
     def test_cleanup_preserves_existing_shared_temp_root_and_unrelated_file(self) -> None:
         self.temp_root.mkdir()

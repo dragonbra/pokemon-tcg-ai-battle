@@ -463,6 +463,22 @@ class EvaluationMetricsTests(unittest.TestCase):
         self.assertEqual(correctness.value, "candidate_error")
         self.assertEqual(correctness.status, "error")
 
+    def test_finished_opponent_forfeit_is_a_candidate_win(self) -> None:
+        raw_trace = worker_trace(
+            winner=0,
+            finished=True,
+            status="opponent_error",
+            error_kind="opponent_error",
+            error="IndexError: invalid selected action",
+            steps=[step(role="opponent")],
+        )
+
+        outcome = OutcomePlugin().analyze_game(raw_trace, context())
+
+        self.assertEqual(outcome.value, "win")
+        self.assertEqual(outcome.status, "success")
+        self.assertEqual(outcome.numerator, 1)
+
     def test_worker_payload_maps_engine_and_worker_failures(self) -> None:
         plugin = CorrectnessPlugin()
         cases = (

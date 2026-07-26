@@ -35,7 +35,7 @@ except ImportError:
 KAGGLE_INPUT = Path("/kaggle/input")
 KAGGLE_WORKING = Path("/kaggle/working")
 RUNNING_ON_KAGGLE = KAGGLE_INPUT.exists() and KAGGLE_WORKING.exists()
-ROOT = Path(__file__).resolve().parent
+ROOT = KAGGLE_WORKING if RUNNING_ON_KAGGLE else Path.cwd()
 DEFAULT_DATES = (
     "2026-07-13,2026-07-14,2026-07-15,2026-07-16,2026-07-17,"
     "2026-07-18,2026-07-19,2026-07-20,2026-07-21,2026-07-22"
@@ -159,6 +159,9 @@ class ModelConfig:
     max_entities: int = 192
     max_options: int = 128
     max_action_steps: int = 16
+    # Ablation switch: keep tensor/checkpoint shapes identical while removing
+    # the option-list index signal from the option representation.
+    use_option_position: bool = True
 
     def validate(self) -> None:
         if self.d_model % self.heads:
@@ -378,6 +381,9 @@ class IDOnlyPointerPolicy(nn.Module):
         self.flags = nn.Embedding(64, d)
         self.global_num = nn.Sequential(nn.Linear(12, d), nn.GELU(), nn.Linear(d, d))
         self.global_norm = nn.LayerNorm(d)
+        self.deck_count = nn.Embedding(61, d, padding_idx=0)
+        self.deck_project = nn.Sequential(nn.Linear(d, d), nn.GELU(), nn.Linear(d, d))
+        self.deck_fusion_norm = nn.LayerNorm(d)
         self.cls = nn.Parameter(torch.zeros(1, 1, d))
         layer = nn.TransformerEncoderLayer(
             d_model=d,
@@ -433,6 +439,12 @@ class IDOnlyPointerPolicy(nn.Module):
             + self.flags(g[:, 3])
             + self.global_num(batch["global_num"])
         )
+        deck_ids = batch["deck_ids"]
+        deck_counts = batch["deck_counts"].clamp(min=0, max=60)
+        deck_mask = deck_ids.gt(0).unsqueeze(-1)
+        deck_tokens = self.card(deck_ids) + self.deck_count(deck_counts)
+        deck_repr = (deck_tokens * deck_mask).sum(dim=1) / deck_mask.sum(dim=1).clamp_min(1)
+        global_repr = self.deck_fusion_norm(global_repr + self.deck_project(deck_repr))
         cls = self.cls.expand(entity.size(0), -1, -1) + global_repr.unsqueeze(1)
         sequence = torch.cat([cls, entity_repr], dim=1)
         padding = torch.cat([torch.zeros((entity.size(0), 1), dtype=torch.bool, device=entity.device), ~batch["entity_mask"]], dim=1)
@@ -450,10 +462,11 @@ class IDOnlyPointerPolicy(nn.Module):
             + self.number(option[..., 6])
             + self.slot(option[..., 7])
             + self.slot(option[..., 8])
-            + self.option_position(option[..., 11])
             + self._gather_entities(encoded_entities, option[..., 9])
             + self._gather_entities(encoded_entities, option[..., 10])
         )
+        if self.config.use_option_position:
+            option_repr = option_repr + self.option_position(option[..., 11])
         option_repr = self.option_norm(option_repr)
         attended, _ = self.option_to_state(option_repr, encoded, encoded, key_padding_mask=padding, need_weights=False)
         option_repr = self.option_state_norm(option_repr + attended)
@@ -504,6 +517,10 @@ def collate_examples(rows: list[dict[str, Any]]) -> dict[str, Tensor]:
     global_cat = np.zeros((batch_size, 4), dtype=np.int64)
     global_num = np.zeros((batch_size, 12), dtype=np.float32)
     min_count = np.zeros(batch_size, dtype=np.int64)
+    deck_ids = np.zeros((batch_size, 60), dtype=np.int64)
+    deck_counts = np.zeros((batch_size, 60), dtype=np.int64)
+    sample_weight = np.ones(batch_size, dtype=np.float32)
+    deck_hash_code = np.zeros(batch_size, dtype=np.int64)
     for index, row in enumerate(rows):
         entities = len(row["entity_cat"])
         options = len(row["option_cat"])
@@ -520,6 +537,12 @@ def collate_examples(rows: list[dict[str, Any]]) -> dict[str, Tensor]:
         global_cat[index] = np.asarray(row["global_cat"], dtype=np.int64)
         global_num[index] = np.asarray(row["global_num"], dtype=np.float32)
         min_count[index] = int(row["min_count"])
+        if len(row.get("deck_ids", [])) != 60 or len(row.get("deck_counts", [])) != 60:
+            raise ValueError("deck-conditioned rows require exactly 60 deck IDs and counts")
+        deck_ids[index] = np.asarray(row["deck_ids"], dtype=np.int64)
+        deck_counts[index] = np.asarray(row["deck_counts"], dtype=np.int64)
+        sample_weight[index] = float(row.get("sample_weight", 1.0))
+        deck_hash_code[index] = int(row.get("deck_hash_code", 0))
     return {
         "global_cat": torch.from_numpy(global_cat),
         "global_num": torch.from_numpy(global_num),
@@ -530,6 +553,10 @@ def collate_examples(rows: list[dict[str, Any]]) -> dict[str, Tensor]:
         "option_mask": torch.from_numpy(option_mask),
         "targets": torch.from_numpy(targets),
         "min_count": torch.from_numpy(min_count),
+        "deck_ids": torch.from_numpy(deck_ids),
+        "deck_counts": torch.from_numpy(deck_counts),
+        "sample_weight": torch.from_numpy(sample_weight),
+        "deck_hash_code": torch.from_numpy(deck_hash_code),
     }
 
 
@@ -630,251 +657,73 @@ def find_preencoded_dataset(input_root: Path) -> dict[str, Any]:
     }
 
 
-def extract_teacher_examples(args: argparse.Namespace, config: ModelConfig, out_dir: Path) -> dict[str, Any]:
-    input_root = Path(args.input_root)
-    dates = {value.strip() for value in args.run_dates.split(",") if value.strip()}
-    valid_dates = {value.strip() for value in args.valid_dates.split(",") if value.strip()}
-    if not valid_dates and dates:
-        valid_dates = {max(dates)}
-    codec = IDOnlyCodec(config)
-    data_dir = out_dir / "dataset"
-    data_dir.mkdir(parents=True, exist_ok=True)
-    train_path, valid_path = data_dir / "train_000.jsonl.gz", data_dir / "valid_000.jsonl.gz"
-    teacher = normalize_team(args.teacher_team)
-    report: dict[str, Any] = {
-        "teacher_team": args.teacher_team,
-        "run_dates": sorted(dates),
-        "valid_dates": sorted(valid_dates),
-        "meta_scan": "ijson" if ijson is not None else "json_fallback",
-        "episodes_seen": 0,
-        "team_matches": 0,
-        "teacher_wins": 0,
-        "decisions_train": 0,
-        "decisions_valid": 0,
-        "skipped": Counter(),
-        "team_names_matching_token": Counter(),
-    }
-    with gzip.open(train_path, "wt", encoding="utf-8") as train_handle, gzip.open(valid_path, "wt", encoding="utf-8") as valid_handle:
-        for file_index, path in enumerate(episode_files(input_root, dates), start=1):
-            report["episodes_seen"] += 1
-            try:
-                teams = scan_episode_teams(path)
-            except Exception as exc:
-                report["skipped"][f"meta_{type(exc).__name__}"] += 1
-                continue
-            matching = [index for index, name in enumerate(teams) if normalize_team(name) == teacher]
-            for name in teams:
-                if "yushin" in normalize_team(name):
-                    report["team_names_matching_token"][name] += 1
-            if not matching:
-                continue
-            report["team_matches"] += len(matching)
-            try:
-                rewards = scan_episode_rewards(path)
-            except Exception as exc:
-                report["skipped"][f"reward_{type(exc).__name__}"] += 1
-                continue
-            winners = [index for index in matching if is_winner(rewards, index)]
-            if not winners:
-                continue
-            report["teacher_wins"] += len(winners)
-            try:
-                data = read_json(path)
-            except Exception as exc:
-                report["skipped"][f"json_{type(exc).__name__}"] += 1
-                continue
-            episode_id = str(getv(data.get("info"), "EpisodeId", path.stem))
-            date = episode_date(path)
-            split = stable_split(episode_id, valid_dates, date)
-            target_handle = valid_handle if split == "valid" else train_handle
-            for _frame, obs, action in visual_decision_frames(data):
-                actor = as_int(getv(getv(obs, "current", {}), "yourIndex", -1), -1)
-                if actor not in winners:
-                    continue
-                if not valid_action(action, getv(obs, "select", {}) or {}):
-                    report["skipped"]["invalid_action"] += 1
-                    continue
-                row = codec.encode(obs, action)
-                if row is None:
-                    report["skipped"]["codec_limits_or_invalid"] += 1
-                    continue
-                row["episode_id"] = episode_id
-                row["date"] = date
-                target_handle.write(json.dumps(row, separators=(",", ":")) + "\n")
-                report[f"decisions_{split}"] += 1
-            if file_index == 1 or file_index % 250 == 0:
-                emit("extract_progress", episodes=file_index, train=report["decisions_train"], valid=report["decisions_valid"], wins=report["teacher_wins"])
-    report["skipped"] = dict(report["skipped"])
-    report["team_names_matching_token"] = dict(report["team_names_matching_token"].most_common(20))
-    report["train_path"] = str(train_path)
-    report["valid_path"] = str(valid_path)
-    return report
 
 
-def evaluate(model: nn.Module, loader: DataLoader[dict[str, Tensor]], device: torch.device, amp: bool) -> dict[str, float]:
-    model.eval()
-    total_loss = total_correct = total_tokens = total_exact = total_rows = 0
-    with torch.no_grad():
-        for batch in loader:
-            batch = move_batch(batch, device)
-            with torch.autocast(device_type=device.type, enabled=amp):
-                logits = model(batch)
-                loss = F.cross_entropy(logits.flatten(0, 1), batch["targets"].flatten(), ignore_index=-100, reduction="sum")
-            valid = batch["targets"] != -100
-            prediction = logits.argmax(dim=-1)
-            total_loss += float(loss.item())
-            total_correct += int(((prediction == batch["targets"]) & valid).sum().item())
-            total_tokens += int(valid.sum().item())
-            row_match = ((prediction == batch["targets"]) | ~valid).all(dim=1)
-            total_exact += int(row_match.sum().item())
-            total_rows += int(valid.size(0))
-    return {
-        "loss": total_loss / max(total_tokens, 1),
-        "token_accuracy": total_correct / max(total_tokens, 1),
-        "exact_action_accuracy": total_exact / max(total_rows, 1),
-        "decisions": float(total_rows),
-    }
+class MarnieIDOnlyRuntime:
+    """CPU greedy decoder with a fixed registered Marnie deck condition."""
 
+    def __init__(self, checkpoint_path: str | Path, deck: list[int]):
+        torch.set_num_threads(1)
+        try:
+            torch.set_num_interop_threads(1)
+        except RuntimeError:
+            pass
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        config = ModelConfig(**checkpoint["model_config"])
+        model = IDOnlyPointerPolicy(config)
+        model.load_state_dict(checkpoint["state_dict"], strict=True)
+        model.eval()
+        if len(deck) != 60:
+            raise ValueError(f"registered deck must contain 60 cards, got {len(deck)}")
+        counts = Counter(int(card) for card in deck)
+        self.deck_ids = [int(card) for card in deck]
+        self.deck_counts = [counts[int(card)] for card in deck]
+        self.model = model
+        self.codec = IDOnlyCodec(config)
 
-def train_model(args: argparse.Namespace, config: ModelConfig, extract: dict[str, Any], out_dir: Path) -> dict[str, Any]:
-    train_paths = [Path(extract["train_path"])]
-    valid_paths = [Path(extract["valid_path"])]
-    if extract["decisions_train"] < args.min_train_decisions:
-        raise RuntimeError(f"only {extract['decisions_train']} training decisions; minimum is {args.min_train_decisions}")
-    if extract["decisions_valid"] < args.min_valid_decisions:
-        raise RuntimeError(f"only {extract['decisions_valid']} validation decisions; minimum is {args.min_valid_decisions}")
-    device = torch.device("cuda" if torch.cuda.is_available() and not args.cpu else "cpu")
-    gpu_specs: list[dict[str, str]] = []
-    if device.type == "cuda":
-        for index in range(torch.cuda.device_count()):
-            major, minor = torch.cuda.get_device_capability(index)
-            gpu_specs.append(
-                {
-                    "index": str(index),
-                    "name": torch.cuda.get_device_name(index),
-                    "capability": f"sm_{major}{minor}",
-                }
-            )
-        unsupported = [gpu for gpu in gpu_specs if int(gpu["capability"].split("_")[1][0]) < 7]
-        if unsupported:
-            raise RuntimeError(
-                f"{unsupported[0]['name']} is {unsupported[0]['capability']}; "
-                "select a T4-class GPU (sm_75+) instead of P100."
-            )
-    base_model = IDOnlyPointerPolicy(config).to(device)
-    parameter_count = count_parameters(base_model)
-    model_mib = parameter_count * 4 / 1024**2
-    if model_mib > args.max_model_mib:
-        raise RuntimeError(f"model is {model_mib:.2f} MiB, over the {args.max_model_mib:.2f} MiB limit")
-    use_data_parallel = device.type == "cuda" and args.multi_gpu and len(gpu_specs) > 1
-    model: nn.Module = nn.DataParallel(base_model) if use_data_parallel else base_model
-    if device.type == "cuda":
-        emit("gpu_ready", devices=gpu_specs, data_parallel=use_data_parallel, global_batch_size=args.batch_size)
-    train_ds = JsonlShardDataset(train_paths, shuffle=True, seed=args.seed)
-    valid_ds = JsonlShardDataset(valid_paths, shuffle=False, seed=args.seed)
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, collate_fn=collate_examples, num_workers=0, pin_memory=device.type == "cuda")
-    valid_loader = DataLoader(valid_ds, batch_size=args.batch_size, collate_fn=collate_examples, num_workers=0, pin_memory=device.type == "cuda")
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    amp = bool(args.amp and device.type == "cuda")
-    scaler = torch.amp.GradScaler("cuda", enabled=amp)
-    best = {"loss": float("inf")}
-    history: list[dict[str, Any]] = []
-    for epoch in range(1, args.epochs + 1):
-        model.train()
-        train_ds.set_epoch(epoch)
-        losses: list[float] = []
-        token_count = 0
-        started = time.time()
-        for step, batch in enumerate(train_loader, start=1):
-            batch = move_batch(batch, device)
-            optimizer.zero_grad(set_to_none=True)
-            with torch.autocast(device_type=device.type, enabled=amp):
-                logits = model(batch)
-                loss = F.cross_entropy(logits.flatten(0, 1), batch["targets"].flatten(), ignore_index=-100)
-            scaler.scale(loss).backward()
-            scaler.unscale_(optimizer)
-            nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
-            scaler.step(optimizer)
-            scaler.update()
-            losses.append(float(loss.item()))
-            token_count += int((batch["targets"] != -100).sum().item())
-            if step == 1 or step % args.log_every_batches == 0:
-                emit("train_progress", epoch=epoch, step=step, loss=round(sum(losses[-args.log_every_batches:]) / min(len(losses), args.log_every_batches), 5), tokens=token_count)
-        validation = evaluate(model, valid_loader, device, amp)
-        epoch_report = {"epoch": epoch, "train_loss": sum(losses) / max(len(losses), 1), "train_tokens": token_count, "elapsed_sec": round(time.time() - started, 3), **validation}
-        history.append(epoch_report)
-        emit("epoch_done", **epoch_report)
-        if validation["loss"] < best["loss"]:
-            best = dict(validation)
-            checkpoint = {
-                "model_version": "ptcg_yushin_idonly_pointer_bc_train_v1",
-                "model_config": asdict(config),
-                "state_dict": unwrap_model(model).state_dict(),
-                "teacher": args.teacher_team,
-                "training": {"args": vars(args), "extract": extract, "best": best},
-            }
-            torch.save(checkpoint, out_dir / "best_model.pt")
-    result = {
-        "device": str(device),
-        "devices": gpu_specs,
-        "data_parallel": use_data_parallel,
-        "parameter_count": parameter_count,
-        "fp32_model_mib": round(model_mib, 3),
-        "best_validation": best,
-        "history": history,
-        "checkpoint": str(out_dir / "best_model.pt"),
-    }
-    (out_dir / "training_report.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
-    return result
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train ID-only Yushin BC from mounted v1 data.")
-    parser.add_argument("--input-root", default=str(KAGGLE_INPUT if RUNNING_ON_KAGGLE else ROOT))
-    parser.add_argument("--out", default=str((KAGGLE_WORKING if RUNNING_ON_KAGGLE else ROOT) / "ptcg_yushin_idonly_bc_train_v1_output"))
-    parser.add_argument("--teacher-team", default="Yushin Ito")
-    parser.add_argument("--seed", type=int, default=int(os.environ.get("SEED", "20260723")))
-    parser.add_argument("--d-model", type=int, default=int(os.environ.get("D_MODEL", "320")))
-    parser.add_argument("--heads", type=int, default=int(os.environ.get("HEADS", "8")))
-    parser.add_argument("--layers", type=int, default=int(os.environ.get("LAYERS", "4")))
-    parser.add_argument("--dropout", type=float, default=float(os.environ.get("DROPOUT", "0.10")))
-    parser.add_argument("--batch-size", type=int, default=int(os.environ.get("BATCH_SIZE", "96")))
-    parser.add_argument("--epochs", type=int, default=int(os.environ.get("EPOCHS", "6")))
-    parser.add_argument("--lr", type=float, default=float(os.environ.get("LR", "0.0003")))
-    parser.add_argument("--weight-decay", type=float, default=float(os.environ.get("WEIGHT_DECAY", "0.02")))
-    parser.add_argument("--grad-clip", type=float, default=float(os.environ.get("GRAD_CLIP", "1.0")))
-    parser.add_argument("--max-model-mib", type=float, default=float(os.environ.get("MAX_MODEL_MIB", "50")))
-    parser.add_argument("--min-train-decisions", type=int, default=int(os.environ.get("MIN_TRAIN_DECISIONS", "10000")))
-    parser.add_argument("--min-valid-decisions", type=int, default=int(os.environ.get("MIN_VALID_DECISIONS", "1000")))
-    parser.add_argument("--log-every-batches", type=int, default=int(os.environ.get("LOG_EVERY_BATCHES", "100")))
-    parser.add_argument("--amp", action="store_true", default=os.environ.get("AMP", "1") == "1")
-    parser.add_argument("--no-multi-gpu", dest="multi_gpu", action="store_false", default=os.environ.get("MULTI_GPU", "1") == "1")
-    parser.add_argument("--cpu", action="store_true", default=os.environ.get("CPU", "0") == "1")
-    return parser.parse_args()
-
-
-def main() -> None:
-    args = parse_args()
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    config = ModelConfig(d_model=args.d_model, heads=args.heads, encoder_layers=args.layers, dropout=args.dropout)
-    config.validate()
-    out_dir = Path(args.out)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    parameter_probe = IDOnlyPointerPolicy(config)
-    parameter_count = count_parameters(parameter_probe)
-    del parameter_probe
-    start = time.time()
-    emit("config", running_on_kaggle=RUNNING_ON_KAGGLE, model_config=asdict(config), parameter_count=parameter_count, fp32_model_mib=round(parameter_count * 4 / 1024**2, 3))
-    extract = find_preencoded_dataset(Path(args.input_root))
-    report: dict[str, Any] = {"model_config": asdict(config), "parameter_count": parameter_count, "fp32_model_mib": round(parameter_count * 4 / 1024**2, 3), "dataset": extract}
-    emit("mounted_dataset", **extract)
-    report["training"] = train_model(args, config, extract, out_dir)
-    report["elapsed_sec"] = round(time.time() - start, 3)
-    (out_dir / "run_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    emit("done", elapsed_sec=report["elapsed_sec"])
-
-
-if __name__ == "__main__":
-    main()
+    def decode(self, obs: dict[str, Any]) -> list[int]:
+        select = obs.get("select") if isinstance(obs, dict) else None
+        options = select.get("option") if isinstance(select, dict) else None
+        if not isinstance(options, list) or not options or len(options) > self.model.config.max_options:
+            return []
+        option_count = len(options)
+        min_count = max(0, as_int(select.get("minCount")))
+        max_count = max(min_count, as_int(select.get("maxCount"), option_count))
+        if min_count > option_count or min_count > self.model.config.max_action_steps:
+            return []
+        max_count = min(max_count, option_count, self.model.config.max_action_steps)
+        row = self.codec.encode(obs, list(range(min_count)))
+        if row is None:
+            return []
+        row.update(
+            deck_ids=self.deck_ids,
+            deck_counts=self.deck_counts,
+            sample_weight=1.0,
+            deck_hash_code=0,
+        )
+        batch = collate_examples([row])
+        with torch.inference_mode():
+            state, option_values = self.model.encode(batch)
+            keys = self.model.pointer_key(option_values)
+            hidden = torch.tanh(self.model.decoder_init(state))
+            available = batch["option_mask"].clone()
+            chosen = torch.zeros((1, option_count), dtype=torch.bool)
+            action: list[int] = []
+            for step in range(max_count):
+                pointer = (
+                    self.model.pointer_query(hidden).unsqueeze(1) * keys
+                ).sum(-1) / math.sqrt(self.model.config.d_model)
+                pointer = pointer + self.model.option_bias(option_values).squeeze(-1)
+                pointer = pointer.masked_fill(~available | chosen, torch.finfo(pointer.dtype).min)
+                stop = self.model.stop(hidden)
+                if step < min_count:
+                    stop = stop.masked_fill(
+                        torch.ones_like(stop, dtype=torch.bool), torch.finfo(stop.dtype).min
+                    )
+                choice = int(torch.argmax(torch.cat([pointer, stop], dim=1), dim=1).item())
+                if choice == option_count:
+                    break
+                action.append(choice)
+                chosen[0, choice] = True
+                hidden = self.model.decoder(option_values[:, choice], hidden)
+        return action
