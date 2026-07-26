@@ -32,6 +32,8 @@ CARD_IMAGE_SET_BY_EXPANSION = {
     "TEF": "sv5", "TWM": "sv6", "WHT": "rsv10pt5",
 }
 SCRYDEX_SET_BY_EXPANSION = {"ASC": "me2pt5", "POR": "me3"}
+REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
+DAILY_REPORT_ROOT = REPOSITORY_ROOT / "docs/environment-daily_kaggle_top100/daily"
 
 
 def _card_catalog() -> dict[int, dict[str, str]]:
@@ -141,6 +143,25 @@ def _datetime(value: object) -> datetime | None:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
+def _episodes_at_or_before(episodes: list[object], cutoff_value: object) -> list[object]:
+    """Return only Episodes whose creation time is inside one frozen snapshot boundary."""
+    from archive.train_legacy.kaggle_bc_top20.training.download_top100_exact_replays import (
+        _model_value,
+    )
+
+    cutoff = _datetime(cutoff_value)
+    if cutoff is None:
+        raise ValueError(f"invalid leaderboard capture timestamp: {cutoff_value!r}")
+    bounded: list[tuple[datetime, int, object]] = []
+    for episode in episodes:
+        created_at = _datetime(_model_value(episode, "create_time", "createTime"))
+        if created_at is None or created_at > cutoff:
+            continue
+        bounded.append((created_at, int(_model_value(episode, "id")), episode))
+    bounded.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return [item[2] for item in bounded]
+
+
 def _card_group(row: dict[str, str]) -> str:
     kind = row.get("Stage (Pokémon)/Type (Energy and Trainer)", "").strip()
     category = row.get("Category", "").strip()
@@ -196,7 +217,7 @@ def _pct(value: float | None) -> str:
 
 
 def _baseline_css(report: Path) -> str:
-    baseline = report.parent / UI_BASELINE
+    baseline = DAILY_REPORT_ROOT / UI_BASELINE
     match = re.search(r"<style>(.*?)</style>", baseline.read_text(encoding="utf-8"), re.S)
     if not match:
         raise ValueError(f"missing style block in UI baseline: {baseline}")
@@ -204,7 +225,7 @@ def _baseline_css(report: Path) -> str:
 
 
 def _previous_players(report: Path) -> dict[str, dict[str, str | int | float]]:
-    text = (report.parent / UI_BASELINE).read_text(encoding="utf-8")
+    text = (DAILY_REPORT_ROOT / UI_BASELINE).read_text(encoding="utf-8")
     result: dict[str, dict[str, str | int | float]] = {}
     for row in re.findall(r'<tr data-index-row.*?</tr>', text, re.S):
         cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
@@ -409,7 +430,8 @@ def _render_report(
             f'<td>{badge(player)}</td><td>{float(player["score"]):.1f}</td>'
             f'<td>{int(player["valid_games"]):,}</td><td>{player["wins"]}-{player["losses"]}-{player["draws"]}</td>'
             f'<td><b>{_pct(player["win_rate"])}</b></td><td><code>{player["deck_hash"]}</code>'
-            f'<small>Episode {player["episode_id"]}</small></td></tr>'
+            f'<small>Episode {player["episode_id"]} · P{player.get("episode_player_index", "—")}'
+            f' · {html.escape(str(player.get("episode_create_time") or "时间未记录"))}</small></td></tr>'
         )
 
     archetype_cards = []
@@ -595,6 +617,8 @@ def _render_report(
             f'<summary><span><b>#{player["rank"]} {html.escape(str(player["team_name"]))}</b> · {badge(player)}</span>'
             f'<span>{player["wins"]}-{player["losses"]}-{player["draws"]} · {_pct(player["win_rate"])}</span></summary>'
             f'<div class="detail-body"><p><b>submission {player["submission_id"]}</b> · Episode {player["episode_id"]} · '
+            f'player index {player.get("episode_player_index", "—")} · '
+            f'createTime {html.escape(str(player.get("episode_create_time") or "未记录"))} · '
             f'deck hash <code>{player["deck_hash"]}</code></p><h4>已识别 matchup</h4>{matchup_html}'
             f'<h4>Exact 60-card deck</h4>{deck_html}</div></details>'
         )
@@ -627,7 +651,7 @@ def _render_report(
 
 <section class="panel" id="player-details"><div class="heading"><div><p class="eyebrow">PLAYER DETAIL / EXACT DECK</p><h2>逐人 exact 60-card deck 展开</h2></div><p>点击展开；卡图、分组、张数、Card ID 与大图预览沿用 0726。</p></div><div class="toolbar"><button id="open-visible" type="button">展开当前筛选</button><button id="close-all" type="button">全部收起</button></div><div class="person-grid">{''.join(detail_blocks)}</div></section>
 
-<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{REPORT_ID}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均绑定最终 submission；只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>.tmp/environment_daily_0727/snapshot.json</code>；逐局 Meta 缓存：<code>.tmp/environment_daily_0727/meta_views.json</code>；生成入口：<code>data/processed/environment_daily/generate_live_snapshot.py</code>。</li></ul></section>
+<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{REPORT_ID}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均绑定最终 submission；只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily_0727")))}/snapshot.json</code>；逐局 Meta 缓存：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily_0727")))}/meta_views.json</code>；生成入口：<code>data/processed/environment_daily/generate_live_snapshot.py</code>。</li></ul></section>
 </main><script>
 const search=document.getElementById('search'), archetype=document.getElementById('archetype-filter'), visible=document.getElementById('visible-count');
 function apply(){{const q=search.value.trim().toLowerCase();let n=0;document.querySelectorAll('[data-player-row],[data-player-detail],[data-person-card]').forEach(row=>{{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok&&row.matches('[data-player-row]'))n++;}});visible.textContent=`显示 ${{n}}`;}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);apply();
@@ -642,6 +666,7 @@ def collect(work: Path, report: Path) -> None:
     from archive.train_legacy.kaggle_bc_top20.training.download_top100_exact_replays import (
         _decks_from_replay,
         _eligible_episodes,
+        _model_value,
         episode_player_index,
         select_leaderboard_submission,
     )
@@ -650,15 +675,23 @@ def collect(work: Path, report: Path) -> None:
     replay_root = work / "representative_replays"
     replay_root.mkdir(exist_ok=True)
     state_path = work / "snapshot.json"
+    if state_path.exists():
+        saved_state = json.loads(state_path.read_text(encoding="utf-8"))
+        if len(saved_state.get("rows", [])) == 100 and len(saved_state.get("players", {})) == 100:
+            raise RuntimeError(
+                "completed leaderboard capture is immutable; use a new empty --work directory "
+                "for a fresh daily freeze, or pass --render-only to render this exact capture"
+            )
     api = KaggleApi()
     api.authenticate()
     catalog = _card_catalog()
     if state_path.exists():
-        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state = saved_state
     else:
         leaderboard = api.competition_leaderboard_view(COMPETITION, page_size=100)[:100]
         state = {
             "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+            "evidence_root": str(work),
             "rows": [
                 {"rank": rank, "team_id": row.team_id, "team_name": row.team_name,
                  "score": row.score, "submission_date": row.submission_date.isoformat()}
@@ -667,10 +700,14 @@ def collect(work: Path, report: Path) -> None:
             "players": {},
         }
         state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+    capture_cutoff = _datetime(state["captured_at_utc"])
+    if capture_cutoff is None:
+        raise ValueError(f"invalid captured_at_utc: {state['captured_at_utc']!r}")
     for row in state["rows"]:
         key = str(row["rank"])
         if key in state["players"]:
             continue
+        print(f"[{row['rank']:03d}/100] binding {row['team_name']}", flush=True)
         submissions = _rate_call(lambda: api.competition_team_submissions(row["team_id"]))
         class Model:
             pass
@@ -681,21 +718,38 @@ def collect(work: Path, report: Path) -> None:
         model.submission_date = datetime.fromisoformat(row["submission_date"])
         selected, binding = select_leaderboard_submission(model, list(submissions))
         submission_id = int(selected.id)
-        episodes = _rate_call(lambda: _eligible_episodes(api, submission_id, 1000))
+        all_eligible = _rate_call(lambda: _eligible_episodes(api, submission_id, 1000))
+        episodes = _episodes_at_or_before(all_eligible, capture_cutoff)
         wins, losses, draws, known = _result(episodes, submission_id)
         deck: list[int] = []
         episode_id = None
+        representative_player_index = None
+        episode_create_time = None
         if episodes:
             episode_id = int(episodes[0].id)
+            representative_player_index = episode_player_index(episodes[0], submission_id)
+            episode_create_time = _datetime(
+                _model_value(episodes[0], "create_time", "createTime")
+            )
             replay = replay_root / f"episode-{episode_id}.json"
             if not replay.exists():
                 _rate_call(lambda: api.competition_episode_replay(episode_id, path=str(replay_root), quiet=True))
                 (replay_root / f"episode-{episode_id}-replay.json").replace(replay)
             deck = _decks_from_replay(json.loads(replay.read_text(encoding="utf-8")))[
-                episode_player_index(episodes[0], submission_id)
+                representative_player_index
             ]
+        if len(deck) != 60:
+            raise RuntimeError(
+                f"submission {submission_id} has no exact 60-card replay at snapshot boundary"
+            )
+        deck_sha256 = hashlib.sha256(
+            ",".join(str(card_id) for card_id in sorted(deck)).encode("ascii")
+        ).hexdigest()
         state["players"][key] = {
             **row, "submission_id": submission_id, "binding": binding, "episode_id": episode_id,
+            "episode_create_time": episode_create_time.isoformat() if episode_create_time else None,
+            "episode_player_index": representative_player_index,
+            "deck_sha256": deck_sha256,
             "valid_games": len(episodes), "wins": wins, "losses": losses, "draws": draws,
             "win_rate": (wins + 0.5 * draws) / known if known else None,
             "archetype": _archetype(deck, catalog), "deck": deck,
