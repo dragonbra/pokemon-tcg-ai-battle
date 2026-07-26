@@ -32,6 +32,14 @@ class DatasetContractTest(unittest.TestCase):
         e=episode(visual=False);record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0];self.assertEqual(record.ordered_action,(0,))
         e=episode(visual=False);e.payload["steps"][1][0]["observation"]["current"]["yourIndex"]=1
         with self.assertRaisesRegex(ValueError,"actor perspective"):list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))
+    def test_opaque_opponent_prize_slots_preserve_count_without_identity(self):
+        e=episode();opaque=[None]*6;e.payload["steps"][0][0]["visualize"][1]["obs"]["current"]["players"][1]["prize"]=opaque;e.payload["steps"][1][0]["observation"]["current"]["players"][1]["prize"]=opaque
+        record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0]
+        self.assertEqual(record.actor_observation["current"]["players"][1]["prize"],(None,)*6)
+    def test_null_select_deck_is_empty_identity_view(self):
+        e=episode();e.payload["steps"][0][0]["visualize"][1]["obs"]["select"]["deck"]=None;e.payload["steps"][1][0]["observation"]["select"]["deck"]=None
+        record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0]
+        self.assertEqual(record.actor_observation["select"]["deck"],())
     def test_null_unauthorized_looking_is_empty_identity_view(self):
         e=episode();e.payload["steps"][0][0]["visualize"][1]["obs"]["current"]["looking"]=None;e.payload["steps"][1][0]["observation"]["current"]["looking"]=None
         record=list(dataset.iter_records(e,manifest(e),frozen_unknown_option_fields=frozenset()))[0]

@@ -157,7 +157,8 @@ def _project_observation(value: object) -> dict[str, Any]:
         if player_index != actor_index:
             for private_zone in ("hand", "prize"):
                 zone = projected.get(private_zone, [])
-                if zone not in ([], None):
+                opaque_slots = isinstance(zone, list) and all(item is None for item in zone)
+                if zone is not None and zone != [] and not opaque_slots:
                     raise ValueError(f"opponent private zone {private_zone} exposes card identities")
         for field in ("active", "bench", "discard", "hand", "prize"):
             if field in projected:
@@ -189,6 +190,8 @@ def _project_observation(value: object) -> dict[str, Any]:
     if "contextCard" in select and isinstance(select["contextCard"], Mapping):
         select["contextCard"] = _project_entity(select["contextCard"])
     if "deck" in select:
+        if select["deck"] is None:
+            select["deck"] = []
         select["deck"] = _project_entity_sequence(select["deck"], "select.deck")
     observation["select"] = select
 
