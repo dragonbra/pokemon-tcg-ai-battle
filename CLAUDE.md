@@ -12,6 +12,21 @@
 
 ## 项目结构与模块组织
 
+### 环境日报 UI 基准
+
+- 新生成的 `docs/environment-daily_kaggle_top100/daily/YYYY-MM-DD.html` 必须默认继承
+  `daily/2026-07-26.html` 的整体信息架构、视觉语言和交互组件，包括顶部导航、摘要指标、
+  个人筛选、构筑分布、跨日变化、证据边界、静态排名、逐人 exact 60-card deck、卡图和大图预览；
+  不得退化为只有标题、输入框和单表格的临时页面。
+- `Top 100 全局构筑卡池` 专项以 `daily/2026-07-25.html` 为 UI 基准，必须使用带卡图、
+  Card ID、类别、覆盖套数和覆盖率的卡片式网格，并保留按牌型展开的典型构筑卡池；不得擅自缩减为纯文本列表。
+- 历史日报是已发布快照，不得为统一模板而回写。新日报若缺少某类逐局证据，必须保留对应分析入口并明确标注
+  “当前快照不可重建”及缺失字段，禁止复制前日数值、伪造矩阵或用 `n=0` 冒充 0% 胜率。
+- 每份新日报交付前必须验证 100 个榜单行、100 个逐人详情、exact deck 均为 60 张、卡池卡图组件存在、
+  0726 核心 section ID 存在且索引按日期倒序更新。生成实现与合同见
+  `data/processed/environment_daily/generate_live_snapshot.py` 和
+  `docs/environment-daily_kaggle_top100/README.md`。
+
 - 仓库不再使用 `work/`；可运行待评估 package 统一放入 `evaluation/arena/candidates/<name>/`。从 `0013` 起，具体训练项目放在根目录 `train/<project_id>/`，项目归档、权威设计文档和正式评测放在 `experiments/<project_id>/`，运行时 dataset、checkpoint、TensorBoard、W&B staging 与版本记录放在 `rl_runs/<project_id>/`。`rl_environment/` 只提供通用训练基础设施；完成选择并需要长期归档的自包含 payload 统一放入 `archive/submission/<project_numbered_name>/`，对应压缩包放入 `archive/submission/dist/`；根目录 `submission/` 已退役，不得再创建新资产。
 - `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；常用基建必须放在所属的 Python package（如 `rl_environment/`、`train/<project>/`、`evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。
 - `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。
