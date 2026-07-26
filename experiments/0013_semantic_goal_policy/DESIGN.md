@@ -2,8 +2,9 @@
 
 **Project ID:** `0013_semantic_goal_policy`
 **Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors published and fully
-validated; formal V1 and V2 are preserved failed; atomic checkpoint selection is fixed and the next
-strictly increasing M0 run is ready; no completed candidate or policy-strength result exists.
+validated; formal V1-V3 are preserved failed; model RNG reproducibility is now explicitly bound and
+the next strictly increasing M0 run is ready; no completed candidate or policy-strength result
+exists.
 
 ## Purpose and boundaries
 
@@ -186,13 +187,14 @@ reached 5,765 decisions/s while M0 optimization reached 638 decisions/s, so feat
 longer starves the model. Full evidence is in
 `data_audit/materialized_v3_audit_2026-07-26.json`.
 
-The next gate is allocation of the strictly increasing formal V3 M0 version with the same V3
-feature dataset, batch 64, seed 20260726, and three complete epochs. V2 completed and preserved two
-full epochs but failed after epoch 2 because the mutable `criteria/latest.json` selection pointer
-was incorrectly written with exclusive-create semantics. Both content-addressed checkpoints and
-canonical/W&B metrics remain valid failure evidence. Epoch checkpoint files stay immutable;
-`latest` and best pointers now use fsynced atomic replacement with a two-epoch regression test.
-M1-M5 remain paused.
+The next gate is allocation of formal V4 M0 with the same V3 feature dataset, batch 64, seed
+20260726, and three complete epochs. V3 proved atomic checkpoint replacement through a complete
+epoch, then was stopped because the configured seed had not been applied to model initialization.
+Formal startup now seeds Python, NumPy, PyTorch CPU and all CUDA RNGs before model construction,
+enables deterministic algorithms and cuDNN behavior, fixes the cuBLAS workspace contract, and
+records the initial state-dict SHA-256. Two independent processes produced identical M0 initial
+SHA-256 `e591bbe16390aa0ab52023294f7f3ea80aa946ea510b828e999f93375dfb0145`.
+V1-V3 remain immutable failure evidence; M1-M5 remain paused.
 
 Only after those gates pass may the next strictly increasing formal version allocate and train M0.
 M1-M5 are paused. After M0 data/action health is established, they may advance as isolated versions
