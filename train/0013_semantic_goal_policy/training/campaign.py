@@ -101,6 +101,12 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
     device = torch.device(args.device)
     paths = initialize_version(PROJECT_ID, args.version)
     dataset_reference = dict(source.reference)
+    wandb_tags = tuple(tag.strip() for tag in args.wandb_tags.split(",") if tag.strip())
+    if not wandb_tags:
+        raise ValueError("at least one W&B tag is required")
+    wandb_notes = args.wandb_notes.strip()
+    if not wandb_notes:
+        raise ValueError("formal W&B notes must not be empty")
     _write_exclusive(paths.dataset_reference, dataset_reference)
     _write_exclusive(paths.model_contract, {
         "schema_version": "semantic_goal_model_contract_v1",
@@ -149,14 +155,22 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
             "mode": "online",
             "entity": "dragon_bra",
             "project": "pokemon-tcg-policy-learning",
+            "name": args.version,
+            "group": PROJECT_ID,
+            "job_type": "bc_train",
+            "tags": list(wandb_tags),
+            "notes": wandb_notes,
         },
     }
     os.environ["WANDB_MODE"] = "online"
     os.environ["WANDB_ENTITY"] = "dragon_bra"
     os.environ["WANDB_PROJECT"] = "pokemon-tcg-policy-learning"
     os.environ["WANDB_DIR"] = str(paths.wandb)
+    os.environ["WANDB_NAME"] = args.version
+    os.environ["WANDB_RUN_GROUP"] = PROJECT_ID
     os.environ["WANDB_JOB_TYPE"] = "bc_train"
-    os.environ["WANDB_TAGS"] = f"0013,{args.variant.lower()},model_ready"
+    os.environ["WANDB_TAGS"] = ",".join(wandb_tags)
+    os.environ["WANDB_NOTES"] = wandb_notes
     return train_version(
         paths,
         model=model,
@@ -195,6 +209,15 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--epochs", type=int, default=3)
     train.add_argument("--batch-size", type=int, default=64)
     train.add_argument("--progress-log-every", type=int, default=20)
+    train.add_argument(
+        "--wandb-tags",
+        default="0013,m0,model_ready",
+        help="comma-separated W&B run tags",
+    )
+    train.add_argument(
+        "--wandb-notes",
+        default="0013 正式 BC 训练；具体数据、模型和优化合同见本次 run config。",
+    )
     train.add_argument("--seed", type=int, default=20260726)
     train.add_argument("--learning-rate", type=float, default=3e-4)
     train.add_argument("--weight-decay", type=float, default=1e-2)

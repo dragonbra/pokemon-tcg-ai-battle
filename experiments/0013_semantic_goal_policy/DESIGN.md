@@ -2,9 +2,8 @@
 
 **Project ID:** `0013_semantic_goal_policy`
 **Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors published and fully
-validated; formal V1-V3 are preserved failed; model RNG reproducibility is now explicitly bound and
-the next strictly increasing M0 run is ready; no completed candidate or policy-strength result
-exists.
+validated; V4 completed the reproducible three-epoch M0 minimum; V5 extends the same M0 contract to
+a monitored 100-epoch ceiling; no candidate or policy-strength result exists.
 
 ## Purpose and boundaries
 
@@ -187,18 +186,18 @@ reached 5,765 decisions/s while M0 optimization reached 638 decisions/s, so feat
 longer starves the model. Full evidence is in
 `data_audit/materialized_v3_audit_2026-07-26.json`.
 
-The next gate is allocation of formal V4 M0 with the same V3 feature dataset, batch 64, seed
-20260726, and three complete epochs. V3 proved atomic checkpoint replacement through a complete
-epoch, then was stopped because the configured seed had not been applied to model initialization.
-Formal startup now seeds Python, NumPy, PyTorch CPU and all CUDA RNGs before model construction,
-enables deterministic algorithms and cuDNN behavior, fixes the cuBLAS workspace contract, and
-records the initial state-dict SHA-256. Two independent processes produced identical M0 initial
-SHA-256 `e591bbe16390aa0ab52023294f7f3ea80aa946ea510b828e999f93375dfb0145`.
-V1-V3 remain immutable failure evidence; M1-M5 remain paused.
+V4 completed all three planned epochs with validation loss `1.12633 -> 1.05466 -> 1.00068` and
+validation exact action `0.55279 -> 0.58960 -> 0.61434`; its W&B run is synced and epoch 3 is best.
+The curve is still improving, so V4 proves the minimum reproducible M0 loop but not convergence.
+V5 restarts from the same bound initial model and keeps dataset, M0 architecture, batch 64, seed
+20260726, learning rate 3e-4, weight decay 1e-2, AMP and deterministic behavior unchanged. Its only
+training-contract change is a 100-epoch ceiling with manual monitoring for sustained validation
+regression against improving train metrics. W&B identity, tags and Chinese Notes are recorded in
+run config; live progress uses the canonical `progress/*` namespace and `progress/iteration` axis.
+M1-M5 remain paused.
 
-Only after those gates pass may the next strictly increasing formal version allocate and train M0.
-M1-M5 are paused. After M0 data/action health is established, they may advance as isolated versions
-on the same raw source, model-ready features, split, seed schedule, compiler, action contract, and
-evaluation schedule. Offline metrics do not establish policy strength. Only frozen official-engine
-arena reports can do that, and promotion into the formal opponent pool still requires explicit user
-confirmation.
+Only after the monitored M0 convergence run and offline audits pass may a self-contained candidate
+be exported. M1-M5 are paused; when resumed, they must use the same raw source, model-ready
+features, split, seed schedule, compiler, action contract, and evaluation schedule. Offline metrics
+do not establish policy strength. Only frozen official-engine arena reports can do that, and
+promotion into the formal opponent pool still requires explicit user confirmation.
