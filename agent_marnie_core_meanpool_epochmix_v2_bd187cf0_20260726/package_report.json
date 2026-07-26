@@ -1,0 +1,29 @@
+{
+  "folder": "D:\\Users\\admin\\Desktop\\pokemon\\arena_agents\\agent_marnie_core_meanpool_epochmix_v2_bd187cf0_20260726",
+  "archive": "D:\\Users\\admin\\Desktop\\pokemon\\arena_agents\\agent_marnie_core_meanpool_epochmix_v2_bd187cf0_20260726\\submission.tar.gz",
+  "archive_bytes": 29348705,
+  "archive_sha256": "233422E041183735EDF5127097CA2D5E8898F5DA0EDB5D22FB2785B1EB5E7C4F",
+  "policy_sha256": "49CFBAF65751C0261DD27AA5F30CC98B821210D15EA99EB96A34E0F4CFA87392",
+  "deck_hash": "bd187cf0e1f5",
+  "member_count": 14,
+  "top_level": [
+    "cg",
+    "deck.csv",
+    "idonly_policy.py",
+    "main.py",
+    "policy.pt"
+  ],
+  "validation_extract": "D:\\Users\\admin\\Desktop\\pokemon\\tmp\\top_player_bc_submission_validation\\marnie_core_meanpool_epochmix_v2_bd187cf0_20260726",
+  "handshake": "exact_60_cards",
+  "runtime_smoke": {
+    "games": 2,
+    "wins": 2,
+    "errors": 0
+  },
+  "kaggle_submission": {
+    "ref": 54991520,
+    "status": "COMPLETE",
+    "initial_public_score": 600.0,
+    "submitted_at_utc": "2026-07-26 04:35:06.877000"
+  }
+}
