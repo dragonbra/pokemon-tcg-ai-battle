@@ -343,6 +343,9 @@ def refresh_experiment_index() -> None:
             continue
         manifest_path = child / "manifest.json"
         if not manifest_path.is_file():
+            match = PROJECT_ID.fullmatch(child.name)
+            if match is not None and int(match.group("number")) < 13:
+                continue
             raise ValueError(f"experiment archive is missing manifest: {child}")
         try:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

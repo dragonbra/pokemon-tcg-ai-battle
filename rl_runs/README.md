@@ -32,7 +32,8 @@ W&B 是正式训练的镜像而不是事实源：一条版本对应一个稳定 
 新训练语义必须新建版本。checkpoint、dataset、完整 trace、replay 和 observation 不上传。
 策略强度结论只来自同一 official-engine evaluation contract 下的 `eval/*`。
 
-`rl_runs/artifact/`、`rl_runs/checkpoint/`、`rl_runs/tensorboard/` 和
-`rl_runs/evaluation/` 是 `0001`–`0012` 的只读历史路径。它们保留用于审计与历史工具兼容，
-不得用于新项目。候选 package 始终位于 `evaluation/arena/candidates/<name>/`；不要写入已废弃的
-`work/<name>/`。
+历史项目也按同一项目根目录归档：运行时 artifact、checkpoint、TensorBoard 与 W&B staging 位于
+`rl_runs/<project_id>/versions/<V<n>_<tag>/`；权威 HTML 评测位于
+`experiments/<project_id>/evaluation/`。不再使用全局的 `rl_runs/artifact/`、
+`rl_runs/tensorboard/` 或 `rl_runs/evaluation/` 容器。候选 package 始终位于
+`evaluation/arena/candidates/<name>/`；不要写入已废弃的 `work/<name>/`。
