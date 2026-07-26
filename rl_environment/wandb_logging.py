@@ -101,6 +101,9 @@ class WandbSink:
             }
             if settings.mode == "online":
                 init_options["resume"] = "allow"
+            notes = os.environ.get("WANDB_NOTES", "").strip()
+            if notes:
+                init_options["notes"] = notes
             settings_factory = getattr(wandb, "Settings", None)
             if settings_factory is not None:
                 init_options["settings"] = settings_factory(
@@ -301,6 +304,11 @@ def _infer_job_type(metrics: dict[str, Any]) -> str:
 
 
 def _metric_axis(job_type: str, record: dict[str, Any]) -> str:
+    if any(key.startswith("progress/") for key in record) and not any(
+        key.startswith(("bc/", "value/", "ppo/", "rollout/", "eval/"))
+        for key in record
+    ):
+        return "progress/iteration"
     if job_type == "ppo_train":
         return "trainer/update"
     if job_type == "rollout_train":
@@ -321,6 +329,7 @@ def _wandb_metric_name(job_type: str, key: str) -> str:
         "counterfactual/",
         "invariance/",
         "system/",
+        "progress/",
         "env/",
         "trainer/",
     )):
