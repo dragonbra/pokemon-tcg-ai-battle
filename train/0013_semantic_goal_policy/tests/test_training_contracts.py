@@ -13,6 +13,10 @@ checkpoints = importlib.import_module("train.0013_semantic_goal_policy.training.
 selection = importlib.import_module("train.0013_semantic_goal_policy.training.selection")
 scheduler = importlib.import_module("train.0013_semantic_goal_policy.training.scheduler")
 telemetry = importlib.import_module("train.0013_semantic_goal_policy.training.telemetry")
+reproducibility = importlib.import_module(
+    "train.0013_semantic_goal_policy.training.reproducibility"
+)
+model_registry = importlib.import_module("train.0013_semantic_goal_policy.model.registry")
 
 
 class TrainingContractsTest(unittest.TestCase):
@@ -29,6 +33,21 @@ class TrainingContractsTest(unittest.TestCase):
             self.assertEqual(latest["sha256"], second["sha256"])
             self.assertEqual(best_after, best_before)
             with self.assertRaises(FileExistsError):checkpoints.save_checkpoint(root,model=model,optimizer=optimizer,epoch=2,global_step=6,metadata={"variant":"M0","dataset_sha256":"a"*64},criteria=("latest",))
+
+    def test_formal_seed_reproduces_initial_model_state(self):
+        first_contract = reproducibility.seed_everything(20260726)
+        first = model_registry.create_model("M0")
+        first_sha256 = reproducibility.model_state_sha256(first)
+        second_contract = reproducibility.seed_everything(20260726)
+        second = model_registry.create_model("M0")
+        second_sha256 = reproducibility.model_state_sha256(second)
+        self.assertEqual(first_contract, second_contract)
+        self.assertEqual(first_sha256, second_sha256)
+        reproducibility.seed_everything(20260727)
+        different = model_registry.create_model("M0")
+        self.assertNotEqual(
+            first_sha256, reproducibility.model_state_sha256(different)
+        )
 
     def test_selection_hard_gates_composite_and_tie_break(self):
         candidates=[
