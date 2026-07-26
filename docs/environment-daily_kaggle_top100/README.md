@@ -13,5 +13,6 @@
 
 当前报告：
 
+- [2026-07-26 — Top 100 今日环境快照 0726（最终 submission + 官方 completed/public Meta）](daily/2026-07-26.html)
 - [2026-07-25 — Top 100 Deck 环境与 Match-up 分析](daily/2026-07-25.html)
 - [2026-07-23 — Kaggle Top 100 BC 候选调研](daily/2026-07-23.html)
