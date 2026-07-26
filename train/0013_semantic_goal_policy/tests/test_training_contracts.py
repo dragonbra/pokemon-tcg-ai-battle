@@ -17,9 +17,30 @@ reproducibility = importlib.import_module(
     "train.0013_semantic_goal_policy.training.reproducibility"
 )
 model_registry = importlib.import_module("train.0013_semantic_goal_policy.model.registry")
+campaign = importlib.import_module(
+    "train.0013_semantic_goal_policy.training.campaign"
+)
 
 
 class TrainingContractsTest(unittest.TestCase):
+    def test_campaign_defaults_to_benchmark_selected_batch_size(self):
+        parser = campaign.build_parser()
+        smoke = parser.parse_args(["smoke"])
+        formal = parser.parse_args(
+            [
+                "train",
+                "--protocol-sha256",
+                "bound-protocol",
+                "--m0-smoke-throughput",
+                "1.0",
+                "--version",
+                "V99_test",
+            ]
+        )
+        self.assertEqual(campaign.DEFAULT_BATCH_SIZE, 256)
+        self.assertEqual(smoke.batch_size, 256)
+        self.assertEqual(formal.batch_size, 256)
+
     def test_content_addressed_checkpoints_and_atomic_selection_pointers(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);model=torch.nn.Linear(2,1);optimizer=torch.optim.AdamW(model.parameters())

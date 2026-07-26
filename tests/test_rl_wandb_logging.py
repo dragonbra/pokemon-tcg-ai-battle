@@ -44,6 +44,11 @@ class FakeWandb:
         self.run = run
         self.fail_init = fail_init
         self.init_calls: list[dict[str, object]] = []
+        self.settings_calls: list[dict[str, object]] = []
+
+    def Settings(self, **kwargs: object) -> dict[str, object]:
+        self.settings_calls.append(dict(kwargs))
+        return dict(kwargs)
 
     def init(self, **kwargs: object) -> FakeRun:
         self.init_calls.append(dict(kwargs))
@@ -137,11 +142,20 @@ class WandbLoggingTests(unittest.TestCase):
         self.assertEqual(init["group"], "0001-test")
         self.assertEqual(init["job_type"], "bc_train")
         self.assertEqual(init["tags"], ["smoke", "offline"])
+        self.assertEqual(fake_wandb.settings_calls[0]["console"], "wrap")
+        self.assertEqual(
+            init["settings"],
+            {"console": "wrap", "disable_code": True},
+        )
         self.assertEqual(
             fake_run.logged,
             [{"trainer/epoch": 3, "bc/train/loss": 0.25}],
         )
         self.assertIn(("trainer/epoch", {}), fake_run.defined_metrics)
+        self.assertIn(
+            ("progress/*", {"step_metric": "trainer/epoch"}),
+            fake_run.defined_metrics,
+        )
         self.assertEqual(fake_run.finish_codes, [0])
 
     def test_online_run_uses_explicit_resume_identity_and_notes(self) -> None:

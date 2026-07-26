@@ -11,6 +11,10 @@ decoder = importlib.import_module("train.0013_semantic_goal_policy.model.decoder
 reproducibility = importlib.import_module(
     "train.0013_semantic_goal_policy.training.reproducibility"
 )
+metrics = importlib.import_module("train.0013_semantic_goal_policy.training.metrics")
+runtime_batch = importlib.import_module(
+    "train.0013_semantic_goal_policy.training.runtime_batch"
+)
 
 
 def batch(batch_size=2, options=5):
@@ -63,6 +67,75 @@ class ModelVariantTest(unittest.TestCase):
         count = sum(parameter.numel() for parameter in m5.parameters())
         self.assertGreaterEqual(count, 18_000_000)
         self.assertLessEqual(count, 28_000_000)
+
+    def test_bc_paths_skip_inactive_value_head(self):
+        values = batch()
+        targets = torch.zeros(2, 1, dtype=torch.long)
+        model = registry.create_model("M0").eval()
+        value_forward = model.value_head.forward
+        calls = 0
+
+        def counted_value(state):
+            nonlocal calls
+            calls += 1
+            return value_forward(state)
+
+        model.value_head.forward = counted_value
+        with torch.no_grad():
+            model.teacher_logits(values, targets)
+            model.deterministic_action_tensors(values)
+        self.assertEqual(calls, 0)
+        with torch.no_grad():
+            encoded = model.encode(values)
+        self.assertEqual(calls, 1)
+        self.assertTrue(torch.isfinite(encoded.value).all())
+
+    def test_unused_deck_path_is_skipped_before_m2(self):
+        values = batch()
+        for name, expected_calls in (("M0", 0), ("M1", 0), ("M2", 1)):
+            model = registry.create_model(name).eval()
+            deck = model._deck
+            calls = 0
+
+            def counted_deck(current):
+                nonlocal calls
+                calls += 1
+                return deck(current)
+
+            model._deck = counted_deck
+            with torch.no_grad():
+                model.encode(values)
+            self.assertEqual(calls, expected_calls, name)
+
+    def test_target_trimming_preserves_autoregressive_logits_and_loss(self):
+        values = batch(batch_size=2, options=5)
+        values["targets"] = torch.tensor(
+            [[0, 1, 5, 5, 5, 5], [2, 5, 5, 5, 5, 5]]
+        )
+        values["target_mask"] = torch.tensor(
+            [
+                [True, True, True, False, False, False],
+                [True, True, False, False, False, False],
+            ]
+        )
+        compacted = runtime_batch.trim_target_padding(values)
+        model = registry.create_model("M0").eval()
+        with torch.no_grad():
+            full_logits = model.teacher_logits(values, values["targets"])
+            compact_logits = model.teacher_logits(
+                compacted,
+                compacted["targets"],
+            )
+        self.assertTrue(torch.equal(full_logits[:, :3], compact_logits))
+        full_loss = torch.nn.functional.cross_entropy(
+            full_logits[values["target_mask"]],
+            values["targets"][values["target_mask"]],
+        )
+        compact_loss = torch.nn.functional.cross_entropy(
+            compact_logits[compacted["target_mask"]],
+            compacted["targets"][compacted["target_mask"]],
+        )
+        self.assertTrue(torch.equal(full_loss, compact_loss))
 
     def test_variant_feature_isolation(self):
         values = batch()
@@ -206,6 +279,55 @@ class ModelVariantTest(unittest.TestCase):
             batched.forced_terminal, tuple(result.forced_terminal for result in singles)
         )
         self.assertEqual(batched.legal, (True, True, True, True))
+
+    def test_evaluation_reuses_one_encoding_for_teacher_and_greedy_metrics(self):
+        values = batch(batch_size=5, options=6)
+        values["min_count"] = torch.tensor([1, 1, 1, 1, 0])
+        values["max_count"] = torch.tensor([1, 4, 1, 2, 0])
+        values["targets"] = torch.tensor(
+            [[0, 6], [1, 6], [2, 6], [3, 6], [6, 6]]
+        )
+        values["target_mask"] = torch.tensor(
+            [
+                [True, False],
+                [True, True],
+                [True, False],
+                [True, True],
+                [False, False],
+            ]
+        )
+        model = registry.create_model("M0").eval()
+        encode = model.encode
+        calls = 0
+
+        def counted_encode(current, **kwargs):
+            nonlocal calls
+            calls += 1
+            return encode(current, **kwargs)
+
+        model.encode = counted_encode
+        result = metrics.evaluate_full_pass(
+            model,
+            [values],
+            device=torch.device("cpu"),
+            namespace="validation",
+            amp=False,
+        )
+        self.assertEqual(calls, 1)
+        self.assertEqual(result["bc/validation/decisions"], 5.0)
+        self.assertEqual(result["bc/validation/tokens"], 6.0)
+        decoded = model.deterministic_actions(values)
+        expected_forced = (True, False, True, False, False)
+        termination_correct = sum(
+            actual == expected
+            for actual, expected in zip(decoded.forced_terminal, expected_forced)
+        )
+        self.assertEqual(
+            result["bc/validation/termination_accuracy"],
+            termination_correct / 5,
+        )
+        self.assertGreaterEqual(result["bc/validation/legal_action"], 0.0)
+        self.assertLessEqual(result["bc/validation/legal_action"], 1.0)
 
     def test_goal_qkv_has_four_named_contexts(self):
         model = registry.create_model("M3").eval()

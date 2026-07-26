@@ -1,4 +1,4 @@
-"""Formal epoch trainer with eager tracking, progress, and full split evaluation."""
+"""Formal epoch trainer with online train metrics and snapshot validation."""
 from __future__ import annotations
 
 import json
@@ -15,10 +15,11 @@ from tqdm.auto import tqdm
 from rl_environment.logging import TrainingLogger
 from rl_environment.runs import VersionPaths, write_version_status
 from .checkpoints import save_checkpoint
-from .metrics import evaluate_full_pass, sequence_loss
+from .metrics import evaluate_full_pass, teacher_forced_batch_metrics
+from .runtime_batch import trim_target_padding
 
 Batch = Mapping[str, Tensor]
-_STAGE_CODE = {"train": 1, "train_eval": 2, "validation_eval": 3}
+_STAGE_CODE = {"train": 1, "validation_eval": 3}
 
 
 def _atomic_json(path: Path, value: dict[str, Any]) -> None:
@@ -33,7 +34,7 @@ def _atomic_json(path: Path, value: dict[str, Any]) -> None:
 def _device_batch(batch: Batch, device: torch.device) -> dict[str, Tensor]:
     return {
         key: value.to(device, non_blocking=device.type == "cuda")
-        for key, value in batch.items()
+        for key, value in trim_target_padding(batch).items()
     }
 
 
@@ -48,6 +49,7 @@ class _PhaseProgress:
         progress_iteration: list[int],
         trainer_update: Callable[[], int],
         log_every: int,
+        device: torch.device,
     ) -> None:
         self.logger = logger
         self.epoch = epoch
@@ -56,8 +58,10 @@ class _PhaseProgress:
         self.progress_iteration = progress_iteration
         self.trainer_update = trainer_update
         self.log_every = log_every
+        self.device = device
         self.started = time.perf_counter()
         self.last_decisions = 0
+        self.last_loss: float | None = None
         self.bar = tqdm(
             total=total_batches,
             desc=f"epoch {epoch} {stage}",
@@ -66,20 +70,31 @@ class _PhaseProgress:
             mininterval=0.5,
         )
 
-    def update(self, batch_index: int, decisions: int, *, loss: float | None = None) -> None:
+    def update(
+        self,
+        batch_index: int,
+        decisions: int,
+        *,
+        loss: float | Tensor | None = None,
+    ) -> None:
         increment = batch_index - self.bar.n
         if increment > 0:
             self.bar.update(increment)
         self.last_decisions = decisions
+        should_log = batch_index % self.log_every == 0 or batch_index == self.total_batches
+        if should_log and self.device.type == "cuda":
+            torch.cuda.synchronize(self.device)
+        if should_log and loss is not None:
+            self.last_loss = float(loss.detach().item()) if isinstance(loss, Tensor) else loss
         elapsed = max(time.perf_counter() - self.started, 1e-9)
         postfix: dict[str, str] = {
             "iter/s": f"{batch_index / elapsed:.2f}",
             "dec/s": f"{decisions / elapsed:.1f}",
         }
-        if loss is not None:
-            postfix["loss"] = f"{loss:.4f}"
+        if self.last_loss is not None:
+            postfix["loss"] = f"{self.last_loss:.4f}"
         self.bar.set_postfix(postfix, refresh=False)
-        if batch_index % self.log_every == 0 or batch_index == self.total_batches:
+        if should_log:
             self.progress_iteration[0] += 1
             metrics: dict[str, Any] = {
                 "trainer/epoch": self.epoch,
@@ -93,8 +108,8 @@ class _PhaseProgress:
                 "progress/decisions_per_second": decisions / elapsed,
                 "progress/elapsed_seconds": elapsed,
             }
-            if loss is not None:
-                metrics["progress/running_loss"] = loss
+            if self.last_loss is not None:
+                metrics["progress/running_loss"] = self.last_loss
             self.logger.log(self.progress_iteration[0], metrics)
 
     def close(self) -> None:
@@ -107,7 +122,7 @@ def train_version(
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
     train_batches: Callable[[int], Iterable[Batch]],
-    evaluation_batches: Callable[[str, int], Iterable[Batch]],
+    validation_batches: Callable[[int], Iterable[Batch]],
     batch_counts: Mapping[str, int],
     epochs: int,
     config: dict[str, Any],
@@ -135,7 +150,6 @@ def train_version(
     progress_iteration = [0]
     history: list[dict[str, Any]] = []
     model.to(device)
-    scaler = torch.amp.GradScaler("cuda", enabled=amp and device.type == "cuda")
     autocast_device = "cuda" if device.type == "cuda" else "cpu"
     try:
         with TrainingLogger(paths.metrics, paths.tensorboard) as logger:
@@ -151,7 +165,8 @@ def train_version(
             for epoch in range(1, epochs + 1):
                 started = time.perf_counter()
                 model.train()
-                optimization_loss = 0.0
+                optimization_loss = torch.zeros((), dtype=torch.float64, device=device)
+                online_totals = torch.zeros(4, dtype=torch.float64, device=device)
                 optimization_batches = 0
                 decisions = 0
                 train_progress = _PhaseProgress(
@@ -162,6 +177,7 @@ def train_version(
                     progress_iteration=progress_iteration,
                     trainer_update=lambda: global_step,
                     log_every=progress_log_every,
+                    device=device,
                 )
                 try:
                     for source_batch in train_batches(epoch):
@@ -172,19 +188,26 @@ def train_version(
                             enabled=amp and device.type == "cuda",
                             dtype=torch.bfloat16 if device.type == "cuda" else torch.float32,
                         ):
-                            loss = sequence_loss(model, batch)
+                            batch_metrics = teacher_forced_batch_metrics(model, batch)
+                            loss = batch_metrics.loss
                         if not torch.isfinite(loss):
                             raise FloatingPointError("nonfinite training loss")
-                        scaler.scale(loss).backward()
-                        scaler.unscale_(optimizer)
+                        loss.backward()
                         gradient_norm = torch.nn.utils.clip_grad_norm_(
                             model.parameters(), max_grad_norm
                         )
                         if not torch.isfinite(gradient_norm):
                             raise FloatingPointError("nonfinite gradient norm")
-                        scaler.step(optimizer)
-                        scaler.update()
-                        optimization_loss += float(loss.item())
+                        optimizer.step()
+                        optimization_loss += loss.detach().to(torch.float64)
+                        online_totals += torch.stack(
+                            (
+                                batch_metrics.tokens,
+                                batch_metrics.token_correct,
+                                batch_metrics.actions,
+                                batch_metrics.exact_actions,
+                            )
+                        ).to(torch.float64)
                         optimization_batches += 1
                         decisions += int(batch["state_num"].size(0))
                         global_step += 1
@@ -198,22 +221,24 @@ def train_version(
                 if optimization_batches != batch_counts["train"]:
                     raise ValueError("training epoch batch count mismatch")
 
-                def evaluate(split: str, stage: str) -> dict[str, float]:
+                def evaluate_validation() -> dict[str, float]:
                     progress = _PhaseProgress(
                         logger=logger,
                         epoch=epoch,
-                        stage=stage,
-                        total_batches=batch_counts[split],
+                        stage="validation_eval",
+                        total_batches=batch_counts["validation"],
                         progress_iteration=progress_iteration,
                         trainer_update=lambda: global_step,
                         log_every=progress_log_every,
+                        device=device,
                     )
                     try:
                         return evaluate_full_pass(
                             model,
-                            evaluation_batches(split, epoch),
+                            validation_batches(epoch),
                             device=device,
-                            namespace=split,
+                            namespace="validation",
+                            amp=amp,
                             progress=lambda batch_index, count: progress.update(
                                 batch_index, count
                             ),
@@ -221,22 +246,36 @@ def train_version(
                     finally:
                         progress.close()
 
-                train_metrics = evaluate("train", "train_eval")
-                validation_metrics = evaluate("validation", "validation_eval")
+                (
+                    online_tokens,
+                    online_token_correct,
+                    online_actions,
+                    online_exact_actions,
+                ) = online_totals.cpu().tolist()
+                mean_optimization_loss = float(
+                    (optimization_loss / optimization_batches).cpu()
+                )
+                validation_metrics = evaluate_validation()
                 metrics = {
                     "trainer/epoch": epoch,
                     "trainer/update": global_step,
                     "progress/iteration": progress_iteration[0],
-                    "bc/optimization/loss": optimization_loss / optimization_batches,
-                    "bc/optimization/decisions": decisions,
-                    **train_metrics,
+                    "bc/optimization/loss": mean_optimization_loss,
+                    "bc/optimization/token_accuracy": (
+                        online_token_correct / online_tokens
+                    ),
+                    "bc/optimization/teacher_exact_action": (
+                        online_exact_actions / online_actions
+                    ),
+                    "bc/optimization/decisions": online_actions,
+                    "bc/optimization/tokens": online_tokens,
                     **validation_metrics,
                     "system/epoch_seconds": time.perf_counter() - started,
                     "system/parameter_count": sum(
                         parameter.numel() for parameter in model.parameters()
                     ),
                     "system/global_step": global_step,
-                    "system/amp_scale": float(scaler.get_scale()),
+                    "system/amp_scale": 1.0,
                 }
                 logger.log(epoch, metrics)
                 criteria = ["latest"]

@@ -107,7 +107,7 @@ class WandbSink:
             settings_factory = getattr(wandb, "Settings", None)
             if settings_factory is not None:
                 init_options["settings"] = settings_factory(
-                    console="off",
+                    console="wrap",
                     disable_code=True,
                 )
             self._run = wandb.init(**init_options)
@@ -128,8 +128,8 @@ class WandbSink:
         self._run.define_metric("trainer/update")
         self._run.define_metric("env/decisions")
         self._run.define_metric("env/episodes")
-        self._run.define_metric("progress/iteration")
-        self._run.define_metric("progress/*", step_metric="progress/iteration")
+        progress_axis = _metric_axis(self.settings.job_type, {})
+        self._run.define_metric("progress/*", step_metric=progress_axis)
         self._run.define_metric("bc/*", step_metric="trainer/epoch")
         self._run.define_metric("value/*", step_metric="trainer/epoch")
         self._run.define_metric("ppo/*", step_metric="trainer/update")
@@ -304,11 +304,7 @@ def _infer_job_type(metrics: dict[str, Any]) -> str:
 
 
 def _metric_axis(job_type: str, record: dict[str, Any]) -> str:
-    if any(key.startswith("progress/") for key in record) and not any(
-        key.startswith(("bc/", "value/", "ppo/", "rollout/", "eval/"))
-        for key in record
-    ):
-        return "progress/iteration"
+    del record
     if job_type == "ppo_train":
         return "trainer/update"
     if job_type == "rollout_train":

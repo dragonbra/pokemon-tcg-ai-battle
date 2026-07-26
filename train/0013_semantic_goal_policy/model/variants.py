@@ -34,6 +34,13 @@ class BatchedActionResult(NamedTuple):
     legal: tuple[bool, ...]
 
 
+class BatchedActionTensorResult(NamedTuple):
+    sequences: Tensor
+    lengths: Tensor
+    forced_terminal: Tensor
+    legal: Tensor
+
+
 class GoalQKV(nn.Module):
     def __init__(self, d_model: int, heads: int) -> None:
         super().__init__()
@@ -170,8 +177,31 @@ class SemanticGoalPolicy(nn.Module):
         return tuple(_EncodedActionScorer(self, encoded, row) for row in range(encoded.state.size(0)))
 
     def deterministic_actions(self, batch: dict[str, Tensor]) -> BatchedActionResult:
-        """Decode a full batch greedily while preserving the centralized action contract."""
-        encoded = self.encode(batch)
+        """Decode a full batch greedily and materialize the public Python contract."""
+        result = self.deterministic_action_tensors(
+            batch,
+            encoded=self.encode(batch, include_value=False),
+        )
+        lengths = result.lengths.cpu().tolist()
+        sequences = result.sequences.cpu().tolist()
+        return BatchedActionResult(
+            tuple(
+                tuple(int(option) for option in row[:length])
+                for row, length in zip(sequences, lengths)
+            ),
+            tuple(bool(value) for value in result.forced_terminal.cpu().tolist()),
+            tuple(bool(value) for value in result.legal.cpu().tolist()),
+        )
+
+    def deterministic_action_tensors(
+        self,
+        batch: dict[str, Tensor],
+        *,
+        encoded: PolicyEncoding | None = None,
+        maximum_steps: int | None = None,
+    ) -> BatchedActionTensorResult:
+        """Decode greedily without per-row device synchronization or Python materialization."""
+        encoded = self.encode(batch, include_value=False) if encoded is None else encoded
         options = encoded.options
         batch_size, option_count, _ = options.shape
         hidden = torch.tanh(self.decoder_init(encoded.state))
@@ -181,15 +211,19 @@ class SemanticGoalPolicy(nn.Module):
         forced = torch.zeros(batch_size, dtype=torch.bool, device=options.device)
         legal = torch.ones(batch_size, dtype=torch.bool, device=options.device)
         lengths = torch.zeros(batch_size, dtype=torch.long, device=options.device)
-        sequences: list[list[int]] = [[] for _ in range(batch_size)]
+        if maximum_steps is None:
+            maximum_steps = int(batch["max_count"].max().item()) if batch_size else 0
+        sequences = torch.full(
+            (batch_size, maximum_steps),
+            -1,
+            dtype=torch.long,
+            device=options.device,
+        )
         rows = torch.arange(batch_size, device=options.device)
-        maximum_steps = int(batch["max_count"].max().item()) if batch_size else 0
-        for _ in range(maximum_steps):
+        for step in range(maximum_steps):
             reached_maximum = ~finished & (lengths >= batch["max_count"])
             forced |= reached_maximum
             finished |= reached_maximum
-            if bool(finished.all()):
-                break
             pointer = (self.pointer_query(hidden).unsqueeze(1) * keys).sum(-1)
             pointer = pointer / self.config.d_model**0.5
             pointer = pointer + self.option_bias(options).squeeze(-1)
@@ -202,29 +236,38 @@ class SemanticGoalPolicy(nn.Module):
             finite = torch.isfinite(logits).any(dim=1)
             legal &= finished | finite
             selected = logits.argmax(1)
-            stopping = ~finished & (selected == option_count)
+            stopping = ~finished & finite & (selected == option_count)
             active = ~finished & ~stopping & finite
-            if bool(active.any()):
-                selected_options = options[rows, selected.clamp_max(option_count - 1)]
-                hidden = torch.where(
-                    active.unsqueeze(-1), self.decoder_cell(selected_options, hidden), hidden
-                )
-                chosen[rows[active], selected[active]] = True
-                lengths[active] += 1
-                for row, option in zip(rows[active].tolist(), selected[active].tolist()):
-                    sequences[row].append(option)
+            safe_selected = selected.clamp_max(option_count - 1)
+            selected_options = options[rows, safe_selected]
+            advanced = self.decoder_cell(selected_options, hidden)
+            hidden = torch.where(active.unsqueeze(-1), advanced, hidden)
+            chosen.scatter_(
+                1,
+                safe_selected.unsqueeze(1),
+                chosen.gather(1, safe_selected.unsqueeze(1)) | active.unsqueeze(1),
+            )
+            sequences[:, step] = torch.where(active, selected, -1)
+            lengths += active
             finished |= stopping | ~finite
         remaining = ~finished
         forced |= remaining
         legal &= ~remaining | (lengths >= batch["max_count"])
-        return BatchedActionResult(
-            tuple(tuple(sequence) for sequence in sequences),
-            tuple(bool(value) for value in forced.tolist()),
-            tuple(bool(value) for value in legal.tolist()),
-        )
+        return BatchedActionTensorResult(sequences, lengths, forced, legal)
 
     def teacher_logits(self, batch: dict[str, Tensor], targets: Tensor) -> Tensor:
-        encoded = self.encode(batch)
+        return self.teacher_logits_from_encoding(
+            batch,
+            targets,
+            self.encode(batch, include_value=False),
+        )
+
+    def teacher_logits_from_encoding(
+        self,
+        batch: dict[str, Tensor],
+        targets: Tensor,
+        encoded: PolicyEncoding,
+    ) -> Tensor:
         options = encoded.options
         batch_size, option_count, _ = options.shape
         keys = self.pointer_key(options)
@@ -246,7 +289,12 @@ class SemanticGoalPolicy(nn.Module):
             chosen.scatter_(1, safe.unsqueeze(1), chosen.gather(1, safe.unsqueeze(1)) | valid.unsqueeze(1))
         return torch.stack(outputs, dim=1)
 
-    def encode(self, batch: dict[str, Tensor]) -> PolicyEncoding:
+    def encode(
+        self,
+        batch: dict[str, Tensor],
+        *,
+        include_value: bool = True,
+    ) -> PolicyEncoding:
         batch_size = batch["state_num"].size(0)
         state = self.state_token.expand(batch_size, -1, -1) + self._cats(batch["state_cat"]).unsqueeze(1) + self.state_numeric(batch["state_num"]).unsqueeze(1)
         entities = self._cats(batch["entities_cat"])
@@ -258,10 +306,13 @@ class SemanticGoalPolicy(nn.Module):
             relation_summary = self.relation_bias(relations).mean(dim=(-2, -1))
             relation_projection = relation_summary.mean(-1, keepdim=True).unsqueeze(-1)
             entities = entities + relation_projection
-        pieces, masks = [state, entities], [torch.ones(batch_size, 1, dtype=torch.bool, device=state.device), batch["entity_mask"]]
-        deck = self._deck(batch)
-        deck_mask = batch["deck_mask"]
+        pieces, masks = [state, entities], [
+            torch.ones(batch_size, 1, dtype=torch.bool, device=state.device),
+            batch["entity_mask"],
+        ]
         if self.level >= 2:
+            deck = self._deck(batch)
+            deck_mask = batch["deck_mask"]
             mean = (deck * deck_mask.unsqueeze(-1)).sum(1) / deck_mask.sum(
                 1, keepdim=True
             ).clamp_min(1)
@@ -306,10 +357,19 @@ class SemanticGoalPolicy(nn.Module):
             attended, _ = attention(options, encoded, encoded, key_padding_mask=~mask, need_weights=False)
             options = norm(options + attended)
         options = options + self.option_ff(options)
-        value = self.value_head(contextual_state).squeeze(-1)
+        value = (
+            self.value_head(contextual_state).squeeze(-1)
+            if include_value
+            else torch.zeros(
+                batch_size,
+                device=contextual_state.device,
+                dtype=contextual_state.dtype,
+            )
+        )
         return PolicyEncoding(contextual_state, options, goals, value)
 
 
 __all__ = [
-    "BatchedActionResult", "GoalQKV", "ModelConfig", "PolicyEncoding", "SemanticGoalPolicy",
+    "BatchedActionResult", "BatchedActionTensorResult", "GoalQKV", "ModelConfig",
+    "PolicyEncoding", "SemanticGoalPolicy",
 ]

@@ -110,16 +110,35 @@ explicit future ablation. There is no diversity regularizer in M0-M5.</p>
 <p>Training permutes every legal option occurrence and synchronously reorders categorical, numeric,
 semantic, mask, and ordered-target tensors. STOP is masked before <code>minCount</code>; reaching
 <code>maxCount</code> forces termination with zero STOP probability/entropy contribution. Teacher,
-greedy, rollout, and future PPO reevaluation share one probability implementation. Full-action
-greedy evaluation is batched. Formal runs create W&amp;B at startup and report train, train-eval, and
-validation-eval progress with iterations/s, decisions/s, completion, elapsed time, and ETA.</p>
+greedy, rollout, and future PPO reevaluation share one probability implementation. The train split
+is consumed once per epoch: loss, token accuracy, and teacher exact-action are aggregated under
+<code>bc/optimization/*</code> from the same teacher-forced logits used by backward. These online
+metrics mix successive parameter states and are optimization diagnostics, not a fixed-snapshot
+train evaluation. Training does not run greedy decode or replay the train split. The epoch-end fixed
+model still runs teacher-forced and greedy full-action evaluation over the complete validation
+split. Both validation decoders share one policy encoding per batch, greedy sequences and metric
+accumulators stay on-device, and only final aggregates cross to the CPU. Before device transfer,
+shard-wide target padding is trimmed to the current batch's final valid teacher token, preserving
+the masked loss and action contract while avoiding decoder work on padding. CUDA train and
+validation use BF16 AMP; validation also uses inference mode and pinned non-blocking transfer. BF16
+uses direct backward without GradScaler because it retains FP32-range exponents; loss/gradient
+finite checks and gradient clipping remain active. Subsequent smoke and formal BC commands default
+to batch 256, selected from real V3 throughput and widest-shard memory benchmarks; each run still
+records the actual value because batch size changes optimizer updates per epoch, while historical
+V4-V6 remain batch 64. Formal runs report train and validation-eval
+progress with iterations/s,
+decisions/s, completion, elapsed time, and ETA. <code>progress/iteration</code> is diagnostic only:
+BC/value charts use <code>trainer/epoch</code>, PPO uses <code>trainer/update</code>, and wrapped
+console capture populates W&amp;B Logs.</p>
 </section>
 <section>
 <h2>Value And Evidence</h2>
 <p>M0-M4 have no active value objective. M5 and M5.1 expose the same finite action-before,
-player-relative scalar, which is not optimized or interpreted during BC. Reward, target, discount,
-bootstrap, terminal/truncation masks, calibration, and PPO losses require a later synchronized
-design update backed by official-engine rollouts.</p>
+player-relative scalar, which is not optimized or interpreted during BC. Teacher-forced BC and
+greedy validation skip the inactive value MLP, while default runtime <code>encode()</code> and action
+scorers retain the value output for later calibration. Reward, target, discount, bootstrap,
+terminal/truncation masks, calibration, and PPO losses require a later synchronized design update
+backed by official-engine rollouts.</p>
 <p class="callout">Offline loss, exact action, legality, and permutation audits establish data and
 imitation health only. Policy strength requires a frozen candidate and official-engine arena report.
 Promotion into the opponent pool requires explicit user confirmation.</p>

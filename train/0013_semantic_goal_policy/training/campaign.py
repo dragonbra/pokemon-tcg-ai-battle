@@ -27,6 +27,7 @@ DEFAULT_DATASET = (
     REPOSITORY_ROOT / "rl_runs" / PROJECT_ID / "dataset" / "V3_model_ready_semantic_v2"
 )
 PROTOCOL_PATH = Path(__file__).parents[1] / "configs" / "pre_run_protocol.json"
+DEFAULT_BATCH_SIZE = 256
 
 
 def _write_exclusive(path: Path, value: dict[str, Any]) -> None:
@@ -144,6 +145,12 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
         "ontology_sha256": source.registry.sha256,
         "epochs": args.epochs,
         "batch_size": args.batch_size,
+        "progress_log_every": args.progress_log_every,
+        "metric_contract": {
+            "optimization": "online_teacher_forced_v1",
+            "validation": "fixed_snapshot_full_action_v1",
+            "full_train_evaluation": False,
+        },
         "batch_counts": {
             split: source.batch_count(split) for split in ("train", "validation")
         },
@@ -154,6 +161,10 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
         "weight_decay": args.weight_decay,
         "max_grad_norm": args.max_grad_norm,
         "amp": not args.no_amp,
+        "amp_dtype": (
+            "bfloat16" if not args.no_amp and device.type == "cuda" else "float32"
+        ),
+        "gradient_scaler": False,
         "device": str(device),
         "m0_smoke_throughput": args.m0_smoke_throughput,
         "runtime_floor": runtime_floor,
@@ -182,8 +193,8 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
         model=model,
         optimizer=optimizer,
         train_batches=lambda epoch: source.batches("train", epoch=epoch, training=True),
-        evaluation_batches=lambda split, epoch: source.batches(
-            split, epoch=epoch, training=False
+        validation_batches=lambda epoch: source.batches(
+            "validation", epoch=epoch, training=False
         ),
         batch_counts={
             split: source.batch_count(split) for split in ("train", "validation")
@@ -202,7 +213,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     smoke = subparsers.add_parser("smoke")
     smoke.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
-    smoke.add_argument("--batch-size", type=int, default=64)
+    smoke.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     smoke.add_argument("--seed", type=int, default=20260726)
     smoke.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     smoke.add_argument("--decisions", type=int, default=256)
@@ -213,7 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--version", required=True)
     train.add_argument("--variant", choices=tuple(MODEL_REGISTRY), default="M0")
     train.add_argument("--epochs", type=int, default=3)
-    train.add_argument("--batch-size", type=int, default=64)
+    train.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     train.add_argument("--progress-log-every", type=int, default=20)
     train.add_argument(
         "--wandb-tags",
