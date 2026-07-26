@@ -206,6 +206,45 @@ class PreRunProtocolTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("protocol hash mismatch", result.stderr)
 
+    def test_m5_1_requires_a_new_bound_ablation_protocol(self) -> None:
+        digest = PreRunProtocol.from_json(PROTOCOL_PATH).sha256()
+        result = self.run_cli(
+            "train",
+            "--variant",
+            "M5.1",
+            "--protocol-sha256",
+            digest,
+            "--m0-smoke-throughput",
+            "12",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("not authorized by the bound formal protocol", result.stderr)
+
+        campaign_result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "train.0013_semantic_goal_policy.training.campaign",
+                "train",
+                "--variant",
+                "M5.1",
+                "--version",
+                "forbidden_m5_1_protocol_test",
+                "--protocol-sha256",
+                digest,
+                "--m0-smoke-throughput",
+                "12",
+            ],
+            cwd=PACKAGE_ROOT.parents[1],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertNotEqual(campaign_result.returncode, 0)
+        self.assertIn(
+            "not authorized by the bound formal protocol", campaign_result.stderr
+        )
+
     def test_training_rejects_missing_runtime_measurement_after_valid_hash(self) -> None:
         digest = PreRunProtocol.from_json(PROTOCOL_PATH).sha256()
         result = self.run_cli("train", "--protocol-sha256", digest)

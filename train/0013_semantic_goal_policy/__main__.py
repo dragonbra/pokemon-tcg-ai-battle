@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from . import PROJECT_ID
+from .model.registry import MODEL_REGISTRY
 from .protocol import PreRunProtocol
 
 PROTOCOL_PATH = Path(__file__).with_name("configs") / "pre_run_protocol.json"
@@ -37,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
             command_parser.add_argument("--protocol-sha256", required=True)
         if command == "train":
             command_parser.add_argument("--m0-smoke-throughput", type=float)
+            command_parser.add_argument("--variant", choices=tuple(MODEL_REGISTRY), default="M0")
     return parser
 
 
@@ -55,6 +57,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command in FORMAL_COMMANDS and args.protocol_sha256 != protocol.sha256():
         parser.error("protocol hash mismatch")
     if args.command == "train":
+        authorized_variants = protocol.data["minimum_formal_allocation"]["models"]
+        if args.variant not in authorized_variants:
+            parser.error(
+                f"variant {args.variant} is not authorized by the bound formal protocol"
+            )
         if args.m0_smoke_throughput is None:
             parser.error("train requires --m0-smoke-throughput")
         try:

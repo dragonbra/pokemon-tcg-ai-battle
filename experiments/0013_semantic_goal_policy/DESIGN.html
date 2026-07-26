@@ -20,7 +20,7 @@ code { overflow-wrap: anywhere; }
 <body>
 <header>
 <h1>0013 Semantic Goal Policy</h1>
-<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V5 runs the monitored 100-epoch M0 ceiling; V6 runs the complete existing M5 ladder in parallel. F1 and its richer feature dataset are deferred. No candidate or strength result yet.</p>
+<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V5 and V6 run the monitored M0 and complete existing M5 ladders in parallel. M5.1 is implemented as an unlaunched Goal-QKV leave-one-out and is not authorized by the current frozen protocol. F1 remains deferred. No candidate or strength result yet.</p>
 <nav>
 <a href="DESIGN.md">Full Markdown contract</a>
 <a href="decisions/001_pre_run_protocol.md">Frozen protocol</a>
@@ -70,12 +70,12 @@ unknown.</p>
 <tr><td>event</td><td><code>cat[E,6], num[E,8], semantic[E,64]</code></td><td>newest 64 actor-visible logs</td><td>no event</td></tr>
 <tr><td>relation</td><td><code>type[N,N]</code></td><td>retained entity endpoints</td><td>zero means absent</td></tr>
 <tr><td>goal</td><td><code>[4,d_model]</code></td><td>four learned roles</td><td>zero when disabled</td></tr>
-<tr><td>value</td><td><code>[1]</code></td><td>M5 uncalibrated interface only</td><td>not a BC target</td></tr>
+<tr><td>value</td><td><code>[1]</code></td><td>M5/M5.1 uncalibrated interface only</td><td>not a BC target</td></tr>
 </tbody>
 </table>
 </section>
 <section>
-<h2>M0-M5 Matrix</h2>
+<h2>M0-M5 Matrix And M5.1 Ablation</h2>
 <table>
 <thead><tr><th>Variant</th><th>Enabled delta</th><th>Goal memory</th><th>Value</th></tr></thead>
 <tbody>
@@ -85,6 +85,7 @@ unknown.</p>
 <tr><td>M3</td><td>M2 + four learned retrieval slots</td><td>registered deck K/V</td><td>inactive</td></tr>
 <tr><td>M4</td><td>M3 + causal ledger tokens</td><td>deck + ledger K/V</td><td>inactive</td></tr>
 <tr><td>M5</td><td>M4 + actor-visible events and per-head directed entity relation attention bias</td><td>deck + ledger K/V</td><td>finite, uncalibrated</td></tr>
+<tr><td>M5.1</td><td>M5 minus Goal-QKV forward and four goal tokens</td><td>disabled; parameters retained</td><td>same as M5</td></tr>
 </tbody>
 </table>
 <p>All variants use <code>d_model=384</code>, six pre-norm state layers, eight heads, FFN 1536, and
@@ -94,13 +95,18 @@ comparison to 0012 V5. A strict control would require a separate <code>M0_0012_m
 cumulative through M3-M5. M5 applies each available typed entity relation as learned per-head bias
 at its directed source/target attention pair; type zero contributes no bias. Richer event and option
 relations remain outside the accepted V3 schema and belong to a future F1 dataset contract.</p>
+<p>M5.1 is full-minus-one, not another cumulative ladder level. It instantiates every M5 module in
+the same order and has the same state-dict tensors and initial model SHA under a matching seed. Only
+Goal-QKV is disconnected and its four tokens are omitted; deck summary, ledger state tokens, events,
+relation bias, option path, decoder, and value interface remain active.</p>
 </section>
 <section>
 <h2>Goal And Action Decisions</h2>
-<p>M3 and M4 share one Goal-QKV module. The four latent roles are setup/board development,
-attack/Prize progress, resource access/recovery, and tempo/survival. Q is the raw state token before
-entity contextualization. A raw-state-plus-board-summary Q is reserved for an explicit future
-M3b/M4b ablation. There is no diversity regularizer in M0-M5.</p>
+<p>M3 through M5 share the same Goal-QKV module design. The four latent roles are setup/board
+development, attack/Prize progress, resource access/recovery, and tempo/survival. Q is the raw state
+token before entity contextualization. M5.1 retains identically initialized Goal-QKV parameters but
+does not call the module or append goal tokens. A raw-state-plus-board-summary Q is reserved for an
+explicit future ablation. There is no diversity regularizer in M0-M5.</p>
 <p>Training permutes every legal option occurrence and synchronously reorders categorical, numeric,
 semantic, mask, and ordered-target tensors. STOP is masked before <code>minCount</code>; reaching
 <code>maxCount</code> forces termination with zero STOP probability/entropy contribution. Teacher,
@@ -110,8 +116,8 @@ validation-eval progress with iterations/s, decisions/s, completion, elapsed tim
 </section>
 <section>
 <h2>Value And Evidence</h2>
-<p>M0-M4 have no active value objective. M5's scalar only establishes a finite action-before,
-player-relative interface and is not optimized or interpreted during BC. Reward, target, discount,
+<p>M0-M4 have no active value objective. M5 and M5.1 expose the same finite action-before,
+player-relative scalar, which is not optimized or interpreted during BC. Reward, target, discount,
 bootstrap, terminal/truncation masks, calibration, and PPO losses require a later synchronized
 design update backed by official-engine rollouts.</p>
 <p class="callout">Offline loss, exact action, legality, and permutation audits establish data and
@@ -139,6 +145,12 @@ with finite loss and 1.804 GiB peak CUDA allocation while V5 remained active. W&
 and Chinese Notes are mirrored into each run config, and live progress uses
 <code>progress/*</code> on <code>progress/iteration</code>. M1-M4 and F1 are paused; this M5 run does
 not introduce F1's richer feature schema or board-conditioned Goal query.</p>
+<p>M5.1 is code-complete and tested, but remains a prepared option only. The current frozen protocol
+authorizes M0-M5, and both command entry points reject M5.1 under its SHA. A real V3 batch-64 AMP
+optimizer smoke matched M5's initial model SHA, kept all Goal-QKV gradients disconnected, produced
+finite loss, and used 1.742 GiB peak CUDA allocation. No V7 directory, W&amp;B run, checkpoint,
+metrics file, or persistent GPU process exists. A later launch requires explicit confirmation and
+a new immutable ablation protocol.</p>
 </section>
 </body>
 </html>

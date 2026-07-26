@@ -3,8 +3,9 @@
 **Project ID:** `0013_semantic_goal_policy`
 **Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors published and fully
 validated; V4 completed the reproducible three-epoch M0 minimum; V5 extends M0 to a monitored
-100-epoch ceiling; V6 runs the complete existing M5 ladder in parallel; F1 and its richer feature
-dataset are deferred; no candidate or policy-strength result exists.
+100-epoch ceiling; V6 runs the complete existing M5 ladder in parallel; M5.1 is implemented as an
+unlaunched Goal-QKV leave-one-out and is not authorized by the current frozen protocol; F1 and its
+richer feature dataset are deferred; no candidate or policy-strength result exists.
 
 ## Purpose and boundaries
 
@@ -107,7 +108,7 @@ and special-condition type. Option numeric pairs contain count, number, energy i
 index. Ledger values contain registered, current-deck, and inferred-prize counts plus their causal
 knowledge states. Event values contain relative age and actor-visible event identity.
 
-## M0-M5 variant matrix
+## M0-M5 variant matrix and M5.1 ablation
 
 Every variant uses the same ordered-action decoder, state token, actor-visible entities, legal
 options, masks, dataset split, and target representation.
@@ -120,12 +121,19 @@ options, masks, dataset split, and target representation.
 | M3 | M2 | M1 | Goal-QKV K/V memory | M1 | inactive | inactive | inactive | four deck retrieval slots | inactive |
 | M4 | M2 | M1 | deck K/V memory | M1 | ledger K/V memory and state tokens | inactive | inactive | four deck+ledger retrieval slots | inactive |
 | M5 | M2 | M1 | deck K/V memory | M1 | M4 | event state tokens | per-head directed entity attention bias | M4 | finite, uncalibrated head |
+| M5.1 | M2 | M1 | masked mean only; Goal K/V disabled | M1 | M4 state tokens; Goal K/V disabled | event state tokens | same as M5 | zero goal output; no goal tokens | same finite, uncalibrated head |
 
 M2's registered-deck masked summary is cumulative through M3-M5. M5 maps each available typed
 entity relation to a learned per-head directed attention bias at its source/target pair; relation
 type zero contributes no bias. The accepted V3 schema contains entity-indexed relations only, so
 richer event/source/target relation schemas remain outside this ladder and belong to a future F1
 dataset contract.
+
+M5.1 is a full-minus-one ablation, not another cumulative ladder level. It instantiates every M5
+module in the same order and has exactly the same state-dict tensors and initial model SHA when the
+seed matches M5. Only Goal-QKV is disconnected from the policy forward and its four goal tokens are
+omitted; deck summary, ledger state tokens, events, relation bias, options, decoder, and value
+interface remain active. This isolates the marginal contribution of Goal-QKV without rebuilding V3.
 
 The reference capacity is `d_model=384`, six pre-norm state layers, eight heads, FFN width 1536,
 two option cross-attention layers, and dropout 0.1. This defines the 0013 ladder baseline. It is not
@@ -135,12 +143,13 @@ no 0012 strength claim may be made from current M0.
 
 ## Goal-QKV decision
 
-M3 and M4 share one Goal-QKV module and its Q/K/V parameters. Four learned role embeddings represent
-setup/board development, attack/Prize progress, resource access/recovery, and tempo/survival. They
-are latent retrieval roles, not supervised goal labels. M3 K/V contains registered-deck tokens. M4
-K/V contains the concatenation of registered-deck and causal ledger tokens. The Q source is the raw
-state token before entity/state Transformer contextualization. No diversity regularizer is used in
-the primary M0-M5 ladder.
+M3 through M5 share one Goal-QKV module design and its Q/K/V parameters. Four learned role
+embeddings represent setup/board development, attack/Prize progress, resource access/recovery, and
+tempo/survival. They are latent retrieval roles, not supervised goal labels. M3 K/V contains
+registered-deck tokens. M4 and M5 K/V contain the concatenation of registered-deck and causal ledger
+tokens. The Q source is the raw state token before entity/state Transformer contextualization. No
+diversity regularizer is used in the primary M0-M5 ladder. M5.1 retains the module parameters for
+matched initialization but does not call it or append goal tokens.
 
 `raw state + masked board/entity summary` is reserved for an explicit future `M3b/M4b` controlled
 ablation and must not silently replace the primary Q source. Because the registered deck is mostly
@@ -164,8 +173,8 @@ and elapsed time; complete split metrics remain one summary per epoch.
 
 ## Value and later PPO boundary
 
-M0-M4 do not expose an active value objective. M5 creates a finite player-relative action-before
-state scalar solely to establish the interface; BC does not optimize or interpret it. Before value
+M0-M4 do not expose an active value objective. M5 and M5.1 create the same finite player-relative
+action-before state scalar solely to establish the interface; BC does not optimize or interpret it. Before value
 calibration or PPO, both DESIGN files must be updated with the target, reward, player perspective,
 terminal/truncation mask, bootstrap and discount convention, loss weights, calibration metrics, and
 official-engine rollout evidence. No value or PPO result currently exists.
@@ -176,7 +185,7 @@ Implemented: frozen source/protocol/action/split contracts; atomic raw shard pub
 audited orphan recovery; published raw v3 dataset with 145,961 train and 16,167 validation
 decisions; typed schema and ontology; chronological causal knowledge with dynamically maintained
 exact deck/Prize resources; transitive compiler v2; synchronized option permutation; M0-M5 model
-paths; centralized batched full-action decoder; model-ready tensor shard writer/reader; eager W&B
+paths plus the unlaunched M5.1 Goal-QKV ablation; centralized batched full-action decoder; model-ready tensor shard writer/reader; eager W&B
 lifecycle and phase progress; and focused contract tests.
 
 V1 is an immutable failed record: it repeated raw JSON/causal compilation in every train/evaluation
@@ -208,7 +217,12 @@ Notes are recorded in each run config; live progress uses the canonical `progres
 
 This M5 direction check deliberately skips M1-M4 and does not implement F1. F1's richer option,
 event/relation, serial-exclusion, and board-conditioned Goal-query dataset/model contract is
-paused until current M0/M5 evidence is reviewed.
+paused until current M0/M5 evidence is reviewed. M5.1 is code-complete and tested but remains only a
+prepared option: the current frozen protocol authorizes M0-M5, and both command entry points reject
+M5.1 under its SHA. A real V3 batch-64 AMP optimizer smoke matched M5's initial model SHA, kept all
+Goal-QKV gradients disconnected, produced finite loss, and used 1.742 GiB peak CUDA allocation. No
+V7 directory, W&B run, checkpoint, metrics, or persistent GPU process has been created. A later
+launch requires explicit confirmation and a new immutable ablation protocol.
 
 Only after the monitored M0/M5 convergence runs and offline audits pass may self-contained
 candidates be exported. M1-M4 and F1 are paused. Any resumed comparison must retain explicit raw

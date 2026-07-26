@@ -84,6 +84,11 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
     protocol = PreRunProtocol.from_json(PROTOCOL_PATH)
     if args.protocol_sha256 != protocol.sha256():
         raise ValueError("protocol hash mismatch")
+    authorized_variants = protocol.data["minimum_formal_allocation"]["models"]
+    if args.variant not in authorized_variants:
+        raise ValueError(
+            f"variant {args.variant} is not authorized by the bound formal protocol"
+        )
     runtime_floor = protocol.resolve_runtime_floor(args.m0_smoke_throughput)
     reproducibility = seed_everything(args.seed)
     source = create_batch_source(

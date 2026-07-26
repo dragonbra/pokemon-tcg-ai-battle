@@ -8,6 +8,9 @@ import torch
 registry = importlib.import_module("train.0013_semantic_goal_policy.model.registry")
 variants = importlib.import_module("train.0013_semantic_goal_policy.model.variants")
 decoder = importlib.import_module("train.0013_semantic_goal_policy.model.decoder")
+reproducibility = importlib.import_module(
+    "train.0013_semantic_goal_policy.training.reproducibility"
+)
 
 
 def batch(batch_size=2, options=5):
@@ -42,7 +45,10 @@ def batch(batch_size=2, options=5):
 
 class ModelVariantTest(unittest.TestCase):
     def test_registry_contains_explicit_m0_to_m5(self):
-        self.assertEqual(tuple(registry.MODEL_REGISTRY), ("M0", "M1", "M2", "M3", "M4", "M5"))
+        self.assertEqual(
+            tuple(registry.MODEL_REGISTRY),
+            ("M0", "M1", "M2", "M3", "M4", "M5", "M5.1"),
+        )
 
     def test_all_variants_forward_and_reference_budget(self):
         values = batch()
@@ -69,7 +75,7 @@ class ModelVariantTest(unittest.TestCase):
                 first = model.encode(values).state
                 second = model.encode(changed).state
             self.assertTrue(torch.equal(first, second), name)
-        for name in ("M4", "M5"):
+        for name in ("M4", "M5", "M5.1"):
             model = registry.create_model(name).eval()
             with torch.no_grad():
                 first = model.encode(values).state
@@ -85,9 +91,13 @@ class ModelVariantTest(unittest.TestCase):
             model = registry.create_model(name).eval()
             with torch.no_grad():
                 self.assertTrue(torch.equal(model.encode(values).state, model.encode(changed).state), name)
-        model = registry.create_model("M5").eval()
-        with torch.no_grad():
-            self.assertFalse(torch.equal(model.encode(values).state, model.encode(changed).state))
+        for name in ("M5", "M5.1"):
+            with self.subTest(name=name):
+                model = registry.create_model(name).eval()
+                with torch.no_grad():
+                    self.assertFalse(
+                        torch.equal(model.encode(values).state, model.encode(changed).state)
+                    )
 
     def test_m5_relation_bias_preserves_edge_topology(self):
         values = batch()
@@ -113,7 +123,7 @@ class ModelVariantTest(unittest.TestCase):
         values = batch()
         changed = dict(values)
         changed["deck_semantic"] = values["deck_semantic"].clone() + 1
-        for name in ("M2", "M3", "M4", "M5"):
+        for name in ("M2", "M3", "M4", "M5", "M5.1"):
             with self.subTest(name=name):
                 model = registry.create_model(name).eval()
                 model.goal_qkv = ZeroGoals()
@@ -121,6 +131,43 @@ class ModelVariantTest(unittest.TestCase):
                     first = model.encode(values).state
                     second = model.encode(changed).state
                 self.assertFalse(torch.equal(first, second))
+
+    def test_m5_1_matches_m5_initial_state_exactly(self):
+        reproducibility.seed_everything(20260726)
+        m5 = registry.create_model("M5")
+        reproducibility.seed_everything(20260726)
+        ablation = registry.create_model("M5.1")
+        self.assertEqual(
+            reproducibility.model_state_sha256(m5),
+            reproducibility.model_state_sha256(ablation),
+        )
+        for key, value in m5.state_dict().items():
+            self.assertTrue(torch.equal(value, ablation.state_dict()[key]), key)
+
+    def test_m5_1_only_disconnects_goal_qkv_from_policy_forward(self):
+        values = batch()
+        reproducibility.seed_everything(7)
+        m5 = registry.create_model("M5").eval()
+        reproducibility.seed_everything(7)
+        ablation = registry.create_model("M5.1").eval()
+
+        m5_output = m5.encode(values)
+        ablation_output = ablation.encode(values)
+        self.assertFalse(torch.equal(m5_output.state, ablation_output.state))
+        self.assertTrue(torch.equal(ablation_output.goals, torch.zeros_like(ablation_output.goals)))
+        self.assertTrue(torch.isfinite(ablation_output.value).all())
+
+        m5_output.options[..., 0].sum().backward()
+        ablation_output.options[..., 0].sum().backward()
+        self.assertTrue(
+            any(
+                parameter.grad is not None and bool(parameter.grad.abs().sum())
+                for parameter in m5.goal_qkv.parameters()
+            )
+        )
+        self.assertTrue(
+            all(parameter.grad is None for parameter in ablation.goal_qkv.parameters())
+        )
 
     def test_option_permutation_does_not_change_state(self):
         values = batch(options=5)

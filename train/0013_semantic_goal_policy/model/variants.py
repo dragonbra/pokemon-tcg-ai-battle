@@ -1,4 +1,4 @@
-"""Explicit M0-M5 Semantic Goal Policy variants."""
+"""Explicit M0-M5 Semantic Goal Policy variants and the M5.1 Goal-QKV ablation."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -78,10 +78,12 @@ class SemanticGoalPolicy(nn.Module):
 
     def __init__(self, variant: str, config: ModelConfig | None = None) -> None:
         super().__init__()
-        if variant not in {f"M{index}" for index in range(6)}:
+        valid_variants = {f"M{index}" for index in range(6)} | {"M5.1"}
+        if variant not in valid_variants:
             raise ValueError(f"unknown model variant {variant}")
         self.variant = variant
-        self.level = int(variant[1])
+        self.level = 5 if variant == "M5.1" else int(variant[1])
+        self.goal_qkv_enabled = variant != "M5.1"
         self.config = config or ModelConfig()
         c, d = self.config, self.config.d_model
         self.categorical = nn.Embedding(c.categorical_vocab, d, padding_idx=0)
@@ -266,15 +268,21 @@ class SemanticGoalPolicy(nn.Module):
             pieces[0] = pieces[0] + mean.unsqueeze(1)
         goals = torch.zeros(batch_size, 4, self.config.d_model, device=state.device, dtype=state.dtype)
         if self.level >= 3:
-            goals = self.goal_qkv(pieces[0][:, 0], deck, deck_mask)
+            if self.goal_qkv_enabled:
+                goals = self.goal_qkv(pieces[0][:, 0], deck, deck_mask)
             if self.level >= 4:
                 ledger = self._cats(batch["ledger_cat"]) + self.ledger_numeric(batch["ledger_num"]) + self.ledger_kind
                 ledger = ledger + self.semantic_projection(batch["ledger_semantic"])
-                resources = torch.cat((deck, ledger), dim=1)
-                resource_mask = torch.cat((deck_mask, batch["ledger_mask"]), dim=1)
-                goals = self.goal_qkv(pieces[0][:, 0], resources, resource_mask)
+                if self.goal_qkv_enabled:
+                    resources = torch.cat((deck, ledger), dim=1)
+                    resource_mask = torch.cat((deck_mask, batch["ledger_mask"]), dim=1)
+                    goals = self.goal_qkv(pieces[0][:, 0], resources, resource_mask)
                 pieces.append(ledger); masks.append(batch["ledger_mask"])
-            pieces.append(goals + self.goal_kind); masks.append(torch.ones(batch_size, 4, dtype=torch.bool, device=state.device))
+            if self.goal_qkv_enabled:
+                pieces.append(goals + self.goal_kind)
+                masks.append(
+                    torch.ones(batch_size, 4, dtype=torch.bool, device=state.device)
+                )
         if self.level >= 5:
             events = self._cats(batch["events_cat"]) + self.event_numeric(batch["events_num"]) + self.event_kind
             events = events + self.semantic_projection(batch["event_semantic"])

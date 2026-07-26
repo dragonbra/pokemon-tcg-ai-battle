@@ -5,7 +5,10 @@ from collections.abc import Mapping
 
 from .variants import ModelConfig, SemanticGoalPolicy
 
-MODEL_REGISTRY: Mapping[str, type[SemanticGoalPolicy]] = {f"M{index}": SemanticGoalPolicy for index in range(6)}
+MODEL_REGISTRY: Mapping[str, type[SemanticGoalPolicy]] = {
+    **{f"M{index}": SemanticGoalPolicy for index in range(6)},
+    "M5.1": SemanticGoalPolicy,
+}
 
 
 def create_model(name: str, config: ModelConfig | None = None) -> SemanticGoalPolicy:
