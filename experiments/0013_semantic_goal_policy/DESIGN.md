@@ -2,8 +2,8 @@
 
 **Project ID:** `0013_semantic_goal_policy`
 **Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors published and fully
-validated; formal V1 is preserved failed; the next strictly increasing M0 run is ready to allocate;
-no checkpoint, candidate, or policy-strength result exists.
+validated; formal V1 and V2 are preserved failed; atomic checkpoint selection is fixed and the next
+strictly increasing M0 run is ready; no completed candidate or policy-strength result exists.
 
 ## Purpose and boundaries
 
@@ -186,9 +186,13 @@ reached 5,765 decisions/s while M0 optimization reached 638 decisions/s, so feat
 longer starves the model. Full evidence is in
 `data_audit/materialized_v3_audit_2026-07-26.json`.
 
-The next gate is allocation of the strictly increasing formal M0 version with V3, batch 64, seed
-20260726, three complete epochs, full train/validation evaluation each epoch, eager online W&B, and
-throttled phase progress. M1-M5 remain paused.
+The next gate is allocation of the strictly increasing formal V3 M0 version with the same V3
+feature dataset, batch 64, seed 20260726, and three complete epochs. V2 completed and preserved two
+full epochs but failed after epoch 2 because the mutable `criteria/latest.json` selection pointer
+was incorrectly written with exclusive-create semantics. Both content-addressed checkpoints and
+canonical/W&B metrics remain valid failure evidence. Epoch checkpoint files stay immutable;
+`latest` and best pointers now use fsynced atomic replacement with a two-epoch regression test.
+M1-M5 remain paused.
 
 Only after those gates pass may the next strictly increasing formal version allocate and train M0.
 M1-M5 are paused. After M0 data/action health is established, they may advance as isolated versions

@@ -16,14 +16,19 @@ telemetry = importlib.import_module("train.0013_semantic_goal_policy.training.te
 
 
 class TrainingContractsTest(unittest.TestCase):
-    def test_content_addressed_checkpoint_and_immutable_criteria(self):
+    def test_content_addressed_checkpoints_and_atomic_selection_pointers(self):
         with tempfile.TemporaryDirectory() as d:
             root=Path(d);model=torch.nn.Linear(2,1);optimizer=torch.optim.AdamW(model.parameters())
             manifest=checkpoints.save_checkpoint(root,model=model,optimizer=optimizer,epoch=1,global_step=3,metadata={"variant":"M0","dataset_sha256":"a"*64},criteria=("latest","best_validation_loss"))
             path=root/manifest["path"]
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(),manifest["sha256"])
-            self.assertTrue((root/"criteria"/"latest.json").is_file())
-            with self.assertRaises(FileExistsError):checkpoints.save_checkpoint(root,model=model,optimizer=optimizer,epoch=1,global_step=3,metadata={"variant":"M0","dataset_sha256":"a"*64},criteria=("latest",))
+            best_before = json.loads((root/"criteria"/"best_validation_loss.json").read_text())
+            second=checkpoints.save_checkpoint(root,model=model,optimizer=optimizer,epoch=2,global_step=6,metadata={"variant":"M0","dataset_sha256":"a"*64},criteria=("latest",))
+            latest = json.loads((root/"criteria"/"latest.json").read_text())
+            best_after = json.loads((root/"criteria"/"best_validation_loss.json").read_text())
+            self.assertEqual(latest["sha256"], second["sha256"])
+            self.assertEqual(best_after, best_before)
+            with self.assertRaises(FileExistsError):checkpoints.save_checkpoint(root,model=model,optimizer=optimizer,epoch=2,global_step=6,metadata={"variant":"M0","dataset_sha256":"a"*64},criteria=("latest",))
 
     def test_selection_hard_gates_composite_and_tie_break(self):
         candidates=[
