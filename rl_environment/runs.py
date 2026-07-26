@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import argparse
 import hashlib
+from html import escape
 import json
 import shutil
 import subprocess
@@ -51,6 +52,11 @@ class VersionPaths:
     metrics: Path
     summary: Path
     status: Path
+    checkpoint_selection: Path
+    model_contract: Path
+    dataset_reference: Path
+    metrics_snapshot: Path
+    wandb_snapshot_manifest: Path
 
 
 def project_version_paths(project_id: str, version_name: str) -> VersionPaths:
@@ -75,16 +81,36 @@ def project_version_paths(project_id: str, version_name: str) -> VersionPaths:
         metrics=artifact / "training_metrics.jsonl",
         summary=artifact / "training_summary.json",
         status=artifact / "status.json",
+        checkpoint_selection=artifact / "checkpoint_selection.json",
+        model_contract=artifact / "model_contract.json",
+        dataset_reference=artifact / "dataset_reference.json",
+        metrics_snapshot=artifact / "metrics_snapshot.json",
+        wandb_snapshot_manifest=artifact / "wandb_snapshot_manifest.json",
     )
 
 
 def _write_json(path: Path, value: dict[str, object]) -> None:
     temporary = path.with_name(f"{path.name}.tmp")
-    temporary.write_text(
-        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    temporary.replace(path)
+    try:
+        temporary.write_text(
+            json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def write_version_status(paths: VersionPaths, updates: dict[str, object]) -> None:
+    """Atomically merge lifecycle updates into an allocated version's status."""
+    try:
+        current = json.loads(paths.status.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"unreadable version status: {paths.status}") from error
+    if not isinstance(current, dict):
+        raise ValueError(f"invalid version status: {paths.status}")
+    current.update(updates)
+    _write_json(paths.status, current)
 
 
 def initialize_version(project_id: str, version_name: str) -> VersionPaths:
@@ -273,8 +299,42 @@ def _project_templates(project_id: str, objective: str) -> dict[str, str]:
     }
 
 
+def _project_evaluation_link(root: Path, project_id: str) -> str:
+    """Return the canonical project link or an existing legacy evaluation index."""
+    match = PROJECT_ID.fullmatch(project_id)
+    if match is None:
+        raise ValueError(f"invalid project ID: {project_id}")
+    if int(match.group("number")) >= 13:
+        return f"{project_id}/evaluation/index.html"
+    canonical = root / project_id / "evaluation" / "index.html"
+    legacy_id = project_id.replace("_", "-", 1)
+    legacy = root.parent / "rl_runs" / "evaluation" / legacy_id / "index.html"
+    if canonical.is_file():
+        return f"{project_id}/evaluation/index.html"
+    if legacy.is_file():
+        return f"../rl_runs/evaluation/{legacy_id}/index.html"
+    return f"{project_id}/evaluation/index.html"
+
+
+def _render_project_cards(project_rows: list[dict[str, str]]) -> str:
+    cards = []
+    for row in project_rows:
+        project_id = escape(row["project_id"])
+        objective = escape(row["objective"])
+        evaluation = escape(row["evaluation"], quote=True)
+        cards.append(
+            '<article class="project">'
+            f'<span class="project-id">{project_id}</span>'
+            f'<h3>{project_id}</h3><p>{objective}</p><div class="links">'
+            f'<a href="{project_id}/README.md">档案</a>'
+            f'<a href="{project_id}/DESIGN.html">设计</a>'
+            f'<a href="{evaluation}">评测</a></div></article>'
+        )
+    return "".join(cards)
+
+
 def refresh_experiment_index() -> None:
-    """Render deterministic top-level experiment discovery indexes."""
+    """Render discovery data while retaining an existing curated HTML shell."""
     root = REPOSITORY_ROOT / "experiments"
     root.mkdir(parents=True, exist_ok=True)
     projects: list[dict[str, object]] = []
@@ -288,20 +348,62 @@ def refresh_experiment_index() -> None:
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise ValueError(f"unreadable experiment manifest: {manifest_path}") from error
-        if not isinstance(manifest, dict) or not isinstance(manifest.get("project_id"), str):
+        if not isinstance(manifest, dict):
             raise ValueError(f"invalid experiment manifest: {manifest_path}")
-        projects.append(manifest)
+        manifest_project_id = manifest.get("project_id")
+        if manifest_project_id is None:
+            match = PROJECT_ID.fullmatch(child.name)
+            if match is None or int(match.group("number")) >= 13:
+                raise ValueError(f"experiment manifest is missing project_id: {manifest_path}")
+            indexed_manifest = {**manifest, "project_id": child.name}
+        elif not isinstance(manifest_project_id, str):
+            raise ValueError(f"invalid experiment manifest: {manifest_path}")
+        elif manifest_project_id != child.name:
+            raise ValueError(
+                f"manifest project_id {manifest_project_id!r} does not match directory {child.name!r}"
+            )
+        else:
+            indexed_manifest = manifest
+        projects.append(indexed_manifest)
     projects.sort(key=lambda manifest: str(manifest["project_id"]))
-    markdown = ["# Experiment projects", "", "| Project | Objective | Status | Archive | Design | Evaluation |", "| --- | --- | --- | --- | --- | --- |"]
-    rows = []
-    for manifest in projects:
-        project_id = str(manifest["project_id"])
-        objective = str(manifest.get("objective", ""))
-        status = str(manifest.get("status", ""))
-        markdown.append(f"| {project_id} | {objective} | {status} | [{project_id}]({project_id}/README.md) | [Design]({project_id}/DESIGN.html) | [Evaluation]({project_id}/evaluation/index.html) |")
-        rows.append(f"<tr><td>{project_id}</td><td>{objective}</td><td>{status}</td><td><a href=\"{project_id}/README.md\">Archive</a></td><td><a href=\"{project_id}/DESIGN.html\">Design</a></td><td><a href=\"{project_id}/evaluation/index.html\">Evaluation</a></td></tr>")
+    rows = [
+        {
+            "project_id": str(manifest["project_id"]),
+            "objective": str(manifest.get("objective", "")),
+            "status": str(manifest.get("status", "")),
+            "evaluation": _project_evaluation_link(root, str(manifest["project_id"])),
+        }
+        for manifest in projects
+    ]
+    markdown = [
+        "# Experiment projects",
+        "",
+        "| Project | Objective | Status | Archive | Design | Evaluation |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in rows:
+        project_id = row["project_id"]
+        markdown.append(
+            f'| {project_id} | {row["objective"]} | {row["status"]} | '
+            f'[{project_id}]({project_id}/README.md) | '
+            f'[Design]({project_id}/DESIGN.html) | '
+            f'[Evaluation]({row["evaluation"]}) |'
+        )
     (root / "INDEX.md").write_text("\n".join(markdown) + "\n", encoding="utf-8")
-    (root / "INDEX.html").write_text("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><title>Experiment projects</title></head>\n<body><h1>Experiment projects</h1><table><thead><tr><th>Project</th><th>Objective</th><th>Status</th><th>Archive</th><th>Design</th><th>Evaluation</th></tr></thead><tbody>" + "".join(rows) + "</tbody></table></body></html>\n", encoding="utf-8")
+
+    html_path = root / "INDEX.html"
+    existing = html_path.read_text(encoding="utf-8") if html_path.is_file() else ""
+    cards = _render_project_cards(rows)
+    project_section = re.compile(r'(<section class="projects">).*?(</section>)', re.DOTALL)
+    if project_section.search(existing):
+        rendered = project_section.sub(r"\1" + cards + r"\2", existing, count=1)
+    else:
+        rendered = (
+            '<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+            '<title>Experiment projects</title></head>\n<body><h1>Experiment projects</h1>'
+            f'<section class="projects">{cards}</section></body></html>\n'
+        )
+    html_path.write_text(rendered, encoding="utf-8")
 
 
 def initialize_project(

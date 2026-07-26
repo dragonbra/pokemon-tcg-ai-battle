@@ -31,6 +31,7 @@ rl_runs/checkpoint/*
 !rl_runs/checkpoint/README.md
 # W&B offline/online staging is local and can be regenerated from canonical JSONL.
 rl_runs/wandb/
+wandb/
 *.egg-info/
 
 # Official card data and Card ID PDFs are local reference downloads only.

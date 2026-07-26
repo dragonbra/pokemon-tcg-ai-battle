@@ -7,6 +7,7 @@ import time
 import unittest
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from evaluation.metrics import GameMetric
@@ -17,7 +18,9 @@ from evaluation.runner.batch import (
     BatchConfig,
     ReportData as BatchReportData,
     _case_candidate,
+    _finalize_formal_report,
     _metric_refs,
+    _write_evaluation_backlink_atomic,
     _metric_registry,
     run_batch,
 )
@@ -371,31 +374,292 @@ class OverridePlugin:
         self.assertEqual(result.report_data.metrics, result.metric_results)
         self.assertEqual({path.name for path in report_root.iterdir()}, {"report.html"})
 
-    def test_batch_writes_explicit_flat_report_without_run_directory(self) -> None:
+    def test_batch_rejects_arbitrary_explicit_report_before_workers(self) -> None:
         candidate = self.make_package("candidate", 7)
         opponent = self.make_package("opponent", 8)
-        report_path = self.root / "reports" / "V1_flat_contract.html"
+        config = replace(
+            self.make_config(candidate, (opponent,), games=1),
+            report_path=self.root / "reports" / "V1_flat_contract.html",
+            update_project_index=True,
+        )
+
+        with patch("evaluation.runner.batch._run_worker") as run_worker:
+            with self.assertRaisesRegex(ValueError, "formal evaluation report path"):
+                run_batch(config)
+        run_worker.assert_not_called()
+
+    def _formal_runtime_paths(self, version_name: str = "V1_initial_contract") -> SimpleNamespace:
+        archive = self.root / "experiments" / "0013_fixture"
+        run_root = self.root / "rl_runs" / "0013_fixture" / "versions" / version_name
+        artifact = run_root / "artifact"
+        return SimpleNamespace(
+            project_id="0013_fixture",
+            project_archive=archive,
+            run_root=run_root,
+            artifact=artifact,
+            status=artifact / "status.json",
+            evaluation=archive / "evaluation" / f"{version_name}.html",
+            version_name=version_name,
+        )
+
+    def _initialize_formal_runtime(self, paths: SimpleNamespace) -> None:
+        paths.project_archive.mkdir(parents=True, exist_ok=True)
+        (paths.project_archive / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": "ptcg_experiment_project_v1",
+                    "project_id": "0013_fixture",
+                    "objective": "fixture",
+                    "deck": "fixture",
+                    "expert_source": "fixture",
+                    "dataset_contract": "fixture",
+                    "engine_revision": "fixture",
+                    "opponent_pool_snapshot": "fixture",
+                    "status": "initialized",
+                    "created_at": "2026-07-26T00:00:00+00:00",
+                    "paths": {},
+                }
+            ),
+            encoding="utf-8",
+        )
+        paths.artifact.mkdir(parents=True)
+        paths.status.write_text(
+            json.dumps({"state": "allocated", "version": paths.version_name}),
+            encoding="utf-8",
+        )
+
+    def test_formal_preflight_rejects_uninitialized_runtime_before_workers(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        paths = self._formal_runtime_paths()
+        config = replace(
+            self.make_config(candidate, (opponent,), games=1),
+            report_path=paths.evaluation,
+            update_project_index=True,
+        )
+
+        with (
+            patch("evaluation.runner.batch._formal_version_paths", return_value=paths),
+            patch("evaluation.runner.batch._run_worker") as run_worker,
+        ):
+            with self.assertRaisesRegex(ValueError, "not initialized"):
+                run_batch(config)
+        run_worker.assert_not_called()
+
+    def test_formal_preflight_rejects_invalid_manifest_or_status_before_workers(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        cases = (
+            ("manifest_identity", {"project_id": "9999_wrong"}, None),
+            ("manifest_fields", {"objective": ""}, None),
+            ("status_state", None, {"state": "invented"}),
+            ("status_empty", None, {"state": ""}),
+        )
+        for tag, manifest_update, status_update in cases:
+            with self.subTest(tag=tag):
+                paths = self._formal_runtime_paths(f"V1_{tag}")
+                self._initialize_formal_runtime(paths)
+                if manifest_update is not None:
+                    manifest_path = paths.project_archive / "manifest.json"
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                    manifest.update(manifest_update)
+                    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+                if status_update is not None:
+                    status = json.loads(paths.status.read_text(encoding="utf-8"))
+                    status.update(status_update)
+                    paths.status.write_text(json.dumps(status), encoding="utf-8")
+                config = replace(
+                    self.make_config(candidate, (opponent,), games=1),
+                    report_path=paths.evaluation,
+                )
+                with (
+                    patch("evaluation.runner.batch._formal_version_paths", return_value=paths),
+                    patch("evaluation.runner.batch._run_worker") as run_worker,
+                ):
+                    with self.assertRaisesRegex(ValueError, "manifest|status"):
+                        run_batch(config)
+                run_worker.assert_not_called()
+
+    def test_formal_preflight_rejects_report_and_backlink_collisions_before_workers(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        for collision in ("report", "backlink"):
+            with self.subTest(collision=collision):
+                paths = self._formal_runtime_paths(f"V1_{collision}")
+                self._initialize_formal_runtime(paths)
+                if collision == "report":
+                    paths.evaluation.parent.mkdir(parents=True, exist_ok=True)
+                    paths.evaluation.write_text("existing", encoding="utf-8")
+                else:
+                    (paths.artifact / "evaluation.json").write_text("{}", encoding="utf-8")
+                config = replace(
+                    self.make_config(candidate, (opponent,), games=1),
+                    report_path=paths.evaluation,
+                    update_project_index=True,
+                )
+                with (
+                    patch("evaluation.runner.batch._formal_version_paths", return_value=paths),
+                    patch("evaluation.runner.batch._run_worker") as run_worker,
+                ):
+                    with self.assertRaisesRegex(ValueError, "already exists"):
+                        run_batch(config)
+                run_worker.assert_not_called()
+
+    def test_formal_preflight_rejects_invalid_version_before_workers(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        report_path = (
+            Path(__file__).resolve().parents[1]
+            / "experiments"
+            / "0013_fixture"
+            / "evaluation"
+            / "invalid.html"
+        )
         config = replace(
             self.make_config(candidate, (opponent,), games=1),
             report_path=report_path,
             update_project_index=True,
         )
 
-        result = run_batch(config)
+        with patch("evaluation.runner.batch._run_worker") as run_worker:
+            with self.assertRaisesRegex(ValueError, "invalid version"):
+                run_batch(config)
+        run_worker.assert_not_called()
 
-        self.assertEqual(result.report_path, report_path.resolve())
+    @staticmethod
+    def _minimal_report_data() -> ReportData:
+        return ReportData(
+            manifest={"run_id": "run-fixture", "candidate": {"name": "candidate"}},
+            summary={"total_games": 0},
+            games=(),
+            metrics={},
+            cases=(),
+        )
+
+    def test_formal_finalization_orders_report_index_then_backlink(self) -> None:
+        report_path = self.root / "evaluation" / "V1_order.html"
+        paths = self._formal_runtime_paths("V1_order")
+        events: list[str] = []
+
+        with (
+            patch(
+                "evaluation.runner.batch.write_report_file_atomic",
+                side_effect=lambda *_: events.append("report"),
+            ),
+            patch(
+                "evaluation.runner.batch.write_evaluation_index",
+                side_effect=lambda *_: events.append("index"),
+            ),
+            patch("evaluation.runner.batch._formal_version_paths", return_value=paths),
+            patch(
+                "evaluation.runner.batch._write_evaluation_backlink_atomic",
+                side_effect=lambda *_args, **_kwargs: events.append("backlink"),
+            ),
+            patch.object(Path, "read_bytes", return_value=b"report"),
+        ):
+            _finalize_formal_report(
+                self._minimal_report_data(),
+                report_path,
+                run_id="run-order",
+                update_project_index=True,
+            )
+
+        self.assertEqual(events, ["report", "index", "backlink"])
+
+    def test_formal_batch_config_cannot_disable_index_regeneration(self) -> None:
+        report_path = self.root / "evaluation" / "V1_index_required.html"
+        paths = self._formal_runtime_paths("V1_index_required")
+        events: list[str] = []
+        with (
+            patch("evaluation.runner.batch.write_report_file_atomic"),
+            patch(
+                "evaluation.runner.batch.write_evaluation_index",
+                side_effect=lambda *_: events.append("index"),
+            ),
+            patch("evaluation.runner.batch._formal_version_paths", return_value=paths),
+            patch("evaluation.runner.batch._write_evaluation_backlink_atomic"),
+            patch.object(Path, "read_bytes", return_value=b"report"),
+        ):
+            _finalize_formal_report(
+                self._minimal_report_data(),
+                report_path,
+                run_id="run-index-required",
+                update_project_index=False,
+            )
+        self.assertEqual(events, ["index"])
+
+    def test_backlink_race_never_overwrites_concurrent_publisher(self) -> None:
+        paths = self._formal_runtime_paths("V1_backlink_race")
+        paths.artifact.mkdir(parents=True)
+        paths.evaluation.parent.mkdir(parents=True)
+        paths.evaluation.write_bytes(b"report")
+        real_link = __import__("os").link
+
+        def concurrent_link(source: Path, target: Path) -> None:
+            target.write_text("concurrent winner", encoding="utf-8")
+            real_link(source, target)
+
+        with (
+            patch("evaluation.runner.batch.os.link", side_effect=concurrent_link),
+            patch.object(Path, "relative_to", return_value=Path("report.html")),
+        ):
+            with self.assertRaises(FileExistsError):
+                _write_evaluation_backlink_atomic(
+                    paths,
+                    run_id="run-race",
+                    report_sha256="hash",
+                )
+
+        backlink = paths.artifact / "evaluation.json"
+        self.assertEqual(backlink.read_text(encoding="utf-8"), "concurrent winner")
+        self.assertFalse(any(path.name.endswith(".tmp") for path in paths.artifact.iterdir()))
+
+    def test_index_failure_retains_report_and_does_not_create_backlink(self) -> None:
+        report_path = self.root / "evaluation" / "V1_index_failure.html"
+        paths = self._formal_runtime_paths("V1_index_failure")
+
+        with (
+            patch("evaluation.runner.batch._formal_version_paths", return_value=paths),
+            patch(
+                "evaluation.runner.batch.write_evaluation_index",
+                side_effect=OSError("index failed"),
+            ),
+            patch("evaluation.runner.batch._write_evaluation_backlink_atomic") as record_evaluation,
+        ):
+            with self.assertRaisesRegex(OSError, "index failed"):
+                _finalize_formal_report(
+                    self._minimal_report_data(),
+                    report_path,
+                    run_id="run-index",
+                    update_project_index=True,
+                )
+
         self.assertTrue(report_path.is_file())
-        self.assertEqual(
-            {path.name for path in report_path.parent.iterdir()},
-            {report_path.name, "index.html"},
-        )
-        self.assertIn(report_path.name, (report_path.parent / "index.html").read_text())
-        self.assertEqual(
-            result.manifest["artifact_policy"]["retained_files"],
-            [report_path.name],
-        )
-        with self.assertRaisesRegex(ValueError, "already exists"):
-            run_batch(config)
+        record_evaluation.assert_not_called()
+        self.assertFalse((paths.artifact / "evaluation.json").exists())
+
+    def test_backlink_failure_retains_report_and_index_without_false_backlink(self) -> None:
+        report_path = self.root / "evaluation" / "V1_backlink_failure.html"
+        paths = self._formal_runtime_paths("V1_backlink_failure")
+
+        with (
+            patch("evaluation.runner.batch._formal_version_paths", return_value=paths),
+            patch(
+                "evaluation.runner.batch._write_evaluation_backlink_atomic",
+                side_effect=OSError("backlink failed"),
+            ),
+        ):
+            with self.assertRaisesRegex(OSError, "backlink failed"):
+                _finalize_formal_report(
+                    self._minimal_report_data(),
+                    report_path,
+                    run_id="run-backlink",
+                    update_project_index=True,
+                )
+
+        self.assertTrue(report_path.is_file())
+        self.assertTrue((report_path.parent / "index.html").is_file())
+        self.assertFalse((paths.artifact / "evaluation.json").exists())
 
     def test_parallel_workers_bound_concurrency_and_preserve_record_order(self) -> None:
         candidate = self.make_package("candidate", 7)

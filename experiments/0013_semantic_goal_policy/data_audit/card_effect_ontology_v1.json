@@ -1,0 +1,16 @@
+{
+  "schema_version": "card_effect_ontology_audit_v1",
+  "ontology_version": "card_effect_ontology_v1",
+  "registry_sha256": "67d95a256465e119a208fbf6e01efb4dfc27da25e5f7a1bf81eaf5ec4f9a9ef4",
+  "official_card_id_range_audited": [1, 1267],
+  "card_identity_coverage": 1.0,
+  "effect_instance_coverage": 1.0,
+  "effect_residual": "rule:text_residual",
+  "unknown_identity_token": "UNK_CARD",
+  "unknown_effect_token": "UNKNOWN_EFFECT",
+  "notes": [
+    "Identity, missing, not-applicable, unknown-effect, and padding channels are distinct.",
+    "Unmatched nonempty official effect text remains an explicit text_residual rule primitive rather than being discarded.",
+    "No free-text language model or external card database is used."
+  ]
+}
