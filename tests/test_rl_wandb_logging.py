@@ -144,16 +144,18 @@ class WandbLoggingTests(unittest.TestCase):
         self.assertIn(("trainer/epoch", {}), fake_run.defined_metrics)
         self.assertEqual(fake_run.finish_codes, [0])
 
-    def test_online_run_uses_explicit_resume_identity(self) -> None:
+    def test_online_run_uses_explicit_resume_identity_and_notes(self) -> None:
         with TemporaryDirectory() as directory:
             fake_run = FakeRun()
             fake_wandb = FakeWandb(fake_run)
-            WandbSink(
-                self._settings(Path(directory), mode="online"),
-                sdk=fake_wandb,
-            )
+            with patch.dict(os.environ, {"WANDB_NOTES": "中文实验说明"}):
+                WandbSink(
+                    self._settings(Path(directory), mode="online"),
+                    sdk=fake_wandb,
+                )
 
         self.assertEqual(fake_wandb.init_calls[0]["resume"], "allow")
+        self.assertEqual(fake_wandb.init_calls[0]["notes"], "中文实验说明")
 
     def test_jsonl_is_flushed_before_explicit_mirror(self) -> None:
         with TemporaryDirectory() as directory:
@@ -331,6 +333,21 @@ class WandbLoggingTests(unittest.TestCase):
 
     def test_sink_routes_canonical_namespaces_to_their_explicit_axes(self) -> None:
         cases = (
+            (
+                "bc_train",
+                {
+                    "progress/iteration": 17,
+                    "progress/fraction": 0.5,
+                    "progress/iterations_per_second": 8.0,
+                    "trainer/epoch": 2,
+                },
+                {
+                    "progress/iteration": 17,
+                    "progress/fraction": 0.5,
+                    "progress/iterations_per_second": 8.0,
+                    "trainer/epoch": 2,
+                },
+            ),
             ("bc_train", {"train/loss": 0.5}, {"trainer/epoch": 2, "bc/train/loss": 0.5}),
             (
                 "value_calibration",

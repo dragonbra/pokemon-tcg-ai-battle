@@ -20,7 +20,7 @@ code { overflow-wrap: anywhere; }
 <body>
 <header>
 <h1>0013 Semantic Goal Policy</h1>
-<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V1-V3 remain failed; formal RNG reproducibility is now bound and V4 M0 is next. No completed candidate or strength result yet.</p>
+<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V4 completed the reproducible three-epoch M0 minimum; V5 extends the same M0 contract to a monitored 100-epoch ceiling. No candidate or strength result yet.</p>
 <nav>
 <a href="DESIGN.md">Full Markdown contract</a>
 <a href="decisions/001_pre_run_protocol.md">Frozen protocol</a>
@@ -125,11 +125,13 @@ and causal compilation were repeated in every hot-path pass. It is preserved wit
 materializer digests, full commitment validation, raw/cache tensor parity, real optimizer
 throughput, complete untrained validation, and runtime smoke. At batch 64 the input path delivered
 5,765 decisions/s while M0 optimization delivered 638 decisions/s, so loading no longer starves the
-model. V3 proved the atomic checkpoint fix, then stopped after epoch 1 because the declared seed had
-not been applied before model initialization. Startup now binds Python, NumPy, PyTorch CPU/CUDA,
-cuBLAS and cuDNN deterministic behavior and records the initial state-dict SHA-256; two independent
-processes produced the same M0 digest. Formal V4 restarts all three epochs from this bound state.
-V1-V3 remain diagnostic evidence. M1-M5 are paused.</p>
+model. V4 completed all three epochs: validation loss improved
+<code>1.12633 -&gt; 1.05466 -&gt; 1.00068</code> and validation exact action improved
+<code>0.55279 -&gt; 0.58960 -&gt; 0.61434</code>. V5 restarts from the same bound initial model and keeps
+the dataset, M0 architecture, batch 64, seed, optimizer parameters, AMP and deterministic behavior
+unchanged; only the ceiling changes to 100 epochs with manual overfitting monitoring. W&amp;B
+identity, tags and Chinese Notes are mirrored into run config, and live progress uses
+<code>progress/*</code> on <code>progress/iteration</code>. M1-M5 are paused.</p>
 </section>
 </body>
 </html>
