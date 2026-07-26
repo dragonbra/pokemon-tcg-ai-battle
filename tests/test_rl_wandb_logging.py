@@ -153,7 +153,14 @@ class WandbLoggingTests(unittest.TestCase):
         )
         self.assertIn(("trainer/epoch", {}), fake_run.defined_metrics)
         self.assertIn(
-            ("progress/*", {"step_metric": "trainer/epoch"}),
+            ("progress/*", {"step_metric": "progress/iteration"}),
+            fake_run.defined_metrics,
+        )
+        self.assertIn(
+            (
+                "bc/validation/exact_action",
+                {"step_metric": "trainer/epoch"},
+            ),
             fake_run.defined_metrics,
         )
         self.assertEqual(fake_run.finish_codes, [0])

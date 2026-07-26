@@ -64,6 +64,11 @@
 
 详细证据见 [`docs/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](docs/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)，官方规则书为 [Pokémon TCG Rules](https://www.pokemon.com/static-assets/content-assets/cms2/pdf/trading-card-game/rulebook/par_rulebook_en.pdf)。后续新会话设计策略时，必须同时遵守下面的官方规则和已确认的策略语义。
 
+### 讨论前规则证据流程
+
+- 当与用户深入讨论游戏设计、策略语义、observation/model feature schema、模型结构或输出 head、action contract、BC/RL loss、reward、value 或训练阶段设计时，必须先完整阅读上述详细规则调研文档，再基于其结论展开讨论；回答中须明确区分通用官方规则、当前卡牌文本/engine runtime 事实与项目策略假设，不能把任一层的结论混称为另一层。
+- 如果问题依赖官方规则的精确措辞、涉及调研文档未覆盖或可能已经变化的规则/卡牌交互，或该文档与当前 runtime/卡牌数据存在冲突或不足以判定，必须进一步查询上列官方规则书；具体卡牌效果仍以当前官方卡牌数据和 official engine runtime 为准。完成必要核验后，才与用户进行深度设计讨论，并说明采用的证据边界。
+
 ### 官方规则硬约束
 
 - 回合先抽牌，再按任意顺序执行主行动，最后才可以攻击；一旦宣告攻击，本回合立即结束，不能再进化、附能、使用 Supporter、铺 Bench 或使用普通 Ability。没有伤害的招式也仍然是攻击提交。

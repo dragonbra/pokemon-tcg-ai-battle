@@ -1,0 +1,26 @@
+{
+  "best_checkpoint": {
+    "epoch": 6,
+    "path": "../checkpoint/epoch-0006-b3073b7cf2683b8c.pt",
+    "sha256": "b3073b7cf2683b8c169cf1203a7edb712a25e5cac6f640ac6a1baf451aeeca38"
+  },
+  "best_greedy_exact": 0.8285077951002228,
+  "best_teacher_exact": 0.8282603316010888,
+  "best_validation_loss": 0.2388154003496729,
+  "canonical_metrics": "artifact/training_metrics.jsonl",
+  "epochs": 6,
+  "global_step": 3426,
+  "parameter_count": 7154562,
+  "state": "complete",
+  "validation_action_length_accuracy": 0.9981440237564959,
+  "validation_legal_action": 1.0,
+  "validation_token_accuracy": 0.9171983716834599,
+  "wandb_name": "0014 · faithful_board_causal_features · V1_0010_faithful_control",
+  "wandb_group": "0014_faithful_board_causal_features",
+  "wandb": {
+    "project": "dragon_bra/pokemon-tcg-policy-learning",
+    "run_id": "0014_faithful_board_causal_features--v1_0010_faithful-88e0b73071",
+    "state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0014_faithful_board_causal_features--v1_0010_faithful-88e0b73071"
+  }
+}

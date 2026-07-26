@@ -1,0 +1,19 @@
+{
+  "device": "cuda",
+  "failed_at": 1785087951.2223287,
+  "reason": "KeyboardInterrupt: ",
+  "started_at": 1785087923.866085,
+  "state": "failed",
+  "version": "V5_0010_faithful_100epoch_early_stop_from_zero",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0014_faithful_board_causal_features--0014-faithful_bo-3d3ae6558e",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0014_faithful_board_causal_features--0014-faithful_bo-3d3ae6558e"
+  },
+  "wandb_expected_mode": "online"
+}

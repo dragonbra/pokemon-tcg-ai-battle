@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="30">
+<title>0014 Progress</title><style>
+:root{--bg:#0c1421;--panel:#16243a;--line:#30435f;--text:#eef5ff;--muted:#a9b7cc;--done:#60dbaa;--run:#87b5ff;--wait:#64748b}*{box-sizing:border-box}body{margin:0;background:linear-gradient(140deg,#09111d,#172d4b);color:var(--text);font:15px/1.5 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:1000px;margin:auto;padding:38px 22px}h1{margin:0 0 8px}.lead{color:var(--muted)}.overall{height:18px;background:#24334a;border-radius:10px;overflow:hidden;margin:22px 0}.overall span{display:block;width:68%;height:100%;background:linear-gradient(90deg,#4fcf9f,#75aaff)}.row{display:grid;grid-template-columns:155px 1fr 100px;gap:15px;align-items:center;background:var(--panel);border:1px solid var(--line);padding:14px;margin:10px 0;border-radius:9px}.bar{height:9px;background:#26364d;border-radius:7px;overflow:hidden}.bar i{display:block;height:100%;background:var(--wait)}.done i{width:100%;background:var(--done)}.running i{width:35%;background:var(--run)}.waiting i{width:0}.state{text-align:right;color:var(--muted)}a{color:#9cc3ff}.notes{margin-top:24px;padding:16px;background:#132036;border-left:4px solid var(--run);border-radius:7px}@media(max-width:650px){.row{grid-template-columns:1fr}.state{text-align:left}}
+</style></head><body><main>
+<h1>0014 · 实施进度</h1><p class="lead">自动刷新 30 秒 · 权威设计：<a href="experiments/0014_faithful_board_causal_features/DESIGN.html">DESIGN.html</a></p>
+<div class="overall"><span></span></div>
+<div class="row done"><b>项目合同</b><div class="bar"><i></i></div><div class="state">完成</div></div>
+<div class="row done"><b>规则/可见性审计</b><div class="bar"><i></i></div><div class="state">全量通过</div></div>
+<div class="row done"><b>0010 tensor parity</b><div class="bar"><i></i></div><div class="state">逐位通过</div></div>
+<div class="row done"><b>全集 schema/compiler</b><div class="bar"><i></i></div><div class="state">完成</div></div>
+<div class="row done"><b>并行 materialization</b><div class="bar"><i></i></div><div class="state">162,128 条</div></div>
+<div class="row done"><b>A0 BF16 smoke</b><div class="bar"><i></i></div><div class="state">通过</div></div>
+<div class="row running"><b>A0 正式训练</b><div class="bar"><i></i></div><div class="state">准备启动 V1</div></div>
+<div class="row waiting"><b>AC 全特征模型</b><div class="bar"><i></i></div><div class="state">A0 后执行</div></div>
+<div class="notes"><b>当前事实：</b>cache <code>e341a7…686a</code>，1.124 GiB；A0 train/validation 145,928/16,164；模型 7,154,562 params；batch 256；W&amp;B 登录已验证。下一动作是 V1 正式 A0。</div>
+</main></body></html>

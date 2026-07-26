@@ -1,0 +1,17 @@
+{
+  "auxiliary_readers": false,
+  "input_keys": [
+    "global_cat",
+    "global_num",
+    "entity_cat",
+    "entity_num",
+    "entity_mask",
+    "option_cat",
+    "option_mask",
+    "targets",
+    "min_count",
+    "max_count"
+  ],
+  "model": "Faithful0010PointerPolicy",
+  "parameter_count": 7154562
+}

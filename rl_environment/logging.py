@@ -68,6 +68,7 @@ class TrainingLogger:
         metrics: dict[str, Any],
         *,
         tensorboard_metrics: dict[str, Any] | None = None,
+        mirror_wandb: bool = True,
     ) -> dict[str, Any]:
         record = {
             "timestamp": time.time(),
@@ -85,8 +86,9 @@ class TrainingLogger:
                 ):
                     self._writer.add_scalar(key, value, step)
             self._writer.flush()
-        self._resolve_wandb_sink(metrics)
-        if self._wandb_sink is not None:
+        if mirror_wandb:
+            self._resolve_wandb_sink(metrics)
+        if mirror_wandb and self._wandb_sink is not None:
             try:
                 self._wandb_sink.log(record)
             except Exception as error:

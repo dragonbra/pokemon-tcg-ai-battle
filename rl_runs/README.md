@@ -32,6 +32,11 @@ W&B 是正式训练的镜像而不是事实源：一条版本对应一个稳定 
 新训练语义必须新建版本。checkpoint、dataset、完整 trace、replay 和 observation 不上传。
 策略强度结论只来自同一 official-engine evaluation contract 下的 `eval/*`。
 
+所有正式项目使用统一、可读的 W&B 命名合同：`<project_number> · <project_slug> · <version_name>`，
+例如 `0014 · faithful_board_causal_features · V1_0010_faithful_control`。W&B `group` 固定为完整
+`project_id`（例如 `0014_faithful_board_causal_features`），`run_id` 仍由项目 ID 和版本稳定派生；
+不要把 batch、日期或随机短 ID 放进 name。训练配置、status 和 W&B URL 必须记录同一 name/group/run_id。
+
 历史项目也按同一项目根目录归档：运行时 artifact、checkpoint、TensorBoard 与 W&B staging 位于
 `rl_runs/<project_id>/versions/<V<n>_<tag>/`；权威 HTML 评测位于
 `experiments/<project_id>/evaluation/`。不再使用全局的 `rl_runs/artifact/`、

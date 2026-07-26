@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build experiment `0014_faithful_board_causal_features`, whose model-ready dataset is a strict actor-visible feature superset of 0010 and whose four new information families are independently switchable and auditable.
+**Goal:** Build experiment `0014_faithful_board_causal_features`, whose single model-ready dataset is a strict actor-visible feature superset of 0010, train faithful A0 on the frozen 07-25 split, and then train the all-feature AC model.
 
-**Architecture:** Keep the immutable 0013-style raw decision records as the sole provenance layer. Create a new 0014 typed schema/compiler/materializer that first recreates every 0010 board and option feature, then appends card capability, own-resource ledger, event-memory, and registered-deck channels without leaking future or opponent-hidden information. Run a faithful 0010 architecture/control on this one 0014 split before enabling any new channel; then vary one registered feature switch or model-reader module at a time.
+**Architecture:** Reuse `rl_runs/0013_semantic_goal_policy/dataset/V1_causal_semantic_v1` and its existing split as the sole provenance layer. Materialize one immutable superset containing faithful 0010 board/option tensors plus card capability, public-zone inventory, own-resource ledger, event-memory, and registered-deck channels. A0 selects only the bitwise-compatible 0010 view; AC reads every new family through typed lightweight adapters and board-conditioned retrieval. Fine-grained ablations are reserved for diagnosing AC only if needed.
 
 **Tech Stack:** Python 3.11, PyTorch, standard-library `unittest`, existing official replay archives and raw JSONL shards, TensorBoard/W&B through `TrainingLogger`, official engine evaluation.
 
@@ -12,26 +12,28 @@
 
 - Project ID is exactly `0014_faithful_board_causal_features`; use `train/`, `experiments/`, and `rl_runs/` roots with strictly increasing `V<n>_<tag>` versions.
 - Never modify `engine/source/`; all strategy-strength claims require official-engine evaluation.
-- Raw records stay immutable. Never overwrite `rl_runs/0013_semantic_goal_policy/dataset/V3_model_ready_semantic_v2` or reuse its tensors for 0014.
+- Raw records and split stay immutable at `rl_runs/0013_semantic_goal_policy/dataset/V1_causal_semantic_v1`; never overwrite any 0013 dataset.
 - The 0014 raw source, split, compiler digest, schema digest, card registry digest, switch set, checkpoint, and evaluation report must be recorded together.
 - All feature values must be actor-visible at the decision time. Encode unknown, missing, not-applicable, padding, bounded, and inferred-exact states distinctly; do not use reward, outcome, future frames, or opponent hidden-card identity.
 - The first formal control must use the original 0010 ID-only architecture and ordered-pointer action contract as faithfully as practical; capacity changes are a separate experimental variable.
 - `training_metrics.jsonl` remains canonical, TensorBoard follows it, and W&B is a failure-isolated mirror only.
+- Reuse 0013's optimized training contract: one train update pass per epoch, no static train evaluation, no train greedy decode, BF16 AMP, one shared validation encoding, pinned/non-blocking transfer, full validation every epoch, and host `python3` W&B online logging.
 
 ---
 
 ## Feature-switch contract
 
-The 0014 compiler always emits the faithful 0010-compatible base. The following channels are off by default in the control and become explicit, hash-recorded switches:
+The 0014 materializer always emits the faithful 0010-compatible base and every additional family. Model views select channels without rebuilding data:
 
 | Switch | Information added beyond 0010 | Required audit invariant |
 |---|---|---|
 | `card_capability` | deterministic structured card semantics: type/stage/HP/type/weakness/resistance/retreat, move cost/damage/effect primitives and capabilities, plus card-ID residual | field provenance is official card CSV; unknown/missing/not-applicable are not equal to zero |
+| `public_zone_inventory` | observed own/opponent Active, Bench, hand, discard, deck and Prize counts plus visible attachment/damage aggregates | opponent hand/deck/Prize expose counts only; hidden identities never enter this family |
 | `own_resource_ledger` | registered multiplicity and causal own deck/Prize identity counts with epistemic state | exact only after verified full deck membership plus conservation; shuffle never invents identity knowledge |
 | `event_memory` | deduplicated actor-visible event stream, event age, event card semantics, and optionally opponent hand known/unknown composition | each source event is consumed once; a hidden draw changes only unknown-card count, never card identity |
 | `registered_deck` | actual own 60-card deck tokens with multiplicity and card semantics | exactly 60 registered cards, independent of later visible zones |
 
-`relation_graph` and `goal_qkv` are model-reader switches, not evidence that an information family exists. They are evaluated only after the base and the four data switches are valid.
+`relation_graph` and redesigned board-conditioned Goal-QKV are AC model readers, not evidence that an information family exists.
 
 ## Task 1: Allocate 0014 and freeze the faithful-control contract
 
@@ -67,7 +69,7 @@ Expected: FAIL because the 0014 package/configuration does not exist.
 
 - [ ] **Step 3: Add the 0014 roots and immutable contract**
 
-Define `FeatureSwitches(card_capability=False, own_resource_ledger=False, event_memory=False, registered_deck=False, relation_graph=False, goal_qkv=False)`. Bind the protocol to one source manifest and one complete-episode-player split. State explicitly that the first run takes the same raw rows and labels as all later switches.
+Define `FeatureSwitches(card_capability=False, public_zone_inventory=False, own_resource_ledger=False, event_memory=False, registered_deck=False, relation_graph=False, goal_qkv=False)`. Bind the protocol to `rl_runs/0013_semantic_goal_policy/dataset/V1_causal_semantic_v1/dataset_reference.json`. State explicitly that A0 and AC use the same rows, split, labels, and superset cache.
 
 - [ ] **Step 4: Run the allocation test**
 
@@ -123,7 +125,7 @@ For opponent hands, represent `known_cards` only after an actor-visible reveal w
 
 Run: `python3 -m unittest -v train.0014_faithful_board_causal_features.tests.test_visibility_audit`
 
-Run: `python3 -m train.0014_faithful_board_causal_features.audit.replay_audit --source <frozen-source> --output experiments/0014_faithful_board_causal_features/data_audit/visibility_transition_audit.json --sample-groups 256`
+Run: `python3 -m train.0014_faithful_board_causal_features.audit.replay_audit --source rl_runs/0013_semantic_goal_policy/dataset/V1_causal_semantic_v1 --output experiments/0014_faithful_board_causal_features/data_audit/visibility_transition_audit.json --sample-groups 256`
 
 Expected: PASS; audit lists every observed log type, reports zero double-consumed events, and distinguishes verified capabilities from unavailable ones.
 
@@ -168,10 +170,11 @@ Run: `python3 -m unittest -v train.0014_faithful_board_causal_features.tests.tes
 
 Expected: PASS on synthetic fixtures and a committed raw-row sample; all differences require an explicit, documented source-contract reason.
 
-## Task 4: Add the four data families as independent compiler switches
+## Task 4: Add all five data families to one superset compiler
 
 **Files:**
 - Create: `train/0014_faithful_board_causal_features/features/card_capability.py`
+- Create: `train/0014_faithful_board_causal_features/features/public_zone_inventory.py`
 - Create: `train/0014_faithful_board_causal_features/features/ledger.py`
 - Create: `train/0014_faithful_board_causal_features/features/events.py`
 - Create: `train/0014_faithful_board_causal_features/features/registered_deck.py`
@@ -201,11 +204,11 @@ def test_each_switch_changes_only_its_declared_family() -> None:
 
 Run: `python3 -m unittest -v train.0014_faithful_board_causal_features.tests.test_feature_switches`
 
-Expected: FAIL because the four compiler families do not exist.
+Expected: FAIL because the five compiler families do not exist.
 
-- [ ] **Step 3: Implement all four channels**
+- [ ] **Step 3: Implement all five channels**
 
-Use the audited 0013 card registry as the source for card capability. Use only audited causal transition state for ledger/event values. Add registered-deck tokens from the exact row deck manifest. If opponent-hand knowledge passed Task 2, expose it as a separately named event-memory subfield with known IDs/serials and unknown-slot count; otherwise keep it absent and document the limitation.
+Use the audited 0013 card registry as the source for card capability. Emit public-zone counts for both players while keeping opponent hidden identities absent. Use only audited causal transition state for ledger/event values. Add registered-deck tokens from the exact row deck manifest. If opponent-hand knowledge passed Task 2, expose it as a separately named event-memory subfield with known IDs/serials and unknown-slot count; otherwise keep it absent and document the limitation. The materializer writes all families on every row; switches are model-view metadata, not separate dataset builds.
 
 - [ ] **Step 4: Run isolation, invariance, and leakage tests**
 
@@ -220,11 +223,11 @@ Expected: PASS; changing a future frame, reward, terminal field, or opponent hid
 - Create: `train/0014_faithful_board_causal_features/model/id_only_control.py`
 - Create: `train/0014_faithful_board_causal_features/training/campaign.py`
 - Create: `train/0014_faithful_board_causal_features/tests/test_materialized_parity.py`
-- Create: `rl_runs/0014_faithful_board_causal_features/dataset/V1_faithful_0010_base/` at execution time only
+- Create: `rl_runs/0014_faithful_board_causal_features/dataset/V1_full_feature_superset/` at execution time only
 - Create: `rl_runs/0014_faithful_board_causal_features/versions/V1_0010_faithful_control/` at execution time only
 
 **Interfaces:**
-- Consumes: frozen raw records and `FeatureSwitches()`.
+- Consumes: frozen raw records and the full enabled materialization schema.
 - Produces: hash-committed tensor shards and an independently initialized 0010-compatible pointer model whose config, parameter count, action decoder, and BC objective are recorded.
 
 - [ ] **Step 1: Write a raw-cache parity test**
@@ -232,7 +235,7 @@ Expected: PASS; changing a future frame, reward, terminal field, or opponent hid
 ```python
 def test_materialized_control_matches_raw_compilation_for_1024_rows() -> None:
     for raw, cached in paired_rows(1024):
-        assert materialize(raw, FeatureSwitches()) == load_cached(cached)
+        assert materialize_all_features(raw) == load_cached(cached)
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -243,7 +246,7 @@ Expected: FAIL because no 0014 materializer exists.
 
 - [ ] **Step 3: Implement atomic materialization and control training**
 
-Publish only into the unused `V1_faithful_0010_base` dataset directory after all shard hashes, split counts, compiler/schema/switch digests, and visibility audit SHA are written. The control model must consume only the faithful 0010 base tensors; it must not receive a zero-filled new token family that could change architecture behavior. Record the source/split comparison against 0010 as a new-dataset control, not as a continuation or reproduction of old 0010 metrics.
+Publish only into the unused `V1_full_feature_superset` dataset directory after all shard hashes, split counts, compiler/schema digests, and visibility audit SHA are written. The control loader selects only faithful 0010 base tensors; it must not pass zero-filled new tokens, change masks, change sequence length, or instantiate new readers. Record the source/split comparison against 0010 as a new-dataset control, not as a continuation or reproduction of old 0010 metrics.
 
 - [ ] **Step 4: Validate, train, and evaluate the control**
 
@@ -255,7 +258,7 @@ Run: `python3 -m compileall -q train/0014_faithful_board_causal_features`
 
 Expected: raw/cache parity passes, complete per-epoch validation exists, local metrics/TensorBoard/W&B contract is intact, and any later official-engine evaluation uses a self-contained candidate only after user authorization.
 
-## Task 6: Add reader models and pre-registered ablations
+## Task 6: Add the AC reader model and reserve diagnostic ablations
 
 **Files:**
 - Create: `train/0014_faithful_board_causal_features/model/superset_policy.py`
@@ -270,10 +273,11 @@ Expected: raw/cache parity passes, complete per-epoch validation exists, local m
 - [ ] **Step 1: Write the ablation-contract test**
 
 ```python
-def test_each_spec_changes_one_named_information_or_reader_variable() -> None:
+def test_primary_campaign_runs_a0_then_ac_on_one_dataset() -> None:
     specs = load_ablation_specs(PATH)
     assert specs[0].name == "A0_0010_faithful_control"
-    assert specs[1].diff(specs[0]) == {"card_capability"}
+    assert specs[1].name == "AC_all_features_lightweight_readers"
+    assert specs[0].dataset_sha256 == specs[1].dataset_sha256
 ```
 
 - [ ] **Step 2: Run it to verify it fails**
@@ -284,7 +288,7 @@ Expected: FAIL because the ablation registry does not exist.
 
 - [ ] **Step 3: Register the initial ladder**
 
-Register `A0_0010_faithful_control`, `A1_card_capability`, `A2_own_resource_ledger`, `A3_event_memory`, `A4_registered_deck`, and separately `R1_relation_graph` and `R2_goal_qkv`. Each spec names the exact dataset switch digest, model capacity, optimizer, seed, and expected input channels. Do not combine all four information families before the individual effects have a control unless a separately named cumulative run is explicitly approved.
+Register primary runs `A0_0010_faithful_control` and `AC_all_features_lightweight_readers`. AC uses local card-semantic residual adapters, a global public-zone adapter, one token per registered card identity combining deck/ledger fields, a causal event encoder, and board-conditioned role retrieval with zero-initialized normalized gates. Reserve A1-A5, relation-only, Goal-off, and capacity-matched controls as diagnostic specs that are not allocated unless AC underperforms or becomes numerically unhealthy. Every spec names the exact dataset digest, model capacity, optimizer, seed, and expected input channels.
 
 - [ ] **Step 4: Run the contract test**
 
@@ -294,6 +298,6 @@ Expected: PASS; a spec that enables a model reader for absent data, changes capa
 
 ## Self-review
 
-- The plan covers: 0010 faithful baseline, four requested independent information switches, a replay/causal audit before data publication, model-reader separation, immutable versioned datasets/runs, and validation/evaluation boundaries.
+- The plan covers: one full superset cache, 0010 faithful A0, direct all-feature AC, five information families, replay/causal audit before publication, 0013 training optimizations, model-reader separation, immutable versioned runs, and validation/evaluation boundaries.
 - The visibility audit is deliberately a hard gate: current 0013 code has an internal opponent-hand representation but does not tensorize it, filters reveal-card payloads from raw logs, and does not consume `event_cursor`; none of those semantics may be claimed for 0014 until replay evidence and tests establish them.
 - No step modifies official engine source or overwrites historical 0013 assets.

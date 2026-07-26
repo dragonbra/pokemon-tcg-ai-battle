@@ -128,9 +128,27 @@ class WandbSink:
         self._run.define_metric("trainer/update")
         self._run.define_metric("env/decisions")
         self._run.define_metric("env/episodes")
-        progress_axis = _metric_axis(self.settings.job_type, {})
-        self._run.define_metric("progress/*", step_metric=progress_axis)
+        # Progress is emitted at batch granularity.  Using trainer/epoch here
+        # collapses all intra-epoch points onto one x-coordinate in W&B and
+        # hides the actual progress bar/throughput curve.
+        self._run.define_metric("progress/*", step_metric="progress/iteration")
         self._run.define_metric("bc/*", step_metric="trainer/epoch")
+        # W&B panels can fall back to the internal `_step` for wildcard-only
+        # definitions.  Pin the primary epoch snapshot metrics explicitly so
+        # their default x-axis is always 1, 2, 3, ... rather than the count of
+        # intervening progress log records.
+        for metric_name in (
+            "bc/optimization/loss",
+            "bc/optimization/token_accuracy",
+            "bc/optimization/teacher_exact_action",
+            "bc/validation/loss",
+            "bc/validation/token_accuracy",
+            "bc/validation/teacher_exact_action",
+            "bc/validation/exact_action",
+            "bc/validation/legal_action",
+            "bc/validation/action_length_accuracy",
+        ):
+            self._run.define_metric(metric_name, step_metric="trainer/epoch")
         self._run.define_metric("value/*", step_metric="trainer/epoch")
         self._run.define_metric("ppo/*", step_metric="trainer/update")
         self._run.define_metric("rollout/*", step_metric="env/decisions")

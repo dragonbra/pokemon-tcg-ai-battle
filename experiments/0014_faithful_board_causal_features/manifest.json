@@ -1,0 +1,35 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0014_faithful_board_causal_features",
+  "created_at": "2026-07-27T00:00:00+08:00",
+  "git_commit_at_allocation": "fb378778eecede513a6b9310257565ae22bd682b",
+  "deck": "alakazam_dudunsparce",
+  "expert_source": "normalized exact Yushin Ito; 2026-07-18..2026-07-25; winner-only",
+  "objective": "Train a faithful 0010 control and an all-feature causal policy from one actor-visible superset cache",
+  "raw_dataset": {
+    "path": "rl_runs/0013_semantic_goal_policy/dataset/V1_causal_semantic_v1",
+    "content_sha256": "146ac0799b0a23a5089615361e76c33722c08df45b276cfd2b387171c70dc0c7",
+    "train_decisions": 145961,
+    "validation_decisions": 16167,
+    "split_reused_without_change": true
+  },
+  "model_ready_dataset": {
+    "path": "rl_runs/0014_faithful_board_causal_features/dataset/V1_full_feature_superset",
+    "content_sha256": "e341a7cbc761797f4fa97a4a01fddf2d25d69b8c3c60e4e41bcb3b4e2708686a",
+    "train_decisions": 145961,
+    "validation_decisions": 16167,
+    "a0_train_decisions": 145928,
+    "a0_validation_decisions": 16164,
+    "bytes": 1207398935
+  },
+  "paths": {
+    "implementation": "train/0014_faithful_board_causal_features",
+    "archive": "experiments/0014_faithful_board_causal_features",
+    "runs": "rl_runs/0014_faithful_board_causal_features"
+  },
+  "primary_campaign": [
+    "A0_0010_faithful_control",
+    "AC_all_features_lightweight_readers"
+  ],
+  "status": "a0_preflight_passed_ready_to_allocate_v1"
+}

@@ -1,0 +1,17 @@
+{
+  "best_greedy_exact": {
+    "criterion": "maximum validation free greedy exact action",
+    "epoch": 6,
+    "manifest": "checkpoint/criteria/best_greedy_exact.json"
+  },
+  "best_teacher_exact": {
+    "criterion": "maximum validation teacher-forced exact action",
+    "epoch": 6,
+    "manifest": "checkpoint/criteria/best_teacher_exact.json"
+  },
+  "best_validation_loss": {
+    "criterion": "minimum validation token cross-entropy",
+    "epoch": 6,
+    "manifest": "checkpoint/criteria/best_validation_loss.json"
+  }
+}
