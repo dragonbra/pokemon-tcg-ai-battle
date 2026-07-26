@@ -1,0 +1,196 @@
+{
+  "file_count": 31,
+  "files": [
+    {
+      "bytes": 40452989,
+      "partial": false,
+      "path": "train-00000.pt",
+      "sha256": "01f04a50683b705b37df91fd09d04f24c4513a1bfdd5946189b460e1556dafa0"
+    },
+    {
+      "bytes": 39545725,
+      "partial": false,
+      "path": "train-00001.pt",
+      "sha256": "106dea4a996f1fb3a408b73d03d9c87cf755dcc60bd644862f4c65d8595e5597"
+    },
+    {
+      "bytes": 40954749,
+      "partial": false,
+      "path": "train-00002.pt",
+      "sha256": "e72a24a074837a12b2a7dbee3b17898c37f98c73d92a9aa821bd503866737d7d"
+    },
+    {
+      "bytes": 42423165,
+      "partial": false,
+      "path": "train-00003.pt",
+      "sha256": "1740ef2ef8aa7021ae1cab6eac5a9432215a30dd3f218b9d0ad8ace5f203db93"
+    },
+    {
+      "bytes": 40615805,
+      "partial": false,
+      "path": "train-00004.pt",
+      "sha256": "a4fa4f932f0a91f128ef43c59757c9109c55ebcf3bd1d2e069861700c1816b94"
+    },
+    {
+      "bytes": 40267645,
+      "partial": false,
+      "path": "train-00005.pt",
+      "sha256": "82ba8113b0ded13911d3c23437e38373f61492f8101bccd390c88bc6fe61ada8"
+    },
+    {
+      "bytes": 41729917,
+      "partial": false,
+      "path": "train-00006.pt",
+      "sha256": "af85bebf43d40499f0139ff8462464e66a0d5f35c55ace96f39668f15cb55e69"
+    },
+    {
+      "bytes": 41181053,
+      "partial": false,
+      "path": "train-00007.pt",
+      "sha256": "6fcb8b15822939e65c1e5461375faa7d5ce705838a472b7e4352392de9bcda6a"
+    },
+    {
+      "bytes": 39910269,
+      "partial": false,
+      "path": "train-00008.pt",
+      "sha256": "7e00557905680c94af336d58f920d4623c25150458b677263d2d8380d6188998"
+    },
+    {
+      "bytes": 41267069,
+      "partial": false,
+      "path": "train-00009.pt",
+      "sha256": "d7ccbccb417118d374a95b775b5e04ce52f57a394aa64df6b0f2f7be84f49ecd"
+    },
+    {
+      "bytes": 40650621,
+      "partial": false,
+      "path": "train-00010.pt",
+      "sha256": "38f98ff1f8f0fc37a497176bb5385614bc8648c05ffdf925000f90fad2f4f2f0"
+    },
+    {
+      "bytes": 41793405,
+      "partial": false,
+      "path": "train-00011.pt",
+      "sha256": "c8a650d39868bfb78206a3787fede711774dc5798ffe417f57c59e386ce91dcd"
+    },
+    {
+      "bytes": 41871229,
+      "partial": false,
+      "path": "train-00012.pt",
+      "sha256": "dda5d56dc5020855525bb088e2e69e88f5086f20c196035b27fd2540c7f1ec62"
+    },
+    {
+      "bytes": 40608637,
+      "partial": false,
+      "path": "train-00013.pt",
+      "sha256": "5d198521b930d546efbf91759959424271b7cd3f2237847c7b71089ff1b42d2b"
+    },
+    {
+      "bytes": 41493373,
+      "partial": false,
+      "path": "train-00014.pt",
+      "sha256": "5fe8d86d388ec536be93a7484dad1a2dd778c2ed89a83c62e7208c2b7f5526e4"
+    },
+    {
+      "bytes": 42597245,
+      "partial": false,
+      "path": "train-00015.pt",
+      "sha256": "ed45104458562c1fb83b35bdeb4f92c88ed82ed1f8e165478e339bf863ffbba4"
+    },
+    {
+      "bytes": 41523069,
+      "partial": false,
+      "path": "train-00016.pt",
+      "sha256": "1247aef79ea45a1cbba63f222b0c249e9e552ca023832a201ca48409a4a016d1"
+    },
+    {
+      "bytes": 44007293,
+      "partial": false,
+      "path": "train-00017.pt",
+      "sha256": "6d54fd7b98730a19919e9593c22b2fdd02c25ca776ccd4052de301a6a723f22e"
+    },
+    {
+      "bytes": 42065789,
+      "partial": false,
+      "path": "train-00018.pt",
+      "sha256": "767e6195a66baa8fa43000f0977b3fd35d77939301eb43a8a52ad6ff18641784"
+    },
+    {
+      "bytes": 43476861,
+      "partial": false,
+      "path": "train-00019.pt",
+      "sha256": "c56f7d9cbb93841011bcb25b66d4fa3efcf019e38ff9edc49c541b3bdae08da3"
+    },
+    {
+      "bytes": 41991037,
+      "partial": false,
+      "path": "train-00020.pt",
+      "sha256": "2baa5ab1be50cff66876941f678125b1979be63087f105ab9fd10ee5d3de0bbe"
+    },
+    {
+      "bytes": 40850301,
+      "partial": false,
+      "path": "train-00021.pt",
+      "sha256": "a4798a80fdcb75c61406637a7f987314a003dddefcdc13b1fce5750bf62da5eb"
+    },
+    {
+      "bytes": 42398589,
+      "partial": false,
+      "path": "train-00022.pt",
+      "sha256": "cad1afbb1c1935d0b9a6cbec8f052e21abe37305b69cb6d23a346554e9ad9e4f"
+    },
+    {
+      "bytes": 41849725,
+      "partial": false,
+      "path": "train-00023.pt",
+      "sha256": "bbfdb44aa06593d93904cb7dd6c7a20dc075b0e4c2ab96aaf44b8dd320c0a011"
+    },
+    {
+      "bytes": 39439229,
+      "partial": false,
+      "path": "train-00024.pt",
+      "sha256": "65a878ba7a2a491e7a9f50f2ca0447d1ebf50c5c8d49b65875b402c0e174bc5b"
+    },
+    {
+      "bytes": 40801149,
+      "partial": false,
+      "path": "train-00025.pt",
+      "sha256": "325af1a3b0b7221f29329ece014b48fda1ba47927d687b78f8217370854c8f7d"
+    },
+    {
+      "bytes": 42492797,
+      "partial": false,
+      "path": "train-00026.pt",
+      "sha256": "be5b90cb10178872c6a419271f4857c73d07d9ed4cd52f889e287a0ae3b77189"
+    },
+    {
+      "bytes": 39029629,
+      "partial": false,
+      "path": "train-00027.pt",
+      "sha256": "aae4069a49570a47b35359325a1f46436fec909f8054ff8ec6e375ca506339e3"
+    },
+    {
+      "bytes": 41406333,
+      "partial": false,
+      "path": "train-00028.pt",
+      "sha256": "faa533f755ffed6d3f2acfcde86c3ab5935767428c30545f5d1e2117b828be35"
+    },
+    {
+      "bytes": 41532285,
+      "partial": false,
+      "path": "train-00029.pt",
+      "sha256": "691a0bd09edbfadee00f34d830aaef9de0ad8d6cca762866170f5717150ec82d"
+    },
+    {
+      "bytes": 41944957,
+      "partial": false,
+      "path": "train-00030.pt",
+      "sha256": "1814b59d98edf23ab00b0dc48a637ca1e240a0a6077ccce661295c8b99729960"
+    }
+  ],
+  "published": false,
+  "reason": "Stopped before publication because real chronological groups proved that full deck membership was persisted without applying later deck/prize/visible resource transitions.",
+  "recorded_at": 1785059111.2268186,
+  "schema_version": "interrupted_materialization_v1",
+  "staging_path": "rl_runs/0013_semantic_goal_policy/dataset/.V2_model_ready_semantic_v2.staging-4ec5d3b30a8f4d6f9daa78f2e9499652"
+}

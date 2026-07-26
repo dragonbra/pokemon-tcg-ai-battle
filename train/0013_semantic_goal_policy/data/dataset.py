@@ -26,6 +26,9 @@ from .source import (
     iter_canonical_episodes_parallel,
     normalize_team_identity,
 )
+from ..features.card_semantics import CardSemanticRegistry
+from ..features.compiler import COMPILER_VERSION, compiler_sha256
+from ..features.schema import SCHEMA_VERSION as TYPED_INPUT_SCHEMA_VERSION
 from ..protocol import PreRunProtocol
 from .split import SplitGroup, SplitManifest, assign_groups
 
@@ -33,6 +36,7 @@ SCHEMA_VERSION = "decision_record_v3"
 ACTION_CONTRACT_VERSION = "ordered_full_action_v1"
 PROTOCOL_SHA256 = "da6482cf2d4cdc8d9e56fd4c03431e60dbf63b8327720c83185e907a039d44d3"
 SOURCE_MANIFEST_SHA256 = "f0ac5c654b82f05ffa3be8fa4e50c6d71f9f132b685217aa40cd9f72cc49818b"
+_OFFICIAL_CARD_DATA = Path(__file__).parents[3] / "data" / "official" / "EN_Card_Data.csv"
 _HEX_DIGITS = frozenset("0123456789abcdef")
 _TOP_FIELDS = frozenset(
     {"current", "logs", "remainingOverageTime", "search_begin_input", "select", "step"}
@@ -63,9 +67,12 @@ _SELECT_FIELDS = frozenset(
 )
 _LOG_FIELDS = frozenset(
     {
-        "attackId", "cardId", "cardIdActive", "cardIdBench", "cardIdTarget", "fromArea",
-        "hasBasicPokemon", "head", "playerIndex", "putDamageCounter", "serial", "serialActive",
-        "serialBench", "serialTarget", "toArea", "type", "value",
+        "attackId", "cardId", "cardIdActive", "cardIdAfter", "cardIdBefore", "cardIdBench",
+        "cardIdTarget", "count", "energyIndex", "fromArea", "hasBasicPokemon", "head",
+        "inPlayArea", "inPlayIndex", "index", "isRecover", "number", "playerIndex",
+        "putDamageCounter", "reason", "result", "serial", "serialActive", "serialAfter",
+        "serialBefore", "serialBench", "serialTarget", "specialConditionType", "toArea",
+        "toolIndex", "type", "value",
     }
 )
 _NONMODEL_TOP_FIELDS = frozenset({"remainingOverageTime", "search_begin_input", "step"})
@@ -206,7 +213,7 @@ _OPTION_FIELDS_WITH_SERIAL = frozenset(
     {
         "area", "attackId", "cardId", "count", "energyIndex", "inPlayArea", "inPlayIndex",
         "index", "number", "playerIndex", "serial", "type", "inPlayPlayerIndex",
-        "targetPlayerIndex", "toolIndex",
+        "targetPlayerIndex", "toolIndex", "specialConditionType",
     }
 )
 
@@ -584,6 +591,16 @@ class _DistributionAudit:
         }
 
 
+def _feature_provenance() -> dict[str, str]:
+    registry = CardSemanticRegistry.from_official_csv(_OFFICIAL_CARD_DATA)
+    return {
+        "typed_input_schema_version": TYPED_INPUT_SCHEMA_VERSION,
+        "feature_compiler_version": COMPILER_VERSION,
+        "feature_compiler_sha256": compiler_sha256(),
+        "ontology_sha256": registry.sha256,
+    }
+
+
 def build_dataset(sources: Iterable[EpisodeSource], output_dir: Path | str, *,
                   split_manifest: SplitManifest, source_manifest_sha256: str,
                   protocol_sha256: str, frozen_unknown_option_fields: frozenset[str],
@@ -618,7 +635,8 @@ def build_dataset(sources: Iterable[EpisodeSource], output_dir: Path | str, *,
                     "split_audit_sha256": split_manifest.sha256(),
                     "protocol_sha256": protocol_sha256,
                     "record_schema_version": SCHEMA_VERSION,
-                    "action_contract_version": ACTION_CONTRACT_VERSION}
+                    "action_contract_version": ACTION_CONTRACT_VERSION,
+                    **_feature_provenance()}
         return writer.finalize(dict(unknown), metadata)
     except BaseException:
         writer.abort()
@@ -680,6 +698,7 @@ def build_dataset_with_derived_split(
             "protocol_sha256": protocol_sha256,
             "record_schema_version": SCHEMA_VERSION,
             "action_contract_version": ACTION_CONTRACT_VERSION,
+            **_feature_provenance(),
         }
         return writer.finalize(dict(unknown), metadata), private_manifest
     except BaseException:

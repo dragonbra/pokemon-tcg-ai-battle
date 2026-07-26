@@ -125,6 +125,8 @@ class WandbSink:
         self._run.define_metric("trainer/update")
         self._run.define_metric("env/decisions")
         self._run.define_metric("env/episodes")
+        self._run.define_metric("progress/iteration")
+        self._run.define_metric("progress/*", step_metric="progress/iteration")
         self._run.define_metric("bc/*", step_metric="trainer/epoch")
         self._run.define_metric("value/*", step_metric="trainer/epoch")
         self._run.define_metric("ppo/*", step_metric="trainer/update")

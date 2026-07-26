@@ -1,6 +1,6 @@
 """Deterministic, durable atomic gzip JSONL shards and reference-driven reading."""
 from __future__ import annotations
-import gzip,hashlib,io,json,os,shutil,uuid
+import gzip,hashlib,io,json,os,shutil,time,uuid
 from pathlib import Path
 from typing import Any,Iterator
 from .dataset import DecisionRecord
@@ -48,16 +48,18 @@ def _validate_record_file(path:Path,expected_hash:str,expected_count:int,split:s
 def iter_dataset(root:Path|str)->Iterator[DecisionRecord]:
     base=Path(root);reference_path=base/"dataset_reference.json"
     reference=json.loads(reference_path.read_text(encoding="utf-8"))
-    if reference.get("schema_version")!="dataset_reference_v2":raise ValueError("unsupported dataset reference schema")
+    if reference.get("schema_version")!="dataset_reference_v3":raise ValueError("unsupported dataset reference schema")
     owner_name=reference.get("publication_owner_path")
     if owner_name!="publication_owner.json":raise ValueError("invalid dataset reference owner path")
     declared={"dataset_reference.json",owner_name};observed={"train":0,"validation":0}
-    required={"schema_version","counts","shards","unknown_option_field_counts","source_manifest_sha256","source_audit","distribution_audit","split_private_assignments_sha256","split_audit_sha256","protocol_sha256","record_schema_version","action_contract_version","publication_owner_path","publication_owner_sha256","content_sha256"}
+    required={"schema_version","counts","shards","unknown_option_field_counts","source_manifest_sha256","source_audit","distribution_audit","split_private_assignments_sha256","split_audit_sha256","protocol_sha256","record_schema_version","action_contract_version","typed_input_schema_version","feature_compiler_version","feature_compiler_sha256","ontology_sha256","publication_owner_path","publication_owner_sha256","content_sha256"}
     counts=reference.get("counts");shard_map=reference.get("shards")
     if set(reference)!=required or not isinstance(counts,dict) or set(counts)!={"train","validation"} or not isinstance(shard_map,dict) or set(shard_map)!={"train","validation"}:raise ValueError("invalid dataset reference schema")
     for split in counts:_exact_nonnegative_int(counts[split],f"counts.{split}")
-    for field in ("source_manifest_sha256","split_private_assignments_sha256","split_audit_sha256","protocol_sha256","publication_owner_sha256","content_sha256"):_sha(reference[field],field)
-    if not isinstance(reference["record_schema_version"],str) or not isinstance(reference["action_contract_version"],str) or not isinstance(reference["unknown_option_field_counts"],dict):raise ValueError("invalid dataset reference types")
+    for field in ("source_manifest_sha256","split_private_assignments_sha256","split_audit_sha256","protocol_sha256","feature_compiler_sha256","ontology_sha256","publication_owner_sha256","content_sha256"):_sha(reference[field],field)
+    for field in ("record_schema_version","action_contract_version","typed_input_schema_version","feature_compiler_version"):
+        if not isinstance(reference[field],str) or not reference[field]:raise ValueError("invalid dataset reference types")
+    if not isinstance(reference["unknown_option_field_counts"],dict):raise ValueError("invalid dataset reference types")
     entries=[]
     for split in ("train","validation"):
         if not isinstance(shard_map[split],list):raise ValueError("invalid dataset reference shard list")
@@ -84,6 +86,90 @@ def iter_dataset(root:Path|str)->Iterator[DecisionRecord]:
     for split,item in entries:_validate_record_file(base/item["path"],item["sha256"],item["count"],split);observed[split]+=item["count"]
     if observed!=reference["counts"]:raise ValueError("dataset aggregate count mismatch")
     for split,item in entries:yield from _raw_iter(base/item["path"])
+
+
+def recover_orphan_staging(
+    output_dir: Path | str,
+    *,
+    diagnostic_path: Path | str,
+    reason: str,
+) -> dict[str, Any]:
+    """Audit and remove one unpublished staging pair left by an interrupted writer."""
+    output = Path(output_dir)
+    diagnostic = Path(diagnostic_path)
+    if output.exists():
+        raise FileExistsError(f"published dataset output exists: {output}")
+    if not reason.strip():
+        raise ValueError("orphan recovery requires a nonempty reason")
+    if diagnostic.exists():
+        raise FileExistsError(f"orphan diagnostic already exists: {diagnostic}")
+    parent = output.parent
+    stage_prefix = f".{output.name}.partial-"
+    reservation_prefix = f".{output.name}.publish-"
+    stages = sorted(path for path in parent.iterdir() if path.name.startswith(stage_prefix))
+    reservations = sorted(
+        path for path in parent.iterdir() if path.name.startswith(reservation_prefix)
+    )
+    if len(stages) != 1 or len(reservations) != 1:
+        raise ValueError("orphan recovery requires exactly one staging/reservation pair")
+    stage, reservation = stages[0], reservations[0]
+    stage_token = stage.name.removeprefix(stage_prefix)
+    reservation_token = reservation.name.removeprefix(reservation_prefix)
+    if not stage_token or stage_token != reservation_token:
+        raise ValueError("orphan staging/reservation token mismatch")
+    if stage.is_symlink() or reservation.is_symlink():
+        raise ValueError("orphan recovery refuses symlinks")
+    if not stage.is_dir() or not reservation.is_dir() or any(reservation.iterdir()):
+        raise ValueError("invalid orphan staging/reservation layout")
+
+    files: list[dict[str, Any]] = []
+    for path in sorted(stage.iterdir()):
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"invalid orphan staging entry: {path.name}")
+        if not (path.name.endswith(".jsonl.gz") or path.name.endswith(".jsonl.gz.partial")):
+            raise ValueError(f"unknown orphan staging entry: {path.name}")
+        item: dict[str, Any] = {
+            "path": path.name,
+            "bytes": path.stat().st_size,
+            "sha256": _sha256(path),
+            "partial_suffix": path.name.endswith(".partial"),
+        }
+        try:
+            item["record_count"] = sum(1 for _ in _raw_iter(path))
+            item["gzip_and_records_valid"] = True
+        except (OSError, ValueError) as error:
+            item["record_count"] = None
+            item["gzip_and_records_valid"] = False
+            item["validation_error"] = f"{type(error).__name__}: {error}"
+        files.append(item)
+
+    report = {
+        "schema_version": "dataset_orphan_recovery_v1",
+        "output_path": str(output),
+        "staging_name": stage.name,
+        "reservation_name": reservation.name,
+        "reason": reason.strip(),
+        "recovered_at_unix": time.time(),
+        "files": files,
+    }
+    diagnostic.parent.mkdir(parents=True, exist_ok=True)
+    payload = (json.dumps(report, indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+    descriptor = os.open(diagnostic, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+    except BaseException:
+        diagnostic.unlink(missing_ok=True)
+        raise
+    _fsync_dir(diagnostic.parent)
+    shutil.rmtree(stage)
+    reservation.rmdir()
+    _fsync_dir(parent)
+    return report
+
+
 class AtomicShardWriter:
     def __init__(self,output_dir:Path,*,shard_size:int)->None:
         self.output_dir=output_dir
@@ -120,7 +206,7 @@ class AtomicShardWriter:
     def finalize(self,unknown:dict[str,int],metadata:dict[str,Any])->dict[str,Any]:
         for split in self.counts:self._finish(split)
         if not all(self.counts.values()):raise ValueError("both train and validation must be nonempty")
-        basis={"schema_version":"dataset_reference_v2","counts":dict(self.counts),"shards":self.shards,"unknown_option_field_counts":dict(sorted(unknown.items())),**metadata}
+        basis={"schema_version":"dataset_reference_v3","counts":dict(self.counts),"shards":self.shards,"unknown_option_field_counts":dict(sorted(unknown.items())),**metadata}
         self.dataset_content_sha256=hashlib.sha256((json.dumps(basis,sort_keys=True,separators=(",",":"),allow_nan=False)+"\n").encode()).hexdigest()
         owner_bytes=(json.dumps({"schema_version":"dataset_publication_owner_v1","dataset_content_sha256":self.dataset_content_sha256},sort_keys=True,separators=(",",":"))+"\n").encode()
         reference={**basis,"publication_owner_path":"publication_owner.json","publication_owner_sha256":hashlib.sha256(owner_bytes).hexdigest()}
@@ -147,4 +233,4 @@ class AtomicShardWriter:
         self._handles.clear();shutil.rmtree(self.stage,ignore_errors=True)
         if self._owns_publication():shutil.rmtree(self.output_dir,ignore_errors=True)
         self._release_reservation();_fsync_dir(self.output_dir.parent);self._closed=True
-__all__=["AtomicShardWriter","iter_dataset","iter_records"]
+__all__=["AtomicShardWriter","iter_dataset","iter_records","recover_orphan_staging"]
