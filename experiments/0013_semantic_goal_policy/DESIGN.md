@@ -2,8 +2,9 @@
 
 **Project ID:** `0013_semantic_goal_policy`
 **Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors published and fully
-validated; V4 completed the reproducible three-epoch M0 minimum; V5 extends the same M0 contract to
-a monitored 100-epoch ceiling; no candidate or policy-strength result exists.
+validated; V4 completed the reproducible three-epoch M0 minimum; V5 extends M0 to a monitored
+100-epoch ceiling; V6 runs the complete existing M5 ladder in parallel; F1 and its richer feature
+dataset are deferred; no candidate or policy-strength result exists.
 
 ## Purpose and boundaries
 
@@ -118,7 +119,13 @@ options, masks, dataset split, and target representation.
 | M2 | M1 | M1 | semantic registered-deck masked mean added to state | M1 | inactive | inactive | inactive | inactive | inactive |
 | M3 | M2 | M1 | Goal-QKV K/V memory | M1 | inactive | inactive | inactive | four deck retrieval slots | inactive |
 | M4 | M2 | M1 | deck K/V memory | M1 | ledger K/V memory and state tokens | inactive | inactive | four deck+ledger retrieval slots | inactive |
-| M5 | M2 | M1 | deck K/V memory | M1 | M4 | event state tokens | relation bias | M4 | finite, uncalibrated head |
+| M5 | M2 | M1 | deck K/V memory | M1 | M4 | event state tokens | per-head directed entity attention bias | M4 | finite, uncalibrated head |
+
+M2's registered-deck masked summary is cumulative through M3-M5. M5 maps each available typed
+entity relation to a learned per-head directed attention bias at its source/target pair; relation
+type zero contributes no bias. The accepted V3 schema contains entity-indexed relations only, so
+richer event/source/target relation schemas remain outside this ladder and belong to a future F1
+dataset contract.
 
 The reference capacity is `d_model=384`, six pre-norm state layers, eight heads, FFN width 1536,
 two option cross-attention layers, and dropout 0.1. This defines the 0013 ladder baseline. It is not
@@ -192,12 +199,19 @@ The curve is still improving, so V4 proves the minimum reproducible M0 loop but 
 V5 restarts from the same bound initial model and keeps dataset, M0 architecture, batch 64, seed
 20260726, learning rate 3e-4, weight decay 1e-2, AMP and deterministic behavior unchanged. Its only
 training-contract change is a 100-epoch ceiling with manual monitoring for sustained validation
-regression against improving train metrics. W&B identity, tags and Chinese Notes are recorded in
-run config; live progress uses the canonical `progress/*` namespace and `progress/iteration` axis.
-M1-M5 remain paused.
+regression against improving train metrics. V6 independently initializes M5 with the same seed and
+optimization settings and runs the complete existing feature ladder in parallel under the same
+100-epoch ceiling. A real V3 batch-64 M5 AMP forward/backward/optimizer smoke passed with finite
+loss and 1.804 GiB peak CUDA allocation while V5 remained active. W&B identity, tags and Chinese
+Notes are recorded in each run config; live progress uses the canonical `progress/*` namespace and
+`progress/iteration` axis.
 
-Only after the monitored M0 convergence run and offline audits pass may a self-contained candidate
-be exported. M1-M5 are paused; when resumed, they must use the same raw source, model-ready
-features, split, seed schedule, compiler, action contract, and evaluation schedule. Offline metrics
+This M5 direction check deliberately skips M1-M4 and does not implement F1. F1's richer option,
+event/relation, serial-exclusion, and board-conditioned Goal-query dataset/model contract is
+paused until current M0/M5 evidence is reviewed.
+
+Only after the monitored M0/M5 convergence runs and offline audits pass may self-contained
+candidates be exported. M1-M4 and F1 are paused. Any resumed comparison must retain explicit raw
+source, model-ready feature, split, seed, compiler, action, and evaluation contracts. Offline metrics
 do not establish policy strength. Only frozen official-engine arena reports can do that, and
 promotion into the formal opponent pool still requires explicit user confirmation.

@@ -89,6 +89,39 @@ class ModelVariantTest(unittest.TestCase):
         with torch.no_grad():
             self.assertFalse(torch.equal(model.encode(values).state, model.encode(changed).state))
 
+    def test_m5_relation_bias_preserves_edge_topology(self):
+        values = batch()
+        values["entities_cat"][:, :, 2] = torch.arange(1, 13)
+        forward = dict(values)
+        reverse = dict(values)
+        forward["relations"] = values["relations"].clone()
+        reverse["relations"] = values["relations"].clone()
+        forward["relations"][:, 0, 1] = 3
+        reverse["relations"][:, 1, 0] = 3
+        model = registry.create_model("M5").eval()
+        with torch.no_grad():
+            first = model.encode(forward).state
+            second = model.encode(reverse).state
+        self.assertFalse(torch.equal(first, second))
+
+    def test_deck_summary_is_cumulative_from_m2_through_m5(self):
+        class ZeroGoals(torch.nn.Module):
+            def forward(self, state, resources, mask):
+                del resources, mask
+                return state.new_zeros(state.size(0), 4, state.size(1))
+
+        values = batch()
+        changed = dict(values)
+        changed["deck_semantic"] = values["deck_semantic"].clone() + 1
+        for name in ("M2", "M3", "M4", "M5"):
+            with self.subTest(name=name):
+                model = registry.create_model(name).eval()
+                model.goal_qkv = ZeroGoals()
+                with torch.no_grad():
+                    first = model.encode(values).state
+                    second = model.encode(changed).state
+                self.assertFalse(torch.equal(first, second))
+
     def test_option_permutation_does_not_change_state(self):
         values = batch(options=5)
         order = torch.tensor([3, 0, 4, 1, 2])

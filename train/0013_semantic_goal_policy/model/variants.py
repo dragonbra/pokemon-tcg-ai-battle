@@ -100,7 +100,7 @@ class SemanticGoalPolicy(nn.Module):
         layer = nn.TransformerEncoderLayer(d, c.heads, c.ffn_dim, c.dropout, activation="gelu", batch_first=True, norm_first=True)
         self.state_encoder = nn.TransformerEncoder(layer, c.state_layers, norm=nn.LayerNorm(d))
         self.goal_qkv = GoalQKV(d, c.heads)
-        self.relation_bias = nn.Embedding(c.relation_types, c.heads)
+        self.relation_bias = nn.Embedding(c.relation_types, c.heads, padding_idx=0)
         self.option_type = nn.Embedding(256, d)
         self.option_attention = nn.ModuleList(nn.MultiheadAttention(d, c.heads, dropout=c.dropout, batch_first=True) for _ in range(c.option_layers))
         self.option_norms = nn.ModuleList(nn.LayerNorm(d) for _ in range(c.option_layers))
@@ -132,6 +132,30 @@ class SemanticGoalPolicy(nn.Module):
             result = result + self.option_numeric(batch["options_num"])
             result = result + self.semantic_projection(batch["option_semantic"])
         return result
+
+    def _relation_attention_bias(
+        self,
+        batch: dict[str, Tensor],
+        *,
+        sequence_width: int,
+        entity_width: int,
+        sequence_mask: Tensor,
+        dtype: torch.dtype,
+    ) -> Tensor:
+        relations = batch["relations"].clamp(0, self.config.relation_types - 1)
+        entity_bias = self.relation_bias(relations).permute(0, 3, 1, 2)
+        bias = torch.zeros(
+            relations.size(0),
+            self.config.heads,
+            sequence_width,
+            sequence_width,
+            device=relations.device,
+            dtype=dtype,
+        )
+        entity_slice = slice(1, 1 + entity_width)
+        bias[:, :, entity_slice, entity_slice] = entity_bias.to(dtype)
+        bias = bias.masked_fill(~sequence_mask[:, None, None, :], -torch.inf)
+        return bias.flatten(0, 1)
 
     def action_scorer(self, batch: dict[str, Tensor], row: int = 0) -> _EncodedActionScorer:
         encoded = self.encode(batch)
@@ -235,8 +259,10 @@ class SemanticGoalPolicy(nn.Module):
         pieces, masks = [state, entities], [torch.ones(batch_size, 1, dtype=torch.bool, device=state.device), batch["entity_mask"]]
         deck = self._deck(batch)
         deck_mask = batch["deck_mask"]
-        if self.level == 2:
-            mean = (deck * deck_mask.unsqueeze(-1)).sum(1) / deck_mask.sum(1, keepdim=True).clamp_min(1)
+        if self.level >= 2:
+            mean = (deck * deck_mask.unsqueeze(-1)).sum(1) / deck_mask.sum(
+                1, keepdim=True
+            ).clamp_min(1)
             pieces[0] = pieces[0] + mean.unsqueeze(1)
         goals = torch.zeros(batch_size, 4, self.config.d_model, device=state.device, dtype=state.dtype)
         if self.level >= 3:
@@ -255,7 +281,17 @@ class SemanticGoalPolicy(nn.Module):
             pieces.append(events); masks.append(batch["event_mask"])
         sequence = torch.cat(pieces, dim=1)
         mask = torch.cat(masks, dim=1)
-        encoded = self.state_encoder(sequence, src_key_padding_mask=~mask)
+        if self.level >= 5:
+            attention_bias = self._relation_attention_bias(
+                batch,
+                sequence_width=sequence.size(1),
+                entity_width=entities.size(1),
+                sequence_mask=mask,
+                dtype=sequence.dtype,
+            )
+            encoded = self.state_encoder(sequence, mask=attention_bias)
+        else:
+            encoded = self.state_encoder(sequence, src_key_padding_mask=~mask)
         contextual_state = encoded[:, 0]
         options = self._options(batch)
         for attention, norm in zip(self.option_attention, self.option_norms):
