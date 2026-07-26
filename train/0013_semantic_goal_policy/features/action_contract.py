@@ -30,6 +30,7 @@ SUPPORTED_OPTION_FIELDS = frozenset(
         "count",
         "energyIndex",
         "toolIndex",
+        "specialConditionType",
     }
 )
 # Observation metadata may align records but must never influence identity or features.

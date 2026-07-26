@@ -83,7 +83,21 @@ def encode_observation(raw: Mapping[str, Any], *, registered_deck: Sequence[int]
         option = _mapping(option_value, "option")
         card_id = option.get("cardId")
         card = card_id if isinstance(card_id, int) and not isinstance(card_id, bool) else None
-        options.append(OptionToken(f"option:{index}", option.get("type", "missing"), card, None, None, {key: value for key, value in option.items() if key not in {"serial", "cardId"} and isinstance(value, (str, int)) and not isinstance(value, bool)}, {}))
+        categorical = {
+            key: value
+            for key, value in option.items()
+            if key not in {"serial", "cardId"}
+            and isinstance(value, (str, int))
+            and not isinstance(value, bool)
+        }
+        numeric = {
+            key: _integer(option.get(key), cap=128, missing=True)
+            for key in ("count", "number", "energyIndex", "toolIndex")
+        }
+        options.append(OptionToken(
+            f"option:{index}", option.get("type", "missing"), card, None, None,
+            categorical, numeric,
+        ))
     typed = TypedPolicyInput(state, tuple(entities), deck_tokens, (), (), tuple(options), tuple(relations))
     typed.validate()
     return typed

@@ -16,19 +16,24 @@ def batch(batch_size=2, options=5):
         "state_num": torch.randn(batch_size, 16),
         "entities_cat": torch.zeros(batch_size, 12, 8, dtype=torch.long),
         "entities_num": torch.randn(batch_size, 12, 12),
+        "entity_semantic": torch.randn(batch_size, 12, 64),
         "entity_mask": torch.ones(batch_size, 12, dtype=torch.bool),
         "deck_card_ids": torch.randint(1, 100, (batch_size, 22)),
         "deck_multiplicity": torch.ones(batch_size, 22),
+        "deck_semantic": torch.randn(batch_size, 22, 64),
         "deck_mask": torch.ones(batch_size, 22, dtype=torch.bool),
         "ledger_cat": torch.zeros(batch_size, 16, 6, dtype=torch.long),
         "ledger_num": torch.randn(batch_size, 16, 12),
+        "ledger_semantic": torch.randn(batch_size, 16, 64),
         "ledger_mask": torch.ones(batch_size, 16, dtype=torch.bool),
         "events_cat": torch.zeros(batch_size, 10, 6, dtype=torch.long),
         "events_num": torch.randn(batch_size, 10, 8),
+        "event_semantic": torch.randn(batch_size, 10, 64),
         "event_mask": torch.ones(batch_size, 10, dtype=torch.bool),
         "relations": torch.zeros(batch_size, 12, 12, dtype=torch.long),
         "options_cat": torch.zeros(batch_size, options, 12, dtype=torch.long),
         "options_num": torch.randn(batch_size, options, 8),
+        "option_semantic": torch.randn(batch_size, options, 64),
         "option_mask": torch.ones(batch_size, options, dtype=torch.bool),
         "min_count": torch.ones(batch_size, dtype=torch.long),
         "max_count": torch.full((batch_size,), min(3, options), dtype=torch.long),
@@ -90,12 +95,37 @@ class ModelVariantTest(unittest.TestCase):
         permuted = dict(values)
         permuted["options_cat"] = values["options_cat"][:, order]
         permuted["options_num"] = values["options_num"][:, order]
+        permuted["option_semantic"] = values["option_semantic"][:, order]
         for name in registry.MODEL_REGISTRY:
             model = registry.create_model(name).eval()
             with torch.no_grad():
                 first, second = model.encode(values), model.encode(permuted)
             self.assertTrue(torch.allclose(first.state, second.state, atol=1e-6), name)
             self.assertTrue(torch.allclose(first.options[:, order], second.options, atol=1e-6), name)
+
+    def test_batched_decoder_matches_single_decision_contract(self):
+        values = batch(batch_size=4, options=6)
+        values["options_cat"][:, :, 0] = torch.arange(1, 7)
+        values["option_mask"][1, 4:] = False
+        values["max_count"] = torch.tensor([1, 2, 3, 4])
+        model = registry.create_model("M0").eval()
+        with torch.no_grad():
+            batched = model.deterministic_actions(values)
+            singles = tuple(
+                decoder.sample_action(
+                    model.action_scorer(values, row),
+                    option_mask=values["option_mask"][row],
+                    min_count=int(values["min_count"][row]),
+                    max_count=int(values["max_count"][row]),
+                    deterministic=True,
+                )
+                for row in range(4)
+            )
+        self.assertEqual(batched.sequences, tuple(result.sequence for result in singles))
+        self.assertEqual(
+            batched.forced_terminal, tuple(result.forced_terminal for result in singles)
+        )
+        self.assertEqual(batched.legal, (True, True, True, True))
 
     def test_goal_qkv_has_four_named_contexts(self):
         model = registry.create_model("M3").eval()

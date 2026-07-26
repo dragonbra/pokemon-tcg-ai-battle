@@ -13,7 +13,7 @@ def observation(*, deck_view=None, hand_count=3, logs=None):
             "yourIndex": 0,
             "turn": 2,
             "players": [
-                {"active": [], "bench": [], "discard": [], "hand": [], "handCount": 0, "prize": [], "deckCount": 54},
+                {"active": [], "bench": [], "discard": [], "hand": [], "handCount": 0, "prize": [None] * 6, "deckCount": 54},
                 {"active": [], "bench": [], "discard": [], "hand": [], "handCount": hand_count, "prize": [], "deckCount": 50},
             ],
         },
@@ -26,11 +26,14 @@ class CausalKnowledgeTest(unittest.TestCase):
     def setUp(self) -> None:
         self.knowledge = state.CausalKnowledgeState.new_game(0, [1] * 30 + [2] * 30)
 
-    def test_prize_unknown_before_full_view_and_unlocks_only_next_decision(self) -> None:
+    def test_prize_exact_view_persists_through_known_state(self) -> None:
         before = self.knowledge.consume(observation())
         self.assertEqual(before.self_ledger[1].prize.state, state.KnowledgeStage.UNKNOWN)
-        current = self.knowledge.consume(observation(deck_view=[{"id": 1}] * 27 + [{"id": 2}] * 27))
-        self.assertEqual(current.self_ledger[1].prize.state, state.KnowledgeStage.UNKNOWN)
+        current = self.knowledge.consume(
+            observation(deck_view=[{"id": 1}] * 27 + [{"id": 2}] * 27)
+        )
+        self.assertEqual(current.self_ledger[1].prize.state, state.KnowledgeStage.INFERRED_EXACT)
+        self.assertEqual(current.self_ledger[1].prize.value, 3)
         after = self.knowledge.consume(observation())
         self.assertEqual(after.self_ledger[1].prize.state, state.KnowledgeStage.INFERRED_EXACT)
         self.assertEqual(after.self_ledger[1].prize.value, 3)
@@ -51,10 +54,15 @@ class CausalKnowledgeTest(unittest.TestCase):
         self.assertEqual([card.card_id for card in moved.opponent_hand.known], [1])
         self.assertEqual(moved.opponent_hand.unknown_slots, 1)
 
-    def test_shuffle_degrades_order_not_membership_and_new_game_resets(self) -> None:
-        self.knowledge.consume(observation(deck_view=[{"id": 1}] * 27 + [{"id": 2}] * 27))
-        self.knowledge.consume(observation())
-        shuffled = self.knowledge.consume(observation(logs=[{"type":"shuffle","playerIndex":0,"area":"deck"}]))
+    def test_shuffle_degrades_order_but_preserves_membership(self) -> None:
+        viewed = self.knowledge.consume(
+            observation(deck_view=[{"id": 1}] * 27 + [{"id": 2}] * 27)
+        )
+        self.assertTrue(viewed.deck_membership_known)
+        self.assertTrue(viewed.deck_order_known)
+        shuffled = self.knowledge.consume(
+            observation(logs=[{"type":"shuffle","playerIndex":0,"area":"deck"}])
+        )
         self.assertFalse(shuffled.deck_order_known)
         self.assertTrue(shuffled.deck_membership_known)
         reset = state.CausalKnowledgeState.new_game(0, [1] * 60).encode_current()
