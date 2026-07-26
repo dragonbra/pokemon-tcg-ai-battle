@@ -9,6 +9,7 @@ import hashlib
 import html
 import json
 import re
+import statistics
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -105,6 +106,41 @@ def _archetype(deck: list[int], catalog: dict[int, dict[str, str]]) -> str:
     return f"{primary[3]['Card Name']} / {partner[3]['Card Name']}"
 
 
+def _classify_archetype(deck: list[int], catalog: dict[int, dict[str, str]]) -> str:
+    names = {catalog.get(card_id, {}).get("Card Name", "") for card_id in deck}
+    fixed = (
+        ("Marnie's Grimmsnarl ex", "Marnie's Grimmsnarl ex / Froslass"),
+        ("Alakazam", "Alakazam / Dudunsparce"),
+        ("Team Rocket's Mewtwo ex", "Team Rocket's Mewtwo ex / Spidops"),
+        ("Cynthia's Garchomp ex", "Cynthia's Garchomp ex / Roserade"),
+        ("Mega Kangaskhan ex", "Mega Kangaskhan ex / Crustle"),
+        ("Mega Lopunny ex", "Mega Lopunny ex / Mega Froslass ex"),
+        ("Mega Lucario ex", "Mega Lucario ex / Solrock"),
+        ("Mega Starmie ex", "Mega Starmie ex / Dusknoir"),
+        ("Mega Abomasnow ex", "Mega Abomasnow ex / Kyogre"),
+    )
+    if "Dragapult ex" in names and "Dusknoir" in names:
+        return "Dragapult ex / Dusknoir"
+    if "Dragapult ex" in names and "Blaziken ex" in names:
+        return "Dragapult ex / Blaziken ex"
+    if "Dragapult ex" in names:
+        return "Dragapult ex"
+    if "Dipplin" in names and "Thwackey" in names:
+        return "Festival Lead / Dipplin"
+    for card_name, archetype in fixed:
+        if card_name in names:
+            return archetype
+    return _archetype(deck, catalog)
+
+
+def _datetime(value: object) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
 def _card_group(row: dict[str, str]) -> str:
     kind = row.get("Stage (Pokémon)/Type (Energy and Trainer)", "").strip()
     category = row.get("Category", "").strip()
@@ -136,6 +172,9 @@ def _card_thumb(card_id: int, catalog: dict[int, dict[str, str]], *, compact: bo
     cls = "card-thumb compact" if compact else "card-thumb"
     image = (
         f'<img src="{html.escape(source)}" alt="{html.escape(name)}" loading="lazy" '
+        f'width="{20 if compact else 30}" height="{28 if compact else 42}" '
+        f'style="width:{20 if compact else 30}px;height:{28 if compact else 42}px;'
+        f'max-width:{20 if compact else 30}px;max-height:{28 if compact else 42}px" '
         'decoding="async" referrerpolicy="no-referrer" '
         'onerror="this.hidden=true;this.parentElement.classList.add(\'thumb-failed\')">'
         if source else ""
@@ -143,7 +182,7 @@ def _card_thumb(card_id: int, catalog: dict[int, dict[str, str]], *, compact: bo
     return (
         f'<span class="{cls}" tabindex="0" data-card-name="{html.escape(name)}" '
         f'data-card-preview-url="{html.escape(preview)}" title="{html.escape(name)} · Card ID {card_id}">'
-        f'{image}<span class="thumb-fallback">ID {card_id}</span></span>'
+        f'{image}<span class="thumb-fallback">ID {card_id}<small>{html.escape(name)}</small></span></span>'
     )
 
 
@@ -189,30 +228,86 @@ def _render_report(
     players: list[dict[str, object]],
     catalog: dict[int, dict[str, str]],
     report: Path,
+    meta_payload: dict[str, object] | None = None,
 ) -> None:
     report.parent.mkdir(parents=True, exist_ok=True)
     css = _baseline_css(report) + """
     .snapshot-note{padding:16px 18px;border:1px solid #e5bb76;border-radius:14px;background:#fff8e9;color:#5e4218}
     .archetype-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.archetype-card{padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff}.archetype-card h3{margin:0 0 8px}.bar-track{height:9px;border-radius:99px;background:#e8eee9;overflow:hidden}.bar-fill{height:100%;background:linear-gradient(90deg,#1e7c60,#8bbf9a)}
-    .pool-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:13px}.pool-card{min-width:0;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}.pool-card .card-art{position:relative;aspect-ratio:2.5/3.5;overflow:hidden;border-radius:8px;background:#edf2ef}.pool-card .card-thumb{width:100%!important;height:100%!important;min-width:0!important;max-width:none!important;min-height:0!important;max-height:none!important}.pool-card .card-thumb img{width:100%!important;height:100%!important;object-fit:contain!important}.pool-card b,.pool-card small{display:block}.pool-card b{margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pool-card small{color:var(--muted)}.pool-rank{position:absolute;z-index:4;top:7px;left:7px;padding:3px 7px;border-radius:999px;color:#fff;background:#173e31e8;font-weight:900}.pool-count{position:absolute;z-index:4;top:7px;right:7px;padding:3px 7px;border-radius:999px;color:#fff;background:#9b6218e8;font-weight:900}
     .deck-group{margin:18px 0 28px}.deck-group h4{padding-bottom:7px;border-bottom:2px solid #a8cdbd}.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}.card-tile{min-width:0}.card-tile .card-art{position:relative;aspect-ratio:2.5/3.5;overflow:hidden;border-radius:8px;background:#edf2ef}.card-tile .card-thumb{width:100%!important;height:100%!important;min-width:0!important;max-width:none!important;min-height:0!important;max-height:none!important}.card-tile .card-thumb img{width:100%!important;height:100%!important;object-fit:contain!important}.card-tile b,.card-tile small{display:block}.card-tile b{margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-tile small{color:var(--muted)}.deck-count{position:absolute;z-index:4;top:7px;right:7px;padding:3px 7px;border-radius:999px;color:#fff;background:#173e31e8;font-weight:900}
     .archetype-profile{margin:10px 0;border:1px solid var(--line);border-radius:14px}.archetype-profile summary{display:flex;justify-content:space-between;gap:12px;padding:15px;cursor:pointer;font-weight:800}.archetype-profile>div{padding:0 15px 15px}.tag-list{display:flex;flex-wrap:wrap;gap:7px}.tag{padding:5px 8px;border-radius:999px;background:#edf6f1;color:#0d6349;font-size:12px}.unavailable-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.unavailable-grid article{padding:16px;border:1px dashed #c9d2cd;border-radius:14px;background:#f7f8f7}.comparison-table small,.summary-table small{display:block;color:var(--muted)}
     @media(max-width:900px){.archetype-grid,.unavailable-grid{grid-template-columns:1fr 1fr}}@media(max-width:680px){.archetype-grid,.unavailable-grid{grid-template-columns:1fr}}
     """
     css = "\n".join(line.rstrip() for line in css.splitlines())
     for player in players:
+        player["archetype"] = _classify_archetype(player["deck"], catalog)
         player["deck_hash"] = _deck_hash(player["deck"])
         player["card_counts"] = Counter(int(card_id) for card_id in player["deck"])
+
+    by_submission = {int(player["submission_id"]): player for player in players}
+    cutoff = _datetime(state["captured_at_utc"])
+    views_by_submission: dict[int, list[dict[str, object]]] = {}
+    for submission_id, player in by_submission.items():
+        raw_views = (meta_payload or {}).get("views", {}).get(str(submission_id), [])
+        bounded_views = []
+        for view in raw_views:
+            created_at = _datetime(view.get("create_time"))
+            if cutoff is not None and created_at is not None and created_at > cutoff:
+                continue
+            bounded_views.append(view)
+        views_by_submission[submission_id] = bounded_views
+        if bounded_views:
+            rewards = [float(view["reward"]) for view in bounded_views if view.get("reward") is not None]
+            player["wins"] = sum(reward > 0 for reward in rewards)
+            player["losses"] = sum(reward < 0 for reward in rewards)
+            player["draws"] = sum(reward == 0 for reward in rewards)
+            player["valid_games"] = len(rewards)
+            player["win_rate"] = (
+                (player["wins"] + 0.5 * player["draws"]) / len(rewards) if rewards else None
+            )
+        high_rewards: list[float] = []
+        other_rewards: list[float] = []
+        for view in bounded_views:
+            reward = view.get("reward")
+            if reward is None:
+                continue
+            other = view.get("other") or {}
+            opponent_submission = int(other.get("submission_id") or 0)
+            (high_rewards if opponent_submission in by_submission else other_rewards).append(float(reward))
+        player["high_rewards"] = high_rewards
+        player["other_rewards"] = other_rewards
 
     distribution = Counter(str(player["archetype"]) for player in players)
     presence: Counter[int] = Counter()
     archetype_presence: dict[str, Counter[int]] = defaultdict(Counter)
+    archetype_decks: dict[str, list[Counter[int]]] = defaultdict(list)
     for player in players:
         unique_ids = set(player["deck"])
         presence.update(unique_ids)
         archetype_presence[str(player["archetype"])].update(unique_ids)
+        archetype_decks[str(player["archetype"])].append(player["card_counts"])
 
     ordered_archetypes = sorted(distribution.items(), key=lambda item: (-item[1], item[0]))
+    archetype_names = [name for name, _ in ordered_archetypes]
+    archetype_matrix: dict[tuple[str, str], Counter[str]] = defaultdict(Counter)
+    player_matrix: dict[tuple[str, str], Counter[str]] = defaultdict(Counter)
+    top100_player_views = 0
+    for submission_id, views in views_by_submission.items():
+        player = by_submission[submission_id]
+        for view in views:
+            other = view.get("other") or {}
+            opponent = by_submission.get(int(other.get("submission_id") or 0))
+            reward = view.get("reward")
+            if opponent is None or reward is None:
+                continue
+            result = "wins" if float(reward) > 0 else "losses" if float(reward) < 0 else "draws"
+            archetype_matrix[(str(player["archetype"]), str(opponent["archetype"]))][result] += 1
+            player_matrix[(str(player["team_name"]), str(opponent["team_name"]))][result] += 1
+            top100_player_views += 1
+    capped_submissions = sum(
+        bool(row.get("possibly_censored_at_1000"))
+        for row in (meta_payload or {}).get("audit", {}).values()
+    )
     previous = _previous_players(report)
     current_names = {str(player["team_name"]) for player in players}
     joined = [player for player in players if player["team_name"] in previous]
@@ -229,8 +324,80 @@ def _render_report(
     total_draws = sum(int(player["draws"]) for player in players)
     overall = (total_wins + 0.5 * total_draws) / total_games if total_games else None
 
+    representative_ids: dict[str, list[int]] = {}
+    for name, _ in ordered_archetypes:
+        selected: list[int] = []
+        requested_names = [part.strip() for part in name.split("/")]
+        aliases = {
+            "Spidops": "Team Rocket's Spidops",
+            "Roserade": "Cynthia's Roserade",
+            "Festival Lead": "Dipplin",
+        }
+        for requested in requested_names:
+            requested = aliases.get(requested, requested)
+            match = next(
+                (
+                    card_id for card_id in archetype_presence[name]
+                    if catalog.get(card_id, {}).get("Card Name") == requested
+                ),
+                None,
+            )
+            if match is not None and match not in selected:
+                selected.append(match)
+        candidates: list[tuple[int, int, int]] = []
+        for card_id, deck_count in archetype_presence[name].items():
+            row = catalog.get(card_id, {})
+            if _card_group(row) != "Pokémon":
+                continue
+            stage = row.get("Stage (Pokémon)/Type (Energy and Trainer)", "")
+            priority = 3 if "Stage 2" in stage else 2 if "Stage 1" in stage else 1
+            if " ex" in row.get("Card Name", "") or row.get("Card Name", "").startswith("Mega "):
+                priority += 2
+            candidates.append((priority, deck_count, card_id))
+        candidates.sort(reverse=True)
+        selected.extend(
+            card_id for _, _, card_id in candidates if card_id not in selected
+        )
+        representative_ids[name] = selected[:2]
+
+    def archetype_visual(name: str, *, compact: bool = True) -> str:
+        thumbs = "".join(
+            _card_thumb(card_id, catalog, compact=compact)
+            for card_id in representative_ids.get(name, [])
+        )
+        return (
+            f'<span class="archetype-visual" title="{html.escape(name)}">'
+            f'<span class="archetype-thumbs">{thumbs}</span>'
+            f'<span class="archetype-label">{html.escape(name)}</span></span>'
+        )
+
+    def reward_rate(rewards: list[float]) -> float | None:
+        if not rewards:
+            return None
+        return (sum(reward > 0 for reward in rewards) + 0.5 * sum(reward == 0 for reward in rewards)) / len(rewards)
+
+    def matrix_cell(counter: Counter[str] | None) -> str:
+        counter = counter or Counter()
+        n = sum(counter.values())
+        if not n:
+            return '<td class="no-sample">—<small>n=0</small></td>'
+        rate = (counter["wins"] + 0.5 * counter["draws"]) / n
+        hue = max(6.0, min(145.0, 8.0 + rate * 137.0))
+        return (
+            f'<td style="background:hsl({hue:.1f} 56% 89%)" title="真实 0727 玩家视角，n={n}">'
+            f'<b>{_pct(rate)}</b><small>{counter["wins"]}-{counter["losses"]}-{counter["draws"]} · n={n}</small></td>'
+        )
+
+    matrix_head = "".join(f'<th>{archetype_visual(name)}</th>' for name in archetype_names)
+    archetype_matrix_rows = "".join(
+        f'<tr><th>{archetype_visual(left)}</th>'
+        + "".join(matrix_cell(archetype_matrix.get((left, right))) for right in archetype_names)
+        + "</tr>"
+        for left in archetype_names
+    )
+
     def badge(player: dict[str, object]) -> str:
-        return f'<span class="archetype-badge">{html.escape(str(player["archetype"]))}</span>'
+        return f'<span class="archetype-badge visual-badge">{archetype_visual(str(player["archetype"]))}</span>'
 
     def player_row(player: dict[str, object], attribute: str) -> str:
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
@@ -254,7 +421,7 @@ def _render_report(
             for card_id, n in ids if card_id in catalog
         )
         archetype_cards.append(
-            f'<article class="archetype-card"><h3>{html.escape(name)} <small>{count} 人</small></h3>'
+            f'<article class="archetype-card"><h3>{archetype_visual(name, compact=False)} <small>{count} 人</small></h3>'
             f'<p>{_pct(count / 100)} · 代表 replay exact deck</p>'
             f'<div class="bar-track"><div class="bar-fill" style="width:{100 * count / max_count:.1f}%"></div></div>'
             f'<div class="tag-list">{tags}</div></article>'
@@ -272,27 +439,114 @@ def _render_report(
             f'<small>{old["deck_hash"] or "—"} → {player["deck_hash"][:10]}</small></td></tr>'
         )
 
+    person_cards = []
+    for player in players:
+        high_rate = reward_rate(player["high_rewards"])
+        other_rate = reward_rate(player["other_rewards"])
+
+        def rate_card(label: str, rate: float | None, n: int) -> str:
+            rate_class = "good" if rate is not None and rate >= 0.60 else "bad" if rate is not None and rate < 0.45 else "mid"
+            return f'<div class="rate {rate_class}"><span>{label}</span><b>{_pct(rate)}</b><small>n={n:,}</small></div>'
+
+        search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
+        person_cards.append(
+            f'<article class="person-card" data-person-card data-archetype="{html.escape(str(player["archetype"]))}" '
+            f'data-search="{html.escape(search)}"><div class="person-head"><span class="rank-chip">#{player["rank"]}</span>'
+            f'<div><a href="#player-{int(player["rank"]):03d}"><b>{html.escape(str(player["team_name"]))}</b></a>'
+            f'{archetype_visual(str(player["archetype"]))}</div></div><div class="win-grid">'
+            f'{rate_card("全样本", player["win_rate"], int(player["valid_games"]))}'
+            f'{rate_card("高分段 · Top 100 对手", high_rate, len(player["high_rewards"]))}'
+            f'{rate_card("低分段 · 其余对手", other_rate, len(player["other_rewards"]))}</div>'
+            f'<div class="person-foot"><span>{player["wins"]}-{player["losses"]}-{player["draws"]}</span>'
+            f'<span>submission {player["submission_id"]}</span><span>deck {player["deck_hash"]}</span></div></article>'
+        )
+
+    top20 = players[:20]
+    top20_names = [str(player["team_name"]) for player in top20]
+    top20_head = "".join(
+        f'<th title="{html.escape(name)}">{index}<small>{html.escape(name[:12])}</small></th>'
+        for index, name in enumerate(top20_names, 1)
+    )
+    top20_matrix_rows = "".join(
+        f'<tr><th>{html.escape(left[:18])}</th>'
+        + "".join(
+            '<td class="no-sample">—</td>' if left == right
+            else matrix_cell(player_matrix.get((left, right)))
+            for right in top20_names
+        )
+        + "</tr>"
+        for left in top20_names
+    )
+    top20_rows = "".join(
+        f'<tr><td>#{player["rank"]}</td><td><a href="#player-{int(player["rank"]):03d}">{html.escape(str(player["team_name"]))}</a></td>'
+        f'<td>{archetype_visual(str(player["archetype"]))}</td><td>{player["valid_games"]}</td>'
+        f'<td>{player["wins"]}-{player["losses"]}-{player["draws"]}</td><td>{_pct(player["win_rate"])}</td></tr>'
+        for player in top20
+    )
+
+    investment_hist: Counter[int] = Counter()
+    for player in players:
+        investment_hist.update(player["card_counts"].values())
+    investment_html = "".join(
+        f'<div><b>×{copies}</b><span>{deck_cards:,} 次 deck-card 投入</span></div>'
+        for copies, deck_cards in sorted(investment_hist.items())
+    )
     pool_cards = []
-    for rank, (card_id, count) in enumerate(presence.most_common(), 1):
+    for card_id, deck_count in presence.most_common():
         row = catalog.get(card_id, {})
         name = row.get("Card Name", f"Card ID {card_id}")
+        investments = [int(player["card_counts"].get(card_id, 0)) for player in players]
+        used = [count for count in investments if count]
+        count_hist = Counter(used)
+        distribution_text = " · ".join(
+            f"×{copies}: {decks}套" for copies, decks in sorted(count_hist.items())
+        )
+        facts = " · ".join(
+            value for value in (
+                row.get("Stage (Pokémon)/Type (Energy and Trainer)", ""),
+                f'{row.get("Expansion", "")} {row.get("Collection No.", "")}'.strip(),
+            ) if value
+        )
         pool_cards.append(
-            f'<article class="pool-card" data-pool-card><div class="card-art">'
-            f'{_card_thumb(card_id, catalog, compact=False)}<span class="pool-rank">#{rank}</span>'
-            f'<span class="pool-count">{count}/100</span></div><b title="{html.escape(name)}">{html.escape(name)}</b>'
-            f'<small>Card ID {card_id} · {_card_group(row)} · {_pct(count / 100)}</small></article>'
+            f'<tr data-pool-card><td><span class="pool-card">{_card_thumb(card_id, catalog, compact=False)}'
+            f'<span><b>{html.escape(name)}</b><small>ID {card_id}</small></span></span></td>'
+            f'<td><small class="card-facts">{html.escape(facts)}</small></td>'
+            f'<td><b>{deck_count}</b> / 100</td><td>{_pct(deck_count / 100)}</td>'
+            f'<td>{sum(used)}</td><td>{statistics.mean(used):.2f}</td>'
+            f'<td>{statistics.median(used):.1f}</td><td>{min(used)}–{max(used)}</td>'
+            f'<td><small>{distribution_text}</small></td></tr>'
         )
 
     archetype_profiles = []
     for name, count in ordered_archetypes:
-        typical = archetype_presence[name].most_common(16)
-        tags = "".join(
-            f'<span class="tag">{html.escape(catalog.get(card_id, {}).get("Card Name", str(card_id)))} · {n}/{count}</span>'
-            for card_id, n in typical
-        )
+        deck_counters = archetype_decks[name]
+        typical = [item for item in archetype_presence[name].most_common() if item[1] / count >= 0.5]
+        typical_rows = []
+        for card_id, deck_count in typical:
+            row = catalog.get(card_id, {})
+            card_name = row.get("Card Name", f"Card ID {card_id}")
+            investments = [deck[card_id] for deck in deck_counters if deck.get(card_id)]
+            mode = Counter(investments).most_common(1)[0][0]
+            typical_rows.append(
+                f'<tr><td><span class="pool-card">{_card_thumb(card_id, catalog, compact=False)}'
+                f'<span><b>{html.escape(card_name)}</b><small>ID {card_id}</small></span></span></td>'
+                f'<td>{_pct(deck_count / count)}</td><td>{mode}</td>'
+                f'<td>{statistics.median(investments):.1f}</td><td>{min(investments)}–{max(investments)}</td></tr>'
+            )
+        exceptions = []
+        for card_id, deck_count in sorted(archetype_presence[name].items(), key=lambda item: (item[1], item[0])):
+            if deck_count / count > 0.2:
+                continue
+            card_name = catalog.get(card_id, {}).get("Card Name", f"Card ID {card_id}")
+            exceptions.append(f"{card_name} ({deck_count})")
         archetype_profiles.append(
-            f'<details class="archetype-profile"><summary><span>{html.escape(name)}</span><span>{count} 套 · 展开构筑卡池</span></summary>'
-            f'<div class="tag-list">{tags}</div></details>'
+            f'<details class="archetype-profile"><summary>{archetype_visual(name, compact=False)}'
+            f'<span>{count} 人 · {len(archetype_presence[name])} 张局部卡池 · {len(typical)} 张典型卡</span></summary>'
+            f'<div class="profile-grid"><div><h4>典型投入（牌型内覆盖 ≥ 50%）</h4>'
+            f'<div class="table-scroll"><table class="compact"><thead><tr><th>卡</th><th>覆盖</th><th>众数</th><th>中位</th><th>范围</th></tr></thead>'
+            f'<tbody>{"".join(typical_rows)}</tbody></table></div></div><div class="audit-verdict">'
+            f'<h4>个人特例 / 低频卡</h4><p>{html.escape("、".join(exceptions[:24]) or "没有 ≤20% 覆盖的低频卡")}</p>'
+            f'<p class="compact-note">只描述当前代表 deck，不推断单卡因果强度。</p></div></div></details>'
         )
 
     detail_blocks = []
@@ -314,6 +568,26 @@ def _render_report(
             f'<div class="card-grid">{"".join(groups[group])}</div></section>'
             for group in ("Pokémon", "Trainer", "Energy")
         )
+        matchup_items = [
+            (right, counter)
+            for (left, right), counter in player_matrix.items()
+            if left == str(player["team_name"])
+        ]
+        matchup_items.sort(key=lambda item: (-sum(item[1].values()), item[0]))
+        matchup_rows = []
+        for opponent_name, counter in matchup_items[:12]:
+            opponent = next(item for item in players if item["team_name"] == opponent_name)
+            n = sum(counter.values())
+            rate = (counter["wins"] + 0.5 * counter["draws"]) / n
+            matchup_rows.append(
+                f'<tr><td>{html.escape(opponent_name)}</td><td>{archetype_visual(str(opponent["archetype"]))}</td>'
+                f'<td>{counter["wins"]}-{counter["losses"]}-{counter["draws"]}</td><td>{_pct(rate)}</td><td>{n}</td></tr>'
+            )
+        matchup_html = (
+            '<div class="table-scroll"><table class="wide-table"><thead><tr><th>对手</th><th>牌型</th><th>W-L-D</th><th>胜率</th><th>n</th></tr></thead>'
+            f'<tbody>{"".join(matchup_rows)}</tbody></table></div>'
+            if matchup_rows else '<p class="empty">冻结边界内没有当前 Top100 最终 submission 的直接对局。</p>'
+        )
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
         detail_blocks.append(
             f'<details class="person-card" id="player-{int(player["rank"]):03d}" data-player-detail '
@@ -321,7 +595,8 @@ def _render_report(
             f'<summary><span><b>#{player["rank"]} {html.escape(str(player["team_name"]))}</b> · {badge(player)}</span>'
             f'<span>{player["wins"]}-{player["losses"]}-{player["draws"]} · {_pct(player["win_rate"])}</span></summary>'
             f'<div class="detail-body"><p><b>submission {player["submission_id"]}</b> · Episode {player["episode_id"]} · '
-            f'deck hash <code>{player["deck_hash"]}</code></p>{deck_html}</div></details>'
+            f'deck hash <code>{player["deck_hash"]}</code></p><h4>已识别 matchup</h4>{matchup_html}'
+            f'<h4>Exact 60-card deck</h4>{deck_html}</div></details>'
         )
 
     report_html = f'''<!doctype html>
@@ -334,17 +609,17 @@ def _render_report(
 <div class="metrics new-metrics"><div class="metric"><b>100</b><span>最终 submissions</span></div><div class="metric"><b>{total_games:,}</b><span>公开 Meta 玩家视角</span></div><div class="metric"><b>{len(presence)}</b><span>Card Pool 并集</span></div><div class="metric"><b>{len(distribution)}</b><span>实际牌型</span></div><div class="metric"><b>100</b><span>exact decks 已审计</span></div><div class="metric"><b>100</b><span>代表 replays</span></div></div>
 <div class="evidence-grid"><article><b>榜单层</b><p>冻结官方 Top100、score 与 submissionDate。</p></article><article><b>Meta 层</b><p>只计 exact submission 的 PUBLIC + COMPLETED Episode Meta。</p></article><article><b>Replay 层</b><p>逐 submission 最新合格 replay 的 exact 60-card deck。</p></article></div>
 <h3>读数摘要</h3><div class="finding-grid"><article><b>榜首与分差</b><p>{html.escape(str(players[0]["team_name"]))} · {float(players[0]["score"]):.1f}；第 100 名 {html.escape(str(players[-1]["team_name"]))} · {float(players[-1]["score"]):.1f}。</p></article><article><b>公开 Meta</b><p>{total_wins:,}-{total_losses:,}-{total_draws:,}，玩家视角胜率 {_pct(overall)}（n={total_games:,}）。</p></article><article><b>环境集中度</b><p>{html.escape(ordered_archetypes[0][0])} {ordered_archetypes[0][1]} 人；前两类合计 {sum(count for _, count in ordered_archetypes[:2])}/100。</p></article><article><b>卡池审计</b><p>100 份代表 deck 均为 60 张，共覆盖 {len(presence)} 个 Card ID。</p></article></div>
-<div class="snapshot-note"><b>证据护栏：</b>单 submission 的 Episode Meta 最多暴露约 1,000 局；本次冻结文件没有持久化逐局对手字段，因此不伪造 0727 matchup、先后攻或墙钟矩阵。</div></section>
+<div class="snapshot-note"><b>证据护栏：</b>单 submission 的 Episode Meta 最多暴露约 1,000 局；本次有 {capped_submissions} 个 submission 命中端点上限。逐局 opponent Meta 已按 leaderboard 冻结时间截断后用于真实 matchup，firstPlayer / final turn 仍只按代表 replay 审计，不外推为全量结论。</div></section>
 
-<section class="panel" id="personal-winrates"><div class="heading"><div><p class="eyebrow">PLAYER CONSTRUCTION UI · FINAL SUBMISSION META</p><h2>个人构筑与公开 Meta 胜率</h2></div><p>筛选会同步作用于本表和逐人 exact deck。</p></div><div class="toolbar"><input id="search" type="search" placeholder="搜索选手、Team ID、牌型或 rank…"><select id="archetype-filter"><option value="">全部牌型</option>{''.join(f'<option value="{html.escape(name)}">{html.escape(name)}</option>' for name, _ in ordered_archetypes)}</select><span id="visible-count" class="count-visible">显示 100</span></div><div class="table-scroll"><table class="wide-table summary-table"><thead><tr><th>Rank</th><th>选手</th><th>牌型</th><th>榜分</th><th>Meta 场次</th><th>W-L-D</th><th>胜率</th><th>deck evidence</th></tr></thead><tbody>{''.join(player_row(player, 'data-player-row') for player in players)}</tbody></table></div></section>
+<section class="panel" id="personal-winrates"><div class="heading"><div><p class="eyebrow">PLAYER CONSTRUCTION UI · FINAL SUBMISSION META</p><h2>个人构筑与双分段胜率</h2></div><p>胜率按 0726 视觉合同分级高亮；高分段 = 对手 submission 属于冻结 Top 100，低分段 = 其余公开 Episode 对手。</p></div><div class="toolbar"><input id="search" type="search" placeholder="搜索选手、Team ID、牌型或 rank…"><select id="archetype-filter"><option value="">全部牌型</option>{''.join(f'<option value="{html.escape(name)}">{html.escape(name)}</option>' for name, _ in ordered_archetypes)}</select><span id="visible-count" class="count-visible">显示 100</span></div><div class="person-grid">{''.join(person_cards)}</div><div class="table-scroll"><table class="wide-table summary-table"><thead><tr><th>Rank</th><th>选手</th><th>牌型</th><th>榜分</th><th>Meta 场次</th><th>W-L-D</th><th>胜率</th><th>deck evidence</th></tr></thead><tbody>{''.join(player_row(player, 'data-player-row') for player in players)}</tbody></table></div></section>
 
 <section class="panel" id="construction-distribution"><div class="heading"><div><p class="eyebrow">CONSTRUCTION DISTRIBUTION</p><h2>构筑使用分布</h2></div><p>牌型只由 0727 最终 submission 的代表 replay exact 60-card deck 分类。</p></div><div class="archetype-grid">{''.join(archetype_cards)}</div></section>
 
 <section class="panel" id="snapshot-comparison"><div class="heading"><div><p class="eyebrow">SNAPSHOT DELTA</p><h2>2026-07-26 → 2026-07-27 同榜选手与卡组变化</h2></div><p>以 0726 已发布报告的 rank、牌型和 deck hash 前缀为基线。</p></div><div class="metrics comparison-metrics"><div class="metric"><b>{len(joined)}</b><span>两次同时上榜</span></div><div class="metric"><b>{len(changed)}</b><span>deck hash 变化</span></div><div class="metric"><b>{len(entered)}</b><span>新进榜</span></div><div class="metric"><b>{len(exited)}</b><span>退出榜</span></div></div><p class="muted"><b>新进榜：</b>{html.escape('、'.join(str(player['team_name']) for player in entered) or '—')}<br><b>退出榜：</b>{html.escape('、'.join(exited) or '—')}</p><label><input id="changed-only" type="checkbox"> 只看卡组变化</label><div class="table-scroll"><table class="comparison-table"><thead><tr><th>选手</th><th>Rank</th><th>牌型</th><th>deck hash</th></tr></thead><tbody>{''.join(comparison_rows)}</tbody></table></div></section>
 
-<section class="panel" id="matchup-boundary"><div class="heading"><div><p class="eyebrow">MATCH-UP / PACING / TURN ORDER</p><h2>对局矩阵与节奏证据边界</h2></div><p>保留 0726 的分析入口，但只展示 0727 快照实际持久化的证据。</p></div><div class="unavailable-grid"><article><b>牌型 Match-up 矩阵</b><p>本次快照只保留逐 submission W-L-D 聚合，没有逐局 opponent submission，无法诚实重建。</p></article><article><b>Top 20 直接 Match-up</b><p>同上；n=0 不等于 0% 胜率，因此不生成伪矩阵。</p></article><article><b>先后攻与墙钟</b><p>代表 replay 可证明 deck，但当前 snapshot 未保留完整 firstPlayer/turn/endTime 审计字段。</p></article></div></section>
+<section class="panel" id="matchup-boundary"><div class="heading"><div><p class="eyebrow">{len(archetype_names)} ARCHETYPE MATRIX · EXACT SUBMISSIONS</p><h2>牌型对战胜率热力图</h2></div><p>行是当前玩家牌型，列是对手牌型；只统计 leaderboard 冻结时间以前、双方均为本次冻结最终 submission 的 PUBLIC + COMPLETED Meta。</p></div><div class="table-scroll matrix-scroll"><table class="matrix-table heatmap"><thead><tr><th>行 / 列</th>{matrix_head}</tr></thead><tbody>{archetype_matrix_rows}</tbody></table></div><p class="muted">共 {top100_player_views:,} 个 Top100 玩家视角；每格显示胜率、W-L-D 与 n。n=0 显示“—”，不冒充 0% 胜率。</p><h3>Top 20 直接 Match-up</h3><div class="table-scroll"><table class="top20-table"><thead><tr><th>Rank</th><th>选手</th><th>牌型</th><th>Meta 场次</th><th>W-L-D</th><th>胜率</th></tr></thead><tbody>{top20_rows}</tbody></table></div><div class="table-scroll"><table class="top20-matrix heatmap"><thead><tr><th>行 / 列</th>{top20_head}</tr></thead><tbody>{top20_matrix_rows}</tbody></table></div><div class="snapshot-note"><b>先后攻/回合护栏：</b>逐局 Meta 已补齐 opponent 与时间字段，但 firstPlayer 和 final turn 只存在于 replay；当前只有每个 submission 一份代表 replay，因此不将其扩张为全量先后攻或节奏结论。</div></section>
 
-<section class="panel" id="card-pool"><div class="heading"><div><p class="eyebrow">100 AUDITED EXACT DECKS · 0725 CARD-POOL UI</p><h2>Top 100 全局构筑卡池</h2></div><p>恢复 0725 的卡图式 Card Pool：按“包含该卡的代表 deck 数”排序，并显示 Card ID、类别和覆盖率。</p></div><div class="pool-grid">{''.join(pool_cards)}</div></section>
+<section class="panel" id="card-pool"><div class="heading"><div><p class="eyebrow">6,000 SLOTS · 0725 CARD-POOL UI</p><h2>Top 100 全局构筑卡池</h2></div><p>100 份 audited exact 60-card deck 的并集共有 {len(presence)} 个 Card ID；投入分布按每份构筑中该卡的张数统计。</p></div><div class="investment-grid">{investment_html}</div><div class="table-scroll card-pool-scroll"><table class="pool-table"><thead><tr><th>卡牌</th><th>卡面资料</th><th>使用构筑</th><th>覆盖率</th><th>合计投入</th><th>使用时均值</th><th>中位数</th><th>范围</th><th>投入分布</th></tr></thead><tbody>{''.join(pool_cards)}</tbody></table></div></section>
 
 <section class="panel" id="archetype-builds"><div class="heading"><div><p class="eyebrow">ARCHETYPE BUILD AUDIT</p><h2>各牌型典型构筑卡池</h2></div><p>每张卡的 n 表示该牌型中有多少套代表 deck 包含它；不是平均投入张数或因果强度。</p></div>{''.join(archetype_profiles)}</section>
 
@@ -352,10 +627,10 @@ def _render_report(
 
 <section class="panel" id="player-details"><div class="heading"><div><p class="eyebrow">PLAYER DETAIL / EXACT DECK</p><h2>逐人 exact 60-card deck 展开</h2></div><p>点击展开；卡图、分组、张数、Card ID 与大图预览沿用 0726。</p></div><div class="toolbar"><button id="open-visible" type="button">展开当前筛选</button><button id="close-all" type="button">全部收起</button></div><div class="person-grid">{''.join(detail_blocks)}</div></section>
 
-<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{REPORT_ID}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均绑定最终 submission；只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配的公开 Episode Meta。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>.tmp/environment_daily_0727/snapshot.json</code>；生成入口：<code>data/processed/environment_daily/generate_live_snapshot.py</code>。</li></ul></section>
+<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{REPORT_ID}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均绑定最终 submission；只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>.tmp/environment_daily_0727/snapshot.json</code>；逐局 Meta 缓存：<code>.tmp/environment_daily_0727/meta_views.json</code>；生成入口：<code>data/processed/environment_daily/generate_live_snapshot.py</code>。</li></ul></section>
 </main><script>
 const search=document.getElementById('search'), archetype=document.getElementById('archetype-filter'), visible=document.getElementById('visible-count');
-function apply(){{const q=search.value.trim().toLowerCase();let n=0;document.querySelectorAll('[data-player-row],[data-player-detail]').forEach(row=>{{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok&&row.matches('[data-player-row]'))n++;}});visible.textContent=`显示 ${{n}}`;}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);apply();
+function apply(){{const q=search.value.trim().toLowerCase();let n=0;document.querySelectorAll('[data-player-row],[data-player-detail],[data-person-card]').forEach(row=>{{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok&&row.matches('[data-player-row]'))n++;}});visible.textContent=`显示 ${{n}}`;}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);apply();
 document.getElementById('changed-only').addEventListener('change',event=>document.querySelectorAll('.comparison-table tbody tr').forEach(row=>row.hidden=event.target.checked&&!row.classList.contains('changed-deck')));
 document.getElementById('open-visible').addEventListener('click',()=>document.querySelectorAll('[data-player-detail]:not([hidden])').forEach(row=>row.open=true));document.getElementById('close-all').addEventListener('click',()=>document.querySelectorAll('[data-player-detail]').forEach(row=>row.open=false));
 const preview=document.createElement('div');preview.className='card-preview';preview.innerHTML='<img alt="卡牌大图预览" width="234" height="328"><b></b>';document.body.appendChild(preview);const previewImg=preview.querySelector('img'),previewName=preview.querySelector('b');let active=null;function position(e){{const w=preview.offsetWidth||250,h=preview.offsetHeight||370,m=14;let l=e.clientX+18,t=e.clientY+18;if(l+w+m>innerWidth)l=e.clientX-w-18;if(t+h+m>innerHeight)t=innerHeight-h-m;preview.style.left=`${{Math.max(m,l)}}px`;preview.style.top=`${{Math.max(m,t)}}px`;}}function show(thumb,e){{const img=thumb.querySelector('img');if(!img||img.hidden)return;active=thumb;previewImg.src=thumb.dataset.cardPreviewUrl||img.src;previewName.textContent=thumb.dataset.cardName||img.alt;preview.classList.add('visible');position(e);}}function hide(){{active=null;preview.classList.remove('visible');}}document.addEventListener('pointerover',e=>{{const t=e.target.closest&&e.target.closest('.card-thumb');if(t&&t!==active)show(t,e);}});document.addEventListener('pointermove',e=>{{if(active)position(e);}});document.addEventListener('pointerout',e=>{{if(active&&!e.relatedTarget?.closest?.('.card-thumb'))hide();}});
@@ -431,7 +706,9 @@ def collect(work: Path, report: Path) -> None:
     for player in players:
         player["archetype"] = _archetype(player["deck"], catalog)
     state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
-    _render_report(state, players, catalog, report)
+    meta_path = work / "meta_views.json"
+    meta_payload = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else None
+    _render_report(state, players, catalog, report, meta_payload)
 
 
 if __name__ == "__main__":
@@ -443,6 +720,8 @@ if __name__ == "__main__":
     if args.render_only:
         snapshot = json.loads((args.work / "snapshot.json").read_text(encoding="utf-8"))
         snapshot_players = [snapshot["players"][str(rank)] for rank in range(1, 101)]
-        _render_report(snapshot, snapshot_players, _card_catalog(), args.report)
+        meta_path = args.work / "meta_views.json"
+        meta_payload = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else None
+        _render_report(snapshot, snapshot_players, _card_catalog(), args.report, meta_payload)
     else:
         collect(args.work, args.report)
