@@ -20,7 +20,7 @@ code { overflow-wrap: anywhere; }
 <body>
 <header>
 <h1>0013 Semantic Goal Policy</h1>
-<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V4 completed the reproducible three-epoch M0 minimum; V5 extends the same M0 contract to a monitored 100-epoch ceiling. No candidate or strength result yet.</p>
+<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V5 runs the monitored 100-epoch M0 ceiling; V6 runs the complete existing M5 ladder in parallel. F1 and its richer feature dataset are deferred. No candidate or strength result yet.</p>
 <nav>
 <a href="DESIGN.md">Full Markdown contract</a>
 <a href="decisions/001_pre_run_protocol.md">Frozen protocol</a>
@@ -84,13 +84,16 @@ unknown.</p>
 <tr><td>M2</td><td>M1 + masked registered-deck semantic mean</td><td>none</td><td>inactive</td></tr>
 <tr><td>M3</td><td>M2 + four learned retrieval slots</td><td>registered deck K/V</td><td>inactive</td></tr>
 <tr><td>M4</td><td>M3 + causal ledger tokens</td><td>deck + ledger K/V</td><td>inactive</td></tr>
-<tr><td>M5</td><td>M4 + actor-visible events and relation bias</td><td>deck + ledger K/V</td><td>finite, uncalibrated</td></tr>
+<tr><td>M5</td><td>M4 + actor-visible events and per-head directed entity relation attention bias</td><td>deck + ledger K/V</td><td>finite, uncalibrated</td></tr>
 </tbody>
 </table>
 <p>All variants use <code>d_model=384</code>, six pre-norm state layers, eight heads, FFN 1536, and
 two option cross-attention layers. M0 is the new 0013-contract baseline, not a strict causal
 comparison to 0012 V5. A strict control would require a separate <code>M0_0012_matched</code> with
-0012's 320-wide, four-layer capacity and matched budget.</p>
+0012's 320-wide, four-layer capacity and matched budget. M2's registered-deck masked summary is
+cumulative through M3-M5. M5 applies each available typed entity relation as learned per-head bias
+at its directed source/target attention pair; type zero contributes no bias. Richer event and option
+relations remain outside the accepted V3 schema and belong to a future F1 dataset contract.</p>
 </section>
 <section>
 <h2>Goal And Action Decisions</h2>
@@ -129,9 +132,13 @@ model. V4 completed all three epochs: validation loss improved
 <code>1.12633 -&gt; 1.05466 -&gt; 1.00068</code> and validation exact action improved
 <code>0.55279 -&gt; 0.58960 -&gt; 0.61434</code>. V5 restarts from the same bound initial model and keeps
 the dataset, M0 architecture, batch 64, seed, optimizer parameters, AMP and deterministic behavior
-unchanged; only the ceiling changes to 100 epochs with manual overfitting monitoring. W&amp;B
-identity, tags and Chinese Notes are mirrored into run config, and live progress uses
-<code>progress/*</code> on <code>progress/iteration</code>. M1-M5 are paused.</p>
+unchanged; only the ceiling changes to 100 epochs with manual overfitting monitoring. V6
+independently initializes M5 with the same seed and optimizer settings, enables all existing ladder
+features, and uses the same 100-epoch ceiling. Its real V3 batch-64 AMP optimizer smoke completed
+with finite loss and 1.804 GiB peak CUDA allocation while V5 remained active. W&amp;B identity, tags
+and Chinese Notes are mirrored into each run config, and live progress uses
+<code>progress/*</code> on <code>progress/iteration</code>. M1-M4 and F1 are paused; this M5 run does
+not introduce F1's richer feature schema or board-conditioned Goal query.</p>
 </section>
 </body>
 </html>
