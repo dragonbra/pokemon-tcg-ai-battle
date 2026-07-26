@@ -101,6 +101,29 @@ class SemanticGoalPolicy(nn.Module):
             result = result + self.option_numeric(batch["options_num"])
         return result
 
+    def teacher_logits(self, batch: dict[str, Tensor], targets: Tensor) -> Tensor:
+        encoded = self.encode(batch)
+        options = encoded.options
+        batch_size, option_count, _ = options.shape
+        keys = self.pointer_key(options)
+        hidden = torch.tanh(self.decoder_init(encoded.state))
+        chosen = torch.zeros(batch_size, option_count, dtype=torch.bool, device=options.device)
+        outputs: list[Tensor] = []
+        rows = torch.arange(batch_size, device=options.device)
+        for step in range(targets.size(1)):
+            pointer = (self.pointer_query(hidden).unsqueeze(1) * keys).sum(-1) / self.config.d_model**0.5
+            pointer = (pointer + self.option_bias(options).squeeze(-1)).masked_fill(~batch["option_mask"] | chosen, -torch.inf)
+            stop = self.stop_head(hidden)
+            stop = stop.masked_fill((step < batch["min_count"]).unsqueeze(-1), -torch.inf)
+            outputs.append(torch.cat((pointer, stop), dim=1))
+            target = targets[:, step]
+            valid = target < option_count
+            safe = target.clamp(0, option_count - 1)
+            selected = options[rows, safe]
+            hidden = torch.where(valid.unsqueeze(-1), self.decoder_cell(selected, hidden), hidden)
+            chosen.scatter_(1, safe.unsqueeze(1), chosen.gather(1, safe.unsqueeze(1)) | valid.unsqueeze(1))
+        return torch.stack(outputs, dim=1)
+
     def encode(self, batch: dict[str, Tensor]) -> PolicyEncoding:
         batch_size = batch["state_num"].size(0)
         state = self.state_token.expand(batch_size, -1, -1) + self._cats(batch["state_cat"]).unsqueeze(1) + self.state_numeric(batch["state_num"]).unsqueeze(1)
