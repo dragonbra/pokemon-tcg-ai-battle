@@ -17,7 +17,6 @@ from evaluation.cards import card_image_url, load_card_catalog
 from evaluation.metrics.profiles import available_metric_profiles
 from evaluation.runner.batch import BatchConfig, default_worker_count, run_batch
 from evaluation.runtime import assert_cg_compatible
-from rl_environment.runs import numbered_artifact_path
 
 
 EXPECTED_FIELDS = frozenset(
@@ -27,9 +26,11 @@ DEFAULT_CATALOG = Path(__file__).resolve().parent / "configs" / "opponents.json"
 ARENA_OPPONENTS_RELATIVE = Path("arena") / "opponents"
 DEFAULT_MAX_STEPS = 1_000
 MIN_RESEARCH_GAMES = 10
-RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl_runs"
-_NUMBERED_OUTPUT = re.compile(r"^(?P<number>\d{4})-(?P<label>.+)$")
-_VERSION_REPORT = re.compile(r"^V[1-9]\d*(?:_[a-z0-9][a-z0-9_]*)?$", re.IGNORECASE)
+RESEARCH_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "experiments"
+_PROJECT_ID = re.compile(r"^\d{4}_[a-z0-9]+(?:_[a-z0-9]+)*$")
+_LEGACY_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / "rl_runs" / "evaluation"
+_TEMP_EVALUATION_ROOT = Path(__file__).resolve().parents[1] / ".tmp" / "evaluation"
+_VERSION_REPORT = re.compile(r"^V[1-9]\d*_[a-z0-9]+(?:_[a-z0-9]+)*$")
 
 
 def _read_catalog_entries(path: Path) -> list[dict[str, Any]]:
@@ -229,45 +230,51 @@ def _validate_positive(value: int, argument: str) -> None:
         raise PackageValidationError(f"{argument} must be at least one")
 
 
-def _numbered_research_output_root(requested: Path) -> Path:
-    """Allocate a globally numbered report below ``rl_runs``."""
-    return numbered_artifact_path(requested, "evaluation")
-
-
 def _evaluation_output_paths(requested: Path) -> tuple[Path, Path | None]:
-    """Resolve formal reports to ``<project>/V<n>_<tag>.html``.
-
-    Non-formal outputs, including ``.tmp/evaluation``, retain the isolated
-    ``run-<id>/report.html`` layout used by smoke and debugging runs.
-    """
-    normalized = _numbered_research_output_root(requested)
-    evaluation_root = (Path(__file__).resolve().parents[1] / "rl_runs" / "evaluation").resolve()
-    resolved = normalized.resolve()
+    """Classify immutable project reports without changing temporary output layout."""
+    resolved = requested.resolve()
+    formal_root = RESEARCH_EVALUATION_ROOT.resolve()
+    legacy_root = _LEGACY_EVALUATION_ROOT.resolve()
     try:
-        relative = resolved.relative_to(evaluation_root)
+        resolved.relative_to(legacy_root)
     except ValueError:
-        return normalized, None
+        pass
+    else:
+        raise PackageValidationError("legacy rl_runs/evaluation reports are read-only")
 
-    if len(relative.parts) != 2:
+    try:
+        relative = resolved.relative_to(formal_root)
+    except ValueError:
+        try:
+            resolved.relative_to(_TEMP_EVALUATION_ROOT.resolve())
+        except ValueError as exc:
+            raise PackageValidationError(
+                "temporary evaluation output must be a directory below .tmp/evaluation"
+            ) from exc
+        if requested.suffix.lower() == ".html":
+            raise PackageValidationError(
+                "temporary evaluation output must be an output-root directory, not a flat report"
+            )
+        return requested, None
+
+    if len(relative.parts) != 3 or relative.parts[1] != "evaluation":
         raise PackageValidationError(
             "formal evaluation output must be "
-            "rl_runs/evaluation/<000N-project>/V<n>_<snake_case_tag>[.html]"
+            "experiments/<0000_ascii_snake_case>/evaluation/V<n>_<snake_case_tag>.html"
         )
-    project_name, requested_name = relative.parts
-    if _NUMBERED_OUTPUT.fullmatch(project_name) is None:
+    project_id, _, requested_name = relative.parts
+    if _PROJECT_ID.fullmatch(project_id) is None:
         raise PackageValidationError(
-            "formal evaluation project must use a 0001-project style name"
+            "formal evaluation project must use a 0000_ascii_snake_case project ID"
         )
     version_name = (
-        Path(requested_name).stem
-        if requested_name.lower().endswith(".html")
-        else requested_name
+        Path(requested_name).stem if requested_name.lower().endswith(".html") else requested_name
     )
     if _VERSION_REPORT.fullmatch(version_name) is None:
         raise PackageValidationError(
             "formal evaluation report must match V<n>_<snake_case_tag>.html"
         )
-    report_path = evaluation_root / project_name / f"{version_name}.html"
+    report_path = formal_root / project_id / "evaluation" / f"{version_name}.html"
     return report_path.parent, report_path
 
 
@@ -319,7 +326,7 @@ def _parser() -> argparse.ArgumentParser:
         required=True,
         help=(
             "评测输出；正式路径使用 "
-            "rl_runs/evaluation/<000N-project>/V<n>_<tag>.html，临时路径创建 run-id 目录"
+            "experiments/<project_id>/evaluation/V<n>_<tag>.html，临时路径创建 run-id 目录"
         ),
     )
     run.add_argument("--control", type=Path, help="仅用于报告对比展示的标准 package")

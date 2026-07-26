@@ -1,0 +1,25 @@
+{
+  "eligible_groups_by_date": {
+    "2026-07-18": 320,
+    "2026-07-19": 420,
+    "2026-07-20": 299,
+    "2026-07-21": 276,
+    "2026-07-22": 229,
+    "2026-07-23": 174,
+    "2026-07-24": 187,
+    "2026-07-25": 205
+  },
+  "eligible_unique_complete_yushin_winner_groups": 2110,
+  "ineligible_noncomplete_episodes": 27,
+  "notes": [
+    "The source reader scanned all eight immutable daily archives from 2026-07-18 through 2026-07-25 and the declared 2026-07-24 patch.",
+    "Incomplete TIMEOUT/ERROR trajectories are skipped and audited before finite complete-reward validation.",
+    "This file contains aggregates and commitments only; no episode body or private split assignment."
+  ],
+  "protocol_sha256": "da6482cf2d4cdc8d9e56fd4c03431e60dbf63b8327720c83185e907a039d44d3",
+  "schema_version": "ptcg_semantic_goal_source_audit_v1",
+  "seen_canonical_episodes": 36700,
+  "source_manifest_sha256": "f0ac5c654b82f05ffa3be8fa4e50c6d71f9f132b685217aa40cd9f72cc49818b",
+  "validated_spool_bytes": 4300991252,
+  "winner_semantics": "unique maximum finite reward after complete all-DONE terminal validation"
+}

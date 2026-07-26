@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import uuid
 import time
 import uuid
 from collections.abc import Iterator
@@ -19,15 +21,29 @@ from evaluation.metrics import GameContext, GameMetric
 from evaluation.metrics.profiles import get_metric_profile
 from evaluation.metrics.registry import MetricRegistry, create_metric_registry
 from evaluation.packages.loader import SubmissionPackage
-from evaluation.reporting import (
-    ReportData,
-    json_ready,
-    write_evaluation_index,
-    write_report,
-    write_report_file,
-)
+from evaluation.reporting import ReportData, json_ready, write_evaluation_index, write_report
+from evaluation.reporting.index import write_report_file_atomic
 from evaluation.runner.models import GameRequest, GameResult
 from evaluation.traces.store import TraceStore
+from rl_environment.runs import project_version_paths
+
+
+_INITIALIZED_MANIFEST_FIELDS = (
+    "schema_version",
+    "project_id",
+    "objective",
+    "deck",
+    "expert_source",
+    "dataset_contract",
+    "engine_revision",
+    "opponent_pool_snapshot",
+    "status",
+    "created_at",
+    "paths",
+)
+_INITIALIZED_VERSION_STATES = frozenset(
+    {"allocated", "running", "completed", "failed", "interrupted"}
+)
 
 
 def default_worker_count() -> int:
@@ -87,8 +103,7 @@ def run_batch(config: BatchConfig) -> BatchResult:
     if explicit_report_path is not None:
         if explicit_report_path.suffix.lower() != ".html":
             raise ValueError("evaluation report path must end with .html")
-        if explicit_report_path.exists():
-            raise ValueError(f"evaluation report already exists: {explicit_report_path}")
+        _validate_formal_destination(explicit_report_path)
         report_root = explicit_report_path.parent
         final_report_path = explicit_report_path
     else:
@@ -174,9 +189,12 @@ def run_batch(config: BatchConfig) -> BatchResult:
         if explicit_report_path is None:
             write_report(report_data, report_root)
         else:
-            write_report_file(report_data, explicit_report_path)
-            if config.update_project_index:
-                write_evaluation_index(explicit_report_path.parent)
+            _finalize_formal_report(
+                report_data,
+                explicit_report_path,
+                run_id=run_id,
+                update_project_index=config.update_project_index,
+            )
         return BatchResult(
             run_id=run_id,
             manifest=manifest,
@@ -190,6 +208,134 @@ def run_batch(config: BatchConfig) -> BatchResult:
         if not config.keep_temp:
             store.cleanup()
             _cleanup_empty_run_temp_root(temp_root)
+
+
+def _validate_formal_destination(report_path: Path) -> None:
+    paths = _formal_version_paths(report_path)
+    if report_path.exists():
+        raise ValueError(f"evaluation report already exists: {report_path}")
+    manifest_path = paths.project_archive / "manifest.json"
+    backlink = paths.artifact / "evaluation.json"
+    if backlink.exists():
+        raise ValueError(f"evaluation provenance already exists: {backlink}")
+    required = (manifest_path, paths.run_root, paths.artifact, paths.status)
+    initialized = all(
+        path.is_file() if path in (manifest_path, paths.status) else path.is_dir()
+        for path in required
+    )
+    if not initialized:
+        raise ValueError(
+            "formal evaluation runtime is not initialized; expected project manifest, "
+            "version root, artifact directory, and status.json"
+        )
+    manifest = _read_json_object(manifest_path, "manifest")
+    invalid_manifest = (
+        manifest.get("project_id") != paths.project_id
+        or manifest.get("schema_version") != "ptcg_experiment_project_v1"
+        or manifest.get("status") != "initialized"
+        or any(
+            field not in manifest
+            or manifest[field] in (None, "")
+            for field in _INITIALIZED_MANIFEST_FIELDS
+        )
+        or not isinstance(manifest.get("paths"), dict)
+    )
+    if invalid_manifest:
+        raise ValueError(f"formal evaluation manifest is invalid: {manifest_path}")
+    status = _read_json_object(paths.status, "status")
+    if (
+        status.get("version") != paths.version_name
+        or status.get("state") not in _INITIALIZED_VERSION_STATES
+    ):
+        raise ValueError(f"formal evaluation status is invalid: {paths.status}")
+
+
+def _read_json_object(path: Path, kind: str) -> dict[str, object]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"formal evaluation {kind} is unreadable: {path}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"formal evaluation {kind} must be a JSON object: {path}")
+    return value
+
+
+def _finalize_formal_report(
+    report_data: ReportData,
+    report_path: Path,
+    *,
+    run_id: str,
+    update_project_index: bool,
+) -> None:
+    """Publish a completed formal report before its derived index and provenance backlink."""
+    write_report_file_atomic(report_data, report_path)
+    write_evaluation_index(report_path.parent)
+    paths = _formal_version_paths(report_path)
+    _write_evaluation_backlink_atomic(
+        paths,
+        run_id=run_id,
+        report_sha256=hashlib.sha256(report_path.read_bytes()).hexdigest(),
+    )
+
+
+def _write_evaluation_backlink_atomic(
+    paths,
+    *,
+    run_id: str,
+    report_sha256: str,
+) -> None:
+    backlink = paths.artifact / "evaluation.json"
+    temporary = backlink.with_name(f".{backlink.name}.{uuid.uuid4().hex}.tmp")
+    payload = {
+        "report": str(paths.evaluation.relative_to(Path(__file__).resolve().parents[2])),
+        "report_sha256": report_sha256,
+        "run_id": run_id,
+        "version": paths.version_name,
+    }
+    try:
+        with temporary.open("x", encoding="utf-8") as output:
+            json.dump(payload, output, ensure_ascii=False, indent=2, sort_keys=True)
+            output.write("\n")
+            output.flush()
+            os.fsync(output.fileno())
+        try:
+            os.link(temporary, backlink)
+        except FileExistsError as exc:
+            raise FileExistsError(
+                f"evaluation provenance already exists: {backlink}"
+            ) from exc
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _formal_version_paths(report_path: Path):
+    repository_root = Path(__file__).resolve().parents[2]
+    experiments_root = (repository_root / "experiments").resolve()
+    try:
+        relative = report_path.resolve().relative_to(experiments_root)
+    except ValueError as exc:
+        raise ValueError(
+            "explicit report_path must be a formal evaluation report path below experiments"
+        ) from exc
+    if len(relative.parts) != 3 or relative.parts[1] != "evaluation":
+        raise ValueError(
+            "formal evaluation report path must be "
+            "experiments/<project_id>/evaluation/V<n>_<tag>.html"
+        )
+    project_id, _, report_name = relative.parts
+    if Path(report_name).suffix.lower() != ".html":
+        raise ValueError("evaluation report path must end with .html")
+    try:
+        paths = project_version_paths(project_id, Path(report_name).stem)
+    except ValueError as exc:
+        raise ValueError(
+            f"invalid version or project in formal evaluation path: {report_path}"
+        ) from exc
+    if paths.evaluation.resolve() != report_path.resolve():
+        raise ValueError(
+            f"formal evaluation report path does not match runtime version: {report_path}"
+        )
+    return paths
 
 
 def _metric_registry(

@@ -11,12 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 import warnings
 
-from rl_environment.runs import (
-    EXPERIMENT_ROOT,
-    RUNS_ROOT,
-    WANDB_PROJECT,
-    wandb_run_id,
-)
+from rl_environment.runs import PROJECT_ID, REPOSITORY_ROOT, VERSIONED_ATTEMPT, WANDB_PROJECT, wandb_run_id
 
 
 WandbMode = Literal["disabled", "offline", "online"]
@@ -83,6 +78,8 @@ class WandbSink:
     def __init__(self, settings: WandbSettings, *, sdk: Any | None = None) -> None:
         self.settings = settings
         self._failed = False
+        self._failure: str | None = None
+        self._closed = False
         self._run: Any | None = None
         if settings.mode == "disabled":
             return
@@ -114,6 +111,7 @@ class WandbSink:
             self._define_axes()
         except Exception as error:  # pragma: no cover - exact SDK failures vary
             self._failed = True
+            self._failure = str(error)
             warnings.warn(f"W&B initialization failed; continuing locally: {error}")
 
     @property
@@ -131,15 +129,35 @@ class WandbSink:
         self._run.define_metric("value/*", step_metric="trainer/epoch")
         self._run.define_metric("ppo/*", step_metric="trainer/update")
         self._run.define_metric("rollout/*", step_metric="env/decisions")
+        self._run.define_metric("eval/*", step_metric="env/episodes")
+        self._run.define_metric("representation/*", step_metric="trainer/epoch")
+        self._run.define_metric("counterfactual/*", step_metric="trainer/epoch")
+        self._run.define_metric("invariance/*", step_metric="trainer/epoch")
         self._run.define_metric("system/*", step_metric="trainer/epoch")
+
+    def status(self) -> dict[str, Any]:
+        state = "failed" if self._failed else "synced" if self._closed else "active"
+        if self._run is None and not self._failed:
+            state = "disabled"
+        url = getattr(self._run, "url", None) if self._run is not None else None
+        return {
+            "project": self.settings.project,
+            "entity": self.settings.entity,
+            "run_id": self.settings.run_id,
+            "url": url,
+            "state": state,
+            "reason": self._failure,
+            "sync_state": state,
+            "failure": self._failure,
+        }
 
     def log(self, record: dict[str, Any]) -> None:
         if not self.active:
             return
-        axis = "trainer/update" if self.settings.job_type == "ppo_train" else "trainer/epoch"
-        payload: dict[str, int | float] = {axis: int(record["step"])}
+        axis = _metric_axis(self.settings.job_type, record)
+        payload: dict[str, int | float] = {axis: int(record.get(axis, record["step"]))}
         for key, value in record.items():
-            if key in {"step", "timestamp"} or isinstance(value, bool):
+            if key in {"step", "timestamp", axis} or isinstance(value, bool):
                 continue
             if isinstance(value, (int, float)) and math.isfinite(float(value)):
                 payload[_wandb_metric_name(self.settings.job_type, key)] = value
@@ -147,6 +165,7 @@ class WandbSink:
             self._run.log(payload)
         except Exception as error:
             self._failed = True
+            self._failure = str(error)
             warnings.warn(f"W&B logging failed; continuing locally: {error}")
 
     def set_summary(self, values: dict[str, Any]) -> None:
@@ -160,6 +179,7 @@ class WandbSink:
                     self._run.summary[key] = value
         except Exception as error:
             self._failed = True
+            self._failure = str(error)
             warnings.warn(f"W&B summary update failed; continuing locally: {error}")
 
     def close(self, exit_code: int = 0) -> None:
@@ -167,7 +187,10 @@ class WandbSink:
             return
         try:
             self._run.finish(exit_code=exit_code)
+            self._closed = True
         except Exception as error:  # pragma: no cover - exact SDK failures vary
+            self._failed = True
+            self._failure = str(error)
             warnings.warn(f"W&B finish failed; local metrics are complete: {error}")
 
 
@@ -192,24 +215,33 @@ def create_wandb_sink_from_environment(
 def _auto_tracking_allowed(jsonl_path: Path) -> bool:
     if os.environ.get("WANDB_ALLOW_NONCANONICAL", "0") == "1":
         return True
-    try:
-        jsonl_path.relative_to(EXPERIMENT_ROOT.resolve())
-    except ValueError:
-        return False
-    return True
+    return _canonical_version_location(jsonl_path) is not None
 
 
 def _run_location(jsonl_path: Path) -> tuple[str, str, str]:
+    canonical = _canonical_version_location(jsonl_path)
+    if canonical is not None:
+        project, version, run_root = canonical
+        return project, version, str(run_root / "wandb")
+    group = "local-smoke"
+    name = jsonl_path.parent.name or "training"
+    return group, name, str(jsonl_path.parent / "wandb")
+
+
+def _canonical_version_location(jsonl_path: Path) -> tuple[str, str, Path] | None:
+    path = jsonl_path.resolve()
     try:
-        relative = jsonl_path.relative_to(EXPERIMENT_ROOT.resolve())
+        relative = path.relative_to(REPOSITORY_ROOT.resolve() / "rl_runs")
     except ValueError:
-        group = "local-smoke"
-        name = jsonl_path.parent.name or "training"
-        return group, name, str(jsonl_path.parent / "wandb")
-    if len(relative.parts) >= 3:
-        experiment, version = relative.parts[:2]
-        return experiment, version, str(RUNS_ROOT / "wandb" / experiment / version)
-    return "local-smoke", jsonl_path.parent.name, str(jsonl_path.parent / "wandb")
+        return None
+    if len(relative.parts) != 5:
+        return None
+    project, versions, version, artifact, filename = relative.parts
+    if versions != "versions" or artifact != "artifact" or filename != "training_metrics.jsonl":
+        return None
+    if PROJECT_ID.fullmatch(project) is None or VERSIONED_ATTEMPT.fullmatch(version) is None:
+        return None
+    return project, version, path.parents[1]
 
 
 def _load_config(jsonl_path: Path) -> dict[str, Any]:
@@ -249,6 +281,16 @@ def _redact_config(value: Any, *, key: str = "") -> Any:
 
 def _infer_job_type(metrics: dict[str, Any]) -> str:
     keys = tuple(metrics)
+    if any(key.startswith("rollout/") for key in keys):
+        return "rollout_train"
+    if any(key.startswith("eval/") for key in keys):
+        return "eval"
+    if any(key.startswith("representation/") for key in keys):
+        return "representation"
+    if any(key.startswith("counterfactual/") for key in keys):
+        return "counterfactual"
+    if any(key.startswith("invariance/") for key in keys):
+        return "invariance"
     if any("ppo" in key for key in keys):
         return "ppo_train"
     if any("value_mae" in key or "value_rmse" in key for key in keys):
@@ -256,7 +298,31 @@ def _infer_job_type(metrics: dict[str, Any]) -> str:
     return "bc_train"
 
 
+def _metric_axis(job_type: str, record: dict[str, Any]) -> str:
+    if job_type == "ppo_train":
+        return "trainer/update"
+    if job_type == "rollout_train":
+        return "env/decisions"
+    if job_type == "eval":
+        return "env/episodes"
+    return "trainer/epoch"
+
+
 def _wandb_metric_name(job_type: str, key: str) -> str:
+    if key.startswith((
+        "bc/",
+        "value/",
+        "ppo/",
+        "rollout/",
+        "eval/",
+        "representation/",
+        "counterfactual/",
+        "invariance/",
+        "system/",
+        "env/",
+        "trainer/",
+    )):
+        return key
     if job_type == "bc_train":
         if key in {"train/loss", "train/bc_loss"}:
             return "bc/train/loss"

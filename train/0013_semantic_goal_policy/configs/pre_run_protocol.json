@@ -1,0 +1,103 @@
+{
+  "event_window": {
+    "max_events": 64,
+    "selection": "newest",
+    "visibility": "actor_visible"
+  },
+  "formal_evaluation": {
+    "games_per_enabled_opponent": 20,
+    "games_per_seat": 10,
+    "metric_profile": "auto_iteration_v8_setup_relay",
+    "metric_revision": 7,
+    "seat_schedule": "alternating",
+    "seed_formula": "20260726 + game_index"
+  },
+  "gpu_time": {
+    "active_seconds_target": 36000,
+    "intervals": "non_overlapping_healthy_gpu_work",
+    "merge_gap_seconds_max": 60,
+    "report_separately": [
+      "idle",
+      "failure",
+      "overlap"
+    ],
+    "telemetry_interval_seconds": 10
+  },
+  "minimum_formal_allocation": {
+    "complete_epochs": 3,
+    "complete_train_passes_min": 1,
+    "models": [
+      "M0",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M5"
+    ],
+    "requires_smoke_pass": true,
+    "seeds": 1
+  },
+  "numerical_health": {
+    "corrupt_checkpoint_count_max": 0,
+    "nan_inf_count_max": 0,
+    "unacknowledged_amp_overflow_count_max": 0
+  },
+  "ontology": {
+    "card_identity_coverage_min": 1.0,
+    "coverage_population": [
+      "registered_deck_identities",
+      "observed_legal_option_identities"
+    ],
+    "effect_instance_coverage_min": 0.99,
+    "residual_effect": "UNKNOWN_EFFECT",
+    "version": "card_effect_ontology_v1"
+  },
+  "runtime_floor": {
+    "formula": "min(10.0, 0.8 * measured_m0_smoke_decisions_per_second)",
+    "units": "decisions_per_second"
+  },
+  "schema_version": "pre_run_protocol_v1",
+  "source_precedence": {
+    "ambiguity": "fail_closed",
+    "date_count": 8,
+    "first_date": "2026-07-18",
+    "identity": "canonical_episode_id",
+    "last_date": "2026-07-25",
+    "rule": "patched_episode_replaces_archive_original"
+  },
+  "split": {
+    "assignment": "deterministic_digest_rank",
+    "digest_algorithm": "sha256",
+    "digest_input": "semantic_goal_policy_split_v1|20260726|<date>|<deck_hash>|<episode_id>|<player>",
+    "group_unit": "complete_episode_player",
+    "seed": 20260726,
+    "stratify_by": [
+      "date",
+      "deck_manifest_hash"
+    ],
+    "train_fraction": 0.9,
+    "validation_fraction": 0.1
+  },
+  "thresholds": {
+    "counterfactual_direction_rate_min": 0.8,
+    "free_running_completion": 1.0,
+    "free_running_legality": 1.0,
+    "invariance_aligned_agreement_min": 0.999,
+    "invariance_mean_kl_max": 0.0001,
+    "irrelevant_goal_mean_abs_logit_change_max": 0.05,
+    "unknown_vs_zero_rate_min": 0.8
+  },
+  "view_contract": {
+    "exact_prize_inference_requires": "verified_full_membership",
+    "kinds": [
+      "none",
+      "eligible_subset",
+      "full_membership",
+      "ordered_view"
+    ]
+  },
+  "wandb_snapshot_limits": {
+    "bytes_per_file_max": 1048576,
+    "bytes_per_generation_max": 4194304
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": "card_effect_ontology_v1",
+  "unknown_effect": "UNKNOWN_EFFECT",
+  "primitives": [
+    "damage", "draw", "search", "reveal", "move", "discard", "recover",
+    "attach", "evolve", "switch", "retreat", "heal", "status", "prize",
+    "shuffle", "energy_access", "setup", "disruption", "protection", "rule"
+  ],
+  "capabilities": [
+    "setup", "evolution", "attacker", "search", "draw", "recovery",
+    "switching", "energy_access", "disruption", "survival", "prize_progress"
+  ]
+}
