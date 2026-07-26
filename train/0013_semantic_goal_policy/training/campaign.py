@@ -19,6 +19,7 @@ from ..model.registry import MODEL_REGISTRY, create_model
 from ..protocol import PreRunProtocol
 from .batching import default_registry
 from .materialized import MaterializedBatchSource
+from .reproducibility import model_state_sha256, seed_everything
 from .trainer import train_version
 
 REPOSITORY_ROOT = Path(__file__).parents[3]
@@ -84,6 +85,7 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
     if args.protocol_sha256 != protocol.sha256():
         raise ValueError("protocol hash mismatch")
     runtime_floor = protocol.resolve_runtime_floor(args.m0_smoke_throughput)
+    reproducibility = seed_everything(args.seed)
     source = create_batch_source(
         args.dataset,
         batch_size=args.batch_size,
@@ -92,6 +94,7 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
     if args.variant != "M0" and source.reference["feature_compiler_version"] != COMPILER_VERSION:
         raise ValueError("semantic variants require the frozen shared compiler")
     model = create_model(args.variant)
+    initial_model_sha256 = model_state_sha256(model)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
     )
@@ -104,6 +107,8 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
         "variant": args.variant,
         "model_config": asdict(model.config),
         "parameter_count": sum(parameter.numel() for parameter in model.parameters()),
+        "initial_model_sha256": initial_model_sha256,
+        "reproducibility": reproducibility,
         "feature_compiler_version": COMPILER_VERSION,
         "feature_compiler_sha256": compiler_sha256(),
         "ontology_sha256": source.registry.sha256,
@@ -131,6 +136,8 @@ def run_formal_training(args: argparse.Namespace) -> dict[str, Any]:
             split: source.batch_count(split) for split in ("train", "validation")
         },
         "seed": args.seed,
+        "initial_model_sha256": initial_model_sha256,
+        "reproducibility": reproducibility,
         "learning_rate": args.learning_rate,
         "weight_decay": args.weight_decay,
         "max_grad_norm": args.max_grad_norm,
