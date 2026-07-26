@@ -28,6 +28,20 @@
   `data/processed/environment_daily/generate_live_snapshot.py` 和
   `docs/environment-daily_kaggle_top100/README.md`。
 
+- “根据现在的快照构建日报”固定要求调用统一生成入口即时冻结官方 Top 100，以 leaderboard 每行
+  `submissionDate` 唯一绑定 submission，并只选择同一冻结点以前该 submission 最新的
+  `PUBLIC + COMPLETED` Episode；必须从 Episode 中 submission 自身唯一 player index 读取 exact
+  60-card deck。不得复用旧 snapshot、旧 replay 或前一日报的统计冒充当前环境。
+- 日报的个人胜率、W-L-D、牌型 match-up 和卡池统计必须由本次冻结 submission 的官方 Episode
+  Meta 与 exact deck 计算。正式渲染前必须通过 100/100 leaderboard → submission → Episode →
+  player index → replay → deck/hash 身份链审计；任一链不一致时 fail closed，不得发布。
+- Kaggle Episode Meta 是最终一致的约 1,000 条滚动窗口；采集必须将多轮查询看到的冻结点前
+  Episode 按 ID 做单调并集，并连续两轮全量扫描零新增后才可完成。胜率和 match-up 必须由该
+  冻结并集重算，禁止使用仍在漂移的单次端点切片。
+- 统一入口为 `python3 -m data.processed.environment_daily.generate_live_snapshot --date YYYY-MM-DD`；
+  每次新采集使用独立 `.tmp/environment_daily/<date>/run-*`，complete run 不得继续采集，正式 HTML
+  已存在时必须显式 `--overwrite` 才可重建，并自动维护日报索引。
+
 - 仓库不再使用 `work/`；可运行待评估 package 统一放入 `evaluation/arena/candidates/<name>/`。从 `0013` 起，具体训练项目放在根目录 `train/<project_id>/`，项目归档、权威设计文档和正式评测放在 `experiments/<project_id>/`，运行时 dataset、checkpoint、TensorBoard、W&B staging 与版本记录放在 `rl_runs/<project_id>/`。`rl_environment/` 只提供通用训练基础设施；完成选择并需要长期归档的自包含 payload 统一放入 `archive/submission/<project_numbered_name>/`，对应压缩包放入 `archive/submission/dist/`；根目录 `submission/` 已退役，不得再创建新资产。
 - `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；常用基建必须放在所属的 Python package（如 `rl_environment/`、`train/<project>/`、`evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。
 - `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。

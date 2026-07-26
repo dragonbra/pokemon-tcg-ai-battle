@@ -3,6 +3,7 @@ from __future__ import annotations
 from html.parser import HTMLParser
 import json
 from pathlib import Path
+import re
 from types import SimpleNamespace
 import tempfile
 import unittest
@@ -10,7 +11,6 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs/environment-daily_kaggle_top100/daily/2026-07-27.html"
-SNAPSHOT = ROOT / ".tmp/environment_daily_0727_live_20260727_0406_bounded/snapshot.json"
 
 
 class _DailyParser(HTMLParser):
@@ -26,6 +26,8 @@ class _DailyParser(HTMLParser):
         self.rate_cards = 0
         self.archetype_visuals = 0
         self.heatmaps = 0
+        self.card_images = 0
+        self.invalid_card_images = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
@@ -39,6 +41,10 @@ class _DailyParser(HTMLParser):
             self.pool_cards += 1
         if "card-thumb" in str(values.get("class", "")).split():
             self.card_thumbs += 1
+        if tag == "img" and str(values.get("src", "")).startswith("https://"):
+            self.card_images += 1
+            if not values.get("width") or not values.get("height"):
+                self.invalid_card_images += 1
         classes = str(values.get("class", "")).split()
         if tag == "table" and "pool-table" in classes:
             self.pool_tables += 1
@@ -69,18 +75,53 @@ class EnvironmentDailyContractTests(unittest.TestCase):
         )
         self.assertEqual([episode.id for episode in bounded], [2, 1])
 
+    def test_episode_identity_uses_agent_index_not_list_position(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _episode_views,
+            _result,
+        )
+
+        episode = SimpleNamespace(
+            id=77,
+            create_time="2026-07-26T20:00:00+00:00",
+            end_time="2026-07-26T20:01:00+00:00",
+            agents=[
+                SimpleNamespace(
+                    index=1, submission_id=42, team_id=4, team_name="self", reward=1
+                ),
+                SimpleNamespace(
+                    index=0, submission_id=99, team_id=9, team_name="other", reward=-1
+                ),
+            ],
+        )
+        self.assertEqual(_result([episode], 42), (1, 0, 0, 1))
+        view = _episode_views([episode], 42)[0]
+        self.assertEqual(view["player_index"], 1)
+        self.assertEqual(view["other"]["submission_id"], 99)
+
+    def test_meta_sweeps_keep_a_monotonic_episode_union(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _merge_episode_views,
+        )
+
+        def view(episode_id: int) -> dict[str, object]:
+            return {"episode_id": episode_id, "create_time": "2026-07-26T20:00:00+00:00"}
+
+        merged = _merge_episode_views([view(1), view(2)], [view(2), view(3)])
+        self.assertEqual({row["episode_id"] for row in merged}, {1, 2, 3})
+
     def test_completed_capture_cannot_be_silently_reused(self) -> None:
         from data.processed.environment_daily.generate_live_snapshot import collect
 
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
             snapshot = {
-                "rows": [{"rank": rank} for rank in range(1, 101)],
-                "players": {str(rank): {} for rank in range(1, 101)},
+                "status": "complete",
+                "report_date": "2026-07-27",
             }
             (work / "snapshot.json").write_text(json.dumps(snapshot), encoding="utf-8")
             with self.assertRaisesRegex(RuntimeError, "completed leaderboard capture is immutable"):
-                collect(work, work / "report.html")
+                collect(work, work / "report.html", "2026-07-27")
 
     def test_temp_preview_resolves_the_canonical_ui_baseline(self) -> None:
         from data.processed.environment_daily.generate_live_snapshot import _baseline_css
@@ -118,18 +159,25 @@ class EnvironmentDailyContractTests(unittest.TestCase):
         self.assertEqual(parser.rate_cards, 300)
         self.assertGreaterEqual(parser.archetype_visuals, 100)
         self.assertEqual(parser.heatmaps, 2)
+        self.assertGreater(parser.card_images, 1_000)
+        self.assertEqual(parser.invalid_card_images, 0)
 
-    def test_0727_snapshot_has_100_exact_60_card_decks(self) -> None:
-        snapshot = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
-        cutoff = snapshot["captured_at_utc"]
-        self.assertEqual(len(snapshot["rows"]), 100)
-        self.assertEqual(len(snapshot["players"]), 100)
-        for rank in range(1, 101):
-            player = snapshot["players"][str(rank)]
-            self.assertEqual(len(player["deck"]), 60)
-            self.assertIn(player["episode_player_index"], (0, 1))
-            self.assertLessEqual(player["episode_create_time"], cutoff)
-            self.assertEqual(len(player["deck_sha256"]), 64)
+    def test_0727_embeds_the_100_player_identity_audit(self) -> None:
+        text = REPORT.read_text(encoding="utf-8")
+        match = re.search(
+            r'<script type="application/json" id="snapshot-audit">(.*?)</script>',
+            text,
+            re.S,
+        )
+        self.assertIsNotNone(match)
+        audit = json.loads(match.group(1))
+        self.assertEqual(audit["audited_players"], 100)
+        self.assertEqual(len(audit["selected"]), 100)
+        self.assertTrue(audit["all_episode_times_at_or_before_capture"])
+        self.assertTrue(audit["all_submission_matches_unique"])
+        self.assertTrue(audit["all_decks_exactly_60"])
+        self.assertGreater(audit["bounded_player_views"], 10_000)
+        self.assertEqual(audit["stabilization"]["consecutive_stable_sweeps"], 2)
 
     def test_project_contract_names_both_ui_baselines(self) -> None:
         contract = (ROOT / "docs/environment-daily_kaggle_top100/README.md").read_text(
@@ -138,6 +186,25 @@ class EnvironmentDailyContractTests(unittest.TestCase):
         self.assertIn("daily/2026-07-26.html", contract)
         self.assertIn("daily/2026-07-25.html", contract)
         self.assertIn("tests.test_environment_daily_contract", contract)
+        self.assertIn("submissionDate", contract)
+        self.assertIn("PUBLIC + COMPLETED", contract)
+
+    def test_generator_is_date_parameterized(self) -> None:
+        source = (
+            ROOT / "data/processed/environment_daily/generate_live_snapshot.py"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn('REPORT_DATE = "2026-07-27"', source)
+        self.assertIn('parser.add_argument("--date"', source)
+        self.assertIn("_validate_snapshot", source)
+        self.assertIn("_update_index", source)
+        self.assertNotIn("archive.train_legacy", source)
+
+    def test_report_index_is_reverse_chronological(self) -> None:
+        text = (
+            ROOT / "docs/environment-daily_kaggle_top100/index.html"
+        ).read_text(encoding="utf-8")
+        dates = re.findall(r'<time datetime="(\d{4}-\d{2}-\d{2})">', text)
+        self.assertEqual(dates, sorted(dates, reverse=True))
 
 
 if __name__ == "__main__":

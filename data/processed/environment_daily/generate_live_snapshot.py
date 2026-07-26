@@ -13,6 +13,8 @@ import statistics
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
+from zoneinfo import ZoneInfo
 
 from kaggle.api.kaggle_api_extended import KaggleApi
 
@@ -20,10 +22,9 @@ COMPETITION = "pokemon-tcg-ai-battle"
 DRAGAPULT_EX = 121
 MARNIES_GRIMMSNARL_EX = 648
 
-REPORT_DATE = "2026-07-27"
-REPORT_ID = "0727"
 UI_BASELINE = "2026-07-26.html"
 CARD_POOL_BASELINE = "2026-07-25.html"
+SNAPSHOT_SCHEMA = "pokemon_tcg_environment_daily_v2"
 
 CARD_IMAGE_SET_BY_EXPANSION = {
     "BLK": "zsv10pt5", "DRI": "sv10", "JTG": "sv9", "MEG": "me1",
@@ -56,14 +57,15 @@ def _rate_call(fn):
 
 
 def _result(episodes, submission_id: int) -> tuple[int, int, int, int]:
-    from archive.train_legacy.kaggle_bc_top20.training.download_top100_exact_replays import (
-        _model_value,
-        episode_player_index,
-    )
-
     wins = losses = draws = 0
     for episode in episodes:
-        agent = (_model_value(episode, "agents", default=[]) or [])[episode_player_index(episode, submission_id)]
+        player_index = _episode_player_index(episode, submission_id)
+        agents = list(_model_value(episode, "agents", default=[]) or [])
+        agent = next(
+            row
+            for fallback_index, row in enumerate(agents)
+            if int(_model_value(row, "index", default=fallback_index)) == player_index
+        )
         reward = _model_value(agent, "reward")
         if reward is None:
             continue
@@ -143,12 +145,126 @@ def _datetime(value: object) -> datetime | None:
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
-def _episodes_at_or_before(episodes: list[object], cutoff_value: object) -> list[object]:
-    """Return only Episodes whose creation time is inside one frozen snapshot boundary."""
-    from archive.train_legacy.kaggle_bc_top20.training.download_top100_exact_replays import (
-        _model_value,
+def _model_value(model: Any, *names: str, default: Any = None) -> Any:
+    for name in names:
+        value = getattr(model, name, None)
+        if value is not None:
+            return value
+    return default
+
+
+def _timestamp(value: object) -> str:
+    parsed = _datetime(value)
+    return parsed.astimezone(timezone.utc).isoformat() if parsed is not None else str(value)
+
+
+def _select_leaderboard_submission(
+    leaderboard_row: object, submissions: list[object]
+) -> tuple[object, str]:
+    if not submissions:
+        raise ValueError("team has no submissions")
+    leaderboard_date = _model_value(leaderboard_row, "submission_date", "submissionDate")
+    exact_dates = [
+        row
+        for row in submissions
+        if _timestamp(_model_value(row, "date_submitted", "dateSubmitted"))
+        == _timestamp(leaderboard_date)
+    ]
+    if len(exact_dates) == 1:
+        return exact_dates[0], "submission_date"
+    leaderboard_datetime = _datetime(leaderboard_date)
+    dated_rows = []
+    if leaderboard_datetime is not None:
+        for row in submissions:
+            submitted_at = _datetime(_model_value(row, "date_submitted", "dateSubmitted"))
+            if submitted_at is not None:
+                dated_rows.append(
+                    (abs((submitted_at - leaderboard_datetime).total_seconds()), row)
+                )
+    dated_rows.sort(key=lambda item: item[0])
+    if (
+        dated_rows
+        and dated_rows[0][0] <= 2.0
+        and (len(dated_rows) == 1 or dated_rows[0][0] < dated_rows[1][0])
+    ):
+        return dated_rows[0][1], "submission_date_nearest_2s"
+    raise ValueError(
+        f"cannot uniquely bind leaderboard submissionDate {leaderboard_date!r}"
     )
 
+
+def _episode_agents(episode: object) -> list[dict[str, object]]:
+    result = []
+    for fallback_index, agent in enumerate(_model_value(episode, "agents", default=[]) or []):
+        result.append(
+            {
+                "index": int(_model_value(agent, "index", default=fallback_index)),
+                "submission_id": int(
+                    _model_value(agent, "submission_id", "submissionId", default=0) or 0
+                ),
+            }
+        )
+    return result
+
+
+def _episode_player_index(episode: object, submission_id: int) -> int:
+    matches = [
+        int(row["index"])
+        for row in _episode_agents(episode)
+        if int(row["submission_id"]) == submission_id
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"submission {submission_id} is not unique in Episode "
+            f"{_model_value(episode, 'id')}: {matches}"
+        )
+    return matches[0]
+
+
+def _decks_from_replay(payload: dict[str, object]) -> list[list[int]]:
+    for step in payload.get("steps") or []:
+        if not isinstance(step, list):
+            continue
+        for row in step:
+            if not isinstance(row, dict):
+                continue
+            for frame in row.get("visualize") or []:
+                actions = frame.get("action") if isinstance(frame, dict) else None
+                if (
+                    isinstance(actions, list)
+                    and len(actions) == 2
+                    and all(isinstance(deck, list) and len(deck) == 60 for deck in actions)
+                ):
+                    return [[int(card_id) for card_id in deck] for deck in actions]
+    raise ValueError("replay has no public two-player 60-card initial deck frame")
+
+
+def _eligible_episodes(api: KaggleApi, submission_id: int, limit: int) -> list[object]:
+    episodes = list(api.competition_list_episodes(submission_id) or [])
+    eligible = []
+    for episode in episodes:
+        if "PUBLIC" not in str(_model_value(episode, "type", default="")):
+            continue
+        if "COMPLETED" not in str(_model_value(episode, "state", default="")):
+            continue
+        try:
+            _episode_player_index(episode, submission_id)
+        except ValueError:
+            continue
+        eligible.append(episode)
+    eligible.sort(
+        key=lambda row: (
+            _datetime(_model_value(row, "create_time", "createTime"))
+            or datetime.min.replace(tzinfo=timezone.utc),
+            int(_model_value(row, "id")),
+        ),
+        reverse=True,
+    )
+    return eligible[:limit]
+
+
+def _episodes_at_or_before(episodes: list[object], cutoff_value: object) -> list[object]:
+    """Return only Episodes whose creation time is inside one frozen snapshot boundary."""
     cutoff = _datetime(cutoff_value)
     if cutoff is None:
         raise ValueError(f"invalid leaderboard capture timestamp: {cutoff_value!r}")
@@ -160,6 +276,179 @@ def _episodes_at_or_before(episodes: list[object], cutoff_value: object) -> list
         bounded.append((created_at, int(_model_value(episode, "id")), episode))
     bounded.sort(key=lambda item: (item[0], item[1]), reverse=True)
     return [item[2] for item in bounded]
+
+
+def _report_date(state: dict[str, object]) -> str:
+    explicit = str(state.get("report_date") or "")
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", explicit):
+        return explicit
+    captured_at = _datetime(state.get("captured_at_utc"))
+    if captured_at is None:
+        raise ValueError("snapshot has neither a valid report_date nor captured_at_utc")
+    return captured_at.astimezone(ZoneInfo("Asia/Shanghai")).date().isoformat()
+
+
+def _report_id(report_date: str) -> str:
+    return report_date[5:7] + report_date[8:10]
+
+
+def _previous_report_path(report_date: str) -> Path:
+    candidates = sorted(
+        path for path in DAILY_REPORT_ROOT.glob("????-??-??.html") if path.stem < report_date
+    )
+    return candidates[-1] if candidates else DAILY_REPORT_ROOT / UI_BASELINE
+
+
+def _episode_views(episodes: list[object], submission_id: int) -> list[dict[str, object]]:
+    views: list[dict[str, object]] = []
+    for episode in episodes:
+        player_index = _episode_player_index(episode, submission_id)
+        agents = list(_model_value(episode, "agents", default=[]) or [])
+        own_matches = [
+            agent
+            for fallback_index, agent in enumerate(agents)
+            if int(_model_value(agent, "index", default=fallback_index)) == player_index
+        ]
+        if len(own_matches) != 1:
+            raise ValueError(f"Episode {_model_value(episode, 'id')} has no unique own agent")
+        own = own_matches[0]
+        others = [
+            agent
+            for fallback_index, agent in enumerate(agents)
+            if int(_model_value(agent, "index", default=fallback_index)) != player_index
+        ]
+        if len(others) != 1:
+            raise ValueError(f"Episode {_model_value(episode, 'id')} is not a two-player game")
+        other = others[0]
+        created_at = _datetime(_model_value(episode, "create_time", "createTime"))
+        ended_at = _datetime(_model_value(episode, "end_time", "endTime"))
+        views.append(
+            {
+                "episode_id": int(_model_value(episode, "id")),
+                "submission_id": submission_id,
+                "reward": _model_value(own, "reward"),
+                "player_index": player_index,
+                "other": {
+                    "index": int(_model_value(other, "index", default=1 - player_index)),
+                    "submission_id": int(
+                        _model_value(other, "submission_id", "submissionId", default=0) or 0
+                    ),
+                    "team_id": int(
+                        _model_value(other, "team_id", "teamId", default=0) or 0
+                    ),
+                    "team_name": str(
+                        _model_value(other, "team_name", "teamName", default="") or ""
+                    ),
+                    "reward": _model_value(other, "reward"),
+                },
+                "create_time": created_at.isoformat() if created_at else None,
+                "end_time": ended_at.isoformat() if ended_at else None,
+            }
+        )
+    return views
+
+
+def _validate_snapshot(
+    state: dict[str, object],
+    meta_payload: dict[str, object] | None,
+    replay_root: Path,
+) -> dict[str, object]:
+    """Fail closed unless all 100 leaderboard → submission → replay → deck chains agree."""
+    cutoff = _datetime(state.get("captured_at_utc"))
+    rows = list(state.get("rows") or [])
+    players = dict(state.get("players") or {})
+    views_by_submission = dict((meta_payload or {}).get("views") or {})
+    if cutoff is None or len(rows) != 100 or len(players) != 100:
+        raise ValueError("snapshot must contain one valid cutoff, 100 rows, and 100 players")
+    if state.get("schema") == SNAPSHOT_SCHEMA:
+        stabilization = dict(state.get("stabilization") or {})
+        if int(stabilization.get("consecutive_stable_sweeps") or 0) < 2:
+            raise ValueError("snapshot has not reached two stable full Meta sweeps")
+    selected: list[dict[str, object]] = []
+    for expected_rank, row in enumerate(rows, 1):
+        player = players.get(str(expected_rank))
+        if not isinstance(player, dict):
+            raise ValueError(f"rank {expected_rank}: missing player record")
+        for field in ("rank", "team_id", "team_name", "score", "submission_date"):
+            if player.get(field) != row.get(field):
+                raise ValueError(f"rank {expected_rank}: leaderboard field {field} diverged")
+        if player.get("binding") not in {"submission_date", "submission_date_nearest_2s"}:
+            raise ValueError(f"rank {expected_rank}: submissionDate was not uniquely bound")
+        submission_id = int(player.get("submission_id") or 0)
+        bounded_views = [
+            view
+            for view in views_by_submission.get(str(submission_id), [])
+            if _datetime(view.get("create_time")) is not None
+            and _datetime(view.get("create_time")) <= cutoff
+        ]
+        if not bounded_views:
+            raise ValueError(f"rank {expected_rank}: no bounded PUBLIC + COMPLETED Episode")
+        latest = max(
+            bounded_views,
+            key=lambda view: (_datetime(view["create_time"]), int(view["episode_id"])),
+        )
+        episode_id = int(player.get("episode_id") or 0)
+        player_index = int(player.get("episode_player_index", -1))
+        if episode_id != int(latest["episode_id"]) or player_index != int(latest["player_index"]):
+            raise ValueError(f"rank {expected_rank}: representative Episode is not cutoff-latest")
+        if _datetime(player.get("episode_create_time")) != _datetime(latest.get("create_time")):
+            raise ValueError(f"rank {expected_rank}: representative Episode time diverged")
+        if int(latest.get("submission_id", submission_id)) != submission_id:
+            raise ValueError(f"rank {expected_rank}: Episode submission identity diverged")
+        replay_path = replay_root / f"episode-{episode_id}.json"
+        if not replay_path.is_file():
+            raise ValueError(f"rank {expected_rank}: missing replay {episode_id}")
+        decks = _decks_from_replay(json.loads(replay_path.read_text(encoding="utf-8")))
+        deck = [int(card_id) for card_id in player.get("deck") or []]
+        if player_index not in (0, 1) or len(deck) != 60 or sorted(decks[player_index]) != sorted(deck):
+            raise ValueError(f"rank {expected_rank}: replay player index or exact deck diverged")
+        deck_sha256 = hashlib.sha256(
+            ",".join(str(card_id) for card_id in sorted(deck)).encode("ascii")
+        ).hexdigest()
+        if player.get("deck_sha256") != deck_sha256:
+            raise ValueError(f"rank {expected_rank}: deck hash diverged")
+        rewards = [float(view["reward"]) for view in bounded_views if view.get("reward") is not None]
+        expected_result = (
+            sum(reward > 0 for reward in rewards),
+            sum(reward < 0 for reward in rewards),
+            sum(reward == 0 for reward in rewards),
+        )
+        actual_result = (player.get("wins"), player.get("losses"), player.get("draws"))
+        if actual_result != expected_result or player.get("valid_games") != len(rewards):
+            raise ValueError(f"rank {expected_rank}: bounded win/loss/draw statistics diverged")
+        expected_win_rate = (
+            (expected_result[0] + 0.5 * expected_result[2]) / len(rewards)
+            if rewards
+            else None
+        )
+        if player.get("win_rate") != expected_win_rate:
+            raise ValueError(f"rank {expected_rank}: bounded win rate diverged")
+        selected.append(
+            {
+                "rank": expected_rank,
+                "team_name": player["team_name"],
+                "submission_id": submission_id,
+                "episode_id": episode_id,
+                "episode_create_time": latest["create_time"],
+                "episode_player_index": player_index,
+                "deck_sha256": deck_sha256,
+            }
+        )
+    return {
+        "contract": (
+            "latest PUBLIC + COMPLETED Episode for the exact leaderboard submission "
+            "at or before captured_at_utc"
+        ),
+        "audited_players": 100,
+        "all_episode_times_at_or_before_capture": True,
+        "all_submission_matches_unique": True,
+        "all_decks_exactly_60": True,
+        "bounded_player_views": sum(
+            int(player.get("valid_games") or 0) for player in players.values()
+        ),
+        "stabilization": state.get("stabilization"),
+        "selected": selected,
+    }
 
 
 def _card_group(row: dict[str, str]) -> str:
@@ -224,8 +513,8 @@ def _baseline_css(report: Path) -> str:
     return match.group(1)
 
 
-def _previous_players(report: Path) -> dict[str, dict[str, str | int | float]]:
-    text = (DAILY_REPORT_ROOT / UI_BASELINE).read_text(encoding="utf-8")
+def _previous_players(report_date: str) -> dict[str, dict[str, str | int | float]]:
+    text = _previous_report_path(report_date).read_text(encoding="utf-8")
     result: dict[str, dict[str, str | int | float]] = {}
     for row in re.findall(r'<tr data-index-row.*?</tr>', text, re.S):
         cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
@@ -250,7 +539,14 @@ def _render_report(
     catalog: dict[int, dict[str, str]],
     report: Path,
     meta_payload: dict[str, object] | None = None,
+    replay_root: Path | None = None,
 ) -> None:
+    report_date = _report_date(state)
+    report_id = _report_id(report_date)
+    previous_report = _previous_report_path(report_date)
+    previous_date = previous_report.stem
+    if replay_root is not None:
+        state["identity_audit"] = _validate_snapshot(state, meta_payload, replay_root)
     report.parent.mkdir(parents=True, exist_ok=True)
     css = _baseline_css(report) + """
     .snapshot-note{padding:16px 18px;border:1px solid #e5bb76;border-radius:14px;background:#fff8e9;color:#5e4218}
@@ -329,7 +625,10 @@ def _render_report(
         bool(row.get("possibly_censored_at_1000"))
         for row in (meta_payload or {}).get("audit", {}).values()
     )
-    previous = _previous_players(report)
+    audit_json = json.dumps(
+        state.get("identity_audit") or {}, ensure_ascii=False, separators=(",", ":")
+    ).replace("</", "<\\/")
+    previous = _previous_players(report_date)
     current_names = {str(player["team_name"]) for player in players}
     joined = [player for player in players if player["team_name"] in previous]
     entered = [player for player in players if player["team_name"] not in previous]
@@ -405,7 +704,8 @@ def _render_report(
         rate = (counter["wins"] + 0.5 * counter["draws"]) / n
         hue = max(6.0, min(145.0, 8.0 + rate * 137.0))
         return (
-            f'<td style="background:hsl({hue:.1f} 56% 89%)" title="真实 0727 玩家视角，n={n}">'
+            f'<td style="background:hsl({hue:.1f} 56% 89%)" '
+            f'title="真实 {report_id} 玩家视角，n={n}">'
             f'<b>{_pct(rate)}</b><small>{counter["wins"]}-{counter["losses"]}-{counter["draws"]} · n={n}</small></td>'
         )
 
@@ -625,11 +925,11 @@ def _render_report(
 
     report_html = f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Top 100 今日环境快照 · {REPORT_ID} · {REPORT_DATE}</title><style>{css}</style></head>
+<title>Top 100 今日环境快照 · {report_id} · {report_date}</title><style>{css}</style></head>
 <body id="top"><main class="page">
-<nav class="section-nav" aria-label="{REPORT_ID} 完整分析导航"><a href="#new-summary">新版总览</a><a href="#personal-winrates">个人胜率</a><a href="#construction-distribution">构筑分布</a><a href="#snapshot-comparison">跨日变化</a><a href="#matchup-boundary">Match-up</a><a href="#card-pool">构筑卡池</a><a href="#archetype-builds">牌型卡池</a><a href="#rank-index">静态排名</a><a href="#player-details">逐人展开</a></nav>
+<nav class="section-nav" aria-label="{report_id} 完整分析导航"><a href="#new-summary">新版总览</a><a href="#personal-winrates">个人胜率</a><a href="#construction-distribution">构筑分布</a><a href="#snapshot-comparison">跨日变化</a><a href="#matchup-boundary">Match-up</a><a href="#card-pool">构筑卡池</a><a href="#archetype-builds">牌型卡池</a><a href="#rank-index">静态排名</a><a href="#player-details">逐人展开</a></nav>
 
-<section class="panel" id="new-summary"><div class="heading"><div><p class="eyebrow">{REPORT_DATE} SNAPSHOT · {REPORT_ID}</p><h2>新版环境分析总览</h2></div><p>整体组件与 UI 继承 0726；构筑卡池专项恢复 0725 的卡图网格与覆盖率表达。</p></div>
+<section class="panel" id="new-summary"><div class="heading"><div><p class="eyebrow">{report_date} SNAPSHOT · {report_id}</p><h2>新版环境分析总览</h2></div><p>整体组件与 UI 固定继承 0726；构筑卡池固定继承 0725 的卡图网格与覆盖率表达。</p></div>
 <div class="metrics new-metrics"><div class="metric"><b>100</b><span>最终 submissions</span></div><div class="metric"><b>{total_games:,}</b><span>公开 Meta 玩家视角</span></div><div class="metric"><b>{len(presence)}</b><span>Card Pool 并集</span></div><div class="metric"><b>{len(distribution)}</b><span>实际牌型</span></div><div class="metric"><b>100</b><span>exact decks 已审计</span></div><div class="metric"><b>100</b><span>代表 replays</span></div></div>
 <div class="evidence-grid"><article><b>榜单层</b><p>冻结官方 Top100、score 与 submissionDate。</p></article><article><b>Meta 层</b><p>只计 exact submission 的 PUBLIC + COMPLETED Episode Meta。</p></article><article><b>Replay 层</b><p>逐 submission 最新合格 replay 的 exact 60-card deck。</p></article></div>
 <h3>读数摘要</h3><div class="finding-grid"><article><b>榜首与分差</b><p>{html.escape(str(players[0]["team_name"]))} · {float(players[0]["score"]):.1f}；第 100 名 {html.escape(str(players[-1]["team_name"]))} · {float(players[-1]["score"]):.1f}。</p></article><article><b>公开 Meta</b><p>{total_wins:,}-{total_losses:,}-{total_draws:,}，玩家视角胜率 {_pct(overall)}（n={total_games:,}）。</p></article><article><b>环境集中度</b><p>{html.escape(ordered_archetypes[0][0])} {ordered_archetypes[0][1]} 人；前两类合计 {sum(count for _, count in ordered_archetypes[:2])}/100。</p></article><article><b>卡池审计</b><p>100 份代表 deck 均为 60 张，共覆盖 {len(presence)} 个 Card ID。</p></article></div>
@@ -637,9 +937,9 @@ def _render_report(
 
 <section class="panel" id="personal-winrates"><div class="heading"><div><p class="eyebrow">PLAYER CONSTRUCTION UI · FINAL SUBMISSION META</p><h2>个人构筑与双分段胜率</h2></div><p>胜率按 0726 视觉合同分级高亮；高分段 = 对手 submission 属于冻结 Top 100，低分段 = 其余公开 Episode 对手。</p></div><div class="toolbar"><input id="search" type="search" placeholder="搜索选手、Team ID、牌型或 rank…"><select id="archetype-filter"><option value="">全部牌型</option>{''.join(f'<option value="{html.escape(name)}">{html.escape(name)}</option>' for name, _ in ordered_archetypes)}</select><span id="visible-count" class="count-visible">显示 100</span></div><div class="person-grid">{''.join(person_cards)}</div><div class="table-scroll"><table class="wide-table summary-table"><thead><tr><th>Rank</th><th>选手</th><th>牌型</th><th>榜分</th><th>Meta 场次</th><th>W-L-D</th><th>胜率</th><th>deck evidence</th></tr></thead><tbody>{''.join(player_row(player, 'data-player-row') for player in players)}</tbody></table></div></section>
 
-<section class="panel" id="construction-distribution"><div class="heading"><div><p class="eyebrow">CONSTRUCTION DISTRIBUTION</p><h2>构筑使用分布</h2></div><p>牌型只由 0727 最终 submission 的代表 replay exact 60-card deck 分类。</p></div><div class="archetype-grid">{''.join(archetype_cards)}</div></section>
+<section class="panel" id="construction-distribution"><div class="heading"><div><p class="eyebrow">CONSTRUCTION DISTRIBUTION</p><h2>构筑使用分布</h2></div><p>牌型只由 {report_id} 最终 submission 的代表 replay exact 60-card deck 分类。</p></div><div class="archetype-grid">{''.join(archetype_cards)}</div></section>
 
-<section class="panel" id="snapshot-comparison"><div class="heading"><div><p class="eyebrow">SNAPSHOT DELTA</p><h2>2026-07-26 → 2026-07-27 同榜选手与卡组变化</h2></div><p>以 0726 已发布报告的 rank、牌型和 deck hash 前缀为基线。</p></div><div class="metrics comparison-metrics"><div class="metric"><b>{len(joined)}</b><span>两次同时上榜</span></div><div class="metric"><b>{len(changed)}</b><span>deck hash 变化</span></div><div class="metric"><b>{len(entered)}</b><span>新进榜</span></div><div class="metric"><b>{len(exited)}</b><span>退出榜</span></div></div><p class="muted"><b>新进榜：</b>{html.escape('、'.join(str(player['team_name']) for player in entered) or '—')}<br><b>退出榜：</b>{html.escape('、'.join(exited) or '—')}</p><label><input id="changed-only" type="checkbox"> 只看卡组变化</label><div class="table-scroll"><table class="comparison-table"><thead><tr><th>选手</th><th>Rank</th><th>牌型</th><th>deck hash</th></tr></thead><tbody>{''.join(comparison_rows)}</tbody></table></div></section>
+<section class="panel" id="snapshot-comparison"><div class="heading"><div><p class="eyebrow">SNAPSHOT DELTA</p><h2>{previous_date} → {report_date} 同榜选手与卡组变化</h2></div><p>以前一份已发布日报的 rank、牌型和 deck hash 前缀为基线。</p></div><div class="metrics comparison-metrics"><div class="metric"><b>{len(joined)}</b><span>两次同时上榜</span></div><div class="metric"><b>{len(changed)}</b><span>deck hash 变化</span></div><div class="metric"><b>{len(entered)}</b><span>新进榜</span></div><div class="metric"><b>{len(exited)}</b><span>退出榜</span></div></div><p class="muted"><b>新进榜：</b>{html.escape('、'.join(str(player['team_name']) for player in entered) or '—')}<br><b>退出榜：</b>{html.escape('、'.join(exited) or '—')}</p><label><input id="changed-only" type="checkbox"> 只看卡组变化</label><div class="table-scroll"><table class="comparison-table"><thead><tr><th>选手</th><th>Rank</th><th>牌型</th><th>deck hash</th></tr></thead><tbody>{''.join(comparison_rows)}</tbody></table></div></section>
 
 <section class="panel" id="matchup-boundary"><div class="heading"><div><p class="eyebrow">{len(archetype_names)} ARCHETYPE MATRIX · EXACT SUBMISSIONS</p><h2>牌型对战胜率热力图</h2></div><p>行是当前玩家牌型，列是对手牌型；只统计 leaderboard 冻结时间以前、双方均为本次冻结最终 submission 的 PUBLIC + COMPLETED Meta。</p></div><div class="table-scroll matrix-scroll"><table class="matrix-table heatmap"><thead><tr><th>行 / 列</th>{matrix_head}</tr></thead><tbody>{archetype_matrix_rows}</tbody></table></div><p class="muted">共 {top100_player_views:,} 个 Top100 玩家视角；每格显示胜率、W-L-D 与 n。n=0 显示“—”，不冒充 0% 胜率。</p><h3>Top 20 直接 Match-up</h3><div class="table-scroll"><table class="top20-table"><thead><tr><th>Rank</th><th>选手</th><th>牌型</th><th>Meta 场次</th><th>W-L-D</th><th>胜率</th></tr></thead><tbody>{top20_rows}</tbody></table></div><div class="table-scroll"><table class="top20-matrix heatmap"><thead><tr><th>行 / 列</th>{top20_head}</tr></thead><tbody>{top20_matrix_rows}</tbody></table></div><div class="snapshot-note"><b>先后攻/回合护栏：</b>逐局 Meta 已补齐 opponent 与时间字段，但 firstPlayer 和 final turn 只存在于 replay；当前只有每个 submission 一份代表 replay，因此不将其扩张为全量先后攻或节奏结论。</div></section>
 
@@ -651,8 +951,8 @@ def _render_report(
 
 <section class="panel" id="player-details"><div class="heading"><div><p class="eyebrow">PLAYER DETAIL / EXACT DECK</p><h2>逐人 exact 60-card deck 展开</h2></div><p>点击展开；卡图、分组、张数、Card ID 与大图预览沿用 0726。</p></div><div class="toolbar"><button id="open-visible" type="button">展开当前筛选</button><button id="close-all" type="button">全部收起</button></div><div class="person-grid">{''.join(detail_blocks)}</div></section>
 
-<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{REPORT_ID}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均绑定最终 submission；只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily_0727")))}/snapshot.json</code>；逐局 Meta 缓存：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily_0727")))}/meta_views.json</code>；生成入口：<code>data/processed/environment_daily/generate_live_snapshot.py</code>。</li></ul></section>
-</main><script>
+<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{report_id}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均绑定最终 submission；只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID；渲染前已执行 100/100 身份链强制审计。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/snapshot.json</code>；逐局 Meta 缓存：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/meta_views.json</code>；生成入口：<code>python3 -m data.processed.environment_daily.generate_live_snapshot</code>。</li></ul></section>
+</main><script type="application/json" id="snapshot-audit">{audit_json}</script><script>
 const search=document.getElementById('search'), archetype=document.getElementById('archetype-filter'), visible=document.getElementById('visible-count');
 function apply(){{const q=search.value.trim().toLowerCase();let n=0;document.querySelectorAll('[data-player-row],[data-player-detail],[data-person-card]').forEach(row=>{{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok&&row.matches('[data-player-row]'))n++;}});visible.textContent=`显示 ${{n}}`;}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);apply();
 document.getElementById('changed-only').addEventListener('change',event=>document.querySelectorAll('.comparison-table tbody tr').forEach(row=>row.hidden=event.target.checked&&!row.classList.contains('changed-deck')));
@@ -662,34 +962,157 @@ const preview=document.createElement('div');preview.className='card-preview';pre
     report.write_text(report_html, encoding="utf-8")
 
 
-def collect(work: Path, report: Path) -> None:
-    from archive.train_legacy.kaggle_bc_top20.training.download_top100_exact_replays import (
-        _decks_from_replay,
-        _eligible_episodes,
-        _model_value,
-        episode_player_index,
-        select_leaderboard_submission,
+def _refresh_frozen_player(
+    api: KaggleApi,
+    player: dict[str, object],
+    capture_cutoff: datetime,
+    replay_root: Path,
+    catalog: dict[int, dict[str, str]],
+) -> tuple[list[dict[str, object]], dict[str, object]]:
+    submission_id = int(player["submission_id"])
+    all_eligible = _rate_call(lambda: _eligible_episodes(api, submission_id, 1000))
+    episodes = _episodes_at_or_before(all_eligible, capture_cutoff)
+    if not episodes:
+        raise RuntimeError(f"submission {submission_id} has no Episode at snapshot boundary")
+    episode = episodes[0]
+    episode_id = int(_model_value(episode, "id"))
+    player_index = _episode_player_index(episode, submission_id)
+    episode_create_time = _datetime(_model_value(episode, "create_time", "createTime"))
+    replay = replay_root / f"episode-{episode_id}.json"
+    if not replay.exists():
+        _rate_call(
+            lambda: api.competition_episode_replay(
+                episode_id, path=str(replay_root), quiet=True
+            )
+        )
+        (replay_root / f"episode-{episode_id}-replay.json").replace(replay)
+    deck = _decks_from_replay(json.loads(replay.read_text(encoding="utf-8")))[player_index]
+    if len(deck) != 60:
+        raise RuntimeError(
+            f"submission {submission_id} has no exact 60-card replay at snapshot boundary"
+        )
+    wins, losses, draws, known = _result(episodes, submission_id)
+    deck_sha256 = hashlib.sha256(
+        ",".join(str(card_id) for card_id in sorted(deck)).encode("ascii")
+    ).hexdigest()
+    player.update(
+        {
+            "episode_id": episode_id,
+            "episode_create_time": (
+                episode_create_time.isoformat() if episode_create_time else None
+            ),
+            "episode_player_index": player_index,
+            "deck_sha256": deck_sha256,
+            "valid_games": len(episodes),
+            "wins": wins,
+            "losses": losses,
+            "draws": draws,
+            "win_rate": (wins + 0.5 * draws) / known if known else None,
+            "archetype": _classify_archetype(deck, catalog),
+            "deck": deck,
+        }
+    )
+    return _episode_views(all_eligible, submission_id), {
+        "eligible": len(all_eligible),
+        "bounded": len(episodes),
+        "possibly_censored_at_1000": len(all_eligible) >= 1000,
+    }
+
+
+def _bounded_meta_fingerprint(
+    views: list[dict[str, object]], capture_cutoff: datetime
+) -> tuple[tuple[object, ...], ...]:
+    return tuple(
+        sorted(
+            (
+                int(view["episode_id"]),
+                view.get("reward"),
+                int(view.get("player_index", -1)),
+                int((view.get("other") or {}).get("submission_id") or 0),
+            )
+            for view in views
+            if _datetime(view.get("create_time")) is not None
+            and _datetime(view.get("create_time")) <= capture_cutoff
+        )
     )
 
+
+def _merge_episode_views(
+    existing: list[dict[str, object]], fresh: list[dict[str, object]]
+) -> list[dict[str, object]]:
+    by_episode = {int(view["episode_id"]): view for view in existing}
+    by_episode.update({int(view["episode_id"]): view for view in fresh})
+    return sorted(
+        by_episode.values(),
+        key=lambda view: (
+            _datetime(view.get("create_time"))
+            or datetime.min.replace(tzinfo=timezone.utc),
+            int(view["episode_id"]),
+        ),
+        reverse=True,
+    )
+
+
+def _apply_bounded_meta_stats(
+    player: dict[str, object],
+    views: list[dict[str, object]],
+    capture_cutoff: datetime,
+) -> None:
+    rewards = [
+        float(view["reward"])
+        for view in views
+        if view.get("reward") is not None
+        and _datetime(view.get("create_time")) is not None
+        and _datetime(view.get("create_time")) <= capture_cutoff
+    ]
+    wins = sum(reward > 0 for reward in rewards)
+    losses = sum(reward < 0 for reward in rewards)
+    draws = sum(reward == 0 for reward in rewards)
+    player.update(
+        {
+            "valid_games": len(rewards),
+            "wins": wins,
+            "losses": losses,
+            "draws": draws,
+            "win_rate": (wins + 0.5 * draws) / len(rewards) if rewards else None,
+        }
+    )
+
+
+def collect(work: Path, report: Path, report_date: str) -> None:
     work.mkdir(parents=True, exist_ok=True)
     replay_root = work / "representative_replays"
     replay_root.mkdir(exist_ok=True)
     state_path = work / "snapshot.json"
+    meta_path = work / "meta_views.json"
     if state_path.exists():
         saved_state = json.loads(state_path.read_text(encoding="utf-8"))
-        if len(saved_state.get("rows", [])) == 100 and len(saved_state.get("players", {})) == 100:
+        if saved_state.get("status") == "complete":
             raise RuntimeError(
                 "completed leaderboard capture is immutable; use a new empty --work directory "
                 "for a fresh daily freeze, or pass --render-only to render this exact capture"
             )
+        if _report_date(saved_state) != report_date:
+            raise ValueError("work directory belongs to a different report date")
+        state = saved_state
+    else:
+        state = {}
+    meta_payload = (
+        json.loads(meta_path.read_text(encoding="utf-8"))
+        if meta_path.exists()
+        else {"views": {}, "audit": {}}
+    )
     api = KaggleApi()
     api.authenticate()
     catalog = _card_catalog()
-    if state_path.exists():
-        state = saved_state
-    else:
+    if not state:
         leaderboard = api.competition_leaderboard_view(COMPETITION, page_size=100)[:100]
+        if len(leaderboard) != 100:
+            raise RuntimeError(f"leaderboard returned {len(leaderboard)} rows, expected 100")
         state = {
+            "schema": SNAPSHOT_SCHEMA,
+            "status": "collecting",
+            "report_date": report_date,
             "captured_at_utc": datetime.now(timezone.utc).isoformat(),
             "evidence_root": str(work),
             "rows": [
@@ -703,79 +1126,199 @@ def collect(work: Path, report: Path) -> None:
     capture_cutoff = _datetime(state["captured_at_utc"])
     if capture_cutoff is None:
         raise ValueError(f"invalid captured_at_utc: {state['captured_at_utc']!r}")
+
+    # Phase 1 freezes the exact submission represented by every leaderboard row before
+    # probing any Episode. This gives Kaggle's Episode index time to settle around the cutoff.
     for row in state["rows"]:
         key = str(row["rank"])
-        if key in state["players"]:
+        existing = state["players"].get(key)
+        if isinstance(existing, dict) and existing.get("submission_id"):
             continue
         print(f"[{row['rank']:03d}/100] binding {row['team_name']}", flush=True)
         submissions = _rate_call(lambda: api.competition_team_submissions(row["team_id"]))
+
         class Model:
             pass
+
         model = Model()
         model.team_id = row["team_id"]
         model.team_name = row["team_name"]
         model.score = row["score"]
         model.submission_date = datetime.fromisoformat(row["submission_date"])
-        selected, binding = select_leaderboard_submission(model, list(submissions))
-        submission_id = int(selected.id)
-        all_eligible = _rate_call(lambda: _eligible_episodes(api, submission_id, 1000))
-        episodes = _episodes_at_or_before(all_eligible, capture_cutoff)
-        wins, losses, draws, known = _result(episodes, submission_id)
-        deck: list[int] = []
-        episode_id = None
-        representative_player_index = None
-        episode_create_time = None
-        if episodes:
-            episode_id = int(episodes[0].id)
-            representative_player_index = episode_player_index(episodes[0], submission_id)
-            episode_create_time = _datetime(
-                _model_value(episodes[0], "create_time", "createTime")
-            )
-            replay = replay_root / f"episode-{episode_id}.json"
-            if not replay.exists():
-                _rate_call(lambda: api.competition_episode_replay(episode_id, path=str(replay_root), quiet=True))
-                (replay_root / f"episode-{episode_id}-replay.json").replace(replay)
-            deck = _decks_from_replay(json.loads(replay.read_text(encoding="utf-8")))[
-                representative_player_index
-            ]
-        if len(deck) != 60:
+        selected, binding = _select_leaderboard_submission(model, list(submissions))
+        if binding not in {"submission_date", "submission_date_nearest_2s"}:
             raise RuntimeError(
-                f"submission {submission_id} has no exact 60-card replay at snapshot boundary"
+                f"rank {row['rank']}: leaderboard submissionDate did not bind uniquely"
             )
-        deck_sha256 = hashlib.sha256(
-            ",".join(str(card_id) for card_id in sorted(deck)).encode("ascii")
-        ).hexdigest()
         state["players"][key] = {
-            **row, "submission_id": submission_id, "binding": binding, "episode_id": episode_id,
-            "episode_create_time": episode_create_time.isoformat() if episode_create_time else None,
-            "episode_player_index": representative_player_index,
-            "deck_sha256": deck_sha256,
-            "valid_games": len(episodes), "wins": wins, "losses": losses, "draws": draws,
-            "win_rate": (wins + 0.5 * draws) / known if known else None,
-            "archetype": _archetype(deck, catalog), "deck": deck,
+            **row,
+            "submission_id": int(selected.id),
+            "submission_date_actual": str(
+                _model_value(selected, "date_submitted", "dateSubmitted", default="")
+            ),
+            "binding": binding,
         }
         state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
-        time.sleep(2.5)
+
+    # Phase 2 refreshes Episode Meta for every frozen submission and derives the exact deck
+    # only from the latest eligible Episode at or before the one shared leaderboard cutoff.
+    for row in state["rows"]:
+        key = str(row["rank"])
+        player = state["players"][key]
+        submission_id = int(player["submission_id"])
+        print(f"[{row['rank']:03d}/100] freezing Episodes for {row['team_name']}", flush=True)
+        views, meta_audit = _refresh_frozen_player(
+            api, player, capture_cutoff, replay_root, catalog
+        )
+        views = _merge_episode_views(
+            meta_payload["views"].get(str(submission_id), []), views
+        )
+        _apply_bounded_meta_stats(player, views, capture_cutoff)
+        meta_audit["bounded_union"] = len(_bounded_meta_fingerprint(views, capture_cutoff))
+        meta_payload["views"][str(submission_id)] = views
+        meta_payload["audit"][str(submission_id)] = meta_audit
+        meta_path.write_text(json.dumps(meta_payload, ensure_ascii=False), encoding="utf-8")
+        state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+        time.sleep(1.0)
+
+    # Phase 3 keeps re-querying until two consecutive full sweeps observe no change in either
+    # the cutoff-latest Episode or the complete bounded Meta set. This is data-driven rather
+    # than assuming Kaggle's eventually consistent Episode index settles after a fixed delay.
+    consecutive_stable_sweeps = 0
+    stabilization_history = []
+    for sweep in range(1, 7):
+        changed_submissions = []
+        for row in state["rows"]:
+            key = str(row["rank"])
+            player = state["players"][key]
+            submission_id = int(player["submission_id"])
+            old_episode_id = player.get("episode_id")
+            old_fingerprint = _bounded_meta_fingerprint(
+                meta_payload["views"].get(str(submission_id), []), capture_cutoff
+            )
+            print(
+                f"[sweep {sweep} · {row['rank']:03d}/100] finalizing {row['team_name']}",
+                flush=True,
+            )
+            views, meta_audit = _refresh_frozen_player(
+                api, player, capture_cutoff, replay_root, catalog
+            )
+            views = _merge_episode_views(
+                meta_payload["views"].get(str(submission_id), []), views
+            )
+            _apply_bounded_meta_stats(player, views, capture_cutoff)
+            new_fingerprint = _bounded_meta_fingerprint(views, capture_cutoff)
+            if old_episode_id != player.get("episode_id") or old_fingerprint != new_fingerprint:
+                changed_submissions.append(submission_id)
+            meta_audit["bounded_union"] = len(new_fingerprint)
+            meta_payload["views"][str(submission_id)] = views
+            meta_payload["audit"][str(submission_id)] = meta_audit
+            meta_path.write_text(json.dumps(meta_payload, ensure_ascii=False), encoding="utf-8")
+            state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+        stabilization_history.append(
+            {
+                "sweep": sweep,
+                "changed_submissions": changed_submissions,
+                "changed_count": len(changed_submissions),
+            }
+        )
+        consecutive_stable_sweeps = (
+            consecutive_stable_sweeps + 1 if not changed_submissions else 0
+        )
+        state["stabilization"] = {
+            "required_consecutive_stable_sweeps": 2,
+            "consecutive_stable_sweeps": consecutive_stable_sweeps,
+            "history": stabilization_history,
+        }
+        state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
+        if consecutive_stable_sweeps >= 2:
+            break
+    else:
+        raise RuntimeError("Kaggle Episode Meta did not stabilize after six full sweeps")
     players = [state["players"][str(i)] for i in range(1, 101)]
-    for player in players:
-        player["archetype"] = _archetype(player["deck"], catalog)
+    state["identity_audit"] = _validate_snapshot(state, meta_payload, replay_root)
+    state["status"] = "complete"
     state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
-    meta_path = work / "meta_views.json"
-    meta_payload = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else None
-    _render_report(state, players, catalog, report, meta_payload)
+    _render_report(state, players, catalog, report, meta_payload, replay_root)
+
+
+def _update_index(report_date: str) -> None:
+    index_path = DAILY_REPORT_ROOT.parent / "index.html"
+    text = index_path.read_text(encoding="utf-8")
+    if f'datetime="{report_date}"' in text:
+        return
+    report_id = _report_id(report_date)
+    article = f'''\n    <article class="report">
+      <time datetime="{report_date}">{report_date}</time>
+      <div>
+        <h3>Top 100 实时环境快照 · {report_id}</h3>
+        <p>冻结官方 Top 100，并审计最终 submission、公开 completed Episode、胜率与 exact deck。</p>
+      </div>
+      <a class="button" href="daily/{report_date}.html">查看日报</a>
+    </article>'''
+    matches = list(re.finditer(r'    <article class="report">.*?    </article>', text, re.S))
+    if not matches:
+        raise ValueError(f"report articles missing: {index_path}")
+    articles = [match.group(0) for match in matches] + [article.strip("\n")]
+    articles.sort(
+        key=lambda value: re.search(r'<time datetime="([^"]+)">', value).group(1),
+        reverse=True,
+    )
+    updated = text[: matches[0].start()] + "\n".join(articles) + text[matches[-1].end() :]
+    index_path.write_text(updated, encoding="utf-8")
+
+
+def _default_report_date() -> str:
+    return datetime.now(timezone.utc).astimezone(ZoneInfo("Asia/Shanghai")).date().isoformat()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Freeze the live Kaggle Top 100 and build one audited environment daily."
+    )
+    parser.add_argument("--date", default=_default_report_date())
+    parser.add_argument("--work", type=Path)
+    parser.add_argument("--report", type=Path)
+    parser.add_argument("--render-only", action="store_true")
+    parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--overwrite", action="store_true")
+    args = parser.parse_args()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", args.date):
+        parser.error("--date must use YYYY-MM-DD")
+    if args.render_only and args.validate_only:
+        parser.error("--render-only and --validate-only are mutually exclusive")
+    if args.work is None:
+        if args.render_only or args.validate_only:
+            parser.error("--work is required for render-only or validate-only")
+        stamp = datetime.now(timezone.utc).strftime("run-%Y%m%dT%H%M%SZ")
+        args.work = REPOSITORY_ROOT / ".tmp/environment_daily" / args.date / stamp
+    if args.report is None:
+        args.report = DAILY_REPORT_ROOT / f"{args.date}.html"
+    if args.report.exists() and not (args.overwrite or args.validate_only):
+        parser.error(f"report already exists; pass --overwrite explicitly: {args.report}")
+
+    if args.render_only or args.validate_only:
+        snapshot = json.loads((args.work / "snapshot.json").read_text(encoding="utf-8"))
+        meta_payload = json.loads((args.work / "meta_views.json").read_text(encoding="utf-8"))
+        replay_root = args.work / "representative_replays"
+        snapshot["identity_audit"] = _validate_snapshot(snapshot, meta_payload, replay_root)
+        if args.validate_only:
+            print(json.dumps(snapshot["identity_audit"], ensure_ascii=False))
+            return
+        snapshot_players = [snapshot["players"][str(rank)] for rank in range(1, 101)]
+        _render_report(
+            snapshot,
+            snapshot_players,
+            _card_catalog(),
+            args.report,
+            meta_payload,
+            replay_root,
+        )
+    else:
+        collect(args.work, args.report, args.date)
+    if args.report.resolve().parent == DAILY_REPORT_ROOT.resolve():
+        _update_index(args.date)
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--work", type=Path, required=True)
-    parser.add_argument("--report", type=Path, required=True)
-    parser.add_argument("--render-only", action="store_true")
-    args = parser.parse_args()
-    if args.render_only:
-        snapshot = json.loads((args.work / "snapshot.json").read_text(encoding="utf-8"))
-        snapshot_players = [snapshot["players"][str(rank)] for rank in range(1, 101)]
-        meta_path = args.work / "meta_views.json"
-        meta_payload = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else None
-        _render_report(snapshot, snapshot_players, _card_catalog(), args.report, meta_payload)
-    else:
-        collect(args.work, args.report)
+    main()
