@@ -12,7 +12,7 @@
 
 ## 项目结构与模块组织
 
-- 仓库不再使用 `work/`；可运行待评估 package 统一放入 `evaluation/arena/candidates/<name>/`。从 `0013` 起，具体训练项目放在根目录 `train/<project_id>/`，项目归档、权威设计文档和正式评测放在 `experiments/<project_id>/`，运行时 dataset、checkpoint、TensorBoard、W&B staging 与版本记录放在 `rl_runs/<project_id>/`。`rl_environment/` 只提供通用训练基础设施；`submission/<name>/` 只保留历史提交源目录。
+- 仓库不再使用 `work/`；可运行待评估 package 统一放入 `evaluation/arena/candidates/<name>/`。从 `0013` 起，具体训练项目放在根目录 `train/<project_id>/`，项目归档、权威设计文档和正式评测放在 `experiments/<project_id>/`，运行时 dataset、checkpoint、TensorBoard、W&B staging 与版本记录放在 `rl_runs/<project_id>/`。`rl_environment/` 只提供通用训练基础设施；完成选择并需要长期归档的自包含 payload 统一放入 `archive/submission/<project_numbered_name>/`，对应压缩包放入 `archive/submission/dist/`；根目录 `submission/` 已退役，不得再创建新资产。
 - `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；常用基建必须放在所属的 Python package（如 `rl_environment/`、`train/<project>/`、`evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。
 - `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。
 - `evaluation/` 是仓库内的评测运行入口：`configs/opponents.json` 固定 catalog，`arena/opponents/<archetype>_<NN>/` 是正式固定对手池，每个对手都是独立标准 package（`main.py`、60 行 `deck.csv`、物理复制的 `cg/`），不是 adapter；正式名称按关键宝可梦组合使用 ASCII `snake_case` 和两位序号，例如 `alakazam_dudunsparce_01`。catalog 同时维护页面显示名和 1–2 张代表宝可梦卡 ID，用于胜率图缩略图。`arena/candidates/<name>/` 只暂存待准入 package，不参与 `--opponents all`，在用户确认收编前保持候选原名。官方 engine runtime 是唯一运行时来源；评测代码不得修改 `engine/source/`，也不得依赖隔壁评测仓库。

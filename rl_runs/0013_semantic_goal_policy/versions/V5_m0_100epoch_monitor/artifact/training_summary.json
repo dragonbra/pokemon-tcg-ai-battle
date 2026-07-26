@@ -1,0 +1,40 @@
+{
+  "best_validation_exact": 0.7247479433413744,
+  "best_validation_exact_epoch": 14,
+  "best_validation_loss": 0.6907608200963037,
+  "best_validation_loss_epoch": 14,
+  "completed_epochs": 16,
+  "discarded_partial_epoch": {
+    "completed_batches": 880,
+    "epoch": 17,
+    "optimization_fraction": 0.3857957036387549,
+    "progress_iteration": 3932,
+    "running_loss": 0.4865674441510981,
+    "stage": "train"
+  },
+  "global_step": 36496,
+  "interruption_detected_at": 1785079402,
+  "last_complete_checkpoint": {
+    "epoch": 16,
+    "path": "epoch-0016-725a52d3580b9899.pt",
+    "sha256": "725a52d3580b9899d157c47b64aa09e394fc55db583844474625cdaf268e0477"
+  },
+  "reason": "The training process was absent after completing epoch 16 and writing only partial epoch 17 optimization progress. Epochs 15 and 16 did not improve validation loss, so epoch 14 was archived as the immutable loss-best inference candidate.",
+  "requested_epochs": 100,
+  "schema_version": "semantic_goal_interrupted_training_summary_v1",
+  "selected_checkpoint": {
+    "criterion": "best_validation_loss",
+    "epoch": 14,
+    "path": "epoch-0014-e1eeed8bccbe04e4.pt",
+    "sha256": "e1eeed8bccbe04e4937bc6489038503928358df4c15b7e571f710922cc906cfa"
+  },
+  "state": "interrupted",
+  "version": "V5_m0_100epoch_monitor",
+  "wandb": {
+    "remote_state": "crashed",
+    "repository_state": "interrupted",
+    "run_id": "0013_semantic_goal_policy--v5_m0_100epoch_monitor-43a6f501ea",
+    "sync_state": "synced_through_partial_epoch_17",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0013_semantic_goal_policy--v5_m0_100epoch_monitor-43a6f501ea"
+  }
+}

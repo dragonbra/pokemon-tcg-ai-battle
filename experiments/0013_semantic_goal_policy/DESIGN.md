@@ -1,11 +1,12 @@
 # 0013 Semantic Goal Policy
 
 **Project ID:** `0013_semantic_goal_policy`
-**Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors published and fully
-validated; V4 completed the reproducible three-epoch M0 minimum; V5 extends M0 to a monitored
-100-epoch ceiling; V6 runs the complete existing M5 ladder in parallel; M5.1 is implemented as an
-unlaunched Goal-QKV leave-one-out and is not authorized by the current frozen protocol; F1 and its
-richer feature dataset are deferred; no candidate or policy-strength result exists.
+**Status:** raw `dataset_reference_v3` and source-frozen V3 model-ready tensors are published and
+fully validated; V4 completed the reproducible three-epoch M0 minimum; V5 stopped after 16 complete
+epochs plus a discarded partial epoch 17 and selected epoch 14 as validation-loss-best; that M0
+snapshot is archived and has an official-engine catalog report; V6 is preserved as a user-stopped
+M5 diagnostic run at epoch 8; M5.1 remains implemented but unlaunched and unauthorized by the
+current frozen protocol; F1 and its richer feature dataset remain deferred.
 
 ## Purpose and boundaries
 
@@ -204,16 +205,37 @@ longer starves the model. Full evidence is in
 
 V4 completed all three planned epochs with validation loss `1.12633 -> 1.05466 -> 1.00068` and
 validation exact action `0.55279 -> 0.58960 -> 0.61434`; its W&B run is synced and epoch 3 is best.
-The curve is still improving, so V4 proves the minimum reproducible M0 loop but not convergence.
-V5 restarts from the same bound initial model and keeps dataset, M0 architecture, batch 64, seed
-20260726, learning rate 3e-4, weight decay 1e-2, AMP and deterministic behavior unchanged. Its only
-training-contract change is a 100-epoch ceiling with manual monitoring for sustained validation
-regression against improving train metrics. V6 independently initializes M5 with the same seed and
-optimization settings and runs the complete existing feature ladder in parallel under the same
-100-epoch ceiling. A real V3 batch-64 M5 AMP forward/backward/optimizer smoke passed with finite
-loss and 1.804 GiB peak CUDA allocation while V5 remained active. W&B identity, tags and Chinese
-Notes are recorded in each run config; live progress uses the canonical `progress/*` namespace and
-`progress/iteration` axis.
+V5 restarted from the same bound initial model with the same dataset, M0 architecture, batch 64,
+seed 20260726, learning rate 3e-4, weight decay 1e-2, AMP, and deterministic behavior. It completed
+16 epochs before the process disappeared during epoch 17 at 38.58% optimization progress. Epoch 14
+is the immutable validation-loss-best snapshot (`loss=0.69076082`, exact action `0.72474794`, legal
+action `1.0`); epochs 15 and 16 improved train metrics but regressed validation loss, so partial
+epoch 17 is excluded. V6 independently initialized M5 with the same seed and optimization settings,
+but was user-stopped after epoch 8 when diagnostics established unnormalized activation scale and
+slow optimization; its partial epoch 9 is excluded. Both interrupted boundaries and their W&B
+lifecycle state are recorded under the corresponding version artifacts.
+
+The epoch-14 M0 state is exported as the self-contained
+`../../archive/submission/0013_v5_m0_epoch14_loss_best/` payload, with optimizer state excluded and
+source checkpoint, model-state, compiler, dataset, protocol, deck, and runtime hashes retained. Its
+matching tar archive is under `../../archive/submission/dist/`. Formal official-engine report
+`evaluation/V5_m0_100epoch_monitor.html` ran 20 catalog opponents x 10 games with eight workers and
+one CPU thread per worker. The immutable report records 92 wins, 98 losses, 10 errors, no unfinished
+games, a fixed-denominator win rate of 46.0%, and 95.0% completion. All ten errors are engine errors
+against `alakazam_dudunsparce_03` at the first 0-2 selections; the other 19 opponents produced 190
+completed games without candidate runtime errors. Completed-game win rate is therefore 92/190 =
+48.42% (first 47/95 = 49.47%; second 45/95 = 47.37%). This is official-engine evidence with an
+explicit catalog correctness caveat, not a clean promotion result and not grounds for automatic
+opponent-pool admission.
+
+V5 and V6 were launched before the evaluation/telemetry runtime optimization and therefore retain
+their already-loaded two-encoding FP32 train/validation evaluation path, `progress/iteration` W&B
+axis, and disabled console capture for their immutable records. Subsequent formal versions consume
+the train split only once, aggregate online teacher-forced optimization diagnostics from the same
+forward used by backward, omit static full-train evaluation and train-time greedy decode, and retain
+one complete epoch-end validation snapshot. Validation uses one shared encoding, on-device metric
+aggregation, configured AMP, epoch-axis BC progress, and wrapped W&B Logs. The canonical
+`training_metrics.jsonl` remains the scalar fact source in both contracts.
 
 This M5 direction check deliberately skips M1-M4 and does not implement F1. F1's richer option,
 event/relation, serial-exclusion, and board-conditioned Goal-query dataset/model contract is
@@ -224,8 +246,8 @@ Goal-QKV gradients disconnected, produced finite loss, and used 1.742 GiB peak C
 V7 directory, W&B run, checkpoint, metrics, or persistent GPU process has been created. A later
 launch requires explicit confirmation and a new immutable ablation protocol.
 
-Only after the monitored M0/M5 convergence runs and offline audits pass may self-contained
-candidates be exported. M1-M4 and F1 are paused. Any resumed comparison must retain explicit raw
-source, model-ready feature, split, seed, compiler, action, and evaluation contracts. Offline metrics
-do not establish policy strength. Only frozen official-engine arena reports can do that, and
-promotion into the formal opponent pool still requires explicit user confirmation.
+The monitored M0/M5 runs are closed and M1-M4 and F1 remain paused. The archived M0 package is an
+evaluated project artifact, but the report's 10 catalog engine errors prevent treating it as a clean
+correctness-gate pass. Any resumed comparison must retain explicit raw source, model-ready feature,
+split, seed, compiler, action, and evaluation contracts. Promotion into the formal opponent pool
+still requires a separate clean official-engine report and explicit user confirmation.

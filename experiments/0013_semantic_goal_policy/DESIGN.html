@@ -20,7 +20,7 @@ code { overflow-wrap: anywhere; }
 <body>
 <header>
 <h1>0013 Semantic Goal Policy</h1>
-<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V5 and V6 run the monitored M0 and complete existing M5 ladders in parallel. M5.1 is implemented as an unlaunched Goal-QKV leave-one-out and is not authorized by the current frozen protocol. F1 remains deferred. No candidate or strength result yet.</p>
+<p class="status">Raw dataset v3 and source-frozen V3 tensors are fully validated. V5 selected epoch 14 as M0 validation-loss-best after 16 complete epochs and a discarded partial epoch 17; the snapshot is archived and evaluated with an explicit catalog engine-error caveat. V6 is preserved as a user-stopped M5 diagnostic at epoch 8. M5.1 remains implemented but unlaunched and unauthorized by the current frozen protocol. F1 remains deferred.</p>
 <nav>
 <a href="DESIGN.md">Full Markdown contract</a>
 <a href="decisions/001_pre_run_protocol.md">Frozen protocol</a>
@@ -136,15 +136,32 @@ throughput, complete untrained validation, and runtime smoke. At batch 64 the in
 5,765 decisions/s while M0 optimization delivered 638 decisions/s, so loading no longer starves the
 model. V4 completed all three epochs: validation loss improved
 <code>1.12633 -&gt; 1.05466 -&gt; 1.00068</code> and validation exact action improved
-<code>0.55279 -&gt; 0.58960 -&gt; 0.61434</code>. V5 restarts from the same bound initial model and keeps
-the dataset, M0 architecture, batch 64, seed, optimizer parameters, AMP and deterministic behavior
-unchanged; only the ceiling changes to 100 epochs with manual overfitting monitoring. V6
-independently initializes M5 with the same seed and optimizer settings, enables all existing ladder
-features, and uses the same 100-epoch ceiling. Its real V3 batch-64 AMP optimizer smoke completed
-with finite loss and 1.804 GiB peak CUDA allocation while V5 remained active. W&amp;B identity, tags
-and Chinese Notes are mirrored into each run config, and live progress uses
-<code>progress/*</code> on <code>progress/iteration</code>. M1-M4 and F1 are paused; this M5 run does
-not introduce F1's richer feature schema or board-conditioned Goal query.</p>
+<code>0.55279 -&gt; 0.58960 -&gt; 0.61434</code>. V5 restarted from the same bound initial model and
+kept the dataset, M0 architecture, batch 64, seed, optimizer parameters, AMP and deterministic
+behavior unchanged. It completed 16 epochs before the process disappeared during epoch 17 at
+38.58% optimization progress. Epoch 14 is validation-loss-best with loss
+<code>0.69076082</code>, exact action <code>0.72474794</code>, and legal action <code>1.0</code>;
+epochs 15 and 16 regressed validation loss and partial epoch 17 is excluded. V6 was user-stopped
+after epoch 8 when diagnostics established unnormalized activation scale and slow optimization;
+its partial epoch 9 is excluded.</p>
+<p>The epoch-14 state is archived as
+<a href="../../archive/submission/0013_v5_m0_epoch14_loss_best/"><code>0013_v5_m0_epoch14_loss_best</code></a>
+with a matching tar archive under <code>archive/submission/dist/</code>. The
+<a href="evaluation/V5_m0_100epoch_monitor.html">formal official-engine report</a> ran 20 catalog
+opponents x 10 games and records 92 wins, 98 losses, 10 errors, no unfinished games, 46.0% fixed-
+denominator win rate, and 95.0% completion. All ten errors are early engine errors against
+<code>alakazam_dudunsparce_03</code>; the remaining 190 games had no candidate runtime error.
+Completed-game win rate is 48.42% overall, 49.47% first, and 47.37% second. This is official-engine
+evidence with a catalog correctness caveat, not a clean promotion result.</p>
+<p>V5 and V6 were launched before the
+runtime/telemetry optimization and retain their already-loaded two-encoding FP32 train/validation
+evaluation path, <code>progress/iteration</code> axis, and disabled console capture in their immutable
+records. Subsequent formal versions consume the train split only once, aggregate online
+teacher-forced optimization diagnostics from the same forward used by backward, omit static
+full-train evaluation and train-time greedy decode, and retain one complete epoch-end validation
+snapshot. Validation uses one shared encoding, on-device aggregation, configured AMP, epoch-axis BC
+progress, and wrapped W&amp;B Logs. The canonical <code>training_metrics.jsonl</code> remains the scalar
+fact source. M1-M4 and F1 remain paused.</p>
 <p>M5.1 is code-complete and tested, but remains a prepared option only. The current frozen protocol
 authorizes M0-M5, and both command entry points reject M5.1 under its SHA. A real V3 batch-64 AMP
 optimizer smoke matched M5's initial model SHA, kept all Goal-QKV gradients disconnected, produced

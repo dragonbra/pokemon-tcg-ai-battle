@@ -35,5 +35,6 @@
     "visibility_contract": "causal_actor_visible_only",
     "winner_only": true
   },
-  "status": "data_contract_and_model_smoke_complete_pending_final_dataset"
+  "research_status": "data_contract_and_model_smoke_complete_pending_final_dataset",
+  "status": "initialized"
 }
