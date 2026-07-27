@@ -18,8 +18,11 @@ EXPECTED_NAMES = (
     "alakazam_dudunsparce_01",
     "alakazam_dudunsparce_02",
     "alakazam_dudunsparce_03_bc",
+    "alakazam_dudunsparce_04_sota",
     "crustle_01",
     "crustle_02",
+    "cynthias_garchomp_ex_roserade_01_bc",
+    "cynthias_garchomp_ex_roserade_02_bc",
     "dragapult_ex_01",
     "dragapult_ex_02",
     "ionos_bellibolt_ex_kilowattrel_01",
@@ -27,6 +30,8 @@ EXPECTED_NAMES = (
     "marnies_grimmsnarl_ex_froslass_01",
     "marnies_grimmsnarl_ex_froslass_02",
     "marnies_grimmsnarl_ex_froslass_03_bc",
+    "marnies_grimmsnarl_ex_froslass_04_bc",
+    "marnies_grimmsnarl_ex_froslass_05_bc",
     "mega_abomasnow_ex_kyogre_01",
     "mega_lucario_ex_solrock_01",
     "mega_lucario_ex_solrock_02",
@@ -34,6 +39,7 @@ EXPECTED_NAMES = (
     "mega_lucario_ex_solrock_04",
     "mega_lucario_ex_solrock_05",
     "mega_lucario_ex_solrock_06",
+    "mega_lucario_ex_solrock_07_bc",
     "team_rockets_mewtwo_ex_spidops_01_bc",
 )
 
@@ -41,7 +47,14 @@ BC_AGENT_NAMES = (
     "alakazam_dudunsparce_03_bc",
     "marnies_grimmsnarl_ex_froslass_03_bc",
     "team_rockets_mewtwo_ex_spidops_01_bc",
+    "cynthias_garchomp_ex_roserade_01_bc",
+    "cynthias_garchomp_ex_roserade_02_bc",
+    "marnies_grimmsnarl_ex_froslass_04_bc",
+    "marnies_grimmsnarl_ex_froslass_05_bc",
+    "mega_lucario_ex_solrock_07_bc",
 )
+
+SOTA_AGENT_NAMES = ("alakazam_dudunsparce_04_sota",)
 
 
 class EvaluationAssetTests(unittest.TestCase):
@@ -100,6 +113,14 @@ class EvaluationAssetTests(unittest.TestCase):
             with self.subTest(opponent=name):
                 self.assertIn("bc_agent", by_name[name]["tags"])
                 self.assertTrue(by_name[name]["display_name"].startswith("[BC] "))
+
+    def test_sota_agent_opponents_are_visibly_tagged(self) -> None:
+        by_name = {opponent["name"]: opponent for opponent in self.catalog["opponents"]}
+        for name in SOTA_AGENT_NAMES:
+            with self.subTest(opponent=name):
+                self.assertIn("sota_agent", by_name[name]["tags"])
+                self.assertTrue(by_name[name]["display_name"].startswith("[SOTA] "))
+
 
 
 if __name__ == "__main__":

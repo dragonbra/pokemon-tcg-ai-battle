@@ -25,6 +25,14 @@
       "tags": ["alakazam", "dudunsparce", "bc_agent"]
     },
     {
+      "name": "alakazam_dudunsparce_04_sota",
+      "package": "arena/opponents/alakazam_dudunsparce_04_sota",
+      "display_name": "[SOTA] Alakazam / Dudunsparce 04",
+      "representative_card_ids": [743, 66],
+      "enabled": true,
+      "tags": ["alakazam", "dudunsparce", "sota_agent"]
+    },
+    {
       "name": "crustle_01",
       "package": "arena/opponents/crustle_01",
       "display_name": "Crustle 01",
@@ -39,6 +47,22 @@
       "representative_card_ids": [345],
       "enabled": true,
       "tags": ["crustle"]
+    },
+    {
+      "name": "cynthias_garchomp_ex_roserade_01_bc",
+      "package": "arena/opponents/cynthias_garchomp_ex_roserade_01_bc",
+      "display_name": "[BC] Cynthia's Garchomp ex / Cynthia's Roserade 01",
+      "representative_card_ids": [381, 342],
+      "enabled": true,
+      "tags": ["cynthias_garchomp_ex", "cynthias_roserade", "bc_agent"]
+    },
+    {
+      "name": "cynthias_garchomp_ex_roserade_02_bc",
+      "package": "arena/opponents/cynthias_garchomp_ex_roserade_02_bc",
+      "display_name": "[BC] Cynthia's Garchomp ex / Cynthia's Roserade 02",
+      "representative_card_ids": [381, 342],
+      "enabled": true,
+      "tags": ["cynthias_garchomp_ex", "cynthias_roserade", "bc_agent"]
     },
     {
       "name": "dragapult_ex_01",
@@ -92,6 +116,22 @@
       "name": "marnies_grimmsnarl_ex_froslass_03_bc",
       "package": "arena/opponents/marnies_grimmsnarl_ex_froslass_03_bc",
       "display_name": "[BC] Marnie’s Grimmsnarl ex / Froslass 03",
+      "representative_card_ids": [648, 104],
+      "enabled": true,
+      "tags": ["marnies_grimmsnarl_ex", "froslass", "bc_agent"]
+    },
+    {
+      "name": "marnies_grimmsnarl_ex_froslass_04_bc",
+      "package": "arena/opponents/marnies_grimmsnarl_ex_froslass_04_bc",
+      "display_name": "[BC] Marnie's Grimmsnarl ex / Froslass 04",
+      "representative_card_ids": [648, 104],
+      "enabled": true,
+      "tags": ["marnies_grimmsnarl_ex", "froslass", "bc_agent"]
+    },
+    {
+      "name": "marnies_grimmsnarl_ex_froslass_05_bc",
+      "package": "arena/opponents/marnies_grimmsnarl_ex_froslass_05_bc",
+      "display_name": "[BC] Marnie's Grimmsnarl ex / Froslass 05",
       "representative_card_ids": [648, 104],
       "enabled": true,
       "tags": ["marnies_grimmsnarl_ex", "froslass", "bc_agent"]
@@ -151,6 +191,14 @@
       "representative_card_ids": [678, 676],
       "enabled": true,
       "tags": ["mega_lucario_ex", "solrock"]
+    },
+    {
+      "name": "mega_lucario_ex_solrock_07_bc",
+      "package": "arena/opponents/mega_lucario_ex_solrock_07_bc",
+      "display_name": "[BC] Mega Lucario ex / Solrock 07",
+      "representative_card_ids": [678, 676],
+      "enabled": true,
+      "tags": ["mega_lucario_ex", "solrock", "bc_agent"]
     },
     {
       "name": "team_rockets_mewtwo_ex_spidops_01_bc",

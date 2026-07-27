@@ -91,9 +91,9 @@ class CombatMatrixTests(unittest.TestCase):
 
             data = build_combat_matrix_data(CATALOG, reports_root)
 
-            self.assertEqual(data["protocol"]["packages"], 20)
-            self.assertEqual(data["protocol"]["archetypes"], 11)
-            self.assertEqual(data["summary"]["total_games"], 20 * 20 * 10)
+            self.assertEqual(data["protocol"]["packages"], len(names))
+            self.assertEqual(data["protocol"]["archetypes"], 17)
+            self.assertEqual(data["summary"]["total_games"], len(names) * len(names) * 10)
             first = names[0]
             second = names[1]
             self.assertEqual(data["package_matrix"][first][second]["win_rate"], 0.1)
@@ -131,7 +131,10 @@ class CombatMatrixTests(unittest.TestCase):
             source = root / "combat_mat" / "matrix.json"
             write_combat_matrix(data, output, source)
             self.assertTrue(output.is_file())
-            self.assertEqual(json.loads(source.read_text())["summary"]["total_games"], 4000)
+            self.assertEqual(
+                json.loads(source.read_text())["summary"]["total_games"],
+                len(names) * len(names) * 10,
+            )
 
 
 if __name__ == "__main__":

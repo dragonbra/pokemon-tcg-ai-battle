@@ -1,0 +1,8 @@
+{
+  "architecture": "mean_pool_probability_ensemble",
+  "left_checkpoint": "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_marnie_core_meanpool_epochmix_v2_tufa_modal_3121746f_20260727\\policy.pt",
+  "right_checkpoint": "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_marnie_core_recent5_meanpool_epochmix_v3_3121746f_20260727\\policy.pt",
+  "right_weight": 0.5,
+  "deck_hash": "3121746f2b28",
+  "deck_cards": 60
+}
