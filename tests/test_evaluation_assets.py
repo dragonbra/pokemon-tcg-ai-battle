@@ -100,9 +100,8 @@ class EvaluationAssetTests(unittest.TestCase):
                 source = (OPPONENTS_ROOT / name / "main.py").read_text(encoding="utf-8")
                 self.assertNotIn(FOREIGN_EVALUATION_REPOSITORY, source)
 
-    def test_arena_candidates_is_a_separate_non_catalog_staging_area(self) -> None:
-        self.assertTrue(CANDIDATES_ROOT.is_dir())
-        self.assertTrue((CANDIDATES_ROOT / "README.md").is_file())
+    def test_arena_candidates_is_local_non_catalog_staging_area(self) -> None:
+        self.assertFalse(CANDIDATES_ROOT.is_symlink())
         catalog_packages = {opponent["package"] for opponent in self.catalog["opponents"]}
         self.assertTrue(all(package.startswith("arena/opponents/") for package in catalog_packages))
         self.assertFalse(any(package.startswith("arena/candidates/") for package in catalog_packages))
