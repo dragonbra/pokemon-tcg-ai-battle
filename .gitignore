@@ -46,6 +46,7 @@ data/replays/*
 .hermes/
 
 # Exported model weights and packaged submissions stay local.
+evaluation/arena/candidates/
 evaluation/arena/candidates/**/strategy/model.bin
 archive/submission/**/strategy/model.bin
 archive/submission/dist/*.tar.gz
