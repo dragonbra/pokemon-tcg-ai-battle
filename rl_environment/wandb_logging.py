@@ -56,7 +56,9 @@ class WandbSettings:
         group, name, default_directory = _run_location(path)
         group = os.environ.get("WANDB_RUN_GROUP", group)
         name = os.environ.get("WANDB_NAME", name)
-        run_id = os.environ.get("WANDB_RUN_ID", wandb_run_id(group, name))
+        canonical = _canonical_version_location(path)
+        identity_name = canonical[1] if canonical is not None else name
+        run_id = os.environ.get("WANDB_RUN_ID", wandb_run_id(group, identity_name))
         job_type = os.environ.get("WANDB_JOB_TYPE", _infer_job_type(metrics))
         tags = tuple(
             tag.strip()
@@ -258,7 +260,9 @@ def _run_location(jsonl_path: Path) -> tuple[str, str, str]:
     canonical = _canonical_version_location(jsonl_path)
     if canonical is not None:
         project, version, run_root = canonical
-        return project, version, str(run_root / "wandb")
+        project_number, project_tag = project.split("_", maxsplit=1)
+        display_name = f"{project_number} · {project_tag} · {version}"
+        return project, display_name, str(run_root / "wandb")
     group = "local-smoke"
     name = jsonl_path.parent.name or "training"
     return group, name, str(jsonl_path.parent / "wandb")

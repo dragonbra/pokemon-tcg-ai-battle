@@ -280,7 +280,10 @@ class WandbLoggingTests(unittest.TestCase):
                 allowed = create_wandb_sink_from_environment(metrics, {"train/bc_loss": 0.5})
 
         self.assertEqual(settings.group, "0013_semantic_goal_policy")
-        self.assertEqual(settings.name, "V1_initial_contract")
+        self.assertEqual(
+            settings.name,
+            "0013 · semantic_goal_policy · V1_initial_contract",
+        )
         self.assertEqual(
             settings.directory,
             root / "rl_runs" / "0013_semantic_goal_policy" / "versions" / "V1_initial_contract" / "wandb",
