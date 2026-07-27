@@ -11,7 +11,13 @@ from pathlib import Path
 from typing import Any, Literal
 import warnings
 
-from rl_environment.runs import PROJECT_ID, REPOSITORY_ROOT, VERSIONED_ATTEMPT, WANDB_PROJECT, wandb_run_id
+from rl_environment.runs import (
+    PROJECT_ID,
+    REPOSITORY_ROOT,
+    VERSIONED_ATTEMPT,
+    WANDB_PROJECT,
+    wandb_run_id,
+)
 
 
 WandbMode = Literal["disabled", "offline", "online"]
@@ -153,6 +159,13 @@ class WandbSink:
         self._run.define_metric("ppo/*", step_metric="trainer/update")
         self._run.define_metric("rollout/*", step_metric="env/decisions")
         self._run.define_metric("eval/*", step_metric="env/episodes")
+        self._run.define_metric("system/disk/*", step_metric="trainer/update")
+        self._run.define_metric("system/rollout/*", step_metric="env/decisions")
+        self._run.define_metric("system/gpu/*", step_metric="trainer/update")
+        self._run.define_metric("system/parameter_count", step_metric="trainer/update")
+        self._run.define_metric(
+            "system/trainable_parameter_count", step_metric="trainer/update"
+        )
         self._run.define_metric("representation/*", step_metric="trainer/epoch")
         self._run.define_metric("counterfactual/*", step_metric="trainer/epoch")
         self._run.define_metric("invariance/*", step_metric="trainer/epoch")
@@ -304,6 +317,8 @@ def _redact_config(value: Any, *, key: str = "") -> Any:
 
 def _infer_job_type(metrics: dict[str, Any]) -> str:
     keys = tuple(metrics)
+    if any(key.startswith("ppo/") or "ppo" in key for key in keys):
+        return "ppo_train"
     if any(key.startswith("rollout/") for key in keys):
         return "rollout_train"
     if any(key.startswith("eval/") for key in keys):
@@ -314,9 +329,10 @@ def _infer_job_type(metrics: dict[str, Any]) -> str:
         return "counterfactual"
     if any(key.startswith("invariance/") for key in keys):
         return "invariance"
-    if any("ppo" in key for key in keys):
-        return "ppo_train"
-    if any("value_mae" in key or "value_rmse" in key for key in keys):
+    if any(
+        key.startswith("value/") or "value_mae" in key or "value_rmse" in key
+        for key in keys
+    ):
         return "value_calibration"
     return "bc_train"
 

@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>0017 Dragapult Terminal RL - Design Review</title>
+  <style>
+    :root {
+      --ink: #17211d;
+      --muted: #58645e;
+      --line: #d7ddd9;
+      --paper: #f7f9f7;
+      --white: #ffffff;
+      --green: #176b4d;
+      --green-soft: #e8f3ed;
+      --red: #a13b38;
+      --red-soft: #f8ecea;
+      --yellow: #8a6419;
+      --yellow-soft: #faf1d9;
+      --blue: #245d80;
+      --blue-soft: #e8f1f6;
+      --code: #202a26;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", "Microsoft YaHei", sans-serif;
+      line-height: 1.58;
+      letter-spacing: 0;
+    }
+    a { color: var(--blue); }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
+    }
+    .topbar-inner {
+      max-width: 1240px;
+      min-height: 54px;
+      margin: 0 auto;
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .brand { font-weight: 760; white-space: nowrap; }
+    nav { display: flex; gap: 16px; overflow-x: auto; }
+    nav a { color: var(--muted); font-size: 13px; text-decoration: none; white-space: nowrap; }
+    main { max-width: 1240px; margin: 0 auto; padding: 30px 24px 72px; }
+    .headline {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(290px, .55fr);
+      gap: 44px;
+      align-items: end;
+      padding: 24px 0 32px;
+      border-bottom: 1px solid var(--line);
+    }
+    .eyebrow { color: var(--green); font-size: 13px; font-weight: 760; text-transform: uppercase; }
+    h1 { margin: 8px 0 12px; font-size: clamp(34px, 5vw, 58px); line-height: 1.06; letter-spacing: 0; }
+    .lead { max-width: 780px; margin: 0; color: var(--muted); font-size: 18px; }
+    .review-state { border-left: 4px solid var(--yellow); padding: 4px 0 4px 18px; }
+    .review-state strong { display: block; font-size: 16px; }
+    .review-state span { color: var(--muted); font-size: 14px; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-bottom: 1px solid var(--line);
+    }
+    .metric { padding: 22px 20px 22px 0; min-width: 0; }
+    .metric + .metric { border-left: 1px solid var(--line); padding-left: 20px; }
+    .metric-value { font-size: 26px; font-weight: 780; overflow-wrap: anywhere; }
+    .metric-label { color: var(--muted); font-size: 12px; }
+    section { padding: 40px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 70px; }
+    h2 { margin: 0 0 10px; font-size: 25px; letter-spacing: 0; }
+    h3 { margin: 28px 0 8px; font-size: 17px; letter-spacing: 0; }
+    p { max-width: 900px; }
+    .section-intro { margin: 0 0 24px; color: var(--muted); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+    .panel { border-top: 3px solid var(--green); padding-top: 14px; }
+    .panel.warn { border-color: var(--yellow); }
+    .panel.danger { border-color: var(--red); }
+    .panel h3 { margin-top: 0; }
+    .panel p { color: var(--muted); margin-bottom: 0; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 2px 9px;
+      border-radius: 4px;
+      color: var(--green);
+      background: var(--green-soft);
+      font-size: 12px;
+      font-weight: 720;
+    }
+    .badge.warn { color: var(--yellow); background: var(--yellow-soft); }
+    .badge.red { color: var(--red); background: var(--red-soft); }
+    table { width: 100%; border-collapse: collapse; background: var(--white); font-size: 13px; }
+    th, td { padding: 10px 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { color: #37423c; background: #eef2ef; font-weight: 720; }
+    td code { overflow-wrap: anywhere; }
+    .table-wrap { overflow-x: auto; }
+    code, pre { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+    code { color: var(--code); background: #edf1ee; padding: 1px 4px; border-radius: 3px; }
+    pre {
+      overflow-x: auto;
+      margin: 20px 0;
+      padding: 22px;
+      color: #e9f2ed;
+      background: var(--code);
+      border-radius: 6px;
+      line-height: 1.7;
+      font-size: 13px;
+    }
+    ul, ol { padding-left: 22px; }
+    li + li { margin-top: 6px; }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(130px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 22px;
+    }
+    .flow-step {
+      position: relative;
+      min-height: 108px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: var(--white);
+      border-radius: 6px;
+    }
+    .flow-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -10px;
+      top: 38px;
+      z-index: 2;
+      color: var(--green);
+      background: var(--paper);
+      font-weight: 800;
+    }
+    .flow-step strong { display: block; margin-bottom: 6px; font-size: 14px; }
+    .flow-step span { color: var(--muted); font-size: 12px; }
+    .callout { padding: 18px 20px; border-left: 4px solid var(--blue); background: var(--blue-soft); }
+    .callout.warning { border-color: var(--yellow); background: var(--yellow-soft); }
+    .callout.danger { border-color: var(--red); background: var(--red-soft); }
+    .callout p { margin: 0; }
+    .roadmap { display: grid; grid-template-columns: 150px 1fr 1fr; }
+    .roadmap > div { padding: 13px 14px; border-bottom: 1px solid var(--line); }
+    .roadmap .version { font-weight: 760; color: var(--green); }
+    .small { color: var(--muted); font-size: 12px; }
+    footer { padding-top: 30px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 900px) {
+      .headline, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metric:nth-child(3) { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); }
+      .metric:nth-child(4) { border-top: 1px solid var(--line); }
+      .flow { grid-template-columns: 1fr; }
+      .flow-step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -17px; }
+      .roadmap { grid-template-columns: 1fr; border-top: 1px solid var(--line); }
+      .roadmap > div { border-bottom: 0; }
+      .roadmap > div:nth-child(3n) { border-bottom: 1px solid var(--line); }
+    }
+    @media (max-width: 580px) {
+      .topbar-inner { align-items: flex-start; flex-direction: column; gap: 4px; padding: 8px 16px; }
+      main { padding: 18px 16px 54px; }
+      .metrics { grid-template-columns: 1fr; }
+      .metric + .metric, .metric:nth-child(3) { border-left: 0; border-top: 1px solid var(--line); padding-left: 0; }
+      h1 { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">0017 · Dragapult Terminal RL</div>
+      <nav aria-label="页面导航">
+        <a href="#contract">合同</a>
+        <a href="#model">模型</a>
+        <a href="#rollout">Rollout</a>
+        <a href="#learning">训练</a>
+        <a href="#metrics">观测</a>
+        <a href="#safety">护栏</a>
+        <a href="#roadmap">版本</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="headline">
+      <div>
+        <div class="eyebrow">Design review · 2026-07-28</div>
+        <h1>多龙终局奖励强化学习</h1>
+        <p class="lead">从 0015 最佳 R15 多龙 checkpoint 出发，以完整官方引擎对局的胜负为唯一环境奖励，建立可审计、可停止、不过度占盘的 value calibration + PPO 闭环。</p>
+      </div>
+      <div class="review-state">
+        <strong>实现与 CUDA smoke 已通过</strong>
+        <span>正式 V1/V2/V3 尚未启动；smoke 结果只证明工程合同。</span>
+      </div>
+    </div>
+
+    <div class="metrics" aria-label="项目摘要">
+      <div class="metric"><div class="metric-value">R15</div><div class="metric-label">0015 V2 exact-best actor</div></div>
+      <div class="metric"><div class="metric-value">17.42M</div><div class="metric-label">继承 actor 参数</div></div>
+      <div class="metric"><div class="metric-value">+1 / −1 / 0</div><div class="metric-label">胜 / 负 / 平终局奖励</div></div>
+      <div class="metric"><div class="metric-value">26</div><div class="metric-label">当前冻结基线对手数</div></div>
+    </div>
+
+    <section id="contract">
+      <h2>一、项目合同</h2>
+      <p class="section-intro">0017 只服务多龙巴鲁托 ex + 黑夜魔灵。它不使用 0016 胡地模型，也不会在未经审核时开始训练。</p>
+      <div class="grid-3">
+        <div class="panel">
+          <span class="badge">唯一奖励</span>
+          <h3>终局胜负</h3>
+          <p>胜利 +1，失败 −1，平局 0，<code>gamma=1.0</code>。Prize、伤害、进化和技能使用都不改变 reward。</p>
+        </div>
+        <div class="panel warn">
+          <span class="badge warn">无效 Episode</span>
+          <h3>错误不是平局</h3>
+          <p>engine error、agent error、人工 step limit 都被丢弃并单独计数，不会伪装成 reward 0。</p>
+        </div>
+        <div class="panel danger">
+          <span class="badge red">强度证据</span>
+          <h3>只认真实引擎对局</h3>
+          <p>rolling 曲线用于训练诊断；版本强度结论仍来自冻结模型在相同 official-engine 合同下的正式评测。</p>
+        </div>
+      </div>
+
+      <h3>证据分层</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>层级</th><th>确定事实</th><th>不能越界的结论</th></tr></thead>
+          <tbody>
+            <tr><td>官方规则</td><td>进化时机、每回合资源、攻击结束回合、Prize/无可战斗宝可梦/回合开始抽牌失败等终局条件。</td><td>官方规则不定义“好策略”，也不定义项目 reward。</td></tr>
+            <tr><td>当前 runtime</td><td>每次 engine selection 提供合法 options；完整 rollout 从 <code>battle_start</code> 到终局 result。</td><td>卡牌精确交互以当前卡牌数据和未修改的 official engine 为准。</td></tr>
+            <tr><td>项目假设</td><td>BC 起点、value head、KL anchor 和多龙诊断可能提高训练稳定性和可解释性。</td><td>这些假设必须通过对局证据验证；诊断永不成为奖励。</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="source">
+      <h2>二、起点与新基线</h2>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><th>来源</th><td><code>0015_dragapult_conditioned_bc / V2_t1_plus_pure_dragapult</code></td></tr>
+            <tr><th>Checkpoint</th><td><code>epoch-0010-7f75894270984186.pt</code></td></tr>
+            <tr><th>SHA-256</th><td><code>7f7589427098418682f3a53e0763f3fd24850d641a0a664955f6094f90530532</code></td></tr>
+            <tr><th>Target persona</th><td><code>third_ptcg_club</code>，source ID 1</td></tr>
+            <tr><th>离线 BC</th><td>target exact action 58.7%，legal action 100%</td></tr>
+            <tr><th>旧评测</th><td>39/200 = 19.5%，但只覆盖旧 20-opponent catalog，不能冒充 0017 baseline</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warning" style="margin-top:20px">
+        <p><strong>V1 必须先做：</strong>冻结当前 26 个 enabled opponent 的 catalog/package/engine hash，逐对手 10 局、先后手平衡、greedy policy、零参数更新。此结果才是 PPO 前的比较基线。</p>
+      </div>
+    </section>
+
+    <section id="model">
+      <h2>三、模型与动作概率</h2>
+      <p class="section-intro">0017 复制并固化 0015 所需实现，禁止运行时 import 其他编号训练项目。跨项目 checkpoint 路径只保留 provenance。</p>
+
+      <div class="grid-2">
+        <div>
+          <h3>保留的 R15 actor</h3>
+          <ul>
+            <li>宽度 320，8 heads，4 层主 entity encoder</li>
+            <li>1 层 causal event reader，4 个 goal roles</li>
+            <li>2 层 scenario reader，option ScaleGate 初值 0.35</li>
+            <li>最多 192 entities、128 legal options、16 action tokens</li>
+            <li>exact 60-card registered deck 和 source persona 同时进入 state/options</li>
+          </ul>
+        </div>
+        <div>
+          <h3>新增的 critic</h3>
+          <p>最终 source-conditioned state <code>[B, 320]</code> 经过 LayerNorm + MLP + tanh，输出 <code>value [B]</code>，范围约束为 [−1, 1]。它不读取对手隐藏牌、终局标签或任何 actor 不可见信息。</p>
+        </div>
+      </div>
+
+      <pre aria-label="模型数据流">official observation
+  → 22 组 actor-visible causal tensors
+  → R15 board / resource / event / goal / scenario readers
+  → source-conditioned state [B, 320] + options [B, O, 320]
+       ├─ autoregressive legal pointer → sampled action + log π(a|s)
+       └─ scalar value head            → V(s)</pre>
+
+      <h3>输入 schema 摘要</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>输入族</th><th>关键 shape</th><th>信息</th></tr></thead>
+          <tbody>
+            <tr><td>global</td><td><code>[4]</code> categorical + <code>[12]</code> numeric</td><td>选择上下文、先后手、回合资源、deck/hand/Prize 压力</td></tr>
+            <tr><td>entities</td><td><code>[E,7]</code> + <code>[E,5]</code>, E ≤ 192</td><td>场面、手牌、弃牌、能量、工具、进化链和因果可见状态</td></tr>
+            <tr><td>options</td><td><code>[O,12]</code>, O ≤ 128</td><td>当前引擎合法动作、来源和目标实体</td></tr>
+            <tr><td>registered deck</td><td><code>[R]</code> IDs/multiplicity/mask</td><td>exact 60-card 构筑身份</td></tr>
+            <tr><td>ledger / zones</td><td><code>[R,4]</code>, <code>[R,15]</code>, <code>[2,16]</code></td><td>已知/未知资源位置与区域账本</td></tr>
+            <tr><td>events / known hand</td><td><code>[H,8]</code>, <code>[H,4]</code>, <code>[K]</code></td><td>公开动作历史与仍然因果可知的对手手牌</td></tr>
+            <tr><td>persona</td><td>scalar</td><td>固定 target source ID 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>一个 PPO action 是什么</h3>
+      <p>一个 action 是一次 engine selection 返回的有序 option index 列表。训练时，pointer decoder 在“剩余合法 options + 合法时的 STOP”上逐 token 采样。行为概率是每个条件 token 概率的乘积，因此日志概率为所有 token（包括实际 STOP）的 log-prob 之和。新 policy 和冻结 BC reference 使用同一个已采样 prefix 重放，保证 PPO ratio 与 reference KL 的动作语义一致。</p>
+    </section>
+
+    <section id="rollout">
+      <h2>四、完整 Episode Rollout</h2>
+      <p class="section-intro">每局都由真实卡组、真实对手 package 和 official engine 完整推进。只有当前学习中的多龙 policy 的决策进入优化数据。</p>
+      <div class="flow" aria-label="rollout 流程">
+        <div class="flow-step"><strong>1 · 调度</strong><span>冻结 opponent 权重、seed、seat 和 policy hash</span></div>
+        <div class="flow-step"><strong>2 · Engine worker</strong><span>每局独立 CPU 进程，运行未修改官方 runtime</span></div>
+        <div class="flow-step"><strong>3 · GPU inference</strong><span>集中批量编码、采样合法 action、返回 old log-prob/value</span></div>
+        <div class="flow-step"><strong>4 · 完整终局</strong><span>终局后附加 +1/−1/0；错误和截断丢弃</span></div>
+        <div class="flow-step"><strong>5 · 更新后释放</strong><span>有界 RAM buffer 被消费，不持久化 raw trace</span></div>
+      </div>
+
+      <h3>内存中的最小 trajectory</h3>
+      <p>每个 candidate decision 只保存紧凑 feature tensors、sampled token sequence、behavior log-prob、behavior value、episode/seat/opponent ID 和诊断计数。原始 observation、对手动作 trace、visualize frames 默认不写盘。队列和 buffer 都有硬上界；GPU inference 变慢时 worker 通过 backpressure 等待。</p>
+
+      <h3>对手切分</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>切片</th><th>成员</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td><span class="badge">Train 20</span></td><td>7 月 28 日 arena promotion 之前的 20 个既有 opponent</td><td>逐 opponent 均匀采样，先后手平衡</td></tr>
+            <tr><td><span class="badge warn">Holdout 6</span></td><td>1 胡地 SOTA + 2 Cynthia BC + 2 新 Marnie BC + 1 新 Lucario BC</td><td>不进入 PPO rollout，只做冻结 greedy 泛化检查</td></tr>
+            <tr><td><span class="badge red">All 26</span></td><td>Train + Holdout</td><td>V1 baseline 与最终正式确认</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">Holdout IDs：alakazam_dudunsparce_04_sota、cynthias_garchomp_ex_roserade_01_bc、cynthias_garchomp_ex_roserade_02_bc、marnies_grimmsnarl_ex_froslass_04_bc、marnies_grimmsnarl_ex_froslass_05_bc、mega_lucario_ex_solrock_07_bc。V1 冻结时再次按 package hash 审计。</p>
+    </section>
+
+    <section id="learning">
+      <h2>五、Value Calibration 与 PPO</h2>
+      <div class="grid-2">
+        <div class="panel">
+          <span class="badge">阶段 A</span>
+          <h3>只训练 value head</h3>
+          <p>actor 完全冻结。完整 episode 的每个 candidate state 目标都是终局 z。每个 timestep 权重设为 1/T，使长局和短局对 value loss 的总贡献相同。</p>
+        </div>
+        <div class="panel warn">
+          <span class="badge warn">阶段 B</span>
+          <h3>保守 PPO pilot</h3>
+          <p>首版只开放 pointer decoder，representation 和 conditioned blocks 保持冻结。固定 BC actor 提供 reference KL 约束，但不改变环境 reward。</p>
+        </div>
+      </div>
+
+      <h3>V3 初始超参数</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Episodes/update</th><th>γ / λ</th><th>PPO epochs</th><th>Minibatch</th><th>Actor / value LR</th><th>Clip</th><th>Entropy</th><th>Target KL</th></tr></thead>
+          <tbody><tr><td>256 complete</td><td>1.0 / 0.95</td><td>4</td><td>1024 decisions</td><td>1e−5 / 1e−4</td><td>0.10</td><td>0.01</td><td>0.02</td></tr></tbody>
+        </table>
+      </div>
+      <p>GAE 只在完整有效 episode 上计算，advantage 在当前 update batch 内标准化。出现非有限 loss/gradient 时跳过 update；behavior KL 超过阈值时提前停止当前 batch 的剩余 PPO epochs。扩大解冻范围必须进入新的不可变版本。</p>
+
+      <div class="callout danger" style="margin-top:22px">
+        <p><strong>胜负 reward 正确，不等于训练必然变强。</strong>有限对手池上的策略过拟合、BC 遗忘、探索塌缩、seat 偏置以及 sampled win rate 噪声都可能让训练曲线上升而冻结评测下降。因此 holdout、固定 BC reference、KL/entropy 护栏和同合同正式对局都是算法的一部分。</p>
+      </div>
+    </section>
+
+    <section id="metrics">
+      <h2>六、W&B 观测面</h2>
+      <p class="section-intro"><code>training_metrics.jsonl</code> 是 canonical 事实源，按“本地 flush → TensorBoard → private W&B”镜像。W&B 项目固定为 <code>dragon_bra/pokemon-tcg-policy-learning</code>。</p>
+
+      <div class="grid-3">
+        <div class="panel"><h3>Rollout outcome</h3><ul><li>rolling 100 / 500 / 2,000 胜率</li><li>W/L/D、样本量、95% Wilson 区间</li><li>累计和先/后手胜率</li><li>per-opponent / archetype 曲线</li><li>完整回合、决策数、终局原因</li><li>错误、截断、丢弃率和 policy hash</li></ul></div>
+        <div class="panel"><h3>PPO health</h3><ul><li>policy / value / total loss</li><li>entropy、behavior KL、reference KL</li><li>clip fraction、ratio mean/p95/max</li><li>advantage / return、explained variance</li><li>gradient 和 update norm、LR</li><li>early stop、skipped/nonfinite update</li></ul></div>
+        <div class="panel"><h3>Value calibration</h3><ul><li>MAE、RMSE、Brier-style error</li><li>value mean/std/min/max</li><li>early/mid/late phase</li><li>seat、opponent、archetype、outcome</li><li>prediction vs empirical reliability buckets</li></ul></div>
+      </div>
+
+      <div class="grid-2" style="margin-top:30px">
+        <div class="panel warn"><h3>Performance / system</h3><p>episodes/sec、decisions/sec、rollout/update wall time、inference p50/p95、batch size、engine wait、queue depth/backpressure、worker restart、GPU utilization/memory、CPU/RAM、两个文件系统剩余空间和 artifact bytes。</p></div>
+        <div class="panel danger"><h3>三条不同横轴</h3><p><code>env/episodes</code> 对齐有效终局；<code>env/decisions</code> 对齐 candidate selections；<code>trainer/update</code> 对齐参数更新。训练 rollout 胜率不能冒充正式 <code>eval/*</code> 强度。</p></div>
+      </div>
+
+      <h3>多龙诊断，不进入 Reward</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>机制</th><th>记录内容</th><th>解释用途</th></tr></thead>
+          <tbody>
+            <tr><td>多龙进化线</td><td>Dreepy → Drakloak → Dragapult 的时间、完成率、攻击衔接</td><td>观察正常进攻节奏是否被破坏或改善</td></tr>
+            <tr><td>黑夜魔灵进化线</td><td>Duskull → Dusclops → Dusknoir 的时间和完成率</td><td>区分“没建立组件”与“建立后不用”</td></tr>
+            <tr><td>Cursed Blast</td><td>可用、使用、目标、自 KO、Prize 与接力状态</td><td>检查关键技能窗口和自爆后的 board continuity</td></tr>
+            <tr><td>Phantom Dive</td><td>提交次数、active damage、bench counters、KO/Prize conversion</td><td>解释伤害分配与进攻兑现</td></tr>
+            <tr><td>资源与时机</td><td>手填 Energy、Supporter、Retreat、Stadium、attack timing</td><td>发现回合预算浪费和过早 attack commit</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="safety">
+      <h2>七、磁盘、Checkpoint 与停止护栏</h2>
+      <div class="grid-3">
+        <div class="panel"><h3>只存模型</h3><p>checkpoint 仅含 actor/value weights、config、hash、update counter 和摘要。明确禁止 optimizer/scheduler/scaler/replay buffer。</p></div>
+        <div class="panel warn"><h3>配额</h3><p>任一监控盘低于 80 GiB 发警告；<code>/</code> 或 <code>/mnt/c</code> 低于 50 GiB 前 graceful stop；单版本上限 20 GiB。</p></div>
+        <div class="panel danger"><h3>不宣称 Resume</h3><p>从模型权重重新启动必须分配新版本，fresh optimizer、fresh rollout，禁止消费旧 trajectory 或向旧 W&B 曲线追加。</p></div>
+      </div>
+
+      <h3>自动停止或暂停条件</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>信号</th><th>处理</th></tr></thead>
+          <tbody>
+            <tr><td>合法动作率低于 100%</td><td>立即停止更新，按 action contract bug 处理</td></tr>
+            <tr><td>500 次尝试内 error/truncation 超过 1%</td><td>暂停 collector，诊断；绝不转为 reward</td></tr>
+            <tr><td>非有限 actor/value/loss/gradient</td><td>跳过 update；重复出现则停止版本</td></tr>
+            <tr><td>behavior KL &gt; 0.02</td><td>停止当前 rollout batch 的剩余 PPO epoch</td></tr>
+            <tr><td>holdout greedy 明显下滑</td><td>不晋级，停止或以新版本调整</td></tr>
+            <tr><td>磁盘硬线或版本 20 GiB 上限</td><td>按 retention 清理可再生 checkpoint；否则 graceful stop</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="roadmap">
+      <h2>八、不可变版本路线</h2>
+      <div class="roadmap" role="table" aria-label="版本路线">
+        <div class="version">V1 contract probe</div><div>不更新参数；当前 26 opponents × 10 games，平衡先后手。</div><div>100% legal、终局归因正确、buffer 有界、无 raw trace 落盘。</div>
+        <div class="version">V2 value calibration</div><div>仅更新新 value head；actor logits 必须逐 bit/容差保持不变。</div><div>critic 有有限且可解释的 calibration，未出现 seat/opponent 假象。</div>
+        <div class="version">V3 PPO pilot</div><div>先更新 pointer decoder + value；每 update 256 complete episodes。</div><div>KL/entropy 稳定、holdout 不塌、冻结 greedy evaluation 有可信变化。</div>
+        <div class="version">Later explicit Vn</div><div>只有证据支持时才扩大 actor 解冻或更改 curriculum。</div><div>任何语义或超参数变化都新建版本，绝不覆盖。</div>
+      </div>
+
+      <div class="callout" style="margin-top:22px"><p><strong>Preflight 证据：</strong>3 个 CPU official-engine episodes；CUDA smoke 为 2 个完整 episodes、135 个候选决策、1 个 value epoch、1 个 PPO epoch，所有 loss/KL/ratio/entropy 有限，model-only checkpoint 反读通过，峰值显存 205,267,456 bytes。以上不构成强度证据。</p></div>
+
+      <h3>后续版本决策</h3>
+      <ol>
+        <li>六个新 SOTA/BC opponents 是否保持严格 holdout，还是在后续 curriculum 中逐步开放。</li>
+        <li>decoder-only 有证据后，是否在新版本开放 final scenario/source-conditioned blocks。</li>
+        <li>256 episodes/update 与每 20 updates 的冻结 evaluation cadence 是否匹配实际 engine throughput。</li>
+      </ol>
+      <p>上述选择都不改变终局 reward。它们会在对应版本开始 collection 之前写入不可变 manifest。</p>
+    </section>
+
+    <footer>
+      权威文本：<a href="DESIGN.md">DESIGN.md</a> · 项目清单：<a href="manifest.json">manifest.json</a> · 规则证据：<a href="../../docs/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md">2026-07-19 rules research</a><br>
+      本页描述计划与合同，不包含尚未发生的训练结果。
+    </footer>
+  </main>
+</body>
+</html>

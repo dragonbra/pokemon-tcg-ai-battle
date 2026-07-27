@@ -1,0 +1,48 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0017_dragapult_terminal_rl",
+  "created_at": "2026-07-28T03:59:22+08:00",
+  "git_commit_at_allocation": "21a82859af3cc91bb9872491c4c4b5d07bee6ea3",
+  "deck": "dragapult_ex_dusknoir",
+  "expert_source": "THIRD PTCG Club target persona, source_id=1, inherited from 0015 V2",
+  "dataset_contract": "online complete official-engine episodes; terminal outcome reward only; no replay persistence by default",
+  "engine_revision": "unmodified official engine runtime in engine/source; exact runtime hash captured per version",
+  "opponent_pool_snapshot": "pending V1 freeze of the current 26 enabled evaluation opponents; initial split is 20 train plus 6 unseen holdout",
+  "objective": "Improve the 0015 Dragapult ex + Dusknoir R15 policy through value calibration and KL-anchored PPO using only terminal win/loss/draw reward",
+  "status": "initialized",
+  "source_checkpoint": {
+    "project": "0015_dragapult_conditioned_bc",
+    "version": "V2_t1_plus_pure_dragapult",
+    "path": "rl_runs/0015_dragapult_conditioned_bc/versions/V2_t1_plus_pure_dragapult/checkpoint/epoch-0010-7f75894270984186.pt",
+    "sha256": "7f7589427098418682f3a53e0763f3fd24850d641a0a664955f6094f90530532",
+    "model_family": "SourceConditionedR15Policy",
+    "source_id": 1,
+    "parameters": 17416642,
+    "validation_exact_action": 0.587,
+    "validation_legal_action": 1.0
+  },
+  "reward_contract": {
+    "win": 1.0,
+    "loss": -1.0,
+    "draw": 0.0,
+    "gamma": 1.0,
+    "diagnostics_affect_reward": false
+  },
+  "storage_contract": {
+    "optimizer_state_saved": false,
+    "raw_rollout_saved_by_default": false,
+    "warning_free_gib": 80,
+    "hard_stop_free_gib": 50,
+    "version_cap_gib": 20,
+    "checkpoint_retention": 8
+  },
+  "paths": {
+    "training": "train/0017_dragapult_terminal_rl",
+    "archive": "experiments/0017_dragapult_terminal_rl",
+    "runs": "rl_runs/0017_dragapult_terminal_rl"
+  },
+  "current_stage": "implementation_verified_ready_for_v1",
+  "implementation_authorized": true,
+  "training_authorized": true,
+  "gpu_training_authorized": true
+}
