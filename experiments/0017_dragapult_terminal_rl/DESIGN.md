@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **implementation verified; formal V1/V2/V3 not started**
+Status: **V1 baseline complete; rollout throughput calibrated; V4 value calibration next**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -274,10 +274,12 @@ Sparse terminal reward does not guarantee monotonic real strength. PPO can explo
 
 | Version | Parameters updated | Evidence produced | Exit condition |
 |---|---|---|---|
-| `V1_contract_probe` | none | fresh 26-opponent baseline, collector/action/storage audit | 100% legal, valid terminal attribution, bounded resources |
-| `V2_value_calibration` | value head only | value learning/calibration curves on fresh complete episodes | finite and useful critic without actor-logit drift |
-| `V3_ppo_pilot` | pointer decoder + value | conservative PPO and rolling/frozen evaluation | stable KL/entropy and no holdout collapse |
-| later explicit version | broader actor blocks if justified | controlled capacity comparison | only after V3 evidence and user review |
+| `V1_contract_probe` | none | 260/260 valid games, 38W-221L-1D, 14.62% baseline | complete; zero engine errors/discards |
+| `V2_value_calibration` | none | 490 rollout episodes | stopped before backward: 2,000-episode batch underused the GPU |
+| `V3_value_calibration_512` | none | 10 rollout episodes | stopped for the requested worker-throughput calibration |
+| `V4_value_calibration_512` | value head only | 512 fresh episodes, then four value epochs | finite and useful critic without actor-logit drift |
+| `V5_ppo_pilot` | pointer decoder + value | 256 fresh episodes per update, then immediate PPO | stable KL/entropy and no holdout collapse |
+| later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
 
@@ -285,7 +287,13 @@ The preflight implementation completed three CPU official-engine episodes and a 
 
 ## 13. Later version decisions
 
-The approved implementation uses the defaults above. Later version-level choices are:
+The 2026-07-28 representative 40-game CUDA benchmark selected 12 isolated workers: 4/8/12/16
+workers produced 0.750/1.117/1.397/1.317 episodes/s with zero errors. Formal collection therefore
+uses 12 workers with one CPU thread inside each worker. The value rollout batch was reduced from
+2,000 to 512 episodes; PPO retains 256 episodes per update so collection and backward alternate on
+a several-minute cadence rather than leaving the GPU in inference-only mode for about half an hour.
+
+Later version-level choices are:
 
 - whether the six newly promoted SOTA/BC opponents should remain a strict holdout or some should enter a later curriculum;
 - whether a later version should open final scenario/source-conditioned blocks after decoder-only evidence;

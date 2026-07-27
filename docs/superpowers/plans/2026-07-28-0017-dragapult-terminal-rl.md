@@ -116,7 +116,8 @@
 **Files:**
 - Create: `rl_runs/0017_dragapult_terminal_rl/versions/V1_contract_probe/`
 - Create: `rl_runs/0017_dragapult_terminal_rl/versions/V2_value_calibration/`
-- Create: `rl_runs/0017_dragapult_terminal_rl/versions/V3_ppo_pilot/`
+- Create: `rl_runs/0017_dragapult_terminal_rl/versions/V4_value_calibration_512/`
+- Create: `rl_runs/0017_dragapult_terminal_rl/versions/V5_ppo_pilot/`
 - Create: `experiments/0017_dragapult_terminal_rl/evaluation/V1_contract_probe.html`
 - Create: `experiments/0017_dragapult_terminal_rl/evaluation/V3_ppo_pilot.html`
 
@@ -124,9 +125,10 @@
 - Consumes: approved implementation, 20-opponent training snapshot, and 6-opponent unseen holdout snapshot.
 - Produces: frozen current-catalog baseline, calibrated critic, PPO learning curves, model-only candidates, and comparable official-engine reports.
 
-- [ ] V1: run 10 greedy games per each of the current 26 opponents, seat-balanced, with no updates; freeze packages and hashes.
-- [ ] V2: collect fresh complete training-pool episodes and calibrate only the value head; discard each rollout after learning.
-- [ ] V3: run a conservative PPO pilot with 256 completed episodes per update, 4 epochs, actor LR `1e-5`, value LR `1e-4`, clip `0.10`, entropy coefficient `0.01`, max grad norm `0.5`, and target behavior KL `0.02`.
+- [x] V1: run 10 greedy games per each of the current 26 opponents, seat-balanced, with no updates; freeze packages and hashes.
+- [x] Benchmark 4/8/12/16 isolated workers on the representative train pool; select 12 workers from measured throughput.
+- [ ] V4: collect 512 fresh complete training-pool episodes and calibrate only the value head; V2/V3 remain preserved failed throughput trials.
+- [ ] V5: run a conservative PPO pilot with 256 completed episodes per update, 4 epochs, actor LR `1e-5`, value LR `1e-4`, clip `0.10`, entropy coefficient `0.01`, max grad norm `0.5`, and target behavior KL `0.02`.
 - [ ] Evaluate frozen greedy snapshots every 20 updates with scalar-only reports; do not select from sampled training win rate alone.
 - [ ] Stop or branch a new version on legality below 100%, repeated nonfinite updates, KL breach, holdout collapse, error/truncation excess, disk guard, or user stop.
 - [ ] Run final 10-game-per-opponent official-engine confirmation against the same 26-opponent snapshot and publish immutable backlink/index records.

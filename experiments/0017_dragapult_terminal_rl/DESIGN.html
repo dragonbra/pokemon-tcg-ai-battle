@@ -429,11 +429,15 @@
     <section id="roadmap">
       <h2>八、不可变版本路线</h2>
       <div class="roadmap" role="table" aria-label="版本路线">
-        <div class="version">V1 contract probe</div><div>不更新参数；当前 26 opponents × 10 games，平衡先后手。</div><div>100% legal、终局归因正确、buffer 有界、无 raw trace 落盘。</div>
-        <div class="version">V2 value calibration</div><div>仅更新新 value head；actor logits 必须逐 bit/容差保持不变。</div><div>critic 有有限且可解释的 calibration，未出现 seat/opponent 假象。</div>
-        <div class="version">V3 PPO pilot</div><div>先更新 pointer decoder + value；每 update 256 complete episodes。</div><div>KL/entropy 稳定、holdout 不塌、冻结 greedy evaluation 有可信变化。</div>
+        <div class="version">V1 contract probe</div><div>260/260 有效，38W-221L-1D，基线胜率 14.62%。</div><div>0 engine error、0 discard；26-opponent snapshot 已冻结。</div>
+        <div class="version">V2 value calibration</div><div>采集 490/2000 后主动停止，未 backward。</div><div>实测证明 rollout batch 过大，GPU 长时间仅低占用推理。</div>
+        <div class="version">V3 throughput trial</div><div>采集 10 场后按用户要求停止，转做 worker benchmark。</div><div>不产生 checkpoint，不声称 value calibration。</div>
+        <div class="version">V4 value calibration</div><div>12 workers 采集 512 场，随后立即做 4 个 value epoch。</div><div>critic 有限且可解释；actor logits 保持不变。</div>
+        <div class="version">V5 PPO pilot</div><div>pointer decoder + value；每 256 场立即 PPO backward。</div><div>KL/entropy 稳定、holdout 不塌、冻结 greedy evaluation 有可信变化。</div>
         <div class="version">Later explicit Vn</div><div>只有证据支持时才扩大 actor 解冻或更改 curriculum。</div><div>任何语义或超参数变化都新建版本，绝不覆盖。</div>
       </div>
+
+      <div class="callout" style="margin-top:22px"><p><strong>Rollout 吞吐校准：</strong>同一 20-opponent 训练池、CUDA 集中推理、40 场平衡样本下，4/8/12/16 workers 分别为 0.750/1.117/1.397/1.317 episodes/s，全部 0 error。正式训练选择 12 workers；worker 内单线程。Value rollout 从 2,000 缩短为 512，PPO 保持每 256 场更新。</p></div>
 
       <div class="callout" style="margin-top:22px"><p><strong>Preflight 证据：</strong>3 个 CPU official-engine episodes；CUDA smoke 为 2 个完整 episodes、135 个候选决策、1 个 value epoch、1 个 PPO epoch，所有 loss/KL/ratio/entropy 有限，model-only checkpoint 反读通过，峰值显存 205,267,456 bytes。以上不构成强度证据。</p></div>
 
