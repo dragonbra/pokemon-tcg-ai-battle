@@ -1,0 +1,71 @@
+{
+  "amp_dtype": "bfloat16",
+  "arm": "t4",
+  "batch_size": 256,
+  "dataset": "rl_runs/0015_dragapult_conditioned_bc/dataset/V3_t4_half_r15_features",
+  "dataset_content_sha256": "fa7287b5c517b59f45bd5a301a209c49c17dbc92454ca785b683357b594b8e54",
+  "early_stopping_min_delta": 0.001,
+  "early_stopping_patience": 5,
+  "epochs": 100,
+  "fresh_initialization": true,
+  "initialization": null,
+  "label_smoothing": {
+    "epsilon": 0.0,
+    "scope": "training_loss_only",
+    "validation": "unsmoothed"
+  },
+  "learning_rate": 0.0003,
+  "model": {
+    "r15": {
+      "ac": {
+        "auxiliary_ffn_multiplier": 2,
+        "base": {
+          "d_model": 320,
+          "dropout": 0.1,
+          "encoder_layers": 4,
+          "ffn_multiplier": 3,
+          "heads": 8,
+          "max_action_steps": 16,
+          "max_card_id": 2048,
+          "max_entities": 192,
+          "max_options": 128
+        },
+        "event_layers": 1,
+        "goal_roles": 4
+      },
+      "option_initial_scale": 0.35,
+      "scale_gate_ffn_multiplier": 2,
+      "scenario_ffn_multiplier": 3,
+      "scenario_layers": 2
+    },
+    "source_initial_scale": 0.03,
+    "source_vocabulary_size": 91
+  },
+  "model_family": "r15",
+  "no_deck": false,
+  "outcome_weighting": {
+    "draw_weight": 1.0,
+    "enabled": false,
+    "loss_weight": 1.0,
+    "scope": "training_loss_only",
+    "validation": "unweighted",
+    "win_weight": 1.0
+  },
+  "parameter_count": 17418882,
+  "project_id": "0015_dragapult_conditioned_bc",
+  "r15_baseline": "0014/V25_r15_deterministic_gradual_option",
+  "schema_version": "0015_r15_source_conditioned_training_v1",
+  "seed": 20260723,
+  "target_validation_decisions": 1000,
+  "train_decisions": 79319,
+  "trainable_parameter_count": 17418882,
+  "training_scope": null,
+  "validation_batch_size": 512,
+  "version": "V17_t4_low_source_scale",
+  "wandb": {
+    "entity": "dragon_bra",
+    "mode": "online",
+    "project": "pokemon-tcg-policy-learning"
+  },
+  "weight_decay": 0.02
+}

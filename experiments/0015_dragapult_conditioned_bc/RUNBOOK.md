@@ -1,29 +1,35 @@
 # 0015 Dragapult Conditioned BC Execution Runbook
 
 **Purpose:** operational handoff for the first authorized 0015 experiment day.
-**Status:** ready-to-execute procedure, but not authorization to download, train, evaluate or submit.
+**Status:** execution authorized for data preparation, BC training and official-engine evaluation.
+Kaggle submission/upload, candidate admission, commit and push remain unauthorized.
 **Primary target:** Dragapult + Dusknoir only.
-**Expected window:** up to 12 hours of continuous, evidence-driven work after the user explicitly
-provides the inputs and says to execute.
+**Expected window:** up to 12 hours of continuous, evidence-driven work from the 2026-07-27 handoff.
 
-## 1. What the user must hand over
+## 1. Completed handoff
 
-Execution starts only after the following handoff record is complete. Paths may be local paths or
-explicit download locations. Do not copy secrets into manifests, logs or W&B.
+The required handoff is complete. Do not copy secrets into manifests, logs or W&B.
+
+One source gap was discovered after handoff: the environment's Mega Starmie/Dusknoir display label
+was hard-coded, while the exact decks contain Froslass and no Duskull line. T2 must stay pending
+until registration-frame evidence identifies a genuine Starmie + Dusknoir source. This does not
+block shared infrastructure or T0/T1 smoke; details are in
+`decisions/003_starmie_dusknoir_source_gap.md`.
 
 | Input | Required content | Acceptance check |
 |---|---|---|
-| Official episode bundle | The new daily bundle expected after 08:00, its date/path and checksum if available | File is readable; episode schema/version and coverage date are recorded. |
-| Dragapult user list | User/team identifiers, intended build label and which one is the target teacher source | Identifiers resolve to episodes; ambiguous deck assignments are quarantined. |
-| Temporary JSON patch | Download location or local directory for episodes not yet present in the daily bundle | Complete JSON, stable episode ID, provenance and no duplicate conflicting payload. |
-| Three exact decks | 60-card lists for target Dragapult+Dusknoir, pure Dragapult and Starmie+Dusknoir | Exactly 60 rows; multiset and SHA-256 stored. |
-| 0014 successor model | Final code/config/checkpoint recommendation after the evening model study | Feature contract, model contract, initialization, train entrypoint and smoke command are reproducible. |
-| Compute envelope | Available GPU/device and any hard deadline inside the 12-hour window | Smoke benchmark establishes safe batch size and estimated arm duration. |
-| Execution authority | An explicit instruction to begin this experiment | Scope includes downloads/training/evaluation but not commit, push, opponent admission or Kaggle submission. |
+| Official episode bundle | 0726 immutable ZIP; 4,554 Episode JSON; SHA-256 `9394d9c4c18dc476cc1fffd5a2dae29c4f2a7afbfa9b2d435876568e2c22fe95` | ZIP CRC and member count passed. |
+| Dragapult user list | THIRD PTCG Club (target), LumenLiquidity and Oshbocker (Dragapult+Blaziken) | Submission IDs, player indices and exact decks frozen. |
+| Temporary JSON patch | 229 downloaded JSON plus 81 official-base references | 310 unique Episode IDs/content hashes; no double count. |
+| Exact named decks | Four audited 60-card manifests including `flg` Marnie/Munkidori | Row counts and sorted-multiset hashes passed. |
+| 0014 successor model | `0014/V25_r15_deterministic_gradual_option` | R15 code, feature switches, hyperparameters and SOTA evidence identified. |
+| Compute envelope | RTX 5080 16 GB; 834 GB free at preflight | Matrix smoke must still establish safe effective batch/runtime. |
+| Execution authority | User explicitly requested continuous execution for up to 12 hours | Data/training/evaluation authorized; external publication actions are not. |
 
-If the model implementation is still changing, freeze the exact source state and contract before
-T0. Do not train T0 on one architecture and later arms on another. Any architecture correction
-after T0 creates a new complete matrix generation; it cannot be silently mixed with earlier arms.
+R15 is frozen as the architectural base. The 0015-only source-persona condition required by the
+multi-team BC contract must be implemented and smoke-tested before T0. Do not train T0 on one
+architecture and later arms on another. Any architecture correction after T0 creates a new complete
+matrix generation; it cannot be silently mixed with earlier arms.
 
 ## 2. Immutable research question
 
@@ -35,13 +41,39 @@ The matrix tests whether auxiliary demonstrations improve one deployed target po
 | T1 | T0 + pure Dragapult | T0 unchanged, plus every usable audited pure-Dragapult trajectory. |
 | T2 | T0 + Starmie+Dusknoir | T0 unchanged, plus every usable audited Starmie+Dusknoir trajectory. |
 | T3 | All three | Exact union of all usable T0, pure-Dragapult and Starmie+Dusknoir trajectories. |
-| T3-no-deck | Same rows/order/epochs as T3 | Only the registered-deck condition is masked. |
+| T3-no-deck | Same rows/order/epochs as T3 | Only exact initial-deck composition is removed; source persona and live ledger remain. |
+
+If T2 remains blocked by the genuine-source gate after T0/T1 complete, run one explicitly
+exploratory `T1-no-deck` arm with the exact T1 rows and training contract. This is an early
+conditioning diagnostic, not a replacement for T2, T3 or the paired T3-no-deck result.
 
 There are no artificial 50/50 build quotas in the primary matrix. “Usable” means the trajectory
 passes the predeclared provenance, completeness, deck-identification, causal-feature and label-
 contract checks; it does not mean selecting only enough rows to balance another source. Record the
 natural episode/decision proportions before training, then keep the selected episode set unchanged
 through T0–T3.
+
+### Executed through V3 (2026-07-27)
+
+T0 and T1 completed under the frozen contract. T2 remained blocked because the full 0726 audit
+found no genuine Starmie + Dusknoir registration. The blocked-gate contingency was used to run an
+exploratory T1-no-deck diagnostic; it is not T3-no-deck.
+
+| Version | Target exact | Official-engine result | Interpretation |
+|---|---:|---:|---|
+| V1 T0 | 54.3% | 15-185 (7.5%) | scarce-target baseline |
+| V2 T1 | 58.7% | 39-161 (19.5%) | positive pure-Dragapult transfer |
+| V3 T1-no-deck | 60.1% | 30-170 (15.0%) | better label match, weaker play than conditioned T1 |
+| V4 loss weight 0.75 | 57.5% | 28-172 (14.0%) | negative; do not select |
+| V5 loss weight 0.50 | 59.0% | 41-159 (20.5%) | first batch inconclusive; confirmation 32-168 |
+
+All formal evaluations ran 200 games, completed 100%, and had zero errors. The authoritative
+reports and run IDs are in [`evaluation/index.html`](evaluation/index.html). Continue to preserve
+the T2 source gate; do not rename V3 as a base-matrix arm.
+
+V5's frozen confirmation reversed its first-run +1pp margin. Combined V5 is 73/400 (18.25%) versus
+V2 at 79/400 (19.75%). Keep V2 as the current best and stop the outcome-weight sweep; do not search
+intermediate weights or additional seeds from this evidence.
 
 All arms use the same:
 
@@ -108,22 +140,26 @@ credible fixed validation/test holdout; auxiliary splits exist for diagnosis and
 
 ## 4. Model readiness gate
 
-The 0014 successor is accepted only if the delivered implementation passes all of these before a
-formal version directory is allocated:
+The selected successor is 0014 R15 from
+`rl_runs/0014_faithful_board_causal_features/versions/V25_r15_deterministic_gradual_option`.
+It is accepted for a formal 0015 version only if the implementation passes all of these:
 
 - its feature schema is frozen and includes the exact registered 60-card channel;
 - offline compilation and online encoding agree on registered IDs, multiplicity, masks and ledger;
 - changing only a valid deck multiset changes the intended conditioning path;
-- T3-no-deck can mask that path without changing rows, labels, sampling order or unrelated inputs;
+- source IDs use a frozen auditable vocabulary and target export fixes the target persona;
+- T3-no-deck replaces initial-deck memory with one valid null token/nonempty mask and zero
+  multiplicity without changing live ledger, source persona, rows, labels, order or epochs;
 - the candidate export reads the target package `deck.csv` and validates exactly 60 cards;
 - a tiny train/validation smoke produces finite metrics and one loadable checkpoint;
 - a candidate smoke returns only official-engine legal actions;
 - the training interpreter imports W&B and the online project is reachable, or the formal status
   records why online mirroring is unavailable.
 
-Do not force 0015 to reuse V9/V10 if tonight's 0014 research produces a better audited model. Do
-reuse the fixed feature meaning and exact-deck contract. Record the selected 0014 version/checkpoint,
-source state and model-contract hash as the 0015 base.
+Reuse R15's complete deterministic R2 evidence paths, option scale `0.35`, batch 256, validation
+batch 512, LR `3e-4`, weight decay `0.02`, BF16, seed `20260723` and early-stop logic. Start every
+arm from the same fresh seeded initialization; do not warm-start Dragapult from the Alakazam R15
+checkpoint. Record the R15 source version, source state and model-contract hash as the 0015 base.
 
 ## 5. Version allocation and W&B contract
 
@@ -282,6 +318,12 @@ than the number of independent training episodes in the complete T3 union. Selec
 deterministically by episode hash, stratified across exact Marnie deck hash, source, outcome and
 seat. Never keep only wins or choose episodes from their validation performance. Record eligible,
 selected and excluded-by-cap counts.
+
+Before any T4 materialization, satisfy
+[`decisions/005_t4_non_ascii_source_identity_gate.md`](decisions/005_t4_non_ascii_source_identity_gate.md).
+The current candidate index collapses seven non-ASCII team names into one `non_ascii_source` token;
+T4 requires a new versioned index with collision-safe Unicode identity. Never regenerate or
+renumber the frozen V1–V5 source vocabulary in place.
 
 If the target Dragapult+Dusknoir deck itself contains Munkidori, T4 tests direct component transfer.
 If it does not, T4 tests only indirect damage-counter reasoning transfer; state that weaker claim

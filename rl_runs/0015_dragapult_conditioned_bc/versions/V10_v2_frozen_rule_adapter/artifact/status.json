@@ -1,0 +1,21 @@
+{
+  "completed_at": 1785128781.36374,
+  "device": "cuda",
+  "greedy_exact": 0.613,
+  "loss": 0.5894341342959586,
+  "started_at": 1785128667.1984975,
+  "state": "completed",
+  "teacher_exact": 0.613,
+  "version": "V10_v2_frozen_rule_adapter",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0015_dragapult_conditioned_bc--0015-dragapult-conditi-9cca0a7a57",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0015_dragapult_conditioned_bc--0015-dragapult-conditi-9cca0a7a57"
+  },
+  "wandb_expected_mode": "online"
+}

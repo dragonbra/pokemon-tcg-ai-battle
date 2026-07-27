@@ -1,0 +1,828 @@
+{
+  "build_ids": {
+    "dragapult_dusknoir": 1,
+    "marnie_munkidori": 4,
+    "pure_dragapult": 2,
+    "starmie_dusknoir": 3
+  },
+  "compiler_sha256": "a929198605d15152dbc33c7c9cb18bef7909e01f952df75b2aa57468d5ccdf2b",
+  "compiler_version": "faithful_board_causal_compiler_v1",
+  "content_sha256": "32e8c483e5a8f76d20b4c559270349b0bf621b9c2f2bf4c1e3c5e3badc2d2f3d",
+  "decision_counts": [
+    {
+      "build": "dragapult_dusknoir",
+      "decisions": 12988,
+      "r15_eligible": true,
+      "split": "train"
+    },
+    {
+      "build": "pure_dragapult",
+      "decisions": 41776,
+      "r15_eligible": true,
+      "split": "train"
+    },
+    {
+      "build": "dragapult_dusknoir",
+      "decisions": 1000,
+      "r15_eligible": true,
+      "split": "validation"
+    }
+  ],
+  "materializer_sha256": "8a64626a74f732ffa648ffbcb88a6175b6f461160f349d494c0c84be967e41f5",
+  "metadata_tensors": [
+    "build_id",
+    "episode_id",
+    "first_player",
+    "outcome_id",
+    "player_index",
+    "source_id"
+  ],
+  "ontology_file_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+  "ontology_sha256": "67d95a256465e119a208fbf6e01efb4dfc27da25e5f7a1bf81eaf5ec4f9a9ef4",
+  "outcome_ids": {
+    "draw": 0,
+    "loss": -1,
+    "win": 1
+  },
+  "raw_content_sha256": "e976a5b9cbb2cd3d126a618e880a6d887a722eaf8bfeee2f57a8ce8e88dcb186",
+  "raw_dataset": "rl_runs/0015_dragapult_conditioned_bc/dataset/V1_core_raw",
+  "raw_reference_sha256": "508af2bae38e50e195963e24a6297165c114a7ef75d372da5da7efb18d3eb523",
+  "schema_version": "0015_r15_feature_cache_v1",
+  "shards": {
+    "train": [
+      {
+        "bytes": 75627537,
+        "count": 9908,
+        "eligible_by_build_id": {
+          "1": 335,
+          "2": 9573
+        },
+        "path": "train-00000.pt",
+        "r15_eligible": 9908,
+        "sha256": "cb952151d1fde35641636f979bf6c4c8281e4f02ccaa111c0713b67e4c7b1fa2",
+        "shapes": {
+          "a0_eligible": [],
+          "action_mask": [
+            7
+          ],
+          "action_termination": [],
+          "build_id": [],
+          "episode_id": [],
+          "event_cat": [
+            64,
+            8
+          ],
+          "event_mask": [
+            64
+          ],
+          "event_num": [
+            64,
+            4
+          ],
+          "first_player": [],
+          "known_opponent_hand_card_ids": [
+            12
+          ],
+          "known_opponent_hand_mask": [
+            12
+          ],
+          "ledger_cat": [
+            29,
+            4
+          ],
+          "ledger_mask": [
+            29
+          ],
+          "ledger_num": [
+            29,
+            15
+          ],
+          "legacy_entity_cat": [
+            105,
+            7
+          ],
+          "legacy_entity_mask": [
+            105
+          ],
+          "legacy_entity_num": [
+            105,
+            5
+          ],
+          "legacy_global_cat": [
+            4
+          ],
+          "legacy_global_num": [
+            12
+          ],
+          "legacy_option_cat": [
+            34,
+            12
+          ],
+          "legacy_option_mask": [
+            34
+          ],
+          "max_count": [],
+          "min_count": [],
+          "ordered_action": [
+            7
+          ],
+          "outcome_id": [],
+          "player_index": [],
+          "registered_card_ids": [
+            29
+          ],
+          "registered_mask": [
+            29
+          ],
+          "registered_multiplicity": [
+            29
+          ],
+          "source_id": [],
+          "source_payload_sha256": [
+            32
+          ],
+          "unknown_opponent_hand_count": [],
+          "zone_inventory_num": [
+            2,
+            16
+          ]
+        }
+      },
+      {
+        "bytes": 79408657,
+        "count": 9991,
+        "eligible_by_build_id": {
+          "1": 2366,
+          "2": 7625
+        },
+        "path": "train-00001.pt",
+        "r15_eligible": 9991,
+        "sha256": "d9bfc34d79cf8a3c153ba954b1fcf5fa942fd44901332fa313e9aab34f73d781",
+        "shapes": {
+          "a0_eligible": [],
+          "action_mask": [
+            9
+          ],
+          "action_termination": [],
+          "build_id": [],
+          "episode_id": [],
+          "event_cat": [
+            64,
+            8
+          ],
+          "event_mask": [
+            64
+          ],
+          "event_num": [
+            64,
+            4
+          ],
+          "first_player": [],
+          "known_opponent_hand_card_ids": [
+            10
+          ],
+          "known_opponent_hand_mask": [
+            10
+          ],
+          "ledger_cat": [
+            29,
+            4
+          ],
+          "ledger_mask": [
+            29
+          ],
+          "ledger_num": [
+            29,
+            15
+          ],
+          "legacy_entity_cat": [
+            109,
+            7
+          ],
+          "legacy_entity_mask": [
+            109
+          ],
+          "legacy_entity_num": [
+            109,
+            5
+          ],
+          "legacy_global_cat": [
+            4
+          ],
+          "legacy_global_num": [
+            12
+          ],
+          "legacy_option_cat": [
+            41,
+            12
+          ],
+          "legacy_option_mask": [
+            41
+          ],
+          "max_count": [],
+          "min_count": [],
+          "ordered_action": [
+            9
+          ],
+          "outcome_id": [],
+          "player_index": [],
+          "registered_card_ids": [
+            29
+          ],
+          "registered_mask": [
+            29
+          ],
+          "registered_multiplicity": [
+            29
+          ],
+          "source_id": [],
+          "source_payload_sha256": [
+            32
+          ],
+          "unknown_opponent_hand_count": [],
+          "zone_inventory_num": [
+            2,
+            16
+          ]
+        }
+      },
+      {
+        "bytes": 78100561,
+        "count": 9910,
+        "eligible_by_build_id": {
+          "1": 3233,
+          "2": 6677
+        },
+        "path": "train-00002.pt",
+        "r15_eligible": 9910,
+        "sha256": "f0376bed937d3d13d1cacc954c197260656075c91bb679291b767d35fab8fa52",
+        "shapes": {
+          "a0_eligible": [],
+          "action_mask": [
+            12
+          ],
+          "action_termination": [],
+          "build_id": [],
+          "episode_id": [],
+          "event_cat": [
+            64,
+            8
+          ],
+          "event_mask": [
+            64
+          ],
+          "event_num": [
+            64,
+            4
+          ],
+          "first_player": [],
+          "known_opponent_hand_card_ids": [
+            13
+          ],
+          "known_opponent_hand_mask": [
+            13
+          ],
+          "ledger_cat": [
+            29,
+            4
+          ],
+          "ledger_mask": [
+            29
+          ],
+          "ledger_num": [
+            29,
+            15
+          ],
+          "legacy_entity_cat": [
+            108,
+            7
+          ],
+          "legacy_entity_mask": [
+            108
+          ],
+          "legacy_entity_num": [
+            108,
+            5
+          ],
+          "legacy_global_cat": [
+            4
+          ],
+          "legacy_global_num": [
+            12
+          ],
+          "legacy_option_cat": [
+            39,
+            12
+          ],
+          "legacy_option_mask": [
+            39
+          ],
+          "max_count": [],
+          "min_count": [],
+          "ordered_action": [
+            12
+          ],
+          "outcome_id": [],
+          "player_index": [],
+          "registered_card_ids": [
+            29
+          ],
+          "registered_mask": [
+            29
+          ],
+          "registered_multiplicity": [
+            29
+          ],
+          "source_id": [],
+          "source_payload_sha256": [
+            32
+          ],
+          "unknown_opponent_hand_count": [],
+          "zone_inventory_num": [
+            2,
+            16
+          ]
+        }
+      },
+      {
+        "bytes": 76085905,
+        "count": 9955,
+        "eligible_by_build_id": {
+          "1": 3382,
+          "2": 6573
+        },
+        "path": "train-00003.pt",
+        "r15_eligible": 9955,
+        "sha256": "3a298c9deffa8077dc50df48b0b4a249ec4946e259136eb301ad8d66fe152536",
+        "shapes": {
+          "a0_eligible": [],
+          "action_mask": [
+            8
+          ],
+          "action_termination": [],
+          "build_id": [],
+          "episode_id": [],
+          "event_cat": [
+            64,
+            8
+          ],
+          "event_mask": [
+            64
+          ],
+          "event_num": [
+            64,
+            4
+          ],
+          "first_player": [],
+          "known_opponent_hand_card_ids": [
+            11
+          ],
+          "known_opponent_hand_mask": [
+            11
+          ],
+          "ledger_cat": [
+            29,
+            4
+          ],
+          "ledger_mask": [
+            29
+          ],
+          "ledger_num": [
+            29,
+            15
+          ],
+          "legacy_entity_cat": [
+            101,
+            7
+          ],
+          "legacy_entity_mask": [
+            101
+          ],
+          "legacy_entity_num": [
+            101,
+            5
+          ],
+          "legacy_global_cat": [
+            4
+          ],
+          "legacy_global_num": [
+            12
+          ],
+          "legacy_option_cat": [
+            40,
+            12
+          ],
+          "legacy_option_mask": [
+            40
+          ],
+          "max_count": [],
+          "min_count": [],
+          "ordered_action": [
+            8
+          ],
+          "outcome_id": [],
+          "player_index": [],
+          "registered_card_ids": [
+            29
+          ],
+          "registered_mask": [
+            29
+          ],
+          "registered_multiplicity": [
+            29
+          ],
+          "source_id": [],
+          "source_payload_sha256": [
+            32
+          ],
+          "unknown_opponent_hand_count": [],
+          "zone_inventory_num": [
+            2,
+            16
+          ]
+        }
+      },
+      {
+        "bytes": 73859537,
+        "count": 9981,
+        "eligible_by_build_id": {
+          "1": 2901,
+          "2": 7080
+        },
+        "path": "train-00004.pt",
+        "r15_eligible": 9981,
+        "sha256": "04a3c6ccceec9f13b73b2917241f73ad057b2c23df7f1dfb46eb9e5b23b304d1",
+        "shapes": {
+          "a0_eligible": [],
+          "action_mask": [
+            12
+          ],
+          "action_termination": [],
+          "build_id": [],
+          "episode_id": [],
+          "event_cat": [
+            64,
+            8
+          ],
+          "event_mask": [
+            64
+          ],
+          "event_num": [
+            64,
+            4
+          ],
+          "first_player": [],
+          "known_opponent_hand_card_ids": [
+            11
+          ],
+          "known_opponent_hand_mask": [
+            11
+          ],
+          "ledger_cat": [
+            29,
+            4
+          ],
+          "ledger_mask": [
+            29
+          ],
+          "ledger_num": [
+            29,
+            15
+          ],
+          "legacy_entity_cat": [
+            98,
+            7
+          ],
+          "legacy_entity_mask": [
+            98
+          ],
+          "legacy_entity_num": [
+            98,
+            5
+          ],
+          "legacy_global_cat": [
+            4
+          ],
+          "legacy_global_num": [
+            12
+          ],
+          "legacy_option_cat": [
+            34,
+            12
+          ],
+          "legacy_option_mask": [
+            34
+          ],
+          "max_count": [],
+          "min_count": [],
+          "ordered_action": [
+            12
+          ],
+          "outcome_id": [],
+          "player_index": [],
+          "registered_card_ids": [
+            29
+          ],
+          "registered_mask": [
+            29
+          ],
+          "registered_multiplicity": [
+            29
+          ],
+          "source_id": [],
+          "source_payload_sha256": [
+            32
+          ],
+          "unknown_opponent_hand_count": [],
+          "zone_inventory_num": [
+            2,
+            16
+          ]
+        }
+      },
+      {
+        "bytes": 38139025,
+        "count": 5019,
+        "eligible_by_build_id": {
+          "1": 771,
+          "2": 4248
+        },
+        "path": "train-00005.pt",
+        "r15_eligible": 5019,
+        "sha256": "0e9a4080be13f388e4e03300348391142ae2a824382b7e1f8600989a2f76e31c",
+        "shapes": {
+          "a0_eligible": [],
+          "action_mask": [
+            8
+          ],
+          "action_termination": [],
+          "build_id": [],
+          "episode_id": [],
+          "event_cat": [
+            64,
+            8
+          ],
+          "event_mask": [
+            64
+          ],
+          "event_num": [
+            64,
+            4
+          ],
+          "first_player": [],
+          "known_opponent_hand_card_ids": [
+            11
+          ],
+          "known_opponent_hand_mask": [
+            11
+          ],
+          "ledger_cat": [
+            29,
+            4
+          ],
+          "ledger_mask": [
+            29
+          ],
+          "ledger_num": [
+            29,
+            15
+          ],
+          "legacy_entity_cat": [
+            104,
+            7
+          ],
+          "legacy_entity_mask": [
+            104
+          ],
+          "legacy_entity_num": [
+            104,
+            5
+          ],
+          "legacy_global_cat": [
+            4
+          ],
+          "legacy_global_num": [
+            12
+          ],
+          "legacy_option_cat": [
+            34,
+            12
+          ],
+          "legacy_option_mask": [
+            34
+          ],
+          "max_count": [],
+          "min_count": [],
+          "ordered_action": [
+            8
+          ],
+          "outcome_id": [],
+          "player_index": [],
+          "registered_card_ids": [
+            29
+          ],
+          "registered_mask": [
+            29
+          ],
+          "registered_multiplicity": [
+            29
+          ],
+          "source_id": [],
+          "source_payload_sha256": [
+            32
+          ],
+          "unknown_opponent_hand_count": [],
+          "zone_inventory_num": [
+            2,
+            16
+          ]
+        }
+      }
+    ],
+    "validation": [
+      {
+        "bytes": 7279188,
+        "count": 1000,
+        "eligible_by_build_id": {
+          "1": 1000
+        },
+        "path": "validation-00000.pt",
+        "r15_eligible": 1000,
+        "sha256": "5cab66730b7504f576c979d23b269ef52c8ed6faf74c72fe870eba84936a9c11",
+        "shapes": {
+          "a0_eligible": [],
+          "action_mask": [
+            5
+          ],
+          "action_termination": [],
+          "build_id": [],
+          "episode_id": [],
+          "event_cat": [
+            64,
+            8
+          ],
+          "event_mask": [
+            64
+          ],
+          "event_num": [
+            64,
+            4
+          ],
+          "first_player": [],
+          "known_opponent_hand_card_ids": [
+            10
+          ],
+          "known_opponent_hand_mask": [
+            10
+          ],
+          "ledger_cat": [
+            25,
+            4
+          ],
+          "ledger_mask": [
+            25
+          ],
+          "ledger_num": [
+            25,
+            15
+          ],
+          "legacy_entity_cat": [
+            100,
+            7
+          ],
+          "legacy_entity_mask": [
+            100
+          ],
+          "legacy_entity_num": [
+            100,
+            5
+          ],
+          "legacy_global_cat": [
+            4
+          ],
+          "legacy_global_num": [
+            12
+          ],
+          "legacy_option_cat": [
+            34,
+            12
+          ],
+          "legacy_option_mask": [
+            34
+          ],
+          "max_count": [],
+          "min_count": [],
+          "ordered_action": [
+            5
+          ],
+          "outcome_id": [],
+          "player_index": [],
+          "registered_card_ids": [
+            25
+          ],
+          "registered_mask": [
+            25
+          ],
+          "registered_multiplicity": [
+            25
+          ],
+          "source_id": [],
+          "source_payload_sha256": [
+            32
+          ],
+          "unknown_opponent_hand_count": [],
+          "zone_inventory_num": [
+            2,
+            16
+          ]
+        }
+      }
+    ]
+  },
+  "source_vocabulary": {
+    "213tubo": 2,
+    "650": 3,
+    "a_r_sekkat": 4,
+    "abhiraj_singh": 5,
+    "azat_akhtyamov": 6,
+    "biomath": 7,
+    "btk15049": 8,
+    "chua_zheng_wei_brian": 9,
+    "dominic_peel": 10,
+    "dries_tufa_labs": 11,
+    "e_toppo_kurupical": 12,
+    "eduardo_rocha_de_andrade": 13,
+    "fle3n": 14,
+    "flg": 15,
+    "fsun": 16,
+    "gemini_ch": 17,
+    "guohaoyang": 18,
+    "haggle": 19,
+    "hancang_mi": 20,
+    "haumea": 21,
+    "hinox13": 22,
+    "hoshi18": 23,
+    "hoshippi": 24,
+    "igor_v": 25,
+    "iwance": 26,
+    "iwashi": 27,
+    "jiatu_l": 28,
+    "jneums": 29,
+    "julian": 30,
+    "jz": 31,
+    "kafersammler_max": 32,
+    "kaggle": 33,
+    "kakutakagawa": 34,
+    "kawattataido": 35,
+    "kazama_yusuke": 36,
+    "kh0a": 37,
+    "kotaro_okuyama": 38,
+    "ktr": 39,
+    "kunihiro": 40,
+    "less": 41,
+    "liamk": 42,
+    "lollipop947": 43,
+    "lolzpo_emonga": 44,
+    "luca": 45,
+    "lumenliquidity": 46,
+    "marshall_maximizer": 47,
+    "matcha110": 48,
+    "matheus": 49,
+    "me_and_the_lads": 50,
+    "mirai_lab": 51,
+    "nguyenthanhnhan": 52,
+    "niwatori": 53,
+    "non_ascii_source": 54,
+    "northstar": 55,
+    "nsytsqdtn": 56,
+    "ntumlnoob": 57,
+    "oshbocker": 58,
+    "pokemon_day_care": 59,
+    "pokemon_fan": 60,
+    "pokemon_siuuuu": 61,
+    "poker_man": 62,
+    "pokesonic": 63,
+    "pokopia": 64,
+    "psyduck_needs_coffee": 65,
+    "rafael": 66,
+    "rmy": 67,
+    "rotto": 68,
+    "sota_uchiyama": 69,
+    "squirtle_prime": 70,
+    "szlachetny_snieg": 71,
+    "taichicchi": 72,
+    "team_kasa": 73,
+    "tetsu2131": 74,
+    "the_bitter_lesson": 75,
+    "third_ptcg_club": 1,
+    "timmy_juicehouse": 76,
+    "titako0000": 77,
+    "ttt_is_all_you_need": 78,
+    "vadim_vasilenko": 79,
+    "wally0593": 80,
+    "wwwwwwwwwwwwwwwwwwwwwwwwwwwwww": 81,
+    "y": 82,
+    "yukhoe": 83,
+    "zhenyu_zhang": 84
+  }
+}

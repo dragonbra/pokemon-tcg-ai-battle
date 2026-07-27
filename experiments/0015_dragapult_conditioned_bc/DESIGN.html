@@ -5,9 +5,10 @@
 :root{--bg:#08131f;--panel:#13263a;--panel2:#0e1d2d;--line:#35536f;--text:#eef6ff;--muted:#b6c8da;--blue:#8fc8ff;--green:#66ddb0;--amber:#ffd079;--red:#ff9b96;--violet:#c5a9ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 5%,#244f70 0,transparent 29%),linear-gradient(145deg,#07101b,#142a42);color:var(--text);font:15px/1.58 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:1180px;margin:auto;padding:44px 24px 76px}h1{font-size:36px;line-height:1.12;margin:0 0 9px}h2{font-size:23px;margin:40px 0 13px}h3{font-size:17px;margin:0 0 7px}.lead,.muted{color:var(--muted)}.badges{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.badge{border:1px solid var(--line);border-radius:18px;padding:4px 10px;background:#172d45}.rule{margin:22px 0;padding:16px 19px;border-left:4px solid var(--green);border-radius:8px;background:#10362e}.warn{border-color:var(--amber);background:#392d16}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px}.card{padding:16px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}.verdict{font-size:21px;color:var(--green)}.flow{display:grid;grid-template-columns:1fr auto 1.25fr;gap:11px;align-items:center;margin:18px 0}.source{display:grid;gap:11px}.node{padding:14px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}.node b{display:block;color:var(--blue)}.target{border-color:var(--green);background:#103229}.arrow{font-size:28px;color:var(--muted)}table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--panel)}th,td{padding:10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{background:#1b3551;color:#e0edff}tr:last-child td{border-bottom:0}.yes{color:var(--green)}.no{color:var(--red)}code{color:#c5ddff}.formula{padding:15px;overflow:auto;border-radius:8px;background:#07121d;color:#d8e8fb;white-space:pre-wrap;font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace}.arm{font-weight:750;color:var(--violet)}a{color:#9fcfff}@media(max-width:720px){main{padding:28px 14px}.flow{grid-template-columns:1fr}.arrow{text-align:center;transform:rotate(90deg)}table{font-size:13px}th,td{padding:8px}}
 </style></head><body><main>
 <h1>0015 · 多龙构筑条件化 BC</h1>
-<p class="lead">前瞻实验：用纯多龙补充“多龙模块”，用宝石海星 + 黑夜魔灵补充“黑夜魔灵模块”，检验二者能否在自爆多龙目标构筑上形成可测量的组合迁移。</p>
-<div class="badges"><span class="badge">prospective · 未训练</span><span class="badge">BC-first</span><span class="badge">T0–T3 component transfer</span><span class="badge">value / RL deferred</span></div>
-<div class="rule"><b>0014 审查结论：</b><span class="verdict">AC/R1 足以表达完整 60 张初始构筑；A0 不足。</span><br>现有 V9 已证明构筑通路接通且 logits 对卡牌数量变化敏感，但尚未证明跨构筑的正确泛化。</div>
+<p class="lead">T0/T1 数据矩阵、胜负权重和 R15 typed rule-reader 序列均已训练；纯多龙数据对自爆多龙目标形成了离线与 official-engine 双轴正迁移，V2 仍是当前最强支持候选。</p>
+<div class="badges"><span class="badge">0726 ingestion passed</span><span class="badge">R15 baseline</span><span class="badge">V1–V13 trained</span><span class="badge">value / RL deferred</span></div>
+<div class="rule"><b>当前基线：</b><span class="verdict">0015 V2 source-conditioned R15，39/200。</span><br>基础模型 17,416,642 参数；V7–V13 的 full-width rule reader 为 20,728,002 参数。离线 exact 更高不能取代 official-engine 强度证据。</div>
+<div class="rule warn"><b>T2 数据门：</b>0726 全量注册构筑中没有真实的 Mega Starmie + Dusknoir。旧环境页把所有 Mega Starmie 硬编码显示成“/ Dusknoir”，但两套精确卡表实际是 Froslass。T2/T3 正式版本等待真实卡表证据；T0/T1 与共享基建继续。</div>
 
 <h2>01 · 要组合的不是三套完整策略，而是两个子模块</h2>
 <div class="flow"><div class="source"><div class="node"><b>纯多龙</b>多龙铺场、能量、前后场轮转、Phantom Dive 提交与伤害分配</div><div class="node"><b>宝石海星 + 黑夜魔灵</b>Duskull 铺场、进化、Cursed Blast 时机、目标和自爆后接力</div></div><div class="arrow">→</div><div class="node target"><b>目标：多龙 + 黑夜魔灵</b>在 exact own-deck 条件下组合两个模块；最终只在目标构筑留出数据和目标 candidate 上判定收益。</div></div>
@@ -22,16 +23,20 @@
 <tr><td>广泛泛化证据</td><td class="no">尚无</td><td>0014 只有一张卡差异的两个不平衡签名，不能代表三 archetype。</td></tr>
 </tbody></table>
 <div class="grid" style="margin-top:14px"><article class="card"><h3>已有 cache</h3><p>162,128 decisions；两个签名占比 85.7% / 14.3%，仅 Enhanced Hammer 与 Nighttime Mine 的 4/2、3/3 互换。</p></article><article class="card"><h3>V9 sensitivity</h3><p>固定同一 validation state，只改 multiplicity：finite-logit max Δ = <code>0.1878586</code>，mean Δ = <code>0.0823456</code>。</p></article><article class="card"><h3>正确解读</h3><p>证明“有线且模型在用”；不证明变化后的动作正确，也不证明它能理解纯多龙、目标多龙和宝石海星的差异。</p></article></div>
+<div class="grid" style="margin-top:14px"><article class="card"><h3>R15 训练逻辑</h3><p>batch 256、validation 512、LR <code>3e-4</code>、weight decay <code>0.02</code>、BF16、seed 20260723、patience 5。</p></article><article class="card"><h3>启用证据</h3><p>card capability、event memory、Goal-QKV、resource ledger、public inventory、registered deck 与 relation graph 全部启用。</p></article><article class="card"><h3>0015 最小扩展</h3><p>加入可审计 source-persona embedding，满足多 team 标签合同；目标导出固定 THIRD PTCG Club persona。</p></article></div>
 
 <h2>03 · 模型和信息边界</h2>
-<div class="formula">π(a | s, D)
+<div class="formula">π(a | s, D, E)
 s = action-time actor-visible board/history + legal full-action options
 D = exact registered own 60-card multiset
+E = frozen expert/source persona; target export fixes THIRD PTCG Club
 
-allowed: own deck identity/counts, ontology, known zones, bounded/unknown resource ledger
-audit only: build family, deck hash, expert/team source, outcome
-forbidden live inputs: future frame, terminal result, opponent hidden deck, expert identity</div>
-<p>采用 0014 AC/R1 风格的 registered-card memory；保留卡牌 identity、初始 multiplicity 和当前资源位置。不同构筑/来源不能无条件混标签。source 用于 manifest、平衡采样和分组报告，默认不作为策略输入。</p>
+allowed: own deck identity/counts, ontology, known zones, bounded/unknown resource ledger, source persona
+audit only: build family, deck hash, outcome
+forbidden live inputs: future frame, terminal result, opponent hidden deck or opponent identity</div>
+<p>采用选定的 0014 R15 registered-card memory；保留卡牌 identity、初始 multiplicity 和当前资源位置。不同 team 的动作标签通过冻结 source vocabulary 显式条件化，部署时固定目标 persona，不使用对手身份或预设 matchup。</p>
+<div class="grid" style="margin-top:14px"><article class="card"><h3>四类 rule token</h3><p><code>turn_budget[10]</code>、<code>prize_race[16]</code>、<code>library_pressure[12]</code>、<code>board_relay[19]</code>；全部只来自 actor-visible 当前状态。</p></article><article class="card"><h3>Full-width reader</h3><p>width 320 / 8 heads；总参数 20,728,002。V2 frozen 模式只训练 3,311,360 参数，271 个 inherited tensor 严格载入并冻结。</p></article><article class="card"><h3>Prepared low-rank reader</h3><p>width 80 / 4 heads；总参数 18,054,162、可训练 637,520（减少 80.7%）。CUDA smoke、逐位冻结校验与 portable export 已通过；gate 失败后未分配正式版本。</p></article></div>
+<div class="rule warn"><b>Rule-reader gate：</b>V9 的全模型 warm-start 即使 LR 1e-4 也迅速破坏 V2；V10–V13 因此冻结基础模型。预声明 gate 要求 V11 或 V12 超过 V2 的 39/200，但两者仅为 38/200 与 29/200，因此停止该路线。V14 独立用于 label smoothing。</div>
 
 <h2>04 · 受控 T0–T3 实验矩阵</h2>
 <table><thead><tr><th>Arm</th><th>训练数据</th><th>它单独回答什么</th></tr></thead><tbody>
@@ -39,12 +44,18 @@ forbidden live inputs: future frame, terminal result, opponent hidden deck, expe
 <tr><td class="arm">T1</td><td>T0 + 纯多龙</td><td>多龙进攻/轮转模块是否迁移。</td></tr>
 <tr><td class="arm">T2</td><td>T0 + 宝石海星 + 黑夜魔灵</td><td>黑夜魔灵铺场、进化、自爆模块是否迁移。</td></tr>
 <tr><td class="arm">T3</td><td>三者全部</td><td>两个辅助模块是否互补、可组合且没有负迁移。</td></tr>
-<tr><td class="arm">T3-no-deck</td><td>同数据、同 updates，mask exact deck</td><td>收益是否真的依赖构筑条件，而不只是样本更多。</td></tr>
+<tr><td class="arm">T3-no-deck</td><td>同 rows/order/epochs；只移除初始构筑</td><td>收益是否真的依赖构筑条件，而不只是样本更多。</td></tr>
+<tr><td class="arm">T1-no-deck（探索）</td><td>与 T1 完全相同；安全移除初始构筑</td><td>T2 阻塞期间提前诊断构筑条件；不替代 T3-no-deck。</td></tr>
 </tbody></table>
+<div class="rule"><b>安全消融：</b>T3-no-deck 保留 live board、实时 resource ledger 与 source persona；registered sequence 使用一个有效 null token、非空 mask 和零 multiplicity，禁止全 mask attention/NaN。测试必须证明与 T3 的 rows、labels、order 完全相同。</div>
 <div class="rule warn"><b>竞赛导向的数据合同：</b>不做人为 50/50，也不为了学术归因丢掉可用对局。T0 使用全部合格目标数据；T1/T2 在 T0 上加入对应来源的全部合格数据；T3 使用三者完整并集。每 epoch 每条选中 decision 学一次，因此 T1–T3 天然 updates 更多、耗时更长。结果诚实解释为 data + compute 的实际增量；仍按整局切分并禁止泄漏、重复和构筑误标。</div>
 
 <h2>05 · 失败对局如何进入 BC</h2>
 <div class="grid"><article class="card"><h3>可以使用</h3><p>数据稀缺时保留经审计的完整失败局；失败是 episode metadata，不代表每一步都错。</p></article><article class="card"><h3>暂不做 value</h3><p>不把终局胜负复制为逐动作 reward/value target，也不假装定位了关键失误。</p></article><article class="card"><h3>可控的静态权重</h3><p>只有出现噪声压制时，比较 bounded episode/source quality 权重；始终另报 unweighted validation 和各 strata 有效权重。</p></article></div>
+<div class="formula">win_weight = 1.0; loss_weight ∈ {0.75, 0.50}; draw_weight = 1.0
+L = Σᵢ wᵢ Σₜ maskᵢ,ₜ CE(zᵢ,ₜ, yᵢ,ₜ) / Σᵢ wᵢ Σₜ maskᵢ,ₜ</div>
+<p>V4/V5 保留 T1 的全部 54,764 条 train decision，只在训练 CE 中消费 episode outcome；validation、checkpoint 选择、离线指标、candidate 推理和 official-engine 评测全部保持 unweighted。每 epoch 包含 33,601 条胜局 decision 与 21,163 条败局 decision；V4/V5 的平均 decision weight 分别为 0.90339 / 0.80678。</p>
+<div class="rule"><b>V14 legal-class label smoothing：</b>回到 plain R15，只在训练 token CE 使用 ε=0.05。Pointer decoder 用 dtype minimum 屏蔽非法 class，因此平滑质量只分配给当前 token 的合法 logits；padding 排除，label 必须合法。Validation 仍为 unsmoothed CE + greedy full-action，模型输入、结构和 candidate runtime 与 V2 相同。两次 nonfinite smoke 保留为诊断，修正后的 5-batch CUDA BF16 smoke 已通过。</div>
 
 <h2>06 · 唯一成功目标：自爆多龙</h2>
 <div class="rule"><b>评测收口：</b>没有可在本地运行的老师 policy，因此不存在“学生对老师胜率”。纯多龙和宝石海星 + 黑夜魔灵只提供辅助训练数据与诊断，不进入 checkpoint 排名、headline score 或最终 go/no-go。T0–T3 的成功只由我们自己的版本在同一套“多龙 + 黑夜魔灵”目标构筑上的相对变化决定。</div>
@@ -75,11 +86,34 @@ forbidden live inputs: future frame, terminal result, opponent hidden deck, expe
 <div class="flow"><div class="node"><b>Target validation</b>统一规则选 checkpoint；不看 engine test</div><div class="arrow">→</div><div class="node"><b>Development batch</b>相同 catalog、paired seats/seeds；报告差值与不确定性</div><div class="arrow">→</div><div class="node target"><b>Fresh confirmation</b>胜者与 T0 用未使用 seeds 复测；package 不再调整</div></div>
 <p>正式报告包括 W/L/error、completion、相对 T0 的 paired win-rate difference、置信区间、先后手和 per-opponent 结果。单次点估计提升只算 exploratory；辅助构筑不参加正式强度评估。</p>
 
-<h2>10 · 明日工作包</h2>
-<ol><li>冻结并 hash 三套 exact deck，列出 expert/team source。</li><li>审计完整 episode、胜负、decision 数与重复/session 泄漏。</li><li>确认目标数据足以保留可信 validation/test。</li><li>验证 materialized 与 online registered-deck tensors 一致。</li><li>冻结 T0–T3 天然 episode membership/counts、epoch 合同、目标-only checkpoint selector、paired engine schedule 与 fresh confirmation seeds。</li></ol>
-<div class="rule">这份设计没有授权训练、评测、candidate 晋级或外部提交。value calibration、reward 和 RL 继续留给后续独立项目。</div>
-<h2>11 · 基础矩阵后的首选扩展：玛莉 + 愿增猿</h2>
+<h2>10 · V1–V17 实际结果</h2>
+<table><thead><tr><th>版本</th><th>训练 arm</th><th>最佳 target exact</th><th>Official-engine W/L</th><th>胜率</th></tr></thead><tbody>
+<tr><td class="arm">V1</td><td>T0 仅目标</td><td>54.3%（epoch 11）</td><td>15 / 185，0 error</td><td>7.5%</td></tr>
+<tr><td class="arm">V2</td><td>T1 + 全部合格纯多龙</td><td>58.7%（epoch 10）</td><td>39 / 161，0 error</td><td class="yes">19.5%</td></tr>
+<tr><td class="arm">V3</td><td>探索性 T1-no-deck</td><td class="yes">60.1%（epoch 11）</td><td>30 / 170，0 error</td><td>15.0%</td></tr>
+<tr><td class="arm">V4</td><td>T1，败局权重 0.75</td><td>57.5%（epoch 11）</td><td>28 / 172，0 error</td><td>14.0%</td></tr>
+<tr><td class="arm">V5</td><td>T1，败局权重 0.50</td><td>59.0%（epoch 11）</td><td>41 / 159，0 error</td><td>20.5%</td></tr>
+<tr><td class="arm">V6</td><td>T1，独立 seed 20260727</td><td>56.2%（epoch 7）</td><td>20 / 180，0 error</td><td>10.0%</td></tr>
+<tr><td class="arm">V7</td><td>fresh rule reader，scale 0.10</td><td>60.2%（epoch 11）</td><td>25 / 175，0 error</td><td>12.5%</td></tr>
+<tr><td class="arm">V8</td><td>fresh rule reader，scale 0.03</td><td>56.2%（epoch 4）</td><td>18 / 182，0 error</td><td>9.0%</td></tr>
+<tr><td class="arm">V9</td><td>V2 warm-start，全模型 LR 1e-4</td><td>57.9%（epoch 4）</td><td>30 / 170，0 error</td><td>15.0%</td></tr>
+<tr><td class="arm">V10</td><td>V2 frozen，rule-only LR 3e-4</td><td class="yes">61.3%（epoch 4）</td><td>29 / 171，0 error</td><td>14.5%</td></tr>
+<tr><td class="arm">V11</td><td>V2 frozen，rule-only LR 1e-4</td><td class="yes">60.7%（epoch 4）</td><td>38 / 162，0 error</td><td>19.0%</td></tr>
+<tr><td class="arm">V12</td><td>V2 frozen，scale 0.10</td><td class="yes">61.6%（epoch 4）</td><td>29 / 171，0 error</td><td>14.5%</td></tr>
+<tr><td class="arm">V13</td><td>V12 独立 seed 20260727</td><td class="yes">61.5%（epoch 7）</td><td>40 / 160，0 error</td><td>20.0%</td></tr>
+<tr><td class="arm">V14</td><td>plain R15，legal-class smoothing 0.05</td><td>59.0%（epoch 10）</td><td>30 / 170，0 error</td><td>15.0%</td></tr>
+<tr><td class="arm">V15</td><td>T4 + 535 条 capped 玛莉/愿增猿 trajectory</td><td>57.5%（epoch 4）</td><td>40 / 160，0 error</td><td>20.0%</td></tr>
+<tr><td class="arm">V16</td><td>T4 + 267 条 capped 玛莉/愿增猿 trajectory</td><td class="yes">60.3%（epoch 7）</td><td>37 / 163，0 error</td><td>18.5%</td></tr>
+<tr><td class="arm">V17</td><td>V16 数据，source 初始尺度 0.03</td><td>59.9%（epoch 9）</td><td>37 / 163，0 error</td><td>18.5%</td></tr>
+</tbody></table>
+<div class="rule"><b>当前结论：</b>T0→T1 同时提升 target exact（+4.4pp）与正式实战胜率（+12.0pp）。V12/V13 离线为 61.6%/61.5%，实战却分裂为 29/200 与 40/200，不能证明 rule-reader 稳定增量。V14 smoothing 仅 30/200。V15 的 535 条玛莉 cap 为 40/200；V16 half-cap 虽把 target exact 提高到 60.3%，实战降到 37/200；V17 把 source 初始尺度从 0.10 降到 0.03 后仍为 37/200。T4 dosage 与 scale 都没有支持增量，相关 sweep 停止，V2 继续作为当前选型。V2 loss-best 诊断仅 26/200。完整报告见 <a href="evaluation/index.html">evaluation index</a>。</div>
+
+<h2>11 · 当前执行门</h2>
+<ol><li>0726 官方 ZIP 与 310 局 targeted overlay 已冻结、hash、去重。</li><li>build/source/outcome/seat audit、source vocabulary 与 12-episode / 1,000-decision target validation 已冻结。</li><li>V15 为 103,557 条 train decision，V16/V17 为 79,319 条；旧 source ID 1–84 不变，Unicode ID 85–91。</li><li>V15–V17 均已完成 W&amp;B 与 200 局正式评测；T4 数据剂量和 source scale 均未形成支持增量，不再继续 sweep。</li><li>T2/T3/T3-no-deck 继续等待真实 Starmie + Dusknoir 来源，禁止用 Starmie + Froslass 冒充。</li></ol>
+<div class="rule">用户已授权本窗口的数据准备、训练和 official-engine 评测；candidate 准入、Kaggle submission/upload、commit 和 push 未授权。value/reward/RL 仍留给后续阶段。</div>
+<h2>12 · 基础矩阵后的首选扩展：玛莉 + 愿增猿</h2>
 <div class="flow"><div class="node"><b>玛莉体系中的愿增猿</b>Adrena-Brain：有恶能时，把自己一只宝可梦上的至多 3 个伤害指示物移到对手一只宝可梦。</div><div class="arrow">→</div><div class="node"><b>共享语义</b>DC 分配、目标选择、KO 算术、Ability 与最终攻击的先后顺序。</div><div class="arrow">→</div><div class="node target"><b>T4-marnie-munkidori</b>完整 T3 + capped 玛莉/愿增猿数据；仍只评目标自爆多龙。</div></div>
 <p>玛莉对局很多，因此它是“天然有多少用多少”的明确例外。数据审计后、训练前冻结 episode cap，首次不超过完整 T3 的独立训练 episode 数；按 exact deck/source/outcome/seat 分层后用 episode hash 确定性选取，不能只选胜局。如果目标多龙本身没有愿增猿，结果只能解释为间接的伤害指示物推理迁移。</p>
-<p class="muted">明日执行：<a href="RUNBOOK.md">RUNBOOK.md</a> · 完整合同：<a href="DESIGN.md">DESIGN.md</a> · 输入审查：<a href="decisions/001_0014_registered_deck_audit.md">0014 registered-deck audit</a> · 评测决策：<a href="decisions/002_target_only_evaluation_contract.md">target-only evaluation contract</a> · 更新于 2026-07-27</p>
+<div class="rule"><b>T4 source identity 门已解除：</b>完整池含 4,672 条候选；原 191 条 Unicode collision subset 已拆成 7 个稳定身份。旧 ID 1–84 完全保留，新 ID 85–91。V15 使用 535 条 outcome-stratified cap；V16 是其中 267 条的严格子集。证据见 <a href="data_audit/t4_marnie_v2.md">T4 data audit</a>。</div>
+<p class="muted">执行手册：<a href="RUNBOOK.md">RUNBOOK.md</a> · 完整合同：<a href="DESIGN.md">DESIGN.md</a> · 输入审查：<a href="decisions/001_0014_registered_deck_audit.md">0014 registered-deck audit</a> · 评测决策：<a href="decisions/002_target_only_evaluation_contract.md">target-only evaluation contract</a> · <a href="decisions/003_starmie_dusknoir_source_gap.md">T2 source gap</a> · 更新于 2026-07-27</p>
 </main></body></html>

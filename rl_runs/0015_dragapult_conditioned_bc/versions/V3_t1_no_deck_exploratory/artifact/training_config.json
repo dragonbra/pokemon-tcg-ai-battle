@@ -1,0 +1,54 @@
+{
+  "amp_dtype": "bfloat16",
+  "arm": "t1",
+  "batch_size": 256,
+  "dataset": "rl_runs/0015_dragapult_conditioned_bc/dataset/V1_core_r15_features",
+  "dataset_content_sha256": "32e8c483e5a8f76d20b4c559270349b0bf621b9c2f2bf4c1e3c5e3badc2d2f3d",
+  "early_stopping_min_delta": 0.001,
+  "early_stopping_patience": 5,
+  "epochs": 100,
+  "fresh_initialization": true,
+  "learning_rate": 0.0003,
+  "model": {
+    "r15": {
+      "ac": {
+        "auxiliary_ffn_multiplier": 2,
+        "base": {
+          "d_model": 320,
+          "dropout": 0.1,
+          "encoder_layers": 4,
+          "ffn_multiplier": 3,
+          "heads": 8,
+          "max_action_steps": 16,
+          "max_card_id": 2048,
+          "max_entities": 192,
+          "max_options": 128
+        },
+        "event_layers": 1,
+        "goal_roles": 4
+      },
+      "option_initial_scale": 0.35,
+      "scale_gate_ffn_multiplier": 2,
+      "scenario_ffn_multiplier": 3,
+      "scenario_layers": 2
+    },
+    "source_initial_scale": 0.1,
+    "source_vocabulary_size": 84
+  },
+  "no_deck": true,
+  "parameter_count": 17416642,
+  "project_id": "0015_dragapult_conditioned_bc",
+  "r15_baseline": "0014/V25_r15_deterministic_gradual_option",
+  "schema_version": "0015_r15_source_conditioned_training_v1",
+  "seed": 20260723,
+  "target_validation_decisions": 1000,
+  "train_decisions": 54764,
+  "validation_batch_size": 512,
+  "version": "V3_t1_no_deck_exploratory",
+  "wandb": {
+    "entity": "dragon_bra",
+    "mode": "online",
+    "project": "pokemon-tcg-policy-learning"
+  },
+  "weight_decay": 0.02
+}
