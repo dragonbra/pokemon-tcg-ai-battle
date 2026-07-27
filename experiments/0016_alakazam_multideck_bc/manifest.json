@@ -1,0 +1,61 @@
+{
+  "schema_version": "0016_experiment_manifest_v1",
+  "project_id": "0016_alakazam_multideck_bc",
+  "phase": "formal_bc_training",
+  "backbone_provenance": {
+    "project_id": "0014_faithful_board_causal_features",
+    "version": "V12_r2_strong_scenario_scalegate",
+    "class": "R2StrongScenarioPolicy",
+    "backbone_parameter_count": 17387842,
+    "initialization": "fresh_seeded"
+  },
+  "data_contract": {
+    "archetype": "alakazam_dudunsparce",
+    "outcomes": ["win"],
+    "exact_registered_deck_per_episode": true,
+    "source_conditioning": "collision_safe_team_persona",
+    "targeted_required_cards": [1146, 1264],
+    "episode_count": 10872,
+    "train_episodes": 9779,
+    "validation_episodes": 1093,
+    "source_count": 25,
+    "catalog_sha256": "8da02dd59e3853ce1d0e343ac4a832c89c6e580ff43f78a4eda5d385a6e351d0"
+  },
+  "action_contract": {
+    "max_action_steps": 64,
+    "observed_decisions": 845405,
+    "observed_max_action_length": 26,
+    "observed_max_option_count": 50,
+    "runtime_capacity_fallback": true
+  },
+  "model": {
+    "class": "SourceConditionedR2Policy",
+    "parameter_count": 17601282,
+    "source_vocabulary_size": 25,
+    "neutral_deployment_source_id": 0
+  },
+  "model_ready_dataset": {
+    "path": "../../rl_runs/0016_alakazam_multideck_bc/dataset/V1_win_multideck",
+    "content_sha256": "59dddebe35e3217e4d1a508d23c1720644f908bfa1b611eafad17594ad4301b0",
+    "train_decisions": 760106,
+    "validation_decisions": 85299,
+    "eligible_decisions": 845405,
+    "battle_cage_legal": 2500,
+    "battle_cage_selected": 257,
+    "wondrous_patch_legal": 283,
+    "wondrous_patch_selected": 76,
+    "wondrous_patch_target_decisions": 114
+  },
+  "formal_version": "V1_win_multideck_r2_scalegate",
+  "recovery": {
+    "cause": "host_power_loss",
+    "last_complete_epoch": 8,
+    "last_complete_global_step": 23760,
+    "interrupted_epoch_replayed": 9,
+    "same_repository_version": true,
+    "same_wandb_run": true,
+    "legacy_checkpoint_rng_state": false,
+    "future_checkpoint_rng_state": true
+  },
+  "target_deck": "../../train/0016_alakazam_multideck_bc/deck.csv"
+}

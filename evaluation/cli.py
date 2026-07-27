@@ -282,8 +282,10 @@ def _validate_research_coverage(
     requested_opponents: str,
     games: int,
     opponents: tuple[SubmissionPackage, ...],
+    *,
+    require_full_catalog: bool = True,
 ) -> None:
-    """Enforce full-catalog evaluation with at least ten games per opponent."""
+    """Enforce the formal coverage contract and the shared minimum game count."""
     minimum_total_games = len(opponents) * MIN_RESEARCH_GAMES
     if games < MIN_RESEARCH_GAMES:
         raise PackageValidationError(
@@ -291,7 +293,7 @@ def _validate_research_coverage(
             f"({len(opponents)}×{MIN_RESEARCH_GAMES}="
             f"{minimum_total_games}); got {games}"
         )
-    if requested_opponents.strip() != "all":
+    if require_full_catalog and requested_opponents.strip() != "all":
         raise PackageValidationError("repo evaluation requires --opponents all")
 
 
@@ -393,11 +395,15 @@ def _run(args: argparse.Namespace) -> str:
         args.opponents,
         load_opponent_catalog(args.catalog, evaluation_root),
     )
-    _validate_research_coverage(args.opponents, args.games, opponents)
+    args.output, args.report_path = _evaluation_output_paths(args.output)
+    _validate_research_coverage(
+        args.opponents,
+        args.games,
+        opponents,
+        require_full_catalog=args.report_path is not None,
+    )
     for opponent in opponents:
         assert_cg_compatible(candidate, opponent)
-
-    args.output, args.report_path = _evaluation_output_paths(args.output)
 
     result = run_batch(
         BatchConfig(

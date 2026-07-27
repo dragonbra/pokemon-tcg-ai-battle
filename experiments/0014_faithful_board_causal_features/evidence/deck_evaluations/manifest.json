@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "created_on": "2026-07-28",
+  "purpose": "Compare the archived 0014 V12 R2 epoch-8 model on Ito's original deck and the same deck with two Battle Cage cards.",
+  "source_archive": "archive/submission/0014_faithful_board_causal_features_v12_r2_epoch8_loss_best",
+  "model_sha256": "3fdf44d5751924fd74c360edaaf1f1163c8228c2d752c673279fd1dc6ed0ffa9",
+  "cg_tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+  "opponent": "marnies_grimmsnarl_ex_froslass_03_bc",
+  "games_per_run": 100,
+  "swap_policy": "alternate_candidate_first",
+  "candidate_first_games_per_run": 50,
+  "workers": 8,
+  "worker_cpu_threads": 1,
+  "randomness_contract": "The official native runtime exposes no caller-supplied shuffle seed. Game IDs and seat allocation match across runs; per-game random streams are not asserted identical.",
+  "runs": [
+    {
+      "name": "ito_original",
+      "candidate": "evaluation/arena/candidates/0014_v12_r2_epoch8_loss_best",
+      "deck_file": "archive_v12_r2_epoch8_ito_original_deck.csv",
+      "deck_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
+      "run_id": "run-b8ffeaefd3ac4b7987bd76509cceb549",
+      "report": "archive_v12_r2_epoch8_ito_original_vs_bc_marnie_100.html",
+      "wins": 37,
+      "losses": 63,
+      "draws": 0,
+      "errors": 0,
+      "first_wins": 22,
+      "first_games": 50,
+      "second_wins": 15,
+      "second_games": 50,
+      "command": "python3 -m evaluation run --candidate evaluation/arena/candidates/0014_v12_r2_epoch8_loss_best --opponents marnies_grimmsnarl_ex_froslass_03_bc --games 100 --output .tmp/evaluation/0014_archive_v12_r2_epoch8_deck_compare/ito_original --workers 8 --worker-cpu-threads 1"
+    },
+    {
+      "name": "ito_battle_cage_2",
+      "candidate": "evaluation/arena/candidates/0014_v12_r2_epoch8_loss_best_battle_cage_2",
+      "deck_file": "archive_v12_r2_epoch8_ito_battle_cage_2_deck.csv",
+      "deck_sha256": "6cbafde369a58d863251bb658bbb5cb11e3859baaa840e59319a42c306df661a",
+      "run_id": "run-22e271fb1ca54c7c80a15ee083134c6f",
+      "report": "archive_v12_r2_epoch8_ito_battle_cage_2_vs_bc_marnie_100.html",
+      "wins": 41,
+      "losses": 59,
+      "draws": 0,
+      "errors": 0,
+      "first_wins": 26,
+      "first_games": 50,
+      "second_wins": 15,
+      "second_games": 50,
+      "command": "python3 -m evaluation run --candidate evaluation/arena/candidates/0014_v12_r2_epoch8_loss_best_battle_cage_2 --opponents marnies_grimmsnarl_ex_froslass_03_bc --games 100 --output .tmp/evaluation/0014_archive_v12_r2_epoch8_deck_compare/ito_battle_cage_2 --workers 8 --worker-cpu-threads 1"
+    }
+  ]
+}
