@@ -149,6 +149,11 @@ def train(
     initial_best: Mapping[str, float] | None = None,
     early_stopping_patience: int = 0,
     early_stopping_min_delta: float = 0.0,
+    optimization_step: Callable[
+        [Faithful0010PointerPolicy, dict[str, Tensor]],
+        tuple[Tensor, Tensor, Tensor, Tensor, Tensor, Mapping[str, Tensor]],
+    ]
+    | None = None,
 ) -> dict[str, Any]:
     _atomic_json(paths.config, config)
     write_version_status(
@@ -186,6 +191,7 @@ def train(
                 model.train()
                 online = torch.zeros(4, dtype=torch.float64, device=device)
                 loss_sum = torch.zeros((), dtype=torch.float64, device=device)
+                optimization_sums: dict[str, Tensor] = {}
                 batches_done = 0
                 decisions_done = 0
                 train_iterator = tqdm(
@@ -211,7 +217,18 @@ def train(
                         enabled=amp and device.type == "cuda",
                         dtype=torch.bfloat16,
                     ):
-                        loss, tokens, correct, exact, _ = _teacher_metrics(model, batch)
+                        if optimization_step is None:
+                            loss, tokens, correct, exact, _ = _teacher_metrics(model, batch)
+                            batch_optimization: Mapping[str, Tensor] = {}
+                        else:
+                            (
+                                loss,
+                                tokens,
+                                correct,
+                                exact,
+                                _,
+                                batch_optimization,
+                            ) = optimization_step(model, batch)
                     if not torch.isfinite(loss):
                         raise FloatingPointError("nonfinite training loss")
                     loss.backward()
@@ -220,7 +237,13 @@ def train(
                         raise FloatingPointError("nonfinite gradient norm")
                     optimizer.step()
                     loss_sum += loss.detach().double()
-                    online += torch.stack((tokens, correct, exact, torch.tensor(batch["targets"].size(0), device=device))).double()
+                    for name, value in batch_optimization.items():
+                        detached = value.detach().double()
+                        optimization_sums[name] = optimization_sums.get(
+                            name, torch.zeros((), dtype=torch.float64, device=device)
+                        ) + detached
+                    batch_size = torch.tensor(batch["targets"].size(0), device=device)
+                    online += torch.stack((tokens, correct, exact, batch_size)).double()
                     global_step += 1
                     batches_done += 1
                     decisions_done += batch["targets"].size(0)
@@ -333,10 +356,30 @@ def train(
                     ),
                 )
                 progress_iteration += batch_counts["validation"]
+                optimization_loss = float((loss_sum / batches_done).cpu())
+                weighted_numerator = optimization_sums.get("weighted_loss_numerator")
+                weighted_denominator = optimization_sums.get("weighted_loss_denominator")
+                if weighted_numerator is not None and weighted_denominator is not None:
+                    optimization_loss = float(
+                        (weighted_numerator / weighted_denominator.clamp_min(1e-8)).cpu()
+                    )
+                extra_optimization_metrics: dict[str, float] = {}
+                weight_sum = optimization_sums.get("decision_weight_sum")
+                if weight_sum is not None:
+                    extra_optimization_metrics["bc/optimization/mean_decision_weight"] = float(
+                        (weight_sum / decisions).cpu()
+                    )
+                for outcome in ("win", "loss", "draw"):
+                    count = optimization_sums.get(f"{outcome}_decisions")
+                    if count is not None:
+                        extra_optimization_metrics[
+                            f"bc/optimization/{outcome}_decisions"
+                        ] = float(count.cpu())
                 metrics = {
                     "trainer/epoch": epoch,
                     "trainer/update": global_step,
-                    "bc/optimization/loss": float((loss_sum / batches_done).cpu()),
+                    "bc/optimization/loss": optimization_loss,
+                    **extra_optimization_metrics,
                     "bc/optimization/token_accuracy": correct / tokens,
                     "bc/optimization/teacher_exact_action": exact / decisions,
                     "bc/optimization/decisions": decisions,
@@ -405,7 +448,11 @@ def train(
     except BaseException as error:
         write_version_status(
             paths,
-            {"state": "failed", "failed_at": time.time(), "reason": f"{type(error).__name__}: {error}"},
+            {
+                "state": "failed",
+                "failed_at": time.time(),
+                "reason": f"{type(error).__name__}: {error}",
+            },
         )
         raise
 
