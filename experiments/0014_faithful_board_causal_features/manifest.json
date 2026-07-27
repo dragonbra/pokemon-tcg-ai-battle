@@ -4,6 +4,8 @@
   "created_at": "2026-07-27T00:00:00+08:00",
   "git_commit_at_allocation": "fb378778eecede513a6b9310257565ae22bd682b",
   "deck": "alakazam_dudunsparce",
+  "dataset_contract": "single normalized Yushin Ito expert; winner-only complete trajectories; actor-visible causal full-feature superset; ordered full actions; frozen original train/validation split",
+  "engine_revision": "unmodified official engine runtime in engine/source; evaluation metric profile auto_iteration_v8_setup_relay revision 7",
   "expert_source": "normalized exact Yushin Ito; 2026-07-18..2026-07-25; winner-only",
   "objective": "Train a faithful 0010 control and an all-feature causal policy from one actor-visible superset cache",
   "raw_dataset": {
@@ -23,13 +25,14 @@
     "bytes": 1207398935
   },
   "paths": {
-    "implementation": "train/0014_faithful_board_causal_features",
+    "training": "train/0014_faithful_board_causal_features",
     "archive": "experiments/0014_faithful_board_causal_features",
     "runs": "rl_runs/0014_faithful_board_causal_features"
   },
+  "opponent_pool_snapshot": "evaluation/configs/opponents.json sha256:b79de1404d94c60ed5bd0b192d54cdd89a5c76a250416e756e44e8368bfb8fda",
   "primary_campaign": [
     "A0_0010_faithful_control",
     "AC_all_features_lightweight_readers"
   ],
-  "status": "a0_preflight_passed_ready_to_allocate_v1"
+  "status": "initialized"
 }

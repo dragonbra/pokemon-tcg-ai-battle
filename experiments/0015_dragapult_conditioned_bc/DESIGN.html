@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>0015 · 多龙构筑条件化 BC</title>
+<style>
+:root{--bg:#08131f;--panel:#13263a;--panel2:#0e1d2d;--line:#35536f;--text:#eef6ff;--muted:#b6c8da;--blue:#8fc8ff;--green:#66ddb0;--amber:#ffd079;--red:#ff9b96;--violet:#c5a9ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 85% 5%,#244f70 0,transparent 29%),linear-gradient(145deg,#07101b,#142a42);color:var(--text);font:15px/1.58 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:1180px;margin:auto;padding:44px 24px 76px}h1{font-size:36px;line-height:1.12;margin:0 0 9px}h2{font-size:23px;margin:40px 0 13px}h3{font-size:17px;margin:0 0 7px}.lead,.muted{color:var(--muted)}.badges{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.badge{border:1px solid var(--line);border-radius:18px;padding:4px 10px;background:#172d45}.rule{margin:22px 0;padding:16px 19px;border-left:4px solid var(--green);border-radius:8px;background:#10362e}.warn{border-color:var(--amber);background:#392d16}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px}.card{padding:16px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}.verdict{font-size:21px;color:var(--green)}.flow{display:grid;grid-template-columns:1fr auto 1.25fr;gap:11px;align-items:center;margin:18px 0}.source{display:grid;gap:11px}.node{padding:14px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}.node b{display:block;color:var(--blue)}.target{border-color:var(--green);background:#103229}.arrow{font-size:28px;color:var(--muted)}table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--panel)}th,td{padding:10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{background:#1b3551;color:#e0edff}tr:last-child td{border-bottom:0}.yes{color:var(--green)}.no{color:var(--red)}code{color:#c5ddff}.formula{padding:15px;overflow:auto;border-radius:8px;background:#07121d;color:#d8e8fb;white-space:pre-wrap;font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace}.arm{font-weight:750;color:var(--violet)}a{color:#9fcfff}@media(max-width:720px){main{padding:28px 14px}.flow{grid-template-columns:1fr}.arrow{text-align:center;transform:rotate(90deg)}table{font-size:13px}th,td{padding:8px}}
+</style></head><body><main>
+<h1>0015 · 多龙构筑条件化 BC</h1>
+<p class="lead">前瞻实验：用纯多龙补充“多龙模块”，用宝石海星 + 黑夜魔灵补充“黑夜魔灵模块”，检验二者能否在自爆多龙目标构筑上形成可测量的组合迁移。</p>
+<div class="badges"><span class="badge">prospective · 未训练</span><span class="badge">BC-first</span><span class="badge">T0–T3 component transfer</span><span class="badge">value / RL deferred</span></div>
+<div class="rule"><b>0014 审查结论：</b><span class="verdict">AC/R1 足以表达完整 60 张初始构筑；A0 不足。</span><br>现有 V9 已证明构筑通路接通且 logits 对卡牌数量变化敏感，但尚未证明跨构筑的正确泛化。</div>
+
+<h2>01 · 要组合的不是三套完整策略，而是两个子模块</h2>
+<div class="flow"><div class="source"><div class="node"><b>纯多龙</b>多龙铺场、能量、前后场轮转、Phantom Dive 提交与伤害分配</div><div class="node"><b>宝石海星 + 黑夜魔灵</b>Duskull 铺场、进化、Cursed Blast 时机、目标和自爆后接力</div></div><div class="arrow">→</div><div class="node target"><b>目标：多龙 + 黑夜魔灵</b>在 exact own-deck 条件下组合两个模块；最终只在目标构筑留出数据和目标 candidate 上判定收益。</div></div>
+<p class="muted">宝石海星的攻击几何和能量路线不同，因此它只提供可能复用的黑夜魔灵监督。不能因混合数据总准确率上升就声称迁移成功。</p>
+
+<h2>02 · 0014 的 registered-deck 能力审查</h2>
+<table><thead><tr><th>层级</th><th>结论</th><th>0015 含义</th></tr></thead><tbody>
+<tr><td>Cache / compiler</td><td class="yes">支持</td><td><code>registered_card_ids</code> + <code>registered_multiplicity</code> 可无损还原 60 张 multiset。</td></tr>
+<tr><td>AC / R1</td><td class="yes">支持</td><td>registered cards 与资源账本进入 resource/scenario memory，并条件化 state 与 legal options。</td></tr>
+<tr><td>Online / export</td><td class="yes">支持</td><td>实际 candidate 的 <code>deck.csv</code> 被校验为 60 张并进入同一编码合同。</td></tr>
+<tr><td>A0</td><td class="no">不支持</td><td>没有消费 registered-deck 特征，不能作为本实验架构。</td></tr>
+<tr><td>广泛泛化证据</td><td class="no">尚无</td><td>0014 只有一张卡差异的两个不平衡签名，不能代表三 archetype。</td></tr>
+</tbody></table>
+<div class="grid" style="margin-top:14px"><article class="card"><h3>已有 cache</h3><p>162,128 decisions；两个签名占比 85.7% / 14.3%，仅 Enhanced Hammer 与 Nighttime Mine 的 4/2、3/3 互换。</p></article><article class="card"><h3>V9 sensitivity</h3><p>固定同一 validation state，只改 multiplicity：finite-logit max Δ = <code>0.1878586</code>，mean Δ = <code>0.0823456</code>。</p></article><article class="card"><h3>正确解读</h3><p>证明“有线且模型在用”；不证明变化后的动作正确，也不证明它能理解纯多龙、目标多龙和宝石海星的差异。</p></article></div>
+
+<h2>03 · 模型和信息边界</h2>
+<div class="formula">π(a | s, D)
+s = action-time actor-visible board/history + legal full-action options
+D = exact registered own 60-card multiset
+
+allowed: own deck identity/counts, ontology, known zones, bounded/unknown resource ledger
+audit only: build family, deck hash, expert/team source, outcome
+forbidden live inputs: future frame, terminal result, opponent hidden deck, expert identity</div>
+<p>采用 0014 AC/R1 风格的 registered-card memory；保留卡牌 identity、初始 multiplicity 和当前资源位置。不同构筑/来源不能无条件混标签。source 用于 manifest、平衡采样和分组报告，默认不作为策略输入。</p>
+
+<h2>04 · 受控 T0–T3 实验矩阵</h2>
+<table><thead><tr><th>Arm</th><th>训练数据</th><th>它单独回答什么</th></tr></thead><tbody>
+<tr><td class="arm">T0</td><td>仅多龙 + 黑夜魔灵</td><td>稀缺目标数据自身的 BC baseline。</td></tr>
+<tr><td class="arm">T1</td><td>T0 + 纯多龙</td><td>多龙进攻/轮转模块是否迁移。</td></tr>
+<tr><td class="arm">T2</td><td>T0 + 宝石海星 + 黑夜魔灵</td><td>黑夜魔灵铺场、进化、自爆模块是否迁移。</td></tr>
+<tr><td class="arm">T3</td><td>三者全部</td><td>两个辅助模块是否互补、可组合且没有负迁移。</td></tr>
+<tr><td class="arm">T3-no-deck</td><td>同数据、同 updates，mask exact deck</td><td>收益是否真的依赖构筑条件，而不只是样本更多。</td></tr>
+</tbody></table>
+<div class="rule warn"><b>竞赛导向的数据合同：</b>不做人为 50/50，也不为了学术归因丢掉可用对局。T0 使用全部合格目标数据；T1/T2 在 T0 上加入对应来源的全部合格数据；T3 使用三者完整并集。每 epoch 每条选中 decision 学一次，因此 T1–T3 天然 updates 更多、耗时更长。结果诚实解释为 data + compute 的实际增量；仍按整局切分并禁止泄漏、重复和构筑误标。</div>
+
+<h2>05 · 失败对局如何进入 BC</h2>
+<div class="grid"><article class="card"><h3>可以使用</h3><p>数据稀缺时保留经审计的完整失败局；失败是 episode metadata，不代表每一步都错。</p></article><article class="card"><h3>暂不做 value</h3><p>不把终局胜负复制为逐动作 reward/value target，也不假装定位了关键失误。</p></article><article class="card"><h3>可控的静态权重</h3><p>只有出现噪声压制时，比较 bounded episode/source quality 权重；始终另报 unweighted validation 和各 strata 有效权重。</p></article></div>
+
+<h2>06 · 唯一成功目标：自爆多龙</h2>
+<div class="rule"><b>评测收口：</b>没有可在本地运行的老师 policy，因此不存在“学生对老师胜率”。纯多龙和宝石海星 + 黑夜魔灵只提供辅助训练数据与诊断，不进入 checkpoint 排名、headline score 或最终 go/no-go。T0–T3 的成功只由我们自己的版本在同一套“多龙 + 黑夜魔灵”目标构筑上的相对变化决定。</div>
+<div class="grid"><article class="card"><h3>离线一致率：诊断轴</h3><p>只看目标构筑 holdout，判断对老师 logged states 的复现、是否明显学歪，并用同一预声明规则为各 arm 选择 checkpoint。</p></article><article class="card"><h3>Official-engine：强度轴</h3><p>所有 frozen candidate 使用同一目标 <code>deck.csv</code>。真实 W/L/error 是主要终点，因为它评估模型自己行为所诱导出的局面。</p></article></div>
+<p class="muted">动作一致率下降、真实胜率上升并不矛盾：多个动作可能近似等价，辅助数据也可能改善 teacher holdout 很少覆盖的恢复局面。它是有价值的候选结论，但必须由冻结 package 的新 seed 确认，而不是一次点估计。</p>
+
+<h2>07 · 黑夜魔灵迁移必须看这些切片</h2>
+<table><thead><tr><th>决策切片</th><th>观察点</th></tr></thead><tbody>
+<tr><td>Duskull setup</td><td>何时铺后场、Bench 空间是否合理。</td></tr>
+<tr><td>Evolution clock</td><td>Duskull → Dusclops → Dusknoir 的合法且有目的的节奏。</td></tr>
+<tr><td>Blast use / non-use</td><td>特性可用时是否应该发动；Dusclops 50 与 Dusknoir 130 如何选择。</td></tr>
+<tr><td>Target and sequence</td><td>目标选择、Prize/KO 后果，以及能否接上预期攻击或 KO。</td></tr>
+<tr><td>Post-self-KO relay</td><td>自爆后的 promotion、接力与后续 Prize race。</td></tr>
+</tbody></table>
+<p class="muted">每个切片都在相同的“自爆多龙目标 holdout”上比较 T0–T3，并显示样本数。辅助构筑 accuracy 仅可解释训练过程，不能补偿目标退化或进入最终分数。</p>
+
+<h2>08 · 二维结果怎么解读</h2>
+<table><thead><tr><th>目标构筑一致率</th><th>目标构筑真实强度</th><th>结论</th></tr></thead><tbody>
+<tr><td class="yes">上升</td><td class="yes">上升</td><td>最干净的正迁移。</td></tr>
+<tr><td>下降</td><td class="yes">上升</td><td>可能学到了超越字面模仿的稳健策略；冻结模型新 seed 复现后可视为成功。</td></tr>
+<tr><td class="yes">上升</td><td>持平/下降</td><td>更像老师，但没有更强的实战证据。</td></tr>
+<tr><td class="no">下降</td><td class="no">下降</td><td>负迁移或确实学歪。</td></tr>
+</tbody></table>
+<p class="muted"><code>T3 ≈ T3-no-deck</code> 时，只能说辅助数据可能有效，不能说 exact-deck conditioning 已被证明。</p>
+
+<h2>09 · 不泄漏的真实对战合同</h2>
+<p>每 epoch 做目标构筑完整固定 validation，不做大型 engine tournament，也不根据 engine 胜率挑 epoch。所有 arm 使用同一目标-only 离线规则各冻结一个 checkpoint，再导出同一套目标多龙 + 黑夜魔灵 <code>deck.csv</code>。另外按预声明的首个、25%、50%、75%、100% epochs 运行小型 milestone 对局，画出我们自己的训练中胜率曲线，但不拿这条曲线反选 checkpoint。</p>
+<div class="flow"><div class="node"><b>Target validation</b>统一规则选 checkpoint；不看 engine test</div><div class="arrow">→</div><div class="node"><b>Development batch</b>相同 catalog、paired seats/seeds；报告差值与不确定性</div><div class="arrow">→</div><div class="node target"><b>Fresh confirmation</b>胜者与 T0 用未使用 seeds 复测；package 不再调整</div></div>
+<p>正式报告包括 W/L/error、completion、相对 T0 的 paired win-rate difference、置信区间、先后手和 per-opponent 结果。单次点估计提升只算 exploratory；辅助构筑不参加正式强度评估。</p>
+
+<h2>10 · 明日工作包</h2>
+<ol><li>冻结并 hash 三套 exact deck，列出 expert/team source。</li><li>审计完整 episode、胜负、decision 数与重复/session 泄漏。</li><li>确认目标数据足以保留可信 validation/test。</li><li>验证 materialized 与 online registered-deck tensors 一致。</li><li>冻结 T0–T3 天然 episode membership/counts、epoch 合同、目标-only checkpoint selector、paired engine schedule 与 fresh confirmation seeds。</li></ol>
+<div class="rule">这份设计没有授权训练、评测、candidate 晋级或外部提交。value calibration、reward 和 RL 继续留给后续独立项目。</div>
+<h2>11 · 基础矩阵后的首选扩展：玛莉 + 愿增猿</h2>
+<div class="flow"><div class="node"><b>玛莉体系中的愿增猿</b>Adrena-Brain：有恶能时，把自己一只宝可梦上的至多 3 个伤害指示物移到对手一只宝可梦。</div><div class="arrow">→</div><div class="node"><b>共享语义</b>DC 分配、目标选择、KO 算术、Ability 与最终攻击的先后顺序。</div><div class="arrow">→</div><div class="node target"><b>T4-marnie-munkidori</b>完整 T3 + capped 玛莉/愿增猿数据；仍只评目标自爆多龙。</div></div>
+<p>玛莉对局很多，因此它是“天然有多少用多少”的明确例外。数据审计后、训练前冻结 episode cap，首次不超过完整 T3 的独立训练 episode 数；按 exact deck/source/outcome/seat 分层后用 episode hash 确定性选取，不能只选胜局。如果目标多龙本身没有愿增猿，结果只能解释为间接的伤害指示物推理迁移。</p>
+<p class="muted">明日执行：<a href="RUNBOOK.md">RUNBOOK.md</a> · 完整合同：<a href="DESIGN.md">DESIGN.md</a> · 输入审查：<a href="decisions/001_0014_registered_deck_audit.md">0014 registered-deck audit</a> · 评测决策：<a href="decisions/002_target_only_evaluation_contract.md">target-only evaluation contract</a> · 更新于 2026-07-27</p>
+</main></body></html>

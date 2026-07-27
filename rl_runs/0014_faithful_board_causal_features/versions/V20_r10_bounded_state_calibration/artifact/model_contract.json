@@ -1,0 +1,39 @@
+{
+  "base_parameter_count": 7154562,
+  "bounded_state_calibration": {
+    "option_initial_scale": 1.0,
+    "option_scale_range": [
+      0.0,
+      2.0
+    ],
+    "preserved": "complete R2 option path and state reader",
+    "state_initial_scale": 0.05,
+    "state_initial_scale_source": "R2 measured state scale mean 0.0327",
+    "state_scale_range": [
+      0.0,
+      0.25
+    ]
+  },
+  "feature_switches": {
+    "card_capability": true,
+    "event_memory": true,
+    "goal_qkv": true,
+    "own_resource_ledger": true,
+    "public_zone_inventory": true,
+    "registered_deck": true,
+    "relation_graph": true
+  },
+  "goal_roles": [
+    "setup_board",
+    "attack_prize",
+    "resource_recovery",
+    "tempo_survival"
+  ],
+  "model": "R10BoundedStateCalibrationPolicy",
+  "parameter_count": 17387842,
+  "r8_evidence": {
+    "exact_best_official_win_rate": 0.755,
+    "finding": "deleting the low-scale R2 state branch removed real-policy value",
+    "loss_best_official_win_rate": 0.76
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "archived_candidate": "0014_v22_r12_epoch12_loss_best",
+  "archived_checkpoint_epoch": 12,
+  "archived_win_rate": 0.77,
+  "archived_wins": 154,
+  "formal_candidate": "0014_v22_r12_epoch22_exact_best",
+  "formal_checkpoint_epoch": 22,
+  "formal_win_rate": 0.75,
+  "formal_wins": 150,
+  "loss_best_candidate": "0014_v22_r12_epoch12_loss_best",
+  "loss_best_checkpoint_epoch": 12,
+  "loss_best_win_rate": 0.77,
+  "loss_best_wins": 154,
+  "official_engine_games_per_checkpoint": 200,
+  "report": "../../../../../experiments/0014_faithful_board_causal_features/evaluation/V22_r12_state_preserving_option_dropout.html",
+  "run_id": "run-3234a003953d40d1974270169df4e73f"
+}

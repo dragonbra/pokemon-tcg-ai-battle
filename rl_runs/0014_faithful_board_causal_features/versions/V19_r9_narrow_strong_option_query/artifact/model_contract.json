@@ -1,0 +1,34 @@
+{
+  "base_parameter_count": 7154562,
+  "feature_switches": {
+    "card_capability": true,
+    "event_memory": true,
+    "goal_qkv": true,
+    "own_resource_ledger": true,
+    "public_zone_inventory": true,
+    "registered_deck": true,
+    "relation_graph": true
+  },
+  "goal_roles": [
+    "setup_board",
+    "attack_prize",
+    "resource_recovery",
+    "tempo_survival"
+  ],
+  "model": "R9NarrowStrongOptionQueryPolicy",
+  "narrow_strong_option_query": {
+    "board_trunk_scenario_injection": false,
+    "evidence_dropout": 0.0,
+    "goal_qkv_independent": true,
+    "initial_scale": 1.0,
+    "route_ffn_multiplier": 1,
+    "scenario_ffn_multiplier": 2,
+    "scenario_layers": 1
+  },
+  "parameter_count": 11946562,
+  "r7_evidence": {
+    "exact_best_official_win_rate": 0.79,
+    "finding": "low scale plus evidence dropout delayed real-policy competence",
+    "loss_best_official_win_rate": 0.72
+  }
+}

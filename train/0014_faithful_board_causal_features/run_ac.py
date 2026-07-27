@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import importlib
 import json
 import math
 import os
@@ -17,14 +16,11 @@ from rl_environment.runs import initialize_version
 
 from . import PROJECT_ID
 from .ac_model import ACModelConfig, AllFeatureCausalPolicy, parameter_count
+from .card_semantics import CardSemanticRegistry
 from .config import AC_SWITCHES, MODEL_READY_DATASET
 from .training.a0_trainer import train
 from .training.ac_data import iter_ac_batches
 from .training.materialized import validate_materialized_dataset
-
-_semantics = importlib.import_module(
-    "train.0013_semantic_goal_policy.features.card_semantics"
-)
 
 
 def _batch_count(reference: dict, split: str, batch_size: int) -> int:
@@ -37,7 +33,7 @@ def _batch_count(reference: dict, split: str, batch_size: int) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--version", required=True)
+    parser.add_argument("--version", default="V9_ac_all_feature_causal_goal_qkv")
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--validation-batch-size", type=int, default=512)
     parser.add_argument("--epochs", type=int, default=100)
@@ -52,7 +48,7 @@ def main() -> None:
     if not torch.cuda.is_available():
         raise RuntimeError("0014 AC requires CUDA")
 
-    registry = _semantics.CardSemanticRegistry.from_official_csv(
+    registry = CardSemanticRegistry.from_official_csv(
         Path("data/official/EN_Card_Data.csv")
     )
     reference = validate_materialized_dataset(MODEL_READY_DATASET, registry=registry)

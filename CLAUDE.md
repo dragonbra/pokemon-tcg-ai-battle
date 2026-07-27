@@ -27,7 +27,6 @@
   0726 核心 section ID 存在且索引按日期倒序更新。生成实现与合同见
   `data/processed/environment_daily/generate_live_snapshot.py` 和
   `docs/environment-daily_kaggle_top100/README.md`。
-
 - “根据现在的快照构建日报”固定要求调用统一生成入口即时冻结官方 Top 100，以 leaderboard 每行
   `submissionDate` 唯一绑定 submission，并只选择同一冻结点以前该 submission 最新的
   `PUBLIC + COMPLETED` Episode；必须从 Episode 中 submission 自身唯一 player index 读取 exact
@@ -41,6 +40,14 @@
 - 统一入口为 `python3 -m data.processed.environment_daily.generate_live_snapshot --date YYYY-MM-DD`；
   每次新采集使用独立 `.tmp/environment_daily/<date>/run-*`，complete run 不得继续采集，正式 HTML
   已存在时必须显式 `--overwrite` 才可重建，并自动维护日报索引。
+
+- 编号训练项目必须是自包含实现单元：`train/<project_id>/` 不得 import
+  另一个编号 `train/<other_id>/` 的可执行代码。需要稳定的模型、codec、
+  feature、checkpoint 等实现时，复制/固化到本项目并在项目决策中记录来源；
+  跨项目仅可保留不可变数据的 provenance。`rl_environment/`、`evaluation/`、
+  官方卡牌数据和官方 engine runtime 是允许的共享基础设施。历史或失败项目
+  （尤其 0013）不得成为新项目的运行时依赖；删除或移动它们不能破坏新项目的
+  训练、smoke、导出或候选 package。
 
 - 仓库不再使用 `work/`；可运行待评估 package 统一放入 `evaluation/arena/candidates/<name>/`。从 `0013` 起，具体训练项目放在根目录 `train/<project_id>/`，项目归档、权威设计文档和正式评测放在 `experiments/<project_id>/`，运行时 dataset、checkpoint、TensorBoard、W&B staging 与版本记录放在 `rl_runs/<project_id>/`。`rl_environment/` 只提供通用训练基础设施；完成选择并需要长期归档的自包含 payload 统一放入 `archive/submission/<project_numbered_name>/`，对应压缩包放入 `archive/submission/dist/`；根目录 `submission/` 已退役，不得再创建新资产。
 - `scripts/` 只保留训练观测入口 `start_tensorboard.sh`；常用基建必须放在所属的 Python package（如 `rl_environment/`、`train/<project>/`、`evaluation/`、`visualization/`）中，不再新增一次性或规则策略脚本。

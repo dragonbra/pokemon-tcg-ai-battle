@@ -1,0 +1,36 @@
+{
+  "base_parameter_count": 7154562,
+  "feature_switches": {
+    "card_capability": true,
+    "event_memory": true,
+    "goal_qkv": true,
+    "own_resource_ledger": true,
+    "public_zone_inventory": true,
+    "registered_deck": true,
+    "relation_graph": true
+  },
+  "goal_roles": [
+    "setup_board",
+    "attack_prize",
+    "resource_recovery",
+    "tempo_survival"
+  ],
+  "model": "R8R2OptionOnlyPolicy",
+  "parameter_count": 15128322,
+  "r2_option_only": {
+    "preserved": [
+      "two-layer typed scenario bank",
+      "option scenario attention",
+      "independent Goal-QKV",
+      "family summary FiLM",
+      "dynamic option ScaleGate initialized at 1.0"
+    ],
+    "removal_evidence": "R2 state scale mean 0.0327 and median 0.00092",
+    "removed": "R2 global state attention/FiLM/ScaleGate path"
+  },
+  "r6_evidence": {
+    "exact_best_official_win_rate": 0.74,
+    "finding": "family routing remained a real-policy shortcut",
+    "loss_best_official_win_rate": 0.72
+  }
+}

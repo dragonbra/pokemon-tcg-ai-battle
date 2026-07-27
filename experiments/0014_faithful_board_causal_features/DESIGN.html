@@ -10,7 +10,10 @@
 <div class="rule"><b>核心合同：</b>全集 dataset 只生成一次。A0 从中读取 faithful-0010 子集，并保持 0010 的 tensor、mask、序列长度、7.15M 模型与 pointer decoder；AC 才读取所有新增 family。</div>
 
 <h2>01 · 冻结数据边界</h2>
-<div class="grid"><article class="card"><h3>来源</h3><p>复用 0013 immutable <code>decision_record_v3</code> raw records；Yushin Ito，2026-07-18..25，winner-only。</p></article><article class="card"><h3>Split</h3><p>原 train/validation assignment 原样复用，不重新抽样，不加入 07-26/27 数据。</p></article><article class="card"><h3>因果边界</h3><p>仅 action 前 actor-visible observation/log；禁止 future frame、reward/outcome、viewer omniscience 和对手隐藏身份。</p></article></div>
+<div class="grid"><article class="card"><h3>来源</h3><p>0014 V1 frozen cache 固化了 <code>decision_record_v3</code> 的审计结果；0013 raw 路径仅为 provenance，不是 runtime dependency。Yushin Ito，2026-07-18..25，winner-only。</p></article>
+<article class="card"><h3>Split</h3><p>原 train/validation assignment 原样复用，不重新抽样，不加入 07-26/27 数据。</p></article>
+<article class="card"><h3>因果边界</h3><p>仅 action 前 actor-visible observation/log；禁止 future frame、reward/outcome、viewer omniscience 和对手隐藏身份。</p></article>
+</div>
 
 <h2>02 · 一次性数据流</h2>
 <div class="flow"><div class="node"><b>Raw V1</b>observation + legal options + ordered label + actual deck manifest</div><div class="arrow">→</div><div class="node"><b>Visibility audit</b>规则、deck view、event cursor、known/unknown 与 conservation</div><div class="arrow">→</div><div class="node"><b>Full compiler</b>组内按 episode-player 时序，组间并行</div><div class="arrow">→</div><div class="node"><b>V1 superset cache</b>A0/AC 共用 content SHA，不建立 variant dataset</div></div>
@@ -24,12 +27,19 @@
 <tr><td>ordered targets</td><td>有序 distinct option 序列、termination、min/max、mask。</td><td>A0/主 AC 同用 0010 always-STOP；corrected forced-max 是独立后续 view。</td></tr></tbody></table>
 
 <h2>04 · 全集新增的五类信息</h2>
+<div class="rule"><b>R1 · measured：</b>R1 保持同一份 V1 cache、可见性边界和 pointer action contract。V10 epoch 25 全 validation 干预显示：关闭全部新增路径 exact-action 下降 1.87pp；ledger / Goal / card capability 分别贡献 1.66 / 1.26 / 0.79pp，但关闭 R1 新增 state / option conditioning 仅下降 0.03 / 0.12pp。结论是 feature 确实被使用，但静态 0.10 conditioning 没有实质改变模型家族。</div>
+<div class="rule warn"><b>R2 · strong Scenario ScaleGate：</b>scenario 明确定义为 public-zone、registered-card causal ledger、event、known/unknown opponent hand 四组 actor-visible facts；card capability 是实体/资源语义，Goal-QKV 是独立规划路径，二者不混入 ScaleGate 输入。state 与每个 option 分别读取 scenario bank，独立 MLP 输出 <code>2 × sigmoid</code> 的逐通道正值 scale（0–2），作用于 FiLM residual。初始 scale 为 1.0，而不是 R1 的 0.10；参数量 17,387,842。V11 因外部后台 PTY 关闭 stdout 在首 batch 后以 EIO 失败并保留；真实正式训练为从零启动的 <code>V12_r2_strong_scenario_scalegate</code>。</div>
 <div class="grid">
 <article class="card"><span class="tag">1 · Card capability</span><h3>卡能做什么</h3><p>card ID 指向 cache 内承诺的 ontology sidecar：kind/stage/HP/type/weakness/resistance/retreat、招式费用/伤害、效果原语与 capability。unknown/missing/N/A 分离。</p></article>
+
 <article class="card"><span class="tag">2 · Public zone inventory</span><h3>双方各区有多少资源</h3><p>Active/Bench/hand/discard/deck/Prize 数量及公开场面聚合。对手隐藏区只有 count。</p></article>
+
 <article class="card"><span class="tag">3 · Own resource ledger</span><h3>己方资源在哪里</h3><p>每种 registered identity 的初始数、公开区数、deck/Prize exact/bounded/unknown、来源事件与年龄。</p></article>
+
 <article class="card"><span class="tag">4 · Causal event memory</span><h3>刚刚发生了什么</h3><p>真实 numeric engine log，按 decision + ordinal 去重并跨 decision 累积；对手 unseen draw 只增加 unknown slot，redacted 离手不保留虚假确定性。</p></article>
+
 <article class="card"><span class="tag">5 · Registered deck</span><h3>自己的完整构筑</h3><p>本 episode-player 实际 60 张 identity multiset 与 multiplicity；不推断对手隐藏 deck。</p></article>
+
 </div>
 
 <h2>05 · 规则与可见性门禁</h2>
@@ -41,17 +51,38 @@
 <tr><td>Events</td><td>source event/cursor 唯一消费；时序和 age 保留。</td><td>重复消费 cumulative log。</td></tr></tbody></table>
 
 <h2>06 · 模型</h2>
-<div class="grid"><article class="card"><span class="tag ok">A0</span><h3>0010 faithful control</h3><p>7,154,562 params；d320，4 层，8 heads，FFN960，1 option cross-attention，GRU pointer。只换 raw/split 与训练 runtime。</p></article><article class="card"><span class="tag">AC</span><h3>All-feature causal policy</h3><p>保留 A0 board trunk；局部 semantic adapter、global zone adapter、per-card resource memory、浅层 event encoder、board-conditioned role retrieval、state/option 独立 normalized zero gates。</p></article></div>
-<div class="rule warn"><b>Goal-QKV 重设计：</b>四个 role query 由 encoded board CLS + board summary + role embedding 产生，读取合并后的 resource memory。它不再用 raw state query，也不把全部 ledger/event token 无控制地 concat 进主 Transformer。</div>
+<div class="grid"><article class="card"><span class="tag ok">A0</span><h3>0010 faithful control</h3><p>7,154,562 params；d320，4 层，8 heads，FFN960，1 option cross-attention，GRU pointer。只换 raw/split 与训练 runtime。</p></article>
+<article class="card"><span class="tag">AC</span><h3>All-feature causal policy</h3><p>保留 A0 board trunk；局部 semantic adapter、global zone adapter、per-card resource memory、浅层 event encoder、board-conditioned role retrieval、state/option 独立 normalized zero gates。</p></article>
+<article class="card"><span class="tag gate">R2</span><h3>Strong dynamic conditioning</h3><p>四组 scenario summary；state/option scenario attention；独立 Goal-QKV；per-sample、per-option、per-channel 0–2 ScaleGate；强度从 1.0 起步。</p></article>
+<article class="card"><span class="tag">R3</span><h3>Typed early fusion</h3><p>10,710,722 params；scenario token 进入每层 board Transformer。Epoch 7/15 official engine 为 77.5%/78.5%，晚期 loss 恶化，低于 R2 1.0pp。</p></article>
+<article class="card"><span class="tag gate">R4</span><h3>Additive family router</h3><p>14,720,642 params；六路 residual 无条件求和。Epoch 7/13 official engine 为 69.5%/75.5%，证明 family interference 明显。</p></article>
+<article class="card"><span class="tag gate">R5</span><h3>Option-query scenario memory</h3><p>12,664,002 params；Epoch 9/15 official engine 为 78.0%/72.5%，证明 query-only 边界可行但后期 residual 严重过拟合。</p></article>
+<article class="card"><span class="tag gate">R6</span><h3>Sparse family mixture</h3><p>14,826,888 params；Epoch 7/9 official engine 为 72.0%/74.0%，复杂 router 仍形成真实策略捷径。</p></article>
+<article class="card"><span class="tag gate">R7</span><h3>Regularized option query</h3><p>11,946,562 params；Epoch 8/14 official engine 为 72.0%/79.0%，低 scale + dropout 延迟了真实策略能力。</p></article>
+<article class="card"><span class="tag gate">R8</span><h3>Faithful R2 option only</h3><p>15,128,322 params；保留 R2 option attention、Goal-QKV、FiLM 与 ScaleGate，删除 low-scale state path 后，Epoch 9/13 official engine 仅为 76.0%/75.5%。</p></article>
+<article class="card"><span class="tag gate">R9</span><h3>Narrow strong option query</h3><p>11,946,562 params；保留浅层/窄 route，去掉 evidence dropout，option scale 从 1.0 起步；Epoch 9/13 official engine 均为 76.5%。</p></article>
+<article class="card"><span class="tag gate">R10</span><h3>Bounded state calibration</h3><p>17,387,842 params；恢复完整 R2，state scale 限制为 0–0.25、初始 0.05；Epoch 8/13 official engine 为 75.0%/77.5%，说明 state path 有价值但不应永久压低。</p></article>
+<article class="card"><span class="tag gate">R11</span><h3>Strong dropout option query</h3><p>11,946,562 params；窄 route、evidence dropout 0.20、option scale 初始 1.0；Epoch 10/14 official engine 为 71.5%/75.5%，没有复现 R7。</p></article>
+<article class="card"><span class="tag gate">R12</span><h3>State-preserving option dropout</h3><p>17,387,842 params；完整 R2 state calibration，对 option scenario/Goal 做逐通道 dropout；Epoch 12/22 official engine 为 77.0%/75.0%。</p></article>
+<article class="card"><span class="tag gate">R13</span><h3>Gradual option scale</h3><p>17,387,842 params；state scale 初始 1.0，option scale 初始 0.35 并保留逐通道 dropout；Epoch 9/13 official engine 为 72.5%/76.5%。</p></article>
+<article class="card"><span class="tag gate">R14</span><h3>Scenario modality dropout</h3><p>17,387,842 params；只对 option scenario 路径使用 per-sample 整体 mask，state/Goal-QKV 完整保留。Epoch 8/10 official engine 为 73.5%/74.0%，全部 evidence-dropout 路线停止。</p></article>
+<article class="card"><span class="tag gate">R15 · SOTA</span><h3>Deterministic gradual option</h3><p>17,387,842 params；完整确定性 R2 evidence，state scale 初始 1.0，option scale 初始 0.35。Epoch 8/14 official engine 为 74.0%/82.5%；选择 epoch 14，成为项目 SOTA。</p></article>
+<article class="card"><span class="tag gate">R16</span><h3>Rule-contract option reader</h3><p>20,699,202 params；CPU/导出门禁通过，但用户在 V26 epoch 1 结束模型探索。运行记录保留，未形成可参与 SOTA 比较的正式 checkpoint。</p></article>
+</div>
+<div class="rule warn"><b>Goal-QKV 与 ScaleGate 分离：</b>四个 role query 从 registered-card resource memory 检索 setup / prize / recovery / tempo 证据；ScaleGate 只读取 actor-visible scenario summary。Goal 输出不反向充当“场景事实”，避免规划假设与输入事实循环混合。</div>
 
 <h2>07 · 主实验顺序</h2>
 <table><thead><tr><th>Run</th><th>目的</th><th>后续决策</th></tr></thead><tbody><tr><td><b>A0</b></td><td>测出 0010 原模型在新单-expert split 上的真实基线与吞吐。</td><td>通过后直接 AC。</td></tr><tr><td><b>AC</b></td><td>全部五类信息 + 结构化轻量 reader，追求竞赛性能。</td><td>好则扩大容量/reader；差或不稳定才做 A1-A5/Goal-off 等诊断。</td></tr></tbody></table>
 
 <h2>08 · 训练效率与记录</h2>
-<div class="grid"><article class="card"><h3>Train</h3><p>每 epoch 一次 update pass；同一 teacher logits 聚合 optimization metrics；无 static train eval、无 train greedy。</p></article><article class="card"><h3>Validation</h3><p>每 epoch 完整 teacher + greedy；共享一次 encoding，on-device accumulation，BF16 inference；exact-action 每 epoch 输出一次。</p></article><article class="card"><h3>Pipeline</h3><p>compact shard、pinned prefetch、non-blocking transfer；worker/shard/batch 先 benchmark。</p></article><article class="card"><h3>Telemetry</h3><p><code>training_metrics.jsonl → TensorBoard → W&amp;B</code>；TQDM 在 W&amp;B Logs 以受控频率显示 batch、loss、decisions/s；scalar history 每 epoch 只写一次，因此默认 Step 与 epoch 严格一致；失败不得影响本地指标/checkpoint。</p></article></div>
+<div class="grid"><article class="card"><h3>Train</h3><p>每 epoch 一次 update pass；同一 teacher logits 聚合 optimization metrics；无 static train eval、无 train greedy。</p></article>
+<article class="card"><h3>Validation / early stop</h3><p>每 epoch 完整 teacher + greedy；共享一次 encoding，BF16 inference；100 epoch 只是上限，greedy exact 连续 5 epoch 未达到至少 +0.001 的改善即停止。</p></article>
+<article class="card"><h3>Pipeline</h3><p>compact shard、pinned prefetch、non-blocking transfer；worker/shard/batch 先 benchmark。</p></article>
+<article class="card"><h3>Telemetry</h3><p><code>training_metrics.jsonl → TensorBoard → W&amp;B</code>；TQDM 在 W&amp;B Logs 以受控频率显示 batch、loss、decisions/s；scalar history 每 epoch 只写一次，因此默认 Step 与 epoch 严格一致；失败不得影响本地指标/checkpoint。</p></article>
+</div>
 <p class="muted">A0 不做 option permutation。实测选择 8 个 compiler worker、train batch 256、validation batch 512；BF16 train peak allocation 约 1.70 GiB。W&amp;B 身份已验证为 dragon_bra。</p>
 
 <h2>09 · A0 启动门槛</h2>
 <p><span class="tag ok">Passed</span>全量 raw visibility audit；0010 codec/collate/logit/greedy parity；full cache commitment；7,154,562 参数；BF16 forward/backward/optimizer；共享编码 validation smoke；本机吞吐 benchmark。</p>
-<p class="muted">当前阶段：A0 preflight 全部通过；V1 六 epoch control 已完成，V8 正在从 epoch 0 运行 100 epoch 上限并按 validation greedy exact-action 早停。TQDM 在 W&amp;B Logs 提供受控刷新吞吐观测，epoch scalar 的默认 Step 与 trainer/epoch 严格一致；尚无 policy-strength 结论。事实来源见同目录 <a href="DESIGN.md">DESIGN.md</a>、<a href="manifest.json">manifest.json</a>、<a href="data_audit/visibility_transition_audit.json">visibility audit</a> 与 decisions。</p>
+<p class="muted">当前阶段：V8–V25 已完成训练与评测。V25 R15 epoch 14 以 165/200（82.5%）成为项目 observed SOTA，超过 V12 R2 的 159/200（79.5%）；同模型 epoch 8 loss-best 仅 74.0%，再次证明 validation loss 不能单独选择策略。用户已结束进一步模型探索，V26 R16 在 epoch 1 主动停止并排除出 SOTA 候选。最终选择只比较完整训练、完成自包含校验并跑过相同 official-engine 合同的版本。事实来源见同目录 <a href="DESIGN.md">DESIGN.md</a>、<a href="evaluation/V25_r15_deterministic_gradual_option.html">V25 evaluation</a> 与 data audit。</p>
 </main></body></html>

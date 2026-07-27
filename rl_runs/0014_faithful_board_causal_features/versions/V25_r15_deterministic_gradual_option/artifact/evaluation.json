@@ -1,0 +1,18 @@
+{
+  "archived_candidate": "0014_v25_r15_epoch14_exact_best",
+  "archived_checkpoint_epoch": 14,
+  "archived_win_rate": 0.825,
+  "archived_wins": 165,
+  "formal_candidate": "0014_v25_r15_epoch14_exact_best",
+  "formal_checkpoint_epoch": 14,
+  "formal_win_rate": 0.825,
+  "formal_wins": 165,
+  "loss_best_candidate": "0014_v25_r15_epoch8_loss_best",
+  "loss_best_checkpoint_epoch": 8,
+  "loss_best_win_rate": 0.74,
+  "loss_best_wins": 148,
+  "official_engine_games_per_checkpoint": 200,
+  "report": "../../../../../experiments/0014_faithful_board_causal_features/evaluation/V25_r15_deterministic_gradual_option.html",
+  "report_sha256": "499ce4e62ce56efe975917cc085ca6e36bea554ae93760bf0abf807e891298b7",
+  "run_id": "run-a6ac4419f92b49068d2104a8bf0800d9"
+}

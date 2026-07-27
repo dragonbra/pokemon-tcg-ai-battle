@@ -1,0 +1,13 @@
+{
+  "archived_candidate": "0014_v19_r9_epoch9_loss_best",
+  "archived_checkpoint_epoch": 9,
+  "archived_win_rate": 0.765,
+  "archived_wins": 153,
+  "formal_candidate": "0014_v19_r9_epoch13_exact_best",
+  "formal_checkpoint_epoch": 13,
+  "formal_win_rate": 0.765,
+  "formal_wins": 153,
+  "official_engine_games_per_checkpoint": 200,
+  "report": "../../../../../experiments/0014_faithful_board_causal_features/evaluation/V19_r9_narrow_strong_option_query.html",
+  "run_id": "run-84485af133ff4e5d9f2dc5108796173b"
+}

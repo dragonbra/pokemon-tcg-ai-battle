@@ -1,58 +1,8 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>0015 · Outcome-Aware Value Foundations</title>
-<style>
-:root{--bg:#0d1622;--panel:#16263a;--line:#36506e;--text:#edf5ff;--muted:#b5c4d8;--blue:#9cc8ff;--green:#6ce0b0;--amber:#ffcf77;--red:#ff9c99}*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#0a121d,#1a3150);color:var(--text);font:15px/1.58 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:1120px;margin:auto;padding:45px 24px 76px}h1{font-size:35px;line-height:1.12;margin:0 0 9px}h2{font-size:23px;margin:40px 0 13px}h3{font-size:17px;margin:0 0 6px}p{margin:7px 0}.lead,.muted{color:var(--muted)}.badges{display:flex;gap:8px;flex-wrap:wrap;margin:19px 0}.badge,.tag{border:1px solid var(--line);border-radius:18px;padding:4px 10px;color:#d7e7ff;background:#1a2d46}.rule{margin:24px 0;padding:17px 20px;border-left:4px solid var(--green);border-radius:8px;background:#11362e;font-size:17px}.warn{border-color:var(--amber);background:#3b2e16}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px}.card{padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}.flow{display:flex;align-items:stretch;gap:10px;flex-wrap:wrap}.node{flex:1 1 190px;padding:14px;border:1px solid var(--line);border-radius:9px;background:var(--panel)}.node b{display:block;color:var(--blue)}.arrow{align-self:center;font-size:24px;color:var(--muted)}table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--panel)}th,td{padding:10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}th{background:#1b3150;color:#dceaff}tr:last-child td{border-bottom:0}code{color:#c5ddff}.formula{padding:16px;overflow:auto;border-radius:8px;background:#09121d;color:#d7e7fb;white-space:pre-wrap;font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace}a{color:#a7d0ff}@media(max-width:680px){main{padding:29px 15px}.arrow{display:none}table{font-size:13px}th,td{padding:8px}}
-</style></head><body><main>
-<h1>0015 · Outcome-Aware Value Foundations</h1>
-<p class="lead">前瞻性权威设计：在不把败局动作粗暴定罪的前提下，让完整胜败轨迹先服务于 actor-visible value calibration，并把 BC、关键动作归因与真正 RL 分层推进。</p>
-<div class="badges"><span class="badge">prospective · no training</span><span class="badge">one deck + one source first</span><span class="badge">BC + value, not RL</span><span class="badge">official-engine required later</span></div>
-<div class="rule"><b>当前工作命题：</b>败局不是“每一步都错”的标签。0015 先用它学习从当前可见局面出发的胜率；它可以标出值得审计的崩盘窗口，却不能单靠一条历史轨迹证明哪一个合法动作造成失败。</div>
-
-<h2>01 · 问题边界</h2>
-<div class="grid"><article class="card"><h3>要做</h3><p>在同一 deck、同一 expert/source 的完整胜败轨迹上训练并校准 state value，测试它是否帮助第一阶段 BC 表征。</p></article><article class="card"><h3>不做</h3><p>不把所有败局动作当负标签；不启动 PPO/在线 RL；不将 value dip 写成因果结论；不自动晋级 policy。</p></article><article class="card"><h3>数据边界</h3><p>episode 分组切分；完整 provenance；actor-visible action-time state；终局 outcome 只能作 target，不能作输入。</p></article></div>
-
-<h2>02 · 第一阶段模型</h2>
-<div class="flow"><div class="node"><b>Actor-visible state</b>observation + legal options + audited causal state</div><div class="arrow">→</div><div class="node"><b>Shared encoder</b><code>h(s)</code></div><div class="arrow">→</div><div class="node"><b>Policy head</b><code>π(a | s)</code><br>full-action BC</div><div class="arrow">+</div><div class="node"><b>Value head</b><code>V(s)=P(win|s)</code><br>all-outcome supervision</div></div>
-<div class="formula">z_t = 1 if the actor at s_t eventually wins, else 0
-L = L_BC + λ_v · BCE(V(s_t), z_t)
-
-terminal outcome: supervision target only
-policy input: never outcome, future frame, future log, or opponent hidden identity</div>
-<p class="muted">初始保守合同：policy 仍使用冻结的 winner-only expert BC baseline；败局首先扩充 value supervision。all-outcome BC 只能作为具名的对照实验。</p>
-
-<h2>03 · 规则为何是 value 输入的一部分</h2>
-<table><thead><tr><th>局面语义</th><th>对 value 的含义</th><th>必须保持的边界</th></tr></thead><tbody>
-<tr><td>Attack commitment</td><td>攻击结束回合，可能放弃尚未使用的准备资源。</td><td>只看选择攻击前的状态。</td></tr>
-<tr><td>Turn budget</td><td>Supporter、手动 Energy、Retreat 的一次性选择会改变后续路线。</td><td>记录 action-time flags，不读未来结果。</td></tr>
-<tr><td>Evolution clock</td><td>本回合才入场的 Basic 与可进化目标有不同价值。</td><td>用 audited history / <code>appearThisTurn</code>，不从未来进化反推。</td></tr>
-<tr><td>Prize / board / resources</td><td>胜利、接力和未来起手抽牌风险都依赖它们。</td><td>未知保持未知；对手 hidden identity 不可见。</td></tr></tbody></table>
-
-<h2>04 · value 能说什么、不能说什么</h2>
-<div class="grid"><article class="card"><h3>能：标记候选窗口</h3><p><code>ΔV = V(s_{t+1}) − V(s_t)</code> 的显著跌落可触发 replay、资源账本和规则时机审计。</p></article><article class="card"><h3>不能：证明动作有罪</h3><p>跌落可能来自随机性、对手回应或未观察的替代路线。单条历史轨迹通常只有一个实际动作。</p></article><article class="card"><h3>后来：动作价值</h3><p>要比较同局面合法替代项，需要 <code>Q(s,a)</code>、优势以及可复现 official-engine counterfactual rollout。</p></article></div>
-
-<h2>05 · 实验阶梯</h2>
-<table><thead><tr><th>阶段</th><th>假设</th><th>Policy target</th><th>Value target</th><th>证据门槛</th></tr></thead><tbody>
-<tr><td>D0</td><td>数据可审计</td><td>—</td><td>—</td><td>manifest、outcome balance、chronology、visibility 和 grouped split 全部通过。</td></tr>
-<tr><td>P0</td><td>BC control 可复现</td><td>冻结 winner-only BC</td><td>—</td><td>离线合同 parity；不做强度结论。</td></tr>
-<tr><td>P1</td><td>value 辅助任务有益</td><td>同 P0</td><td>完整胜败状态的 <code>z</code></td><td>比较 <code>λ_v=0</code> 与多个预声明非零值；看 calibration 和 BC。</td></tr>
-<tr><td>P2</td><td>广泛动作标签值得模仿</td><td>显式 all-outcome BC control</td><td>同 P1</td><td>必须有分组离线与 official-engine 证据。</td></tr>
-<tr><td>P3</td><td>value 可指导审计</td><td>冻结最佳候选</td><td>校准最佳 head</td><td>replay 审计 + 重复 engine rollout；不自动更新 policy。</td></tr></tbody></table>
-
-<h2>06 · 预注册的测量原则</h2>
-<div class="grid"><article class="card"><h3>Value</h3><p>BCE、Brier、reliability curve、calibration slope/intercept；按 outcome、turn、seat、先后手、长度、Prizes、attack-ready、deck/source 分组并附样本数。</p></article><article class="card"><h3>Policy</h3><p>保持 online diagnostics 与 fixed validation teacher/greedy full-action 分开。JSONL → TensorBoard → W&amp;B。</p></article><article class="card"><h3>Strength</h3><p>只有自包含 candidate 的 official-engine 实战，在同 opponent pool、seat/seed、metric profile 下才是强度证据。</p></article></div>
-<div class="rule warn"><b>停止条件：</b>发现 outcome/future leakage、source/deck 混合、时序无效、value 低于平凡基线、BC 明显退化或 engine/replay 矛盾时，保留失败版本和证据，不覆盖旧版本。</div>
-
-<h2>07 · 明日讨论 Q&amp;A</h2>
-<table><thead><tr><th>问题</th><th>当前答案</th><th>提交前需要什么证据</th></tr></thead><tbody>
-<tr><td>败局动作是否训练 policy？</td><td>默认否；先训练 value，all-outcome BC 是单独 control。</td><td>P0/P1/P2 对照与 official-engine 结果。</td></tr>
-<tr><td>只用胜负够不够？</td><td>够作第一版、无歧义的 value target；但稀疏，不能归因。</td><td>outcome audit 和 calibration。</td></tr>
-<tr><td>现在要 dense reward 吗？</td><td>不要；Prize/KO/回合数会改变目标并可能 reward-hack。</td><td>独立 reward proposal 和消融。</td></tr>
-<tr><td>如何找关键错误？</td><td><code>ΔV</code> 只做候选；需 <code>Q(s,a)</code> 或受控 engine alternatives。</td><td>legal-action counterfactual rollout 设计。</td></tr>
-<tr><td>能合并多个 deck 吗？</td><td>0015 第一阶段不能；需明确 deck/source conditioning。</td><td>独立跨 deck 设计。</td></tr>
-<tr><td>何时才算 RL？</td><td>用当前 policy 的 return 显式优化 policy 时，而不是训练一个 value head 时。</td><td>新 rollout/reward/Q/PPO 设计。</td></tr></tbody></table>
-
-<h2>08 · 明日从何处开始</h2>
-<p>先选择一个 deck 和一个 normalized expert/team source，审计全部官方完整胜败 episode，冻结 episode-grouped manifest 与 actor-perspective outcome target；之后才建立 P0，并预先写好 <code>λ_v</code>、checkpoint、calibration 与成功门槛。没有此审计，不启动训练、RL、对手晋级或外部提交。</p>
-<p class="muted">详尽事实、公式与项目边界见同目录 <a href="DESIGN.md">DESIGN.md</a>。更新于 2026-07-27。</p>
-</main></body></html>
+<title>Superseded 0015 Value Design</title>
+<style>body{max-width:760px;margin:48px auto;padding:0 20px;color:#172019;background:#f3f5ef;font:16px/1.6 system-ui,sans-serif}a{color:#176b47}</style>
+</head><body><h1>已延期：0015 Outcome-Aware Value Foundations</h1>
+<p>这份前瞻性 value/RL 设计在任何实现、训练或评测开始前被延期。当前研究重点是先把多构筑 Dragapult BC 做扎实。</p>
+<p>请查看当前权威设计：<a href="../0015_dragapult_conditioned_bc/DESIGN.html">0015 · Dragapult Conditioned BC</a>。</p>
+</body></html>

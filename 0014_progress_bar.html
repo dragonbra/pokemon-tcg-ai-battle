@@ -4,14 +4,53 @@
 :root{--bg:#0c1421;--panel:#16243a;--line:#30435f;--text:#eef5ff;--muted:#a9b7cc;--done:#60dbaa;--run:#87b5ff;--wait:#64748b}*{box-sizing:border-box}body{margin:0;background:linear-gradient(140deg,#09111d,#172d4b);color:var(--text);font:15px/1.5 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:1000px;margin:auto;padding:38px 22px}h1{margin:0 0 8px}.lead{color:var(--muted)}.overall{height:18px;background:#24334a;border-radius:10px;overflow:hidden;margin:22px 0}.overall span{display:block;width:68%;height:100%;background:linear-gradient(90deg,#4fcf9f,#75aaff)}.row{display:grid;grid-template-columns:155px 1fr 100px;gap:15px;align-items:center;background:var(--panel);border:1px solid var(--line);padding:14px;margin:10px 0;border-radius:9px}.bar{height:9px;background:#26364d;border-radius:7px;overflow:hidden}.bar i{display:block;height:100%;background:var(--wait)}.done i{width:100%;background:var(--done)}.running i{width:35%;background:var(--run)}.waiting i{width:0}.state{text-align:right;color:var(--muted)}a{color:#9cc3ff}.notes{margin-top:24px;padding:16px;background:#132036;border-left:4px solid var(--run);border-radius:7px}@media(max-width:650px){.row{grid-template-columns:1fr}.state{text-align:left}}
 </style></head><body><main>
 <h1>0014 · 实施进度</h1><p class="lead">自动刷新 30 秒 · 权威设计：<a href="experiments/0014_faithful_board_causal_features/DESIGN.html">DESIGN.html</a></p>
-<div class="overall"><span></span></div>
+<div class="overall"><span style="width:93%"></span></div>
 <div class="row done"><b>项目合同</b><div class="bar"><i></i></div><div class="state">完成</div></div>
 <div class="row done"><b>规则/可见性审计</b><div class="bar"><i></i></div><div class="state">全量通过</div></div>
 <div class="row done"><b>0010 tensor parity</b><div class="bar"><i></i></div><div class="state">逐位通过</div></div>
 <div class="row done"><b>全集 schema/compiler</b><div class="bar"><i></i></div><div class="state">完成</div></div>
 <div class="row done"><b>并行 materialization</b><div class="bar"><i></i></div><div class="state">162,128 条</div></div>
 <div class="row done"><b>A0 BF16 smoke</b><div class="bar"><i></i></div><div class="state">通过</div></div>
-<div class="row running"><b>A0 正式训练</b><div class="bar"><i></i></div><div class="state">准备启动 V1</div></div>
-<div class="row waiting"><b>AC 全特征模型</b><div class="bar"><i></i></div><div class="state">A0 后执行</div></div>
-<div class="notes"><b>当前事实：</b>cache <code>e341a7…686a</code>，1.124 GiB；A0 train/validation 145,928/16,164；模型 7,154,562 params；batch 256；W&amp;B 登录已验证。下一动作是 V1 正式 A0。</div>
+<div class="row done"><b>A0 V8 基线</b><div class="bar"><i></i></div><div class="state">epoch 13 最佳已归档</div></div>
+<div class="row done"><b>V8 官方引擎评测</b><div class="bar"><i></i></div><div class="state">151/200 胜，75.5%</div></div>
+<div class="row done"><b>AC V9 全特征</b><div class="bar"><i></i></div><div class="state">epoch 27 后停止 · 已评测</div></div>
+<div class="row done"><b>R1 结构实现</b><div class="bar"><i></i></div><div class="state">CPU full-path 通过</div></div>
+<div class="row done"><b>V10 · R1 训练</b><div class="bar"><i></i></div><div class="state">按新 patience 5 口径停止</div></div>
+<div class="row done"><b>R1 checkpoint ablation</b><div class="bar"><i></i></div><div class="state">epoch 25 · full validation</div></div>
+<div class="row done"><b>R1 official evaluation</b><div class="bar"><i></i></div><div class="state">epoch 7: 75.0% · epoch 32: 72.5%</div></div>
+<div class="row done"><b>R2 结构 / BF16 smoke</b><div class="bar"><i></i></div><div class="state">17,387,842 params · 通过</div></div>
+<div class="row done"><b>V11 · launcher audit</b><div class="bar"><i></i></div><div class="state">PTY EIO · 1 batch 后保留</div></div>
+<div class="row done"><b>V12 · R2 强假设</b><div class="bar"><i></i></div><div class="state">epoch 13 · 159/200 · 79.5%</div></div>
+<div class="row done"><b>R3 early-fusion smoke</b><div class="bar"><i></i></div><div class="state">10,710,722 params · 通过</div></div>
+<div class="row done"><b>V13 · R3 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 15 · 157/200 · 78.5%</div></div>
+<div class="row done"><b>R4 option-router smoke</b><div class="bar"><i></i></div><div class="state">14,720,642 params · 通过</div></div>
+<div class="row done"><b>V14 · R4 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 13 · 151/200 · 75.5%</div></div>
+<div class="row done"><b>R5 option-query smoke</b><div class="bar"><i></i></div><div class="state">12,664,002 params · 通过</div></div>
+<div class="row done"><b>V15 · R5 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 9 · 156/200 · 78.0%</div></div>
+<div class="row done"><b>R6 sparse-mixture smoke</b><div class="bar"><i></i></div><div class="state">14,826,888 params · 通过</div></div>
+<div class="row done"><b>V16 · R6 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 9 · 148/200 · 74.0%</div></div>
+<div class="row done"><b>R7 regularized smoke</b><div class="bar"><i></i></div><div class="state">11,946,562 params · 通过</div></div>
+<div class="row done"><b>V17 · R7 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 14 · 158/200 · 79.0%</div></div>
+<div class="row done"><b>R8 option-only CPU smoke</b><div class="bar"><i></i></div><div class="state">15,128,322 params · 通过</div></div>
+<div class="row done"><b>R8 batch-256 gate</b><div class="bar"><i></i></div><div class="state">通过</div></div>
+<div class="row done"><b>V18 · R8 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 9 · 152/200 · 76.0%</div></div>
+<div class="row done"><b>R9 narrow-strong CPU smoke</b><div class="bar"><i></i></div><div class="state">11,946,562 params · 通过</div></div>
+<div class="row done"><b>R9 batch-256 gate</b><div class="bar"><i></i></div><div class="state">通过</div></div>
+<div class="row done"><b>V19 · R9 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 9 · 153/200 · 76.5%</div></div>
+<div class="row done"><b>R10 bounded-state CPU smoke</b><div class="bar"><i></i></div><div class="state">17,387,842 params · 通过</div></div>
+<div class="row done"><b>R10 batch-256 gate</b><div class="bar"><i></i></div><div class="state">通过</div></div>
+<div class="row done"><b>V20 · R10 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 13 · 155/200 · 77.5%</div></div>
+<div class="row done"><b>R11 strong-dropout smoke</b><div class="bar"><i></i></div><div class="state">11,946,562 params · 通过</div></div>
+<div class="row done"><b>V21 · R11 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 14 · 151/200 · 75.5%</div></div>
+<div class="row done"><b>R12 state-preserving smoke</b><div class="bar"><i></i></div><div class="state">17,387,842 params · CPU/导出通过</div></div>
+<div class="row done"><b>V22 · R12 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 12 · 154/200 · 77.0%</div></div>
+<div class="row done"><b>R13 gradual-option smoke</b><div class="bar"><i></i></div><div class="state">17,387,842 params · CPU/导出通过</div></div>
+<div class="row done"><b>V23 · R13 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 13 · 153/200 · 76.5%</div></div>
+<div class="row done"><b>R14 modality-dropout smoke</b><div class="bar"><i></i></div><div class="state">17,387,842 params · CPU/导出通过</div></div>
+<div class="row done"><b>V24 · R14 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 10 · 148/200 · 74.0%</div></div>
+<div class="row done"><b>R15 deterministic-gradual smoke</b><div class="bar"><i></i></div><div class="state">17,387,842 params · CPU/导出通过</div></div>
+<div class="row done"><b>V25 · R15 正式训练</b><div class="bar"><i></i></div><div class="state">epoch 14 · 165/200 · 82.5% SOTA</div></div>
+<div class="row done"><b>R16 rule-contract smoke</b><div class="bar"><i></i></div><div class="state">20,699,202 params · CPU/导出通过</div></div>
+<div class="row done"><b>V26 · R16 正式训练</b><div class="bar"><i></i></div><div class="state">用户在 epoch 1 停止 · 排除 SOTA</div></div>
+<div class="notes"><b>当前事实：</b>V25 R15 epoch 14 以 165/200（82.5%）成为 observed SOTA，超过 V12 R2 的 79.5%。同模型 loss-best epoch 8 仅 74.0%，因此正式选择依赖 official-engine 对局而非 validation loss。V26 已由用户停止，不参与 SOTA。</div>
 </main></body></html>

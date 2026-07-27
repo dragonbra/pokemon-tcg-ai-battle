@@ -1,0 +1,46 @@
+{
+  "base_parameter_count": 7154562,
+  "feature_switches": {
+    "card_capability": true,
+    "event_memory": true,
+    "goal_qkv": true,
+    "own_resource_ledger": true,
+    "public_zone_inventory": true,
+    "registered_deck": true,
+    "relation_graph": true
+  },
+  "goal_roles": [
+    "setup_board",
+    "attack_prize",
+    "resource_recovery",
+    "tempo_survival"
+  ],
+  "model": "R4OptionFamilyRouterPolicy",
+  "option_family_routes": {
+    "families": [
+      "ledger",
+      "goal",
+      "card",
+      "zone",
+      "event",
+      "hand"
+    ],
+    "formula": "2 * sigmoid(family_mlp(evidence)) * family_projection(evidence)",
+    "global_scenario_state_gate": false,
+    "initial_scales": {
+      "card": 1.0,
+      "event": 0.25,
+      "goal": 1.0,
+      "hand": 0.25,
+      "ledger": 1.0,
+      "zone": 0.5
+    }
+  },
+  "parameter_count": 14720642,
+  "r2_evidence": {
+    "legal_option_scale_mean": 0.3474218547344208,
+    "legal_option_scale_median": 0.26171875,
+    "state_scale_mean": 0.032662536948919296,
+    "state_scale_median": 0.00091552734375
+  }
+}

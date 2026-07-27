@@ -1,0 +1,67 @@
+{
+  "amp_dtype": "bfloat16",
+  "batch_size": 256,
+  "dataset_content_sha256": "e341a7cbc761797f4fa97a4a01fddf2d25d69b8c3c60e4e41bcb3b4e2708686a",
+  "dataset_counts": {
+    "train": 145928,
+    "validation": 16164
+  },
+  "dataset_path": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0014_faithful_board_causal_features/dataset/V1_full_feature_superset",
+  "early_stopping_min_delta": 0.001,
+  "early_stopping_patience": 5,
+  "epochs": 100,
+  "feature_switches": {
+    "card_capability": true,
+    "event_memory": true,
+    "goal_qkv": true,
+    "own_resource_ledger": true,
+    "public_zone_inventory": true,
+    "registered_deck": true,
+    "relation_graph": true
+  },
+  "grad_scaler": false,
+  "learning_rate": 0.0003,
+  "legacy_always_stop_objective": true,
+  "model": {
+    "ac": {
+      "auxiliary_ffn_multiplier": 2,
+      "base": {
+        "d_model": 320,
+        "dropout": 0.1,
+        "encoder_layers": 4,
+        "ffn_multiplier": 3,
+        "heads": 8,
+        "max_action_steps": 16,
+        "max_card_id": 2048,
+        "max_entities": 192,
+        "max_options": 128
+      },
+      "event_layers": 1,
+      "goal_roles": 4
+    },
+    "evidence_dropout": 0.2,
+    "initial_scale": 0.35,
+    "route_ffn_multiplier": 1,
+    "scenario_ffn_multiplier": 2,
+    "scenario_layers": 1
+  },
+  "ontology_file_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+  "option_permutation": false,
+  "parameter_count": 11946562,
+  "project_id": "0014_faithful_board_causal_features",
+  "schema_version": "0014_r7_training_v1",
+  "seed": 20260723,
+  "train_greedy_decode": false,
+  "train_static_evaluation": false,
+  "validation_batch_size": 512,
+  "version": "V17_r7_regularized_option_query",
+  "wandb": {
+    "entity": "dragon_bra",
+    "group": "0014_faithful_board_causal_features",
+    "job_type": "bc",
+    "mode": "online",
+    "name": "0014 \u00b7 faithful_board_causal_features \u00b7 V17_r7_regularized_option_query",
+    "project": "pokemon-tcg-policy-learning"
+  },
+  "weight_decay": 0.02
+}

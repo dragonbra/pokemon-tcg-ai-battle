@@ -1,7 +1,6 @@
 """Efficient faithful-0010 BC training with online train and full validation metrics."""
 from __future__ import annotations
 
-import importlib
 import json
 import math
 import os
@@ -19,10 +18,7 @@ from rl_environment.logging import TrainingLogger
 from rl_environment.runs import VersionPaths, write_version_status
 
 from ..model import Faithful0010PointerPolicy
-
-_checkpoints = importlib.import_module(
-    "train.0013_semantic_goal_policy.training.checkpoints"
-)
+from . import checkpoints as _checkpoints
 
 
 def _atomic_json(path: Path, value: Mapping[str, Any]) -> None:
@@ -404,7 +400,7 @@ def train(
                 "best_greedy_exact": "maximum free greedy exact action",
             },
         )
-        write_version_status(paths, {"state": "complete", "completed_at": time.time(), **best})
+        write_version_status(paths, {"state": "completed", "completed_at": time.time(), **best})
         return summary
     except BaseException as error:
         write_version_status(

@@ -1,0 +1,45 @@
+{
+  "base_parameter_count": 7154562,
+  "feature_switches": {
+    "card_capability": true,
+    "event_memory": true,
+    "goal_qkv": true,
+    "own_resource_ledger": true,
+    "public_zone_inventory": true,
+    "registered_deck": true,
+    "relation_graph": true
+  },
+  "goal_roles": [
+    "setup_board",
+    "attack_prize",
+    "resource_recovery",
+    "tempo_survival"
+  ],
+  "model": "R6SparseFamilyMixturePolicy",
+  "parameter_count": 14826888,
+  "r4_evidence": {
+    "exact_best_official_win_rate": 0.755,
+    "finding": "unconditional six-family residual sum caused interference",
+    "loss_best_official_win_rate": 0.695
+  },
+  "sparse_family_mixture": {
+    "card_capability_path": "local entity/option identity adapter",
+    "families": [
+      "ledger",
+      "goal",
+      "zone",
+      "event",
+      "hand"
+    ],
+    "formula": "LN(option + 2*sigmoid(amplitude)*softmax_mixture(experts))",
+    "initial_priors": {
+      "event": 0.0375,
+      "goal": 0.15,
+      "hand": 0.0375,
+      "ledger": 0.2,
+      "null": 0.5,
+      "zone": 0.075
+    },
+    "null_route": true
+  }
+}

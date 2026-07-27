@@ -1,0 +1,17 @@
+{
+  "archived_candidate": "0014_v20_r10_epoch13_exact_best",
+  "archived_checkpoint_epoch": 13,
+  "archived_win_rate": 0.775,
+  "archived_wins": 155,
+  "formal_candidate": "0014_v20_r10_epoch13_exact_best",
+  "formal_checkpoint_epoch": 13,
+  "formal_win_rate": 0.775,
+  "formal_wins": 155,
+  "loss_best_candidate": "0014_v20_r10_epoch8_loss_best",
+  "loss_best_checkpoint_epoch": 8,
+  "loss_best_win_rate": 0.75,
+  "loss_best_wins": 150,
+  "official_engine_games_per_checkpoint": 200,
+  "report": "../../../../../experiments/0014_faithful_board_causal_features/evaluation/V20_r10_bounded_state_calibration.html",
+  "run_id": "run-316de91d7d924ede8944c0849c99336f"
+}

@@ -1,0 +1,10 @@
+{
+  "checkpoint": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0014_faithful_board_causal_features/versions/V25_r15_deterministic_gradual_option/checkpoint/epoch-0014-f64428fe0c0fa839.pt",
+  "checkpoint_sha256": "f64428fe0c0fa8399e0392b70ba910128e7bbfd44ef8433866ab1720b05937dd",
+  "deck_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
+  "model_bytes": 70413711,
+  "model_sha256": "031091b3eb5223605fb381616f3a9bffe3f4c9c9e5953f71c6940a5872d11e06",
+  "ontology_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+  "schema_version": "0014_r15_candidate_v1",
+  "source_package": "/home/cyd/repos/pokemon-tcg-ai-battle/evaluation/arena/candidates/0014_v24_r14_epoch10_exact_best"
+}

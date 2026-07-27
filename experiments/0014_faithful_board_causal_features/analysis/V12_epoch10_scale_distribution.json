@@ -1,0 +1,32 @@
+{
+  "checkpoint": "rl_runs/0014_faithful_board_causal_features/versions/V12_r2_strong_scenario_scalegate/checkpoint/epoch-0010-e8c59a31b96f4e54.pt",
+  "epoch": 10,
+  "global_step": 5710,
+  "legal_option_scale": {
+    "count": 41651840.0,
+    "maximum": 1.8359375,
+    "mean": 0.3474218547344208,
+    "median": 0.26171875,
+    "minimum": 0.00103759765625,
+    "p01": 0.0137939453125,
+    "p10": 0.048095703125,
+    "p90": 0.7890625,
+    "p99": 1.3359375,
+    "quantile_sample_count": 1000000.0,
+    "std": 0.30879372358322144
+  },
+  "schema_version": "0014_r2_scale_diagnostic_v1",
+  "state_scale": {
+    "count": 5172480.0,
+    "maximum": 2.0,
+    "mean": 0.032662536948919296,
+    "median": 0.00091552734375,
+    "minimum": 2.130866050720215e-06,
+    "p01": 2.1576881408691406e-05,
+    "p10": 0.0001239776611328125,
+    "p90": 0.01611328125,
+    "p99": 1.2734375,
+    "quantile_sample_count": 1000000.0,
+    "std": 0.20183485746383667
+  }
+}

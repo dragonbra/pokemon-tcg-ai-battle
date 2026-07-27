@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>0014 模型特征研究夜报</title><style>
+:root{--bg:#09121f;--panel:#14243a;--line:#304563;--text:#eef5ff;--muted:#aebbd0;--good:#61d9a8;--blue:#8ab8ff;--amber:#ffd071;--bad:#ff8d8d}*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#08101c,#173251);color:var(--text);font:15px/1.55 system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif}main{max-width:1160px;margin:auto;padding:40px 22px 80px}h1{margin:0;font-size:32px}h2{margin:34px 0 12px}p{margin:7px 0}.muted{color:var(--muted)}.badges{display:flex;flex-wrap:wrap;gap:8px;margin:17px 0}.badge{border:1px solid var(--line);background:#172a45;border-radius:18px;padding:5px 10px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:13px}.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}.card h3{margin:0 0 7px}.good{color:var(--good)}.amber{color:var(--amber)}table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line)}th,td{padding:10px;text-align:left;border-bottom:1px solid var(--line)}th{background:#1c304e}.rule{padding:16px 18px;border-left:4px solid var(--blue);background:#142a47;border-radius:8px}.flow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.node{flex:1 1 180px;padding:13px;background:var(--panel);border:1px solid var(--line);border-radius:9px}.arrow{color:var(--muted);font-size:20px}code{color:#cfe0ff}a{color:#9fc6ff}@media(max-width:650px){.arrow{display:none}table{font-size:13px}}
+</style></head><body><main>
+<h1>0014 · 模型特征研究夜报</h1>
+<p class="muted">持续更新 · 目标是找到最能利用 actor-visible card / ledger / zone / event / hand feature 的 BC policy，并用 official engine 验证，而不是只看离线 exact-action。</p>
+<div class="badges"><span class="badge">Frozen single-expert split</span><span class="badge">BC → official-engine evaluation → RL</span><span class="badge">100 epoch ceiling</span><span class="badge">patience 5 · min delta 0.001</span></div>
+
+<h2>当前结论</h2>
+<div class="rule"><b>新增信息有效，但 R1 的使用方式太弱。</b>V10 epoch-25 同 checkpoint 干预显示：全部新增路径关闭后 exact-action 下降 1.87pp；ledger、Goal、card capability、zone 分别贡献 1.66、1.26、0.79、0.30pp。R1 新增 state/option conditioning 仅贡献 0.03/0.12pp，因此曲线仍接近 V8。</div>
+
+<h2>结构演进</h2>
+<div class="grid">
+<article class="card"><h3>V8 · A0</h3><p>7.15M。忠实 0010 board/option trunk，只换新的单 expert 数据与 split。</p><p>best exact <b>0.84546</b></p></article>
+<article class="card"><h3>V9 · AC</h3><p>9.89M。zero-gated semantics、zone、ledger/event reader 与 Goal-QKV。</p><p>best exact <b>0.85765</b></p></article>
+<article class="card"><h3>V10 · R1</h3><p>14.31M。scenario memory + state/option attention + FiLM，但静态 scale 从 0.10 起步。</p><p>official engine：epoch 7 <b>150/200 (75.0%)</b>；epoch 32 <b>145/200 (72.5%)</b></p></article>
+<article class="card"><h3>V12 · R2 <span class="amber">former SOTA</span></h3><p>17.39M。Goal-QKV 与 scenario 分离；动态 <code>2×sigmoid</code> ScaleGate，逐样本/动作/通道，初始 1.0。</p><p>epoch 13 exact <b>0.85944</b> · official engine <b>159/200 (79.5%)</b></p></article>
+<article class="card"><h3>V13 · R3 <span class="amber">evaluated</span></h3><p>10.71M。typed scenario tokens 从第一层进入 board Transformer；实体在 option gather 前已 scenario-aware；semantic/Goal path 首步全开。</p><p>epoch 7 <b>155/200 (77.5%)</b> · epoch 15 <b>157/200 (78.5%)</b></p></article>
+<article class="card"><h3>V14 · R4 <span class="amber">evaluated</span></h3><p>14.72M。ledger/Goal/card/zone/event/hand 六路独立 option router 与动态 scale 无条件相加。</p><p>epoch 7 <b>139/200 (69.5%)</b> · epoch 13 <b>151/200 (75.5%)</b></p></article>
+<article class="card"><h3>V15 · R5 <span class="amber">evaluated</span></h3><p>12.66M。typed memory 只由 legal-option query 读取；Goal-QKV 独立，动态 0–2 gate 初始 1.0。</p><p>epoch 9 <b>156/200 (78.0%)</b> · epoch 15 <b>145/200 (72.5%)</b></p></article>
+<article class="card"><h3>V16 · R6 <span class="amber">evaluated</span></h3><p>14.83M。根据 R4 失败，将 family 求和改为 null + 五专家 per-option softmax mixture；card semantics 回归局部 identity adapter。</p><p>epoch 7 <b>144/200 (72.0%)</b> · epoch 9 <b>148/200 (74.0%)</b></p></article>
+<article class="card"><h3>V17 · R7 <span class="amber">evaluated</span></h3><p>11.95M。根据 R5 过拟合，保留 query-only 边界，初始 scale 0.35，route FFN 减半并加入 0.20 evidence dropout。</p><p>epoch 8 <b>144/200 (72.0%)</b> · epoch 14 <b>158/200 (79.0%)</b></p></article>
+<article class="card"><h3>V18 · R8 <span class="amber">evaluated</span></h3><p>15.13M。根据 R6 失败停止复杂 router，忠实回到 R2，只删除实测塌缩的 global-state scenario 分支。</p><p>epoch 9 <b>152/200 (76.0%)</b> · epoch 13 <b>151/200 (75.5%)</b></p></article>
+<article class="card"><h3>V19 · R9 <span class="amber">evaluated</span></h3><p>11.95M。由 R7 结果设计：保留浅层/窄 route，去掉 evidence dropout，动态 option scale 恢复为 1.0。</p><p>epoch 9 / 13 均为 <b>153/200 (76.5%)</b></p></article>
+<article class="card"><h3>V20 · R10 <span class="amber">evaluated</span></h3><p>17.39M。由 R8 删除失败设计：恢复完整 R2，state gate 限制在 0–0.25 且初始 0.05；option gate 保持 0–2 / 初始 1.0。</p><p>epoch 8 <b>150/200 (75.0%)</b> · epoch 13 <b>155/200 (77.5%)</b></p></article>
+<article class="card"><h3>V21 · R11 <span class="amber">evaluated</span></h3><p>11.95M。由 R9 结果设计：保留强 scale 1.0，同时恢复 R7 的 0.20 evidence dropout，避免完整 evidence 捷径。</p><p>epoch 10 <b>143/200 (71.5%)</b> · epoch 14 <b>151/200 (75.5%)</b></p></article>
+<article class="card"><h3>V22 · R12 <span class="amber">evaluated</span></h3><p>17.39M。由 R10 结果设计：恢复完整 R2 state calibration，对 option scenario / Goal evidence 使用 0.20 逐通道 dropout。</p><p>epoch 12 <b>154/200 (77.0%)</b> · epoch 22 <b>150/200 (75.0%)</b></p></article>
+<article class="card"><h3>V23 · R13 <span class="amber">evaluated</span></h3><p>17.39M。由 R11 结果设计：state gate 保持完整 R2 的初始 1.0；option gate 单独以 0.35 起步并保留 dropout 0.20。</p><p>epoch 9 <b>145/200 (72.5%)</b> · epoch 13 <b>153/200 (76.5%)</b></p></article>
+<article class="card"><h3>V24 · R14 <span class="amber">evaluated</span></h3><p>17.39M。由 R12 结果设计：只对 option scenario 路径做 per-sample 整体 dropout；state 与 Goal-QKV 完整保留。</p><p>epoch 8 <b>147/200 (73.5%)</b> · epoch 10 <b>148/200 (74.0%)</b></p></article>
+<article class="card"><h3>V25 · R15 <span class="good">SOTA</span></h3><p>17.39M。完全移除 evidence dropout，完整 R2 state scale 1.0，option scale 从 0.35 起步。</p><p>epoch 8 <b>148/200 (74.0%)</b> · epoch 14 <b>165/200 (82.5%)</b></p></article>
+<article class="card"><h3>V26 · R16 <span class="muted">stopped</span></h3><p>20.70M。rule-contract 设计通过门禁，但用户结束进一步探索。</p><p>epoch 1 主动停止；不参与 SOTA 选择。</p></article>
+</div>
+
+<h2>R2 信息流</h2>
+<div class="flow"><div class="node"><b>规则相关场景事实</b><br>zone · ledger · event · known/unknown hand</div><span class="arrow">→</span><div class="node"><b>Scenario encoder</b><br>保留四类 family summary</div><span class="arrow">→</span><div class="node"><b>ScaleGate MLP</b><br>0–2 dynamic positive scale</div><span class="arrow">→</span><div class="node"><b>FiLM residual</b><br>state 与每个 option 独立</div></div>
+<div class="flow" style="margin-top:8px"><div class="node"><b>Board-conditioned Goal-QKV</b><br>setup · prize · recovery · tempo</div><span class="arrow">→</span><div class="node"><b>Registered-card resource memory</b><br>独立于 ScaleGate 输入</div><span class="arrow">→</span><div class="node"><b>Option role routing</b><br>作为规划证据进入 option residual</div></div>
+<p class="rule" style="margin-top:14px"><b>Epoch 10 gate diagnosis：</b>state scale mean 0.0327 / median 0.00092，几乎完全关闭；legal-option scale mean 0.347 / median 0.262 / P90 0.789 / P99 1.336。R2 的有效路径是动作级 scenario evidence，不是全局 state 改写。</p>
+
+<h2>规则证据怎样约束模型</h2>
+<table><thead><tr><th>规则事实</th><th>需要的 feature</th><th>模型用途</th></tr></thead><tbody>
+<tr><td>攻击是 turn-ending commitment</td><td>phase、剩余回合预算、option type</td><td>Goal/option path 比较立即攻击与先完成准备。</td></tr>
+<tr><td>进化取决于本回合开始时是否已在场</td><td>appearThisTurn、实例/事件年龄、进化 parent</td><td>event + board instance memory 表达 evolution clock。</td></tr>
+<tr><td>Supporter、手填 Energy、Retreat 各自每回合一次</td><td>global flags、event、legal option source</td><td>tempo/setup 目标读取剩余预算，避免把合法性当价值。</td></tr>
+<tr><td>Prize、hand、discard、deck 是不同资源区；unknown 不是 deck</td><td>zone inventory、causal ledger、epistemic state</td><td>资源恢复、Prize race、接力和 deck-risk 判断。</td></tr>
+</tbody></table>
+
+<h2>实验决策状态</h2>
+<table><thead><tr><th>版本</th><th>状态</th><th>决策</th></tr></thead><tbody>
+<tr><td>V10 R1</td><td>evaluated / archived</td><td>loss-best 75.0% 胜率优于 exact-best 72.5%；选择 epoch 7 自包含归档，仍低于 V9 epoch 27 的 79.0%。</td></tr>
+<tr><td>V11 R2</td><td>launcher failed</td><td>外部 PTY 在首 batch 后关闭 stdout 导致 EIO；模型/数据无异常，版本保留。</td></tr>
+<tr><td>V12 R2</td><td>evaluated / archived</td><td>loss-best 79.0%，exact-best 79.5%；选择 epoch 13，当前 0014 official-engine 最强。</td></tr>
+<tr><td>V13 R3</td><td>evaluated / archived</td><td>loss-best 77.5%，exact-best 78.5%；选择 epoch 15。early fusion 晚期 loss 恶化且低于 R2 1.0pp。</td></tr>
+<tr><td>V14 R4</td><td>evaluated / archived</td><td>loss-best 69.5%，exact-best 75.5%；选择 epoch 13。六路 residual 求和造成明显 family interference。</td></tr>
+<tr><td>V15 R5</td><td>evaluated / archived</td><td>loss-best 78.0%，exact-best 72.5%；选择 epoch 9。query-only 边界有效，但后期离线 exact 过拟合严重。</td></tr>
+<tr><td>V16 R6</td><td>evaluated / archived</td><td>loss-best 72.0%，exact-best 74.0%；选择 epoch 9。softmax mixture 仍形成真实策略捷径，不再扩展复杂 router。</td></tr>
+<tr><td>V17 R7</td><td>evaluated / archived</td><td>loss-best 72.0%，exact-best 79.0%；选择 epoch 14。低 scale + dropout 延迟而非保护真实策略。</td></tr>
+<tr><td>V18 R8</td><td>evaluated / archived</td><td>loss-best 76.0%，exact-best 75.5%；选择 epoch 9。删除低幅 state path 损失真实策略价值。</td></tr>
+<tr><td>V19 R9</td><td>evaluated / archived</td><td>loss-best 与 exact-best 均为 76.5%；选择 loss 更好的 epoch 9。去掉 dropout 后低于 R7 2.5pp。</td></tr>
+<tr><td>V20 R10</td><td>evaluated / archived</td><td>loss-best 75.0%，exact-best 77.5%；选择 epoch 13。state path 有价值，但永久限制到 0–0.25 仍低于完整 R2。</td></tr>
+<tr><td>V21 R11</td><td>evaluated / archived</td><td>loss-best 71.5%，exact-best 75.5%；选择 epoch 14。dropout + 初始 option scale 1.0 没有复现 R7。</td></tr>
+<tr><td>V22 R12</td><td>evaluated / archived</td><td>loss-best 77.0%，exact-best 75.0%；选择 epoch 12。逐通道破坏 scenario 与 Goal 证据低于完整 R2。</td></tr>
+<tr><td>V23 R13</td><td>evaluated / archived</td><td>loss-best 72.5%，exact-best 76.5%；选择 epoch 13。低 option prior 不能抵消逐通道 dropout 伤害。</td></tr>
+<tr><td>V24 R14</td><td>evaluated / archived</td><td>loss-best 73.5%，exact-best 74.0%；选择 epoch 10。scenario-only 整体 dropout 仍破坏精确规划证据，停止全部 evidence-dropout 路线。</td></tr>
+<tr><td>V25 R15</td><td>evaluated / archived · SOTA</td><td>loss-best 74.0%，exact-best 82.5%；选择 epoch 14。完整确定性 evidence + 低 option prior 成为项目最强。</td></tr>
+<tr><td>V26 R16</td><td>stopped by user</td><td>门禁通过后启动，用户在 epoch 1 结束模型探索；保留审计记录，不参与 SOTA。</td></tr>
+</tbody></table>
+
+<h2>事实来源</h2>
+<p><a href="experiments/0014_faithful_board_causal_features/DESIGN.html">权威 DESIGN</a> · <a href="experiments/0014_faithful_board_causal_features/analysis/V10_epoch25_feature_ablation.json">V10 ablation JSON</a> · <a href="0014_progress_bar.html">实施进度</a></p>
+</main></body></html>

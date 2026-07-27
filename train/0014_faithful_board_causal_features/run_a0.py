@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import importlib
 import json
 import math
 import os
@@ -17,12 +16,9 @@ from rl_environment.runs import initialize_version
 from . import PROJECT_ID
 from .config import MODEL_READY_DATASET
 from .model import Faithful0010PointerPolicy, IDOnlyConfig, parameter_count
+from .card_semantics import CardSemanticRegistry
 from .training.a0_trainer import train
 from .training.materialized import iter_a0_batches, validate_materialized_dataset
-
-_semantics = importlib.import_module(
-    "train.0013_semantic_goal_policy.features.card_semantics"
-)
 
 
 def _batch_count(reference: dict, split: str, batch_size: int) -> int:
@@ -55,7 +51,7 @@ def main() -> None:
     arguments = parser.parse_args()
     if not torch.cuda.is_available():
         raise RuntimeError("0014 A0 requires CUDA")
-    registry = _semantics.CardSemanticRegistry.from_official_csv(
+    registry = CardSemanticRegistry.from_official_csv(
         Path("data/official/EN_Card_Data.csv")
     )
     reference = validate_materialized_dataset(MODEL_READY_DATASET, registry=registry)

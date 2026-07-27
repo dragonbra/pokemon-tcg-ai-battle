@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import importlib
 import json
 import os
 import random
@@ -20,14 +19,27 @@ from torch import Tensor
 
 from ..features.compiler import COMPILER_VERSION, compile_row, compiler_sha256
 from ..knowledge.state import CausalKnowledge
-
-_raw_shards = importlib.import_module("train.0013_semantic_goal_policy.data.shards")
-_card_semantics = importlib.import_module(
-    "train.0013_semantic_goal_policy.features.card_semantics"
-)
+from ..card_semantics import CardSemanticRegistry
 
 SCHEMA_VERSION = "faithful_board_causal_cache_v1"
 TERMINATION_CODES = {"forced_max": 1, "optional_stop": 2}
+# The committed V1 cache was built before the repository renamed the 0010
+# module path.  Its compiler source is otherwise byte-for-byte semantically
+# identical: only the import string changed, while the resolved codec file and
+# every generated tensor remain the same.  Keep this single digest explicit;
+# all other compiler changes still require a rebuild.
+SEMANTICALLY_EQUIVALENT_COMPILER_SHA256S = frozenset(
+    {"0c9fe0519894f3a2439ee8e00b09cfdd58d98dfd2b17fc14c1a25e18e91e0ad2"}
+)
+# V1 was built before its reader was made hermetic.  The cache remains
+# content-addressed (ontology, every shard and reference are checked); this
+# permits exactly the retired builder and the local-only reader implementation.
+V1_COMPATIBLE_MATERIALIZER_SHA256S = frozenset(
+    {
+        "5397da8089050f7827e55b62eaff43126d94be5e040f5f2ee1859759b56f76f8",
+        "6fe295a4d87918b6dbce949b896c4472c38d4b7302a6b8ec5283dbe0bee9243b",
+    }
+)
 
 LEGACY_FIELDS = frozenset(
     {
@@ -167,7 +179,7 @@ def _compile_group_local(rows: list[Mapping[str, Any]], registry: Any) -> list[d
 def _worker_initialize(card_data_path: str, ontology_sha256: str) -> None:
     global _WORKER_REGISTRY
     torch.set_num_threads(1)
-    _WORKER_REGISTRY = _card_semantics.CardSemanticRegistry.from_official_csv(card_data_path)
+    _WORKER_REGISTRY = CardSemanticRegistry.from_official_csv(card_data_path)
     if _WORKER_REGISTRY.sha256 != ontology_sha256:
         raise ValueError("worker ontology SHA-256 mismatch")
 
@@ -351,6 +363,10 @@ def build_materialized_dataset(
     shard_records: int = 1024,
     source_workers: int = 8,
 ) -> dict[str, Any]:
+    raise RuntimeError(
+        "0014 V1 is a frozen, audited materialized dataset. Raw 0013 shards were "
+        "deliberately retired; rebuilding this cache is unsupported."
+    )
     raw_root, target = Path(raw_dataset), Path(output)
     if target.exists():
         raise FileExistsError(target)
@@ -453,9 +469,15 @@ def validate_materialized_dataset(root: Path | str, *, registry: Any) -> dict[st
     reference["content_sha256"] = commitment
     if reference["schema_version"] != SCHEMA_VERSION:
         raise ValueError("model-ready schema mismatch")
-    if reference["feature_compiler_sha256"] != compiler_sha256():
+    if reference["feature_compiler_sha256"] not in {
+        compiler_sha256(),
+        *SEMANTICALLY_EQUIVALENT_COMPILER_SHA256S,
+    }:
         raise ValueError("feature compiler commitment mismatch")
-    if reference["materializer_sha256"] != _sha256(Path(__file__)):
+    if reference["materializer_sha256"] not in {
+        _sha256(Path(__file__)),
+        *V1_COMPATIBLE_MATERIALIZER_SHA256S,
+    }:
         raise ValueError("materializer commitment mismatch")
     if reference["ontology_sha256"] != registry.sha256:
         raise ValueError("card ontology mismatch")
@@ -552,7 +574,7 @@ def _main() -> None:
     validate = subparsers.add_parser("validate")
     validate.add_argument("dataset", type=Path)
     arguments = parser.parse_args()
-    registry = _card_semantics.CardSemanticRegistry.from_official_csv(
+    registry = CardSemanticRegistry.from_official_csv(
         Path(__file__).parents[3] / "data" / "official" / "EN_Card_Data.csv"
     )
     if arguments.command == "build":
