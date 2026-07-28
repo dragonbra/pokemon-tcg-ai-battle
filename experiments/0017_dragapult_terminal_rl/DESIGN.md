@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V11 eval-mode lambda=1 PPO active; first five updates pass probability contract**
+Status: **V11 lambda=1 improves seat balance without strength gain; V12 lambda=0.97 next**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -301,6 +301,7 @@ an audit metric because dynamic inference batches can have different padding wid
 | `V9_ppo_lr1e5` | pointer decoder + value, LR 1e-5, lambda 0.95 | rolling-2,000 peaked at 18.9%; update 60 ended 17.85% with seat divergence | stop after update 60; retain update 50 as stable branch point |
 | `V10_ppo_lambda1` | pointer decoder + value, LR 1e-5, lambda 1.0 | update 1 rollout-log-prob MAE 0.181 exposed train-mode dropout | stopped before update 2 backward; do not use checkpoint |
 | `V11_ppo_lambda1_eval_mode` | same V10 hypothesis with pre-rollout eval contract | undiscounted terminal credit with exact behavior probabilities | require first-update log-prob audit near numerical tolerance |
+| `V12_ppo_lambda097` | same V9 branch point, LR 1e-5, lambda 0.97 | interpolate lower-variance bootstrap and earlier terminal credit | seek V9 strength with V11 seat balance |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
@@ -326,7 +327,10 @@ categorical sampling as the only rollout stochasticity.
 V11 passed its first five updates with rollout-log-prob MAE between `3.85e-7` and `3.97e-7`.
 Explained variance ranged from 0.17 to 0.22. After 1,280 valid episodes its sampled-policy rate
 was 17.81%, with first/second seat rates of 18.59%/17.03%. This validates the probability and
-credit-assignment implementation but is not yet enough data to claim lambda=1 is stronger than V9.
+credit-assignment implementation. At update 20, rolling-2,000 reached 17.95%, below the V9
+update-50 branch point's 18.55%, while seat rates improved to 17.7%/18.2% and entropy remained
+0.628. Lambda=1 therefore improves the balance/exploration diagnostics but does not show a strength
+gain. V12 tests `gae_lambda=0.97` from the same clean branch point with all other variables fixed.
 
 ## 13. Later version decisions
 

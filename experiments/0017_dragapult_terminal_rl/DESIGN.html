@@ -202,8 +202,8 @@
         <p class="lead">从 0015 最佳 R15 多龙 checkpoint 出发，以完整官方引擎对局的胜负为唯一环境奖励，建立可审计、可停止、不过度占盘的 value calibration + PPO 闭环。</p>
       </div>
       <div class="review-state">
-        <strong>V11 eval-mode λ=1.0 正式训练中</strong>
-        <span>前 5 次 update 的 log-prob MAE 均约 4e-7；1,280 场全有效。</span>
+        <strong>V11 λ=1.0 结论完成，V12 λ=0.97 待启动</strong>
+        <span>V11 update 20：rolling-2,000 17.95%，先后手 17.7% / 18.2%。</span>
       </div>
     </div>
 
@@ -440,6 +440,7 @@
         <div class="version">V9 PPO LR 1e-5</div><div>从 V8 update 10 权重开始，fresh optimizer / rollout。</div><div>保持 frozen behavior 与 minibatch KL 护栏，争取可测增量。</div>
         <div class="version">V10 PPO λ 1.0</div><div>从 V9 update 50 权重开始；其余训练变量保持一致。</div><div>测试不衰减终局信用能否改善早期决策与先后手稳定性。</div>
         <div class="version">V11 PPO λ 1.0 eval</div><div>修复首次 rollout 的 train-mode dropout 概率错位。</div><div>首个 update 的 rollout log-prob 审计必须接近数值容差。</div>
+        <div class="version">V12 PPO λ 0.97</div><div>同一 V9 update 50 起点，仅折中信用分配系数。</div><div>争取保留 V9 强度，同时延续 V11 的座次平衡。</div>
         <div class="version">Later explicit Vn</div><div>只有证据支持时才扩大 actor 解冻或更改 curriculum。</div><div>任何语义或超参数变化都新建版本，绝不覆盖。</div>
       </div>
 
