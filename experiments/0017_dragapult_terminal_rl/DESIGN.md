@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V1 baseline complete; rollout throughput calibrated; V4 value calibration next**
+Status: **V9 decoder-only PPO active; terminal-reward strength gain observed under guards**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -298,6 +298,12 @@ an audit metric because dynamic inference batches can have different padding wid
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
 
 The preflight implementation completed three CPU official-engine episodes and a two-episode CUDA training smoke. The CUDA smoke covered 135 candidate decisions, one value epoch, one PPO epoch, finite loss/KL/ratio/entropy, and a model-only checkpoint round trip. Peak allocated CUDA memory was 205,267,456 bytes. These are contract checks, not strength evidence.
+
+V9 is the active formal run. At update 34 it had consumed 8,704 valid official-engine training
+episodes with zero discards; rolling-500 and rolling-2,000 sampled-policy win rates reached 18.6%
+and 15.8%. Behavior KL remained 0.000116, the BC-reference surrogate was 0.0354, and entropy
+was 0.644. These are promising train-pool diagnostics, not a frozen greedy holdout claim; V9
+continues under the existing KL, entropy, legality, error, storage, and checkpoint guards.
 
 ## 13. Later version decisions
 
