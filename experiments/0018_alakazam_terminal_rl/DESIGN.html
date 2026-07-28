@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>0018 胡地终局奖励强化学习</title>
+  <style>
+    :root { color-scheme: light; --ink:#17202a; --muted:#5d6874; --line:#d9dee3; --green:#16734a; --red:#a33a32; --blue:#2367a8; --paper:#fff; --band:#f4f6f7; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif; letter-spacing:0; }
+    header { border-bottom:1px solid var(--line); background:#12212d; color:#fff; }
+    header div, main { width:min(1120px,calc(100% - 32px)); margin:auto; }
+    header div { padding:28px 0 24px; }
+    h1 { margin:0 0 4px; font-size:30px; letter-spacing:0; }
+    h2 { margin:0 0 14px; font-size:21px; letter-spacing:0; }
+    p { margin:8px 0; }
+    .sub { color:#cbd5dc; }
+    .status { display:inline-block; margin-top:12px; padding:4px 9px; border:1px solid #6ca98b; color:#d8f2e5; border-radius:4px; }
+    section { padding:26px 0; border-bottom:1px solid var(--line); }
+    .band { background:var(--band); margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); padding-left:calc(50vw - 50%); padding-right:calc(50vw - 50%); }
+    .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+    .metric { border-left:3px solid var(--blue); padding:4px 12px; }
+    .metric strong { display:block; font-size:22px; }
+    .metric span { color:var(--muted); font-size:13px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th,td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#edf1f3; font-size:13px; }
+    code { background:#eef1f3; padding:1px 4px; border-radius:3px; }
+    pre { overflow:auto; padding:16px; background:#14232f; color:#e8f0f4; border-radius:4px; }
+    .good { color:var(--green); font-weight:700; }
+    .bad { color:var(--red); }
+    .note { border-left:3px solid #be8a20; padding:8px 12px; background:#fff8e8; }
+    a { color:var(--blue); }
+    @media (max-width:760px) { .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } table { font-size:12px; } th,td { padding:7px 5px; } }
+  </style>
+</head>
+<body>
+<header><div>
+  <h1>0018 · 胡地终局奖励强化学习</h1>
+  <div class="sub">R15 行为克隆编码器 · 卡组专用解码器 PPO · 官方引擎终局奖励</div>
+  <div class="status">框架与训练冒烟验证已完成 · 准备进入正式 PPO</div>
+</div></header>
+<main>
+  <section class="metrics">
+    <div class="metric"><strong>17,601,282</strong><span>冻结的来源 Actor 参数</span></div>
+    <div class="metric"><strong>1,130,883</strong><span>Decoder 与 Value 可训练参数</span></div>
+    <div class="metric"><strong>16 / 2 ms</strong><span>引擎进程数 / 动态聚合窗口</span></div>
+    <div class="metric"><strong>+1 / -1 / 0</strong><span>胜利 / 失败 / 平局奖励</span></div>
+  </section>
+
+  <section>
+    <h2>冻结的训练目标</h2>
+    <table>
+      <tr><th>来源模型</th><td>0016 <code>V2_win_multideck_r15_gradual_option</code> 第 10 个 epoch</td></tr>
+      <tr><th>Checkpoint SHA-256</th><td><code>9db3b4d37a4d4f5cc483df1ac78ad4c5d39fed320c5325ebaa5fa61fd1114ebf</code></td></tr>
+      <tr><th>卡组 SHA-256</th><td><code>267ce842b45f960afef843e68f3aad86573bf7d19329ea23e7469ec8265c017b</code></td></tr>
+      <tr><th>卡组身份</th><td>0016 中用户原创的胡地 + 土龙节节 60 张构筑；不是镜像对局的 Xerosic 消融构筑</td></tr>
+      <tr><th>BC 证据</th><td>验证集完整动作一致率 81.8755%；合法动作率 100%</td></tr>
+    </table>
+  </section>
+
+  <section class="band">
+    <h2>模型数据流</h2>
+    <pre>官方引擎 observation
+  → 因果 R15 特征编译器（与 0016 相同的 Actor 可见 schema）
+  → 冻结的实体 / 资源 / 事件 / 目标 / 场景表征 [B, 320]
+      ├─→ 自回归合法动作指针 Decoder（由 PPO 训练）
+      └─→ LayerNorm → MLP → tanh Value Head [B]（可训练）</pre>
+    <p>Actor 看不到终局结果或任何对手私有信息。它只能看到合法选项、公开或因果已知状态、
+      自己注册的完整卡组，以及固定的来源 ID 0。只有满足 <code>minCount</code> 后才能选择 STOP；
+      官方引擎提供的 mask 始终是不可突破的动作合同。</p>
+  </section>
+
+  <section>
+    <h2>流式动态批处理</h2>
+    <p>第一个引擎请求到达后开启 2 ms 聚合窗口。窗口内实际到达多少请求，就立即合并为一次
+      张量前向；服务不会为了凑满固定 batch 而等待。使用 16 个 worker 时，每次候选模型
+      推理的 batch 可以自然地处于 1 到 16 之间。</p>
+    <table>
+      <thead><tr><th>真实官方引擎负载</th><th>推理路由</th><th>每秒对局</th><th>平均 batch</th></tr></thead>
+      <tbody>
+        <tr><td>竹兰 · 64 局 · 16 workers · 0 ms</td><td>CPU 对手</td><td>0.951</td><td>候选模型 6.94</td></tr>
+        <tr><td>竹兰 · 64 局 · 16 workers · 2 ms</td><td>CPU 对手</td><td class="good">1.114</td><td>候选模型 10.13</td></tr>
+        <tr><td>竹兰 · 64 局 · 16 workers · 2 ms</td><td>GPU 对手</td><td>0.835</td><td>对手模型 6.99</td></tr>
+        <tr><td>12 模型池 · 96 局 · 16 workers</td><td>CPU 对手</td><td class="good">0.912</td><td>候选模型 7.42</td></tr>
+        <tr><td>12 模型池 · 96 局 · 16 workers · 2 ms</td><td>GPU 对手</td><td class="bad">0.537</td><td>对手模型 1.17</td></tr>
+      </tbody>
+    </table>
+    <p class="note">不同权重的模型无法共享同一次张量前向。12 模型混合池把 7,507 个请求
+      拆成了 6,443 次前向，其中 5,386 次的 batch size 只有 1。在这张单独的 RTX 5080 上，
+      实测最优默认方案是 CPU 并行运行对手、GPU 对候选模型做动态批处理。对手模型常驻 GPU
+      的能力仍然保留，可通过显式实验开关启用。</p>
+  </section>
+
+  <section class="band">
+    <h2>初始 RL 训练合同</h2>
+    <table>
+      <thead><tr><th>配置</th><th>取值</th><th>依据</th></tr></thead>
+      <tbody>
+        <tr><td>每次更新的 Episode</td><td>256 个完整 Episode</td><td>终局完成后的 on-policy batch</td></tr>
+        <tr><td>GAE lambda / gamma</td><td>0.97 / 1.0</td><td>沿用 0017 稳定分支证据；不改变终局奖励</td></tr>
+        <tr><td>PPO epochs / minibatch</td><td>4 / 1024 个决策</td><td>保守地微调 Decoder</td></tr>
+        <tr><td>Actor / Value 学习率</td><td>3e-6 / 1e-4</td><td>减缓 Actor 漂移，同时更快校准 Critic</td></tr>
+        <tr><td>对手池</td><td>全部已启用 Arena 对手</td><td>不设置人为的六对手 holdout</td></tr>
+        <tr><td>Checkpoint</td><td>只保存模型权重；最多保留 8 个</td><td>不保存 optimizer 恢复状态或 replay</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>证据边界与监控</h2>
+    <p>官方规则定义合法性与终局条件；未经修改的官方引擎产生每一个 Episode 和奖励。PPO
+      选型属于项目实验假设。W&amp;B run 名固定为
+      <code>0018_alakazam_terminal_rl-&lt;Vn_tag&gt;</code>。指标先写入本地事实源，再镜像到
+      TensorBoard 和私有 W&amp;B。</p>
+    <p>主要实时面板包括：rolling 100/500/2000 胜率及 Wilson 区间；先后手与逐对手胜率；
+      每秒 Episode 和每秒决策；候选/对手 batch 的平均值、最大值与推理耗时；Policy/Value
+      loss、熵、behavior/reference KL、clip fraction、explained variance；GPU 显存、利用率
+      与磁盘警戒线。</p>
+    <p>完整特征 shape、存储限制、模型来源和评测边界见同步维护的
+      <a href="DESIGN.md">DESIGN.md</a>。</p>
+  </section>
+</main>
+</body>
+</html>
