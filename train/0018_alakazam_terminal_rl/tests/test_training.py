@@ -15,7 +15,7 @@ from ..compare_frozen_evaluations import (
     validate_comparison_contract,
     wilson_interval,
 )
-from ..export_candidate import write_candidate_model
+from ..export_candidate import _main_source, write_candidate_model
 from ..observability.metrics import OutcomeTracker
 from ..rollout.collector import (
     RolloutCollector,
@@ -60,6 +60,12 @@ def _episode(name: str, reward: float, length: int, first: bool = True) -> Episo
 
 
 class TrainingContractTest(unittest.TestCase):
+    def test_candidate_main_supports_kaggle_exec_loader(self) -> None:
+        source = _main_source()
+        self.assertIn('globals().get("__file__")', source)
+        self.assertIn('Path("/kaggle_simulations/agent")', source)
+        self.assertIn("def read_deck_csv():", source)
+
     def test_alakazam_diagnostics_use_target_card_ids(self) -> None:
         metrics: dict[str, float] = {}
         _update_diagnostics(

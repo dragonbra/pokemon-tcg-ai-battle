@@ -109,6 +109,16 @@
   </section>
 
   <section>
+    <h2>候选包运行合同</h2>
+    <p>Kaggle 使用 <code>exec</code> 加载策略，运行环境可能没有 <code>__file__</code>。
+      候选包依次从 <code>__file__</code>、<code>/kaggle_simulations/agent</code> 和当前目录
+      定位根目录，并同时导出 <code>read_deck_csv()</code> 与 <code>agent()</code>。portable
+      inference 精确重建冻结的 0016 R15 source contract；遇到模型容量溢出或可恢复的编码异常时，
+      返回满足数量约束的合法 fallback，不改变正常 greedy 推理。提交前必须同时通过根层 archive
+      检查和无 <code>__file__</code> 的真实 exec 加载。</p>
+  </section>
+
+  <section>
     <h2>证据边界与监控</h2>
     <p>官方规则定义合法性与终局条件；未经修改的官方引擎产生每一个 Episode 和奖励。PPO
       选型属于项目实验假设。W&amp;B run 名固定为
@@ -127,8 +137,8 @@
       为 224/300（74.67%），update 10 为 228/298（76.51%，另有 1 平局），没有证明真实
       greedy 强度提升或损坏。V2 update 10 的 reference KL surrogate 仅 0.000620，Decoder
       相对 BC 位移 0.2599%。</p>
-    <p><strong>下一阶段：</strong><code>V3_ppo_lambda1_lr1e5_smoke</code> 先验证单次更新合同；
-      随后 <code>V4_ppo_decoder_lambda1_lr1e5</code> 从干净的 V1
+    <p><strong>当前训练：</strong><code>V3_ppo_lambda1_lr1e5_smoke</code> 已完成单次更新合同验证；
+      <code>V4_ppo_decoder_lambda1_lr1e5</code> 正从干净的 V1
       model-only checkpoint 开始，使用 512 局/update、lambda 1.0、2 epochs、Actor LR 1e-5、
       零熵奖励和更严格的 behavior KL 护栏。rolling 胜率只作训练诊断；密集 checkpoint
       将用于后续官方引擎 frozen-greedy 对比。</p>

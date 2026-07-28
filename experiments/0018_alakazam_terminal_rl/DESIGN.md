@@ -1,6 +1,6 @@
 # 0018 Alakazam Terminal RL
 
-Status: **V1 value calibration complete; V2 audited; V3 smoke prepared; V4 PPO next**
+Status: **V1 value calibration complete; V2 audited; V3 smoke complete; V4 PPO running**
 
 Date: 2026-07-29
 Target: user-designed Alakazam + Dudunsparce deck, initialized from 0016 R15 epoch 10
@@ -181,6 +181,16 @@ official engine. 0018 intentionally has no six-opponent holdout split.
 - Warn below 80 GiB free and stop before either monitored filesystem falls below 50 GiB or one
   version reaches 20 GiB.
 
+### Candidate package runtime boundary
+
+Candidate `main.py` must support Kaggle's `exec` loader, where `__file__` may be absent. It resolves
+the package root from `__file__`, then `/kaggle_simulations/agent`, then the current directory, and
+exports both `read_deck_csv()` and `agent()`. Portable inference reconstructs the exact frozen 0016
+R15 source contract. A model-capacity overflow or recoverable encoder failure returns a count-valid
+legal fallback instead of failing the validation Episode; these guards do not alter normal greedy
+inference. Root-level archive membership and an actual no-`__file__` exec load are mandatory
+submission gates.
+
 Current stage: implementation, adapter compatibility, official-engine smoke and throughput A/B are
 complete. `V1_value_calibration` collected 512 valid official-engine Episodes and 36,282 candidate
 decisions, then trained only the value head for four epochs. Its final in-sample value RMSE was
@@ -195,7 +205,8 @@ surrogate was only `0.000620` at update 10, behavior KL about `1.24e-5`, and Dec
 movement was `0.0768%` at update 1 and `0.2599%` at update 10. The interrupted update 11 was never
 retained and is not part of the policy evidence.
 
-V3 is the one-update official-engine smoke for the new contract. V4 starts from V1 rather than V2
+V3 is the completed one-update official-engine smoke for the new contract. V4 is running from V1
+rather than V2
 and adds an explicit main-process PyTorch seed, fixed in-memory
 greedy canary, dense model-only checkpoints and the revised section-7 contract. Rolling sampled
 win rate remains an online diagnostic. Promotion still requires frozen greedy official-engine
