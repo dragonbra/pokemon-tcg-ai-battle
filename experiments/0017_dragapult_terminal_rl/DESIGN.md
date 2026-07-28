@@ -198,6 +198,9 @@ An update is skipped on nonfinite loss/gradient. PPO epochs stop early on behavi
 - `env/decisions`: candidate engine selections;
 - `trainer/update`: value/PPO parameter updates.
 
+W&B binds rolling/cumulative/seat/opponent strength namespaces explicitly to `env/episodes`;
+PPO health remains bound to `trainer/update`. The SDK-internal `Step` is only a log-row counter.
+
 ### Rollout outcome
 
 - rolling win rate over trailing 100, 500, and 2,000 valid episodes;

@@ -160,6 +160,15 @@ class WandbSink:
         self._run.define_metric("value/*", step_metric="trainer/epoch")
         self._run.define_metric("ppo/*", step_metric="trainer/update")
         self._run.define_metric("rollout/*", step_metric="env/decisions")
+        for strength_namespace in (
+            "rollout/rolling_100/*",
+            "rollout/rolling_500/*",
+            "rollout/rolling_2000/*",
+            "rollout/cumulative/*",
+            "rollout/seat/*",
+            "rollout/opponent/*",
+        ):
+            self._run.define_metric(strength_namespace, step_metric="env/episodes")
         self._run.define_metric("eval/*", step_metric="env/episodes")
         self._run.define_metric("system/disk/*", step_metric="trainer/update")
         self._run.define_metric("system/rollout/*", step_metric="env/decisions")

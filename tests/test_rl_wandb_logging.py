@@ -163,6 +163,10 @@ class WandbLoggingTests(unittest.TestCase):
             ),
             fake_run.defined_metrics,
         )
+        self.assertIn(
+            ("rollout/rolling_500/*", {"step_metric": "env/episodes"}),
+            fake_run.defined_metrics,
+        )
         self.assertEqual(fake_run.finish_codes, [0])
 
     def test_online_run_uses_explicit_resume_identity_and_notes(self) -> None:

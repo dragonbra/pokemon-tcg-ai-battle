@@ -384,7 +384,7 @@
 
       <div class="grid-2" style="margin-top:30px">
         <div class="panel warn"><h3>Performance / system</h3><p>episodes/sec、decisions/sec、rollout/update wall time、inference p50/p95、batch size、engine wait、queue depth/backpressure、worker restart、GPU utilization/memory、CPU/RAM、两个文件系统剩余空间和 artifact bytes。项目级 GPU watcher 每分钟核对 NVIDIA compute PID，只累计真实存在 CUDA 训练进程的时间。</p></div>
-        <div class="panel danger"><h3>三条不同横轴</h3><p><code>env/episodes</code> 对齐有效终局；<code>env/decisions</code> 对齐 candidate selections；<code>trainer/update</code> 对齐参数更新。训练 rollout 胜率不能冒充正式 <code>eval/*</code> 强度。</p></div>
+        <div class="panel danger"><h3>三条不同横轴</h3><p><code>env/episodes</code> 对齐有效终局并显式绑定 rolling/cumulative/seat/opponent 胜率；<code>env/decisions</code> 对齐 candidate selections；<code>trainer/update</code> 对齐 PPO 健康与参数更新。W&B 默认 Step 只是日志行号。</p></div>
       </div>
 
       <h3>多龙诊断，不进入 Reward</h3>
