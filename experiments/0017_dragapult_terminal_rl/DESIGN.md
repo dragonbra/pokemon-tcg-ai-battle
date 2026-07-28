@@ -291,7 +291,8 @@ an audit metric because dynamic inference batches can have different padding wid
 | `V5_ppo_pilot` | pointer decoder + value | update 1 reached KL 0.0494 | stopped: epoch-level KL guard reacted too late |
 | `V6_ppo_lr2e6` | pointer decoder + value | update 1 reached KL 0.0504 | stopped: lower LR alone did not fix guard granularity |
 | `V7_ppo_minibatch_kl_guard` | pointer decoder + value | first minibatch KL was already 0.0493 | stopped: dynamic batch log-prob mismatch isolated |
-| `V8_ppo_frozen_behavior` | pointer decoder + value | frozen behavior snapshot plus minibatch KL guard | stable ratio/KL and no holdout collapse |
+| `V8_ppo_frozen_behavior` | pointer decoder + value, LR 2e-6 | 10 stable updates; KL 4e-6 to 1e-5 | viable contract, but rolling-2000 ended 10.5% and learning was too slow |
+| `V9_ppo_lr1e5` | pointer decoder + value, LR 1e-5 | frozen behavior plus minibatch KL guard | seek measurable gain without KL/entropy breach |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.

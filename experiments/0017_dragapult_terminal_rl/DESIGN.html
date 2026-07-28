@@ -435,7 +435,8 @@
         <div class="version">V4 value calibration</div><div>12 workers 采集 512 场，随后立即做 4 个 value epoch。</div><div>critic 有限且可解释；actor logits 保持不变。</div>
         <div class="version">V5/V6 PPO trial</div><div>首个 update 的 behavior KL 分别为 0.0494/0.0504。</div><div>均停止；证明 epoch 末检查过晚，单独降低 LR 不足。</div>
         <div class="version">V7 PPO trial</div><div>首个 minibatch 在更新前 KL 已为 0.0493。</div><div>定位为 rollout 与训练动态 padding 下的 log-prob 不等价。</div>
-        <div class="version">V8 PPO pilot</div><div>每 update 冻结 behavior policy 重算 old log-prob；BC reference 独立。</div><div>minibatch KL 小于 0.02；rollout log-prob 只做 mismatch 审计。</div>
+        <div class="version">V8 PPO pilot</div><div>LR 2e-6；10 次稳定更新，behavior KL 仅 4e-6 到 1e-5。</div><div>合同可行，但 rolling-2000 结束于 10.5%，策略移动过慢。</div>
+        <div class="version">V9 PPO LR 1e-5</div><div>从 V8 update 10 权重开始，fresh optimizer / rollout。</div><div>保持 frozen behavior 与 minibatch KL 护栏，争取可测增量。</div>
         <div class="version">Later explicit Vn</div><div>只有证据支持时才扩大 actor 解冻或更改 curriculum。</div><div>任何语义或超参数变化都新建版本，绝不覆盖。</div>
       </div>
 

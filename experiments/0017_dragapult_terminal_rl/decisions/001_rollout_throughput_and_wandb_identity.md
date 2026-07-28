@@ -49,3 +49,9 @@ V7 then showed KL 0.0493 on the first formal minibatch before any optimizer step
 each update freezes an exact behavior snapshot and recomputes denominator log-prob in the same
 training minibatch. Stored rollout log-prob remains only as `ppo/rollout_log_prob_mae`; the fixed
 BC reference remains a separate long-horizon anchor.
+
+V8 completed ten controlled updates at actor LR `2e-6`. Behavior KL stayed between roughly
+`4e-6` and `1e-5`, clip fraction remained effectively zero, and the BC-reference surrogate reached
+only 0.000326. Rolling-2,000 win rate ended at 10.5%, so the configuration proved the corrected PPO
+contract but moved too slowly. V9 warm-starts from V8 update 10 with fresh optimizer/rollout and
+raises actor LR to `1e-5`, retaining both frozen-behavior and minibatch-KL guards.
