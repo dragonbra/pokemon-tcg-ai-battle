@@ -433,7 +433,8 @@
         <div class="version">V2 value calibration</div><div>采集 490/2000 后主动停止，未 backward。</div><div>实测证明 rollout batch 过大，GPU 长时间仅低占用推理。</div>
         <div class="version">V3 throughput trial</div><div>采集 10 场后按用户要求停止，转做 worker benchmark。</div><div>不产生 checkpoint，不声称 value calibration。</div>
         <div class="version">V4 value calibration</div><div>12 workers 采集 512 场，随后立即做 4 个 value epoch。</div><div>critic 有限且可解释；actor logits 保持不变。</div>
-        <div class="version">V5 PPO pilot</div><div>pointer decoder + value；每 256 场立即 PPO backward。</div><div>KL/entropy 稳定、holdout 不塌、冻结 greedy evaluation 有可信变化。</div>
+        <div class="version">V5/V6 PPO trial</div><div>首个 update 的 behavior KL 分别为 0.0494/0.0504。</div><div>均停止；证明 epoch 末检查过晚，单独降低 LR 不足。</div>
+        <div class="version">V7 PPO pilot</div><div>每个 minibatch 在 backward 前检查 KL；每 256 场更新。</div><div>越过 0.02 前停止后续 step，保持 entropy 与 BC anchor。</div>
         <div class="version">Later explicit Vn</div><div>只有证据支持时才扩大 actor 解冻或更改 curriculum。</div><div>任何语义或超参数变化都新建版本，绝不覆盖。</div>
       </div>
 

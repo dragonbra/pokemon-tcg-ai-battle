@@ -278,7 +278,9 @@ Sparse terminal reward does not guarantee monotonic real strength. PPO can explo
 | `V2_value_calibration` | none | 490 rollout episodes | stopped before backward: 2,000-episode batch underused the GPU |
 | `V3_value_calibration_512` | none | 10 rollout episodes | stopped for the requested worker-throughput calibration |
 | `V4_value_calibration_512` | value head only | 512 fresh episodes, then four value epochs | finite and useful critic without actor-logit drift |
-| `V5_ppo_pilot` | pointer decoder + value | 256 fresh episodes per update, then immediate PPO | stable KL/entropy and no holdout collapse |
+| `V5_ppo_pilot` | pointer decoder + value | update 1 reached KL 0.0494 | stopped: epoch-level KL guard reacted too late |
+| `V6_ppo_lr2e6` | pointer decoder + value | update 1 reached KL 0.0504 | stopped: lower LR alone did not fix guard granularity |
+| `V7_ppo_minibatch_kl_guard` | pointer decoder + value | 256 fresh episodes per update; pre-backward minibatch KL guard | stable KL/entropy and no holdout collapse |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.

@@ -69,6 +69,7 @@ class PPOTrainer:
         minibatches = 0
         epochs_completed = 0
         early_stop = False
+        rejected_behavior_kl = 0.0
         # Policy stochasticity comes only from legal categorical sampling, not dropout.
         model.eval()
         reference.eval()
@@ -97,6 +98,11 @@ class PPOTrainer:
                     )
                 log_ratio = evaluated.log_prob - old_log_prob
                 ratio = log_ratio.exp()
+                approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
+                if minibatches > 0 and float(approximate_kl) > config.target_behavior_kl:
+                    early_stop = True
+                    rejected_behavior_kl = float(approximate_kl)
+                    break
                 unclipped = ratio * advantage
                 clipped = ratio.clamp(
                     1.0 - config.clip_ratio, 1.0 + config.clip_ratio
@@ -131,7 +137,6 @@ class PPOTrainer:
                 self.optimizer.step()
 
                 with torch.no_grad():
-                    approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
                     clip_fraction = (
                         ((ratio - 1.0).abs() > config.clip_ratio).float() * weights
                     ).sum()
@@ -152,6 +157,8 @@ class PPOTrainer:
                     epoch_kls.append(float(approximate_kl))
                     minibatches += 1
             epochs_completed = epoch + 1
+            if early_stop:
+                break
             if epoch_kls and sum(epoch_kls) / len(epoch_kls) > config.target_behavior_kl:
                 early_stop = True
                 break
@@ -164,6 +171,8 @@ class PPOTrainer:
             {
                 "ppo/epochs_completed": float(epochs_completed),
                 "ppo/target_kl_early_stop": float(early_stop),
+                "ppo/rejected_behavior_kl": rejected_behavior_kl,
+                "ppo/minibatches_completed": float(minibatches),
                 "ppo/decisions": float(batch.decisions),
                 "ppo/actor_learning_rate": config.actor_learning_rate,
                 "ppo/value_learning_rate": config.value_learning_rate,

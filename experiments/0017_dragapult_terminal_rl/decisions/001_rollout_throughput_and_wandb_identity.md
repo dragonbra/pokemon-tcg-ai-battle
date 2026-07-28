@@ -35,3 +35,12 @@ worker:
 
 These are throughput and observability changes. The terminal reward, action contract, model graph,
 frozen opponent split, and model-only checkpoint contract are unchanged.
+
+## PPO guard follow-up
+
+V5 and V6 each stopped after update 1 because behavior KL reached 0.0494 and 0.0504. Reducing
+actor LR from `1e-5` to `2e-6` did not resolve the breach. The implementation checked KL only
+after all minibatches in an epoch, so roughly twenty optimizer steps could occur before stopping.
+V7 checks behavior KL before every minibatch backward and rejects the remaining steps immediately
+when the current policy exceeds 0.02. A 32-episode CUDA smoke completed 1,972 decisions and 124
+minibatches with KL 0.000127, clip fraction 0.00260, ratio mean 0.99996, and no invalid episode.
