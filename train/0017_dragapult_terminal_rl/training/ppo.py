@@ -13,6 +13,7 @@ from .batch import PreparedBatch, training_batch_metrics
 
 @dataclass(frozen=True)
 class PPOConfig:
+    gae_lambda: float = 0.95
     epochs: int = 4
     batch_size: int = 1024
     actor_learning_rate: float = 1e-5

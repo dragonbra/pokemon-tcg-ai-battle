@@ -366,6 +366,7 @@
         </table>
       </div>
       <p>GAE 只在完整有效 episode 上计算，advantage 在当前 update batch 内标准化。出现非有限 loss/gradient 时跳过 update；behavior KL 超过阈值时提前停止当前 batch 的剩余 PPO epochs。扩大解冻范围必须进入新的不可变版本。</p>
+      <p><code>gae_lambda</code> 现在是显式版本参数并写入 training config，范围固定为 <code>[0, 1]</code>。V9 保持 <code>0.95</code>；后续若测试 <code>1.0</code>，它只改变完整终局结果向早期决策传播的方式，不改变胜负奖励，并且必须新建版本与 V9 对照。</p>
 
       <div class="callout danger" style="margin-top:22px">
         <p><strong>胜负 reward 正确，不等于训练必然变强。</strong>有限对手池上的策略过拟合、BC 遗忘、探索塌缩、seat 偏置以及 sampled win rate 噪声都可能让训练曲线上升而冻结评测下降。因此 holdout、固定 BC reference、KL/entropy 护栏和同合同正式对局都是算法的一部分。</p>

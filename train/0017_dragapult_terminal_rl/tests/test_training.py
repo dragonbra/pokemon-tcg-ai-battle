@@ -9,6 +9,7 @@ import torch
 from ..checkpoint import checkpoint_metadata, save_model_only
 from ..observability.metrics import OutcomeTracker
 from ..rollout.protocol import Episode, TrajectoryDecision
+from ..run import build_parser
 from ..storage import storage_guard
 from ..training.batch import prepare_episodes, training_batch_metrics
 
@@ -45,6 +46,20 @@ def _episode(name: str, reward: float, length: int, first: bool = True) -> Episo
 
 
 class TrainingContractTest(unittest.TestCase):
+    def test_ppo_parser_exposes_gae_lambda(self) -> None:
+        args = build_parser().parse_args(
+            [
+                "ppo",
+                "--version",
+                "V_test",
+                "--warm-start",
+                "checkpoint.pt",
+                "--gae-lambda",
+                "1.0",
+            ]
+        )
+        self.assertEqual(args.gae_lambda, 1.0)
+
     def test_terminal_returns_and_episode_weights(self) -> None:
         batch = prepare_episodes(
             [_episode("win", 1.0, 2), _episode("loss", -1.0, 4)]

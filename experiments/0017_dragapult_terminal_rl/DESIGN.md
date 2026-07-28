@@ -186,6 +186,12 @@ Initial proposed settings, to be frozen in V3 metadata:
 
 Advantages are normalized within the completed update batch. The fixed V2 BC actor provides a reference KL regularizer; this is a training constraint, not an environment reward. V3 initially unfreezes only the autoregressive pointer decoder, while all representation and conditioned blocks remain frozen. Broader unfreezing is a separate version-level decision.
 
+`gae_lambda` is an explicit immutable-version parameter (`--gae-lambda`, constrained to `[0, 1]`)
+and is written into `training_config.json`. V9 remains fixed at `0.95`. A later `lambda=1.0`
+branch is a credit-assignment experiment: it gives every decision the undiscounted terminal outcome
+through Monte Carlo returns, without changing the terminal reward contract. It must start as a new
+version and be compared against V9 rather than appended to it.
+
 An update is skipped on nonfinite loss/gradient. PPO epochs stop early on behavior KL breach. Any adaptive reference-KL coefficient and every freeze transition are logged and versioned.
 
 ## 9. W&B and local observability
@@ -318,5 +324,7 @@ Later version-level choices are:
 - whether the six newly promoted SOTA/BC opponents should remain a strict holdout or some should enter a later curriculum;
 - whether a later version should open final scenario/source-conditioned blocks after decoder-only evidence;
 - whether the 256-episode update size and 20-update frozen-evaluation cadence fit the observed engine throughput.
+- whether a post-V9 version should use `gae_lambda=1.0` to reduce early-action credit decay while
+  keeping the actor LR, frozen behavior, BC reference, and opponent pool fixed.
 
 None of these changes the reward contract. Any approved change is frozen in the version manifest before collection begins.

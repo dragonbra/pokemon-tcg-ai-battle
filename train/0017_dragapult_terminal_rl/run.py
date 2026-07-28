@@ -332,6 +332,7 @@ def run_ppo(args: argparse.Namespace) -> int:
     device = _device(args.device, args.allow_gpu)
     paths, packages, snapshot, config = _allocate(args, device)
     ppo_config = PPOConfig(
+        gae_lambda=args.gae_lambda,
         epochs=args.epochs,
         batch_size=args.batch_size,
         actor_learning_rate=args.actor_learning_rate,
@@ -386,7 +387,7 @@ def run_ppo(args: argparse.Namespace) -> int:
                 started = time.perf_counter()
                 episodes = collector.collect(jobs, on_episode=on_episode)
                 rollout_seconds = time.perf_counter() - started
-                batch = prepare_episodes(episodes)
+                batch = prepare_episodes(episodes, gae_lambda=ppo_config.gae_lambda)
                 metrics = trainer.update(batch)
                 logger.log(
                     update,
@@ -469,6 +470,7 @@ def build_parser() -> argparse.ArgumentParser:
     ppo.add_argument("--warm-start", type=Path, required=True)
     ppo.add_argument("--updates", type=int, default=100)
     ppo.add_argument("--episodes-per-update", type=int, default=256)
+    ppo.add_argument("--gae-lambda", type=float, default=0.95)
     ppo.add_argument("--epochs", type=int, default=4)
     ppo.add_argument("--batch-size", type=int, default=1024)
     ppo.add_argument("--actor-learning-rate", type=float, default=1e-5)
@@ -482,6 +484,8 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.workers < 1:
         raise ValueError("workers must be positive")
+    if hasattr(args, "gae_lambda") and not 0.0 <= args.gae_lambda <= 1.0:
+        raise ValueError("gae_lambda must be in [0, 1]")
     _configure_wandb(args)
     torch.set_num_threads(1 if args.device == "cpu" else max(1, min(4, os.cpu_count() or 1)))
     return int(args.handler(args))
