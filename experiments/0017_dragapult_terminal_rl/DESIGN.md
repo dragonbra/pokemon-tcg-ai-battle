@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V12 lambda=0.97 improves critic but drifts by update 10; V13 lower-LR branch next**
+Status: **V13 lambda=0.97 / actor LR 5e-6 active; drift reduced through update 10**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -338,6 +338,11 @@ loss about 0.09-0.12. Rolling-2,000 reached 19.01% at update 6, but fell for fou
 updates to 17.8% at update 10; second-seat rate fell from 16.9% to 14.3%. V13 branches from the
 retained V12 update-5 checkpoint and halves only actor LR to `5e-6`, retaining lambda 0.97 and
 value LR `1e-4` to test whether slower actor movement stabilizes the early gain.
+
+V13 reached rolling-2,000 19.36% at update 7 and 18.25% at update 10. First/second seat rates
+at update 10 were 19.0%/17.5%, a much smaller gap than V12. Behavior KL was about `3e-5` and
+explained variance was 0.48. This supports the lower-LR stabilization hypothesis, but the run must
+continue beyond 10 updates before selecting it over the V9 update-50 checkpoint.
 
 ## 13. Later version decisions
 
