@@ -50,6 +50,14 @@ class PPOTrainer:
         self.device = device
         self.config = config
         model.unfreeze_decoder()
+        self._actor_parameter_names = tuple(
+            name for name, parameter in model.actor.named_parameters() if parameter.requires_grad
+        )
+        self._reference_actor_parameters = {
+            name: parameter.detach().clone()
+            for name, parameter in model.actor.named_parameters()
+            if name in self._actor_parameter_names
+        }
         trainable_actor = [
             parameter for parameter in model.actor.parameters() if parameter.requires_grad
         ]
@@ -67,6 +75,11 @@ class PPOTrainer:
         behavior = frozen_reference(model, self.device)
         device = self.device
         config = self.config
+        behavior_actor_parameters = {
+            name: parameter.detach().clone()
+            for name, parameter in model.actor.named_parameters()
+            if name in self._actor_parameter_names
+        }
         accumulators: dict[str, float] = {}
         minibatches = 0
         epochs_completed = 0
@@ -190,6 +203,28 @@ class PPOTrainer:
             }
         )
         result.update(training_batch_metrics(batch))
+        current_parameters = dict(model.actor.named_parameters())
+
+        def relative_l2(baseline: dict[str, torch.Tensor]) -> float:
+            difference = torch.zeros((), device=self.device, dtype=torch.float64)
+            scale = torch.zeros((), device=self.device, dtype=torch.float64)
+            for name in self._actor_parameter_names:
+                current = current_parameters[name].detach().double()
+                source = baseline[name].to(self.device).double()
+                difference += (current - source).square().sum()
+                scale += source.square().sum()
+            return float((difference.sqrt() / scale.sqrt().clamp_min(1e-12)).item())
+
+        result.update(
+            {
+                "ppo/actor_relative_l2_vs_behavior": relative_l2(
+                    behavior_actor_parameters
+                ),
+                "ppo/actor_relative_l2_vs_reference": relative_l2(
+                    self._reference_actor_parameters
+                ),
+            }
+        )
         return result
 
 

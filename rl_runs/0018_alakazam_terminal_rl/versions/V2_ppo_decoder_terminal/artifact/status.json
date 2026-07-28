@@ -1,0 +1,21 @@
+{
+  "device": "cuda",
+  "interruption": "KeyboardInterrupt occurred during unretained update 11 collection",
+  "last_retained_checkpoint": "update-000010.pt",
+  "planned_stop": true,
+  "optimizer_state_saved": false,
+  "raw_rollout_saved": false,
+  "stage": "ppo",
+  "state": "stopped",
+  "version": "V2_ppo_decoder_terminal",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0018_alakazam_terminal_rl--v2_ppo_decoder_terminal-ff5a5ec9bf",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0018_alakazam_terminal_rl--v2_ppo_decoder_terminal-ff5a5ec9bf"
+  }
+}

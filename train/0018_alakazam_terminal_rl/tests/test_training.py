@@ -23,7 +23,7 @@ from ..rollout.collector import (
     _update_diagnostics,
 )
 from ..rollout.protocol import Episode, TrajectoryDecision
-from ..run import build_parser
+from ..run import build_parser, main, seed_training_rng
 from ..storage import storage_guard
 from ..training.batch import prepare_episodes, training_batch_metrics
 
@@ -176,6 +176,56 @@ class TrainingContractTest(unittest.TestCase):
             ]
         )
         self.assertEqual(args.gae_lambda, 1.0)
+
+    def test_training_rng_seeds_torch(self) -> None:
+        with patch("torch.manual_seed") as manual_seed, patch(
+            "torch.cuda.is_available", return_value=True
+        ), patch("torch.cuda.manual_seed_all") as manual_seed_all:
+            seed_training_rng(20260729)
+        manual_seed.assert_called_once_with(20260729)
+        manual_seed_all.assert_called_once_with(20260729)
+
+    def test_ppo_parser_exposes_loss_guards_and_dense_checkpoints(self) -> None:
+        args = build_parser().parse_args(
+            [
+                "ppo",
+                "--version",
+                "V_test",
+                "--warm-start",
+                "checkpoint.pt",
+                "--entropy-coefficient",
+                "0",
+                "--reference-kl-coefficient",
+                "0.02",
+                "--target-behavior-kl",
+                "0.01",
+                "--checkpoint-every",
+                "1",
+                "--checkpoint-retention",
+                "100",
+            ]
+        )
+        self.assertEqual(args.entropy_coefficient, 0.0)
+        self.assertEqual(args.reference_kl_coefficient, 0.02)
+        self.assertEqual(args.target_behavior_kl, 0.01)
+        self.assertEqual(args.checkpoint_every, 1)
+        self.assertEqual(args.checkpoint_retention, 100)
+
+    def test_ppo_rejects_nonpositive_checkpoint_cadence(self) -> None:
+        with self.assertRaisesRegex(ValueError, "checkpoint-every must be positive"):
+            main(
+                [
+                    "ppo",
+                    "--version",
+                    "V_test",
+                    "--warm-start",
+                    "checkpoint.pt",
+                    "--checkpoint-every",
+                    "0",
+                    "--wandb-mode",
+                    "disabled",
+                ]
+            )
 
     def test_terminal_returns_and_episode_weights(self) -> None:
         batch = prepare_episodes(

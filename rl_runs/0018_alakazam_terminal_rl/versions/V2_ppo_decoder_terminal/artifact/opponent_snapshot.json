@@ -1,0 +1,1033 @@
+{
+  "catalog": "evaluation/configs/opponents.json",
+  "catalog_sha256": "92221e5a6b080d46f85d499e491a371a610a94087d7f001a1663bc657cfbe5c0",
+  "enabled_count": 30,
+  "holdout": [],
+  "holdout_count": 0,
+  "packages": [
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "369f515b4597cf43bc6556202858a51b4948e44443f6c72f609dce84cef7dcfc",
+      "name": "alakazam_dudunsparce_01",
+      "package_hash": "b4948a38dca4c156ee3fedd6fb0acd3e89efdc7c8323b8056db9de3a7e1adbdf"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "a8c9177354b92abe5fb877f46b792b86f8ec9c4bc3551d5d16d4a89128f00976",
+      "name": "alakazam_dudunsparce_02",
+      "package_hash": "ad1fa74eca28179eed00caa09abaf4492ec6a85b48cb0865a4c1abc933a1e896"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
+      "name": "alakazam_dudunsparce_03_bc",
+      "package_hash": "6a20623be8ae8838702c73ce19cf3cdbf8b4bf14a58e695b9b4be220a8332241"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "267ce842b45f960afef843e68f3aad86573bf7d19329ea23e7469ec8265c017b",
+      "name": "alakazam_dudunsparce_04_sota",
+      "package_hash": "15dd82af80f5f6e24e6e8a0c74deab1058be42e2a342ec84b6df9da445581da4"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "9c2647bd80d51bfd9cf89c74026e6a53607903b94cae9c235fad0c2128aad3aa",
+      "name": "crustle_01",
+      "package_hash": "d9496d43b41c059dfeb54d67bbaa4c40a43e0939be47050d501cb58917b2da4b"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "9c2647bd80d51bfd9cf89c74026e6a53607903b94cae9c235fad0c2128aad3aa",
+      "name": "crustle_02",
+      "package_hash": "fa962ae7c666343d199f2ecf1656cf923d8cf2ac141997a9965501196b606396"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "0d5cb0303a955a0432ed73eec60a3dfcfd01c88ab7d7758597605bd8297bfb2f",
+      "name": "cynthias_garchomp_ex_roserade_01_bc",
+      "package_hash": "1c16d0773548d863809a63f57588790db6c39bc7cd03020e46cfd7767074bcf4"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "0d5cb0303a955a0432ed73eec60a3dfcfd01c88ab7d7758597605bd8297bfb2f",
+      "name": "cynthias_garchomp_ex_roserade_02_bc",
+      "package_hash": "1c16d0773548d863809a63f57588790db6c39bc7cd03020e46cfd7767074bcf4"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "008816603a8ac836007f2cfc1c5b238177d7c1853eb3bbbbb931eec24cf717a7",
+      "name": "dragapult_ex_01",
+      "package_hash": "cbe241106ab6d8b756d7b2bee5ae06b2d5fde4faf7d9b50c03da0768e8c7725f"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "ae1093532b5d1b86339090e2b5a2b5074eea560ffb051efb9e29dcabdb83ca5a",
+      "name": "dragapult_ex_02",
+      "package_hash": "77557eee544e0ce22c923157dffe7a0eab337b4c1618a69560c29d79620c75bd"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "00468e64b7c5eefb1cc4586ba9351a7f2a5bce223ef209d2b9e4b0bb0ca42e17",
+      "name": "dragapult_ex_03_v20260729_rl",
+      "package_hash": "1b13a2c382fbc07df9f735cd4e9bfd3bc4a825996dd2027a689f0baa6dd1a417"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "98d92a7fefbb0511edb30b2cd2f944835b9b5ce8b9e989c939c719c2a2f40959",
+      "name": "dragapult_ex_04_v20260729_bc",
+      "package_hash": "970092763940c5b67ebdd562f8b5947503cd62a98e4c289ff4f96bf613b170c9"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "bb264cca591df66a505b825c819557580606308dca2cee687c027164026bea55",
+      "name": "ionos_bellibolt_ex_kilowattrel_01",
+      "package_hash": "62ad93b5cf4bd4b8da5302eb2e66ff286c9cbf04b3a6bc5e20eedf4f28e22d68"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "7d9bd6efa43c2fc1a006db757528d44d30f84c4ee9ca344cae9168d9a8738c72",
+      "name": "marnies_grimmsnarl_ex_dudunsparce_01",
+      "package_hash": "89220abd83dbc1a33abb4b04567cf60d23dd3f469708963b29e6519b2088026a"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "0b365fb05b96307d41790c081d620daa0578551b3be282b671df7a14ba0a8c16",
+      "name": "marnies_grimmsnarl_ex_froslass_01",
+      "package_hash": "743126c36f4cea8a7858ec62a1b1fe10173dc42777c42e8e43221a068f0e4c54"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "48f1a03e8ab8162f6dc608e6743a4f3b32004cb702ca447050e62055b85defbf",
+      "name": "marnies_grimmsnarl_ex_froslass_02",
+      "package_hash": "f8d4b3b8a79bda4a446248bd3266a0dc2f8bd86b0fd1f04be6a0662823b7e4ed"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "af1d6b942451a92cd38d49c37e8059954544915a79bd766ff6263d0d2ce4610f",
+      "name": "marnies_grimmsnarl_ex_froslass_03_bc",
+      "package_hash": "7a8f803c11ae1c67df13a9a273489343e19ef91b43dd57bab74d2375ab2afee9"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "3e940d211c0a506d4513d93461e9092c622b455d8b2152a3703846a05179f9e5",
+      "name": "marnies_grimmsnarl_ex_froslass_04_bc",
+      "package_hash": "9335a36397738f1183a30da1d19a4b0d9d252480ba7d1c6dd653359458ab826d"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "3e940d211c0a506d4513d93461e9092c622b455d8b2152a3703846a05179f9e5",
+      "name": "marnies_grimmsnarl_ex_froslass_05_bc",
+      "package_hash": "bc693348e5184e944d5167835669aef123eb30ef52c17b62942285cf5e8ad02f"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "644446f606998d55f951c94525aa8d157b7eaf2b069d576220d3acb6cc8f2075",
+      "name": "marnies_grimmsnarl_ex_froslass_06_v20260729_bc",
+      "package_hash": "edd8b1f5b89ceb2762892917c87eb6133789b1cd9c352ef981a05bfc036c2068"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "90f308029355e7156470175f27ba6355c831116647bc8c5c3f206d585d6aca90",
+      "name": "mega_abomasnow_ex_kyogre_01",
+      "package_hash": "b249dd4e255d91a26306a706b15b2f79ea5e152180a463ccd2ec349e914e4b75"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "cd7bfdfa205c4c3743aada1dc62293bf5a669fa8cbbac759a527ddd7d15bbb8f",
+      "name": "mega_kangaskhan_ex_crustle_01_v20260729_bc",
+      "package_hash": "231bae4d65a76c07207dd3d2469d93906fd50d784c1582b700d388d39ec84473"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "fd2fc062ffc23c5a4f77f30c05d2fc1d08a7bade73e1dc67e1dd547192fd46b3",
+      "name": "mega_lucario_ex_solrock_01",
+      "package_hash": "7518d829f65a676f542aa6c5d681d8984550dcfd15519434d28831d8bb361777"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "4eebedaf0eb018bb188234ac0f0010ae68189fbfce0a22e67775f2d807527e15",
+      "name": "mega_lucario_ex_solrock_02",
+      "package_hash": "22050bc0bd3860c3787a63230d5e3e5088be0f7e17a764beee74b617cf3418f4"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "b4464eb525a25e6598a972d00efc5e5b5156372e77f51853f4076d8ebb34fd7d",
+      "name": "mega_lucario_ex_solrock_03",
+      "package_hash": "340cead027da715911819e8d61186a505870f98969869c81d308a24f4bb0c597"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "25da5c5ebbfa094ad012f699291ece30d1dfb3aed0951432f5b0fa9358bf03c4",
+      "name": "mega_lucario_ex_solrock_04",
+      "package_hash": "91d69614587dc51ccf502a154edb469283f03660f5cfceadeb4ddf227860fe04"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "2a541d7bf3d9e6b36037123f53f4dfef6348223f79fd27095dafc602a5357c19",
+      "name": "mega_lucario_ex_solrock_05",
+      "package_hash": "d5cbe4df8f0834c03aa1526affcfd24348ccc1eca1613bd130e9aff30905b10d"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "026f160e0bc581ba97004047cef3fe0986c7d49fa3b77d6956226e9a70d3252d",
+      "name": "mega_lucario_ex_solrock_06",
+      "package_hash": "bc366b7f0dd0f74ddeab2ebf3e9f0c18f8c8ac6fdf2557d20aa20b8752b8347d"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "026f160e0bc581ba97004047cef3fe0986c7d49fa3b77d6956226e9a70d3252d",
+      "name": "mega_lucario_ex_solrock_07_bc",
+      "package_hash": "fcd5354c4ace37f72d8ae837ab323b9a2824d28dee3c4df1fcac2c634a49c406"
+    },
+    {
+      "cg_manifest": {
+        "file_count": 9,
+        "files": {
+          "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "api.py": "f71b25be35240f6fc70bd4482bed7ff3f6ac524372eec4e13b8d823b35503422",
+          "cg.dll": "c7c87eb76513784b0089b02dcf9d57466a1b0b2217df4cfc9af8c74deda3969f",
+          "game.py": "c4699ecbe617013349895992ae493d17486de72fec85c798cdfabc06d7260e41",
+          "libcg-arm64.so": "116750365a1043f0d95e200bb283c042753cdbd44c7d16331827ad0a44df0553",
+          "libcg.dylib": "00154aee7d3071451096c929c52da9f9af360a2821e686671097f5011e5a5d95",
+          "libcg.so": "75d7d619b56e5ad4c5caeadc698e61faecc650678dceab52ad687f08d5676beb",
+          "sim.py": "e495f41a68395b0b78bb0cc36304ee1758b29e61c9b46d99203a1075898673f3",
+          "utils.py": "a4fb9266c71b0d7519be03d37f9864e3c212143a4cc4b038d2ce481b70733769"
+        },
+        "native_files": [
+          "cg.dll",
+          "libcg-arm64.so",
+          "libcg.dylib",
+          "libcg.so"
+        ],
+        "python_files": [
+          "__init__.py",
+          "api.py",
+          "game.py",
+          "sim.py",
+          "utils.py"
+        ],
+        "tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac"
+      },
+      "deck_hash": "f9a4ce6c1d634cc6d13c0eff8638420c18f000cabae850b45d7fa6e6ce3fad5d",
+      "name": "team_rockets_mewtwo_ex_spidops_01_bc",
+      "package_hash": "975dd9467472405327c13c373207b93a8e840e8ab9bbae6c9f25d895bbffc963"
+    }
+  ],
+  "schema_version": "0018_opponent_snapshot_v1",
+  "train": [
+    "alakazam_dudunsparce_01",
+    "alakazam_dudunsparce_02",
+    "alakazam_dudunsparce_03_bc",
+    "alakazam_dudunsparce_04_sota",
+    "crustle_01",
+    "crustle_02",
+    "cynthias_garchomp_ex_roserade_01_bc",
+    "cynthias_garchomp_ex_roserade_02_bc",
+    "dragapult_ex_01",
+    "dragapult_ex_02",
+    "dragapult_ex_03_v20260729_rl",
+    "dragapult_ex_04_v20260729_bc",
+    "ionos_bellibolt_ex_kilowattrel_01",
+    "marnies_grimmsnarl_ex_dudunsparce_01",
+    "marnies_grimmsnarl_ex_froslass_01",
+    "marnies_grimmsnarl_ex_froslass_02",
+    "marnies_grimmsnarl_ex_froslass_03_bc",
+    "marnies_grimmsnarl_ex_froslass_04_bc",
+    "marnies_grimmsnarl_ex_froslass_05_bc",
+    "marnies_grimmsnarl_ex_froslass_06_v20260729_bc",
+    "mega_abomasnow_ex_kyogre_01",
+    "mega_kangaskhan_ex_crustle_01_v20260729_bc",
+    "mega_lucario_ex_solrock_01",
+    "mega_lucario_ex_solrock_02",
+    "mega_lucario_ex_solrock_03",
+    "mega_lucario_ex_solrock_04",
+    "mega_lucario_ex_solrock_05",
+    "mega_lucario_ex_solrock_06",
+    "mega_lucario_ex_solrock_07_bc",
+    "team_rockets_mewtwo_ex_spidops_01_bc"
+  ],
+  "train_count": 30
+}

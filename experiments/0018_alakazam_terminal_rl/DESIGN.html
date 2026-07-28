@@ -38,7 +38,7 @@
 <header><div>
   <h1>0018 · 胡地终局奖励强化学习</h1>
   <div class="sub">R15 行为克隆编码器 · 卡组专用解码器 PPO · 官方引擎终局奖励</div>
-  <div class="status">V1 Value 校准已完成 · V2 Decoder PPO 正在训练</div>
+  <div class="status">V1 Value 校准完成 · V2 已审计 · V3 Smoke · V4 PPO</div>
 </div></header>
 <main>
   <section class="metrics">
@@ -93,16 +93,17 @@
   </section>
 
   <section class="band">
-    <h2>初始 RL 训练合同</h2>
+    <h2>V4 RL 训练合同</h2>
     <table>
       <thead><tr><th>配置</th><th>取值</th><th>依据</th></tr></thead>
       <tbody>
-        <tr><td>每次更新的 Episode</td><td>256 个完整 Episode</td><td>终局完成后的 on-policy batch</td></tr>
-        <tr><td>GAE lambda / gamma</td><td>0.97 / 1.0</td><td>沿用 0017 稳定分支证据；不改变终局奖励</td></tr>
-        <tr><td>PPO epochs / minibatch</td><td>4 / 1024 个决策</td><td>保守地微调 Decoder</td></tr>
-        <tr><td>Actor / Value 学习率</td><td>3e-6 / 1e-4</td><td>减缓 Actor 漂移，同时更快校准 Critic</td></tr>
+        <tr><td>每次更新的 Episode</td><td>512 个完整 Episode</td><td>降低终局奖励的批次方差</td></tr>
+        <tr><td>GAE lambda / gamma</td><td>1.0 / 1.0</td><td>让早期准备动作完整接收终局胜负信用</td></tr>
+        <tr><td>PPO epochs / minibatch</td><td>2 / 1024 个决策</td><td>减少对单批 on-policy 数据的重复拟合</td></tr>
+        <tr><td>Actor / Value 学习率</td><td>1e-5 / 1e-4</td><td>推动接近选项发生排序翻转，KL 护栏继续生效</td></tr>
+        <tr><td>熵 / Reference KL / Behavior KL 护栏</td><td>0 / 0.02 / 0.01</td><td>不奖励额外随机性，同时约束偏离与单次更新</td></tr>
         <tr><td>对手池</td><td>全部已启用 Arena 对手</td><td>不设置人为的六对手 holdout</td></tr>
-        <tr><td>Checkpoint</td><td>只保存模型权重；最多保留 8 个</td><td>不保存 optimizer 恢复状态或 replay</td></tr>
+        <tr><td>Checkpoint</td><td>每个 update 保存；最多保留 100 个</td><td>约 6.9 GiB；不保存 optimizer、RNG 或 replay</td></tr>
       </tbody>
     </table>
   </section>
@@ -115,14 +116,22 @@
       TensorBoard 和私有 W&amp;B。</p>
     <p>主要实时面板包括：rolling 100/500/2000 胜率及 Wilson 区间；先后手与逐对手胜率；
       每秒 Episode 和每秒决策；候选/对手 batch 的平均值、最大值与推理耗时；Policy/Value
-      loss、熵、behavior/reference KL、clip fraction、explained variance；GPU 显存、利用率
+      loss、熵、behavior/reference KL、clip fraction、explained variance；Decoder 相对 BC
+      与本次更新前的参数位移；固定 1,024 状态上的 greedy 动作翻转率；GPU 显存、利用率
       与磁盘警戒线。</p>
     <p><strong>当前阶段：</strong><code>V1_value_calibration</code> 已使用官方引擎完成
       512 个有效 Episode、36,282 个候选决策，并在冻结 Actor 的前提下训练 Value Head
       4 个 epoch；最终训练内 RMSE 为 0.8374，explained variance 为 0.2538。这些数字只用于
-      Critic 初始化诊断，不是策略强度证据。<code>V2_ppo_decoder_terminal</code> 已从 V1 的
-      model-only checkpoint 启动正式 Decoder PPO：每采集 256 局时冻结当前策略，随后训练
-      4 个 PPO epoch，下一批对局再使用更新后的权重。</p>
+      Critic 初始化诊断，不是策略强度证据。<code>V2_ppo_decoder_terminal</code> 在保留
+      update 10 后按计划停止；300-job greedy 诊断中，BC/V1 为 228/299（76.25%），update 1
+      为 224/300（74.67%），update 10 为 228/298（76.51%，另有 1 平局），没有证明真实
+      greedy 强度提升或损坏。V2 update 10 的 reference KL surrogate 仅 0.000620，Decoder
+      相对 BC 位移 0.2599%。</p>
+    <p><strong>下一阶段：</strong><code>V3_ppo_lambda1_lr1e5_smoke</code> 先验证单次更新合同；
+      随后 <code>V4_ppo_decoder_lambda1_lr1e5</code> 从干净的 V1
+      model-only checkpoint 开始，使用 512 局/update、lambda 1.0、2 epochs、Actor LR 1e-5、
+      零熵奖励和更严格的 behavior KL 护栏。rolling 胜率只作训练诊断；密集 checkpoint
+      将用于后续官方引擎 frozen-greedy 对比。</p>
     <p>完整特征 shape、存储限制、模型来源和评测边界见同步维护的
       <a href="DESIGN.md">DESIGN.md</a>。</p>
   </section>

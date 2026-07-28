@@ -19,6 +19,8 @@ from .observability.metrics import OutcomeTracker, episode_metrics
 from .opponent_inference import ResidentOpponentPool
 from .opponents import balanced_jobs, load_frozen_pool, select_slice, write_snapshot
 from .policy.actor_critic import AlakazamActorCritic, load_source_actor_critic
+from .policy.action_distribution import greedy_actions
+from .policy.batching import collate_feature_batches, move_batch
 from .rollout.collector import RolloutCollector
 from .storage import storage_guard
 from .training.batch import prepare_episodes
@@ -47,6 +49,48 @@ def _device(value: str, allow_gpu: bool) -> torch.device:
         if not torch.cuda.is_available():
             raise RuntimeError("CUDA was explicitly requested but is unavailable")
     return requested
+
+
+def seed_training_rng(seed: int) -> None:
+    """Seed main-process policy sampling and PPO minibatch ordering."""
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def _greedy_canary_metrics(
+    model: AlakazamActorCritic,
+    reference: AlakazamActorCritic,
+    features: tuple[dict[str, torch.Tensor], ...],
+    *,
+    device: torch.device,
+    batch_size: int = 256,
+) -> dict[str, float]:
+    changed = 0
+    current_log_prob = 0.0
+    reference_log_prob = 0.0
+    decisions = 0
+    for start in range(0, len(features), batch_size):
+        batch = move_batch(
+            collate_feature_batches(features[start : start + batch_size]), device
+        )
+        current = greedy_actions(model, batch)
+        baseline = greedy_actions(reference, batch)
+        for candidate, source in zip(current, baseline, strict=True):
+            decisions += 1
+            changed += (candidate.indices, candidate.stopped) != (
+                source.indices,
+                source.stopped,
+            )
+            current_log_prob += candidate.log_prob
+            reference_log_prob += source.log_prob
+    denominator = max(1, decisions)
+    return {
+        "canary/decisions": float(decisions),
+        "canary/greedy_action_flip_rate_vs_reference": changed / denominator,
+        "canary/current_greedy_log_prob_mean": current_log_prob / denominator,
+        "canary/reference_greedy_log_prob_mean": reference_log_prob / denominator,
+    }
 
 
 def _configure_wandb(args: argparse.Namespace) -> None:
@@ -409,6 +453,9 @@ def run_ppo(args: argparse.Namespace) -> int:
         batch_size=args.batch_size,
         actor_learning_rate=args.actor_learning_rate,
         value_learning_rate=args.value_learning_rate,
+        entropy_coefficient=args.entropy_coefficient,
+        reference_kl_coefficient=args.reference_kl_coefficient,
+        target_behavior_kl=args.target_behavior_kl,
     )
     config["ppo"] = asdict(ppo_config)
     config["episodes_per_update"] = args.episodes_per_update
@@ -433,6 +480,7 @@ def run_ppo(args: argparse.Namespace) -> int:
         tracker = OutcomeTracker()
         episodes_seen = 0
         decisions_seen = 0
+        canary_features: tuple[dict[str, torch.Tensor], ...] | None = None
         with TrainingLogger(paths.metrics, paths.tensorboard) as logger:
             for update in range(1, args.updates + 1):
                 storage = storage_guard(paths.run_root)
@@ -466,7 +514,17 @@ def run_ppo(args: argparse.Namespace) -> int:
                 episodes = collector.collect(jobs, on_episode=on_episode)
                 rollout_seconds = time.perf_counter() - started
                 batch = prepare_episodes(episodes, gae_lambda=ppo_config.gae_lambda)
+                if canary_features is None:
+                    canary_features = batch.features[: min(1024, batch.decisions)]
                 metrics = trainer.update(batch)
+                metrics.update(
+                    _greedy_canary_metrics(
+                        model,
+                        reference,
+                        canary_features,
+                        device=device,
+                    )
+                )
                 logger.log(
                     update,
                     {
@@ -497,7 +555,9 @@ def run_ppo(args: argparse.Namespace) -> int:
                             "env_decisions": decisions_seen,
                         },
                     )
-                    prune_model_checkpoints(paths.checkpoints, keep=8)
+                    prune_model_checkpoints(
+                        paths.checkpoints, keep=args.checkpoint_retention
+                    )
         summary = {
             "state": "completed",
             "updates": args.updates,
@@ -556,7 +616,11 @@ def build_parser() -> argparse.ArgumentParser:
     ppo.add_argument("--batch-size", type=int, default=1024)
     ppo.add_argument("--actor-learning-rate", type=float, default=3e-6)
     ppo.add_argument("--value-learning-rate", type=float, default=1e-4)
+    ppo.add_argument("--entropy-coefficient", type=float, default=0.01)
+    ppo.add_argument("--reference-kl-coefficient", type=float, default=0.02)
+    ppo.add_argument("--target-behavior-kl", type=float, default=0.02)
     ppo.add_argument("--checkpoint-every", type=int, default=10)
+    ppo.add_argument("--checkpoint-retention", type=int, default=8)
     ppo.set_defaults(handler=run_ppo)
     return parser
 
@@ -569,7 +633,18 @@ def main(argv: list[str] | None = None) -> int:
         raise ValueError("coalesce-ms must be non-negative")
     if hasattr(args, "gae_lambda") and not 0.0 <= args.gae_lambda <= 1.0:
         raise ValueError("gae_lambda must be in [0, 1]")
+    if hasattr(args, "checkpoint_every") and args.checkpoint_every < 1:
+        raise ValueError("checkpoint-every must be positive")
+    if hasattr(args, "checkpoint_retention") and args.checkpoint_retention < 1:
+        raise ValueError("checkpoint-retention must be positive")
+    if hasattr(args, "entropy_coefficient") and args.entropy_coefficient < 0.0:
+        raise ValueError("entropy-coefficient must be non-negative")
+    if hasattr(args, "reference_kl_coefficient") and args.reference_kl_coefficient < 0.0:
+        raise ValueError("reference-kl-coefficient must be non-negative")
+    if hasattr(args, "target_behavior_kl") and args.target_behavior_kl <= 0.0:
+        raise ValueError("target-behavior-kl must be positive")
     _configure_wandb(args)
+    seed_training_rng(args.seed)
     torch.set_num_threads(1 if args.device == "cpu" else max(1, min(4, os.cpu_count() or 1)))
     return int(args.handler(args))
 

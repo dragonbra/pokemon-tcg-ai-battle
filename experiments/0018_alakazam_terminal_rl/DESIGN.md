@@ -1,6 +1,6 @@
 # 0018 Alakazam Terminal RL
 
-Status: **V1 value calibration complete; V2 decoder PPO running**
+Status: **V1 value calibration complete; V2 audited; V3 smoke prepared; V4 PPO next**
 
 Date: 2026-07-29
 Target: user-designed Alakazam + Dudunsparce deck, initialized from 0016 R15 epoch 10
@@ -142,9 +142,18 @@ useful for a second GPU, repeated games against one policy, or a future concurre
 ## 7. Learning and observability contract
 
 Initial value calibration freezes the actor and fits terminal Monte Carlo targets with equal total
-weight per Episode. Initial PPO uses 256 complete Episodes/update, `gamma=1`, GAE lambda `0.97`,
-4 PPO epochs, decision minibatch 1024, actor LR `3e-6`, value LR `1e-4`, ratio clip `0.10`, value
+weight per Episode. V2 used 256 complete Episodes/update, `gamma=1`, GAE lambda `0.97`, four PPO
+epochs, decision minibatch 1024, actor LR `3e-6`, value LR `1e-4`, ratio clip `0.10`, value
 coefficient `0.5`, entropy coefficient `0.01`, gradient norm `0.5`, and a fixed BC reference.
+
+V4 is a clean model-only warm start from V1 and changes the refinement contract for the strong
+Alakazam BC actor: 512 complete Episodes/update, `gamma=1`, GAE lambda `1.0`, two PPO epochs,
+decision minibatch 1024, actor LR `1e-5`, value LR `1e-4`, entropy coefficient `0`, reference-KL
+coefficient `0.02`, behavior-KL guard `0.01`, ratio clip `0.10`, and gradient norm `0.5`. Lambda 1
+passes terminal win/loss credit to early setup decisions without Value bootstrap attenuation. The
+larger rollout batch and two epochs reduce the risk of repeatedly fitting one noisy batch. The
+higher actor LR is permitted because V2 moved only `0.2599%` in Decoder relative L2 by update 10
+and its KL/clip metrics remained far below their guards; it is not allowed to bypass those guards.
 
 `training_metrics.jsonl` is canonical, then TensorBoard, then private W&B project
 `dragon_bra/pokemon-tcg-policy-learning`. W&B run names are
@@ -154,6 +163,8 @@ coefficient `0.5`, entropy coefficient `0.01`, gradient norm `0.5`, and a fixed 
 - Episodes/s, decisions/s, rollout/update wall time and invalid Episode count;
 - candidate/opponent request count, batch count, mean/max batch and inference seconds;
 - policy/value loss, entropy, behavior/reference KL, clip fraction and explained variance;
+- Decoder relative L2 movement per update and versus BC, plus greedy action flip rate on a fixed
+  1,024-state canary captured from the first rollout of the current formal version;
 - parameter counts, GPU memory/utilization and both filesystem free-space guards.
 
 Training rolling win rate is an optimization diagnostic, not final proof. Frozen greedy comparison
@@ -164,7 +175,8 @@ official engine. 0018 intentionally has no six-opponent holdout split.
 
 - Versions are immutable `rl_runs/0018_alakazam_terminal_rl/versions/V<n>_<tag>/` directories.
 - Checkpoints contain model weights and provenance only; no optimizer/scheduler/RNG resume state.
-- At most eight model-only checkpoints are retained per version.
+- Checkpoint cadence and retention are immutable version config. V4 saves every update and retains
+  up to 100 model-only checkpoints (about 6.9 GiB at current model size).
 - Rollout buffers are released after the update; raw traces and replays are off by default.
 - Warn below 80 GiB free and stop before either monitored filesystem falls below 50 GiB or one
   version reaches 20 GiB.
@@ -173,6 +185,18 @@ Current stage: implementation, adapter compatibility, official-engine smoke and 
 complete. `V1_value_calibration` collected 512 valid official-engine Episodes and 36,282 candidate
 decisions, then trained only the value head for four epochs. Its final in-sample value RMSE was
 `0.8374` and explained variance was `0.2538`; these are critic-initialization diagnostics, not policy
-strength evidence. `V2_ppo_decoder_terminal` is now running formal decoder-only PPO from the V1
-model-only checkpoint with the training contract in section 7. Each 256-Episode rollout freezes the
-current policy, followed by four PPO epochs; the following rollout uses the updated policy.
+strength evidence.
+
+`V2_ppo_decoder_terminal` was deliberately stopped after its update-10 checkpoint. Its sampled
+rollouts totaled 1,687/2,560 wins (`65.90%`), but the fixed 300-job greedy diagnostic found BC/V1
+at 228/299 (`76.25%`), update 1 at 224/300 (`74.67%`), and update 10 at 228/298 (`76.51%`, plus
+one draw). V2 therefore showed neither a proven greedy gain nor lasting damage. Reference-KL
+surrogate was only `0.000620` at update 10, behavior KL about `1.24e-5`, and Decoder relative L2
+movement was `0.0768%` at update 1 and `0.2599%` at update 10. The interrupted update 11 was never
+retained and is not part of the policy evidence.
+
+V3 is the one-update official-engine smoke for the new contract. V4 starts from V1 rather than V2
+and adds an explicit main-process PyTorch seed, fixed in-memory
+greedy canary, dense model-only checkpoints and the revised section-7 contract. Rolling sampled
+win rate remains an online diagnostic. Promotion still requires frozen greedy official-engine
+evaluation against the same Arena catalog and balanced seats.

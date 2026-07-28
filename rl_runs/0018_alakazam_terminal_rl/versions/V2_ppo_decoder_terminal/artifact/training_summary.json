@@ -1,0 +1,43 @@
+{
+  "actor_relative_l2_vs_v1": {
+    "update_1": 0.000768,
+    "update_10": 0.002599
+  },
+  "frozen_greedy_diagnostic": {
+    "bc_v1": {
+      "games": 299,
+      "win_rate": 0.7625,
+      "wins": 228
+    },
+    "jobs": 300,
+    "update_1": {
+      "games": 300,
+      "win_rate": 0.7467,
+      "wins": 224
+    },
+    "update_10": {
+      "draws": 1,
+      "games": 298,
+      "win_rate": 0.7651,
+      "wins": 228
+    }
+  },
+  "interruption": "Update 11 collection was interrupted after update 10 was atomically saved",
+  "last_retained_checkpoint": "update-000010.pt",
+  "optimizer_state_saved": false,
+  "planned_stop": true,
+  "rollout": {
+    "episodes": 2560,
+    "losses": 873,
+    "win_rate": 0.659,
+    "wins": 1687
+  },
+  "state": "stopped",
+  "strength_conclusion": "No proven frozen-greedy gain or regression versus BC/V1",
+  "update_10": {
+    "behavior_kl": 0.00001240758481663779,
+    "reference_kl_surrogate": 0.00061989810274099
+  },
+  "updates_retained": 10,
+  "version": "V2_ppo_decoder_terminal"
+}
