@@ -17,8 +17,8 @@ REPORT_DATA_PATTERN = re.compile(
     r'<script id="report-data" type="application/json">(.*?)</script>',
     re.DOTALL,
 )
-ARCHETYPE_SUFFIX = re.compile(r"_\d{2}$")
-DISPLAY_SUFFIX = re.compile(r" \d{2}$")
+ARCHETYPE_SUFFIX = re.compile(r"_\d{2}(?:_v\d{8})?(?:_(?:bc|rl|sota))?$")
+DISPLAY_SUFFIX = re.compile(r" \d{2}(?: · \d{4}-\d{2}-\d{2})?$")
 
 
 def build_combat_matrix_data(catalog_path: Path, reports_root: Path) -> dict[str, object]:

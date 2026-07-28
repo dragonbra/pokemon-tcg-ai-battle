@@ -1,0 +1,153 @@
+{
+  "teacher_rule": "all public replay seats satisfying Mega Kangaskhan ex + Crustle core counts; strict positive reward only",
+  "core_min_counts": {
+    "756": 2,
+    "344": 2,
+    "345": 2
+  },
+  "target_dates": [
+    "2026-07-22",
+    "2026-07-23",
+    "2026-07-24",
+    "2026-07-25",
+    "2026-07-26"
+  ],
+  "validation_strategy": "daily deterministic episode-group holdout",
+  "validation_fraction": 0.1,
+  "split_seed": 20260727,
+  "teacher_games": 1221,
+  "decisions_train": 63817,
+  "decisions_valid": 7025,
+  "skipped": {
+    "codec_limits_or_invalid": 2
+  },
+  "strict_win_games_by_deck_hash": {
+    "e510e4d41bef": 482,
+    "808185b78ffe": 359,
+    "6f87e9d4949a": 82,
+    "34fd4b590f04": 72,
+    "95a90b610b06": 66,
+    "654a23f37f37": 12,
+    "6d0aa533d170": 10,
+    "e867e2c1a720": 9,
+    "904cf804c83c": 3,
+    "4f7f289fc83f": 2,
+    "f9d7ad6b5b3c": 1,
+    "d74a281947ca": 1
+  },
+  "strict_win_games_by_deck_hash_train": {
+    "e510e4d41bef": 482,
+    "808185b78ffe": 359,
+    "6f87e9d4949a": 82,
+    "34fd4b590f04": 72,
+    "95a90b610b06": 66,
+    "654a23f37f37": 12,
+    "6d0aa533d170": 10,
+    "e867e2c1a720": 9,
+    "904cf804c83c": 3,
+    "4f7f289fc83f": 2,
+    "f9d7ad6b5b3c": 1,
+    "d74a281947ca": 1
+  },
+  "strict_win_games_by_deck_hash_valid": {
+    "e510e4d41bef": 55,
+    "808185b78ffe": 33,
+    "34fd4b590f04": 11,
+    "95a90b610b06": 11,
+    "6f87e9d4949a": 7,
+    "654a23f37f37": 3,
+    "6d0aa533d170": 1,
+    "904cf804c83c": 1
+  },
+  "deck_hash_sample_weights": {
+    "e510e4d41bef": 0.61542422,
+    "6f87e9d4949a": 1.4920768,
+    "654a23f37f37": 3.90038503,
+    "808185b78ffe": 0.71310073,
+    "6d0aa533d170": 4.27265773,
+    "34fd4b590f04": 1.59232552,
+    "f9d7ad6b5b3c": 13.51133008,
+    "4f7f289fc83f": 9.55395312,
+    "95a90b610b06": 1.66312976,
+    "d74a281947ca": 13.51133008,
+    "e867e2c1a720": 4.50377669,
+    "904cf804c83c": 7.80077006
+  },
+  "deck_hash_code_map": {
+    "889015129": "34fd4b590f04",
+    "1333733535": "4f7f289fc83f",
+    "1699357683": "654a23f37f37",
+    "1829414195": "6d0aa533d170",
+    "1871178196": "6f87e9d4949a",
+    "2155972023": "808185b78ffe",
+    "2420963332": "904cf804c83c",
+    "2510883681": "95a90b610b06",
+    "3611961369": "d74a281947ca",
+    "3843089620": "e510e4d41bef",
+    "3899122369": "e867e2c1a720",
+    "4191661419": "f9d7ad6b5b3c"
+  },
+  "daily_split": {
+    "2026-07-22": {
+      "games_total": 339,
+      "games_train": 305,
+      "games_valid": 34,
+      "episodes_total": 339,
+      "episodes_train": 305,
+      "episodes_valid": 34,
+      "deck_hashes_train": 5,
+      "deck_hashes_valid": 5,
+      "decisions_train": 17871,
+      "decisions_valid": 1966
+    },
+    "2026-07-23": {
+      "games_total": 323,
+      "games_train": 291,
+      "games_valid": 32,
+      "episodes_total": 323,
+      "episodes_train": 291,
+      "episodes_valid": 32,
+      "deck_hashes_train": 8,
+      "deck_hashes_valid": 5,
+      "decisions_train": 16790,
+      "decisions_valid": 1816
+    },
+    "2026-07-24": {
+      "games_total": 333,
+      "games_train": 300,
+      "games_valid": 33,
+      "episodes_total": 333,
+      "episodes_train": 300,
+      "episodes_valid": 33,
+      "deck_hashes_train": 6,
+      "deck_hashes_valid": 5,
+      "decisions_train": 17198,
+      "decisions_valid": 1868
+    },
+    "2026-07-25": {
+      "games_total": 118,
+      "games_train": 106,
+      "games_valid": 12,
+      "episodes_total": 118,
+      "episodes_train": 106,
+      "episodes_valid": 12,
+      "deck_hashes_train": 5,
+      "deck_hashes_valid": 3,
+      "decisions_train": 6101,
+      "decisions_valid": 669
+    },
+    "2026-07-26": {
+      "games_total": 108,
+      "games_train": 97,
+      "games_valid": 11,
+      "episodes_total": 108,
+      "episodes_train": 97,
+      "episodes_valid": 11,
+      "deck_hashes_train": 5,
+      "deck_hashes_valid": 3,
+      "decisions_train": 5857,
+      "decisions_valid": 706
+    }
+  },
+  "episode_leakage_count": 0
+}

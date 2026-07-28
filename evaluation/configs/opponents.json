@@ -81,6 +81,22 @@
       "tags": ["dragapult_ex"]
     },
     {
+      "name": "dragapult_ex_03_v20260729_rl",
+      "package": "arena/opponents/dragapult_ex_03_v20260729_rl",
+      "display_name": "[RL] Dragapult ex 03 · 2026-07-29",
+      "representative_card_ids": [121],
+      "enabled": true,
+      "tags": ["dragapult_ex", "rl_agent", "v20260729"]
+    },
+    {
+      "name": "dragapult_ex_04_v20260729_bc",
+      "package": "arena/opponents/dragapult_ex_04_v20260729_bc",
+      "display_name": "[BC] Dragapult ex 04 · 2026-07-29",
+      "representative_card_ids": [121],
+      "enabled": true,
+      "tags": ["dragapult_ex", "bc_agent", "v20260729"]
+    },
+    {
       "name": "ionos_bellibolt_ex_kilowattrel_01",
       "package": "arena/opponents/ionos_bellibolt_ex_kilowattrel_01",
       "display_name": "Iono’s Bellibolt ex / Kilowattrel 01",
@@ -137,12 +153,28 @@
       "tags": ["marnies_grimmsnarl_ex", "froslass", "bc_agent"]
     },
     {
+      "name": "marnies_grimmsnarl_ex_froslass_06_v20260729_bc",
+      "package": "arena/opponents/marnies_grimmsnarl_ex_froslass_06_v20260729_bc",
+      "display_name": "[BC] Marnie's Grimmsnarl ex / Froslass 06 · 2026-07-29",
+      "representative_card_ids": [648, 104],
+      "enabled": true,
+      "tags": ["marnies_grimmsnarl_ex", "froslass", "bc_agent", "v20260729"]
+    },
+    {
       "name": "mega_abomasnow_ex_kyogre_01",
       "package": "arena/opponents/mega_abomasnow_ex_kyogre_01",
       "display_name": "Mega Abomasnow ex / Kyogre 01",
       "representative_card_ids": [723, 721],
       "enabled": true,
       "tags": ["mega_abomasnow_ex", "kyogre"]
+    },
+    {
+      "name": "mega_kangaskhan_ex_crustle_01_v20260729_bc",
+      "package": "arena/opponents/mega_kangaskhan_ex_crustle_01_v20260729_bc",
+      "display_name": "[BC] Mega Kangaskhan ex / Crustle 01 · 2026-07-29",
+      "representative_card_ids": [756, 345],
+      "enabled": true,
+      "tags": ["mega_kangaskhan_ex", "crustle", "bc_agent", "v20260729"]
     },
     {
       "name": "mega_lucario_ex_solrock_01",

@@ -1,0 +1,8 @@
+{
+  "model_version": "ptcg_marnie_prize_directed_bc_v4",
+  "variant": "control",
+  "deck_hash": "3121746f2b28",
+  "checkpoint": "D:\\Users\\admin\\Desktop\\pokemon\\artifacts\\kaggle\\ptcg_marnie_prize_ab_train_v4\\ptcg_marnie_prize_ab_train_v4_output\\control\\best_model.pt",
+  "prize_features": "registered-count control",
+  "runtime": "greedy legal-option pointer decoder with per-game public PrizeLedger"
+}

@@ -1,0 +1,344 @@
+{
+  "model_version": "ptcg_kangaskhan_crustle_core_deck_conditioned_bc_epochmix_v2",
+  "devices": [
+    {
+      "index": "0",
+      "name": "Tesla T4",
+      "capability": "sm_75"
+    },
+    {
+      "index": "1",
+      "name": "Tesla T4",
+      "capability": "sm_75"
+    }
+  ],
+  "model_config": {
+    "max_card_id": 2048,
+    "d_model": 320,
+    "heads": 8,
+    "encoder_layers": 4,
+    "ffn_multiplier": 3,
+    "dropout": 0.1,
+    "max_entities": 192,
+    "max_options": 128,
+    "max_action_steps": 16,
+    "use_option_position": true
+  },
+  "parameter_count": 7380162,
+  "fp32_model_mib": 28.153,
+  "dataset": {
+    "teacher_rule": "all public replay seats satisfying Mega Kangaskhan ex + Crustle core counts; strict positive reward only",
+    "core_min_counts": {
+      "756": 2,
+      "344": 2,
+      "345": 2
+    },
+    "target_dates": [
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+      "2026-07-25",
+      "2026-07-26"
+    ],
+    "validation_strategy": "daily deterministic episode-group holdout",
+    "validation_fraction": 0.1,
+    "split_seed": 20260727,
+    "teacher_games": 1221,
+    "decisions_train": 63817,
+    "decisions_valid": 7025,
+    "skipped": {
+      "codec_limits_or_invalid": 2
+    },
+    "strict_win_games_by_deck_hash": {
+      "e510e4d41bef": 482,
+      "808185b78ffe": 359,
+      "6f87e9d4949a": 82,
+      "34fd4b590f04": 72,
+      "95a90b610b06": 66,
+      "654a23f37f37": 12,
+      "6d0aa533d170": 10,
+      "e867e2c1a720": 9,
+      "904cf804c83c": 3,
+      "4f7f289fc83f": 2,
+      "f9d7ad6b5b3c": 1,
+      "d74a281947ca": 1
+    },
+    "strict_win_games_by_deck_hash_train": {
+      "e510e4d41bef": 482,
+      "808185b78ffe": 359,
+      "6f87e9d4949a": 82,
+      "34fd4b590f04": 72,
+      "95a90b610b06": 66,
+      "654a23f37f37": 12,
+      "6d0aa533d170": 10,
+      "e867e2c1a720": 9,
+      "904cf804c83c": 3,
+      "4f7f289fc83f": 2,
+      "f9d7ad6b5b3c": 1,
+      "d74a281947ca": 1
+    },
+    "strict_win_games_by_deck_hash_valid": {
+      "e510e4d41bef": 55,
+      "808185b78ffe": 33,
+      "34fd4b590f04": 11,
+      "95a90b610b06": 11,
+      "6f87e9d4949a": 7,
+      "654a23f37f37": 3,
+      "6d0aa533d170": 1,
+      "904cf804c83c": 1
+    },
+    "deck_hash_sample_weights": {
+      "e510e4d41bef": 0.61542422,
+      "6f87e9d4949a": 1.4920768,
+      "654a23f37f37": 3.90038503,
+      "808185b78ffe": 0.71310073,
+      "6d0aa533d170": 4.27265773,
+      "34fd4b590f04": 1.59232552,
+      "f9d7ad6b5b3c": 13.51133008,
+      "4f7f289fc83f": 9.55395312,
+      "95a90b610b06": 1.66312976,
+      "d74a281947ca": 13.51133008,
+      "e867e2c1a720": 4.50377669,
+      "904cf804c83c": 7.80077006
+    },
+    "deck_hash_code_map": {
+      "889015129": "34fd4b590f04",
+      "1333733535": "4f7f289fc83f",
+      "1699357683": "654a23f37f37",
+      "1829414195": "6d0aa533d170",
+      "1871178196": "6f87e9d4949a",
+      "2155972023": "808185b78ffe",
+      "2420963332": "904cf804c83c",
+      "2510883681": "95a90b610b06",
+      "3611961369": "d74a281947ca",
+      "3843089620": "e510e4d41bef",
+      "3899122369": "e867e2c1a720",
+      "4191661419": "f9d7ad6b5b3c"
+    },
+    "daily_split": {
+      "2026-07-22": {
+        "games_total": 339,
+        "games_train": 305,
+        "games_valid": 34,
+        "episodes_total": 339,
+        "episodes_train": 305,
+        "episodes_valid": 34,
+        "deck_hashes_train": 5,
+        "deck_hashes_valid": 5,
+        "decisions_train": 17871,
+        "decisions_valid": 1966
+      },
+      "2026-07-23": {
+        "games_total": 323,
+        "games_train": 291,
+        "games_valid": 32,
+        "episodes_total": 323,
+        "episodes_train": 291,
+        "episodes_valid": 32,
+        "deck_hashes_train": 8,
+        "deck_hashes_valid": 5,
+        "decisions_train": 16790,
+        "decisions_valid": 1816
+      },
+      "2026-07-24": {
+        "games_total": 333,
+        "games_train": 300,
+        "games_valid": 33,
+        "episodes_total": 333,
+        "episodes_train": 300,
+        "episodes_valid": 33,
+        "deck_hashes_train": 6,
+        "deck_hashes_valid": 5,
+        "decisions_train": 17198,
+        "decisions_valid": 1868
+      },
+      "2026-07-25": {
+        "games_total": 118,
+        "games_train": 106,
+        "games_valid": 12,
+        "episodes_total": 118,
+        "episodes_train": 106,
+        "episodes_valid": 12,
+        "deck_hashes_train": 5,
+        "deck_hashes_valid": 3,
+        "decisions_train": 6101,
+        "decisions_valid": 669
+      },
+      "2026-07-26": {
+        "games_total": 108,
+        "games_train": 97,
+        "games_valid": 11,
+        "episodes_total": 108,
+        "episodes_train": 97,
+        "episodes_valid": 11,
+        "deck_hashes_train": 5,
+        "deck_hashes_valid": 3,
+        "decisions_train": 5857,
+        "decisions_valid": 706
+      }
+    },
+    "episode_leakage_count": 0,
+    "source": "mounted_kangaskhan_crustle_core_dataset",
+    "train_path": "/kaggle/input/notebooks/horizen12/ptcg-kangaskhan-crustle-core-bc-dataset-v1/ptcg_kangaskhan_crustle_core_bc_dataset_v1_output/dataset/train_000.jsonl.gz",
+    "valid_path": "/kaggle/input/notebooks/horizen12/ptcg-kangaskhan-crustle-core-bc-dataset-v1/ptcg_kangaskhan_crustle_core_bc_dataset_v1_output/dataset/valid_000.jsonl.gz"
+  },
+  "training": {
+    "device": "cuda",
+    "devices": [
+      {
+        "index": "0",
+        "name": "Tesla T4",
+        "capability": "sm_75"
+      },
+      {
+        "index": "1",
+        "name": "Tesla T4",
+        "capability": "sm_75"
+      }
+    ],
+    "data_parallel": true,
+    "parameter_count": 7380162,
+    "fp32_model_mib": 28.153,
+    "best_validation": {
+      "loss": 0.4646635506288495,
+      "token_accuracy": 0.8333678327468433,
+      "exact_action_accuracy": 0.6661921708185053,
+      "decisions": 7025.0
+    },
+    "history": [
+      {
+        "epoch": 1,
+        "train_loss": 0.5732648138937197,
+        "train_tokens": 132235,
+        "elapsed_sec": 77.578,
+        "loss": 0.5515904180144685,
+        "token_accuracy": 0.7972814462154143,
+        "exact_action_accuracy": 0.5953024911032029,
+        "decisions": 7025.0
+      },
+      {
+        "epoch": 2,
+        "train_loss": 0.48596537949746116,
+        "train_tokens": 132235,
+        "elapsed_sec": 76.605,
+        "loss": 0.517920748669111,
+        "token_accuracy": 0.817429103705237,
+        "exact_action_accuracy": 0.6365836298932385,
+        "decisions": 7025.0
+      },
+      {
+        "epoch": 3,
+        "train_loss": 0.44755262126002393,
+        "train_tokens": 132235,
+        "elapsed_sec": 76.893,
+        "loss": 0.5224594003557212,
+        "token_accuracy": 0.8206720485751742,
+        "exact_action_accuracy": 0.64355871886121,
+        "decisions": 7025.0
+      },
+      {
+        "epoch": 4,
+        "train_loss": 0.4214779888328753,
+        "train_tokens": 132235,
+        "elapsed_sec": 77.508,
+        "loss": 0.47974326501497694,
+        "token_accuracy": 0.8320568550334644,
+        "exact_action_accuracy": 0.6650533807829182,
+        "decisions": 7025.0
+      },
+      {
+        "epoch": 5,
+        "train_loss": 0.39868316360210115,
+        "train_tokens": 132235,
+        "elapsed_sec": 77.601,
+        "loss": 0.4646635506288495,
+        "token_accuracy": 0.8333678327468433,
+        "exact_action_accuracy": 0.6661921708185053,
+        "decisions": 7025.0
+      },
+      {
+        "epoch": 6,
+        "train_loss": 0.3741872844204568,
+        "train_tokens": 132235,
+        "elapsed_sec": 78.491,
+        "loss": 0.469195768945518,
+        "token_accuracy": 0.8348168081142621,
+        "exact_action_accuracy": 0.6698932384341637,
+        "decisions": 7025.0
+      }
+    ],
+    "checkpoint": "/kaggle/working/ptcg_kangaskhan_crustle_core_bc_train_epochmix_v2_output/best_model.pt",
+    "sampling_coverage": {
+      "resample_by_epoch": true,
+      "target_reference_games": 6400,
+      "unique_episodes_across_epochs": 1099,
+      "selected_unique_episodes_by_epoch": {
+        "1": 1099,
+        "2": 1099,
+        "3": 1099,
+        "4": 1099,
+        "5": 1099,
+        "6": 1099
+      }
+    }
+  },
+  "validation_by_deck": {
+    "e510e4d41bef": {
+      "deck_hash": "e510e4d41bef",
+      "loss": 0.47273769563638274,
+      "token_accuracy": 0.8250232270052648,
+      "exact_action_accuracy": 0.651170246873998,
+      "decisions": 3119.0
+    },
+    "808185b78ffe": {
+      "deck_hash": "808185b78ffe",
+      "loss": 0.3665998397736497,
+      "token_accuracy": 0.8685857321652065,
+      "exact_action_accuracy": 0.7352488455618266,
+      "decisions": 1949.0
+    },
+    "34fd4b590f04": {
+      "deck_hash": "34fd4b590f04",
+      "loss": 0.43766145799346184,
+      "token_accuracy": 0.8448150833937635,
+      "exact_action_accuracy": 0.6931137724550899,
+      "decisions": 668.0
+    },
+    "95a90b610b06": {
+      "deck_hash": "95a90b610b06",
+      "loss": 0.5561578403634734,
+      "token_accuracy": 0.7996661101836394,
+      "exact_action_accuracy": 0.5965811965811966,
+      "decisions": 585.0
+    },
+    "6f87e9d4949a": {
+      "deck_hash": "6f87e9d4949a",
+      "loss": 0.692655371162984,
+      "token_accuracy": 0.7758620689655172,
+      "exact_action_accuracy": 0.5440414507772021,
+      "decisions": 386.0
+    },
+    "654a23f37f37": {
+      "deck_hash": "654a23f37f37",
+      "loss": 0.548988802733492,
+      "token_accuracy": 0.8031496062992126,
+      "exact_action_accuracy": 0.601063829787234,
+      "decisions": 188.0
+    },
+    "904cf804c83c": {
+      "deck_hash": "904cf804c83c",
+      "loss": 0.4409013424952904,
+      "token_accuracy": 0.8540145985401459,
+      "exact_action_accuracy": 0.696969696969697,
+      "decisions": 66.0
+    },
+    "6d0aa533d170": {
+      "deck_hash": "6d0aa533d170",
+      "loss": 0.8650378906146161,
+      "token_accuracy": 0.7819548872180451,
+      "exact_action_accuracy": 0.546875,
+      "decisions": 64.0
+    }
+  },
+  "elapsed_sec": 476.77
+}

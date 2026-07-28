@@ -1,0 +1,7 @@
+{
+  "name": "dragapult_large_data_decoder_2layer",
+  "model": "ptcg_dragapult_decoder_depth_ablation_v1",
+  "decoder_layers": 2,
+  "deck_hash": "f2b4039a04c2",
+  "checkpoint": "D:\\Users\\admin\\Desktop\\pokemon\\tmp\\ptcg_dragapult_decoder_depth_ablation_v1_output\\ptcg_dragapult_decoder_depth_ablation_v1_output\\decoder_2layer\\best_model.pt"
+}
