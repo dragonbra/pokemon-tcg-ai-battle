@@ -10,7 +10,7 @@ from ..checkpoint import checkpoint_metadata, save_model_only
 from ..observability.metrics import OutcomeTracker
 from ..rollout.protocol import Episode, TrajectoryDecision
 from ..storage import storage_guard
-from ..training.batch import prepare_episodes
+from ..training.batch import prepare_episodes, training_batch_metrics
 
 
 def _decision(value: float = 0.0) -> TrajectoryDecision:
@@ -55,6 +55,17 @@ class TrainingContractTest(unittest.TestCase):
         self.assertAlmostEqual(float(batch.episode_weight[:2].sum()), 1.0)
         self.assertAlmostEqual(float(batch.episode_weight[2:].sum()), 1.0)
         self.assertAlmostEqual(float((batch.advantage * batch.episode_weight).sum()), 0.0, places=5)
+
+    def test_training_batch_metrics_are_episode_balanced_and_finite(self) -> None:
+        batch = prepare_episodes(
+            [_episode("win", 1.0, 2), _episode("loss", -1.0, 8)]
+        )
+        metrics = training_batch_metrics(batch)
+        self.assertAlmostEqual(metrics["ppo/advantage_mean"], 0.0, places=5)
+        self.assertAlmostEqual(metrics["ppo/advantage_std"], 1.0, places=5)
+        self.assertGreaterEqual(metrics["ppo/return_mean"], -1.0)
+        self.assertLessEqual(metrics["ppo/return_mean"], 1.0)
+        self.assertTrue(all(torch.isfinite(torch.tensor(value)) for value in metrics.values()))
 
     def test_outcome_tracker_has_rolling_wilson_and_seats(self) -> None:
         tracker = OutcomeTracker()

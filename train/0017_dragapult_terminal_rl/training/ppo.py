@@ -8,7 +8,7 @@ import torch
 from ..policy.action_distribution import evaluate_actions
 from ..policy.actor_critic import DragapultActorCritic
 from ..policy.batching import collate_feature_batches, move_batch
-from .batch import PreparedBatch
+from .batch import PreparedBatch, training_batch_metrics
 
 
 @dataclass(frozen=True)
@@ -188,6 +188,7 @@ class PPOTrainer:
                 "ppo/value_learning_rate": config.value_learning_rate,
             }
         )
+        result.update(training_batch_metrics(batch))
         return result
 
 

@@ -30,6 +30,38 @@ class PreparedBatch:
         return len(self.features)
 
 
+def training_batch_metrics(batch: PreparedBatch) -> dict[str, float]:
+    """Return episode-balanced diagnostics for one immutable PPO rollout batch."""
+    weights = batch.episode_weight / batch.episode_weight.sum()
+
+    def moments(values: Tensor) -> tuple[Tensor, Tensor]:
+        mean = (values * weights).sum()
+        variance = ((values - mean).square() * weights).sum()
+        return mean, variance
+
+    advantage_mean, advantage_variance = moments(batch.advantage)
+    return_mean, return_variance = moments(batch.gae_return)
+    value_mean, value_variance = moments(batch.old_value)
+    residual_variance = (
+        ((batch.gae_return - batch.old_value) - (return_mean - value_mean)).square()
+        * weights
+    ).sum()
+    explained_variance = torch.where(
+        return_variance > 1e-8,
+        1.0 - residual_variance / return_variance,
+        torch.zeros_like(return_variance),
+    )
+    return {
+        "ppo/advantage_mean": float(advantage_mean),
+        "ppo/advantage_std": float(advantage_variance.sqrt()),
+        "ppo/return_mean": float(return_mean),
+        "ppo/return_std": float(return_variance.sqrt()),
+        "ppo/old_value_mean": float(value_mean),
+        "ppo/old_value_std": float(value_variance.sqrt()),
+        "ppo/explained_variance": float(explained_variance),
+    }
+
+
 def _episode_gae(
     values: list[float], reward: float, *, gamma: float, gae_lambda: float
 ) -> tuple[list[float], list[float]]:
@@ -121,4 +153,4 @@ def prepare_episodes(
     )
 
 
-__all__ = ["PreparedBatch", "prepare_episodes"]
+__all__ = ["PreparedBatch", "prepare_episodes", "training_batch_metrics"]
