@@ -107,9 +107,10 @@ class PPOTrainer:
                 log_ratio = evaluated.log_prob - old_log_prob
                 ratio = log_ratio.exp()
                 approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
-                if minibatches > 0 and float(approximate_kl) > config.target_behavior_kl:
+                approximate_kl_value = float(approximate_kl.detach())
+                if minibatches > 0 and approximate_kl_value > config.target_behavior_kl:
                     early_stop = True
-                    rejected_behavior_kl = float(approximate_kl)
+                    rejected_behavior_kl = approximate_kl_value
                     break
                 unclipped = ratio * advantage
                 clipped = ratio.clamp(
