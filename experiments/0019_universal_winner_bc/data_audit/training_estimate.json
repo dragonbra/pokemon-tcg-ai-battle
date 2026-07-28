@@ -1,0 +1,53 @@
+{
+  "schema_version": "0019_training_estimate_v1",
+  "status": "smoke_projection_pending_full_materialization",
+  "measured_smoke": {
+    "archive_date": "2026-07-27",
+    "episode_members_sampled": 200,
+    "accepted_winner_episodes": 199,
+    "decisions": 17885,
+    "decisions_per_episode": 89.87437185929649,
+    "raw_shard_bytes": 5376169,
+    "raw_bytes_per_decision": 300.5965334078837,
+    "model_ready_shard_bytes": 127282462,
+    "model_ready_bytes_per_decision": 7116.71579535924,
+    "catalog_seconds": 11.92,
+    "model_ready_seconds": 23.87
+  },
+  "current_archive_scope": {
+    "date_start": "2026-07-10",
+    "date_end": "2026-07-27",
+    "episode_members": 85166,
+    "projected_decisions": 7650000
+  },
+  "projected_storage": {
+    "raw_gib": 2.14,
+    "model_ready_gib": 50.70,
+    "catalog_and_manifests_gib": 0.2,
+    "total_dataset_gib_range": [53.0, 56.0],
+    "hard_limit_gib": 100,
+    "headroom_assessment": "sufficient, subject to full-corpus shape variance"
+  },
+  "training_basis": {
+    "reference_project": "0016_alakazam_multideck_bc",
+    "reference_train_decisions": 760106,
+    "reference_validation_decisions": 85299,
+    "observed_train_decisions_per_second_range": [1457.42, 1870.43],
+    "observed_total_epoch_seconds_range": [419.99, 535.97]
+  },
+  "projected_training": {
+    "epoch_minutes_range": [70, 95],
+    "eight_epochs_hours_range": [9.3, 12.7],
+    "fifteen_epochs_hours_range": [17.5, 23.8],
+    "selection": "minimum full-validation bc/validation/loss",
+    "early_stopping_patience": 5,
+    "early_stopping_min_delta": 0.001,
+    "note": "replace all projections with exact counts after full materialization"
+  },
+  "fallback_storage_options_in_order": [
+    "increase tensor shard packing efficiency without changing features",
+    "remove duplicated audit-only fields from model-ready shards while retaining raw commitments",
+    "retain compressed raw shards and compile selected features online",
+    "cap source/deck data only as a last resort because the competition objective favors using all valid data"
+  ]
+}

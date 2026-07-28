@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>0019 通用胜者行为克隆</title>
+  <style>
+    :root{color-scheme:light;--ink:#17202a;--muted:#59636e;--line:#d8dee5;--paper:#fff;--band:#f4f7f9;--accent:#087e8b;--warn:#a04b00}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;letter-spacing:0}
+    header{border-bottom:1px solid var(--line);background:#14212b;color:#fff;padding:28px max(24px,calc((100vw - 1120px)/2)) 24px}header p{margin:6px 0 0;color:#c9d5dc}h1{margin:0;font-size:30px}h2{font-size:20px;margin:0 0 14px}h3{font-size:16px;margin:22px 0 8px}main{max-width:1120px;margin:auto;padding:26px 24px 60px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:28px}.metric{background:#fff;padding:16px}.metric strong{display:block;font-size:24px;color:var(--accent)}section{padding:24px 0;border-top:1px solid var(--line)}.band{margin-inline:calc(50% - 50vw);padding-inline:max(24px,calc((100vw - 1120px)/2));background:var(--band)}table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#edf2f5}code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.92em}ul,ol{padding-left:22px}.note{border-left:3px solid var(--warn);padding:9px 12px;background:#fff8ef;color:#613311}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.flow div{border:1px solid var(--line);border-radius:6px;padding:12px;background:#fff}.flow b{display:block;color:var(--accent)}@media(max-width:760px){.metrics,.flow{grid-template-columns:1fr 1fr}h1{font-size:24px}}@media(max-width:460px){.metrics,.flow{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header><h1>0019 通用胜者行为克隆</h1><p>全卡组、全胜者视角的通用 Encoder 预训练工程</p></header>
+<main>
+  <div class="metrics">
+    <div class="metric"><span>真实 smoke</span><strong>199 局</strong><small>0727 官方 Episode</small></div>
+    <div class="metric"><span>平均决策</span><strong>89.87</strong><small>decisions / Episode</small></div>
+    <div class="metric"><span>raw 密度</span><strong>300.6 B</strong><small>gzip / decision</small></div>
+    <div class="metric"><span>模型缓存估算</span><strong>50.7 GiB</strong><small>总数据预计 53–56 GiB</small></div>
+  </div>
+  <section><h2>项目目标</h2><p>0019 不针对多龙或胡地。它模仿官方对局中所有可审计胜者，目标是让 Encoder 学到跨卡组通用的牌面、资源、时机与合法动作知识；特定构筑的最终决策与胜率由后续 deck-specific BC/RL 完成。</p><p class="note">胜者 BC 是高质量动作先验，不是价值函数。离线 loss 或 exact-action 不能替代 official-engine 胜率。</p></section>
+  <section class="band"><h2>数据流水线</h2><div class="flow"><div><b>1. ZIP catalog</b>逐成员读取，不完整解压</div><div><b>2. Winner contract</b>唯一正奖励胜者、60 张卡组</div><div><b>3. Raw shards</b>因果 observation + ordered action</div><div><b>4. Model tensors</b>可直接进入 R15 训练</div></div><h3>显式条件</h3><p>每条轨迹包含 exact deck multiset、deck hash、Unicode NFC team identity、source ID、先后手、Episode/player identity 和 payload hash。source 0 专用于部署时的中性 persona。</p></section>
+  <section><h2>模型输入</h2><table><thead><tr><th>张量</th><th>Shape</th><th>用途</th></tr></thead><tbody>
+    <tr><td><code>entity_cat/num/mask</code></td><td><code>[B,E,7] / [B,E,5] / [B,E]</code></td><td>场上与公开区域实体，E≤192</td></tr>
+    <tr><td><code>option_cat/mask</code></td><td><code>[B,O,12] / [B,O]</code></td><td>官方合法候选，O≤128</td></tr>
+    <tr><td><code>registered_*</code></td><td><code>[B,D]</code></td><td>exact 60-card 构筑与 multiplicity</td></tr>
+    <tr><td><code>ledger_*</code></td><td><code>[B,D,4/15]</code></td><td>因果资源账本</td></tr>
+    <tr><td><code>event_*</code></td><td><code>[B,T,8/4]</code></td><td>已观察事件记忆</td></tr>
+    <tr><td><code>source_id</code></td><td><code>[B] int32</code></td><td>训练 expert persona；0 为中性部署</td></tr>
+    <tr><td><code>targets</code></td><td><code>[B,A+1]</code></td><td>最长 64 步 ordered pointer + STOP</td></tr>
+  </tbody></table></section>
+  <section class="band"><h2>网络与训练</h2><p>R15 backbone：宽度 320、8 heads、4 层 board Transformer、Goal-QKV、事件记忆、2 层 scenario Transformer、option ScaleGate 初值 0.35。输出是 autoregressive legal-option pointer。</p><ul><li>AdamW，LR 3e-4，weight decay 0.02，BF16</li><li>每 epoch 一次 train pass + 一次完整 validation</li><li>validation 复用同一次 backbone encoding，同时记录真实 expert source 与 <code>source_id=0</code> 的 neutral loss、teacher/greedy exact 和合法率</li><li>V1 仍以真实 source validation loss 选点；neutral 指标只诊断通用部署差距，不参与反向传播</li><li>patience 5，min delta 0.001</li><li>单 epoch 初估 70–95 分钟；8–15 epochs 约 9–24 小时</li><li>checkpoint 仅模型权重，不保存 optimizer/RNG/恢复轨迹</li><li>W&amp;B：<code>0019 · universal_winner_bc · V&lt;n&gt;_&lt;tag&gt;</code></li></ul></section>
+  <section><h2>有余量时的下一步</h2><ol><li>中性 persona 蒸馏，缩小训练 source 与部署 source 0 的差距。</li><li>温和 source dropout，始终保留 exact deck conditioning。</li><li>仅在头部来源支配梯度时启用分层采样上限。</li><li>把通用 Encoder 交给 deck-specific Decoder/末层 BC 或 RL。</li></ol><p>这些都作为 V1 baseline 之后的单变量实验，不混入首个正式版本。</p></section>
+</main>
+</body>
+</html>
