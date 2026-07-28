@@ -1,0 +1,39 @@
+{
+  "command": "value",
+  "device": "cuda",
+  "episodes": 512,
+  "inference": {
+    "candidate_coalesce_ms": 2.0,
+    "opponent_routing": "isolated_worker_cpu"
+  },
+  "opponent_snapshot_sha256": "92221e5a6b080d46f85d499e491a371a610a94087d7f001a1663bc657cfbe5c0",
+  "project_id": "0018_alakazam_terminal_rl",
+  "reward": {
+    "draw": 0.0,
+    "gamma": 1.0,
+    "loss": -1.0,
+    "win": 1.0
+  },
+  "schema_version": "0018_terminal_rl_training_v1",
+  "seed": 20260728,
+  "source_checkpoint_sha256": "9db3b4d37a4d4f5cc483df1ac78ad4c5d39fed320c5325ebaa5fa61fd1114ebf",
+  "storage": {
+    "hard_stop_free_gib": 50,
+    "version_cap_gib": 20,
+    "warning_free_gib": 80
+  },
+  "value": {
+    "batch_size": 1024,
+    "epochs": 4,
+    "learning_rate": 0.0001,
+    "max_grad_norm": 0.5,
+    "weight_decay": 0.0
+  },
+  "version": "V1_value_calibration",
+  "wandb": {
+    "entity": "dragon_bra",
+    "mode": "online",
+    "project": "pokemon-tcg-policy-learning"
+  },
+  "workers": 16
+}

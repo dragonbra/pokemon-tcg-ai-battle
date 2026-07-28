@@ -97,6 +97,14 @@
 - 每个正式版本的 `status.json`、`training_summary.json` 或等价版本记录必须保留 W&B project、稳定 run ID 或 URL、sync 状态以及失败原因；本地 `rl_runs/<project_id>/versions/<V<n>_<tag>>/wandb/` 只作为可再生 staging 并保持 Git ignore。
 - 默认只镜像有限标量、非秘密 config 和 W&B 自动元数据，不上传 checkpoint、dataset、optimizer state、完整 trace、replay、observation、source patch 或其他大文件。跨 BC/RL 的 policy 强度比较仍必须来自相同 official-engine runtime、opponent catalog、seed/先后手合同和 metric profile 下的正式 `eval/*` 结果。
 
+## 模型权重与断点存储约定
+
+- 后续 BC 预训练、value calibration 和 RL/PPO 默认只保存 model-only checkpoint：模型权重、schema/version、epoch 或 update、模型/数据/来源 checkpoint/config hash，以及足以定位该权重的关键指标。不得默认保存 optimizer、scheduler、GradScaler、RNG state、DataLoader 位置、rollout buffer、replay 或其他用于逐 bit 恢复训练轨迹的状态。
+- model-only checkpoint 必须原子写入并在测试中拒绝上述恢复状态字段。它保证策略推理、导出和正式评测可复现，但不声称可以精确续跑原优化轨迹。
+- 从历史权重继续训练时必须分配新的 `V<n>_<tag>`，重新初始化 optimizer，并重新采集 on-policy 数据或重新开始明确的数据 pass；不得向旧版本追加一条语义不同的训练曲线。
+- checkpoint 保留数量必须有限并写入训练配置。默认优先保留最后、最佳和明确分支点所需的少量权重，不得仅因每个 epoch/update 都可保存就无限累积。
+- 只有用户明确要求精确断点恢复，并在版本设计中记录额外磁盘成本、恢复边界和清理策略时，才允许保存 optimizer 等恢复状态；该例外不得成为其他项目的默认模板。
+
 ## 宝可梦 TCG 规则学习长期记忆
 
 详细证据见 [`docs/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`](docs/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md)，官方规则书为 [Pokémon TCG Rules](https://www.pokemon.com/static-assets/content-assets/cms2/pdf/trading-card-game/rulebook/par_rulebook_en.pdf)。后续新会话设计策略时，必须同时遵守下面的官方规则和已确认的策略语义。

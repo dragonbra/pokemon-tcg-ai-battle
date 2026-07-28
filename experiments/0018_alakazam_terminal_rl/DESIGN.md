@@ -1,6 +1,6 @@
 # 0018 Alakazam Terminal RL
 
-Status: **framework and rollout-throughput preflight implemented; formal PPO not started**
+Status: **V1 value calibration complete; V2 decoder PPO running**
 
 Date: 2026-07-29
 Target: user-designed Alakazam + Dudunsparce deck, initialized from 0016 R15 epoch 10
@@ -170,5 +170,9 @@ official engine. 0018 intentionally has no six-opponent holdout split.
   version reaches 20 GiB.
 
 Current stage: implementation, adapter compatibility, official-engine smoke and throughput A/B are
-complete. The next gate is an end-to-end CUDA training smoke using the measured routing. Formal
-PPO starts only as a new version after that smoke and an explicit review of this throughput choice.
+complete. `V1_value_calibration` collected 512 valid official-engine Episodes and 36,282 candidate
+decisions, then trained only the value head for four epochs. Its final in-sample value RMSE was
+`0.8374` and explained variance was `0.2538`; these are critic-initialization diagnostics, not policy
+strength evidence. `V2_ppo_decoder_terminal` is now running formal decoder-only PPO from the V1
+model-only checkpoint with the training contract in section 7. Each 256-Episode rollout freezes the
+current policy, followed by four PPO epochs; the following rollout uses the updated policy.
