@@ -44,3 +44,8 @@ after all minibatches in an epoch, so roughly twenty optimizer steps could occur
 V7 checks behavior KL before every minibatch backward and rejects the remaining steps immediately
 when the current policy exceeds 0.02. A 32-episode CUDA smoke completed 1,972 decisions and 124
 minibatches with KL 0.000127, clip fraction 0.00260, ratio mean 0.99996, and no invalid episode.
+
+V7 then showed KL 0.0493 on the first formal minibatch before any optimizer step. From V8 onward,
+each update freezes an exact behavior snapshot and recomputes denominator log-prob in the same
+training minibatch. Stored rollout log-prob remains only as `ppo/rollout_log_prob_mae`; the fixed
+BC reference remains a separate long-horizon anchor.

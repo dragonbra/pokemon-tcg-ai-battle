@@ -63,6 +63,7 @@ class PPOTrainer:
     def update(self, batch: PreparedBatch) -> dict[str, float]:
         model = self.model
         reference = self.reference
+        behavior = frozen_reference(model, self.device)
         device = self.device
         config = self.config
         accumulators: dict[str, float] = {}
@@ -85,7 +86,7 @@ class PPOTrainer:
                 sequences = batch.sequences[indices].to(device)
                 lengths = batch.lengths[indices].to(device)
                 stopped = batch.stopped[indices].to(device)
-                old_log_prob = batch.old_log_prob[indices].to(device)
+                rollout_log_prob = batch.old_log_prob[indices].to(device)
                 advantage = batch.advantage[indices].to(device)
                 returns = batch.gae_return[indices].to(device)
                 weights = batch.episode_weight[indices].to(device)
@@ -93,9 +94,16 @@ class PPOTrainer:
 
                 evaluated = evaluate_actions(model, features, sequences, lengths, stopped)
                 with torch.no_grad():
+                    behavior_eval = evaluate_actions(
+                        behavior, features, sequences, lengths, stopped
+                    )
                     reference_eval = evaluate_actions(
                         reference, features, sequences, lengths, stopped
                     )
+                old_log_prob = behavior_eval.log_prob
+                rollout_log_prob_mae = (
+                    (rollout_log_prob - old_log_prob).abs() * weights
+                ).sum()
                 log_ratio = evaluated.log_prob - old_log_prob
                 ratio = log_ratio.exp()
                 approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
@@ -147,6 +155,7 @@ class PPOTrainer:
                         "total_loss": total_loss,
                         "behavior_kl": approximate_kl,
                         "reference_kl_surrogate": reference_kl_surrogate,
+                        "rollout_log_prob_mae": rollout_log_prob_mae,
                         "clip_fraction": clip_fraction,
                         "ratio_mean": (ratio * weights).sum(),
                         "ratio_max": ratio.max(),
