@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V9 decoder-only PPO active; terminal-reward strength gain observed under guards**
+Status: **V9 plateau identified at update 60; V10 Monte Carlo credit branch next**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -298,18 +298,21 @@ an audit metric because dynamic inference batches can have different padding wid
 | `V6_ppo_lr2e6` | pointer decoder + value | update 1 reached KL 0.0504 | stopped: lower LR alone did not fix guard granularity |
 | `V7_ppo_minibatch_kl_guard` | pointer decoder + value | first minibatch KL was already 0.0493 | stopped: dynamic batch log-prob mismatch isolated |
 | `V8_ppo_frozen_behavior` | pointer decoder + value, LR 2e-6 | 10 stable updates; KL 4e-6 to 1e-5 | viable contract, but rolling-2000 ended 10.5% and learning was too slow |
-| `V9_ppo_lr1e5` | pointer decoder + value, LR 1e-5 | frozen behavior plus minibatch KL guard | seek measurable gain without KL/entropy breach |
+| `V9_ppo_lr1e5` | pointer decoder + value, LR 1e-5, lambda 0.95 | rolling-2,000 peaked at 18.9%; update 60 ended 17.85% with seat divergence | stop after update 60; retain update 50 as stable branch point |
+| `V10_ppo_lambda1` | pointer decoder + value, LR 1e-5, lambda 1.0 | undiscounted terminal credit with new batch diagnostics | compare long-window gain, seat balance, entropy, and explained variance |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
 
 The preflight implementation completed three CPU official-engine episodes and a two-episode CUDA training smoke. The CUDA smoke covered 135 candidate decisions, one value epoch, one PPO epoch, finite loss/KL/ratio/entropy, and a model-only checkpoint round trip. Peak allocated CUDA memory was 205,267,456 bytes. These are contract checks, not strength evidence.
 
-V9 is the active formal run. At update 34 it had consumed 8,704 valid official-engine training
-episodes with zero discards; rolling-500 and rolling-2,000 sampled-policy win rates reached 18.6%
-and 15.8%. Behavior KL remained 0.000116, the BC-reference surrogate was 0.0354, and entropy
-was 0.644. These are promising train-pool diagnostics, not a frozen greedy holdout claim; V9
-continues under the existing KL, entropy, legality, error, storage, and checkpoint guards.
+V9 established that corrected decoder-only PPO can improve sampled train-pool strength. Its
+rolling-2,000 rate rose from 9.4% at update 2 to a peak of 18.9% at update 54. By update 60 it was
+17.85%; rolling seat rates had diverged to 20.3% first versus 15.4% second while entropy fell to
+0.579. All 15,360 episodes were valid, behavior KL remained 0.000152, and no update guard fired.
+The run is therefore stopped as a successful but plateauing configuration, not as a failure.
+Update 50 is the stable V10 branch point because it is an actually retained checkpoint near the
+long-window peak and precedes the persistent seat gap.
 
 ## 13. Later version decisions
 
