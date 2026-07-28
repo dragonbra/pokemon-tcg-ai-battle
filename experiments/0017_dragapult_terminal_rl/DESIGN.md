@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V10 first-rollout mode defect isolated; V11 eval-mode lambda=1 branch next**
+Status: **V11 eval-mode lambda=1 PPO active; first five updates pass probability contract**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -322,6 +322,11 @@ a different distribution from the eval-mode frozen behavior snapshot. The first 
 in V9. V10 was stopped before update 2 backward. From V11 onward, PPO loads the live model into
 eval mode before collection and `RolloutCollector` rejects any train-mode policy. This keeps legal
 categorical sampling as the only rollout stochasticity.
+
+V11 passed its first five updates with rollout-log-prob MAE between `3.85e-7` and `3.97e-7`.
+Explained variance ranged from 0.17 to 0.22. After 1,280 valid episodes its sampled-policy rate
+was 17.81%, with first/second seat rates of 18.59%/17.03%. This validates the probability and
+credit-assignment implementation but is not yet enough data to claim lambda=1 is stronger than V9.
 
 ## 13. Later version decisions
 
