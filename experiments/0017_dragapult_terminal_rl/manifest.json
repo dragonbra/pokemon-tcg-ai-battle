@@ -39,7 +39,8 @@
   "paths": {
     "training": "train/0017_dragapult_terminal_rl",
     "archive": "experiments/0017_dragapult_terminal_rl",
-    "runs": "rl_runs/0017_dragapult_terminal_rl"
+    "runs": "rl_runs/0017_dragapult_terminal_rl",
+    "gpu_runtime_audit": "rl_runs/0017_dragapult_terminal_rl/gpu_runtime_audit.jsonl"
   },
   "current_stage": "v4_value_complete_v8_frozen_behavior_next",
   "implementation_authorized": true,

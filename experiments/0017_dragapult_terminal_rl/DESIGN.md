@@ -231,6 +231,9 @@ An update is skipped on nonfinite loss/gradient. PPO epochs stop early on behavi
 - engine wait time, IPC queue depth, backpressure, worker restarts;
 - GPU utilization, allocated/reserved/peak memory, CPU/RAM where available;
 - free GiB on `/` and `/mnt/c`, version/artifact/checkpoint bytes.
+- project-level `gpu_runtime_audit.jsonl` samples the matching CUDA training PID once per minute and
+  accumulates only intervals where that process is present in NVIDIA compute-app telemetry; the
+  12-hour requirement is not inferred from rollout episode counts or process intent.
 
 ### Dragapult diagnostics, never rewards
 
