@@ -9,7 +9,7 @@ from typing import Any
 
 import torch
 
-from .constants import ONTOLOGY_PATH, PROJECT_ID, TARGET_DECK
+from .constants import ONTOLOGY_PATH, PROJECT_ID, TARGET_DECK, TARGET_SOURCE_ID
 
 
 def _sha256(path: Path) -> str:
@@ -96,6 +96,8 @@ def export_candidate(checkpoint: Path, cg_source: Path, output: Path) -> dict[st
         "config.py",
         "online_runtime.py",
         "portable_inference.py",
+        "source_model.py",
+        "source_r15_model.py",
         "features/compiler.py",
         "knowledge/state.py",
         "knowledge/ledger.py",
@@ -110,7 +112,7 @@ def export_candidate(checkpoint: Path, cg_source: Path, output: Path) -> dict[st
         "checkpoint_sha256": _sha256(checkpoint),
         "deck_sha256": _sha256(output / "deck.csv"),
         "model_sha256": _sha256(strategy / "model.bin"),
-        "source_id": 1,
+        "source_id": TARGET_SOURCE_ID,
         **checkpoint_audit,
         "optimizer_state_saved": checkpoint_audit["packaged_optimizer_state_saved"],
     }

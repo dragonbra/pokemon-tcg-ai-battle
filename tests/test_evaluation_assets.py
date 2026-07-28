@@ -25,6 +25,8 @@ EXPECTED_NAMES = (
     "cynthias_garchomp_ex_roserade_02_bc",
     "dragapult_ex_01",
     "dragapult_ex_02",
+    "dragapult_ex_03_v20260729_rl",
+    "dragapult_ex_04_v20260729_bc",
     "ionos_bellibolt_ex_kilowattrel_01",
     "marnies_grimmsnarl_ex_dudunsparce_01",
     "marnies_grimmsnarl_ex_froslass_01",
@@ -32,7 +34,9 @@ EXPECTED_NAMES = (
     "marnies_grimmsnarl_ex_froslass_03_bc",
     "marnies_grimmsnarl_ex_froslass_04_bc",
     "marnies_grimmsnarl_ex_froslass_05_bc",
+    "marnies_grimmsnarl_ex_froslass_06_v20260729_bc",
     "mega_abomasnow_ex_kyogre_01",
+    "mega_kangaskhan_ex_crustle_01_v20260729_bc",
     "mega_lucario_ex_solrock_01",
     "mega_lucario_ex_solrock_02",
     "mega_lucario_ex_solrock_03",
@@ -52,6 +56,18 @@ BC_AGENT_NAMES = (
     "marnies_grimmsnarl_ex_froslass_04_bc",
     "marnies_grimmsnarl_ex_froslass_05_bc",
     "mega_lucario_ex_solrock_07_bc",
+    "dragapult_ex_04_v20260729_bc",
+    "marnies_grimmsnarl_ex_froslass_06_v20260729_bc",
+    "mega_kangaskhan_ex_crustle_01_v20260729_bc",
+)
+
+RL_AGENT_NAMES = ("dragapult_ex_03_v20260729_rl",)
+
+DATED_AGENT_NAMES = (
+    "dragapult_ex_03_v20260729_rl",
+    "dragapult_ex_04_v20260729_bc",
+    "marnies_grimmsnarl_ex_froslass_06_v20260729_bc",
+    "mega_kangaskhan_ex_crustle_01_v20260729_bc",
 )
 
 SOTA_AGENT_NAMES = ("alakazam_dudunsparce_04_sota",)
@@ -119,6 +135,22 @@ class EvaluationAssetTests(unittest.TestCase):
             with self.subTest(opponent=name):
                 self.assertIn("sota_agent", by_name[name]["tags"])
                 self.assertTrue(by_name[name]["display_name"].startswith("[SOTA] "))
+
+    def test_new_agent_opponents_have_dated_anonymous_identities(self) -> None:
+        by_name = {opponent["name"]: opponent for opponent in self.catalog["opponents"]}
+        for name in DATED_AGENT_NAMES:
+            with self.subTest(opponent=name):
+                self.assertIn("v20260729", by_name[name]["tags"])
+                self.assertIn("2026-07-29", by_name[name]["display_name"])
+                self.assertNotIn("agent_", name)
+
+    def test_rl_agent_opponents_are_visibly_tagged(self) -> None:
+        by_name = {opponent["name"]: opponent for opponent in self.catalog["opponents"]}
+        for name in RL_AGENT_NAMES:
+            with self.subTest(opponent=name):
+                self.assertIn("rl_agent", by_name[name]["tags"])
+                self.assertNotIn("bc_agent", by_name[name]["tags"])
+                self.assertTrue(by_name[name]["display_name"].startswith("[RL] "))
 
 
 

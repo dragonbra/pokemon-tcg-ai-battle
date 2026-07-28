@@ -16,11 +16,19 @@ from ..constants import (
     TARGET_SOURCE_ID,
 )
 from ..policy.actor_critic import load_source_actor_critic
+from ..policy.portable_inference import PortablePolicy, _fixed_config
 from ..policy.action_distribution import evaluate_actions, sample_actions
 from ..policy.online_runtime import OnlineCausalEncoder
 
 
 class PolicyContractTest(unittest.TestCase):
+    def test_portable_policy_reconstructs_frozen_source_contract(self) -> None:
+        model_config, source_config = _fixed_config()
+        self.assertEqual(model_config.ac.base.max_action_steps, 64)
+        self.assertEqual(source_config.vocabulary_size, 25)
+        self.assertEqual(source_config.initial_scale, 0.05)
+        self.assertEqual(PortablePolicy.__init__.__kwdefaults__["source_id"], 0)
+
     @classmethod
     def setUpClass(cls) -> None:
         torch.set_num_threads(1)
