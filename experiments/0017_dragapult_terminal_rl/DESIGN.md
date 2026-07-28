@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V13 selected as stable viable config at update 20; long-run audit continues**
+Status: **V14 lower-LR stabilization branch active from the V13 update-25 peak**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -303,6 +303,7 @@ an audit metric because dynamic inference batches can have different padding wid
 | `V11_ppo_lambda1_eval_mode` | same V10 hypothesis with pre-rollout eval contract | undiscounted terminal credit with exact behavior probabilities | require first-update log-prob audit near numerical tolerance |
 | `V12_ppo_lambda097` | same V9 branch point, LR 1e-5, lambda 0.97 | interpolate lower-variance bootstrap and earlier terminal credit | seek V9 strength with V11 seat balance |
 | `V13_ppo_lambda097_lr5e6` | V12 update 5, actor LR 5e-6, lambda 0.97 | preserve high explained variance while slowing actor drift | stabilize 19% sampled strength without second-seat collapse |
+| `V14_ppo_lambda097_lr3e6` | V13 update 25, actor LR 3e-6, lambda 0.97 | retain the 20.6% peak while reducing later seat drift | test lower-LR stability from the strongest retained checkpoint |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
@@ -348,6 +349,14 @@ At update 20 V13 reached rolling-2,000 19.55% (19.75% at update 18), with rollin
 Explained variance was 0.515, behavior KL `3.23e-5`, and rollout-log-prob MAE remained about
 `4e-7`. V13 therefore passes the viable-configuration gate and is selected for uninterrupted
 long-run training through the remaining 12-hour audited CUDA target, subject to existing guards.
+
+V13 later confirmed both the gain and its remaining instability. Rolling-2,000 reached 20.6% at
+update 25 and 20.2% at update 45, but fell to 17.9% at update 50 while the second-seat rate fell to
+16.1%. All 12,800 update-complete episodes were valid; entropy, explained variance, behavior KL,
+and rollout-log-prob audits remained healthy, so this was policy drift rather than a broken PPO
+contract. V13 was stopped at the retained update-50 boundary. V14 branches from the stronger V13
+update-25 checkpoint and changes only actor LR from `5e-6` to `3e-6`; value LR `1e-4`, lambda
+0.97, rollout pool, batch sizes, epochs, reward, and all guards remain fixed.
 
 ## 13. Later version decisions
 
