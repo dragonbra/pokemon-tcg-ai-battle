@@ -1,0 +1,6 @@
+{
+  "best_greedy_exact": "maximum free greedy exact action",
+  "best_teacher_exact": "maximum teacher-forced exact action",
+  "best_validation_loss": "minimum validation token cross-entropy",
+  "latest": "final completed epoch"
+}

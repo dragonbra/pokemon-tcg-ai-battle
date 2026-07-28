@@ -1,0 +1,12 @@
+{
+  "checkpoint": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0016_alakazam_multideck_bc/versions/V2_win_multideck_r15_gradual_option/checkpoint/epoch-0010-9db3b4d37a4d4f5c.pt",
+  "checkpoint_sha256": "9db3b4d37a4d4f5cc483df1ac78ad4c5d39fed320c5325ebaa5fa61fd1114ebf",
+  "deck_sha256": "267ce842b45f960afef843e68f3aad86573bf7d19329ea23e7469ec8265c017b",
+  "deployment_deck": "/home/cyd/repos/pokemon-tcg-ai-battle/train/0016_alakazam_multideck_bc/deck.csv",
+  "deployment_source_id": 0,
+  "model_bytes": 71268799,
+  "model_sha256": "e9ecb6ff0fffdb2b616b253be2ec3f0afea82b948c5f460188133030638f083a",
+  "ontology_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+  "schema_version": "0016_source_r15_candidate_v1",
+  "source_package": "/home/cyd/repos/pokemon-tcg-ai-battle/archive/submission/0016_alakazam_multideck_bc_v1_r2_epoch12_loss_best_submit_deck"
+}

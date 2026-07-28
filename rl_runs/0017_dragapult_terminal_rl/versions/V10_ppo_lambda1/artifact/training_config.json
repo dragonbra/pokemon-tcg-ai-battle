@@ -1,0 +1,44 @@
+{
+  "command": "ppo",
+  "device": "cuda",
+  "episodes_per_update": 256,
+  "opponent_snapshot_sha256": "61bd90778f1e1aee999288a25165e679ce22d45f1659fd1c9bcc759067a2c6d4",
+  "ppo": {
+    "actor_learning_rate": 1e-05,
+    "batch_size": 1024,
+    "clip_ratio": 0.1,
+    "entropy_coefficient": 0.01,
+    "epochs": 4,
+    "gae_lambda": 1.0,
+    "max_grad_norm": 0.5,
+    "reference_kl_coefficient": 0.02,
+    "target_behavior_kl": 0.02,
+    "value_coefficient": 0.5,
+    "value_learning_rate": 0.0001,
+    "weight_decay": 0.0
+  },
+  "project_id": "0017_dragapult_terminal_rl",
+  "reward": {
+    "draw": 0.0,
+    "gamma": 1.0,
+    "loss": -1.0,
+    "win": 1.0
+  },
+  "schema_version": "0017_terminal_rl_training_v1",
+  "seed": 20260728,
+  "source_checkpoint_sha256": "7f7589427098418682f3a53e0763f3fd24850d641a0a664955f6094f90530532",
+  "storage": {
+    "hard_stop_free_gib": 50,
+    "version_cap_gib": 20,
+    "warning_free_gib": 80
+  },
+  "updates": 100,
+  "version": "V10_ppo_lambda1",
+  "wandb": {
+    "entity": "dragon_bra",
+    "mode": "online",
+    "project": "pokemon-tcg-policy-learning"
+  },
+  "warm_start": "rl_runs/0017_dragapult_terminal_rl/versions/V9_ppo_lr1e5/checkpoint/update-000050.pt",
+  "workers": 12
+}

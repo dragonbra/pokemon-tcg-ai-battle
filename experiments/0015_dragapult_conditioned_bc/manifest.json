@@ -162,6 +162,13 @@
       "target_greedy_exact": 0.599,
       "official_engine_wins": 37,
       "official_engine_games": 200
+    },
+    {
+      "version": "V18_r2_strong_scenario_t1",
+      "arm": "T1_r2_strong_scenario_scalegate",
+      "target_greedy_exact": 0.584,
+      "official_engine_wins": 27,
+      "official_engine_games": 200
     }
   ],
   "current_best": {
@@ -169,7 +176,7 @@
     "candidate": "evaluation/arena/candidates/0015_v2_t1_exact_best",
     "selection_reason": "strongest supported result after pooled confirmation; V13's one-win single-batch edge is offset by same-contract V12 at 29/200"
   },
-  "active_version": "V17_t4_low_source_scale",
+  "active_version": "V18_r2_strong_scenario_t1",
   "open_data_gates": [
     {
       "arms": ["T2", "T3", "T3_no_deck"],
@@ -177,7 +184,7 @@
       "decision": "decisions/003_starmie_dusknoir_source_gap.md"
     }
   ],
-  "completed_at": "2026-07-27T15:03:10+08:00",
-  "campaign_status": "completed_available_source_campaign_no_supported_t4_uplift",
+  "completed_at": "2026-07-27T21:50:45+08:00",
+  "campaign_status": "completed_r2_strong_scenario_t1_no_supported_uplift",
   "status": "initialized"
 }

@@ -1,7 +1,11 @@
 {
+  "completed_at": 1785183977.8390422,
   "device": "cuda",
+  "greedy_exact": 0.8216977924711896,
+  "loss": 0.2481986143370273,
   "started_at": 1785177222.5923417,
-  "state": "training",
+  "state": "completed",
+  "teacher_exact": 0.8216977924711896,
   "version": "V2_win_multideck_r15_gradual_option",
   "wandb": {
     "entity": "dragon_bra",
@@ -9,8 +13,8 @@
     "project": "pokemon-tcg-policy-learning",
     "reason": null,
     "run_id": "0016_alakazam_multideck_bc--0016-alakazam_multideck_b-f248a6abec",
-    "state": "active",
-    "sync_state": "active",
+    "state": "synced",
+    "sync_state": "synced",
     "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0016_alakazam_multideck_bc--0016-alakazam_multideck_b-f248a6abec"
   },
   "wandb_expected_mode": "online"

@@ -7,6 +7,7 @@ import re
 from types import SimpleNamespace
 import tempfile
 import unittest
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -59,6 +60,19 @@ class _DailyParser(HTMLParser):
 
 
 class EnvironmentDailyContractTests(unittest.TestCase):
+    def test_rate_call_retries_transient_kaggle_transport_failure(self) -> None:
+        from requests.exceptions import ConnectionError
+
+        from data.processed.environment_daily.generate_live_snapshot import _rate_call
+
+        operation = mock.Mock(side_effect=[ConnectionError("connection reset"), "ok"])
+        with mock.patch(
+            "data.processed.environment_daily.generate_live_snapshot.time.sleep"
+        ) as sleep:
+            self.assertEqual(_rate_call(operation), "ok")
+        self.assertEqual(operation.call_count, 2)
+        sleep.assert_called_once_with(5)
+
     def test_episode_selection_is_bounded_by_leaderboard_capture(self) -> None:
         from data.processed.environment_daily.generate_live_snapshot import (
             _episodes_at_or_before,

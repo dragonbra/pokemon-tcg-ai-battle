@@ -1,0 +1,52 @@
+{
+  "schema_version": "0016_kaggle_submission_receipt_v1",
+  "competition": "pokemon-tcg-ai-battle",
+  "submission_ref": 55037482,
+  "kaggle_timestamp": "2026-07-27 20:23:20.897000",
+  "file_name": "0016_alakazam_multideck_bc_v2_r15_epoch10_loss_best_submit_deck_root.tar.gz",
+  "archive_path": "archive/submission/dist/0016_alakazam_multideck_bc_v2_r15_epoch10_loss_best_submit_deck_root.tar.gz",
+  "archive_sha256": "d3dc126b0328107b5b30ad2a9d1e888beacebdeb5bae01bafe2482b53eb1b81a",
+  "payload_path": "archive/submission/0016_alakazam_multideck_bc_v2_r15_epoch10_loss_best_submit_deck",
+  "checkpoint_path": "rl_runs/0016_alakazam_multideck_bc/versions/V2_win_multideck_r15_gradual_option/checkpoint/epoch-0010-9db3b4d37a4d4f5c.pt",
+  "checkpoint_sha256": "9db3b4d37a4d4f5cc483df1ac78ad4c5d39fed320c5325ebaa5fa61fd1114ebf",
+  "model_sha256": "e9ecb6ff0fffdb2b616b253be2ec3f0afea82b948c5f460188133030638f083a",
+  "deck_sha256": "267ce842b45f960afef843e68f3aad86573bf7d19329ea23e7469ec8265c017b",
+  "cg_tree_hash": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+  "original_upload_message": "愿R15在克制中学会判断，让这副完整胡地稳稳走向更远的赛场。",
+  "description_at_capture": "愿R2与R15今夜乘胜追击，让完整胡地一路稳扎稳打，把金牌带回来。",
+  "description_edit_via_cli_or_installed_api_supported": false,
+  "status_at_capture": "COMPLETE",
+  "public_score_at_capture": 600.0,
+  "submission_commands_issued": 1,
+  "automatic_retry_issued": false,
+  "validation": {
+    "payload_valid": true,
+    "extracted_archive_valid": true,
+    "root_layout_valid": true,
+    "deck_card_count": 60,
+    "python_cache_excluded": true
+  },
+  "offline_validation": {
+    "epoch": 10,
+    "validation_loss": 0.2481986143370273,
+    "validation_exact_action": 0.8187552022884207,
+    "validation_legal_action": 1.0
+  },
+  "local_evidence": {
+    "tufa_marnie_100_yushin": {
+      "report": "experiments/0016_alakazam_multideck_bc/evidence/deck_evaluations/epoch10_r15_tufa_marnie_100_yushin.html",
+      "wins": 43,
+      "games": 100
+    },
+    "tufa_marnie_100_yushin_battle_cage_2": {
+      "report": "experiments/0016_alakazam_multideck_bc/evidence/deck_evaluations/epoch10_r15_tufa_marnie_100_yushin_battle_cage_2.html",
+      "wins": 53,
+      "games": 100
+    },
+    "tufa_marnie_100_submit": {
+      "report": "experiments/0016_alakazam_multideck_bc/evidence/deck_evaluations/epoch10_r15_tufa_marnie_100_submit.html",
+      "wins": 67,
+      "games": 100
+    }
+  }
+}

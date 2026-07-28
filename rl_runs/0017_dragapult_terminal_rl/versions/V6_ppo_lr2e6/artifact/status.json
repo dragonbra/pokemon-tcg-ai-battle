@@ -1,0 +1,19 @@
+{
+  "device": "cuda",
+  "error": "KeyboardInterrupt: ",
+  "optimizer_state_saved": false,
+  "raw_rollout_saved": false,
+  "stage": "ppo",
+  "state": "failed",
+  "version": "V6_ppo_lr2e6",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0017_dragapult_terminal_rl--v6_ppo_lr2e6-8da5d422b4",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0017_dragapult_terminal_rl--v6_ppo_lr2e6-8da5d422b4"
+  }
+}

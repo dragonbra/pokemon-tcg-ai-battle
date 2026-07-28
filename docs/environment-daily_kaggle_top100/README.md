@@ -55,6 +55,8 @@ python3 -m data.processed.environment_daily.generate_live_snapshot \
 
 当前报告：
 
+- [0726–0728 — Top 100 跨日环境变迁分析（构筑、排名、卡池与证据边界）](environment-transition.html)
+- [2026-07-28 — Top 100 实时环境快照 0728（最终 submission + 官方 completed/public Meta）](daily/2026-07-28.html)
 - [2026-07-27 — Top 100 实时环境快照 0727（最终 submission + 官方 completed/public Meta）](daily/2026-07-27.html)
 - [2026-07-26 — Top 100 今日环境快照 0726（最终 submission + 官方 completed/public Meta）](daily/2026-07-26.html)
 - [2026-07-25 — Top 100 Deck 环境与 Match-up 分析](daily/2026-07-25.html)

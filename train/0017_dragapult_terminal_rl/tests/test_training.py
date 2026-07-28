@@ -7,6 +7,13 @@ from pathlib import Path
 import torch
 
 from ..checkpoint import checkpoint_metadata, save_model_only
+from ..compare_frozen_evaluations import (
+    compare_binomial,
+    compare_reports,
+    validate_comparison_contract,
+    wilson_interval,
+)
+from ..export_candidate import write_candidate_model
 from ..observability.metrics import OutcomeTracker
 from ..rollout.collector import RolloutCollector
 from ..rollout.protocol import Episode, TrajectoryDecision
@@ -47,6 +54,75 @@ def _episode(name: str, reward: float, length: int, first: bool = True) -> Episo
 
 
 class TrainingContractTest(unittest.TestCase):
+    def test_independent_win_rate_difference_detects_clear_gain(self) -> None:
+        result = compare_binomial(100, 1000, 150, 1000)
+        self.assertAlmostEqual(result["difference"], 0.05)
+        self.assertGreater(result["difference_95"][0], 0.0)
+        self.assertLess(result["two_sided_score_p"], 0.01)
+
+    def test_wilson_interval_contains_observed_rate(self) -> None:
+        low, high = wilson_interval(20, 100)
+        self.assertLess(low, 0.2)
+        self.assertGreater(high, 0.2)
+
+    def test_comparison_contract_rejects_seat_mismatch(self) -> None:
+        manifest = {
+            "swap_policy": "alternate_candidate_first",
+            "engine_runtime": {"cg_tree_hash": "same"},
+            "metric_profile": {"id": "core"},
+            "worker_cpu_threads": 1,
+            "opponents": [{"package_hash": "opponent"}],
+        }
+        baseline = {
+            "manifest": manifest,
+            "games": [{"opponent": "opponent", "candidate_first": True}],
+        }
+        candidate = {
+            "manifest": manifest,
+            "games": [{"opponent": "opponent", "candidate_first": False}],
+        }
+        with self.assertRaisesRegex(ValueError, "allocation"):
+            validate_comparison_contract(baseline, candidate)
+
+    def test_report_comparison_separates_train_holdout_and_seats(self) -> None:
+        manifest = {
+            "swap_policy": "alternate_candidate_first",
+            "engine_runtime": {"cg_tree_hash": "same"},
+            "metric_profile": {"id": "core"},
+            "worker_cpu_threads": 1,
+            "opponents": [
+                {"package_hash": "train-hash"},
+                {"package_hash": "holdout-hash"},
+            ],
+        }
+        train = "alakazam_dudunsparce_01"
+        holdout = "new_holdout"
+
+        def games(winners: tuple[int, int, int, int]) -> list[dict[str, object]]:
+            return [
+                {
+                    "opponent": opponent,
+                    "candidate_first": first,
+                    "status": "finished",
+                    "winner": winner,
+                }
+                for opponent, first, winner in zip(
+                    (train, train, holdout, holdout),
+                    (True, False, True, False),
+                    winners,
+                    strict=True,
+                )
+            ]
+
+        result = compare_reports(
+            {"manifest": manifest, "games": games((1, 1, 1, 1))},
+            {"manifest": manifest, "games": games((0, 1, 0, 1))},
+        )
+        self.assertEqual(result["groups"]["train_pool"]["candidate"]["wins"], 1)
+        self.assertEqual(result["groups"]["holdout_pool"]["candidate"]["wins"], 1)
+        self.assertEqual(result["groups"]["candidate_first"]["candidate"]["wins"], 2)
+        self.assertFalse(result["paired"])
+
     def test_rollout_collector_rejects_train_mode_policy(self) -> None:
         model = torch.nn.Linear(2, 1)
         with self.assertRaisesRegex(ValueError, "eval mode"):
@@ -119,6 +195,33 @@ class TrainingContractTest(unittest.TestCase):
                 }.intersection(payload)
             )
             self.assertEqual(checkpoint_metadata(path)["update"], 1)
+
+    def test_candidate_export_strips_source_optimizer_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.pt"
+            output = root / "model.bin"
+            torch.save(
+                {
+                    "epoch": 10,
+                    "global_step": 42,
+                    "model": {"weight": torch.ones(2)},
+                    "metadata": {"model_family": "r15"},
+                    "optimizer": {"state": {1: {"momentum": torch.ones(2)}}},
+                },
+                source,
+            )
+
+            audit = write_candidate_model(source, output)
+            payload = torch.load(output, map_location="cpu", weights_only=False)
+
+            self.assertEqual(
+                set(payload), {"schema_version", "model", "metadata", "source_progress"}
+            )
+            self.assertEqual(payload["source_progress"], {"epoch": 10, "global_step": 42})
+            self.assertNotIn("optimizer", payload)
+            self.assertTrue(audit["source_had_optimizer_state"])
+            self.assertFalse(audit["packaged_optimizer_state_saved"])
 
     def test_storage_guard_reports_both_filesystems(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

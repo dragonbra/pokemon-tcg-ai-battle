@@ -1,0 +1,23 @@
+{
+  "candidate_package": "evaluation/arena/candidates/0017_v14_update15_rl",
+  "catalog": "evaluation/configs/opponents.json",
+  "catalog_sha256": "61bd90778f1e1aee999288a25165e679ce22d45f1659fd1c9bcc759067a2c6d4",
+  "checkpoint": "rl_runs/0017_dragapult_terminal_rl/versions/V14_ppo_lambda097_lr3e6/checkpoint/update-000015.pt",
+  "checkpoint_sha256": "08169c47cd37fa45cf87ec49b8883792a84df9e6a2e9d74ec0e27b40834b692d",
+  "enabled_opponents": 26,
+  "games_per_opponent": 100,
+  "metric_profile": "core",
+  "project_id": "0017_dragapult_terminal_rl",
+  "randomness_contract": "independent_official_runtime_random_device_not_seed_pairable",
+  "schema_version": "0017_frozen_policy_evaluation_v1",
+  "seat_contract": "alternate_candidate_first_50_each_per_opponent",
+  "stage": "frozen_policy_evaluation",
+  "total_games": 2600,
+  "version": "V16_rl_update15_frozen_eval",
+  "wandb": {
+    "enabled": false,
+    "reason": "evaluation_only_no_training"
+  },
+  "worker_cpu_threads": 1,
+  "workers": 4
+}

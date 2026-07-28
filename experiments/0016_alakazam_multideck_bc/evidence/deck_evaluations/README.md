@@ -19,6 +19,9 @@ are identical and only the exact 60-card deployment deck changes.
 | epoch 12 | TUFA BC Marnie, 100 games | Yushin | 48-52 | [report](epoch12_tufa_marnie_100_yushin.html) |
 | epoch 12 | TUFA BC Marnie, 100 games | Yushin + 2 Battle Cage | 57-43 | [report](epoch12_tufa_marnie_100_yushin_battle_cage_2.html) |
 | epoch 12 | TUFA BC Marnie, 100 games | submit | 64-36 | [report](epoch12_tufa_marnie_100_submit.html) |
+| R15 epoch 10 | TUFA BC Marnie 04, 100 games | Yushin | 43-57 | [report](epoch10_r15_tufa_marnie_100_yushin.html) |
+| R15 epoch 10 | TUFA BC Marnie 04, 100 games | Yushin + 2 Battle Cage | 53-47 | [report](epoch10_r15_tufa_marnie_100_yushin_battle_cage_2.html) |
+| R15 epoch 10 | TUFA BC Marnie 04, 100 games | submit | 67-33 | [report](epoch10_r15_tufa_marnie_100_submit.html) |
 
 See `manifest.json` for checkpoint, deck, model, run and metric-profile commitments.
 
@@ -26,3 +29,6 @@ The TUFA candidate carried an older, incompatible `cg/` copy. Its temporary eval
 preserved `main.py`, `idonly_policy.py`, `policy.pt` and `deck.csv` byte-for-byte and replaced only
 that runtime copy with the current official evaluation runtime. It remained outside the formal
 opponent catalog.
+
+After that historical R2 evaluation, the normalized TUFA package was admitted to the formal arena
+as `marnies_grimmsnarl_ex_froslass_04_bc`. The R15 epoch 10 runs use that formal package directly.

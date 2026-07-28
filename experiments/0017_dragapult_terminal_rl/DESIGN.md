@@ -304,6 +304,10 @@ an audit metric because dynamic inference batches can have different padding wid
 | `V12_ppo_lambda097` | same V9 branch point, LR 1e-5, lambda 0.97 | interpolate lower-variance bootstrap and earlier terminal credit | seek V9 strength with V11 seat balance |
 | `V13_ppo_lambda097_lr5e6` | V12 update 5, actor LR 5e-6, lambda 0.97 | preserve high explained variance while slowing actor drift | stabilize 19% sampled strength without second-seat collapse |
 | `V14_ppo_lambda097_lr3e6` | V13 update 25, actor LR 3e-6, lambda 0.97 | retain the 20.6% peak while reducing later seat drift | test lower-LR stability from the strongest retained checkpoint |
+| `V15_bc_source_frozen_eval` | none | interrupted 100-game/opponent BC evaluation | stopped at user-requested scale reduction; no formal report |
+| `V16_rl_update15_frozen_eval` | none | interrupted 100-game/opponent RL evaluation | stopped at user-requested scale reduction; no formal report |
+| `V17_bc_source_eval_10g` | none | 26 opponents × 10 games, 41/260 (15.77%) | complete frozen greedy BC baseline |
+| `V18_rl_update15_eval_10g` | none | 26 opponents × 10 games, 68/260 (26.15%) | complete; +10.38 points, 95% CI [+3.39, +17.27] |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
@@ -362,10 +366,25 @@ V14 completed 30 updates and 7,680 valid official-engine episodes before a plann
 boundary stop. Its rolling-2,000 rate remained around 20%-21%, reached 22.0% at update 29, and
 ended at 21.25% at the retained update-30 checkpoint. The retained update-15 checkpoint is the
 seat-balanced recommendation (21.05% overall, 21.3%/20.8% first/second); update 30 is retained as
-the highest rolling checkpoint for paired evaluation. Behavior KL stayed around `1e-5`, rollout-
+the highest rolling checkpoint for a later independently randomized frozen evaluation. Behavior KL stayed around `1e-5`, rollout-
 log-prob MAE around `4e-7`, and no episode was discarded or errored. The telemetry audit recorded
 43,235.93 active CUDA seconds against the 43,200-second target. V14 is therefore the selected
 stable viable configuration; the 0018 fallback is not triggered.
+
+V17/V18 supplied the missing frozen-policy evidence. Both self-contained packages used the exact
+same 60-card deck, official runtime hash, 26 opponent package hashes, 10 games per opponent and
+five/five seat split. The BC source won 41/260 games (15.77%); V14 update 15 won 68/260 (26.15%),
+an absolute gain of 10.38 points with a 95% Newcombe interval of `[+3.39, +17.27]` and a two-sided
+score-test `p=0.00363`. The 20-opponent training slice improved 20.0% → 29.5%, while the six-
+opponent holdout slice improved 1.67% → 15.0%. Both seats had positive point changes and every one
+of the 520 games completed without error. This supports a real pool-level frozen greedy gain, not
+merely the moving sampled-policy rolling curve. Individual 10-game matchups remain too noisy for
+deck-specific claims.
+
+The comparison is not shared-seed paired evidence. The unmodified official binary initializes battle
+randomness through `random_device` and exposes no battle-seed API. The evaluation therefore freezes
+opponents, allocation and seats and uses independent game randomness; modifying `engine/source/` to
+create deterministic pairs is outside the official-runtime contract.
 
 ## 13. Later version decisions
 

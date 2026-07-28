@@ -18,7 +18,12 @@ from rl_environment.runs import initialize_version, project_version_paths
 
 from . import PROJECT_ID
 from .initialization import freeze_to_new_model_keys, load_r15_base_checkpoint
-from .model import SourceConditionedR15Config, SourceConditionedR15Policy
+from .model import (
+    SourceConditionedR2Config,
+    SourceConditionedR2Policy,
+    SourceConditionedR15Config,
+    SourceConditionedR15Policy,
+)
 from .rule_contract_model import (
     SourceConditionedR15RuleConfig,
     SourceConditionedR15RulePolicy,
@@ -33,7 +38,7 @@ _trainer = importlib.import_module(
 DEFAULT_DATASET = Path(
     "rl_runs/0015_dragapult_conditioned_bc/dataset/V1_core_r15_features"
 )
-MODEL_FAMILIES = ("r15", "r15_rule_contract")
+MODEL_FAMILIES = ("r2", "r15", "r15_rule_contract")
 
 
 def build_policy(
@@ -48,6 +53,12 @@ def build_policy(
 ) -> tuple[torch.nn.Module, object]:
     """Build an explicit model family without changing the R15 default path."""
 
+    if model_family == "r2":
+        config = SourceConditionedR2Config(
+            source_vocabulary_size=source_vocabulary_size,
+            source_initial_scale=source_initial_scale,
+        )
+        return SourceConditionedR2Policy(config, ontology_path=ontology_path), config
     if model_family == "r15":
         config = SourceConditionedR15Config(
             source_vocabulary_size=source_vocabulary_size,
@@ -98,7 +109,7 @@ def _smoke_paths(version: str):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train one 0015 R15-family BC arm")
+    parser = argparse.ArgumentParser(description="Train one 0015 R2/R15-family BC arm")
     parser.add_argument("--arm", choices=("t0", "t1", "t2", "t3", "t4"), required=True)
     parser.add_argument("--version")
     parser.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
@@ -128,9 +139,11 @@ def main() -> None:
         raise RuntimeError("0015 R15 requires CUDA")
     if args.no_deck and args.arm not in {"t1", "t3"}:
         raise ValueError("--no-deck is defined only for --arm t1 or t3")
-    if args.model_family == "r15" and not math.isclose(args.rule_initial_scale, 0.10):
+    if args.model_family != "r15_rule_contract" and not math.isclose(
+        args.rule_initial_scale, 0.10
+    ):
         raise ValueError("--rule-initial-scale applies only to r15_rule_contract")
-    if args.model_family == "r15" and (
+    if args.model_family != "r15_rule_contract" and (
         args.rule_model_width != 320 or args.rule_heads != 8
     ):
         raise ValueError("rule bottleneck options apply only to r15_rule_contract")
@@ -225,11 +238,11 @@ def main() -> None:
         epochs, maximum_train, maximum_validation = args.epochs, None, None
 
     config = {
-        "schema_version": (
-            "0015_r15_source_conditioned_training_v1"
-            if args.model_family == "r15"
-            else "0015_r15_rule_contract_training_v1"
-        ),
+        "schema_version": {
+            "r2": "0015_r2_source_conditioned_training_v1",
+            "r15": "0015_r15_source_conditioned_training_v1",
+            "r15_rule_contract": "0015_r15_rule_contract_training_v1",
+        }[args.model_family],
         "project_id": PROJECT_ID,
         "version": paths.version_name,
         "arm": args.arm,
@@ -257,7 +270,11 @@ def main() -> None:
         "training_scope": training_scope,
         "parameter_count": parameters,
         "trainable_parameter_count": trainable_parameters,
-        "r15_baseline": "0014/V25_r15_deterministic_gradual_option",
+        "architecture_baseline": (
+            "0014/V12_r2_strong_scenario_scalegate"
+            if args.model_family == "r2"
+            else "0014/V25_r15_deterministic_gradual_option"
+        ),
         "fresh_initialization": initialization is None,
         "batch_size": args.batch_size,
         "validation_batch_size": args.validation_batch_size,
@@ -281,7 +298,21 @@ def main() -> None:
                 "model": type(model).__name__,
                 "model_family": args.model_family,
                 "parameter_count": parameters,
-                "r15_config": asdict(model_config.r15),
+                "base_model_config": asdict(
+                    model_config.r2
+                    if isinstance(model_config, SourceConditionedR2Config)
+                    else model_config.r15
+                ),
+                "r2_config": (
+                    asdict(model_config.r2)
+                    if isinstance(model_config, SourceConditionedR2Config)
+                    else None
+                ),
+                "r15_config": (
+                    None
+                    if isinstance(model_config, SourceConditionedR2Config)
+                    else asdict(model_config.r15)
+                ),
                 "model_config": model_config.to_dict(),
                 "initialization": initialization,
                 "training_scope": training_scope,

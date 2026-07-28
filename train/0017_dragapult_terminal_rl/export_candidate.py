@@ -43,12 +43,34 @@ def agent(observation):
 '''
 
 
+def write_candidate_model(source: Path, output: Path) -> dict[str, bool]:
+    """Write an inference-only checkpoint even when the BC source is resumable."""
+    payload = torch.load(source, map_location="cpu", weights_only=False)
+    if "model" not in payload:
+        raise ValueError("checkpoint has no model state")
+    resume_keys = {"optimizer", "scheduler", "scaler", "rng_state", "rollout"}
+    source_progress = {
+        key: int(payload[key])
+        for key in ("epoch", "global_step", "update")
+        if isinstance(payload.get(key), int)
+    }
+    model_only = {
+        "schema_version": "0017_candidate_model_only_v1",
+        "model": payload["model"],
+        "metadata": payload.get("metadata") or {},
+        "source_progress": source_progress,
+    }
+    torch.save(model_only, output)
+    packaged = torch.load(output, map_location="cpu", weights_only=False)
+    return {
+        "source_had_optimizer_state": bool(resume_keys.intersection(payload)),
+        "packaged_optimizer_state_saved": bool(resume_keys.intersection(packaged)),
+    }
+
+
 def export_candidate(checkpoint: Path, cg_source: Path, output: Path) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError(output)
-    payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
-    if "model" not in payload:
-        raise ValueError("checkpoint has no model state")
     strategy = output / "strategy"
     (strategy / "features").mkdir(parents=True)
     (strategy / "knowledge").mkdir(parents=True)
@@ -81,7 +103,7 @@ def export_candidate(checkpoint: Path, cg_source: Path, output: Path) -> dict[st
     for relative in copies:
         shutil.copy2(policy_root / relative, strategy / relative)
     shutil.copy2(ONTOLOGY_PATH, strategy / "card_ontology.json")
-    shutil.copy2(checkpoint, strategy / "model.bin")
+    checkpoint_audit = write_candidate_model(checkpoint, strategy / "model.bin")
     manifest = {
         "schema_version": "0017_dragapult_terminal_rl_candidate_v1",
         "checkpoint": str(checkpoint),
@@ -89,9 +111,8 @@ def export_candidate(checkpoint: Path, cg_source: Path, output: Path) -> dict[st
         "deck_sha256": _sha256(output / "deck.csv"),
         "model_sha256": _sha256(strategy / "model.bin"),
         "source_id": 1,
-        "optimizer_state_saved": any(
-            key in payload for key in ("optimizer", "scheduler", "scaler")
-        ),
+        **checkpoint_audit,
+        "optimizer_state_saved": checkpoint_audit["packaged_optimizer_state_saved"],
     }
     if manifest["optimizer_state_saved"]:
         raise ValueError("candidate checkpoint contains optimizer state")

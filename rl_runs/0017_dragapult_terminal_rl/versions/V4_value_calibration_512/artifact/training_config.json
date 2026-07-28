@@ -1,0 +1,35 @@
+{
+  "command": "value",
+  "device": "cuda",
+  "episodes": 512,
+  "opponent_snapshot_sha256": "61bd90778f1e1aee999288a25165e679ce22d45f1659fd1c9bcc759067a2c6d4",
+  "project_id": "0017_dragapult_terminal_rl",
+  "reward": {
+    "draw": 0.0,
+    "gamma": 1.0,
+    "loss": -1.0,
+    "win": 1.0
+  },
+  "schema_version": "0017_terminal_rl_training_v1",
+  "seed": 20260728,
+  "source_checkpoint_sha256": "7f7589427098418682f3a53e0763f3fd24850d641a0a664955f6094f90530532",
+  "storage": {
+    "hard_stop_free_gib": 50,
+    "version_cap_gib": 20,
+    "warning_free_gib": 80
+  },
+  "value": {
+    "batch_size": 1024,
+    "epochs": 4,
+    "learning_rate": 0.0001,
+    "max_grad_norm": 0.5,
+    "weight_decay": 0.0
+  },
+  "version": "V4_value_calibration_512",
+  "wandb": {
+    "entity": "dragon_bra",
+    "mode": "online",
+    "project": "pokemon-tcg-policy-learning"
+  },
+  "workers": 12
+}

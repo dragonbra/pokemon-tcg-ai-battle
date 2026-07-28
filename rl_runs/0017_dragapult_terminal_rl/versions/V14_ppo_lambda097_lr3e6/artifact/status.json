@@ -1,0 +1,21 @@
+{
+  "device": "cuda",
+  "error": null,
+  "last_completed_update": 30,
+  "optimizer_state_saved": false,
+  "raw_rollout_saved": false,
+  "stage": "ppo",
+  "state": "stopped",
+  "stop_reason": "planned_stop_after_12h_gpu_audit_and_update_30_checkpoint",
+  "version": "V14_ppo_lambda097_lr3e6",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0017_dragapult_terminal_rl--v14_ppo_lambda097_lr3e6-a360c83ffd",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0017_dragapult_terminal_rl--v14_ppo_lambda097_lr3e6-a360c83ffd"
+  }
+}

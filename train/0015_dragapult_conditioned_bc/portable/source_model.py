@@ -8,7 +8,39 @@ from pathlib import Path
 import torch
 from torch import Tensor, nn
 
+from .r2_model import R2ModelConfig, R2StrongScenarioPolicy
 from .r15_model import R15DeterministicGradualOptionPolicy, R15ModelConfig
+
+
+@dataclass(frozen=True)
+class SourceConditionedR2Config:
+    r2: R2ModelConfig
+    source_vocabulary_size: int
+    source_initial_scale: float = 0.10
+
+
+class SourceConditionedR2Policy(R2StrongScenarioPolicy):
+    def __init__(self, config: SourceConditionedR2Config, *, ontology_path: Path | str) -> None:
+        super().__init__(config.r2, ontology_path=ontology_path)
+        self.source_config = config
+        width = self.config.d_model
+        self.source_persona = nn.Embedding(config.source_vocabulary_size + 1, width)
+        self.source_state_norm = nn.LayerNorm(width)
+        self.source_option_norm = nn.LayerNorm(width)
+        initial = torch.tensor(config.source_initial_scale)
+        self.source_gate = nn.Parameter(torch.full((width,), float(torch.atanh(initial))))
+        nn.init.normal_(self.source_persona.weight, std=0.02)
+        with torch.no_grad():
+            self.source_persona.weight[0].zero_()
+
+    def encode(self, batch: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
+        state, options = super().encode(batch)
+        persona = self.source_persona(batch["source_id"])
+        delta = torch.tanh(self.source_gate) * persona
+        return (
+            self.source_state_norm(state + delta),
+            self.source_option_norm(options + delta.unsqueeze(1)),
+        )
 
 
 @dataclass(frozen=True)
@@ -43,4 +75,9 @@ class SourceConditionedR15Policy(R15DeterministicGradualOptionPolicy):
         )
 
 
-__all__ = ["SourceConditionedR15Config", "SourceConditionedR15Policy"]
+__all__ = [
+    "SourceConditionedR2Config",
+    "SourceConditionedR2Policy",
+    "SourceConditionedR15Config",
+    "SourceConditionedR15Policy",
+]

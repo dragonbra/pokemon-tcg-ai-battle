@@ -9,7 +9,7 @@
   "engine_revision": "unmodified official engine runtime in engine/source; exact runtime hash captured per version",
   "opponent_pool_snapshot": "pending V1 freeze of the current 26 enabled evaluation opponents; initial split is 20 train plus 6 unseen holdout",
   "objective": "Improve the 0015 Dragapult ex + Dusknoir R15 policy through value calibration and KL-anchored PPO using only terminal win/loss/draw reward",
-  "status": "rollout_throughput_calibrated",
+  "status": "initialized",
   "source_checkpoint": {
     "project": "0015_dragapult_conditioned_bc",
     "version": "V2_t1_plus_pure_dragapult",
@@ -42,7 +42,7 @@
     "runs": "rl_runs/0017_dragapult_terminal_rl",
     "gpu_runtime_audit": "rl_runs/0017_dragapult_terminal_rl/gpu_runtime_audit.jsonl"
   },
-  "current_stage": "v9_ppo_lr1e5_running",
+  "current_stage": "v17_v18_frozen_policy_ab_10_games",
   "implementation_authorized": true,
   "training_authorized": true,
   "gpu_training_authorized": true

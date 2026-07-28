@@ -48,10 +48,10 @@ import sys
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from strategy.source_inference import SourceR15Policy
+from strategy.source_inference import SourcePolicy
 
 DECK = [int(line) for line in (ROOT / "deck.csv").read_text().splitlines() if line.strip()]
-_POLICY = SourceR15Policy.from_checkpoint(
+_POLICY = SourcePolicy.from_checkpoint(
     ROOT / "strategy/model.bin", ROOT / "strategy/card_ontology.json", DECK,
     source_id={source_id}, no_deck={no_deck!r},
 )
@@ -81,13 +81,14 @@ def export_candidate(
     payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
     metadata = payload.get("metadata") or {}
     supported_schemas = {
+        "0015_r2_source_conditioned_training_v1",
         "0015_r15_source_conditioned_training_v1",
         "0015_r15_rule_contract_training_v1",
     }
     if metadata.get("schema_version") not in supported_schemas:
-        raise ValueError("checkpoint is not a supported 0015 R15-family policy")
+        raise ValueError("checkpoint is not a supported 0015 source-conditioned policy")
     model_family = metadata.get("model_family", "r15")
-    if model_family not in {"r15", "r15_rule_contract"}:
+    if model_family not in {"r2", "r15", "r15_rule_contract"}:
         raise ValueError(f"unsupported 0015 model family: {model_family}")
     model_contract = json.loads(
         (version_root / "artifact/model_contract.json").read_text(encoding="utf-8")
@@ -144,7 +145,11 @@ def export_candidate(
         model_path,
     )
     manifest = {
-        "schema_version": "0015_source_conditioned_r15_candidate_v1",
+        "schema_version": (
+            "0015_source_conditioned_r2_candidate_v1"
+            if model_family == "r2"
+            else "0015_source_conditioned_r15_candidate_v1"
+        ),
         "version": version_root.name,
         "model_family": model_family,
         "criterion": criterion,

@@ -26,8 +26,10 @@ W&B synced successfully under `0017 · dragapult_terminal_rl · V14_ppo_lambda09
 
 - Select V14 as the stable viable terminal-reward PPO configuration.
 - Recommend update 15 as the seat-balanced checkpoint for the first frozen-policy evaluation.
-- Retain update 30 as the highest rolling-2,000 checkpoint for a paired comparison under the same
-  official-engine opponent, seed, and seat contract.
+- Retain update 30 as the highest rolling-2,000 checkpoint for a later frozen-policy comparison.
+  The unmodified official binary seeds each battle through `random_device` and exposes no battle-
+  seed API, so local Arena comparisons can freeze opponent packages, counts and seats but must be
+  described as independently randomized balanced A/B evaluations rather than shared-seed pairs.
 - Do not start 0018: Dragapult training is viable and materially stronger than the earlier branch.
 - Treat the interrupt after update 30 as a planned stop after the 12-hour target, not a training
   failure; optimizer state and raw rollouts remain intentionally unsaved.

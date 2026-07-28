@@ -1,8 +1,8 @@
 # 0015 Dragapult Conditioned BC
 
 **Project ID:** `0015_dragapult_conditioned_bc`
-**Status:** 0726 ingestion/materialization and V1–V5 are complete. All five formal runs are
-W&B-synced and have official-engine reports; V5 also has an independent confirmation run.
+**Status:** 0726 ingestion/materialization and V1–V18 are complete. Every formal run has an
+official-engine report; V18 is W&B-synced and adds the requested R2 strong-scenario comparison.
 **Current phase:** V2 remains the strongest supported candidate. Preserve the genuine-source gate
 for T2/T3 and do not continue tuning terminal-outcome weights. Value/RL remains deferred.
 
@@ -59,6 +59,28 @@ R15's batch 256, validation batch 512, learning rate `3e-4`, weight decay `0.02`
 `20260723`, and patience 5/min-delta `0.001` logic. All matrix arms start from the same fresh seeded
 initialization; the Alakazam-trained R15 checkpoint is architectural evidence, not a Dragapult
 warm-start.
+
+### V18 R2 strong-scenario comparison
+
+V18 replaces the R15 trunk with the complete
+`0014/V12_r2_strong_scenario_scalegate` architecture while preserving 0015's required
+source-persona residual. Its input schema is unchanged: 22 actor-visible tensor groups comprise
+nine board/legal-option groups (`global_cat`, `global_num`, `entity_cat`, `entity_num`,
+`entity_mask`, `option_cat`, `option_mask`, `min_count`, `max_count`) and thirteen causal auxiliary
+groups (`zone_inventory_num`, the three registered-deck tensors, the three ledger tensors, the
+three event tensors and the three known/unknown opponent-hand tensors). Their leading dimension is
+`[B]`; entity, legal-option, registered-card, event and known-hand axes are dynamically trimmed and
+masked, while their feature widths remain the frozen 0014 schema. A separate `[B]` `source_id` is
+expert conditioning, not a game-state feature.
+
+The actor-visible scenario bank contains public zone inventory, registered-deck causal ledger,
+causal event memory and known/unknown opponent hand. A two-layer width-320 Transformer reads this
+bank. State and options receive separate attention and FiLM residuals; independent Goal-QKV reads
+the registered-card resource bank for options. Dynamic per-channel state/option ScaleGates are
+`2 * sigmoid(MLP(evidence))`, initialized to neutral `1.0` and bounded to `(0, 2)`. The 0015
+source-persona residual is then added to state and options at initial scale `0.10`. The resulting
+`SourceConditionedR2Policy` has 17,416,642 parameters. V18 starts from the same fresh seed as V2;
+the Alakazam V12 checkpoint is not loaded.
 
 The 0014 cache contains 162,128 decisions but only two signatures: 138,898 decisions (85.7%) use
 Enhanced Hammer ×4 / Nighttime Mine ×2, while 23,230 (14.3%) use Hammer ×3 / Mine ×3. The V9
@@ -317,7 +339,7 @@ Formal runs follow `V<n>_<tag>`, immutable artifacts, per-epoch validation and
 official-engine evaluation for this experiment window. Candidate admission, Kaggle submission,
 dataset upload, commit and push remain unauthorized.
 
-## 11. Results through V17
+## 11. Results through V18
 
 All candidates use the same THIRD PTCG Club target deck and persona, the predeclared
 best-target-greedy-exact checkpoint selector, and the same 20-opponent official-engine catalog at
@@ -342,6 +364,7 @@ best-target-greedy-exact checkpoint selector, and the same 20-opponent official-
 | V15 | T4 + 535 capped Marnie/Munkidori trajectories | 57.5% | 4 | 40 / 160 | 20.0% |
 | V16 | T4 + 267 capped Marnie/Munkidori trajectories | 60.3% | 7 | 37 / 163 | 18.5% |
 | V17 | V16 data, source initial scale 0.03 | 59.9% | 9 | 37 / 163 | 18.5% |
+| V18 | T1, R2 strong-scenario ScaleGate | 58.4% | 10 | 27 / 173 | 13.5% |
 
 T1 improves both axes over T0: +4.4 percentage points target exact and +12.0 percentage points
 official-engine win rate. The independent temporary engine runs were directionally consistent
@@ -383,6 +406,14 @@ embedding initial scale from 0.10 to 0.03. Its five-batch CUDA BF16 smoke and fo
 complete with finite loss and 100% validation legality. Target exact reaches 59.9%, but official
 engine strength remains exactly 37/200 (18.5%), identical to V16. Source-scale exploration stops.
 
+V18 performs the requested architecture replacement on the strongest supported data arm: the
+same 54,764-decision T1 dataset, target validation, source persona, seed, optimizer, equal
+win/loss weighting and no label smoothing as V2, but with the 0014 V12 R2 strong-scenario trunk.
+Training completed with W&B synced and 100% validation legality. Exact-best epoch 10 reached 58.4%
+and the frozen candidate scored 27/200 (13.5%) with zero errors. Relative to V2 this is -0.3pp
+target exact and -6.0pp official-engine win rate, so the R2 replacement is lower on both axes and
+does not displace V2.
+
 A separate read-only V2 loss-best diagnostic scored 26/200 (13.0%), rejecting loss-best checkpoint
 selection for 0015 despite its success in some 0014 runs.
 
@@ -399,8 +430,9 @@ recorded in their corresponding version artifacts.
 4. The shared R15 cache contains 55,764 eligible decisions and passed offline/online and safe-mask
    smoke tests.
 5. T0, T1, exploratory T1-no-deck, the bounded V4/V5 outcome-weight sweep, V6–V13 R15/rule
-   sequence, V14 label smoothing, V15/V16 T4 dosage comparison and V17 source-scale check are
-   complete. Their gates did not displace V2, and no further cap/scale sweep is authorized.
+   sequence, V14 label smoothing, V15/V16 T4 dosage comparison, V17 source-scale check and V18 R2
+   strong-scenario comparison are complete. Their gates did not displace V2, and no further
+   cap/scale/R2 sweep is authorized from this evidence.
    T2/T3/T3-no-deck remain pending a genuine Starmie + Dusknoir source and must not use Starmie +
    Froslass as a substitute.
 

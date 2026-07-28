@@ -1,4 +1,4 @@
-"""CPU inference for a portable source-conditioned 0015 R15 candidate."""
+"""CPU inference for a portable source-conditioned 0015 R2/R15 candidate."""
 
 from __future__ import annotations
 
@@ -12,11 +12,17 @@ from .ablation import remove_initial_deck_information
 from .ac_model import ACModelConfig
 from .base_model import IDOnlyConfig
 from .online_runtime import OnlineCausalEncoder
+from .r2_model import R2ModelConfig
 from .r15_model import R15ModelConfig
-from .source_model import SourceConditionedR15Config, SourceConditionedR15Policy
+from .source_model import (
+    SourceConditionedR2Config,
+    SourceConditionedR2Policy,
+    SourceConditionedR15Config,
+    SourceConditionedR15Policy,
+)
 
 
-class SourceR15Policy:
+class SourcePolicy:
     def __init__(
         self,
         model: nn.Module,
@@ -43,13 +49,18 @@ class SourceR15Policy:
         *,
         source_id: int,
         no_deck: bool,
-    ) -> "SourceR15Policy":
+    ) -> "SourcePolicy":
         payload = torch.load(checkpoint, map_location="cpu", weights_only=False)
-        raw = (payload.get("metadata") or {}).get("model")
-        if not isinstance(raw, dict) or not isinstance(raw.get("r15"), dict):
-            raise ValueError("0015 checkpoint metadata is missing model.r15")
-        r15_raw = raw["r15"]
-        ac_raw = r15_raw["ac"]
+        metadata = payload.get("metadata") or {}
+        raw = metadata.get("model")
+        if not isinstance(raw, dict):
+            raise ValueError("0015 checkpoint metadata is missing model config")
+        model_family = metadata.get("model_family", "r15")
+        family_key = "r2" if model_family == "r2" else "r15"
+        family_raw = raw.get(family_key)
+        if not isinstance(family_raw, dict):
+            raise ValueError(f"0015 checkpoint metadata is missing model.{family_key}")
+        ac_raw = family_raw["ac"]
         base = IDOnlyConfig(**ac_raw["base"])
         ac = ACModelConfig(
             base=base,
@@ -57,15 +68,27 @@ class SourceR15Policy:
             auxiliary_ffn_multiplier=int(ac_raw["auxiliary_ffn_multiplier"]),
             goal_roles=int(ac_raw["goal_roles"]),
         )
-        r15 = R15ModelConfig(
-            ac=ac,
-            scenario_layers=int(r15_raw["scenario_layers"]),
-            scenario_ffn_multiplier=int(r15_raw["scenario_ffn_multiplier"]),
-            scale_gate_ffn_multiplier=int(r15_raw["scale_gate_ffn_multiplier"]),
-            option_initial_scale=float(r15_raw["option_initial_scale"]),
-        )
-        model_family = (payload.get("metadata") or {}).get("model_family", "r15")
-        if model_family == "r15":
+        if model_family == "r2":
+            r2 = R2ModelConfig(
+                ac=ac,
+                scenario_layers=int(family_raw["scenario_layers"]),
+                scenario_ffn_multiplier=int(family_raw["scenario_ffn_multiplier"]),
+                scale_gate_ffn_multiplier=int(family_raw["scale_gate_ffn_multiplier"]),
+            )
+            config = SourceConditionedR2Config(
+                r2=r2,
+                source_vocabulary_size=int(raw["source_vocabulary_size"]),
+                source_initial_scale=float(raw["source_initial_scale"]),
+            )
+            model = SourceConditionedR2Policy(config, ontology_path=ontology_path)
+        elif model_family == "r15":
+            r15 = R15ModelConfig(
+                ac=ac,
+                scenario_layers=int(family_raw["scenario_layers"]),
+                scenario_ffn_multiplier=int(family_raw["scenario_ffn_multiplier"]),
+                scale_gate_ffn_multiplier=int(family_raw["scale_gate_ffn_multiplier"]),
+                option_initial_scale=float(family_raw["option_initial_scale"]),
+            )
             config = SourceConditionedR15Config(
                 r15=r15,
                 source_vocabulary_size=int(raw["source_vocabulary_size"]),
@@ -73,6 +96,13 @@ class SourceR15Policy:
             )
             model = SourceConditionedR15Policy(config, ontology_path=ontology_path)
         elif model_family == "r15_rule_contract":
+            r15 = R15ModelConfig(
+                ac=ac,
+                scenario_layers=int(family_raw["scenario_layers"]),
+                scenario_ffn_multiplier=int(family_raw["scenario_ffn_multiplier"]),
+                scale_gate_ffn_multiplier=int(family_raw["scale_gate_ffn_multiplier"]),
+                option_initial_scale=float(family_raw["option_initial_scale"]),
+            )
             from .rule_contract_model import (
                 SourceConditionedR15RuleConfig,
                 SourceConditionedR15RulePolicy,
@@ -112,4 +142,6 @@ class SourceR15Policy:
             return self.model.greedy_action(batch)
 
 
-__all__ = ["SourceR15Policy"]
+SourceR15Policy = SourcePolicy
+
+__all__ = ["SourcePolicy", "SourceR15Policy"]

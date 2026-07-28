@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -10,7 +12,7 @@ from ..rule_contract_model import (
     SourceConditionedR15RuleConfig,
     SourceConditionedR15RulePolicy,
 )
-from ..export_candidate import select_checkpoint
+from ..export_candidate import export_candidate, select_checkpoint
 from ..initialization import freeze_to_new_model_keys, load_r15_base_checkpoint
 from ..run import build_policy
 from ..training.data import iter_batches
@@ -133,6 +135,30 @@ class RuleContractConfigTest(unittest.TestCase):
         self.assertEqual(type(config).__name__, "SourceConditionedR15Config")
         self.assertEqual(sum(parameter.numel() for parameter in model.parameters()), 17_416_642)
 
+    def test_factory_builds_source_conditioned_v12_r2_contract(self) -> None:
+        model, config = build_policy(
+            model_family="r2",
+            source_vocabulary_size=84,
+            rule_initial_scale=0.10,
+            rule_model_width=320,
+            rule_heads=8,
+            ontology_path=DATASET / "card_ontology.json",
+        )
+        self.assertEqual(type(model).__name__, "SourceConditionedR2Policy")
+        self.assertEqual(type(config).__name__, "SourceConditionedR2Config")
+        self.assertEqual(sum(parameter.numel() for parameter in model.parameters()), 17_416_642)
+        width = model.config.d_model
+        state_scale = model.state_scale_gate(torch.randn(2, 4 * width))
+        option_scale = model.option_scale_gate(torch.randn(2, 3, 2 * width))
+        self.assertTrue(torch.allclose(state_scale, torch.ones_like(state_scale)))
+        self.assertTrue(torch.allclose(option_scale, torch.ones_like(option_scale)))
+        self.assertTrue(
+            torch.allclose(
+                torch.tanh(model.source_gate),
+                torch.full_like(model.source_gate, 0.10),
+            )
+        )
+
     def test_factory_threads_source_initial_scale(self) -> None:
         model, config = build_policy(
             model_family="r15",
@@ -150,6 +176,58 @@ class RuleContractConfigTest(unittest.TestCase):
                 torch.full_like(model.source_gate, 0.03),
             )
         )
+
+    def test_export_accepts_source_conditioned_r2_checkpoint(self) -> None:
+        model, config = build_policy(
+            model_family="r2",
+            source_vocabulary_size=84,
+            rule_initial_scale=0.10,
+            rule_model_width=320,
+            rule_heads=8,
+            ontology_path=DATASET / "card_ontology.json",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            version = root / "V18_r2_test"
+            (version / "checkpoint").mkdir(parents=True)
+            (version / "artifact").mkdir()
+            checkpoint = version / "checkpoint/epoch-0001-test.pt"
+            metadata = {
+                "schema_version": "0015_r2_source_conditioned_training_v1",
+                "model_family": "r2",
+                "model": config.to_dict(),
+                "no_deck": False,
+                "metrics": {
+                    "bc/validation/exact_action": 0.5,
+                    "bc/validation/loss": 0.7,
+                },
+            }
+            torch.save({"model": model.state_dict(), "metadata": metadata}, checkpoint)
+            checkpoint.with_suffix(".json").write_text(
+                json.dumps({"epoch": 1, "metadata": metadata}), encoding="utf-8"
+            )
+            (version / "artifact/model_contract.json").write_text(
+                json.dumps({"target_source_id": 1}), encoding="utf-8"
+            )
+            deck = root / "deck.csv"
+            deck.write_text("1\n" * 60, encoding="utf-8")
+            cg = root / "cg"
+            cg.mkdir()
+            (cg / "__init__.py").write_text("", encoding="utf-8")
+            output = root / "candidate"
+            manifest = export_candidate(
+                version_root=version,
+                criterion="best_greedy_exact",
+                ontology=DATASET / "card_ontology.json",
+                deck=deck,
+                cg_source=cg,
+                output=output,
+            )
+            self.assertEqual(manifest["model_family"], "r2")
+            self.assertEqual(
+                manifest["schema_version"], "0015_source_conditioned_r2_candidate_v1"
+            )
+            self.assertIn("SourcePolicy", (output / "main.py").read_text(encoding="utf-8"))
 
     def test_v2_warm_start_loads_only_inherited_parameters(self) -> None:
         model = SourceConditionedR15RulePolicy(

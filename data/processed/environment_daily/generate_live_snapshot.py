@@ -17,6 +17,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from kaggle.api.kaggle_api_extended import KaggleApi
+from requests.exceptions import RequestException
 
 COMPETITION = "pokemon-tcg-ai-battle"
 DRAGAPULT_EX = 121
@@ -47,13 +48,19 @@ def _card_catalog() -> dict[int, dict[str, str]]:
 
 
 def _rate_call(fn):
+    transient_failures = 0
     while True:
         try:
             return fn()
         except Exception as exc:  # Kaggle currently rate-limits team-submission lookups.
-            if "429" not in str(exc):
-                raise
-            time.sleep(65)
+            if "429" in str(exc):
+                time.sleep(65)
+                continue
+            if isinstance(exc, RequestException) and transient_failures < 4:
+                transient_failures += 1
+                time.sleep(5)
+                continue
+            raise
 
 
 def _result(episodes, submission_id: int) -> tuple[int, int, int, int]:
