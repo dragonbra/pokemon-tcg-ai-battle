@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V11 lambda=1 improves seat balance without strength gain; V12 lambda=0.97 next**
+Status: **V12 lambda=0.97 improves critic but drifts by update 10; V13 lower-LR branch next**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -302,6 +302,7 @@ an audit metric because dynamic inference batches can have different padding wid
 | `V10_ppo_lambda1` | pointer decoder + value, LR 1e-5, lambda 1.0 | update 1 rollout-log-prob MAE 0.181 exposed train-mode dropout | stopped before update 2 backward; do not use checkpoint |
 | `V11_ppo_lambda1_eval_mode` | same V10 hypothesis with pre-rollout eval contract | undiscounted terminal credit with exact behavior probabilities | require first-update log-prob audit near numerical tolerance |
 | `V12_ppo_lambda097` | same V9 branch point, LR 1e-5, lambda 0.97 | interpolate lower-variance bootstrap and earlier terminal credit | seek V9 strength with V11 seat balance |
+| `V13_ppo_lambda097_lr5e6` | V12 update 5, actor LR 5e-6, lambda 0.97 | preserve high explained variance while slowing actor drift | stabilize 19% sampled strength without second-seat collapse |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
@@ -331,6 +332,12 @@ credit-assignment implementation. At update 20, rolling-2,000 reached 17.95%, be
 update-50 branch point's 18.55%, while seat rates improved to 17.7%/18.2% and entropy remained
 0.628. Lambda=1 therefore improves the balance/exploration diagnostics but does not show a strength
 gain. V12 tests `gae_lambda=0.97` from the same clean branch point with all other variables fixed.
+
+V12 confirmed the credit-assignment interpolation: explained variance was 0.42-0.53 and value
+loss about 0.09-0.12. Rolling-2,000 reached 19.01% at update 6, but fell for four consecutive
+updates to 17.8% at update 10; second-seat rate fell from 16.9% to 14.3%. V13 branches from the
+retained V12 update-5 checkpoint and halves only actor LR to `5e-6`, retaining lambda 0.97 and
+value LR `1e-4` to test whether slower actor movement stabilizes the early gain.
 
 ## 13. Later version decisions
 
