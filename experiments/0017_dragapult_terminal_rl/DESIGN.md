@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V14 lower-LR stabilization branch active from the V13 update-25 peak**
+Status: **V14 selected as stable viable config; 12-hour GPU audit completed**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -357,6 +357,15 @@ and rollout-log-prob audits remained healthy, so this was policy drift rather th
 contract. V13 was stopped at the retained update-50 boundary. V14 branches from the stronger V13
 update-25 checkpoint and changes only actor LR from `5e-6` to `3e-6`; value LR `1e-4`, lambda
 0.97, rollout pool, batch sizes, epochs, reward, and all guards remain fixed.
+
+V14 completed 30 updates and 7,680 valid official-engine episodes before a planned checkpoint-
+boundary stop. Its rolling-2,000 rate remained around 20%-21%, reached 22.0% at update 29, and
+ended at 21.25% at the retained update-30 checkpoint. The retained update-15 checkpoint is the
+seat-balanced recommendation (21.05% overall, 21.3%/20.8% first/second); update 30 is retained as
+the highest rolling checkpoint for paired evaluation. Behavior KL stayed around `1e-5`, rollout-
+log-prob MAE around `4e-7`, and no episode was discarded or errored. The telemetry audit recorded
+43,235.93 active CUDA seconds against the 43,200-second target. V14 is therefore the selected
+stable viable configuration; the 0018 fallback is not triggered.
 
 ## 13. Later version decisions
 

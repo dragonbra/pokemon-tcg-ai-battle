@@ -202,8 +202,8 @@
         <p class="lead">从 0015 最佳 R15 多龙 checkpoint 出发，以完整官方引擎对局的胜负为唯一环境奖励，建立可审计、可停止、不过度占盘的 value calibration + PPO 闭环。</p>
       </div>
       <div class="review-state">
-        <strong>V14 从 V13 update 25 强点降低 actor LR 稳定化</strong>
-        <span>V13 峰值 20.6%；V14 仅把 actor LR 从 5e-6 降到 3e-6。</span>
+        <strong>V14 已选为稳定可行配置，12 小时 GPU 审计完成</strong>
+        <span>update 29 rolling-2,000 22.0%；审计 43,235.93 / 43,200 秒。</span>
       </div>
     </div>
 
@@ -442,7 +442,7 @@
         <div class="version">V11 PPO λ 1.0 eval</div><div>修复首次 rollout 的 train-mode dropout 概率错位。</div><div>首个 update 的 rollout log-prob 审计必须接近数值容差。</div>
         <div class="version">V12 PPO λ 0.97</div><div>同一 V9 update 50 起点，仅折中信用分配系数。</div><div>争取保留 V9 强度，同时延续 V11 的座次平衡。</div>
         <div class="version">V13 λ 0.97 / LR 5e-6</div><div>从 V12 update 5 开始，仅把 actor LR 减半。</div><div>稳定 19% 附近增量，避免后手胜率继续回落。</div>
-        <div class="version">V14 λ 0.97 / LR 3e-6</div><div>从 V13 update 25 的 20.6% 强点开始，其余合同不变。</div><div>针对 V13 update 50 后手回落，测试更低 actor LR 的长时稳定性。</div>
+        <div class="version">V14 λ 0.97 / LR 3e-6</div><div>30 updates、7,680 场全部有效；峰值长窗 22.0%。</div><div>推荐 update 15 座次平衡权重；保留 update 30 最高 retained 长窗权重。</div>
         <div class="version">Later explicit Vn</div><div>只有证据支持时才扩大 actor 解冻或更改 curriculum。</div><div>任何语义或超参数变化都新建版本，绝不覆盖。</div>
       </div>
 
