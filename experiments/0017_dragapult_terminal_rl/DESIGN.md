@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V13 lambda=0.97 / actor LR 5e-6 active; drift reduced through update 10**
+Status: **V13 selected as stable viable config at update 20; long-run audit continues**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -343,6 +343,11 @@ V13 reached rolling-2,000 19.36% at update 7 and 18.25% at update 10. First/seco
 at update 10 were 19.0%/17.5%, a much smaller gap than V12. Behavior KL was about `3e-5` and
 explained variance was 0.48. This supports the lower-LR stabilization hypothesis, but the run must
 continue beyond 10 updates before selecting it over the V9 update-50 checkpoint.
+
+At update 20 V13 reached rolling-2,000 19.55% (19.75% at update 18), with rolling-500 19.2%.
+Explained variance was 0.515, behavior KL `3.23e-5`, and rollout-log-prob MAE remained about
+`4e-7`. V13 therefore passes the viable-configuration gate and is selected for uninterrupted
+long-run training through the remaining 12-hour audited CUDA target, subject to existing guards.
 
 ## 13. Later version decisions
 
