@@ -68,6 +68,8 @@ class RolloutCollector:
     ) -> None:
         if workers < 1:
             raise ValueError("workers must be positive")
+        if model.training:
+            raise ValueError("rollout policy must be in eval mode")
         self.model = model
         self.device = device
         self.workers = workers

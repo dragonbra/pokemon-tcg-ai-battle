@@ -344,7 +344,7 @@ def run_ppo(args: argparse.Namespace) -> int:
     config["warm_start"] = str(args.warm_start)
     _write_json(paths.config, config)
     try:
-        model = _load_model_only(args.warm_start, device)
+        model = _load_model_only(args.warm_start, device).eval()
         reference, _ = _load_model(device)
         reference = frozen_reference(reference, device)
         trainer = PPOTrainer(model, reference, device=device, config=ppo_config)

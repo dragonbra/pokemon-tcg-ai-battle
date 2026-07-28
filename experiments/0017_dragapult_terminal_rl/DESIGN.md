@@ -1,6 +1,6 @@
 # 0017 Dragapult Terminal RL
 
-Status: **V9 plateau identified at update 60; V10 Monte Carlo credit branch next**
+Status: **V10 first-rollout mode defect isolated; V11 eval-mode lambda=1 branch next**
 Date: 2026-07-28
 Target: Dragapult ex + Dusknoir, initialized from 0015 V2 R15 exact-best
 
@@ -299,7 +299,8 @@ an audit metric because dynamic inference batches can have different padding wid
 | `V7_ppo_minibatch_kl_guard` | pointer decoder + value | first minibatch KL was already 0.0493 | stopped: dynamic batch log-prob mismatch isolated |
 | `V8_ppo_frozen_behavior` | pointer decoder + value, LR 2e-6 | 10 stable updates; KL 4e-6 to 1e-5 | viable contract, but rolling-2000 ended 10.5% and learning was too slow |
 | `V9_ppo_lr1e5` | pointer decoder + value, LR 1e-5, lambda 0.95 | rolling-2,000 peaked at 18.9%; update 60 ended 17.85% with seat divergence | stop after update 60; retain update 50 as stable branch point |
-| `V10_ppo_lambda1` | pointer decoder + value, LR 1e-5, lambda 1.0 | undiscounted terminal credit with new batch diagnostics | compare long-window gain, seat balance, entropy, and explained variance |
+| `V10_ppo_lambda1` | pointer decoder + value, LR 1e-5, lambda 1.0 | update 1 rollout-log-prob MAE 0.181 exposed train-mode dropout | stopped before update 2 backward; do not use checkpoint |
+| `V11_ppo_lambda1_eval_mode` | same V10 hypothesis with pre-rollout eval contract | undiscounted terminal credit with exact behavior probabilities | require first-update log-prob audit near numerical tolerance |
 | later explicit version | broader actor blocks if justified | controlled capacity comparison | only after decoder-only evidence and user review |
 
 Formal V1 and final evaluation use 10 games per each frozen opponent with balanced seats. Periodic probes may use fewer games but retain official-engine provenance and are not allowed to overwrite formal reports.
@@ -313,6 +314,14 @@ rolling-2,000 rate rose from 9.4% at update 2 to a peak of 18.9% at update 54. B
 The run is therefore stopped as a successful but plateauing configuration, not as a failure.
 Update 50 is the stable V10 branch point because it is an actually retained checkpoint near the
 long-window peak and precedes the persistent seat gap.
+
+V10 then exposed a pre-existing first-update defect rather than valid lambda evidence. The loaded
+model remained in train mode during the first rollout, so its 0.10 dropout produced actions under
+a different distribution from the eval-mode frozen behavior snapshot. The first update's
+`ppo/rollout_log_prob_mae` was 0.181; the same one-update-only pattern was visible retrospectively
+in V9. V10 was stopped before update 2 backward. From V11 onward, PPO loads the live model into
+eval mode before collection and `RolloutCollector` rejects any train-mode policy. This keeps legal
+categorical sampling as the only rollout stochasticity.
 
 ## 13. Later version decisions
 

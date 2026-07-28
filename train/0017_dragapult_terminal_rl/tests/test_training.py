@@ -8,6 +8,7 @@ import torch
 
 from ..checkpoint import checkpoint_metadata, save_model_only
 from ..observability.metrics import OutcomeTracker
+from ..rollout.collector import RolloutCollector
 from ..rollout.protocol import Episode, TrajectoryDecision
 from ..run import build_parser
 from ..storage import storage_guard
@@ -46,6 +47,13 @@ def _episode(name: str, reward: float, length: int, first: bool = True) -> Episo
 
 
 class TrainingContractTest(unittest.TestCase):
+    def test_rollout_collector_rejects_train_mode_policy(self) -> None:
+        model = torch.nn.Linear(2, 1)
+        with self.assertRaisesRegex(ValueError, "eval mode"):
+            RolloutCollector(  # type: ignore[arg-type]
+                model, device=torch.device("cpu"), workers=1
+            )
+
     def test_ppo_parser_exposes_gae_lambda(self) -> None:
         args = build_parser().parse_args(
             [
