@@ -1,0 +1,55 @@
+{
+  "schema_version": "pretrained_policy_archive_v1",
+  "asset_id": "0019-0730-epoch13",
+  "display_name": "0019 Universal Winner BC 0730 Epoch 13",
+  "project_id": "0019_universal_winner_bc",
+  "repository_version": "V1_universal_winner_r15",
+  "release_date": "2026-07-30",
+  "epoch": 13,
+  "global_step": 337194,
+  "checkpoint_schema": "0019_model_only_checkpoint_v1",
+  "checkpoint_payload": "model_weights_only_no_optimizer_no_resume_state",
+  "weights": {
+    "path": "model.pt",
+    "git_lfs": true,
+    "bytes": 71911281,
+    "sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
+  },
+  "model": {
+    "class": "SourceConditionedR15Policy",
+    "backbone": "R15DeterministicGradualOptionPolicy",
+    "parameter_count": 17756162,
+    "source_vocabulary_size": 509,
+    "neutral_source_id": 0,
+    "model_source_bundle_sha256": "1f103c179fde4fd471f0b8d765d9edd341886112991a7e35ff92bb5c38b041fd"
+  },
+  "data_identity": {
+    "snapshot_range": "2026-07-10..2026-07-28",
+    "dataset_content_sha256": "141aa82ac8a162cec5e6e57970d4020024fc0c03ef408b89c4dfa538c870b724",
+    "source_vocabulary_sha256": "ca8cbedae94fd4c371a88e03479b1b3f1e4b10e9b20d05d04d22b7f1bbe14c36",
+    "train_decisions": 6640006,
+    "validation_decisions": 707126
+  },
+  "selection": {
+    "metric": "bc/validation/loss",
+    "validation_loss": 0.2530806470442328,
+    "validation_greedy_exact_action": 0.812870690654848,
+    "validation_teacher_exact_action": 0.8128593772538416,
+    "validation_legal_action": 1.0,
+    "neutral_validation_loss": 0.36879337444767035,
+    "neutral_validation_greedy_exact_action": 0.748430972697935
+  },
+  "file_sha256": {
+    "model.pt": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+    "checkpoint_metadata.json": "689e7b0de214bbe4075c7a1faefade0165a6b0f822b11e4f8ffb8dc19d528a6b",
+    "contracts/model_contract.json": "e3a7d30a230fac637addc5d7acf36df46591dc39940a3729eb1a87b735bbbab4",
+    "contracts/training_config.json": "6fa95831a286a889e8c0c4cb731717644ee03e265d714d7c1aef7a20108be8a4",
+    "contracts/feature_dataset_reference.json": "a1c27e58cea879ef17976be85eeccdfd988fe6f8fa78b31658da0d4cf2e530d5",
+    "contracts/card_ontology.json": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d"
+  },
+  "provenance": {
+    "training_audit_commit": "810e8a9",
+    "source_checkpoint": "rl_runs/0019_universal_winner_bc/versions/V1_universal_winner_r15/checkpoint/epoch-0013-da9b13d6f82d19d4.pt",
+    "authoritative_design": "experiments/0019_universal_winner_bc/DESIGN.md"
+  }
+}

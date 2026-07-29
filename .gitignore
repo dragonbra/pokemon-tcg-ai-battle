@@ -8,6 +8,7 @@ venv/
 *.7z
 *.pkl
 *.pt
+!archive/pretrained/0019_universal_winner_bc_0730_epoch13/model.pt
 !evaluation/arena/opponents/marnies_grimmsnarl_ex_froslass_02/policy.pt
 !evaluation/arena/opponents/team_rockets_mewtwo_ex_spidops_01/policy.pt
 *.pth
