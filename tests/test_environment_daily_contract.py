@@ -12,6 +12,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs/environment-daily_kaggle_top100/daily/2026-07-27.html"
+CURRENT_REPORT = ROOT / "docs/environment-daily_kaggle_top100/daily/2026-07-30.html"
 
 
 class _DailyParser(HTMLParser):
@@ -88,6 +89,86 @@ class EnvironmentDailyContractTests(unittest.TestCase):
             "2026-07-26T20:07:01.973692+00:00",
         )
         self.assertEqual([episode.id for episode in bounded], [2, 1])
+
+    def test_leaderboard_binding_prefers_matching_score_over_latest_submission_date(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _select_leaderboard_submission,
+        )
+
+        leaderboard = SimpleNamespace(
+            score="1148.2",
+            submission_date="2026-07-29T02:34:52.576000+00:00",
+        )
+        lower_score_latest = SimpleNamespace(
+            id=55070000,
+            public_score="929.5",
+            date_submitted="2026-07-29T02:34:52.577000+00:00",
+        )
+        leaderboard_best = SimpleNamespace(
+            id=55069846,
+            public_score="1148.2",
+            date_submitted="2026-07-29T02:25:43.117000+00:00",
+        )
+
+        selected, binding = _select_leaderboard_submission(
+            leaderboard,
+            [lower_score_latest, leaderboard_best],
+        )
+
+        self.assertEqual(selected.id, 55069846)
+        self.assertEqual(binding, "leaderboard_score")
+
+    def test_leaderboard_binding_uses_date_only_to_disambiguate_equal_scores(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _select_leaderboard_submission,
+        )
+
+        leaderboard = SimpleNamespace(
+            score="1100.0",
+            submission_date="2026-07-29T02:34:52.576000+00:00",
+        )
+        selected, binding = _select_leaderboard_submission(
+            leaderboard,
+            [
+                SimpleNamespace(
+                    id=1,
+                    public_score="1100.0",
+                    date_submitted="2026-07-29T02:00:00+00:00",
+                ),
+                SimpleNamespace(
+                    id=2,
+                    public_score="1100.0",
+                    date_submitted="2026-07-29T02:34:52.577000+00:00",
+                ),
+            ],
+        )
+
+        self.assertEqual(selected.id, 2)
+        self.assertEqual(binding, "leaderboard_score_submission_date")
+
+    def test_leaderboard_binding_rejects_an_ambiguous_score(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _select_leaderboard_submission,
+        )
+
+        leaderboard = SimpleNamespace(
+            score="1100.0",
+            submission_date="2026-07-29T03:00:00+00:00",
+        )
+        tied = [
+            SimpleNamespace(
+                id=submission_id,
+                public_score="1100.0",
+                date_submitted=submitted_at,
+            )
+            for submission_id, submitted_at in (
+                (1, "2026-07-29T01:00:00+00:00"),
+                (2, "2026-07-29T02:00:00+00:00"),
+            )
+        ]
+
+        with self.assertRaisesRegex(ValueError, "leaderboard score"):
+            _select_leaderboard_submission(leaderboard, tied)
 
     def test_episode_identity_uses_agent_index_not_list_position(self) -> None:
         from data.processed.environment_daily.generate_live_snapshot import (
@@ -202,6 +283,34 @@ class EnvironmentDailyContractTests(unittest.TestCase):
         self.assertIn("tests.test_environment_daily_contract", contract)
         self.assertIn("submissionDate", contract)
         self.assertIn("PUBLIC + COMPLETED", contract)
+        self.assertIn("leaderboard `score`", contract)
+        self.assertIn("同分", contract)
+
+    def test_current_report_highlights_the_user_team_everywhere(self) -> None:
+        text = CURRENT_REPORT.read_text(encoding="utf-8")
+
+        self.assertIn("我的位置", text)
+        self.assertIn('data-current-user="true"', text)
+        self.assertGreaterEqual(text.count('data-current-user="true"'), 4)
+        self.assertIn("宝糕手", text)
+
+    def test_current_report_embeds_100_matching_leaderboard_scores(self) -> None:
+        text = CURRENT_REPORT.read_text(encoding="utf-8")
+        match = re.search(
+            r'<script type="application/json" id="snapshot-audit">(.*?)</script>',
+            text,
+            re.S,
+        )
+        self.assertIsNotNone(match)
+        audit = json.loads(match.group(1))
+        selected = audit["selected"]
+
+        self.assertEqual(len(selected), 100)
+        self.assertTrue(all("leaderboard_score" in row for row in selected))
+        self.assertTrue(
+            all(row["leaderboard_score"] == row["submission_public_score"] for row in selected)
+        )
+        self.assertIn("leaderboard score = submission publicScore", text)
 
     def test_generator_is_date_parameterized(self) -> None:
         source = (
@@ -212,6 +321,28 @@ class EnvironmentDailyContractTests(unittest.TestCase):
         self.assertIn("_validate_snapshot", source)
         self.assertIn("_update_index", source)
         self.assertNotIn("archive.train_legacy", source)
+
+    def test_previous_report_parser_reads_the_latest_published_daily(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import _previous_players
+
+        players = _previous_players("2026-07-30")
+        self.assertEqual(len(players), 100)
+        self.assertEqual(players["Dries @ Tufa Labs"]["rank"], 1)
+        self.assertEqual(
+            players["Dries @ Tufa Labs"]["archetype"],
+            "Marnie's Grimmsnarl ex / Froslass",
+        )
+        self.assertEqual(players["Dries @ Tufa Labs"]["deck_hash"], "c20a8a46f5c6")
+
+    def test_deck_hash_comparison_accepts_a_shared_display_prefix(self) -> None:
+        from data.processed.environment_daily import generate_live_snapshot
+
+        comparison = getattr(generate_live_snapshot, "_same_deck_hash", None)
+        self.assertIsNotNone(comparison)
+        self.assertTrue(comparison("c20a8a46f5c6", "c20a8a46f5c6"))
+        self.assertTrue(comparison("c20a8a46f5c6", "c20a8a46f5"))
+        self.assertFalse(comparison("c20a8a46f5c6", "f50fa3a23cdf"))
+        self.assertFalse(comparison("", "c20a8a46f5c6"))
 
     def test_report_index_is_reverse_chronological(self) -> None:
         text = (

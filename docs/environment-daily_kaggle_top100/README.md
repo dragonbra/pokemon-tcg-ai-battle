@@ -7,10 +7,11 @@
 - 本目录保存 Kaggle Pokémon TCG AI Battle **Top 100 对战环境分析日报**。
 - 它不是项目开发进展日报，也不负责规定固定的数据来源。
 - 当用户说“根据现在的快照构建日报”时，固定含义是：立即冻结调用时可见的官方 Top 100
-  leaderboard；按每行 `submissionDate` 唯一绑定该行代表的 submission；对每个 submission
-  获取同一冻结时刻以前最新的 `PUBLIC + COMPLETED` Episode，并从该 Episode 中 submission
-  自身唯一的 player index 读取 exact 60-card deck。禁止复用前一天、同日旧 run 或任意缓存
-  replay 冒充当前快照。
+  leaderboard；按每行 leaderboard `score` 唯一绑定实际产生该榜分的 submission。只有多个
+  submission 的 `publicScore` 同分时，才允许在同分候选内部使用 `submissionDate` 消歧；仍不唯一
+  时必须 fail closed，禁止选择最新但分数更低的 submission。对每个已验证 submission 获取同一
+  冻结时刻以前最新的 `PUBLIC + COMPLETED` Episode，并从该 Episode 中 submission 自身唯一的
+  player index 读取 exact 60-card deck。禁止复用前一天、同日旧 run 或任意缓存 replay 冒充当前快照。
 - 胜率、W-L-D 和 match-up 只使用同一批冻结 submission 在冻结时间以前的官方 Episode Meta；
   opponent 必须来自 Episode 对侧的真实 submission。缺少证据时显示不可重建或 `n=0`，不得复制
   前日报数值、把缺失值写成 0% 或从代表 replay 外推全量先后攻/回合统计。
@@ -50,11 +51,13 @@ python3 -m data.processed.environment_daily.generate_live_snapshot \
   禁止沿用前日报数值或将无证据格子写成 0% 胜率。
 - 禁止将正式日报退化为单个搜索框加排行榜表格。发布前须通过
   `tests.test_environment_daily_contract` 的结构回归检查。
-- 渲染是 fail-closed：100 行中任一 leaderboard 字段、submissionDate 绑定、截止时间、最新
-  Episode、player index、replay 文件、60 张 deck、deck hash 或 W-L-D 对不上，就不得生成正式日报。
+- 渲染是 fail-closed：100 行中任一 leaderboard 字段、榜分与 submission `publicScore` 绑定、
+  同分日期消歧、截止时间、最新 Episode、player index、replay 文件、60 张 deck、deck hash 或
+  W-L-D 对不上，就不得生成正式日报。
 
 当前报告：
 
+- [2026-07-30 — Top 100 实时环境快照 0730（leaderboard score + 高分 submission + 官方 Meta）](daily/2026-07-30.html)
 - [0726–0728 — Top 100 跨日环境变迁分析（构筑、排名、卡池与证据边界）](environment-transition.html)
 - [2026-07-28 — Top 100 实时环境快照 0728（最终 submission + 官方 completed/public Meta）](daily/2026-07-28.html)
 - [2026-07-27 — Top 100 实时环境快照 0727（最终 submission + 官方 completed/public Meta）](daily/2026-07-27.html)

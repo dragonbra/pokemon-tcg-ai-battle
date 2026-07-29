@@ -28,12 +28,15 @@
   `data/processed/environment_daily/generate_live_snapshot.py` 和
   `docs/environment-daily_kaggle_top100/README.md`。
 - “根据现在的快照构建日报”固定要求调用统一生成入口即时冻结官方 Top 100，以 leaderboard 每行
-  `submissionDate` 唯一绑定 submission，并只选择同一冻结点以前该 submission 最新的
+  `score` 唯一绑定实际产生该榜分的 submission；只有多个 submission 的 `publicScore` 同分时，
+  才允许在这些同分候选内部用 `submissionDate` 消歧，仍不唯一时必须 fail closed，禁止把最新但
+  低分的 submission 冒充榜单 submission。绑定后只选择同一冻结点以前该 submission 最新的
   `PUBLIC + COMPLETED` Episode；必须从 Episode 中 submission 自身唯一 player index 读取 exact
   60-card deck。不得复用旧 snapshot、旧 replay 或前一日报的统计冒充当前环境。
 - 日报的个人胜率、W-L-D、牌型 match-up 和卡池统计必须由本次冻结 submission 的官方 Episode
   Meta 与 exact deck 计算。正式渲染前必须通过 100/100 leaderboard → submission → Episode →
-  player index → replay → deck/hash 身份链审计；任一链不一致时 fail closed，不得发布。
+  player index → replay → deck/hash 身份链审计，并确认每行 leaderboard `score` 与所选 submission
+  `publicScore` 相等；任一链不一致时 fail closed，不得发布。
 - Kaggle Episode Meta 是最终一致的约 1,000 条滚动窗口；采集必须将多轮查询看到的冻结点前
   Episode 按 ID 做单调并集，并连续两轮全量扫描零新增后才可完成。胜率和 match-up 必须由该
   冻结并集重算，禁止使用仍在漂移的单次端点切片。

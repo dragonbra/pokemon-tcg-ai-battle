@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 import csv
+from decimal import Decimal, InvalidOperation
 import hashlib
 import html
 import json
@@ -20,12 +21,17 @@ from kaggle.api.kaggle_api_extended import KaggleApi
 from requests.exceptions import RequestException
 
 COMPETITION = "pokemon-tcg-ai-battle"
+CURRENT_USER_TEAM_ID = 16383960
 DRAGAPULT_EX = 121
 MARNIES_GRIMMSNARL_EX = 648
 
 UI_BASELINE = "2026-07-26.html"
 CARD_POOL_BASELINE = "2026-07-25.html"
-SNAPSHOT_SCHEMA = "pokemon_tcg_environment_daily_v2"
+SNAPSHOT_SCHEMA = "pokemon_tcg_environment_daily_v3"
+LEADERBOARD_BINDINGS = {
+    "leaderboard_score",
+    "leaderboard_score_submission_date",
+}
 
 CARD_IMAGE_SET_BY_EXPANSION = {
     "BLK": "zsv10pt5", "DRI": "sv10", "JTG": "sv9", "MEG": "me1",
@@ -165,24 +171,45 @@ def _timestamp(value: object) -> str:
     return parsed.astimezone(timezone.utc).isoformat() if parsed is not None else str(value)
 
 
+def _score(value: object) -> Decimal | None:
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+
+
 def _select_leaderboard_submission(
     leaderboard_row: object, submissions: list[object]
 ) -> tuple[object, str]:
     if not submissions:
         raise ValueError("team has no submissions")
+    leaderboard_score = _score(_model_value(leaderboard_row, "score"))
+    if leaderboard_score is None:
+        raise ValueError("leaderboard row has no valid score")
+    score_matches = [
+        row
+        for row in submissions
+        if _score(_model_value(row, "public_score", "publicScore")) == leaderboard_score
+    ]
+    if len(score_matches) == 1:
+        return score_matches[0], "leaderboard_score"
+    if not score_matches:
+        raise ValueError(
+            f"cannot bind leaderboard score {leaderboard_score}: no submission matches"
+        )
     leaderboard_date = _model_value(leaderboard_row, "submission_date", "submissionDate")
     exact_dates = [
         row
-        for row in submissions
+        for row in score_matches
         if _timestamp(_model_value(row, "date_submitted", "dateSubmitted"))
         == _timestamp(leaderboard_date)
     ]
     if len(exact_dates) == 1:
-        return exact_dates[0], "submission_date"
+        return exact_dates[0], "leaderboard_score_submission_date"
     leaderboard_datetime = _datetime(leaderboard_date)
     dated_rows = []
     if leaderboard_datetime is not None:
-        for row in submissions:
+        for row in score_matches:
             submitted_at = _datetime(_model_value(row, "date_submitted", "dateSubmitted"))
             if submitted_at is not None:
                 dated_rows.append(
@@ -194,9 +221,10 @@ def _select_leaderboard_submission(
         and dated_rows[0][0] <= 2.0
         and (len(dated_rows) == 1 or dated_rows[0][0] < dated_rows[1][0])
     ):
-        return dated_rows[0][1], "submission_date_nearest_2s"
+        return dated_rows[0][1], "leaderboard_score_submission_date"
     raise ValueError(
-        f"cannot uniquely bind leaderboard submissionDate {leaderboard_date!r}"
+        f"cannot uniquely bind leaderboard score {leaderboard_score} across "
+        f"{len(score_matches)} submissions"
     )
 
 
@@ -379,8 +407,10 @@ def _validate_snapshot(
         for field in ("rank", "team_id", "team_name", "score", "submission_date"):
             if player.get(field) != row.get(field):
                 raise ValueError(f"rank {expected_rank}: leaderboard field {field} diverged")
-        if player.get("binding") not in {"submission_date", "submission_date_nearest_2s"}:
-            raise ValueError(f"rank {expected_rank}: submissionDate was not uniquely bound")
+        if player.get("binding") not in LEADERBOARD_BINDINGS:
+            raise ValueError(f"rank {expected_rank}: leaderboard score was not uniquely bound")
+        if _score(player.get("submission_public_score")) != _score(row.get("score")):
+            raise ValueError(f"rank {expected_rank}: submission publicScore diverged")
         submission_id = int(player.get("submission_id") or 0)
         bounded_views = [
             view
@@ -434,7 +464,9 @@ def _validate_snapshot(
             {
                 "rank": expected_rank,
                 "team_name": player["team_name"],
+                "leaderboard_score": str(row["score"]),
                 "submission_id": submission_id,
+                "submission_public_score": player["submission_public_score"],
                 "episode_id": episode_id,
                 "episode_create_time": latest["create_time"],
                 "episode_player_index": player_index,
@@ -449,6 +481,7 @@ def _validate_snapshot(
         "audited_players": 100,
         "all_episode_times_at_or_before_capture": True,
         "all_submission_matches_unique": True,
+        "all_leaderboard_scores_match": True,
         "all_decks_exactly_60": True,
         "bounded_player_views": sum(
             int(player.get("valid_games") or 0) for player in players.values()
@@ -508,6 +541,12 @@ def _deck_hash(deck: list[int]) -> str:
     return hashlib.sha256(encoded).hexdigest()[:12]
 
 
+def _same_deck_hash(left: str, right: str) -> bool:
+    left = left.strip().lower()
+    right = right.strip().lower()
+    return bool(left and right) and (left.startswith(right) or right.startswith(left))
+
+
 def _pct(value: float | None) -> str:
     return "—" if value is None else f"{100 * value:.1f}%"
 
@@ -525,14 +564,16 @@ def _previous_players(report_date: str) -> dict[str, dict[str, str | int | float
     result: dict[str, dict[str, str | int | float]] = {}
     for row in re.findall(r'<tr data-index-row.*?</tr>', text, re.S):
         cells = re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)
-        if len(cells) < 10:
+        if len(cells) < 8:
             continue
         plain = [re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", cell)).strip() for cell in cells]
         rank = re.search(r"#(\d+)", plain[0])
+        team_name = re.search(r'<a href="#player-\d+">(.*?)</a>', row, re.S)
         archetype = re.search(r'data-archetype="([^"]*)"', row)
         deck_hash = re.search(r"([0-9a-f]{10,12})", plain[-1])
-        if rank:
-            result[plain[1].split("Team ")[0].strip()] = {
+        if rank and team_name:
+            name = html.unescape(re.sub(r"<[^>]+>", "", team_name.group(1))).strip()
+            result[name] = {
                 "rank": int(rank.group(1)),
                 "archetype": html.unescape(archetype.group(1)) if archetype else "",
                 "deck_hash": deck_hash.group(1) if deck_hash else "",
@@ -560,6 +601,7 @@ def _render_report(
     .archetype-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.archetype-card{padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff}.archetype-card h3{margin:0 0 8px}.bar-track{height:9px;border-radius:99px;background:#e8eee9;overflow:hidden}.bar-fill{height:100%;background:linear-gradient(90deg,#1e7c60,#8bbf9a)}
     .deck-group{margin:18px 0 28px}.deck-group h4{padding-bottom:7px;border-bottom:2px solid #a8cdbd}.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}.card-tile{min-width:0}.card-tile .card-art{position:relative;aspect-ratio:2.5/3.5;overflow:hidden;border-radius:8px;background:#edf2ef}.card-tile .card-thumb{width:100%!important;height:100%!important;min-width:0!important;max-width:none!important;min-height:0!important;max-height:none!important}.card-tile .card-thumb img{width:100%!important;height:100%!important;object-fit:contain!important}.card-tile b,.card-tile small{display:block}.card-tile b{margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-tile small{color:var(--muted)}.deck-count{position:absolute;z-index:4;top:7px;right:7px;padding:3px 7px;border-radius:999px;color:#fff;background:#173e31e8;font-weight:900}
     .archetype-profile{margin:10px 0;border:1px solid var(--line);border-radius:14px}.archetype-profile summary{display:flex;justify-content:space-between;gap:12px;padding:15px;cursor:pointer;font-weight:800}.archetype-profile>div{padding:0 15px 15px}.tag-list{display:flex;flex-wrap:wrap;gap:7px}.tag{padding:5px 8px;border-radius:999px;background:#edf6f1;color:#0d6349;font-size:12px}.unavailable-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.unavailable-grid article{padding:16px;border:1px dashed #c9d2cd;border-radius:14px;background:#f7f8f7}.comparison-table small,.summary-table small{display:block;color:var(--muted)}
+    .current-user{outline:2px solid #c88b19;outline-offset:-2px;background:#fffaf0!important}.current-user-badge{display:inline-flex;align-items:center;margin-left:7px;padding:3px 7px;border:1px solid #d8aa54;border-radius:999px;background:#fff0c9;color:#754b08;font-size:11px;font-weight:900;vertical-align:middle}.current-user-banner{display:flex;flex-wrap:wrap;align-items:center;gap:9px 16px;margin:16px 0;padding:15px 18px;border:2px solid #c88b19;border-radius:12px;background:#fffaf0}.current-user-banner b{font-size:18px}.current-user-banner span{color:#5f584c}.current-user-banner a{margin-left:auto;font-weight:850}
     @media(max-width:900px){.archetype-grid,.unavailable-grid{grid-template-columns:1fr 1fr}}@media(max-width:680px){.archetype-grid,.unavailable-grid{grid-template-columns:1fr}}
     """
     css = "\n".join(line.rstrip() for line in css.splitlines())
@@ -567,6 +609,10 @@ def _render_report(
         player["archetype"] = _classify_archetype(player["deck"], catalog)
         player["deck_hash"] = _deck_hash(player["deck"])
         player["card_counts"] = Counter(int(card_id) for card_id in player["deck"])
+    current_user = next(
+        (player for player in players if int(player["team_id"]) == CURRENT_USER_TEAM_ID),
+        None,
+    )
 
     by_submission = {int(player["submission_id"]): player for player in players}
     cutoff = _datetime(state["captured_at_utc"])
@@ -642,7 +688,10 @@ def _render_report(
     exited = sorted(set(previous) - current_names)
     changed = [
         player for player in joined
-        if previous[str(player["team_name"])]["deck_hash"] != player["deck_hash"][:10]
+        if not _same_deck_hash(
+            str(previous[str(player["team_name"])]["deck_hash"]),
+            str(player["deck_hash"]),
+        )
     ]
 
     total_games = sum(int(player["valid_games"]) for player in players)
@@ -727,12 +776,21 @@ def _render_report(
     def badge(player: dict[str, object]) -> str:
         return f'<span class="archetype-badge visual-badge">{archetype_visual(str(player["archetype"]))}</span>'
 
+    def is_current_user(player: dict[str, object]) -> bool:
+        return int(player["team_id"]) == CURRENT_USER_TEAM_ID
+
+    def current_user_attributes(player: dict[str, object]) -> str:
+        return ' class="current-user" data-current-user="true"' if is_current_user(player) else ""
+
+    def current_user_badge(player: dict[str, object]) -> str:
+        return '<span class="current-user-badge">我的位置</span>' if is_current_user(player) else ""
+
     def player_row(player: dict[str, object], attribute: str) -> str:
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
         return (
-            f'<tr {attribute} data-archetype="{html.escape(str(player["archetype"]))}" '
+            f'<tr {attribute}{current_user_attributes(player)} data-archetype="{html.escape(str(player["archetype"]))}" '
             f'data-search="{html.escape(search)}"><td><b>#{player["rank"]}</b></td>'
-            f'<td><a href="#player-{int(player["rank"]):03d}">{html.escape(str(player["team_name"]))}</a>'
+            f'<td><a href="#player-{int(player["rank"]):03d}">{html.escape(str(player["team_name"]))}</a>{current_user_badge(player)}'
             f'<small>Team {player["team_id"]} · submission {player["submission_id"]}</small></td>'
             f'<td>{badge(player)}</td><td>{float(player["score"]):.1f}</td>'
             f'<td>{int(player["valid_games"]):,}</td><td>{player["wins"]}-{player["losses"]}-{player["draws"]}</td>'
@@ -759,13 +817,13 @@ def _render_report(
     comparison_rows = []
     for player in joined:
         old = previous[str(player["team_name"])]
-        is_changed = old["deck_hash"] != player["deck_hash"][:10]
+        is_changed = not _same_deck_hash(str(old["deck_hash"]), str(player["deck_hash"]))
         comparison_rows.append(
             f'<tr class="{"changed-deck" if is_changed else "same-deck"}"><td><b>{html.escape(str(player["team_name"]))}</b></td>'
             f'<td>#{old["rank"]} → <b>#{player["rank"]}</b></td>'
             f'<td>{html.escape(str(old["archetype"]))} → <b>{html.escape(str(player["archetype"]))}</b></td>'
             f'<td><span class="status {"provisional" if is_changed else "strict"}">{"卡组变化" if is_changed else "卡组不变"}</span>'
-            f'<small>{old["deck_hash"] or "—"} → {player["deck_hash"][:10]}</small></td></tr>'
+            f'<small>{old["deck_hash"] or "—"} → {player["deck_hash"]}</small></td></tr>'
         )
 
     person_cards = []
@@ -779,10 +837,12 @@ def _render_report(
 
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
         person_cards.append(
-            f'<article class="person-card" data-person-card data-archetype="{html.escape(str(player["archetype"]))}" '
+            f'<article class="person-card{" current-user" if is_current_user(player) else ""}" data-person-card '
+            f'{"data-current-user=\"true\" " if is_current_user(player) else ""}'
+            f'data-archetype="{html.escape(str(player["archetype"]))}" '
             f'data-search="{html.escape(search)}"><div class="person-head"><span class="rank-chip">#{player["rank"]}</span>'
             f'<div><a href="#player-{int(player["rank"]):03d}"><b>{html.escape(str(player["team_name"]))}</b></a>'
-            f'{archetype_visual(str(player["archetype"]))}</div></div><div class="win-grid">'
+            f'{current_user_badge(player)}{archetype_visual(str(player["archetype"]))}</div></div><div class="win-grid">'
             f'{rate_card("全样本", player["win_rate"], int(player["valid_games"]))}'
             f'{rate_card("高分段 · Top 100 对手", high_rate, len(player["high_rewards"]))}'
             f'{rate_card("低分段 · 其余对手", other_rate, len(player["other_rewards"]))}</div>'
@@ -919,15 +979,29 @@ def _render_report(
         )
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
         detail_blocks.append(
-            f'<details class="person-card" id="player-{int(player["rank"]):03d}" data-player-detail '
+            f'<details class="person-card{" current-user" if is_current_user(player) else ""}" '
+            f'id="player-{int(player["rank"]):03d}" data-player-detail '
+            f'{"data-current-user=\"true\" " if is_current_user(player) else ""}'
             f'data-archetype="{html.escape(str(player["archetype"]))}" data-search="{html.escape(search)}">'
-            f'<summary><span><b>#{player["rank"]} {html.escape(str(player["team_name"]))}</b> · {badge(player)}</span>'
+            f'<summary><span><b>#{player["rank"]} {html.escape(str(player["team_name"]))}</b>'
+            f'{current_user_badge(player)} · {badge(player)}</span>'
             f'<span>{player["wins"]}-{player["losses"]}-{player["draws"]} · {_pct(player["win_rate"])}</span></summary>'
             f'<div class="detail-body"><p><b>submission {player["submission_id"]}</b> · Episode {player["episode_id"]} · '
             f'player index {player.get("episode_player_index", "—")} · '
             f'createTime {html.escape(str(player.get("episode_create_time") or "未记录"))} · '
             f'deck hash <code>{player["deck_hash"]}</code></p><h4>已识别 matchup</h4>{matchup_html}'
             f'<h4>Exact 60-card deck</h4>{deck_html}</div></details>'
+        )
+
+    current_user_banner = ""
+    if current_user is not None:
+        current_user_banner = (
+            '<aside class="current-user-banner" data-current-user="true">'
+            '<span class="current-user-badge">我的位置</span>'
+            f'<b>#{current_user["rank"]} {html.escape(str(current_user["team_name"]))}</b>'
+            f'<span>榜分 {float(current_user["score"]):.1f} · submission '
+            f'{current_user["submission_id"]} · {html.escape(str(current_user["archetype"]))}</span>'
+            f'<a href="#player-{int(current_user["rank"]):03d}">查看完整构筑与对局</a></aside>'
         )
 
     report_html = f'''<!doctype html>
@@ -937,8 +1011,9 @@ def _render_report(
 <nav class="section-nav" aria-label="{report_id} 完整分析导航"><a href="#new-summary">新版总览</a><a href="#personal-winrates">个人胜率</a><a href="#construction-distribution">构筑分布</a><a href="#snapshot-comparison">跨日变化</a><a href="#matchup-boundary">Match-up</a><a href="#card-pool">构筑卡池</a><a href="#archetype-builds">牌型卡池</a><a href="#rank-index">静态排名</a><a href="#player-details">逐人展开</a></nav>
 
 <section class="panel" id="new-summary"><div class="heading"><div><p class="eyebrow">{report_date} SNAPSHOT · {report_id}</p><h2>新版环境分析总览</h2></div><p>整体组件与 UI 固定继承 0726；构筑卡池固定继承 0725 的卡图网格与覆盖率表达。</p></div>
+{current_user_banner}
 <div class="metrics new-metrics"><div class="metric"><b>100</b><span>最终 submissions</span></div><div class="metric"><b>{total_games:,}</b><span>公开 Meta 玩家视角</span></div><div class="metric"><b>{len(presence)}</b><span>Card Pool 并集</span></div><div class="metric"><b>{len(distribution)}</b><span>实际牌型</span></div><div class="metric"><b>100</b><span>exact decks 已审计</span></div><div class="metric"><b>100</b><span>代表 replays</span></div></div>
-<div class="evidence-grid"><article><b>榜单层</b><p>冻结官方 Top100、score 与 submissionDate。</p></article><article><b>Meta 层</b><p>只计 exact submission 的 PUBLIC + COMPLETED Episode Meta。</p></article><article><b>Replay 层</b><p>逐 submission 最新合格 replay 的 exact 60-card deck。</p></article></div>
+<div class="evidence-grid"><article><b>榜单层</b><p>冻结官方 Top100，以 score 匹配 submission publicScore；同分才用 submissionDate 消歧。</p></article><article><b>Meta 层</b><p>只计 exact submission 的 PUBLIC + COMPLETED Episode Meta。</p></article><article><b>Replay 层</b><p>逐 submission 最新合格 replay 的 exact 60-card deck。</p></article></div>
 <h3>读数摘要</h3><div class="finding-grid"><article><b>榜首与分差</b><p>{html.escape(str(players[0]["team_name"]))} · {float(players[0]["score"]):.1f}；第 100 名 {html.escape(str(players[-1]["team_name"]))} · {float(players[-1]["score"]):.1f}。</p></article><article><b>公开 Meta</b><p>{total_wins:,}-{total_losses:,}-{total_draws:,}，玩家视角胜率 {_pct(overall)}（n={total_games:,}）。</p></article><article><b>环境集中度</b><p>{html.escape(ordered_archetypes[0][0])} {ordered_archetypes[0][1]} 人；前两类合计 {sum(count for _, count in ordered_archetypes[:2])}/100。</p></article><article><b>卡池审计</b><p>100 份代表 deck 均为 60 张，共覆盖 {len(presence)} 个 Card ID。</p></article></div>
 <div class="snapshot-note"><b>证据护栏：</b>单 submission 的 Episode Meta 最多暴露约 1,000 局；本次有 {capped_submissions} 个 submission 命中端点上限。逐局 opponent Meta 已按 leaderboard 冻结时间截断后用于真实 matchup，firstPlayer / final turn 仍只按代表 replay 审计，不外推为全量结论。</div></section>
 
@@ -958,7 +1033,7 @@ def _render_report(
 
 <section class="panel" id="player-details"><div class="heading"><div><p class="eyebrow">PLAYER DETAIL / EXACT DECK</p><h2>逐人 exact 60-card deck 展开</h2></div><p>点击展开；卡图、分组、张数、Card ID 与大图预览沿用 0726。</p></div><div class="toolbar"><button id="open-visible" type="button">展开当前筛选</button><button id="close-all" type="button">全部收起</button></div><div class="person-grid">{''.join(detail_blocks)}</div></section>
 
-<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{report_id}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均绑定最终 submission；只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID；渲染前已执行 100/100 身份链强制审计。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/snapshot.json</code>；逐局 Meta 缓存：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/meta_views.json</code>；生成入口：<code>python3 -m data.processed.environment_daily.generate_live_snapshot</code>。</li></ul></section>
+<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{report_id}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均通过 <code>leaderboard score = submission publicScore</code> 绑定实际高分 submission；只有同分候选才使用 submissionDate 消歧。</li><li>只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID；渲染前已执行 100/100 身份链强制审计。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/snapshot.json</code>；逐局 Meta 缓存：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/meta_views.json</code>；生成入口：<code>python3 -m data.processed.environment_daily.generate_live_snapshot</code>。</li></ul></section>
 </main><script type="application/json" id="snapshot-audit">{audit_json}</script><script>
 const search=document.getElementById('search'), archetype=document.getElementById('archetype-filter'), visible=document.getElementById('visible-count');
 function apply(){{const q=search.value.trim().toLowerCase();let n=0;document.querySelectorAll('[data-player-row],[data-player-detail],[data-person-card]').forEach(row=>{{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok&&row.matches('[data-player-row]'))n++;}});visible.textContent=`显示 ${{n}}`;}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);apply();
@@ -1153,13 +1228,16 @@ def collect(work: Path, report: Path, report_date: str) -> None:
         model.score = row["score"]
         model.submission_date = datetime.fromisoformat(row["submission_date"])
         selected, binding = _select_leaderboard_submission(model, list(submissions))
-        if binding not in {"submission_date", "submission_date_nearest_2s"}:
+        if binding not in LEADERBOARD_BINDINGS:
             raise RuntimeError(
-                f"rank {row['rank']}: leaderboard submissionDate did not bind uniquely"
+                f"rank {row['rank']}: leaderboard score did not bind uniquely"
             )
         state["players"][key] = {
             **row,
             "submission_id": int(selected.id),
+            "submission_public_score": str(
+                _model_value(selected, "public_score", "publicScore", default="")
+            ),
             "submission_date_actual": str(
                 _model_value(selected, "date_submitted", "dateSubmitted", default="")
             ),
@@ -1252,8 +1330,6 @@ def collect(work: Path, report: Path, report_date: str) -> None:
 def _update_index(report_date: str) -> None:
     index_path = DAILY_REPORT_ROOT.parent / "index.html"
     text = index_path.read_text(encoding="utf-8")
-    if f'datetime="{report_date}"' in text:
-        return
     report_id = _report_id(report_date)
     article = f'''\n    <article class="report">
       <time datetime="{report_date}">{report_date}</time>
@@ -1263,10 +1339,14 @@ def _update_index(report_date: str) -> None:
       </div>
       <a class="button" href="daily/{report_date}.html">查看日报</a>
     </article>'''
-    matches = list(re.finditer(r'    <article class="report">.*?    </article>', text, re.S))
+    matches = list(
+        re.finditer(r'    <article class="[^"]*\breport\b[^"]*">.*?    </article>', text, re.S)
+    )
     if not matches:
         raise ValueError(f"report articles missing: {index_path}")
-    articles = [match.group(0) for match in matches] + [article.strip("\n")]
+    articles = [match.group(0) for match in matches]
+    if f'href="daily/{report_date}.html"' not in text:
+        articles.append(article.strip("\n"))
     articles.sort(
         key=lambda value: re.search(r'<time datetime="([^"]+)">', value).group(1),
         reverse=True,
