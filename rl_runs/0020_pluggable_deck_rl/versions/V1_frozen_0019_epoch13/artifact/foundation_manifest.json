@@ -1,0 +1,31 @@
+{
+  "schema_version": "0020_frozen_foundation_v1",
+  "project_id": "0020_pluggable_deck_rl",
+  "version": "V1_frozen_0019_epoch13",
+  "source": {
+    "project_id": "0019_universal_winner_bc",
+    "version": "V1_universal_winner_r15",
+    "selection_record": "rl_runs/0019_universal_winner_bc/versions/V1_universal_winner_r15/artifact/checkpoint_selection.json",
+    "selection_metric": "bc/validation/loss"
+  },
+  "checkpoint": {
+    "path": "../checkpoint/epoch-0013-da9b13d6f82d19d4.pt",
+    "sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+    "bytes": 71911281,
+    "epoch": 13,
+    "global_step": 337194,
+    "payload_keys": ["epoch", "global_step", "metadata", "model"],
+    "optimizer_state_saved": false,
+    "resumable_training_state_saved": false
+  },
+  "ontology": {
+    "path": "card_ontology.json",
+    "sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+    "bytes": 1297257
+  },
+  "deployment_source_id": 0,
+  "registered_deck_contract": "exact 60-card multiset from candidate deck.csv",
+  "parameter_count": 17756162,
+  "model_only": true,
+  "training_updates": 0
+}

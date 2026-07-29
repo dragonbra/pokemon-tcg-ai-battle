@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "name": "heterogeneous_10_frozen_bc_plus_1_bc_learner_example",
+  "max_policies": 32,
+  "notes": "BC-only opponent-pool example. It excludes the standalone Alakazam strategy runtime. Duplicate archetypes must be replaced by promotion winners when the league manifest is frozen.",
+  "routing": {
+    "mode": "fixed_padded_device_cohorts",
+    "enforce_reset_quota": true,
+    "read_counts_on_host": false,
+    "overflow": "named_engine_error"
+  },
+  "policies": [
+    {
+      "policy_id": 0,
+      "name": "rocket_mewtwo_spidops_bc",
+      "deck": "rocket_mewtwo_spidops",
+      "checkpoint": "bc_models/agent_bc_rocket_mewtwo_spidops_v1_20260724/policy.pt",
+      "adapter": "idonly_pointer_v1",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 27.33
+    },
+    {
+      "policy_id": 1,
+      "name": "marnie_grimmsnarl_froslass_bc",
+      "deck": "marnie_grimmsnarl_froslass",
+      "checkpoint": "bc_models/agent_bc_marnie_grimmsnarl_froslass_v1_20260724/policy.pt",
+      "adapter": "idonly_pointer_v1",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 27.33
+    },
+    {
+      "policy_id": 2,
+      "name": "yushin_alakazam_bc",
+      "deck": "yushin_alakazam",
+      "checkpoint": "bc_models/agent_yushin_idonly_bc_v1_20260723/policy.pt",
+      "adapter": "idonly_pointer_v1",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 27.33
+    },
+    {
+      "policy_id": 3,
+      "name": "dragapult_gru_bc",
+      "deck": "dragapult",
+      "checkpoint": "bc_models/dragapult_large_data_decoder_2layer/policy.pt",
+      "adapter": "gru_pointer_v1",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 30.08
+    },
+    {
+      "policy_id": 4,
+      "name": "cynthia_meanpool_bc",
+      "deck": "cynthia",
+      "checkpoint": "bc_models/agent_cynthia_core_meanpool_epochmix_v1_c7b3253f_20260727/policy.pt",
+      "adapter": "meanpool_pointer_v1",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 28.20
+    },
+    {
+      "policy_id": 5,
+      "name": "kangaskhan_crustle_meanpool_bc",
+      "deck": "kangaskhan_crustle",
+      "checkpoint": "bc_models/agent_kangaskhan_crustle_core_meanpool_epochmix_v2_e510e4d4_20260728/policy.pt",
+      "adapter": "meanpool_pointer_v1",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 28.20
+    },
+    {
+      "policy_id": 6,
+      "name": "marnie_prize_control_bc",
+      "deck": "marnie_prize_control",
+      "checkpoint": "bc_models/agent_marnie_prize_control_v4_3121746f_20260728/policy.pt",
+      "adapter": "marnie_prize_pointer_v4",
+      "codec": "marnie_prize_codec_v4",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 30.59
+    },
+    {
+      "policy_id": 7,
+      "name": "dragapult_goal_qkv_need_bc",
+      "deck": "dragapult_goal_qkv",
+      "checkpoint": "bc_models/agent_dragapult_goal_qkv_need_v2_f2b4039a_20260728/policy.pt",
+      "adapter": "goal_qkv_need_v2",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 37.23
+    },
+    {
+      "policy_id": 8,
+      "name": "dragapult_decoder_only_bc",
+      "deck": "dragapult_decoder_only",
+      "checkpoint": "bc_models/agent_dragapult_goal_qkv_need_decoder_only_v1_f2b4039a_20260729/policy.pt",
+      "adapter": "decoder_only_v1",
+      "codec": "idonly_codec_v1",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 37.22
+    },
+    {
+      "policy_id": 9,
+      "name": "marnie_compact_probability_bc",
+      "deck": "marnie_compact_probability",
+      "checkpoint": "bc_models/agent_marnie_compact_probability_v5_3121746f_20260729/policy.pt",
+      "adapter": "marnie_compact_v5",
+      "codec": "marnie_compact_codec_v5",
+      "frozen": true,
+      "dtype": "bf16",
+      "parameter_mib": 30.58
+    },
+    {
+      "policy_id": 10,
+      "name": "marnie_rl_learner",
+      "deck": "marnie_prize_control",
+      "checkpoint": "bc_models/agent_marnie_prize_control_v4_3121746f_20260728/policy.pt",
+      "adapter": "marnie_prize_pointer_v4",
+      "codec": "marnie_prize_codec_v4",
+      "frozen": false,
+      "dtype": "bf16",
+      "parameter_mib": 30.59
+    }
+  ]
+}

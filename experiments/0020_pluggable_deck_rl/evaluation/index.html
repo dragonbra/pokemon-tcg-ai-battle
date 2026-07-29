@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>evaluation · Evaluation 总览</title>
+<style>
+:root { color-scheme: light; --ink:#172033; --muted:#667085; --line:#d9e0ea;
+  --panel:#fff; --accent:#3157d5; --bg:#f4f7fb; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,sans-serif; }
+main { max-width:1320px; margin:0 auto; padding:32px 24px 56px; }
+h1 { margin:0 0 6px; font-size:28px; }
+.lead { margin:0 0 22px; color:var(--muted); }
+.cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:20px 0; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+.card strong { display:block; font-size:24px; }
+.card span { color:var(--muted); }
+.table-wrap { overflow:auto; background:var(--panel); border:1px solid var(--line);
+  border-radius:12px; }
+table { width:100%; border-collapse:collapse; white-space:nowrap; }
+th,td { padding:11px 12px; border-bottom:1px solid var(--line); text-align:right; }
+th { background:#eef3fb; color:#475467; font-size:12px; text-transform:uppercase; }
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2) { text-align:left; }
+tr:last-child td { border-bottom:0; }
+a { color:var(--accent); font-weight:650; text-decoration:none; }
+a:hover { text-decoration:underline; }
+.bad { color:#b42318; } .muted,.empty { color:var(--muted); }
+@media (max-width:720px) { .cards { grid-template-columns:1fr; } main { padding:20px 12px; } }
+</style>
+</head>
+<body><main>
+<h1>evaluation</h1>
+<p class="lead">项目级 Evaluation 总览。每个版本仍以独立 HTML 保存；点击版本名查看完整报告。</p>
+<section class="cards">
+<div class="card"><strong>5</strong><span>版本报告</span></div>
+<div class="card"><strong>1500</strong><span>累计对局</span></div>
+<div class="card"><strong>5</strong><span>零 error 报告</span></div>
+</section>
+<div class="table-wrap"><table>
+<thead><tr><th>版本报告</th><th>candidate / run</th><th>对局</th><th>胜</th><th>负</th>
+<th>平</th><th>error</th><th>unfinished</th><th>胜率</th><th>完成率</th></tr></thead>
+<tbody><tr><td><a href="V2_zero_shot_dragapult.html">V2_zero_shot_dragapult</a></td><td>0020_zero_shot_dragapult<br><span class="muted">run-674c5d0a4b804f91a17c492a9fed2cf3</span></td><td>300</td><td>127</td><td>173</td><td>0</td><td>0</td><td>0</td><td>42.33%</td><td>100.00%</td></tr><tr><td><a href="V3_zero_shot_alakazam.html">V3_zero_shot_alakazam</a></td><td>0020_zero_shot_alakazam<br><span class="muted">run-6c1fc3220adc49978885d5112d464df2</span></td><td>300</td><td>219</td><td>81</td><td>0</td><td>0</td><td>0</td><td>73.00%</td><td>100.00%</td></tr><tr><td><a href="V4_zero_shot_marnie.html">V4_zero_shot_marnie</a></td><td>0020_zero_shot_marnie<br><span class="muted">run-a261deac34b5453395106db4a798f6f6</span></td><td>300</td><td>240</td><td>60</td><td>0</td><td>0</td><td>0</td><td>80.00%</td><td>100.00%</td></tr><tr><td><a href="V5_zero_shot_lucario.html">V5_zero_shot_lucario</a></td><td>0020_zero_shot_lucario<br><span class="muted">run-813a4dd55ca84eedb7ac2691a6328fec</span></td><td>300</td><td>163</td><td>137</td><td>0</td><td>0</td><td>0</td><td>54.33%</td><td>100.00%</td></tr><tr><td><a href="V6_zero_shot_kangaskhan.html">V6_zero_shot_kangaskhan</a></td><td>0020_zero_shot_kangaskhan<br><span class="muted">run-bfe82f70adb5492bbbd235961cbe23d7</span></td><td>300</td><td>215</td><td>85</td><td>0</td><td>0</td><td>0</td><td>71.67%</td><td>100.00%</td></tr></tbody>
+</table></div>
+</main></body></html>
