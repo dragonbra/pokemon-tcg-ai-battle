@@ -1,0 +1,63 @@
+{
+  "schema_version": "0019_universal_winner_baseline_audit_v1",
+  "status": "complete_and_fully_validated_before_final_0728_rebuild",
+  "scope": {
+    "date_start": "2026-07-10",
+    "date_end": "2026-07-27",
+    "archive_count": 18,
+    "archive_episode_members": 85165,
+    "accepted_gap_patches": 1,
+    "unique_winning_episodes": 85120,
+    "excluded_episode_members": 46,
+    "duplicate_episode_members": 0,
+    "source_count": 482,
+    "deck_count": 350
+  },
+  "catalog": {
+    "catalog_sha256": "5a435e0c938913ec7e005fd9000525b63d7c442f255108ebcfec47534d86d6a8",
+    "source_vocabulary_sha256": "eb26aafa48daf9f68a3f96e6301dc827488f165e47b1fe81ae482b5aaca119b0",
+    "bytes": 71279961,
+    "elapsed_seconds": 1712.30,
+    "workers": 4
+  },
+  "raw": {
+    "content_sha256": "01fe84315e926ff57dec2d84ea378495935f1f13aa4ec90d588021688cf6ad03",
+    "trajectory_index_sha256": "a617ad79335440cff0530fd07861d01ae4cc834cb92bfcfe8952d9210a1b0d66",
+    "train_decisions": 6269070,
+    "validation_decisions": 666843,
+    "total_decisions": 6935913,
+    "maximum_action_length": 31,
+    "train_shards": 63,
+    "validation_shards": 7,
+    "bytes": 2259398597,
+    "bytes_per_decision": 325.753595,
+    "elapsed_seconds": 4015.14,
+    "workers": 8
+  },
+  "model_ready": {
+    "schema_version": "faithful_board_causal_cache_v1",
+    "content_sha256": "4123d20efa5129980d11819efdd752604f4996e09fbcf0d4be515983aafc6862",
+    "feature_compiler_sha256": "930956637572f1ab19f04c8e88b8e829f3cec857298cc0fba69203df0ea66b2d",
+    "materializer_sha256": "067101d7a60c0b340362774d6ec5ac7498477c002375ea809e3fb6b7347d3d12",
+    "ontology_file_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+    "train_decisions": 6269070,
+    "validation_decisions": 666843,
+    "a0_eligible_train_decisions": 6269070,
+    "a0_eligible_validation_decisions": 666843,
+    "train_shards": 6123,
+    "validation_shards": 652,
+    "shard_records": 1024,
+    "bytes": 51245836429,
+    "bytes_per_decision": 7388.477397,
+    "elapsed_seconds": 9309.84,
+    "workers": 8,
+    "validation": "passed_full_hash_dtype_shape_and_aggregate_contract"
+  },
+  "storage": {
+    "catalog_raw_and_model_ready_bytes": 53576514987,
+    "catalog_raw_and_model_ready_gib": 49.897018,
+    "dataset_hard_limit_gib": 100,
+    "assessment": "passed_with_more_than_50_gib_headroom"
+  },
+  "rebuild_reason": "The 2026-07-28 archive changes the globally sorted source vocabulary; old numeric source IDs cannot be appended safely."
+}

@@ -2,7 +2,7 @@
   "schema_version": "0019_project_manifest_v1",
   "project_id": "0019_universal_winner_bc",
   "title": "Universal Winner Behavioral Cloning",
-  "status": "data_preparation",
+  "status": "v1_bc_selected_epoch_13_after_system_interruption",
   "created_at": "2026-07-29T05:00:00+08:00",
   "provenance": {
     "implementation_source": "train/0016_alakazam_multideck_bc",
@@ -16,7 +16,14 @@
     "selection": "one completed decisive positive winner perspective per unique Episode",
     "deck_conditioning": "exact registered 60-card multiset",
     "source_conditioning": "Unicode NFC exact TeamNames identity; source_id 0 reserved for neutral inference",
-    "split": "whole Episode deterministic SHA-256 90/10"
+    "split": "whole Episode deterministic SHA-256 90/10",
+    "catalog_sha256": "51d0e99309acdc1166f62465dc577f6310c2560d032dd6ec50b567277211a008",
+    "model_ready_content_sha256": "141aa82ac8a162cec5e6e57970d4020024fc0c03ef408b89c4dfa538c870b724",
+    "winner_episodes": 89503,
+    "train_decisions": 6640006,
+    "validation_decisions": 707126,
+    "source_count": 509,
+    "deck_count": 367
   },
   "storage": {
     "archive_policy": "stream ZIP members without persistent extraction",
@@ -34,6 +41,16 @@
     "checkpoint_payload": "model weights only",
     "optimizer_state_saved": false,
     "resume_training_supported": false,
-    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning"
+    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning",
+    "v1_result": {
+      "version": "V1_universal_winner_r15",
+      "state": "interrupted_with_valid_selected_checkpoint",
+      "completed_epochs": 17,
+      "selected_epoch": 13,
+      "selected_validation_loss": 0.2530806470442328,
+      "selected_checkpoint_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+      "interruption": "system restart during epoch 18 validation",
+      "wandb_run_id": "0019_universal_winner_bc--v1_universal_winner_r15-a71785ee00"
+    }
   }
 }

@@ -14,10 +14,10 @@
 <header><h1>0019 通用胜者行为克隆</h1><p>全卡组、全胜者视角的通用 Encoder 预训练工程</p></header>
 <main>
   <div class="metrics">
-    <div class="metric"><span>真实 smoke</span><strong>199 局</strong><small>0727 官方 Episode</small></div>
-    <div class="metric"><span>平均决策</span><strong>89.87</strong><small>decisions / Episode</small></div>
-    <div class="metric"><span>raw 密度</span><strong>300.6 B</strong><small>gzip / decision</small></div>
-    <div class="metric"><span>模型缓存估算</span><strong>50.7 GiB</strong><small>总数据预计 53–56 GiB</small></div>
+    <div class="metric"><span>胜者 Episode</span><strong>89,503</strong><small>0710–0728 全量</small></div>
+    <div class="metric"><span>训练决策</span><strong>6,640,006</strong><small>validation 707,126</small></div>
+    <div class="metric"><span>数据规模</span><strong>52.73 GiB</strong><small>catalog + raw + tensor</small></div>
+    <div class="metric"><span>V1 最优</span><strong>Epoch 13</strong><small>validation loss 0.253081</small></div>
   </div>
   <section><h2>项目目标</h2><p>0019 不针对多龙或胡地。它模仿官方对局中所有可审计胜者，目标是让 Encoder 学到跨卡组通用的牌面、资源、时机与合法动作知识；特定构筑的最终决策与胜率由后续 deck-specific BC/RL 完成。</p><p class="note">胜者 BC 是高质量动作先验，不是价值函数。离线 loss 或 exact-action 不能替代 official-engine 胜率。</p></section>
   <section class="band"><h2>数据流水线</h2><div class="flow"><div><b>1. ZIP catalog</b>逐成员读取，不完整解压</div><div><b>2. Winner contract</b>唯一正奖励胜者、60 张卡组</div><div><b>3. Raw shards</b>因果 observation + ordered action</div><div><b>4. Model tensors</b>可直接进入 R15 训练</div></div><h3>显式条件</h3><p>每条轨迹包含 exact deck multiset、deck hash、Unicode NFC team identity、source ID、先后手、Episode/player identity 和 payload hash。source 0 专用于部署时的中性 persona。</p></section>
@@ -30,8 +30,9 @@
     <tr><td><code>source_id</code></td><td><code>[B] int32</code></td><td>训练 expert persona；0 为中性部署</td></tr>
     <tr><td><code>targets</code></td><td><code>[B,A+1]</code></td><td>最长 64 步 ordered pointer + STOP</td></tr>
   </tbody></table></section>
-  <section class="band"><h2>网络与训练</h2><p>R15 backbone：宽度 320、8 heads、4 层 board Transformer、Goal-QKV、事件记忆、2 层 scenario Transformer、option ScaleGate 初值 0.35。输出是 autoregressive legal-option pointer。</p><ul><li>AdamW，LR 3e-4，weight decay 0.02，BF16</li><li>每 epoch 一次 train pass + 一次完整 validation</li><li>validation 复用同一次 backbone encoding，同时记录真实 expert source 与 <code>source_id=0</code> 的 neutral loss、teacher/greedy exact 和合法率</li><li>V1 仍以真实 source validation loss 选点；neutral 指标只诊断通用部署差距，不参与反向传播</li><li>patience 5，min delta 0.001</li><li>单 epoch 初估 70–95 分钟；8–15 epochs 约 9–24 小时</li><li>checkpoint 仅模型权重，不保存 optimizer/RNG/恢复轨迹</li><li>W&amp;B：<code>0019 · universal_winner_bc · V&lt;n&gt;_&lt;tag&gt;</code></li></ul></section>
-  <section><h2>有余量时的下一步</h2><ol><li>中性 persona 蒸馏，缩小训练 source 与部署 source 0 的差距。</li><li>温和 source dropout，始终保留 exact deck conditioning。</li><li>仅在头部来源支配梯度时启用分层采样上限。</li><li>把通用 Encoder 交给 deck-specific Decoder/末层 BC 或 RL。</li></ol><p>这些都作为 V1 baseline 之后的单变量实验，不混入首个正式版本。</p></section>
+  <section class="band"><h2>网络与训练</h2><p>R15 backbone：宽度 320、8 heads、4 层 board Transformer、Goal-QKV、事件记忆、2 层 scenario Transformer、option ScaleGate 初值 0.35；source residual 词表为 509，完整模型 17,756,162 参数。输出是 autoregressive legal-option pointer。</p><ul><li>AdamW，LR 3e-4，weight decay 0.02，BF16</li><li>每 epoch 一次 train pass + 一次完整 validation</li><li>validation 复用同一次 backbone encoding，同时记录真实 expert source 与 <code>source_id=0</code> 的 neutral loss、teacher/greedy exact 和合法率</li><li>V1 以真实 source validation loss 选点；neutral 指标只诊断通用部署差距，不参与反向传播</li><li>17 个完整 epoch 实测 15.15 小时；稳定期约 46.73 分钟 / epoch</li><li>checkpoint 仅模型权重，不保存 optimizer/RNG/恢复轨迹</li><li>W&amp;B：<code>0019 · universal_winner_bc · V1_universal_winner_r15</code></li></ul></section>
+  <section><h2>V1 训练结果</h2><p><code>V1_universal_winner_r15</code> 的正式选择指标在 Epoch 13 最优：conditioned validation loss <strong>0.253080647</strong>，greedy exact <strong>81.2871%</strong>，teacher exact <strong>81.2859%</strong>，legal action <strong>100%</strong>。Epoch 13 同时赢得三项 conditioned 选点指标。</p><p class="note">系统在 Epoch 18 validation 进行到 480/1,382 batches 时重启。运行被如实记录为 interrupted，不冒充正常 early stopping；Epoch 18 没有完整指标或 checkpoint。Epoch 13 的 model-only checkpoint 仍完整可用。</p><p>neutral persona 的最低 loss 出现在 Epoch 9（0.365444490），Epoch 13 为 0.368793374。这证明 expert-conditioned 最优点与 source-0 部署诊断最优点并不完全一致；BC 指标仍不代表 official-engine 胜率。</p></section>
+  <section><h2>下一步</h2><ol><li>V2 单独测试 deterministic source dropout，始终保留 exact deck conditioning。</li><li>或单独测试中性 persona 蒸馏，不与 source dropout 混在同一版本。</li><li>用 neutral validation 与 deck-specific official-engine 评测共同判断迁移效果。</li><li>把通用 Encoder 交给 deck-specific Decoder/末层 BC 或 RL。</li></ol><p>所有新语义都必须创建严格递增的新版本，不向已中断的 V1 追加训练轨迹。</p></section>
 </main>
 </body>
 </html>

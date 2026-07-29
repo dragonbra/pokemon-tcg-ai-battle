@@ -1,0 +1,38 @@
+{
+  "best_conditioned": {
+    "checkpoint_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+    "epoch": 13,
+    "greedy_exact_action": 0.812870690654848,
+    "legal_action": 1.0,
+    "loss": 0.2530806470442328,
+    "teacher_exact_action": 0.8128593772538416
+  },
+  "best_neutral_diagnostic": {
+    "checkpoint_sha256": "afb1846827391f3d2879a95d6e444e210641a0b29d0bae9f86b19a1cc034cd9b",
+    "epoch": 9,
+    "greedy_exact_action": 0.7456563611011333,
+    "legal_action": 1.0,
+    "loss": 0.36544449034630716,
+    "selection_metric": false,
+    "teacher_exact_action": 0.7455997940961017
+  },
+  "completed_epochs": 17,
+  "dataset": {
+    "content_sha256": "141aa82ac8a162cec5e6e57970d4020024fc0c03ef408b89c4dfa538c870b724",
+    "train_decisions": 6640006,
+    "validation_decisions": 707126
+  },
+  "interruption": {
+    "epoch": 18,
+    "reason": "system_restart_during_validation",
+    "validation_fraction": 0.3473227206946454
+  },
+  "model_parameter_count": 17756162,
+  "optimizer_state_saved": false,
+  "requested_epochs": 20,
+  "schema_version": "0019_interrupted_training_summary_v1",
+  "selected_epoch": 13,
+  "selection_metric": "bc/validation/loss",
+  "state": "interrupted_with_valid_selected_checkpoint",
+  "version": "V1_universal_winner_r15"
+}

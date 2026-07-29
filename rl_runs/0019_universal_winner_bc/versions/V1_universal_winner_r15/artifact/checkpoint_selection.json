@@ -1,0 +1,9 @@
+{
+  "best_greedy_exact": "epoch 13 (conditioned validation)",
+  "best_teacher_exact": "epoch 13 (conditioned validation)",
+  "best_validation_loss": "epoch 13 (formal V1 selection metric)",
+  "latest_complete": "epoch 17",
+  "neutral_loss_diagnostic": "epoch 9 (not a V1 selection metric)",
+  "selected": "epoch 13",
+  "selection_note": "Epoch 18 was interrupted by a system restart during validation and produced no complete checkpoint or epoch metrics."
+}

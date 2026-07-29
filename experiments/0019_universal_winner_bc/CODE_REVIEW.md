@@ -1,17 +1,20 @@
 # 0019 数据与训练代码审查
 
-审查时间：2026-07-29（全量数据构建前）
+审查时间：2026-07-29；2026-07-30 在全量数据与 V1 训练后复核
 
 ## 结论
 
-数据合同可以继续全量构建：winner 选择、Episode 去重、exact deck、整局 split、
-source/team conditioning、原始 payload commitment 和存储护栏均已有 fail-closed 实现。
-当前没有发现需要中止 0710–0728 数据解码的问题。
+0710–0728 全量数据已经完成构建并通过 materialized 全量验证。winner 选择、Episode 去重、
+exact deck、整局 split、source/team conditioning、原始 payload commitment 和存储护栏均按
+fail-closed 合同工作；最终规模为 89,503 Episodes / 7,347,132 decisions / 52.73 GiB。
 
-正式训练前仍有一个高优先级模型选择问题：训练和 validation 都使用真实 expert
+V1 训练结果确认了此前的高优先级模型选择问题：训练和 validation 都使用真实 expert
 `source_id`，而实际部署使用 `source_id=0`。后者的 embedding 固定为零，且没有训练样本直接
-优化中性输出。因此，当前 `bc/validation/loss` 只证明 expert-conditioned imitation，不能保证
+优化中性输出。因此，`bc/validation/loss` 只证明 expert-conditioned imitation，不能保证
 被选择的 checkpoint 在中性部署模式下最好。
+
+实证是：conditioned 指标在 Epoch 13 最优（loss `0.253080647`），neutral loss 则在
+Epoch 9 最优（`0.365444490`）。这不是理论风险，已经成为 V2 必须处理的可测 gap。
 
 ## Findings
 
@@ -53,6 +56,18 @@ source/team conditioning、原始 payload commitment 和存储护栏均已有 fa
 - 建议：本次先保留 fail-closed guard；记录全量实测时间。后续若该部分显著占比，再改为
   “累计已提交 bytes + 定期全目录 audit”，并保留最终完整复核。
 
+### P2：突然断电/重启会留下 JSONL 尾部半条记录
+
+- 证据：系统在 Epoch 18 validation 时重启，`training_metrics.jsonl` 留下 205 bytes 的半条
+  JSON；其 SHA-256 已记录在 V1 status，尾部恢复后 7,716 行均可解析。
+- 影响：正常 Python exception 会进入 trainer 的 failed status，但机器级重启不会执行
+  `__exit__` 或最终 summary，W&B 也会显示 crashed。
+- 当前处理：保留系统启动时间、丢弃片段 hash、完整 Epoch 数、未完成 validation 进度和
+  selected checkpoint；状态明确为 interrupted，不伪装为 complete/early-stopped。
+- 后续建议：为通用 `TrainingLogger` 增加启动时“仅允许修复最后一个无换行且不可解析的
+  fragment”的显式恢复入口，并给该合同增加断电模拟测试。由于本项目约定不恢复 optimizer
+  轨迹，本次不从 Epoch 17 续训。
+
 ## 已验证合同
 
 - 同一 Episode ID 的 payload hash 不一致时立即失败。
@@ -68,9 +83,9 @@ source/team conditioning、原始 payload commitment 和存储护栏均已有 fa
   `0019 · universal_winner_bc · V<n>_<tag>`。
 - 项目生产模块均可 import，R15 teacher-forced 与 greedy 前向 smoke 已通过。
 
-## 明日建议顺序
+## 下一步建议顺序
 
-1. 用最终 0710–0728 数据跑一个小规模 GPU throughput smoke，实测单 epoch 时间。
-2. V1 跑 conditioned baseline，同时记录 conditioned 与 neutral validation；不更改训练标签。
-3. 若 neutral 指标明显落后，V2 只增加 deterministic source dropout。
-4. 在 V1/V2 之后，再考虑 source/deck 分层采样或通用 Encoder + deck-specific adapter。
+1. 固化 Epoch 13 作为 V1 conditioned baseline；不要继续写入已经 interrupted 的版本。
+2. V2 只增加 deterministic source dropout 或 neutral distillation 二者之一，不能同时更改。
+3. 用 neutral validation 检查 source-0 gap，再以 deck-specific official-engine 评测判断强度。
+4. V1/V2 之后再考虑 source/deck 分层采样或通用 Encoder + deck-specific adapter。

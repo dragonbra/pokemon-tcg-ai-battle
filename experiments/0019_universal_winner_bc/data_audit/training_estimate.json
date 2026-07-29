@@ -1,53 +1,57 @@
 {
-  "schema_version": "0019_training_estimate_v1",
-  "status": "smoke_projection_pending_full_materialization",
-  "measured_smoke": {
-    "archive_date": "2026-07-27",
-    "episode_members_sampled": 200,
-    "accepted_winner_episodes": 199,
-    "decisions": 17885,
-    "decisions_per_episode": 89.87437185929649,
-    "raw_shard_bytes": 5376169,
-    "raw_bytes_per_decision": 300.5965334078837,
-    "model_ready_shard_bytes": 127282462,
-    "model_ready_bytes_per_decision": 7116.71579535924,
-    "catalog_seconds": 11.92,
-    "model_ready_seconds": 23.87
+  "schema_version": "0019_training_estimate_v2",
+  "status": "replaced_projection_with_full_run_measurement",
+  "dataset": {
+    "content_sha256": "141aa82ac8a162cec5e6e57970d4020024fc0c03ef408b89c4dfa538c870b724",
+    "train_decisions": 6640006,
+    "validation_decisions": 707126,
+    "train_batches_per_epoch": 25938,
+    "validation_batches_per_epoch": 1382,
+    "batch_size": 256,
+    "validation_batch_size": 512
   },
-  "current_archive_scope": {
-    "date_start": "2026-07-10",
-    "date_end": "2026-07-27",
-    "episode_members": 85166,
-    "projected_decisions": 7650000
+  "measured_training": {
+    "complete_epochs": 17,
+    "complete_epoch_seconds_total": 54529.250797,
+    "complete_epoch_hours_total": 15.147014,
+    "epoch_seconds_mean": 3207.602988,
+    "epoch_seconds_median": 2804.446245,
+    "steady_state_epoch_seconds_mean_epochs_4_to_17": 2803.56399,
+    "steady_state_epoch_seconds_median_epochs_4_to_17": 2788.619495,
+    "steady_state_epoch_minutes": 46.476992,
+    "hours_through_epoch_8": 8.118827,
+    "hours_through_selected_epoch_13": 11.986218,
+    "hours_through_epoch_17": 15.147014,
+    "train_decisions_per_second_at_selected_epoch": 2465.658169
   },
-  "projected_storage": {
-    "raw_gib": 2.14,
-    "model_ready_gib": 50.70,
-    "catalog_and_manifests_gib": 0.2,
-    "total_dataset_gib_range": [53.0, 56.0],
-    "hard_limit_gib": 100,
-    "headroom_assessment": "sufficient, subject to full-corpus shape variance"
+  "selection": {
+    "metric": "bc/validation/loss",
+    "selected_epoch": 13,
+    "selected_loss": 0.2530806470442328,
+    "selected_greedy_exact_action": 0.812870690654848,
+    "selected_teacher_exact_action": 0.8128593772538416,
+    "selected_legal_action": 1.0,
+    "checkpoint_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
   },
-  "training_basis": {
-    "reference_project": "0016_alakazam_multideck_bc",
-    "reference_train_decisions": 760106,
-    "reference_validation_decisions": 85299,
-    "observed_train_decisions_per_second_range": [1457.42, 1870.43],
-    "observed_total_epoch_seconds_range": [419.99, 535.97]
+  "early_stopping": {
+    "patience": 5,
+    "min_delta": 0.001,
+    "epochs_without_improvement_after_epoch_13": [14, 15, 16, 17],
+    "epoch_18": "train pass completed; validation interrupted at 480/1382 batches by system restart",
+    "normal_early_stop_not_claimed": true
   },
-  "projected_training": {
-    "epoch_minutes_range": [70, 95],
-    "eight_epochs_hours_range": [9.3, 12.7],
-    "fifteen_epochs_hours_range": [17.5, 23.8],
-    "selection": "minimum full-validation bc/validation/loss",
-    "early_stopping_patience": 5,
-    "early_stopping_min_delta": 0.001,
-    "note": "replace all projections with exact counts after full materialization"
+  "neutral_diagnostic": {
+    "best_loss_epoch": 9,
+    "best_loss": 0.36544449034630716,
+    "epoch_13_loss": 0.36879337444767035,
+    "selection_metric": false,
+    "interpretation": "conditioned V1 best and neutral deployment diagnostic best are different checkpoints"
   },
-  "fallback_storage_options_in_order": [
-    "increase tensor shard packing efficiency without changing features",
-    "remove duplicated audit-only fields from model-ready shards while retaining raw commitments",
-    "retain compressed raw shards and compile selected features online",
-    "cap source/deck data only as a last resort because the competition objective favors using all valid data"
-  ]
+  "next_run_estimate": {
+    "steady_state_epoch_minutes": 46.5,
+    "eight_epochs_hours": 6.2,
+    "thirteen_epochs_hours_with_cold_start_overhead": 12.0,
+    "seventeen_epochs_hours_with_cold_start_overhead": 15.15,
+    "note": "Use steady-state time for incremental planning and measured cumulative time for end-to-end budgeting."
+  }
 }
