@@ -18,6 +18,7 @@ from data.processed.environment_limitless.labs import (
     parse_standings_payload,
 )
 from data.processed.environment_limitless.fetch import fetch_text
+from data.processed.environment_limitless import render
 from data.processed.environment_limitless.render import render_report
 from data.processed.environment_limitless.stats import (
     evidence_grade,
@@ -289,13 +290,47 @@ class FetchTests(unittest.TestCase):
 
 
 class ReportContractTests(unittest.TestCase):
-    def test_frozen_snapshot_renders_complete_analysis_contract(self):
+    @classmethod
+    def setUpClass(cls):
         snapshot_path = (
             Path(__file__).resolve().parents[1]
             / "data/processed/environment_limitless/snapshot.json"
         )
-        snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
-        report = render_report(snapshot)
+        cls.snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+
+    def test_card_registry_and_archetype_visuals_are_complete(self):
+        registry = render._build_card_registry(self.snapshot["representative_decklists"])
+
+        self.assertEqual(registry["dragapult ex"]["set"], "ASC")
+        visual = render._archetype_visual("Dragapult Dusknoir", registry)
+        self.assertIn("Dragapult ex", visual)
+        self.assertIn("Dusknoir", visual)
+        self.assertIn("data-card-preview=", visual)
+
+    def test_report_adds_card_visuals_to_analysis_surfaces(self):
+        report = render_report(self.snapshot)
+
+        self.assertIn('id="primary-heatmap"', report)
+        self.assertGreaterEqual(report.count('class="archetype-visual'), 100)
+        self.assertGreaterEqual(report.count('class="inline-card-ref'), 8)
+        self.assertGreaterEqual(report.count('data-card-context="narrative"'), 4)
+        self.assertIn('data-card-preview=', report)
+        self.assertIn('class="matrix-archetype"', report)
+
+    def test_every_exact_deck_card_type_has_an_image_tile(self):
+        report = render_report(self.snapshot)
+        expected = sum(
+            len(deck["cards"])
+            for deck in self.snapshot["representative_decklists"]
+        )
+
+        self.assertEqual(report.count('class="deck-card-tile"'), expected)
+        self.assertIn('data-card-group="pokemon"', report)
+        self.assertIn('data-card-group="trainer"', report)
+        self.assertIn('data-card-group="energy"', report)
+
+    def test_frozen_snapshot_renders_complete_analysis_contract(self):
+        report = render_report(self.snapshot)
         checked_in_report = (
             Path(__file__).resolve().parents[1] / "docs/environment/limitless.html"
         ).read_text(encoding="utf-8")

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-29T19:12:06.104544+00:00",
+  "generated_at": "2026-07-29T21:49:51.517272+00:00",
   "filter_contract": {
     "query": "time=all&type=all&format=TEF-POR&region=all&division=all",
     "format": "TEF-POR",
@@ -1063,67 +1063,11 @@
       "sha256": "ae0949db0e9f381923e2eeba95fa9b17cf9de4bdaaec14f14dc7b09ce6b7665b"
     },
     {
-      "role": "representative_decklist:starmie-froslass",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=346",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=346",
-      "fetched_at": "2026-07-29T17:58:19.368098+00:00",
-      "sha256": "c07f5b319bb6ac912c5712dd99258cee3b6e90d9481626164e15283b406319f5"
-    },
-    {
-      "role": "representative_decklist:starmie-dusknoir",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=802",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=802",
-      "fetched_at": "2026-07-29T17:58:18.059462+00:00",
-      "sha256": "3f246b358d6e6804f64c5d3c1bb19e5b9128acac24c69fc6f372dc5ddf31fcf8"
-    },
-    {
-      "role": "representative_decklist:festival-lead",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=226",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=226",
-      "fetched_at": "2026-07-29T17:58:19.623548+00:00",
-      "sha256": "036be2cfe5119f48fc759d36654a10144a2f62a0d568d0bf9c45e8093d7cab57"
-    },
-    {
-      "role": "representative_decklist:rocket-mewtwo-ex",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1219",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1219",
-      "fetched_at": "2026-07-29T17:58:16.745959+00:00",
-      "sha256": "2543d979845e47cdcb9950ad2db479c61810c7cd333b90b39add26d1e117539b"
-    },
-    {
       "role": "representative_decklist:ogerpon-meganium-arboliva",
       "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0066&playerId=137",
       "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0066&playerId=137",
       "fetched_at": "2026-07-29T17:58:18.094957+00:00",
       "sha256": "249b1a7abe806bc266f6bb1a0d0af8df984b188fa9372c763374bddf6d5673d0"
-    },
-    {
-      "role": "representative_decklist:dragapult-dudunsparce",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=1323",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=1323",
-      "fetched_at": "2026-07-29T17:58:18.039916+00:00",
-      "sha256": "646b776efe18b9ca2fd417c3afbff5bb195eda33400d86744c853e59fd276470"
-    },
-    {
-      "role": "representative_decklist:lopunny-dudunsparce",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=64",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=64",
-      "fetched_at": "2026-07-29T17:58:16.757719+00:00",
-      "sha256": "471929e72153dd85c44d8b3c85c4d1cb47fa533cb8360606323fb034292272b4"
-    },
-    {
-      "role": "representative_decklist:lucario-hariyama",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1398",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1398",
-      "fetched_at": "2026-07-29T17:58:19.367948+00:00",
-      "sha256": "c3b69157c9845d2531e3d3dda5dfaee9d54a6612f29b3146ffa59d6a05335ab5"
-    },
-    {
-      "role": "representative_decklist:ogerpon-meganium-hydrapple",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1416",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1416",
-      "fetched_at": "2026-07-29T17:58:19.618965+00:00",
-      "sha256": "4a4ca12b109f8cca82c76ff12f2db8c937bf4267e83cbc043c1f1de25f7f3fce"
     },
     {
       "role": "representative_decklist:basic-box-m",
@@ -1133,11 +1077,18 @@
       "sha256": "a178ea3b2e3fcc0c5adfce4399e70899c6c019fa8f32d3c732e74055ed7c11d1"
     },
     {
-      "role": "representative_decklist:dragapult-blaziken",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=618",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=618",
-      "fetched_at": "2026-07-29T17:58:18.253804+00:00",
-      "sha256": "f78720b9af0ac47172d3f3ef9bc9e27c8c75cae276374162ee38b607deeba4f2"
+      "role": "representative_decklist:n-zoroark",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=138",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=138",
+      "fetched_at": "2026-07-29T17:58:16.857423+00:00",
+      "sha256": "ca7b01a7b9ebc3658a1ab99c77ee0dd248ba3c08d1fb131a9782d00c31f00a3f"
+    },
+    {
+      "role": "representative_decklist:dragapult-dudunsparce",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=1323",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=1323",
+      "fetched_at": "2026-07-29T17:58:18.039916+00:00",
+      "sha256": "646b776efe18b9ca2fd417c3afbff5bb195eda33400d86744c853e59fd276470"
     },
     {
       "role": "representative_decklist:raging-bolt-ogerpon",
@@ -1147,6 +1098,13 @@
       "sha256": "e6555f3faa54073b874a1b13f2f2a1024de4289179bf57a40fc012aef2a7fdc3"
     },
     {
+      "role": "representative_decklist:lucario-hariyama",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1398",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1398",
+      "fetched_at": "2026-07-29T17:58:19.367948+00:00",
+      "sha256": "c3b69157c9845d2531e3d3dda5dfaee9d54a6612f29b3146ffa59d6a05335ab5"
+    },
+    {
       "role": "representative_decklist:rockets-honchkrow",
       "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=1477",
       "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=1477",
@@ -1154,11 +1112,18 @@
       "sha256": "23e3c0bab855e0842060dc9e9976b4cbf0870e1576d1ab1fb8512c63f85aa569"
     },
     {
-      "role": "representative_decklist:dragapult-dusknoir",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1074",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1074",
-      "fetched_at": "2026-07-29T17:58:16.733060+00:00",
-      "sha256": "f7d690fdc31d8492da9fbf2c84c27c802517d59b213879b524182bcfa55cd4aa"
+      "role": "representative_decklist:rocket-mewtwo-ex",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1219",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1219",
+      "fetched_at": "2026-07-29T17:58:16.745959+00:00",
+      "sha256": "2543d979845e47cdcb9950ad2db479c61810c7cd333b90b39add26d1e117539b"
+    },
+    {
+      "role": "representative_decklist:lopunny-dudunsparce",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=64",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=64",
+      "fetched_at": "2026-07-29T17:58:16.757719+00:00",
+      "sha256": "471929e72153dd85c44d8b3c85c4d1cb47fa533cb8360606323fb034292272b4"
     },
     {
       "role": "representative_decklist:dragapult-froslass",
@@ -1168,11 +1133,11 @@
       "sha256": "a08b8243ff39686a2a00c73c5865e9f649aa5c58b046d84888e9b866fd33e160"
     },
     {
-      "role": "representative_decklist:n-zoroark",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=138",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0064&playerId=138",
-      "fetched_at": "2026-07-29T17:58:16.857423+00:00",
-      "sha256": "ca7b01a7b9ebc3658a1ab99c77ee0dd248ba3c08d1fb131a9782d00c31f00a3f"
+      "role": "representative_decklist:dragapult-dusknoir",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1074",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=1074",
+      "fetched_at": "2026-07-29T17:58:16.733060+00:00",
+      "sha256": "f7d690fdc31d8492da9fbf2c84c27c802517d59b213879b524182bcfa55cd4aa"
     },
     {
       "role": "representative_decklist:alakazam-dudunsparce",
@@ -1182,11 +1147,25 @@
       "sha256": "58f9e83fc8b17109742af9db83662368ad9ea20e0f162d0c6bfe1b1252e9641f"
     },
     {
-      "role": "representative_decklist:dragapult-ex",
-      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=546",
-      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=546",
-      "fetched_at": "2026-07-29T17:58:18.077468+00:00",
-      "sha256": "c28c689bbbc25cce58c5746dfada76154384b29aa3913be490e8fb9465a1cf59"
+      "role": "representative_decklist:ogerpon-meganium-hydrapple",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1416",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0065&playerId=1416",
+      "fetched_at": "2026-07-29T17:58:19.618965+00:00",
+      "sha256": "4a4ca12b109f8cca82c76ff12f2db8c937bf4267e83cbc043c1f1de25f7f3fce"
+    },
+    {
+      "role": "representative_decklist:starmie-dusknoir",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=802",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=802",
+      "fetched_at": "2026-07-29T17:58:18.059462+00:00",
+      "sha256": "3f246b358d6e6804f64c5d3c1bb19e5b9128acac24c69fc6f372dc5ddf31fcf8"
+    },
+    {
+      "role": "representative_decklist:starmie-froslass",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=346",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=346",
+      "fetched_at": "2026-07-29T17:58:19.368098+00:00",
+      "sha256": "c07f5b319bb6ac912c5712dd99258cee3b6e90d9481626164e15283b406319f5"
     },
     {
       "role": "representative_decklist:cynthia-garchomp-ex",
@@ -1194,6 +1173,27 @@
       "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=243",
       "fetched_at": "2026-07-29T17:58:16.742901+00:00",
       "sha256": "92fe203cc710f0c9649a1c28e04cd3d67aaaed1e7cfa49374cb1e12b0db73dc6"
+    },
+    {
+      "role": "representative_decklist:dragapult-ex",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=546",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0063&playerId=546",
+      "fetched_at": "2026-07-29T17:58:18.077468+00:00",
+      "sha256": "c28c689bbbc25cce58c5746dfada76154384b29aa3913be490e8fb9465a1cf59"
+    },
+    {
+      "role": "representative_decklist:dragapult-blaziken",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=618",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0062&playerId=618",
+      "fetched_at": "2026-07-29T17:58:18.253804+00:00",
+      "sha256": "f78720b9af0ac47172d3f3ef9bc9e27c8c75cae276374162ee38b607deeba4f2"
+    },
+    {
+      "role": "representative_decklist:festival-lead",
+      "url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=226",
+      "final_url": "https://mew.limitlesstcg.com/labs/data/tcg/decklist?tournamentId=0067&playerId=226",
+      "fetched_at": "2026-07-29T17:58:19.623548+00:00",
+      "sha256": "036be2cfe5119f48fc759d36654a10144a2f62a0d568d0bf9c45e8093d7cab57"
     },
     {
       "role": "kaggle_2026_07_30",
@@ -111027,5 +111027,5 @@
     "representative_decks_are_60": true,
     "kaggle_has_100_rows": true
   },
-  "report_sha256": "ec065ecb85d7e0b5d0a4b28b4a1a5870cfaf1a3d9fc4017371ac5c6b66c92b26"
+  "report_sha256": "d3cacea111b208217b42775f65f5110ba6d50a62c6c7784bd89ae59666b5aa9d"
 }

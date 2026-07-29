@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+import csv
 import html
-import json
+import re
 from collections import defaultdict
+from pathlib import Path
 from typing import Any
+
+
+ARCHETYPE_CARD_NAMES: dict[str, tuple[str, ...]] = {
+    "Dragapult Dusknoir": ("Dragapult ex", "Dusknoir"),
+    "Basic Box": ("Teal Mask Ogerpon ex", "Lillie's Clefairy ex"),
+    "Festival Lead": ("Dipplin", "Thwackey"),
+    "Tera Box": ("Teal Mask Ogerpon ex", "Wellspring Mask Ogerpon ex"),
+    "Other": (),
+}
 
 
 def _e(value: Any) -> str:
@@ -20,6 +31,133 @@ def _card_image(card: dict[str, Any], size: str = "SM") -> str:
     return (
         "https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpci/"
         f"{card_set}/{card_set}_{number}_R_EN_{size}.png"
+    )
+
+
+def _build_card_registry(decks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    registry: dict[str, dict[str, Any]] = {}
+    for deck in decks:
+        for card in deck["cards"]:
+            registry.setdefault(card["name"].casefold(), card)
+    path = Path(__file__).parents[2] / "official" / "EN_Card_Data.csv"
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            name = row["Card Name"]
+            kind = row["Stage (Pokémon)/Type (Energy and Trainer)"]
+            group = (
+                "energy"
+                if kind.endswith("Energy")
+                else "pokemon"
+                if kind.endswith("Pokémon")
+                else "trainer"
+            )
+            registry.setdefault(
+                name.casefold(),
+                {
+                    "name": name,
+                    "set": row["Expansion"],
+                    "number": row["Collection No."],
+                    "group": group,
+                },
+            )
+    return registry
+
+
+def _name_tokens(value: str) -> list[str]:
+    normalized = value.casefold().replace("’", "'")
+    return [token for token in re.findall(r"[a-z0-9-]+", normalized) if token != "ex"]
+
+
+def _representative_cards(
+    name: str,
+    registry: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    requested = ARCHETYPE_CARD_NAMES.get(name)
+    if requested is not None:
+        cards = []
+        for card_name in requested:
+            card = registry.get(card_name.casefold())
+            if card is None:
+                raise ValueError(
+                    f"missing representative card {card_name!r} for archetype {name!r}"
+                )
+            cards.append(card)
+        return cards
+
+    label_tokens = _name_tokens(name)
+    cards: list[dict[str, Any]] = []
+    used_species: set[str] = set()
+    pokemon = [card for card in registry.values() if card.get("group") == "pokemon"]
+    for token in label_tokens:
+        candidates = []
+        for card in pokemon:
+            card_tokens = _name_tokens(card["name"])
+            if not card_tokens or card_tokens[-1] != token:
+                continue
+            overlap = len(set(card_tokens) & set(label_tokens))
+            candidates.append((overlap, len(card_tokens), card))
+        if not candidates or token in used_species:
+            continue
+        candidates.sort(key=lambda item: (item[0], item[1]), reverse=True)
+        cards.append(candidates[0][2])
+        used_species.add(token)
+        if len(cards) == 2:
+            break
+    return cards
+
+
+def _card_ref(
+    card: dict[str, Any],
+    *,
+    compact: bool = False,
+    label: bool = False,
+) -> str:
+    name = _e(card["name"])
+    card_set = _e(card["set"])
+    number = _e(card["number"])
+    classes = "card-thumb compact" if compact else "card-thumb"
+    label_html = f'<span class="card-ref-label">{name}</span>' if label else ""
+    return (
+        f'<span class="card-ref{(" with-label" if label else "")}">'
+        f'<button type="button" class="{classes}" data-card-preview="{_e(_card_image(card, "MD"))}" '
+        f'data-card-small="{_e(_card_image(card))}" data-card-name="{name}" '
+        f'data-card-meta="{card_set} {number}" aria-label="查看 {name}，{card_set} {number} 大图">'
+        f'<img src="{_e(_card_image(card))}" alt="{name}" loading="lazy" width="28" height="39" '
+        'onerror="this.hidden=true;this.parentElement.classList.add(\'thumb-failed\')">'
+        f'<span class="thumb-fallback">{card_set}<small>{number}</small></span></button>{label_html}</span>'
+    )
+
+
+def _deck_card_tile(card: dict[str, Any]) -> str:
+    name = _e(card["name"])
+    card_set = _e(card["set"])
+    number = _e(card["number"])
+    return (
+        '<article class="deck-card-tile">'
+        f'<button type="button" class="deck-card-art" data-card-preview="{_e(_card_image(card, "MD"))}" '
+        f'data-card-small="{_e(_card_image(card))}" data-card-name="{name}" '
+        f'data-card-meta="{card_set} {number}" aria-label="查看 {name}，{card_set} {number} 大图">'
+        f'<img src="{_e(_card_image(card))}" alt="{name}" loading="lazy" '
+        'onerror="this.hidden=true;this.parentElement.classList.add(\'thumb-failed\')">'
+        f'<span class="deck-card-fallback">{card_set}<small>{number}</small></span>'
+        f'<span class="deck-count">×{card["count"]}</span></button>'
+        f'<b title="{name}">{name}</b><small>{card_set} {number} · {card["count"]} 张</small>'
+        "</article>"
+    )
+
+
+def _archetype_visual(
+    name: str,
+    registry: dict[str, dict[str, Any]],
+    *,
+    compact: bool = False,
+) -> str:
+    cards = _representative_cards(name, registry)
+    thumbs = "".join(_card_ref(card, compact=compact) for card in cards)
+    return (
+        f'<span class="archetype-visual" title="{_e(name)}">'
+        f'<span class="archetype-thumbs">{thumbs}</span>'
+        f'<span class="archetype-label">{_e(name)}</span></span>'
     )
 
 
@@ -40,9 +178,14 @@ def _matrix_table(
     names: dict[str, str],
     matrix_rows: list[dict[str, Any]],
     table_id: str,
+    registry: dict[str, dict[str, Any]],
 ) -> str:
     cells = {(row["deck_id"], row["opponent_id"]): row for row in matrix_rows}
-    header = "".join(f"<th><span>{_e(names.get(key, key))}</span></th>" for key in columns)
+    header = "".join(
+        f'<th><span class="matrix-archetype">'
+        f'{_archetype_visual(names.get(key, key), registry, compact=True)}</span></th>'
+        for key in columns
+    )
     body: list[str] = []
     labels = {
         "strong_advantage": "可信优势",
@@ -52,7 +195,10 @@ def _matrix_table(
         "self_matchup": "同型内战",
     }
     for row_key in rows:
-        values = [f"<th>{_e(names.get(row_key, row_key))}</th>"]
+        values = [
+            f'<th><span class="matrix-archetype">'
+            f'{_archetype_visual(names.get(row_key, row_key), registry, compact=True)}</span></th>'
+        ]
         for column_key in columns:
             cell = cells.get((row_key, column_key))
             if cell is None:
@@ -107,6 +253,22 @@ def render_report(snapshot: dict[str, Any]) -> str:
     comparison = snapshot["comparison"]
     pairing = snapshot["pairing_summary"]
     event_dates = [row["date"] for row in snapshot["events"]]
+    card_registry = _build_card_registry(snapshot["representative_decklists"])
+
+    def deck_label(name: str, *, compact: bool = True) -> str:
+        return _archetype_visual(name, card_registry, compact=compact)
+
+    def inline_card(card_name: str, label: str | None = None) -> str:
+        card = card_registry.get(card_name.casefold())
+        if card is None:
+            raise ValueError(f"missing inline card reference: {card_name}")
+        rendered = _card_ref(card, compact=True, label=True)
+        if label is not None:
+            rendered = rendered.replace(
+                f'<span class="card-ref-label">{_e(card["name"])}</span>',
+                f'<span class="card-ref-label">{_e(label)}</span>',
+            )
+        return f'<span class="inline-card-ref">{rendered}</span>'
 
     primary_by_name = {row["name"]: row for row in primary_points}
     labs_primary_by_id = {row["deck_id"]: row for row in primary_meta}
@@ -158,14 +320,16 @@ def render_report(snapshot: dict[str, Any]) -> str:
 
     point_rows = "".join(
         "<tr>"
-        f'<td>{row["rank"]}</td><td><a href="{_e(row["url"])}" target="_blank">{_e(row["name"])}</a></td>'
+        f'<td>{row["rank"]}</td><td>{deck_label(row["name"])}'
+        f'<a class="source-link" href="{_e(row["url"])}" target="_blank" '
+        f'aria-label="打开 {_e(row["name"])} Limitless 页面">↗</a></td>'
         f'<td>{row["points"]:,}</td><td><b>{_pct(row["share"], 2)}</b></td>'
         "</tr>"
         for row in primary_points
     )
     meta_rows = "".join(
         "<tr>"
-        f'<td>{index}</td><td>{_e(row["name"])}</td><td>{row["players"]:,}</td>'
+        f'<td>{index}</td><td>{deck_label(row["name"])}</td><td>{row["players"]:,}</td>'
         f'<td>{_pct(row["players"] / pairing["players_in_pairing_events"], 2)}</td>'
         f'<td>{row["day2s"]:,}</td><td>{_pct(row["day2_rate"])}</td>'
         f'<td>{_record(row)}</td><td><b>{_pct(row["effective_win_rate"])}</b></td>'
@@ -174,7 +338,7 @@ def render_report(snapshot: dict[str, Any]) -> str:
     )
     comparison_rows = "".join(
         "<tr>"
-        f'<td>{_e(row["name"])}</td><td>{_pct(row["limitless_share"], 2)}</td>'
+        f'<td>{deck_label(row["name"])}</td><td>{_pct(row["limitless_share"], 2)}</td>'
         f'<td>{_pct(row["kaggle_share"], 2)}</td>'
         f'<td><b class="delta {"up" if row["delta"] > 0 else "down"}">{row["delta"] * 100:+.2f} pp</b></td>'
         "</tr>"
@@ -182,8 +346,8 @@ def render_report(snapshot: dict[str, Any]) -> str:
     )
     mapping_rows = "".join(
         "<tr>"
-        f'<td>{_e(row["source"])}</td><td>{_e(row["original"])}</td>'
-        f'<td>{_e(row["canonical"])}</td><td><code>{_e(row["rule"])}</code></td>'
+        f'<td>{_e(row["source"])}</td><td>{deck_label(row["original"])}</td>'
+        f'<td>{deck_label(row["canonical"])}</td><td><code>{_e(row["rule"])}</code></td>'
         f'<td>{_pct(row["mass"], 2)}</td></tr>'
         for row in comparison["mapping_audit"]
     )
@@ -193,7 +357,7 @@ def render_report(snapshot: dict[str, Any]) -> str:
     variant_point_by_name = {row["name"]: row for row in variant_points}
     drag_variant_rows = "".join(
         "<tr>"
-        f'<td>{_e(row["name"])}</td><td>{row["players"]:,}</td>'
+        f'<td>{deck_label(row["name"], compact=False)}</td><td>{row["players"]:,}</td>'
         f'<td>{_pct(row["players"] / pairing["players_in_pairing_events"], 2)}</td>'
         f'<td>{_pct(variant_point_by_name.get(row["name"], {}).get("share"))}</td>'
         f'<td>{row["day2s"]:,}</td><td>{_pct(row["day2_rate"])}</td>'
@@ -203,7 +367,8 @@ def render_report(snapshot: dict[str, Any]) -> str:
     )
     all_variant_rows = "".join(
         f'<tr data-variant-row data-search="{_e((row["name"] + " " + row["primary_name"]).lower())}">'
-        f'<td>{index}</td><td>{_e(row["name"])}</td><td>{_e(row["primary_name"])}</td>'
+        f'<td>{index}</td><td>{deck_label(row["name"])}</td>'
+        f'<td>{deck_label(row["primary_name"])}</td>'
         f'<td>{row["players"]:,}</td><td>{row["events"]}</td><td>{row["day2s"]:,}</td>'
         f'<td>{_pct(row["day2_rate"])}</td><td>{_record(row)}</td>'
         f'<td><b>{_pct(row["effective_win_rate"])}</b></td></tr>'
@@ -214,7 +379,8 @@ def render_report(snapshot: dict[str, Any]) -> str:
         "<tr>"
         f'<td>{index}</td><td><b>{_e(row["name"])}</b><small>{_e(row["country"] or "—")}</small></td>'
         f'<td>{row["events"]}</td><td>{row["points"]}</td><td>{row["wins"]}-{row["losses"]}-{row["ties"]}</td>'
-        f'<td>{row["best_placement"] or "—"}</td><td>{_e(" / ".join(row["decks"]))}</td></tr>'
+        f'<td>{row["best_placement"] or "—"}</td><td><div class="deck-label-list">'
+        f'{"".join(deck_label(name) for name in row["decks"])}</div></td></tr>'
         for index, row in enumerate(snapshot["players"][:40], start=1)
     )
 
@@ -231,22 +397,17 @@ def render_report(snapshot: dict[str, Any]) -> str:
         groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for card in deck["cards"]:
             groups[card["group"]].append(card)
-        pokemon = "".join(
-            f'<button class="pokemon-card" data-preview="{_e(_card_image(card, "MD"))}" '
-            f'data-card-name="{_e(card["name"])}"><img src="{_e(_card_image(card))}" '
-            f'alt="{_e(card["name"])}" loading="lazy" onerror="this.hidden=true">'
-            f'<span>{card["count"]}× {_e(card["name"])}<small>{_e(card["set"])} {card["number"]}</small></span></button>'
-            for card in groups["pokemon"]
-        )
-        text_groups = "".join(
-            f'<div><b>{"Trainer" if group == "trainer" else "Energy"}</b><p>'
-            + " · ".join(
-                f'{card["count"]}× {_e(card["name"])} <small>{_e(card["set"])} {card["number"]}</small>'
-                for card in groups[group]
+        group_labels = {"pokemon": "Pokémon", "trainer": "Trainer", "energy": "Energy"}
+        deck_sections = []
+        for group in ("pokemon", "trainer", "energy"):
+            cards = groups[group]
+            total = sum(card["count"] for card in cards)
+            tiles = "".join(_deck_card_tile(card) for card in cards)
+            deck_sections.append(
+                f'<section class="deck-card-group" data-card-group="{group}">'
+                f'<h4>{group_labels[group]} <small>{total} 张 · {len(cards)} 种</small></h4>'
+                f'<div class="deck-card-grid">{tiles}</div></section>'
             )
-            + "</p></div>"
-            for group in ("trainer", "energy")
-        )
         history = deck["history"]
         classification = deck["classification_audit"]
         key_cards = "、".join(
@@ -263,20 +424,30 @@ def render_report(snapshot: dict[str, Any]) -> str:
             f'最佳 #{history["best_placement"]}。<a href="{_e(deck["source_url"])}" target="_blank">核对原始卡表</a></p>'
             f'<p><b>分类交叉审计：</b>{_e(classification["note"])} '
             f'<small>关键副轴：{_e(key_cards)}；范围：{_e(classification["scope"])}。</small></p>'
-            f'<div class="pokemon-strip">{pokemon}</div><div class="list-lines">{text_groups}</div>'
+            f'{"".join(deck_sections)}'
             "</div></details>"
         )
 
     primary_ids = [row["deck_id"] for row in primary_meta[:16]]
     primary_names = {row["deck_id"]: row["name"] for row in primary_meta}
     primary_matrix = _matrix_table(
-        primary_ids, primary_ids, primary_names, snapshot["matchups_primary"], "primary-heatmap"
+        primary_ids,
+        primary_ids,
+        primary_names,
+        snapshot["matchups_primary"],
+        "primary-heatmap",
+        card_registry,
     )
     variant_names = {row["deck_id"]: row["name"] for row in variant_meta}
     drag_ids = [row["deck_id"] for row in drag_variants]
     opponent_ids = [row["deck_id"] for row in variant_meta if row["deck_id"] not in drag_ids][:16]
     drag_matrix = _matrix_table(
-        drag_ids, opponent_ids, variant_names, snapshot["matchups_variant"], "dragapult-heatmap"
+        drag_ids,
+        opponent_ids,
+        variant_names,
+        snapshot["matchups_variant"],
+        "dragapult-heatmap",
+        card_registry,
     )
 
     strong_rows = [
@@ -291,7 +462,7 @@ def render_report(snapshot: dict[str, Any]) -> str:
     )[:35]
     counter_rows = "".join(
         "<tr>"
-        f'<td>{_e(row["deck_name"])}</td><td>{_e(row["opponent_name"])}</td>'
+        f'<td>{deck_label(row["deck_name"])}</td><td>{deck_label(row["opponent_name"])}</td>'
         f'<td>{row["wins"]}-{row["losses"]}-{row["ties"]}</td><td>{row["n"]}</td>'
         f'<td><b>{_pct(row["effective_win_rate"])}</b></td>'
         f'<td>{_pct(row["wilson_low"])}–{_pct(row["wilson_high"])}</td>'
@@ -299,16 +470,105 @@ def render_report(snapshot: dict[str, Any]) -> str:
         for row in strong_advantages
     )
 
+    card_dragapult = inline_card("Dragapult ex", "多龙")
+    card_dusknoir = inline_card("Dusknoir", "黑夜魔灵")
+    card_dudunsparce = inline_card("Dudunsparce", "土龙节节")
+    card_blaziken = inline_card("Blaziken ex", "火焰鸡")
+    card_froslass = inline_card("Froslass", "雪妖女")
+    card_grimmsnarl = inline_card("Marnie's Grimmsnarl ex", "Grimmsnarl")
+    card_alakazam = inline_card("Alakazam")
+    card_raging_bolt = inline_card("Raging Bolt ex", "Raging Bolt")
+    card_ogerpon = inline_card("Teal Mask Ogerpon ex", "Ogerpon")
+    summary_card_refs = (
+        '<div class="card-context-strip"><b>本报告重点卡牌</b>'
+        f'{card_dragapult}{card_grimmsnarl}{card_alakazam}{card_raging_bolt}{card_ogerpon}'
+        "</div>"
+    )
+    dragapult_card_refs = (
+        '<div class="card-context-strip"><b>多龙细分轴</b>'
+        f'{card_dragapult}{card_dusknoir}{card_dudunsparce}{card_blaziken}{card_froslass}'
+        "</div>"
+    )
+    summary_narrative = (
+        '<p class="narrative-card-line" data-card-context="narrative">线下环境核心是'
+        f'{card_dragapult}，而 Kaggle 榜单核心是{card_grimmsnarl}；'
+        "两者占比反转是本报告需要解释的第一层差异。</p>"
+    )
+    dragapult_narrative = (
+        '<p class="narrative-card-line" data-card-context="narrative">这里不能只写“多龙”：'
+        f'{card_dusknoir}负责爆发补刀，{card_dudunsparce}负责资源循环，'
+        f'{card_blaziken}改变附能节奏，{card_froslass}则是低样本独立路线。</p>'
+    )
+    matchup_narrative = (
+        '<p class="narrative-card-line" data-card-context="narrative">速度压力的代表是'
+        f'{card_raging_bolt}与{card_ogerpon}；面对它们时，基础型与土龙型多龙出现相反方向。</p>'
+    )
+    causes_narrative = (
+        '<p class="narrative-card-line" data-card-context="narrative">实现复杂度也不同：'
+        f'{card_dragapult}需要跨回合分伤与副轴规划，{card_grimmsnarl}的主计划更集中，'
+        f'而{card_alakazam}依赖进化、资源循环与攻击连续性。</p>'
+    )
+
     css = """
 :root{--ink:#17202a;--muted:#65707c;--line:#d8dee4;--paper:#f7f8fa;--panel:#fff;--red:#aa3935;--teal:#126f67;--amber:#9a6815;--blue:#255d8b}*{box-sizing:border-box}html{scroll-behavior:smooth;max-width:100%;overflow-x:clip}body{margin:0;max-width:100%;overflow-x:clip;background:var(--paper);color:var(--ink);font-family:Inter,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:14px;line-height:1.55;letter-spacing:0}.page{max-width:1540px;margin:auto;padding:0 22px 80px}.topbar{position:sticky;top:0;z-index:20;max-width:100%;overflow:hidden;background:rgba(247,248,250,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}.nav{width:100%;max-width:1540px;margin:auto;padding:10px 22px;display:flex;gap:6px;overflow:auto}.nav a{white-space:nowrap;color:var(--ink);text-decoration:none;padding:6px 9px;border-radius:5px}.nav a:hover{background:#e8edf1}.hero{padding:42px 0 26px;border-bottom:3px solid var(--ink)}.eyebrow{margin:0 0 8px;color:var(--red);font-weight:800;text-transform:uppercase}.hero h1{font-size:clamp(30px,4vw,58px);line-height:1.02;margin:0;max-width:1000px}.hero .lede{font-size:18px;max-width:1040px;color:#3f4b55}.stamp{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px}.panel{min-width:0;padding:34px 0;border-bottom:1px solid var(--line);scroll-margin-top:58px}.heading{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:18px}.heading>*,.split>*{min-width:0}.heading h2{font-size:26px;margin:0}.heading p{max-width:760px;color:var(--muted);margin:0}.metrics{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid var(--line);background:var(--panel)}.metric{min-width:0;padding:16px;border-right:1px solid var(--line);min-height:108px}.metric:last-child{border-right:0}.metric span,.metric small{display:block;color:var(--muted)}.metric b{display:block;font-size:25px;margin:7px 0}.note{padding:14px 16px;border-left:4px solid var(--amber);background:#fff7e6;margin:18px 0}.finding-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}.finding{background:var(--panel);padding:18px}.finding h3{font-size:16px;margin:0 0 8px}.finding p{margin:0;color:#3f4b55}.table-wrap,.matrix-wrap{max-width:100%;overflow:auto;border:1px solid var(--line);background:var(--panel)}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}thead th{position:sticky;top:0;background:#eef1f4;z-index:2;font-weight:800}tbody tr:hover{background:#f3f6f8}td small{display:block;color:var(--muted)}a{color:var(--blue)}.status{font-weight:800}.status.ok{color:var(--teal)}.status.warn,.delta.down{color:var(--red)}.delta.up{color:var(--teal)}.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}.bar-list{display:grid;gap:9px}.bar-row{display:grid;grid-template-columns:180px 1fr 58px;gap:10px;align-items:center}.bar{height:11px;background:#e4e8ec}.bar i{display:block;height:100%;background:var(--teal)}.bar.kaggle i{background:var(--red)}.controls{display:flex;gap:8px;align-items:center;margin:12px 0;flex-wrap:wrap}.controls input{padding:8px 10px;border:1px solid var(--line);min-width:280px}.segmented{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}.segmented button{border:0;border-right:1px solid var(--line);padding:7px 10px;background:#fff}.segmented button:last-child{border-right:0}.segmented button.active{background:var(--ink);color:#fff}.matrix{width:max-content;min-width:100%}.matrix th:first-child{position:sticky;left:0;z-index:4;min-width:150px}.matrix thead th:first-child{z-index:6}.matrix thead th{height:150px;min-width:98px;max-width:98px;vertical-align:bottom}.matrix thead th span{display:block;writing-mode:vertical-rl;transform:rotate(180deg);max-height:130px}.matrix td{min-width:98px;text-align:center;padding:8px 5px}.heat b,.heat small,.heat i{display:block}.heat b{font-size:15px}.heat small{font-size:10px}.heat i{font-size:10px;color:#4c5964;font-style:normal}.heat.missing{color:#89939c;background:#fafafa}.heat:focus{outline:3px solid var(--blue);outline-offset:-3px}.legend{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:12px;margin:10px 0}.legend span:before{content:"";display:inline-block;width:10px;height:10px;margin-right:5px}.legend .good:before{background:rgba(24,133,120,.38)}.legend .mid:before{background:rgba(207,151,39,.18)}.legend .bad:before{background:rgba(190,70,61,.38)}[data-sortable] thead th{cursor:pointer}[data-sortable] thead th:after{content:" ↕";color:var(--muted);font-size:10px}[data-sortable] thead th[aria-sort="ascending"]:after{content:" ↑"}[data-sortable] thead th[aria-sort="descending"]:after{content:" ↓"}.deck-detail{background:#fff;border:1px solid var(--line);margin-bottom:8px}.deck-detail summary{cursor:pointer;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center}.deck-detail summary span,.deck-detail summary small{display:block}.deck-detail summary small{color:var(--muted)}.deck-record{font-weight:800;color:var(--teal)}.deck-audit{padding:0 14px 16px;border-top:1px solid var(--line)}.pokemon-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:6px}.pokemon-card{display:flex;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:#fff;padding:6px;min-height:72px}.pokemon-card img{width:38px;height:53px;object-fit:contain}.pokemon-card span,.pokemon-card small{display:block}.pokemon-card small{color:var(--muted)}.list-lines{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:12px}.list-lines p{margin:5px 0}.reason-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--line)}.reason{padding:16px;background:#fff;border-right:1px solid var(--line)}.reason:last-child{border:0}.reason b{display:block;font-size:22px;color:var(--red)}.training-table td:first-child{font-weight:800}.source-list{columns:2}.source-list li{break-inside:avoid;margin-bottom:7px}.modal{border:0;border-radius:6px;padding:12px;box-shadow:0 18px 60px rgba(0,0,0,.3)}.modal::backdrop{background:rgba(0,0,0,.72)}.modal img{max-height:75vh;max-width:80vw;display:block}.modal button{width:100%;margin-top:8px;padding:8px}@media(max-width:1000px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.metric:nth-child(3){border-right:0}.finding-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.reason-flow{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.reason:nth-child(2){border-right:0}.split{grid-template-columns:minmax(0,1fr)}}@media(max-width:650px){.page{padding:0 12px 60px}.nav{padding:8px 12px}.hero{padding-top:26px}.metrics{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.metric:nth-child(3){border-right:1px solid var(--line)}.metric:nth-child(even){border-right:0}.finding-grid,.reason-flow{grid-template-columns:minmax(0,1fr)}.reason{border-right:0;border-bottom:1px solid var(--line)}.heading{display:block}.heading p{margin-top:8px}.list-lines{grid-template-columns:minmax(0,1fr)}.source-list{columns:1}.bar-row{grid-template-columns:120px minmax(0,1fr) 48px}.controls input{width:100%;min-width:0}}@media print{.topbar,.controls,.pokemon-card img{display:none}.page{max-width:none}.panel{break-inside:avoid}.matrix-wrap{overflow:visible}.matrix{transform:scale(.72);transform-origin:top left}}
+"""
+    css += """
+.archetype-visual{display:inline-flex;align-items:center;gap:7px;min-width:0;max-width:100%}
+.archetype-thumbs{display:inline-flex;align-items:center;flex:0 0 auto;padding-left:3px}
+.archetype-thumbs .card-ref+ .card-ref{margin-left:-8px}
+.archetype-label{min-width:0;line-height:1.25;font-weight:700}
+.card-ref{display:inline-flex;align-items:center;gap:5px;min-width:0;vertical-align:middle}
+.card-thumb{position:relative;display:inline-grid;place-items:center;flex:0 0 auto;width:32px;height:45px;padding:0;overflow:hidden;border:1px solid #bfc8cf;border-radius:5px;background:#edf1f3;box-shadow:0 2px 7px rgba(23,32,42,.13);cursor:zoom-in}
+.card-thumb.compact{width:24px;height:34px;border-radius:4px}
+.card-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#edf1f3}
+.card-thumb:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.thumb-fallback{display:none;padding:2px;color:#495560;font-size:8px;font-weight:800;line-height:1;text-align:center}
+.thumb-fallback small{display:block;font-size:7px}.card-thumb.thumb-failed .thumb-fallback{display:block}
+.card-ref-label{font-weight:750;white-space:nowrap}.inline-card-ref{display:inline-flex;margin:0 2px;vertical-align:middle}
+.inline-card-ref .card-ref{padding:2px 6px 2px 3px;border:1px solid #d4dce2;border-radius:5px;background:#fff}
+.card-context-strip{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 0;padding:10px 12px;border:1px solid var(--line);background:#f0f4f6}
+.card-context-strip>b{margin-right:4px}.deck-label-list{display:flex;flex-wrap:wrap;gap:7px}
+.narrative-card-line{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:12px 0;color:#33414b}.narrative-card-line .inline-card-ref{margin:0 2px}
+.source-link{display:inline-block;margin-left:6px;font-weight:900;text-decoration:none;vertical-align:middle}
+.matrix .matrix-archetype{display:flex;align-items:center;gap:6px;writing-mode:horizontal-tb;transform:none;max-height:none}
+.matrix thead th{height:176px}.matrix thead th>.matrix-archetype{height:158px;flex-direction:column;justify-content:flex-end}
+.matrix thead .archetype-label{writing-mode:vertical-rl;transform:rotate(180deg);max-height:102px;overflow:hidden}
+.matrix thead .archetype-thumbs,.matrix thead .card-ref,.matrix thead .card-thumb{writing-mode:horizontal-tb;transform:none}
+.matrix tbody th .matrix-archetype{min-width:180px}.matrix tbody th .archetype-label{white-space:normal}
+.deck-card-group{margin:22px 0 30px}.deck-card-group h4{margin:0 0 11px;padding-bottom:7px;border-bottom:2px solid #a9c4bf;font-size:18px}.deck-card-group h4 small{color:var(--muted);font-size:12px;font-weight:500}
+.deck-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}
+.deck-card-tile{min-width:0}.deck-card-art{position:relative;display:block;width:100%;padding:0;overflow:hidden;aspect-ratio:2.5/3.5;border:0;border-radius:7px;background:#e8edef;box-shadow:0 5px 14px rgba(23,32,42,.14);cursor:zoom-in}
+.deck-card-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#edf1f3}.deck-card-fallback{display:none;position:absolute;inset:0;place-content:center;color:#4a5862;font-weight:850}.deck-card-fallback small{display:block}.deck-card-art.thumb-failed .deck-card-fallback{display:grid}
+.deck-card-tile>b,.deck-card-tile>small{display:block}.deck-card-tile>b{margin-top:7px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.deck-card-tile>small{color:var(--muted);font-size:10px}.deck-count{position:absolute;z-index:2;top:7px;right:7px;padding:3px 7px;border-radius:999px;color:#fff;background:#17202ae8;font-size:12px;font-weight:900}
+.card-hover-preview{position:fixed;z-index:80;display:none;width:236px;padding:8px;border:1px solid #c7d0d6;border-radius:7px;background:#fff;box-shadow:0 18px 48px rgba(12,24,34,.28);pointer-events:none}.card-hover-preview.visible{display:block}.card-hover-preview img{display:block;width:218px;height:305px;object-fit:contain;background:#edf1f3}.card-hover-preview b,.card-hover-preview small{display:block;margin-top:5px}.card-hover-preview small{color:var(--muted)}
+.modal{width:min(440px,calc(100vw - 24px));max-height:calc(100vh - 24px);padding:14px}.modal-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}.modal-head span{color:var(--muted)}.modal img{width:100%;max-width:390px;max-height:76vh;margin:auto;object-fit:contain}.modal-actions{display:grid;grid-template-columns:44px 1fr 44px;gap:8px;margin-top:9px}.modal-actions button{width:auto;margin:0;min-height:40px;border:1px solid var(--line);background:#f3f6f8;font-size:18px;cursor:pointer}.modal-actions [data-card-close]{font-size:20px;font-weight:900}
+@media(max-width:650px){.card-context-strip{align-items:flex-start}.inline-card-ref .card-ref-label{white-space:normal}.matrix tbody th .matrix-archetype{min-width:150px}}
+@media(max-width:650px){.deck-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.deck-audit{padding-left:10px;padding-right:10px}}
+@media(hover:none){.card-hover-preview{display:none!important}}
+@media(prefers-reduced-motion:no-preference){.card-thumb{transition:transform .14s ease,box-shadow .14s ease}.card-thumb:hover{transform:translateY(-2px);box-shadow:0 6px 15px rgba(23,32,42,.2)}}
 """
     js = """
 const search=document.querySelector('#variant-search');
 search?.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();document.querySelectorAll('[data-variant-row]').forEach(row=>row.hidden=!row.dataset.search.includes(q));});
 document.querySelectorAll('[data-heat-mode]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-heat-mode]').forEach(b=>b.classList.toggle('active',b===button));const mode=button.dataset.heatMode;document.querySelectorAll('.heat[data-n]:not(.self-matchup)').forEach(cell=>{const value=Number(cell.dataset[mode]);cell.querySelector('[data-rate]').textContent=(value*100).toFixed(1)+'%';});}));
-const modal=document.querySelector('#card-modal'),modalImg=modal?.querySelector('img'),modalTitle=modal?.querySelector('b');
-document.querySelectorAll('[data-preview]').forEach(button=>button.addEventListener('click',()=>{modalImg.src=button.dataset.preview;modalImg.alt=button.dataset.cardName;modalTitle.textContent=button.dataset.cardName;modal.showModal();}));
-modal?.querySelector('button')?.addEventListener('click',()=>modal.close());
+const cardTargets=()=>[...document.querySelectorAll('[data-card-preview]')];
+const hoverPreview=document.querySelector('#card-hover-preview'),hoverImg=hoverPreview?.querySelector('img'),hoverName=hoverPreview?.querySelector('b'),hoverMeta=hoverPreview?.querySelector('small');
+let hoverTarget=null,lastCardTrigger=null,currentCardIndex=-1;
+const placeHover=(x,y)=>{if(!hoverPreview)return;const margin=14,w=hoverPreview.offsetWidth||236,h=hoverPreview.offsetHeight||360;let left=x+18,top=y+18;if(left+w+margin>innerWidth)left=x-w-18;if(top+h+margin>innerHeight)top=innerHeight-h-margin;hoverPreview.style.left=Math.max(margin,left)+'px';hoverPreview.style.top=Math.max(margin,top)+'px';};
+const showHover=(target,event)=>{if(!hoverPreview||matchMedia('(hover:none)').matches)return;hoverTarget=target;hoverImg.src=target.dataset.cardPreview;hoverImg.alt=target.dataset.cardName;hoverName.textContent=target.dataset.cardName;hoverMeta.textContent=target.dataset.cardMeta||'';hoverPreview.classList.add('visible');if(event)placeHover(event.clientX,event.clientY);else{const rect=target.getBoundingClientRect();placeHover(rect.right,rect.top);}};
+const hideHover=()=>{hoverTarget=null;hoverPreview?.classList.remove('visible');};
+document.addEventListener('pointerover',event=>{const target=event.target.closest?.('[data-card-preview]');if(target&&target!==hoverTarget)showHover(target,event);});
+document.addEventListener('pointermove',event=>{if(hoverTarget)placeHover(event.clientX,event.clientY);});
+document.addEventListener('pointerout',event=>{if(hoverTarget&&!event.relatedTarget?.closest?.('[data-card-preview]'))hideHover();});
+document.addEventListener('focusin',event=>{const target=event.target.closest?.('[data-card-preview]');if(target)showHover(target);});
+document.addEventListener('focusout',event=>{if(hoverTarget&&!event.relatedTarget?.closest?.('[data-card-preview]'))hideHover();});
+const modal=document.querySelector('#card-modal'),modalImg=modal?.querySelector('img'),modalTitle=modal?.querySelector('b'),modalMeta=modal?.querySelector('[data-card-meta]');
+const renderModalCard=target=>{if(!target)return;modalImg.src=target.dataset.cardPreview;modalImg.alt=target.dataset.cardName;modalTitle.textContent=target.dataset.cardName;modalMeta.textContent=target.dataset.cardMeta||'';currentCardIndex=cardTargets().indexOf(target);};
+document.addEventListener('click',event=>{const target=event.target.closest?.('[data-card-preview]');if(!target)return;event.preventDefault();event.stopPropagation();lastCardTrigger=target;hideHover();renderModalCard(target);modal.showModal();});
+modal?.querySelector('[data-card-close]')?.addEventListener('click',()=>modal.close());
+modal?.querySelector('[data-card-prev]')?.addEventListener('click',()=>{const cards=cardTargets();currentCardIndex=(currentCardIndex-1+cards.length)%cards.length;renderModalCard(cards[currentCardIndex]);});
+modal?.querySelector('[data-card-next]')?.addEventListener('click',()=>{const cards=cardTargets();currentCardIndex=(currentCardIndex+1)%cards.length;renderModalCard(cards[currentCardIndex]);});
+modal?.addEventListener('close',()=>lastCardTrigger?.focus());
 const sortValue=value=>{const compact=value.trim().replaceAll(',','').replaceAll('%','').replace(/^#/, '');const number=Number(compact);return Number.isFinite(number)&&compact!==''?number:value.trim().toLowerCase();};
 document.querySelectorAll('table[data-sortable]').forEach(table=>{const headers=[...table.querySelectorAll('thead th')];headers.forEach((header,index)=>{header.tabIndex=0;header.title='点击排序';const sort=()=>{const direction=header.getAttribute('aria-sort')==='ascending'?'descending':'ascending';headers.forEach(item=>item.setAttribute('aria-sort','none'));header.setAttribute('aria-sort',direction);const rows=[...table.tBodies[0].rows];rows.sort((left,right)=>{const a=sortValue(left.cells[index]?.textContent||''),b=sortValue(right.cells[index]?.textContent||'');const result=typeof a==='number'&&typeof b==='number'?a-b:String(a).localeCompare(String(b),'zh-CN');return direction==='ascending'?result:-result;});rows.forEach(row=>table.tBodies[0].append(row));};header.addEventListener('click',sort);header.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();sort();}});});});
 """
@@ -321,6 +581,8 @@ document.querySelectorAll('table[data-sortable]').forEach(table=>{const headers=
 
 <section class="panel" id="summary"><div class="heading"><div><p class="eyebrow">EXECUTIVE VERDICT</p><h2>先给结论：这不是同一个竞争生态</h2></div><p>卡池相近，不代表策略分布可直接迁移。这里同时量化“选择了什么”“打得怎样”和“榜单留下什么”。</p></div>
 <div class="metrics"><div class="metric"><span>Limitless 多龙积分份额</span><b>{_pct(drag_points['share'],2)}</b><small>{drag_points['points']:,} / {snapshot['filter_contract']['points']:,} Points</small></div><div class="metric"><span>{pairing['events_with_pairings']} 场多龙实际参赛</span><b>{dragapult['players']:,}</b><small>{_pct(dragapult['players']/pairing['players_in_pairing_events'],2)} · {len(drag_variants)} 个站点标签</small></div><div class="metric"><span>Kaggle 多龙席位</span><b>{kaggle_dragapult}/{kaggle['players']}</b><small>相对积分份额 {(kaggle_dragapult/kaggle['players']-drag_points['share'])*100:+.2f} pp</small></div><div class="metric"><span>Kaggle Grimmsnarl</span><b>{kaggle_grimmsnarl}/{kaggle['players']}</b><small>Limitless Points {_pct(grim_points['share'],2)}</small></div><div class="metric"><span>分布距离</span><b>{comparison['jensen_shannon_divergence']:.3f}</b><small>Jensen–Shannon · 0 相同 / 1 完全分离</small></div><div class="metric"><span>公开 matchup</span><b>{pairing['accepted_matches']:,}</b><small>{pairing['events_with_pairings']}/{pairing['events_total']} 赛事 · {pairing['unresolved_rows'] + pairing['no_result_rows']} 条赛果排除</small></div></div>
+{summary_card_refs}
+{summary_narrative}
 <div class="note"><b>最重要的口径：</b>{_pct(drag_points['share'],2)} 是 Limitless 主站的 <b>Points Share</b>，不是参赛套数。{pairing['events_with_pairings']} 场 Labs 中多龙实际为 {dragapult['players']:,}/{pairing['players_in_pairing_events']:,}（{_pct(dragapult['players']/pairing['players_in_pairing_events'],2)}），有效胜率 {_pct(dragapult['effective_win_rate'])}。Kaggle 的 {_pct(kaggle_dragapult/kaggle['players'])} 则是 Top {kaggle['players']} 席位，不是所有参赛 submission 的选择率。</div>
 <div class="finding-grid"><article class="finding"><h3>差距是结构性的</h3><p>Kaggle HHI {comparison['kaggle_hhi']:.3f}，Limitless 为 {comparison['limitless_hhi']:.3f}；Top 2 由 {_pct(comparison['limitless_top2'])} 升至 {_pct(comparison['kaggle_top2'])}。自动对战榜单明显更集中。</p></article><article class="finding"><h3>多龙不是一个 matchup</h3><p>基础/未单列多龙对黑夜魔灵多龙 {_pct(base_vs_dusk['effective_win_rate'])}（{_record(base_vs_dusk)}，n={base_vs_dusk['n']}），反向则为 {_pct(1-base_vs_dusk['effective_win_rate'])}。子型合并会直接掩盖方向。</p></article><article class="finding"><h3>Grimmsnarl 的 Kaggle 统治不能外推</h3><p>线下 {pairing['events_with_pairings']} 场仅 {grimmsnarl['players']} 人，有效胜率 {_pct(grimmsnarl['effective_win_rate'])}、Day 2 {_pct(grimmsnarl['day2_rate'])}；{kaggle_grimmsnarl}/{kaggle['players']} 更像 agent 实现和榜分选择压力的产物，而不是线下公开数据证明的通用最强牌。</p></article></div></section>
 
@@ -330,7 +592,7 @@ document.querySelectorAll('table[data-sortable]').forEach(table=>{const headers=
 
 <section class="panel" id="kaggle-gap"><div class="heading"><div><p class="eyebrow">DISTRIBUTION SHIFT</p><h2>与 Kaggle 0730 的差距</h2></div><p>版本化包含规则按主要攻击轴归并复合名称；正值表示 Kaggle 过度代表，负值表示线下过度代表。</p></div><div class="metrics"><div class="metric"><span>Limitless HHI</span><b>{comparison['limitless_hhi']:.3f}</b><small>Points Share</small></div><div class="metric"><span>Kaggle HHI</span><b>{comparison['kaggle_hhi']:.3f}</b><small>Top {kaggle['players']} 席位</small></div><div class="metric"><span>Limitless Top 5</span><b>{_pct(comparison['limitless_top5'])}</b></div><div class="metric"><span>Kaggle Top 5</span><b>{_pct(comparison['kaggle_top5'])}</b></div><div class="metric"><span>多龙差</span><b>{(kaggle_dragapult/kaggle['players']-drag_points['share'])*100:+.2f} pp</b></div><div class="metric"><span>Grimmsnarl 差</span><b>{(kaggle_grimmsnarl/kaggle['players']-grim_points['share'])*100:+.2f} pp</b></div></div><div class="table-wrap"><table><thead><tr><th>映射牌型</th><th>Limitless Points</th><th>Kaggle 席位</th><th>差值</th></tr></thead><tbody>{comparison_rows}</tbody></table></div><details id="mapping-audit" class="deck-detail"><summary><span><b>展开逐标签映射审计</b><small>{len(comparison['mapping_audit'])} 个原始标签；规则按优先级匹配，未命中者原样保留</small></span></summary><div class="deck-audit"><div class="table-wrap"><table data-sortable><thead><tr><th aria-sort="none">来源</th><th aria-sort="none">原标签</th><th aria-sort="none">归并标签</th><th aria-sort="none">规则</th><th aria-sort="none">质量</th></tr></thead><tbody>{mapping_rows}</tbody></table></div></div></details></section>
 
-<section class="panel" id="dragapult-core"><div class="heading"><div><p class="eyebrow">THE FORMAT CENTER</p><h2>多龙：{_pct(drag_points['share'],2)} 积分份额背后的 {len(drag_variants)} 个站点标签</h2></div><p>这些是 Limitless Labs 站点标签，不是逐份卡表重分类。基础/未单列、黑夜魔灵、土龙节节、火焰鸡和雪妖女在速度、资源循环、补刀方式及弱点上不同，不能合成一个训练 opponent。</p></div><div class="note"><b>分类证据边界：</b>统计按 Labs 标签直接聚合；下方 {len(snapshot['representative_decklists'])} 份代表表只交叉核对每型最佳名次卡表。特别是“Dragapult”应读作“基础/未单列”，其代表表也含 1-1 土龙 tech，不能解释成所有 {drag_variant_by_id['dragapult-ex']['players']:,} 份都没有副轴。</div><div class="table-wrap"><table><thead><tr><th>细分子型</th><th>{pairing['events_with_pairings']} 场人数</th><th>参赛占比</th><th>Points Share</th><th>Day 2</th><th>D2率</th><th>W-L-D</th><th>有效胜率</th></tr></thead><tbody>{drag_variant_rows}</tbody></table></div><div class="finding-grid"><article class="finding"><h3>基础/未单列型内战表现突出</h3><p>{drag_variant_by_id['dragapult-ex']['players']:,} 人，是最大站点标签；对黑夜魔灵型 {_pct(base_vs_dusk['effective_win_rate'])}、对火焰鸡型 {_pct(base_vs_blaziken['effective_win_rate'])}、对土龙型 {_pct(base_vs_dudun['effective_win_rate'])}。</p></article><article class="finding"><h3>土龙型改变部分外部 matchup</h3><p>土龙多龙对 Raging Bolt/Ogerpon 为 {_pct(dudun_vs_bolt['effective_win_rate'])}（{_record(dudun_vs_bolt)}，n={dudun_vs_bolt['n']}），而基础/未单列型只有 {_pct(base_vs_bolt['effective_win_rate'])}（{_record(base_vs_bolt)}，n={base_vs_bolt['n']}）。“多龙怕/不怕 Raging Bolt”取决于子型。</p></article><article class="finding"><h3>黑夜魔灵不是普遍升级</h3><p>它对 Alakazam/Dudunsparce 为 {_pct(dusk_vs_alakazam['effective_win_rate'])}，但对基础/未单列多龙 {_pct(1-base_vs_dusk['effective_win_rate'])}、Raging Bolt/Ogerpon {_pct(dusk_vs_bolt['effective_win_rate'])}，对 Mega Lucario {_pct(dusk_vs_lucario['effective_win_rate'])}（n={dusk_vs_lucario['n']}）。加入爆伤线会改变资源和稳定性，不是无条件增强。</p></article></div></section>
+<section class="panel" id="dragapult-core"><div class="heading"><div><p class="eyebrow">THE FORMAT CENTER</p><h2>多龙：{_pct(drag_points['share'],2)} 积分份额背后的 {len(drag_variants)} 个站点标签</h2></div><p>这些是 Limitless Labs 站点标签，不是逐份卡表重分类。基础/未单列、黑夜魔灵、土龙节节、火焰鸡和雪妖女在速度、资源循环、补刀方式及弱点上不同，不能合成一个训练 opponent。</p></div>{dragapult_card_refs}{dragapult_narrative}<div class="note"><b>分类证据边界：</b>统计按 Labs 标签直接聚合；下方 {len(snapshot['representative_decklists'])} 份代表表只交叉核对每型最佳名次卡表。特别是“Dragapult”应读作“基础/未单列”，其代表表也含 1-1 土龙 tech，不能解释成所有 {drag_variant_by_id['dragapult-ex']['players']:,} 份都没有副轴。</div><div class="table-wrap"><table><thead><tr><th>细分子型</th><th>{pairing['events_with_pairings']} 场人数</th><th>参赛占比</th><th>Points Share</th><th>Day 2</th><th>D2率</th><th>W-L-D</th><th>有效胜率</th></tr></thead><tbody>{drag_variant_rows}</tbody></table></div><div class="finding-grid"><article class="finding"><h3>基础/未单列型内战表现突出</h3><p>{drag_variant_by_id['dragapult-ex']['players']:,} 人，是最大站点标签；对黑夜魔灵型 {_pct(base_vs_dusk['effective_win_rate'])}、对火焰鸡型 {_pct(base_vs_blaziken['effective_win_rate'])}、对土龙型 {_pct(base_vs_dudun['effective_win_rate'])}。</p></article><article class="finding"><h3>土龙型改变部分外部 matchup</h3><p>土龙多龙对 Raging Bolt/Ogerpon 为 {_pct(dudun_vs_bolt['effective_win_rate'])}（{_record(dudun_vs_bolt)}，n={dudun_vs_bolt['n']}），而基础/未单列型只有 {_pct(base_vs_bolt['effective_win_rate'])}（{_record(base_vs_bolt)}，n={base_vs_bolt['n']}）。“多龙怕/不怕 Raging Bolt”取决于子型。</p></article><article class="finding"><h3>黑夜魔灵不是普遍升级</h3><p>它对 Alakazam/Dudunsparce 为 {_pct(dusk_vs_alakazam['effective_win_rate'])}，但对基础/未单列多龙 {_pct(1-base_vs_dusk['effective_win_rate'])}、Raging Bolt/Ogerpon {_pct(dusk_vs_bolt['effective_win_rate'])}，对 Mega Lucario {_pct(dusk_vs_lucario['effective_win_rate'])}（n={dusk_vs_lucario['n']}）。加入爆伤线会改变资源和稳定性，不是无条件增强。</p></article></div></section>
 
 <section class="panel" id="variants"><div class="heading"><div><p class="eyebrow">VARIANT CATALOG</p><h2>全部公开细分牌型</h2></div><p>默认按 {pairing['events_with_pairings']} 场实际参赛人数排序；低样本仍保留，但不进入克制结论。点击表头可重新排序。</p></div><div class="controls"><input id="variant-search" type="search" placeholder="筛选牌型或一级 archetype…"><span>{len(variant_meta)} 个细分类</span></div><div class="table-wrap"><table data-sortable><thead><tr>{''.join(f'<th aria-sort="none">{label}</th>' for label in ('#','细分牌型','一级牌型','人数','赛事','D2','D2率','W-L-D','有效胜率'))}</tr></thead><tbody>{all_variant_rows}</tbody></table></div></section>
 
@@ -338,14 +600,14 @@ document.querySelectorAll('table[data-sortable]').forEach(table=>{const headers=
 
 <section class="panel" id="matchup-matrix"><div class="heading"><div><p class="eyebrow">PRIMARY MATCHUP MATRIX</p><h2>一级牌型对战热力图</h2></div><p>每格为我方视角，平局计半胜；对角线仅表示内战样本。悬停查看 95% Wilson、赛事数和选手数。</p></div><div class="controls"><div class="segmented"><button class="active" data-heat-mode="effective">有效胜率</button><button data-heat-mode="raw">纯胜率</button></div></div><div class="legend"><span class="good">优势</span><span class="mid">接近五五开/方向信号</span><span class="bad">劣势</span><span>粗色仅在证据更强时加深</span></div>{primary_matrix}</section>
 
-<section class="panel" id="dragapult-matchups"><div class="heading"><div><p class="eyebrow">DRAGAPULT DEEP DIVE</p><h2>多龙五个站点标签 × 主流细分对手</h2></div><p>这是本页最重要的矩阵。相同“Dragapult”主标签在不同副轴下会出现方向相反的 matchup。</p></div>{drag_matrix}<div class="note"><b>读法示例：</b>基础/未单列多龙对 Raging Bolt/Ogerpon 为 {_pct(base_vs_bolt['effective_win_rate'])}，土龙多龙则为 {_pct(dudun_vs_bolt['effective_win_rate'])}；三型对 Alakazam/Dudunsparce 分别为 {_pct(base_vs_alakazam['effective_win_rate'])}、{_pct(dusk_vs_alakazam['effective_win_rate'])}、{_pct(blaziken_vs_alakazam['effective_win_rate'])}。训练时至少需要把四个高样本站点标签拆成独立 opponent，再用实际卡表审计确认 candidate 边界。</div></section>
+<section class="panel" id="dragapult-matchups"><div class="heading"><div><p class="eyebrow">DRAGAPULT DEEP DIVE</p><h2>多龙五个站点标签 × 主流细分对手</h2></div><p>这是本页最重要的矩阵。相同“Dragapult”主标签在不同副轴下会出现方向相反的 matchup。</p></div>{matchup_narrative}{drag_matrix}<div class="note"><b>读法示例：</b>基础/未单列多龙对 Raging Bolt/Ogerpon 为 {_pct(base_vs_bolt['effective_win_rate'])}，土龙多龙则为 {_pct(dudun_vs_bolt['effective_win_rate'])}；三型对 Alakazam/Dudunsparce 分别为 {_pct(base_vs_alakazam['effective_win_rate'])}、{_pct(dusk_vs_alakazam['effective_win_rate'])}、{_pct(blaziken_vs_alakazam['effective_win_rate'])}。训练时至少需要把四个高样本站点标签拆成独立 opponent，再用实际卡表审计确认 candidate 边界。</div></section>
 
 <section class="panel" id="counter-evidence"><div class="heading"><div><p class="eyebrow">COUNTER EVIDENCE</p><h2>哪些优势足以称为“较可信信号”</h2></div><p>只列 n≥30 且 95% Wilson 完全高于 50% 的有向细分 matchup；仍然是观察性赛果，不消除选手水平和赛事阶段混杂。</p></div><div class="table-wrap"><table><thead><tr><th>我方</th><th>对手</th><th>W-L-D</th><th>n</th><th>有效胜率</th><th>95% Wilson</th><th>覆盖</th></tr></thead><tbody>{counter_rows}</tbody></table></div></section>
 
-<section class="panel" id="causes"><div class="heading"><div><p class="eyebrow">WHY THIS SHAPE</p><h2>环境为什么呈现这种状态？</h2></div></div><div class="reason-flow"><article class="reason"><b>01</b><h3>卡组强度与工具箱</h3><p>多龙拥有分散伤害、进化抽牌和多种副轴，线下玩家可以随预期环境选择不同版本；大样本下这种可调节性提高了积分产出。</p></article><article class="reason"><b>02</b><h3>BO3 与平局压力</h3><p>公开记录含大量 tie。线下瑞士轮不仅奖励赢局，也惩罚慢速和复杂决策的时间成本；本页使用有效胜率保留平局，而 Kaggle 自动 BO1 不存在同样的时间管理。</p></article><article class="reason"><b>03</b><h3>Agent 实现成本</h3><p>多龙的伤害指示物分配、进化线、副轴选择与跨回合规划扩大 action/credit assignment 难度。Grimmsnarl/Froslass 的计划更集中，更容易被规则策略或单专家 BC 稳定复制。</p></article><article class="reason"><b>04</b><h3>榜单反馈回路</h3><p>Kaggle 高分构筑会被反复复现，形成 {_pct(kaggle_grimmsnarl/kaggle['players'])} Grimmsnarl 与 {_pct(comparison['kaggle_top2'])} Top-2 集中；线下 {snapshot['filter_contract']['players']:,} 人跨地区分散选择，Top-2 Points 为 {_pct(comparison['limitless_top2'])}。这是选择机制差异，不是单一克制链能解释。</p></article></div><div class="note"><b>不能下的结论：</b>不能因为 Kaggle Grimmsnarl 占 {kaggle_grimmsnarl} 席就说它在线下天然克制多龙。公开线下基础/未单列多龙对 Grimmsnarl/Froslass 为 {_pct(base_vs_grim['effective_win_rate'])}（{_record(base_vs_grim)}，n={base_vs_grim['n']}）；黑夜魔灵多龙为 {_pct(dusk_vs_grim['effective_win_rate'])}（{_record(dusk_vs_grim)}，n={dusk_vs_grim['n']}）。子型与实现质量都比粗标签重要。</div></section>
+<section class="panel" id="causes"><div class="heading"><div><p class="eyebrow">WHY THIS SHAPE</p><h2>环境为什么呈现这种状态？</h2></div></div>{causes_narrative}<div class="reason-flow"><article class="reason"><b>01</b><h3>卡组强度与工具箱</h3><p>多龙拥有分散伤害、进化抽牌和多种副轴，线下玩家可以随预期环境选择不同版本；大样本下这种可调节性提高了积分产出。</p></article><article class="reason"><b>02</b><h3>BO3 与平局压力</h3><p>公开记录含大量 tie。线下瑞士轮不仅奖励赢局，也惩罚慢速和复杂决策的时间成本；本页使用有效胜率保留平局，而 Kaggle 自动 BO1 不存在同样的时间管理。</p></article><article class="reason"><b>03</b><h3>Agent 实现成本</h3><p>多龙的伤害指示物分配、进化线、副轴选择与跨回合规划扩大 action/credit assignment 难度。Grimmsnarl/Froslass 的计划更集中，更容易被规则策略或单专家 BC 稳定复制。</p></article><article class="reason"><b>04</b><h3>榜单反馈回路</h3><p>Kaggle 高分构筑会被反复复现，形成 {_pct(kaggle_grimmsnarl/kaggle['players'])} Grimmsnarl 与 {_pct(comparison['kaggle_top2'])} Top-2 集中；线下 {snapshot['filter_contract']['players']:,} 人跨地区分散选择，Top-2 Points 为 {_pct(comparison['limitless_top2'])}。这是选择机制差异，不是单一克制链能解释。</p></article></div><div class="note"><b>不能下的结论：</b>不能因为 Kaggle Grimmsnarl 占 {kaggle_grimmsnarl} 席就说它在线下天然克制多龙。公开线下基础/未单列多龙对 Grimmsnarl/Froslass 为 {_pct(base_vs_grim['effective_win_rate'])}（{_record(base_vs_grim)}，n={base_vs_grim['n']}）；黑夜魔灵多龙为 {_pct(dusk_vs_grim['effective_win_rate'])}（{_record(dusk_vs_grim)}，n={dusk_vs_grim['n']}）。子型与实现质量都比粗标签重要。</div></section>
 
 <section class="panel" id="training"><div class="heading"><div><p class="eyebrow">BC + RL IMPLICATIONS</p><h2>对训练路线的具体调整</h2></div><p>建议遵守 deck-specific policy、candidate package 和固定 opponent catalog 边界，不把不同专家动作标签无条件混训。</p></div><div class="table-wrap"><table class="training-table"><thead><tr><th>优先级</th><th>工作包</th><th>证据</th><th>实施边界</th></tr></thead><tbody><tr><td>P0</td><td>建立基础/未单列、黑夜魔灵、土龙、火焰鸡四套隔离 BC policy</td><td>四个高样本标签分别有 {drag_variant_by_id['dragapult-ex']['players']:,} / {drag_variant_by_id['dragapult-dusknoir']['players']:,} / {drag_variant_by_id['dragapult-dudunsparce']['players']:,} / {drag_variant_by_id['dragapult-blaziken']['players']:,} 名选手，且多个 matchup 方向相反</td><td>先按标签收集，再用 exact deck 审计各自 expert、dataset manifest、version、candidate package；不合并冲突标签</td></tr><tr><td>P0</td><td>将四型作为独立 arena curriculum 候选</td><td>多龙一级 {dragapult['players']:,} 人、{_pct(drag_points['share'],2)} Points，覆盖线下核心环境</td><td>先生成候选 package，经官方 engine 真实评测和用户确认后再准入</td></tr><tr><td>P1</td><td>补充 Raging Bolt、N's Zoroark、Crustle、Alakazam 对手</td><td>它们分别揭示多龙子型的速度、Prize trade、墙与资源循环弱点</td><td>固定 pool snapshot 与采样权重，RL run 中显式记录</td></tr><tr><td>P1</td><td>为多龙加入跨回合伤害分配与副轴 conditioning</td><td>仅对 Raging Bolt/Ogerpon，土龙与基础/未单列标签就相差 {abs(dudun_vs_bolt['effective_win_rate']-base_vs_bolt['effective_win_rate'])*100:.1f} pp</td><td>若共享模型，必须显式 deck/source conditioning 和分来源评测</td></tr><tr><td>P2</td><td>保留 Kaggle Grimmsnarl 高频 curriculum，但降低其代表“真实环境”的权重</td><td>Kaggle {_pct(kaggle_grimmsnarl/kaggle['players'])}，线下实际 {_pct(grimmsnarl['players']/pairing['players_in_pairing_events'])}、有效胜率 {_pct(grimmsnarl['effective_win_rate'])}</td><td>把“榜单适应性”与“广谱牌型强度”设为两个实验变量</td></tr><tr><td>暂缓</td><td>雪妖女多龙专门训练</td><td>仅 {drag_variant_by_id['dragapult-froslass']['players']} 名选手，公开表现与 matchup 样本不足</td><td>保留 catalog 观察，不据此重排训练预算</td></tr></tbody></table></div></section>
 
 <section class="panel" id="methodology"><div class="heading"><div><p class="eyebrow">METHOD & LIMITS</p><h2>统计方法、来源与不可比较部分</h2></div></div><div class="split"><div><h3>计算合同</h3><ul><li>有效胜率 = (W + 0.5×D) / n；纯胜率 = W / n。</li><li>每格显示 95% Wilson 区间；n≥30 且区间排除 50% 才标为可信优势/劣势。</li><li>15≤n&lt;30 仅为方向信号；n&lt;15 不推断。bye、未完成、牌型缺失和 `winner=-1` no-result 均排除。</li><li>每场 BO3 match 是一个样本，不把一场 match 伪装成三局 game；同型内战只计一次，仅展示决胜/平局数量，不赋予任意 player1 牌型胜率。</li><li>Jensen–Shannon 在版本化名称映射后的并集类别计算，单位为 bit；0 相同，1 完全分离。</li></ul></div><div><h3>残余局限</h3><ul><li>韩国联赛没有 Labs pairings，进入总体但不进入矩阵。</li><li>{pairing['accepted_matches']:,} 场仍有选手能力、地区、轮次与 drop 选择偏差。</li><li>主站 Points Share、Labs 参赛套数和 Kaggle Top {kaggle['players']} 席位是三种不同分母。</li><li>细分统计遵循 Labs 站点标签；仅代表卡表经过关键副轴交叉审计，不能外推到该型每位参赛者。</li><li>卡牌机理解释来自构筑结构与公开赛果；严格因果需要控制选手与随机性的实验。</li></ul></div></div><h3>关键来源</h3><ul class="source-list"><li><a href="{_e(primary_points[0]['url'].split('/decks/')[0] + '/decks?' + snapshot['filter_contract']['query'])}" target="_blank">Limitless TEF-POR Metagame Filter</a></li><li><a href="https://limitlesstcg.com/tournaments?{_e(snapshot['filter_contract']['query'])}" target="_blank">Limitless TEF-POR Tournament Filter</a></li><li><a href="https://labs.limitlesstcg.com/0068/standings" target="_blank">Limitless Labs Indianapolis 示例</a></li><li><a href="../environment-daily_kaggle_top100/daily/2026-07-30.html">Kaggle 2026-07-30 Top {kaggle['players']} 日报</a></li><li>快照中保留 {len(snapshot['sources'])} 条源 URL、抓取时间与 SHA-256（含 8 个赛事详情页）。</li><li>聚合事实：<code>data/processed/environment_limitless/snapshot.json</code></li></ul></section>
-</main><dialog class="modal" id="card-modal"><b></b><img alt=""><button type="button">关闭</button></dialog><script>{js}</script></body></html>"""
+</main><div class="card-hover-preview" id="card-hover-preview" role="tooltip"><img alt=""><b></b><small></small></div><dialog class="modal" id="card-modal"><div class="modal-head"><b></b><span data-card-meta></span></div><img alt=""><div class="modal-actions"><button type="button" data-card-prev aria-label="上一张卡" title="上一张卡">←</button><button type="button" data-card-close aria-label="关闭卡图" title="关闭">×</button><button type="button" data-card-next aria-label="下一张卡" title="下一张卡">→</button></div></dialog><script>{js}</script></body></html>"""
     return report
