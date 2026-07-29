@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>从官方引擎到 Foundation Agent</title>
+  <style>
+    :root {
+      --ink: #172026;
+      --muted: #5d6870;
+      --line: #cbd3d8;
+      --paper: #ffffff;
+      --wash: #f4f6f7;
+      --charcoal: #242d32;
+      --red: #c43d35;
+      --red-soft: #f8e8e6;
+      --teal: #147d78;
+      --teal-soft: #e2f2f0;
+      --amber: #b87808;
+      --amber-soft: #fff1d5;
+      --green: #3c7a47;
+      --green-soft: #e8f3e9;
+      --blue: #356aa0;
+      --blue-soft: #e6eef7;
+      --violet: #77558c;
+      --violet-soft: #f0e9f3;
+      --max: 1180px;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+      line-height: 1.65;
+      letter-spacing: 0;
+    }
+    a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    button, input { font: inherit; }
+    code, .mono {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: .94em;
+    }
+    .wrap { width: min(calc(100% - 40px), var(--max)); margin: 0 auto; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(255,255,255,.96);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(10px);
+    }
+    .topbar-inner {
+      min-height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: max-content;
+      font-weight: 760;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .brand-mark {
+      width: 24px;
+      height: 24px;
+      border: 6px solid var(--red);
+      border-radius: 50%;
+      box-shadow: inset 0 0 0 2px var(--paper);
+      background: var(--charcoal);
+    }
+    .nav {
+      display: flex;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      white-space: nowrap;
+    }
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      padding: 7px 9px;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .nav a:hover, .nav a:focus-visible { background: var(--wash); color: var(--ink); }
+
+    .report-head {
+      background: var(--charcoal);
+      color: #fff;
+      border-bottom: 6px solid var(--red);
+      padding: 54px 0 46px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 760;
+      text-transform: uppercase;
+      color: #b9c6cd;
+    }
+    .eyebrow::before { content: ""; width: 28px; height: 3px; background: #efb33c; }
+    h1 {
+      margin: 14px 0 14px;
+      max-width: 920px;
+      font-size: 42px;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+    .lede { max-width: 840px; margin: 0; color: #d7e0e4; font-size: 18px; }
+    .identity-row {
+      margin-top: 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .identity {
+      border: 1px solid #59666d;
+      border-radius: 4px;
+      padding: 6px 9px;
+      color: #e8edef;
+      font-size: 12px;
+    }
+
+    section { padding: 64px 0; border-bottom: 1px solid var(--line); }
+    section.alt { background: var(--wash); }
+    .section-kicker { color: var(--red); font-size: 12px; font-weight: 800; text-transform: uppercase; }
+    h2 { margin: 8px 0 12px; font-size: 30px; line-height: 1.22; letter-spacing: 0; }
+    h3 { margin: 0 0 9px; font-size: 18px; line-height: 1.35; letter-spacing: 0; }
+    .section-intro { max-width: 850px; margin: 0 0 30px; color: var(--muted); }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 12px;
+      margin-top: 30px;
+    }
+    .metric {
+      min-height: 128px;
+      padding: 18px;
+      background: #fff;
+      color: var(--ink);
+      border-top: 4px solid var(--teal);
+      border-radius: var(--radius);
+    }
+    .metric:nth-child(2) { border-color: var(--amber); }
+    .metric:nth-child(3) { border-color: var(--blue); }
+    .metric:nth-child(4) { border-color: var(--red); }
+    .metric strong { display: block; font-size: 26px; line-height: 1.1; }
+    .metric span { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; }
+
+    .boundary-grid, .three-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 16px;
+    }
+    .boundary {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+    }
+    .boundary.rule { border-top: 5px solid var(--red); }
+    .boundary.runtime { border-top: 5px solid var(--teal); }
+    .boundary.hypothesis { border-top: 5px solid var(--amber); }
+    .boundary p, .boundary li { color: var(--muted); font-size: 14px; }
+    .boundary ul { margin: 10px 0 0; padding-left: 20px; }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px,1fr));
+      gap: 22px;
+      overflow-x: auto;
+      padding: 4px 2px 16px;
+    }
+    .stage {
+      position: relative;
+      min-height: 158px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--blue);
+      background: var(--paper);
+      border-radius: var(--radius);
+    }
+    .stage:nth-child(2) { border-top-color: var(--teal); }
+    .stage:nth-child(3) { border-top-color: var(--amber); }
+    .stage:nth-child(4) { border-top-color: var(--green); }
+    .stage:nth-child(5) { border-top-color: var(--violet); }
+    .stage:nth-child(6) { border-top-color: var(--red); }
+    .stage:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -21px;
+      top: 60px;
+      color: var(--muted);
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .stage-num { font: 700 12px/1 "SFMono-Regular", monospace; color: var(--muted); }
+    .stage h3 { margin-top: 12px; font-size: 16px; }
+    .stage p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: minmax(0,1.05fr) minmax(0,1.4fr) minmax(0,1fr);
+      gap: 16px;
+      align-items: stretch;
+    }
+    .arch-column {
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .arch-column h3 { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+    .token-stack { display: grid; gap: 7px; }
+    .token {
+      min-height: 42px;
+      padding: 10px 11px;
+      border-left: 4px solid var(--blue);
+      background: var(--blue-soft);
+      font-size: 13px;
+    }
+    .token:nth-child(2n) { border-color: var(--teal); background: var(--teal-soft); }
+    .token:nth-child(3n) { border-color: var(--amber); background: var(--amber-soft); }
+    .attention-block {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) 54px minmax(0,1.25fr);
+      gap: 10px;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px dashed var(--line);
+    }
+    .attention-block:last-child { border-bottom: 0; }
+    .qkv-box { min-height: 74px; padding: 11px; border-radius: 4px; font-size: 13px; }
+    .q-box { background: var(--red-soft); border: 1px solid #e5aaa6; }
+    .kv-box { background: var(--teal-soft); border: 1px solid #9ccfca; }
+    .qkv-label { display: block; font-size: 10px; font-weight: 850; color: var(--muted); }
+    .attn-arrow { text-align: center; color: var(--charcoal); font-weight: 850; }
+    .attn-result {
+      margin-top: 8px;
+      padding: 10px;
+      background: var(--amber-soft);
+      border-left: 4px solid var(--amber);
+      font-size: 13px;
+    }
+    .pointer-box {
+      display: grid;
+      gap: 10px;
+    }
+    .pointer-step { padding: 12px; background: var(--violet-soft); border-left: 4px solid var(--violet); font-size: 13px; }
+    .formula {
+      overflow-x: auto;
+      padding: 13px;
+      background: #1f282d;
+      color: #f2f5f6;
+      border-radius: 4px;
+      font: 13px/1.6 "SFMono-Regular", Consolas, monospace;
+      white-space: nowrap;
+    }
+
+    .segmented {
+      display: flex;
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: var(--radius);
+      padding: 4px;
+      margin-bottom: 18px;
+    }
+    .segmented button {
+      flex: 1 0 auto;
+      min-height: 42px;
+      border: 0;
+      border-right: 1px solid var(--line);
+      padding: 8px 12px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .segmented button:last-child { border-right: 0; }
+    .segmented button[aria-selected="true"] { background: var(--charcoal); color: #fff; }
+    .phase-panel {
+      display: none;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 16px;
+      min-height: 224px;
+    }
+    .phase-panel.active { display: grid; }
+    .phase-copy, .phase-contract {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: var(--radius);
+    }
+    .phase-copy p, .phase-contract p { color: var(--muted); }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+    .pill { padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: 750; }
+    .pill.train { background: var(--green-soft); color: #25572e; }
+    .pill.freeze { background: #e8ecee; color: #48545b; }
+    .pill.new { background: var(--amber-soft); color: #7b4e00; }
+
+    .matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+    table { width: 100%; border-collapse: collapse; background: var(--paper); }
+    th, td { padding: 12px 13px; text-align: left; border-bottom: 1px solid var(--line); font-size: 13px; }
+    th { background: var(--charcoal); color: #fff; font-weight: 700; white-space: nowrap; }
+    tr:last-child td { border-bottom: 0; }
+    td.state { text-align: center; font-weight: 780; white-space: nowrap; }
+    .s-hard { background: #edf0f1; color: #465158; }
+    .s-train { background: var(--green-soft); color: #285d33; }
+    .s-optional { background: var(--amber-soft); color: #754b05; }
+    .s-na { color: #89939a; }
+
+    .math-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+    .math-item { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .math-item p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+
+    .arena-layout {
+      display: grid;
+      grid-template-columns: minmax(0,.9fr) minmax(0,1.4fr) minmax(0,.9fr);
+      gap: 18px;
+      align-items: center;
+    }
+    .foundation-node {
+      padding: 22px;
+      border: 2px solid var(--charcoal);
+      background: var(--paper);
+      border-radius: var(--radius);
+    }
+    .foundation-node strong { display: block; font-size: 18px; }
+    .foundation-node span { color: var(--muted); font-size: 12px; }
+    .branch-list { display: grid; gap: 9px; }
+    .branch { padding: 13px; border-left: 5px solid var(--teal); background: var(--teal-soft); }
+    .branch:nth-child(2) { border-color: var(--red); background: var(--red-soft); }
+    .branch:nth-child(3) { border-color: var(--amber); background: var(--amber-soft); }
+    .branch:nth-child(4) { border-color: var(--violet); background: var(--violet-soft); }
+    .loop { display: grid; gap: 10px; }
+    .loop-step { padding: 11px; text-align: center; border: 1px solid var(--line); background: var(--paper); font-size: 13px; }
+    .loop-arrow { text-align: center; color: var(--red); font-weight: 900; }
+
+    .claim-table td:first-child { width: 29%; font-weight: 760; }
+    .yes { color: var(--green); }
+    .not-yet { color: var(--amber); }
+
+    .sources { background: var(--charcoal); color: #e8edef; }
+    .sources a { color: #a9c9e7; }
+    .sources h2 { color: #fff; }
+    .sources ul { padding-left: 20px; }
+    footer { padding: 24px 0; background: #141a1e; color: #aab5bb; font-size: 12px; }
+
+    @media (max-width: 900px) {
+      .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .boundary-grid, .three-grid, .architecture, .arena-layout { grid-template-columns: minmax(0,1fr); }
+      .pipeline { grid-template-columns: repeat(6, 180px); }
+      .phase-panel { grid-template-columns: minmax(0,1fr); }
+      .math-grid { grid-template-columns: minmax(0,1fr); }
+      .topbar-inner { align-items: flex-start; flex-direction: column; padding: 10px 0; gap: 7px; }
+      .nav { width: 100%; }
+      h1 { font-size: 34px; }
+    }
+    @media (max-width: 560px) {
+      .wrap { width: min(calc(100% - 24px), var(--max)); }
+      .report-head { padding: 38px 0 34px; }
+      h1 { font-size: 29px; }
+      h2 { font-size: 25px; }
+      .lede { font-size: 16px; }
+      section { padding: 46px 0; }
+      .metrics { grid-template-columns: 1fr; }
+      .attention-block { grid-template-columns: 1fr; }
+      .attn-arrow { transform: rotate(90deg); }
+      th, td { padding: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>Foundation Agent 路线</a>
+      <nav class="nav" aria-label="文档章节">
+        <a href="#evidence">证据</a>
+        <a href="#pipeline">路径</a>
+        <a href="#model">模型</a>
+        <a href="#training">训练</a>
+        <a href="#physics">引擎预训练</a>
+        <a href="#arena">Arena</a>
+        <a href="#math">数学依据</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <div class="report-head">
+      <div class="wrap">
+        <div class="eyebrow">2026-07-30 · Solution / Scale-up Concept</div>
+        <h1>从官方引擎到 Foundation Agent</h1>
+        <p class="lede">以 0019 通用胜者 BC 和 0018 Deck-specific PPO 为实证起点，建立卡牌动力学预训练、行为先验、构筑适配、League 自博弈与代际蒸馏的完整路线。</p>
+        <div class="identity-row">
+          <span class="identity mono">asset 0019-0730-epoch13</span>
+          <span class="identity mono">17,756,162 parameters</span>
+          <span class="identity mono">source_id=0 deployment</span>
+          <span class="identity">官方引擎闭环</span>
+        </div>
+      </div>
+    </div>
+
+    <section id="evidence" class="alt">
+      <div class="wrap">
+        <div class="section-kicker">01 · Evidence</div>
+        <h2>不是概念起跑：已经有两块关键证据</h2>
+        <p class="section-intro">0019 证明大规模多构筑训练没有压垮模仿能力；0020 多龙 zero-shot 证明同一 Foundation 能在未做专属 BC/RL 的构筑上产生真实竞争力。数字仍受评测分布约束，但方向已经可验证。</p>
+        <div class="metrics">
+          <div class="metric"><strong>81.2871%</strong><span>0019 conditioned greedy exact-action</span></div>
+          <div class="metric"><strong>74.8431%</strong><span>neutral persona greedy exact-action</span></div>
+          <div class="metric"><strong>42.33%</strong><span>多龙 zero-shot，127 / 300 official-engine games</span></div>
+          <div class="metric"><strong>100%</strong><span>该评测完成率；合法动作是硬合同</span></div>
+        </div>
+        <div class="boundary-grid" style="margin-top:28px">
+          <article class="boundary rule">
+            <h3>官方规则</h3>
+            <ul>
+              <li>攻击是终止回合的提交</li>
+              <li>进化与每回合资源有硬时机</li>
+              <li>胜负由 Prize、无 Pokémon 或无法回合抽牌决定</li>
+            </ul>
+          </article>
+          <article class="boundary runtime">
+            <h3>当前 Runtime 事实</h3>
+            <ul>
+              <li>引擎提供合法 option 与 count 边界</li>
+              <li>引擎执行卡牌效果、随机与终局</li>
+              <li>策略强度只由真实完整对局证明</li>
+            </ul>
+          </article>
+          <article class="boundary hypothesis">
+            <h3>研究假设</h3>
+            <ul>
+              <li>transition 可预训练卡牌动力学</li>
+              <li>跨层 adapter 可兼顾稳定与可塑</li>
+              <li>League 蒸馏可产生下一代 Foundation</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <div class="wrap">
+        <div class="section-kicker">02 · Full Path</div>
+        <h2>Engine 是物理世界，BC 是人类先验，RL 是价值优化</h2>
+        <p class="section-intro">三者不是互相替代。Engine 提供“会发生什么”，BC 提供“高手通常怎样开始”，RL 提供“在目标环境中怎样更能赢”。</p>
+        <div class="pipeline" aria-label="完整学习路径">
+          <article class="stage"><span class="stage-num">00</span><h3>Official Engine</h3><p>合法动作、精确 transition、随机结算与 terminal reward。</p></article>
+          <article class="stage"><span class="stage-num">01</span><h3>Dynamics Pretrain</h3><p>学习卡牌、动作与可见状态变化，不学习动作偏好。</p></article>
+          <article class="stage"><span class="stage-num">02</span><h3>Universal BC</h3><p>学习胜者动作语法、资源偏好和跨构筑共享策略表示。</p></article>
+          <article class="stage"><span class="stage-num">03</span><h3>Value + Deck RL</h3><p>终局胜负校准具体构筑的 option 排序与连续动作。</p></article>
+          <article class="stage"><span class="stage-num">04</span><h3>League Arena</h3><p>与冻结历史策略和多构筑对手共同进化，保留 matchup 多样性。</p></article>
+          <article class="stage"><span class="stage-num">05</span><h3>Foundation G+1</h3><p>把稳健分支与旧 BC anchors 蒸馏成新的不可变基石。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="model" class="alt">
+      <div class="wrap">
+        <div class="section-kicker">03 · Current Model</div>
+        <h2>0019 每一步：先让动作理解场面，再让场面选择动作</h2>
+        <p class="section-intro">Encoder/Decoder 是工程边界，不是语义边界。当前 <code>encode()</code> 已包含 option-conditioned attention；末端 pointer head 只负责在已经语境化的合法 options 中生成 ordered full-action。</p>
+        <div class="architecture">
+          <article class="arch-column">
+            <h3>共享 Memory</h3>
+            <div class="token-stack">
+              <div class="token">Board / entity tokens<br><span class="mono">[B,E,320]</span></div>
+              <div class="token">Exact deck + resource ledger</div>
+              <div class="token">Causal events + opponent hand boundary</div>
+              <div class="token">Goal-QKV: setup / attack / recovery / tempo</div>
+              <div class="token">Global state summary<br><span class="mono">[B,320]</span></div>
+            </div>
+          </article>
+
+          <article class="arch-column">
+            <h3>两种 Q/K 方向</h3>
+            <div class="attention-block">
+              <div class="qkv-box q-box"><span class="qkv-label">QUERY</span>每个合法 Option<br><span class="mono">[B,O,320]</span></div>
+              <div class="attn-arrow">→</div>
+              <div>
+                <div class="qkv-box kv-box"><span class="qkv-label">KEY / VALUE</span>Board / Goal / Scenario memories</div>
+                <div class="attn-result">回答：考虑这个动作时，我应该关注什么？</div>
+              </div>
+            </div>
+            <div class="attention-block">
+              <div class="qkv-box q-box"><span class="qkv-label">QUERY</span>Decoder hidden<br>场面 + 已选动作前缀</div>
+              <div class="attn-arrow">→</div>
+              <div>
+                <div class="qkv-box kv-box"><span class="qkv-label">KEYS</span>Contextualized Options<br><span class="mono">[B,O,320]</span></div>
+                <div class="attn-result">回答：现在最匹配需求的是哪个动作？</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="arch-column">
+            <h3>输出 Heads</h3>
+            <div class="pointer-box">
+              <div class="pointer-step">Pointer logits<br><span class="mono">q<sub>t</sub>Kᵀ → [B,O]</span></div>
+              <div class="pointer-step">GRU action history<br>选中 option 后更新 hidden</div>
+              <div class="pointer-step">STOP head<br>遵守 minCount / maxCount</div>
+              <div class="pointer-step">Value head<br><span class="mono">V(s) ∈ [-1,1]</span></div>
+            </div>
+          </article>
+        </div>
+        <div class="formula" style="margin-top:16px">logit(t,i) = (Wq · hidden_t)ᵀ (Wk · option_i) / sqrt(320) + option_bias_i</div>
+      </div>
+    </section>
+
+    <section id="training">
+      <div class="wrap">
+        <div class="section-kicker">04 · Freeze / Train</div>
+        <h2>阶段不是简单地“越训越多”，而是逐层释放可塑性</h2>
+        <p class="section-intro">点击阶段查看目标和边界。Foundation 永远保留不可变原件；新策略先使用小型 heads/adapters，只有出现可测平台期才开放更深层。</p>
+
+        <div class="segmented" role="tablist" aria-label="训练阶段">
+          <button type="button" role="tab" aria-selected="true" aria-controls="phase-physics" id="tab-physics" data-phase="physics">Engine Physics</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="phase-bc" id="tab-bc" data-phase="bc">Universal BC</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="phase-value" id="tab-value" data-phase="value">Value</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="phase-rl" id="tab-rl" data-phase="rl">Deck RL</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="phase-consolidate" id="tab-consolidate" data-phase="consolidate">Consolidation</button>
+        </div>
+
+        <div class="phase-panel active" id="phase-physics" role="tabpanel" aria-labelledby="tab-physics">
+          <article class="phase-copy"><h3>学习“会发生什么”</h3><p>合法探索产生 <span class="mono">(s, a, events, s')</span>。状态 delta、事件、latent forward/inverse 与 masked observation 训练 Card/State/Action Encoders，不提供动作好坏标签。</p><div class="pill-row"><span class="pill train">训练 Encoders</span><span class="pill new">新增 Dynamics Head</span><span class="pill freeze">Policy 不形成偏好</span></div></article>
+          <article class="phase-contract"><h3>采集合同</h3><p>非法动作不参与探索；随机性预测分布；隐藏信息 mask；构筑可以不强，但必须让目标机制可达。</p><div class="formula">Ldyn = λΔLΔ + λeLevent + λzLlatent + λiLinverse + λmLmasked</div></article>
+        </div>
+        <div class="phase-panel" id="phase-bc" role="tabpanel" aria-labelledby="tab-bc" hidden>
+          <article class="phase-copy"><h3>学习“高手通常怎样做”</h3><p>胜者 ordered full-action 通过 teacher forcing 训练共享表示和 pointer policy。Exact deck/source conditioning 分离冲突标签。</p><div class="pill-row"><span class="pill train">训练 Shared Representation</span><span class="pill train">训练 Pointer Decoder</span><span class="pill freeze">不声称真实强度</span></div></article>
+          <article class="phase-contract"><h3>0019 实证</h3><p>509 sources、367 exact decks；Epoch 13 conditioned greedy exact <code>81.2871%</code>，neutral exact <code>74.8431%</code>。</p><div class="formula">LBC = -Σt log π(a*t | st, a*&lt;t, deck, source)</div></article>
+        </div>
+        <div class="phase-panel" id="phase-value" role="tabpanel" aria-labelledby="tab-value" hidden>
+          <article class="phase-copy"><h3>学习“当前局面最后能否赢”</h3><p>先冻结 actor，只训练新 value head。它把完整 Episode 的终局回报映射到每个 actor-visible state，为 GAE/PPO 提供 critic 起点。</p><div class="pill-row"><span class="pill freeze">冻结 Actor</span><span class="pill train">训练 Value Head</span><span class="pill new">103,681 参数</span></div></article>
+          <article class="phase-contract"><h3>边界</h3><p>Value calibration 降低预测误差，不自动增强 policy；不能把 in-sample explained variance 当作策略胜率。</p><div class="formula">LV = E[(Vψ(st) - Gt)²]</div></article>
+        </div>
+        <div class="phase-panel" id="phase-rl" role="tabpanel" aria-labelledby="tab-rl" hidden>
+          <article class="phase-copy"><h3>学习“这套构筑怎样更能赢”</h3><p>从 Foundation 分支。先训练 deck adapter、option/pointer head 与 value；只有平台期后才以更低 LR 开放最后 scenario 或 semantic 层。</p><div class="pill-row"><span class="pill freeze">冻结 Foundation</span><span class="pill train">训练 Adapter</span><span class="pill train">训练 Policy / Value</span><span class="pill new">可选末层解冻</span></div></article>
+          <article class="phase-contract"><h3>当前实证与下一步</h3><p>0018 的保守实现冻结全部 state/option representation，只训练 <strong>1,130,883</strong> 个 Decoder + Value 参数。未来 adapter 是在该边界不足时增加的可塑性，不是已经验证的结果。</p><div class="formula">L = LPPO + λVLV + λoldLanchor + λKL KLref + λdynLdyn</div></article>
+        </div>
+        <div class="phase-panel" id="phase-consolidate" role="tabpanel" aria-labelledby="tab-consolidate" hidden>
+          <article class="phase-copy"><h3>学习“哪些局部创新值得成为共识”</h3><p>保留 G0，筛选跨 matchup 稳健的 deck branches，把它们与原始 BC anchors、dynamics 数据一起蒸馏为新的 G1。</p><div class="pill-row"><span class="pill freeze">G0 永久不可变</span><span class="pill train">训练 Foundation G1</span><span class="pill new">新资产版本</span></div></article>
+          <article class="phase-contract"><h3>晋级依据</h3><p>固定 official-engine runtime、opponent snapshot、先后手和 matchup 向量。单一 rolling win rate 或 Elo 不足以晋级。</p><div class="formula">LG1 = Lold_BC + Σd wd KL(πd || πG1) + λdynLdyn</div></article>
+        </div>
+
+        <div class="matrix-wrap" style="margin-top:26px">
+          <table aria-label="模块冻结与训练矩阵">
+            <thead><tr><th>模块</th><th>Physics</th><th>Universal BC</th><th>Value</th><th>Deck RL</th><th>G+1 蒸馏</th></tr></thead>
+            <tbody>
+              <tr><td>Official engine / legal mask</td><td class="state s-hard">硬合同</td><td class="state s-hard">硬合同</td><td class="state s-hard">硬合同</td><td class="state s-hard">硬合同</td><td class="state s-hard">硬合同</td></tr>
+              <tr><td>Card / State / Event Encoder</td><td class="state s-train">训练</td><td class="state s-train">训练</td><td class="state s-hard">冻结</td><td class="state s-hard">默认冻结</td><td class="state s-train">训练 G+1</td></tr>
+              <tr><td>Option-to-memory reasoning</td><td class="state s-train">训练</td><td class="state s-train">训练</td><td class="state s-hard">冻结</td><td class="state s-optional">Adapter / 末层</td><td class="state s-train">训练 G+1</td></tr>
+              <tr><td>Pointer Decoder</td><td class="state s-na">无偏好</td><td class="state s-train">训练</td><td class="state s-hard">冻结</td><td class="state s-train">训练</td><td class="state s-train">蒸馏</td></tr>
+              <tr><td>Value Head</td><td class="state s-na">无</td><td class="state s-na">可无</td><td class="state s-train">训练</td><td class="state s-train">训练</td><td class="state s-optional">可共享</td></tr>
+              <tr><td>Deck Adapter</td><td class="state s-na">无</td><td class="state s-optional">可选</td><td class="state s-hard">冻结</td><td class="state s-train">训练</td><td class="state s-optional">吸收后重置</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="physics" class="alt">
+      <div class="wrap">
+        <div class="section-kicker">05 · Engine Physics</div>
+        <h2>没有人类 JSON，也能先学习卡牌世界如何运转</h2>
+        <p class="section-intro">这一阶段不是随机模仿自己，而是使用真实 transition 做自监督表示学习。错误时机打出的卡仍能提供正确效果；策略价值由后续 BC/RL 决定。</p>
+        <div class="three-grid">
+          <article class="boundary runtime"><h3>采集</h3><p class="mono">s<sub>t</sub>, ordered action, resolved events, s<sub>t+1</sub></p><p>使用覆盖率导向合法探索。实验构筑不必强，但要保证目标卡与依赖机制可达。</p></article>
+          <article class="boundary hypothesis"><h3>表示</h3><p>Card Encoder + State Encoder + Action Encoder + Dynamics Head。</p><p>预测可见 delta、事件、next latent 和 inverse action。</p></article>
+          <article class="boundary rule"><h3>边界</h3><p>coin flip 与抽牌预测分布；隐藏信息不作为唯一真值；攻击自动结算与对手主动行动严格分离。</p></article>
+        </div>
+        <div class="math-grid" style="margin-top:16px">
+          <article class="math-item"><h3>状态变化</h3><div class="formula">LΔ: zones, damage, energy, evolution, budgets</div><p>避免重建整份 JSON 导致模型只复制不变字段。</p></article>
+          <article class="math-item"><h3>Latent Dynamics</h3><div class="formula">F(E(st), A(at)) ≈ stopgrad(Etarget(st+1))</div><p>学习动作作用后的表示，而非人工规定卡牌价值。</p></article>
+          <article class="math-item"><h3>Inverse Dynamics</h3><div class="formula">I(E(st), E(st+1)) → action / event</div><p>迫使表示保留能够区分动作效果的信息。</p></article>
+          <article class="math-item"><h3>策略仍未完成</h3><div class="formula">Dynamics ≠ Policy ≠ Value</div><p>知道“会发生什么”不等于知道“何时值得做”。</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="arena">
+      <div class="wrap">
+        <div class="section-kicker">06 · Arena Evolution</div>
+        <h2>一份 GPU 常驻 Foundation，多套牌独立分化</h2>
+        <p class="section-intro">共享的是权重、批量 forward 与静态卡牌/构筑计算；每次动态 observation 仍要编码。Adapter 足够小时可以全部常驻，并按 adapter ID 分组完成异构 batch。</p>
+        <div class="arena-layout">
+          <div class="foundation-node"><strong>Foundation G0</strong><span>共享 Card / Board / Event / Option memories<br>不可变资产</span></div>
+          <div class="branch-list">
+            <div class="branch"><strong>Dragapult</strong><br><span class="mono">adapter + pointer + value</span></div>
+            <div class="branch"><strong>Alakazam</strong><br><span class="mono">adapter + pointer + value</span></div>
+            <div class="branch"><strong>Marnie</strong><br><span class="mono">adapter + pointer + value</span></div>
+            <div class="branch"><strong>Candidate Deck</strong><br><span class="mono">zero-shot → short RL → finalist</span></div>
+          </div>
+          <div class="loop">
+            <div class="loop-step">冻结历史快照</div><div class="loop-arrow">↓</div>
+            <div class="loop-step">完整 matchup 向量</div><div class="loop-arrow">↓</div>
+            <div class="loop-step">稳健分支筛选</div><div class="loop-arrow">↓</div>
+            <div class="loop-step">蒸馏 Foundation G1</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="math" class="alt">
+      <div class="wrap">
+        <div class="section-kicker">07 · Why It Can Work</div>
+        <h2>数学上是同一个条件策略函数的逐层求解</h2>
+        <p class="section-intro">目标不是证明唯一全局最优，而是在 official engine 定义的部分可观测随机博弈中，以更好的表示和更低的每构筑样本成本优化期望终局回报。</p>
+        <div class="math-grid">
+          <article class="math-item"><h3>动态输出词表</h3><div class="formula">π(a | s, deck, history), a ∈ LegalOptions(s)</div><p>Pointer 直接对引擎给出的可变合法集合归一化。</p></article>
+          <article class="math-item"><h3>共享降低样本复杂度</h3><div class="formula">θshared + φdeck  &lt;&lt;  θfull per deck</div><p>区域、资源、时机和动作语法跨构筑复用。</p></article>
+          <article class="math-item"><h3>长程信用</h3><div class="formula">At = GAE(rewardterminal, Vψ)</div><p>Value 将终局胜负分配到早期准备和连续操作。</p></article>
+          <article class="math-item"><h3>稳定 / 可塑</h3><div class="formula">immutable θG0 + residual φdeck + distill θG1</div><p>失败分支不污染 Foundation，成功知识按代际吸收。</p></article>
+        </div>
+
+        <div class="matrix-wrap" style="margin-top:24px">
+          <table class="claim-table" aria-label="结论边界">
+            <thead><tr><th>判断</th><th>当前结论</th><th>依据</th></tr></thead>
+            <tbody>
+              <tr><td>共享 Foundation 有迁移价值</td><td class="yes"><strong>强支持</strong></td><td>0019 模仿指标与多龙 42.33% zero-shot</td></tr>
+              <tr><td>Encoder 单独包含绝大多数知识</td><td class="not-yet"><strong>尚未隔离证明</strong></td><td>当前证据同时包含通用 Decoder 与 option-conditioned reasoning</td></tr>
+              <tr><td>Decoder-only 永远足够</td><td class="not-yet"><strong>不成立</strong></td><td>新机制可能需要 option adapter、semantic 或末层 scenario 更新</td></tr>
+              <tr><td>只有 Engine 可以训练强 Agent</td><td class="yes"><strong>理论可行</strong></td><td>合法动作、transition 和 terminal reward 构成完整学习问题</td></tr>
+              <tr><td>自博弈保证全局最优</td><td class="not-yet"><strong>没有保证</strong></td><td>隐藏信息、随机性、有限算力、非平稳与循环克制</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="sources">
+      <div class="wrap">
+        <div class="section-kicker">08 · Sources</div>
+        <h2>事实来源与完整论证</h2>
+        <ul>
+          <li><a href="../../experiments/0019_universal_winner_bc/DESIGN.html">0019 通用胜者 BC 权威设计</a></li>
+          <li><a href="../../experiments/0018_alakazam_terminal_rl/DESIGN.html">0018 胡地 Terminal RL 权威设计</a></li>
+          <li><a href="../../experiments/0020_pluggable_deck_rl/evaluation/V2_zero_shot_dragapult.html">0020 多龙 Zero-shot 官方引擎评测</a></li>
+          <li><a href="../../archive/pretrained/0019_universal_winner_bc_0730_epoch13/README.md">0019 Epoch 13 预训练资产</a></li>
+          <li><a href="../rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md">规则调研与证据边界</a></li>
+          <li><a href="engine_to_foundation_agent_roadmap_2026-07-30.md">本报告 Markdown 完整稿</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap">Pokemon TCG Policy Learning · Engine → Foundation → League · 2026-07-30</div></footer>
+
+  <script>
+    const tabs = Array.from(document.querySelectorAll('[data-phase]'));
+    const panels = Array.from(document.querySelectorAll('.phase-panel'));
+
+    function selectPhase(name) {
+      tabs.forEach((tab) => tab.setAttribute('aria-selected', String(tab.dataset.phase === name)));
+      panels.forEach((panel) => {
+        const active = panel.id === `phase-${name}`;
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+      });
+    }
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => selectPhase(tab.dataset.phase));
+      tab.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+        event.preventDefault();
+        const offset = event.key === 'ArrowRight' ? 1 : -1;
+        const next = tabs[(index + offset + tabs.length) % tabs.length];
+        next.focus();
+        selectPhase(next.dataset.phase);
+      });
+    });
+  </script>
+</body>
+</html>
