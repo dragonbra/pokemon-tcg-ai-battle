@@ -1,0 +1,21 @@
+{
+  "decisions": 3555884,
+  "device": "cuda",
+  "episodes": 51179,
+  "optimizer_state_saved": false,
+  "raw_rollout_saved": false,
+  "stage": "ppo",
+  "state": "completed",
+  "updates": 100,
+  "version": "V4_ppo_decoder_lambda1_lr1e5",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0018_alakazam_terminal_rl--v4_ppo_decoder_lambda1_lr1-03c3482464",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0018_alakazam_terminal_rl--v4_ppo_decoder_lambda1_lr1-03c3482464"
+  }
+}

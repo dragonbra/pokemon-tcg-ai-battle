@@ -34,13 +34,30 @@
     "warning_free_gib": 80,
     "hard_stop_free_gib": 50,
     "version_cap_gib": 20,
-    "checkpoint_retention": 8
+    "checkpoint_retention": 100
   },
   "paths": {
     "training": "train/0018_alakazam_terminal_rl",
     "archive": "experiments/0018_alakazam_terminal_rl",
     "runs": "rl_runs/0018_alakazam_terminal_rl"
   },
-  "current_stage": "rollout_throughput_preflight_complete",
-  "formal_training_started": false
+  "current_stage": "v4_ppo_completed_candidate_selection_pending",
+  "formal_training_started": true,
+  "v4_result": {
+    "version": "V4_ppo_decoder_lambda1_lr1e5",
+    "state": "completed",
+    "updates": 100,
+    "episodes": 51179,
+    "decisions": 3555884,
+    "wins": 35586,
+    "losses": 15583,
+    "draws": 10,
+    "rolling_500_at_update_100": 0.692,
+    "rolling_2000_at_update_100": 0.71,
+    "wandb_run_id": "0018_alakazam_terminal_rl--v4_ppo_decoder_lambda1_lr1-03c3482464",
+    "kaggle_candidates": {
+      "update_39": {"submission_ref": 55069846, "public_score": 943.4},
+      "update_63": {"submission_ref": 55070000, "public_score": 600.0}
+    }
+  }
 }

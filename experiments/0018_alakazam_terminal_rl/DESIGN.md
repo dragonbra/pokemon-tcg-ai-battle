@@ -1,6 +1,6 @@
 # 0018 Alakazam Terminal RL
 
-Status: **V1 value calibration complete; V2 audited; V3 smoke complete; V4 PPO running**
+Status: **V1 value calibration complete; V2 audited; V3 smoke complete; V4 PPO completed at U100**
 
 Date: 2026-07-29
 Target: user-designed Alakazam + Dudunsparce deck, initialized from 0016 R15 epoch 10
@@ -156,8 +156,8 @@ higher actor LR is permitted because V2 moved only `0.2599%` in Decoder relative
 and its KL/clip metrics remained far below their guards; it is not allowed to bypass those guards.
 
 `training_metrics.jsonl` is canonical, then TensorBoard, then private W&B project
-`dragon_bra/pokemon-tcg-policy-learning`. W&B run names are
-`0018_alakazam_terminal_rl-<Vn_tag>`. Required curves include:
+`dragon_bra/pokemon-tcg-policy-learning`. W&B run names follow
+`0018 · alakazam_terminal_rl · V<n>_<tag>`. Required curves include:
 
 - rolling 100/500/2000 W/L/D, Wilson intervals, seat and per-opponent rates;
 - Episodes/s, decisions/s, rollout/update wall time and invalid Episode count;
@@ -205,9 +205,16 @@ surrogate was only `0.000620` at update 10, behavior KL about `1.24e-5`, and Dec
 movement was `0.0768%` at update 1 and `0.2599%` at update 10. The interrupted update 11 was never
 retained and is not part of the policy evidence.
 
-V3 is the completed one-update official-engine smoke for the new contract. V4 is running from V1
-rather than V2
-and adds an explicit main-process PyTorch seed, fixed in-memory
-greedy canary, dense model-only checkpoints and the revised section-7 contract. Rolling sampled
-win rate remains an online diagnostic. Promotion still requires frozen greedy official-engine
-evaluation against the same Arena catalog and balanced seats.
+V3 is the completed one-update official-engine smoke for the new contract. V4 completed all 100
+updates from V1 rather than V2. It generated 51,179 valid official-engine Episodes and 3,555,884
+candidate decisions, with cumulative 35,586 wins, 15,583 losses and 10 draws. At U100 the rolling
+100/500/2000 win rates were 73.0% / 69.2% / 71.0%; the corresponding run maxima were 78.0% at U96,
+75.4% at U92 and 72.7% at U92. Reference-KL surrogate ended at 0.02694, behavior KL at 4.19e-5,
+and actor relative L2 versus the BC reference at 2.012%.
+
+These rolling rates remain sampled optimization diagnostics. The two long-distance candidates
+selected during training were U39 and U63. Their official Kaggle scores were 943.4 and 600.0,
+respectively, while the earlier U6/U11 submissions scored 974.5/999.5. This is direct evidence that
+later rollout rolling-rate peaks do not monotonically predict the competition score. No automatic
+promotion is claimed from V4 completion; future selection still requires comparable frozen greedy
+official-engine evaluation or an explicitly authorized official submission.

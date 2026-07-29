@@ -1,0 +1,11 @@
+{
+  "checkpoint": "rl_runs/0018_alakazam_terminal_rl/versions/V4_ppo_decoder_lambda1_lr1e5/checkpoint/update-000063.pt",
+  "checkpoint_sha256": "c7cca960308aff1671d7783cd63020c1733f42aeebf9bc6059417bd67a5c8b28",
+  "deck_sha256": "267ce842b45f960afef843e68f3aad86573bf7d19329ea23e7469ec8265c017b",
+  "model_sha256": "0ae54d3cdb77ccbd2f808e65f675460be937dcac3b0abbc43961a1977acf43cb",
+  "optimizer_state_saved": false,
+  "packaged_optimizer_state_saved": false,
+  "schema_version": "0018_alakazam_terminal_rl_candidate_v1",
+  "source_had_optimizer_state": false,
+  "source_id": 0
+}

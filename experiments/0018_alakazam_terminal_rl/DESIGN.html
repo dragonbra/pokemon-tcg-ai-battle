@@ -38,7 +38,7 @@
 <header><div>
   <h1>0018 · 胡地终局奖励强化学习</h1>
   <div class="sub">R15 行为克隆编码器 · 卡组专用解码器 PPO · 官方引擎终局奖励</div>
-  <div class="status">V1 Value 校准完成 · V2 已审计 · V3 Smoke · V4 PPO</div>
+  <div class="status">V1 Value 校准完成 · V2 已审计 · V3 Smoke · V4 已完成 100 Updates</div>
 </div></header>
 <main>
   <section class="metrics">
@@ -122,7 +122,7 @@
     <h2>证据边界与监控</h2>
     <p>官方规则定义合法性与终局条件；未经修改的官方引擎产生每一个 Episode 和奖励。PPO
       选型属于项目实验假设。W&amp;B run 名固定为
-      <code>0018_alakazam_terminal_rl-&lt;Vn_tag&gt;</code>。指标先写入本地事实源，再镜像到
+      <code>0018 · alakazam_terminal_rl · V&lt;n&gt;_&lt;tag&gt;</code>。指标先写入本地事实源，再镜像到
       TensorBoard 和私有 W&amp;B。</p>
     <p>主要实时面板包括：rolling 100/500/2000 胜率及 Wilson 区间；先后手与逐对手胜率；
       每秒 Episode 和每秒决策；候选/对手 batch 的平均值、最大值与推理耗时；Policy/Value
@@ -137,11 +137,14 @@
       为 224/300（74.67%），update 10 为 228/298（76.51%，另有 1 平局），没有证明真实
       greedy 强度提升或损坏。V2 update 10 的 reference KL surrogate 仅 0.000620，Decoder
       相对 BC 位移 0.2599%。</p>
-    <p><strong>当前训练：</strong><code>V3_ppo_lambda1_lr1e5_smoke</code> 已完成单次更新合同验证；
-      <code>V4_ppo_decoder_lambda1_lr1e5</code> 正从干净的 V1
-      model-only checkpoint 开始，使用 512 局/update、lambda 1.0、2 epochs、Actor LR 1e-5、
-      零熵奖励和更严格的 behavior KL 护栏。rolling 胜率只作训练诊断；密集 checkpoint
-      将用于后续官方引擎 frozen-greedy 对比。</p>
+    <p><strong>V4 最终结果：</strong><code>V4_ppo_decoder_lambda1_lr1e5</code> 已完成 100 次更新，
+      共生成 51,179 个有效官方引擎 Episode、3,555,884 个候选决策，累计 35,586 胜、15,583 负、
+      10 平。U100 的 rolling 100/500/2000 胜率为 73.0% / 69.2% / 71.0%；全程对应峰值为
+      78.0%（U96）/ 75.4%（U92）/ 72.7%（U92）。最终 reference KL surrogate 为 0.02694，
+      behavior KL 为 4.19e-5，Actor 相对 BC 的 L2 位移为 2.012%。</p>
+    <p class="note">滚动胜率只是训练采样诊断。长程候选 U39/U63 的官方分数分别为 943.4 和
+      600.0，而较早的 U6/U11 为 974.5/999.5；这证明后期 rolling 峰值不能单调预测线上分数。
+      V4 完成不等于自动晋级，后续仍需同合同 frozen-greedy 官方引擎评测或用户明确授权的正式提交。</p>
     <p>完整特征 shape、存储限制、模型来源和评测边界见同步维护的
       <a href="DESIGN.md">DESIGN.md</a>。</p>
   </section>
