@@ -26,8 +26,16 @@ python3 -m train.0022_league_training verify-foundation
 python3 -m train.0022_league_training validate-decks
 python3 -m train.0022_league_training initialize --version V1_initial_league
 python3 -m train.0022_league_training audit-version --version V1_initial_league
+python3 -m train.0022_league_training smoke-rollout --device cuda:0 --workers 4
+python3 -m train.0022_league_training canary-ppo --device cuda:0 --workers 4
+python3 -m train.0022_league_training train --version V1_dragapult_focal_20h
 ```
 
-Initialization does not run PPO and is not official-engine strength evidence. Formal training must
-start from a validated immutable version, use official-engine on-policy episodes, record Frozen and
-Live policy versions separately, and enable the project W&B contract when optimization begins.
+The catalog contains 48 exact decks. The first formal run schedules 512 games per update across
+48 Frozen and 48 Live views with balanced seats, but updates only the `dragapult_ex_001` decoder
+and value head. Other Live assets remain at update 0; their simultaneous evolution requires a new
+version. Every fifth update runs 96 Frozen greedy games.
+
+Formal training enables W&B online and enforces 100 GiB launch free space, an 80 GiB clean-stop
+low-water mark, a 10 GiB version cap, and bounded model-only checkpoint retention. Initialization
+alone does not run PPO and is not official-engine strength evidence.

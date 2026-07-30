@@ -4,132 +4,78 @@
 :root{--ink:#16202a;--muted:#5c6975;--line:#d8e0e7;--panel:#f5f8fa;--blue:#2563eb;--green:#087f5b;--amber:#b45309}
 body{font:16px/1.68 system-ui,-apple-system,sans-serif;max-width:1180px;margin:0 auto;padding:36px;color:var(--ink)}
 h1,h2,h3{line-height:1.25}h1{margin-bottom:4px}h2{margin-top:34px;border-bottom:1px solid var(--line);padding-bottom:8px}
-code{background:#edf1f4;padding:2px 5px;border-radius:4px}pre{background:#111827;color:#e5edf5;padding:18px;border-radius:10px;overflow:auto}
+code{background:#edf1f4;padding:2px 5px;border-radius:4px}pre{background:#111827;color:#e5edf5;padding:18px;border-radius:8px;overflow:auto}
 table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}th{background:var(--panel)}
 .lede{font-size:18px;color:#344454}.meta{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
-.card{border:1px solid var(--line);border-radius:10px;padding:16px;background:#fff}.gate{border-left:5px solid var(--blue)}
-.good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}ul{padding-left:22px}.flow{text-align:center;font-weight:650;color:#26374a}
+.card{border:1px solid var(--line);border-radius:8px;padding:16px;background:#fff}.gate{border-left:5px solid var(--blue)}.good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}
 </style></head><body>
 <h1>0022 League Training</h1>
-<p class="meta"><strong>当前阶段：</strong>工程框架已完成、deck catalog 待填充；end-to-end gate 通过，opponent-only 2.0x gate 待优化；正式 PPO 尚未开始。</p>
-<p class="lede">目标是在 BC foundation 完成后，验证常驻、批量化 opponent pool 是否能显著提高真实 RL rollout 与迭代吞吐，同时用一个不会随训练漂移的 Frozen League 保持质量锚点。</p>
+<p class="meta"><strong>当前阶段：</strong>48-deck catalog 与训练框架已完成；official-engine smoke、PPO canary、W&amp;B 与 SSD preflight 已通过，等待 update-0 Frozen greedy gate 后启动约 20 小时正式训练。</p>
+<p class="lede">第一版验证冻结 0019 Foundation 后，仅调整 Dragapult ex 001 - Limitless 的 Decoder/Value，能否在高吞吐、可审计的 48-deck League 中持续获得局部策略改进。</p>
 
-<h2>核心结论</h2>
-<div class="grid">
-<div class="card"><h3>Frozen pool</h3><p>完整策略身份全部固定；zero-shot baseline 用 Foundation sentinel 避免重复权重，historical snapshot 绑定不可变 checkpoint SHA。它们是质量锚点，不只是 Frozen Encoder。</p></div>
-<div class="card"><h3>Live pool</h3><p>16 个 deck-specific Decoder/Value 分支，共享长期冻结的 0019 Foundation。每个 policy 只从自己的 actor trajectory 和终局 reward 更新。</p></div>
-<div class="card"><h3>吞吐目标</h3><p>通过一个常驻 GPU inference service 批量执行共享 Encoder，再按 <code>policy_id</code> 路由 Decoder，消除 per-game package load 和独立 CPU opponent inference。</p></div>
-<div class="card"><h3>研究边界</h3><p>研究 Decoder-only 局部改进与 opponent throughput；不声称全局最优、完整 self-play equilibrium 或 CUDA battle engine parity。</p></div>
+<h2>当前合同</h2><div class="grid">
+<div class="card"><h3>Foundation</h3><p>严格绑定 0019 Epoch 13，17,756,162 参数，SHA-256 <code>da9b13d6…e5bb</code>；<code>source_id</code> 永远为 0，Encoder 长期冻结。</p></div>
+<div class="card"><h3>48 Frozen</h3><p>每套 exact deck 都有 Foundation decoder 质量锚点。训练期间永不更新，用于固定 greedy 回归评测。</p></div>
+<div class="card"><h3>48 Live</h3><p>每套拥有独立 Decoder/Value model-only 资产。首个版本只更新 <code>dragapult_ex_001</code>；其余 47 套保持 update 0。</p></div>
+<div class="card"><h3>Official engine</h3><p>每局在隔离 worker 中执行未修改 official runtime。CPU 负责状态转移，双方策略动作由父进程集中 GPU 推理。</p></div>
 </div>
 
-<h2>运行拓扑</h2>
-<pre>official-engine workers
-    │ observation/action requests
+<h2>运行拓扑</h2><pre>isolated official-engine workers
+    │ focal + opponent observation requests (0.5 ms coalesce)
     ▼
-one resident inference service
-    shared frozen Encoder ── one batched forward
-       ├── 16 Frozen Decoder/Value heads
-       └── 16 Live Decoder/Value heads
-    │ legal ordered actions
+one resident GPU service
+    shared frozen Encoder ── one mixed batched forward
+       ├── focal Decoder/Value: stochastic behavior action
+       └── Foundation Decoder: greedy Frozen/Live-view opponent action
+    │ legal ordered action response
     ▼
-official-engine workers → trajectories → owner-specific PPO updates</pre>
-<p>所有正式对局继续由未修改 official engine runtime 执行。<code>engine_cuda/</code> 在 semantic parity gate 通过前不能产生 0022 正式 rollout、reward 或强度结论。</p>
+terminal trajectories → focal-only GAE/PPO → decoder/value checkpoint</pre>
+<p>初始 Live 与 Frozen view 的动作等价，因为另外 47 个 Live decoder 尚未分叉。两种 view 当前用于验证独立身份、调度、provenance 和未来 curriculum 路由，不能被解释成两种不同 opponent 强度。相同 head 使用写时复制语义，不在 GPU 上重复 48 份相同 tensor。</p>
 
-<h2>模型和梯度所有权</h2>
-<table><thead><tr><th>组件</th><th>是否训练</th><th>职责</th></tr></thead><tbody>
-<tr><td>Shared 0019 Foundation</td><td>长期冻结</td><td>卡牌、场面、资源、事件、exact deck、neutral persona residual 和 legal option 表示</td></tr>
-<tr><td>Frozen Decoder/Value</td><td>永不更新</td><td>固定强度 anchor、回归指标和 historical snapshot</td></tr>
-<tr><td>Live Decoder/Value</td><td>按 deck 独立更新</td><td>在现有表示空间中重新排序合法动作、ordered action 和 STOP</td></tr>
-<tr><td>Official engine</td><td>不修改</td><td>合法动作、卡牌效果、随机结果、Prize 和终局判定</td></tr>
+<h2>模型与梯度</h2><table><thead><tr><th>组件</th><th>训练状态</th><th>参数/职责</th></tr></thead><tbody>
+<tr><td>Shared 0019 Encoder</td><td>冻结</td><td>卡牌、场面、资源、event、exact deck 与 legal option 表示；每次更新前后 SHA 必须一致</td></tr>
+<tr><td>Focal action decoder</td><td>训练</td><td>pointer key/query、option bias、decoder init、GRU decoder、STOP，共 1,027,202 参数</td></tr>
+<tr><td>Focal value head</td><td>训练</td><td>LayerNorm + 320→320→1 + Tanh，共 103,681 参数</td></tr>
+<tr><td>其他 47 Live + 48 Frozen</td><td>第一版冻结</td><td>只提供 opponent 动作；不采集 opponent loss，不参与 backward</td></tr>
 </tbody></table>
-<p>Foundation 严格绑定归档 <code>0019-0730-epoch13</code>：Epoch 13、global step 337194、17,756,162 参数，权重 SHA-256 <code>da9b13d6…e5bb</code>。模型结构仍包含 0019 历史 persona residual，但 0022 的 <code>source_id: int64[B]</code> 永远为 0；deck、team 和玩家身份不得写入该字段。模型、feature、ledger 和 ontology 源码均物理固化在 0022，运行时不 import 其他编号训练项目。</p>
-<p>Frozen 对局中只有 Live/focal actor 的轨迹进入梯度。Live 对局中双方都可以更新，但必须分别保存自己的 observation、action、behavior log-prob、value、advantage、reward sign 和 policy version。</p>
+<p>每个可变 checkpoint 合计 1,130,883 参数，只包含 Decoder/Value tensor、Foundation/deck hash、policy role/version 和 update。optimizer、scheduler、GradScaler、RNG、rollout、replay 与完整 Foundation 一律不保存。</p>
 
-<h2>第一版 focal iteration</h2>
-<pre>16 Frozen opponents × 10 games = 160 games
-16 Live opponents   × 10 games = 160 games
-                         total = 320 games / focal iteration</pre>
-<p>先后手使用固定平衡日程。每个 matchup 的 10 局只作 rollout 和快速诊断；正式趋势用跨 iteration 滚动窗口和 Wilson 区间。一个 focal deck 的 320 局不能冒充 16 个 deck 各自获得 320 局 actor 数据。</p>
-<p>每场必须记录 <code>actor_deck_id</code>、<code>actor_policy_version</code>、<code>opponent_deck_id</code>、<code>opponent_policy_version</code>、seat、Frozen/Live role、pool snapshot、engine hash、reward 和 terminal reason。</p>
+<h2>正式更新</h2><pre>48 Frozen views + 48 Live views = 96 matchup identities
+512 official-engine games / PPO update
+256 focal-first + 256 focal-second
+terminal reward: win +1 / loss -1 / draw 0, gamma = 1
+every 5 updates: 48 Frozen decks × both seats = 96 greedy games</pre>
+<p><code>rollout/source_policy_update=k</code> 表示对局由 update k 的 behavior policy 采集；该批 PPO 生成 <code>checkpoint/update=k+1</code>。sampled rollout 胜率只作训练诊断，checkpoint 强度以独立 <code>eval/*</code> Frozen greedy 对局为准。一个 focal batch 不能声称为其他 47 套提供了 actor 数据。</p>
 
-<h2>BC 完成后的速度验证 gate</h2>
-<p class="flow">tuned CPU baseline → resident CPU service → resident GPU service</p>
-<p>三臂必须使用相同 exact deck、checkpoint、official engine、完成局合同和先后手日程。分别记录 completed/error/unfinished、engine selections/s、opponent decisions/s、learner decisions/s、episodes/s、package-load、feature encode、IPC、H2D/D2H、latency、内存和 GPU utilization。</p>
-<div class="card gate"><h3>Promotion thresholds</h3><ul>
-<li>opponent decisions/s 相对 tuned baseline 至少 <strong>2.0x</strong>；</li>
-<li>end-to-end completed episodes/s 至少 <strong>1.5x</strong>；</li>
-<li>完成率、error 和 unfinished 合同无回归；</li>
-<li>Frozen pool 固定 Arena 质量保持在预先记录的统计区间内；</li>
-<li>profiling 证明收益来自常驻和批量推理，而不是减少局数或降低 opponent 质量。</li>
-</ul></div>
-<p class="warn">只有 policy inference 变快、但 end-to-end rollout 没有提升时，不能称为 RL iteration speedup。</p>
-<p>2026-07-31 PPO-ready 实测：A sample 300 局为 1.990 episodes/s、339.14 selections/s；unified stacked GPU D 512 局为 3.568 episodes/s、582.17 selections/s、264.44 opponent decisions/s，完成率均 100%，trajectory log-prob/entropy/value 非有限数均为 0。end-to-end 1.79x 通过，opponent-only 1.73x 尚未达到 2.0x，因此仍不能开始 Live self-evolution。</p>
-
-<h2>Frozen / Live 质量合同</h2>
-<table><thead><tr><th>证据</th><th>用途</th><th>不能证明</th></tr></thead><tbody>
-<tr><td>Live vs Frozen</td><td>相对固定 anchor 的改进与回归</td><td>全局最优</td></tr>
-<tr><td>Live vs Live</td><td>curriculum、循环和当前 league 诊断</td><td>稳定的绝对强度</td></tr>
-<tr><td>Live vs historical snapshots</td><td>检测遗忘和非传递循环</td><td>线上环境全覆盖</td></tr>
-<tr><td>正式 official-engine Arena</td><td>同合同策略强度</td><td>未来新卡组的零样本最优</td></tr>
+<h2>PPO 目标</h2><table><thead><tr><th>项</th><th>合同</th></tr></thead><tbody>
+<tr><td>Policy</td><td>clipped surrogate，ratio clip 0.10</td></tr><tr><td>Value</td><td>GAE λ 0.95，value coefficient 0.5</td></tr>
+<tr><td>Exploration</td><td>legal categorical entropy coefficient 0.01</td></tr><tr><td>Reference</td><td>KL surrogate coefficient 0.02，behavior target KL 0.02</td></tr>
+<tr><td>Optimization</td><td>4 epochs，minibatch 1024，actor LR 1e-5，value LR 1e-4，grad norm 0.5</td></tr>
 </tbody></table>
-<p>Live policy 不自动进入 Frozen pool。晋级必须创建新版本，完成 package validation、固定 Frozen/historical evaluation、pool snapshot 审计和权威 HTML 报告。</p>
 
-<h2>16-deck catalog 准入</h2>
-<p>第一版设计不写死 16 套具体卡组。正式 catalog 是独立、不可变、带 hash 的信息资产。每个候选必须：</p>
-<ul>
-<li>拥有可审计的 exact 60-card deck，来自线上环境或官方 submission/Episode 身份链；</li>
-<li>在当前线上环境真实出现且频率足够，不按 archetype 名称猜测构筑；</li>
-<li>在 BC 数据中有可追溯的关键卡牌和构筑语义覆盖；</li>
-<li>通过 package、deck hash、card ontology 和 official engine validation；</li>
-<li>覆盖不同的进化、攻击、控制、资源、Prize race 和接力模式，避免 16 个近似 deck；</li>
-<li>记录来源、频率、选择理由、BC coverage 和风险。</li>
-</ul>
-<p>新卡牌、定向 card embedding 或开放 Encoder/adapter 是验证第一版 League 可行后的独立实验，不能无记录地混入第一版 catalog。</p>
+<h2>已通过门禁</h2><div class="grid">
+<div class="card gate"><h3>Rollout smoke</h3><p><span class="good">4/4 finished，0 error</span>；881 次双边 GPU 动作请求，最大 batch 4，15.24 秒；CUDA peak allocation 93,645,312 bytes。</p></div>
+<div class="card gate"><h3>PPO canary</h3><p><span class="good">4/4 finished，420 focal decisions</span>；8 minibatches，Decoder/Value L2 delta 0.151800；Encoder SHA 不变，save/reload greedy parity 通过。</p></div>
+<div class="card gate"><h3>资源</h3><p>RTX 5080 16 GiB；canary CUDA peak 477,429,760 bytes。当前磁盘约 817 GiB free，canary 资产约 4.3 MiB。</p></div>
+<div class="card gate"><h3>Tracking</h3><p>W&amp;B 身份 <code>dragon_bra</code> 联网预检通过。正式标量按 JSONL flush → TensorBoard → W&amp;B online 顺序写入。</p></div>
+</div>
 
-<h2>已实现的插件与权重合同</h2>
-<pre>train/0022_league_training/deck/&lt;deck_id&gt;/
-  manifest.json
-  deck.csv                         # exactly 60 positive card IDs
+<h2>运行与存储</h2><table><thead><tr><th>边界</th><th>行为</th></tr></thead><tbody>
+<tr><td>启动磁盘</td><td>少于 100 GiB free 则拒绝分配 version</td></tr><tr><td>运行磁盘</td><td>少于 80 GiB free 时在完整 update 边界干净停止</td></tr>
+<tr><td>Version cap</td><td>超过 10 GiB 立即失败；不保存 rollout buffer 或 optimizer</td></tr><tr><td>Checkpoint</td><td>保留最新 2、Frozen eval 最佳 2 和显式分支；每个文件原子写入并带 SHA sidecar</td></tr>
+<tr><td>训练时限</td><td>约 20 GPU 小时；到时间后完成当前 update 再结束</td></tr>
+</tbody></table>
 
+<h2>资产布局</h2><pre>train/0022_league_training/deck/&lt;deck_id&gt;/{manifest.json,deck.csv}
 rl_runs/0022_league_training/versions/V&lt;n&gt;_&lt;tag&gt;/
-  artifact/training_config.json
-  artifact/league_catalog.json
-  artifact/status.json
-  checkpoint/decks/&lt;deck_id&gt;.pt
-  checkpoint/decks/&lt;deck_id&gt;.pt.sha256</pre>
-<p>staging 为空时可以验证 Foundation 和 deck 合同，但初始化必须至少有一个 focal Live deck。插件拒绝非 ASCII snake_case ID、未知字段/文件、重复 deck/hash、Frozen focal 和不完整 provenance。Frozen Foundation entry 不生成 checkpoint；每个 Live entry 生成独立 tensor storage。</p>
-<table><thead><tr><th>可变组件</th><th>shape / 参数</th></tr></thead><tbody>
-<tr><td>pointer key/query</td><td>各 <code>[320,320]</code></td></tr>
-<tr><td>option bias、decoder init</td><td><code>[1,320]</code> + <code>[1]</code>；<code>[320,320]</code> + <code>[320]</code></td></tr>
-<tr><td>GRU decoder</td><td>两个 <code>[960,320]</code> weight + 两个 <code>[960]</code> bias</td></tr>
-<tr><td>STOP head</td><td><code>320→320→1</code></td></tr>
-<tr><td>Value head</td><td>LayerNorm + <code>320→320→1</code> + Tanh，103,681 参数</td></tr>
-</tbody></table>
-<p>actor decoder 为 1,027,202 参数；连同 value head 合计 1,130,883。model-only payload 只允许 schema、Foundation SHA、deck ID/hash、policy role/version、update 和这些 tensor；optimizer、scheduler、scaler、RNG、rollout、replay 与未知 tensor key 均拒绝。</p>
-<pre>python3 -m train.0022_league_training verify-foundation
-python3 -m train.0022_league_training validate-decks
-python3 -m train.0022_league_training initialize --version V1_initial_league
-python3 -m train.0022_league_training audit-version --version V1_initial_league</pre>
-<p class="warn">初始化不采集 Episode、不做 backward，也不是 official-engine 强度证据。正式 PPO 启动时才启用 W&amp;B online，并继续受 Frozen evaluation 与 on-policy trajectory 合同约束。</p>
+  artifact/{training_config.json,league_catalog.json,training_metrics.jsonl,status.json}
+  checkpoint/decks/&lt;48 initial decoder assets&gt;.pt
+  checkpoint/focal/update-&lt;n&gt;.pt
+  tensorboard/
+  wandb/
+experiments/0022_league_training/evaluation/V&lt;n&gt;_&lt;tag&gt;.html</pre>
 
-<h2>风险与护栏</h2>
-<div class="grid">
-<div class="card"><h3>共同退化</h3><p>保留 zero-shot Frozen、historical best 和固定外部 anchors；Live-only 胜率不晋级。</p></div>
-<div class="card"><h3>策略循环</h3><p>报告 cross-play matrix、先后手、Frozen anchor 和历史 snapshot，不只看平均 Elo。</p></div>
-<div class="card"><h3>稀疏 reward</h3><p>主合同保持 terminal win/loss；记录 value calibration、优势、KL、探索和 episode length。</p></div>
-<div class="card"><h3>吞吐假象</h3><p>完成率、对局合同和 opponent 质量必须一致；减少游戏或忽略 error 不算加速。</p></div>
-</div>
-
-<h2>阶段路线</h2>
-<table><thead><tr><th>Gate</th><th>交付</th><th>通过条件</th></tr></thead><tbody>
-<tr><td>A · BC/catalog</td><td>0019 neutral-source Foundation、候选 evidence、exact packages</td><td>checkpoint 与 catalog 可审计</td></tr>
-<tr><td>B · Throughput</td><td>CPU baseline / resident CPU / resident GPU / unified stacked GPU</td><td>end-to-end 1.79x 已通过；opponent 1.73x 尚未达到 2.0x，继续优化后再进入 C</td></tr>
-<tr><td>C · Frozen-only RL</td><td>一个 focal deck 的 Decoder/Value RL</td><td>Frozen anchor 改善且版本合同正确</td></tr>
-<tr><td>D · Frozen + Live</td><td>16 Live 分支和 focal/round-robin schedule</td><td>Live curriculum 提供额外收益且不隐藏退化</td></tr>
-<tr><td>E · Promotion</td><td>historical Frozen snapshots</td><td>package、official evaluation、snapshot audit 全部通过</td></tr>
-</tbody></table>
-
-<h2>版本和成功标准</h2>
-<p>正式版本使用 <code>rl_runs/0022_league_training/versions/V&lt;n&gt;_&lt;tag&gt;/</code>，并在 <code>experiments/0022_league_training/evaluation/</code> 保存权威报告。每个版本记录 BC、Encoder/Decoder schema、Frozen/Live pool、deck/engine hashes、sampling weights、先后手、W&amp;B identity 和吞吐。</p>
-<p class="good">0022 第一阶段成功不要求全局最优：它需要证明相同质量下真实 RL throughput 显著提高，并证明 Decoder-only policy 能相对 zero-shot/Frozen anchor 获得稳定、可追踪的局部改进。</p>
+<h2>证据边界</h2><p>Frozen 胜率改善只能证明相对当前 48-deck anchor 的局部改进，不能证明全局最优。Live-view rollout、loss、KL 和 reward 不能冒充 checkpoint 强度。真正启用其他 Live deck 的 actor gradient、League 共进化、开放 Encoder 或加入新机制，均必须创建新的不可变版本并重新执行 smoke、Frozen gate 与设计同步。</p>
+<p class="warn">当前尚未产生正式训练结果；smoke 与 canary 只证明工程和优化合同可运行。</p>
+<p>完整字段、准入、风险与阶段说明见 <a href="DESIGN.md">DESIGN.md</a>；Frozen 起点见 <a href="frozen_baseline/index.html">frozen baseline</a>。</p>
 </body></html>

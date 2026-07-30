@@ -10,6 +10,9 @@ from pathlib import Path
 from .decks import load_deck_plugins
 from .foundation import verify_foundation
 from .league import DEFAULT_DECK_ROOT, audit_league_version, initialize_league_version
+from .smoke import run_rollout_smoke
+from .canary import run_ppo_canary
+from .training.run import LeagueTrainingConfig, run_training
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -23,6 +26,22 @@ def build_parser() -> argparse.ArgumentParser:
     initialize.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
     audit = subparsers.add_parser("audit-version")
     audit.add_argument("--version", required=True)
+    smoke = subparsers.add_parser("smoke-rollout")
+    smoke.add_argument("--device", default="cuda:0")
+    smoke.add_argument("--workers", type=int, default=4)
+    smoke.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
+    canary = subparsers.add_parser("canary-ppo")
+    canary.add_argument("--device", default="cuda:0")
+    canary.add_argument("--workers", type=int, default=4)
+    canary.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
+    train = subparsers.add_parser("train")
+    train.add_argument("--version", required=True)
+    train.add_argument("--device", default="cuda:0")
+    train.add_argument("--workers", type=int, default=8)
+    train.add_argument("--games-per-update", type=int, default=512)
+    train.add_argument("--duration-hours", type=float, default=20.0)
+    train.add_argument("--frozen-eval-interval", type=int, default=5)
+    train.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
     return parser
 
 
@@ -44,8 +63,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             "version": paths.version_name,
             "initialized": True,
         }
-    else:
+    elif args.command == "audit-version":
         result = audit_league_version(args.version)
+    elif args.command == "smoke-rollout":
+        result = run_rollout_smoke(device=args.device, workers=args.workers, deck_root=args.deck_root)
+    elif args.command == "canary-ppo":
+        result = run_ppo_canary(device=args.device, workers=args.workers, deck_root=args.deck_root)
+    else:
+        return run_training(LeagueTrainingConfig(
+            version=args.version, device=args.device, workers=args.workers,
+            games_per_update=args.games_per_update, duration_hours=args.duration_hours,
+            frozen_eval_interval=args.frozen_eval_interval,
+        ), deck_root=args.deck_root)
     print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 

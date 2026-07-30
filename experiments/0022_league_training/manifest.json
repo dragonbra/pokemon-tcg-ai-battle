@@ -2,7 +2,7 @@
   "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0022_league_training",
   "title": "Shared-Foundation League Training",
-  "status": "framework_initialized_catalog_pending",
+  "status": "preflight_passed_formal_training_pending",
   "created_at": "2026-07-31T00:00:00+08:00",
   "objective": "Train pluggable exact-deck Decoder/Value branches against Frozen and Live League pools while sharing one frozen resident Foundation",
   "engine_revision": "unmodified official engine runtime remains authoritative",
@@ -19,15 +19,31 @@
     "runs": "rl_runs/0022_league_training"
   },
   "catalog": {
-    "state": "pending_user_supplied_exact_deck_plugins",
-    "minimum_initialization_contract": "at least one focal Live deck"
+    "state": "validated",
+    "deck_count": 48,
+    "focal_deck_id": "dragapult_ex_001",
+    "views_per_deck": ["frozen", "live"]
   },
   "training": {
     "started": false,
+    "first_formal_run_updates": ["dragapult_ex_001.decoder", "dragapult_ex_001.value_head"],
+    "other_live_updates_enabled": false,
+    "games_per_update": 512,
+    "frozen_eval_games": 96,
+    "frozen_eval_interval_updates": 5,
+    "duration_hours": 20,
     "encoder_frozen": true,
     "decoder_and_value_only": true,
     "checkpoint_payload": "model weights only",
     "optimizer_state_saved": false,
-    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning"
+    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning",
+    "launch_minimum_free_gib": 100,
+    "runtime_stop_free_gib": 80,
+    "version_cap_gib": 10
+  },
+  "preflight": {
+    "official_engine_smoke": {"games": 4, "finished": 4, "errors": 0, "cuda_peak_allocated_bytes": 93645312},
+    "ppo_canary": {"games": 4, "finished": 4, "errors": 0, "decisions": 420, "decoder_value_l2_delta": 0.1518002599477768, "encoder_unchanged": true, "reload_greedy_parity": true, "cuda_peak_allocated_bytes": 477429760},
+    "wandb_authenticated_entity": "dragon_bra"
   }
 }

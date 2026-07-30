@@ -2,8 +2,9 @@
 
 **项目 ID：** `0022_league_training`
 
-**当前阶段：** 工程框架已完成、deck catalog 待填充；吞吐 feasibility 的 end-to-end gate
-通过，opponent-only 2.0x gate 待优化；尚未开始正式 PPO 训练
+**当前阶段：** 48-deck catalog、共享 GPU 双边推理、official-engine rollout、focal PPO、
+model-only checkpoint、W&B 和 SSD 门禁均已实现；4 局 smoke 与一次 PPO canary 已通过，
+等待正式版本的 update-0 Frozen greedy gate 后启动约 20 小时训练。
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
 
@@ -60,7 +61,7 @@ Decoder-only 研究假设是：既有表示已经包含足够的卡牌、场面�
 
 ### 3.2 Frozen pool
 
-Frozen pool 是 16 个**完整策略 package**，不是只有 Encoder 的权重。每个 package 固定：
+Frozen pool 是 48 个**完整策略身份**，不是只有 Encoder 的权重。每个身份固定：
 
 - exact 60-card `deck.csv` 与 deck SHA-256；
 - BC checkpoint、模型 schema、ontology 和 feature compiler hash；
@@ -81,7 +82,10 @@ historical decoder snapshot 才引用不可变 `.pt` 和 SHA-256。它永远不�
 
 ### 3.3 Live pool
 
-Live pool 由 16 个独立的 deck-specific Decoder/Value 分支组成，共享 Frozen Encoder。Live policy 可以从自己的 actor trajectory 学习；对手是否参与更新由它是否拥有自己的合法 trajectory、policy version 和终局回报决定，不能因为“作为 opponent 出现”就把动作混入另一套 policy 的 loss。
+Live pool 由 48 个独立的 deck-specific Decoder/Value 资产组成，共享 Frozen Encoder。首个
+正式版本只更新 `dragapult_ex_001` 的 Decoder/Value；另外 47 个 Live 资产固定在 update 0。
+它们和 Frozen 在初始动作上等价，但身份、路由和 checkpoint 独立，为后续版本的真正 Live
+更新保留合同。对手动作绝不混入 focal loss。
 
 Live pool 是 curriculum 和探索资产，不是自动晋级的正式 opponent。只有通过固定 Frozen pool、历史 snapshot 和完整 package audit 后，才可以创建新的 Frozen snapshot。
 
@@ -101,21 +105,24 @@ official_engine_hash
 reward / terminal_reason
 ```
 
-主视角是当前要优化的 focal deck。Frozen 对局中，Frozen opponent 只提供动作，不进入梯度；主视角的 action/log-prob/value/advantage 进入主视角 PPO。Live 对局中，双方可以各自从自己的观测和动作序列计算 loss，但双方的 policy version、action mask 和 reward sign 必须分开保存。
+主视角固定为 `dragapult_ex_001`。Frozen 和 Live-view 对局中都只有主视角的
+action/log-prob/value/advantage 进入 PPO；第一版不收集或更新 opponent trajectory。双方独立更新
+属于后续新版本，届时必须分别保存 policy version、action mask 和 reward sign。
 
 ### 4.2 初始批次
 
 第一版采用可配置的 focal schedule。默认一个 focal deck 的 iteration 包含：
 
 ```text
-16 Frozen opponents × 10 games = 160 games
-16 Live opponents   × 10 games = 160 games
-总计 320 games / focal iteration
+48 Frozen views + 48 Live views = 96 matchup identities
+512 official-engine games / PPO update
+严格 256 先手 + 256 后手，确定性轮转覆盖整个 catalog
 ```
 
 先后手按固定平衡日程分配。`10 games / matchup` 只用于 rollout 和快速诊断，单个 matchup 的胜率不得作为强结论；正式趋势使用跨 iteration 滚动窗口和 Wilson 区间。
 
-当需要让 16 个 Live deck 都获得更新时，使用 round-robin focal schedule 或明确的 deck sampling weight。不能把一个 focal deck 的 320 局误称为 16 个 deck 各自获得了 320 局 actor 数据。
+不能把 focal 的 512 局误称为另外 47 个 deck 获得了 actor 数据。每 5 个 PPO update 运行
+48 Frozen × 双座位 = 96 局 greedy evaluation；该 `eval/*` 与 sampled rollout 分开记录。
 
 ### 4.3 PPO 更新边界
 
@@ -153,7 +160,9 @@ BC 完成后，0022 必须先进行三臂 benchmark，保持 exact deck、checkp
 2. 常驻 CPU batched opponent service；
 3. 常驻 GPU batched opponent service。
 
-实现中增加了 unified League 对照：主视角与 opponent request 在 5 ms 窗口内合批，共享一次 encoder，再用带 expert 维度的 stacked GEMM 路由 16 个独立 decoder 参数切片。PPO-ready sample 路径同时返回 candidate behavior log-prob、entropy 和 value；纯 greedy serving 数字不能冒充 PPO throughput。
+当前正式实现把主视角与 opponent request 在 0.5 ms 窗口内合批，共享一次 Encoder forward；
+主视角路由到可训练 Decoder/Value 并随机采样，opponent 路由到只读 Foundation Decoder 并
+greedy decode。未分叉的 47 个 Live head 使用写时复制语义，不在 GPU 上重复相同 tensor。
 
 必须分别记录：
 
@@ -191,7 +200,7 @@ BC 完成后，0022 必须先进行三臂 benchmark，保持 exact deck、checkp
 
 报告必须按 deck、opponent、先后手和 metric profile 分组。任何单一 matchup 的短期上涨都不能自动晋级。Live candidate 至少要在 focal deck 的 Frozen pool aggregate 指标上达到预先记录的非劣性，并在历史 snapshot 上没有明显崩溃；正式阈值写入该版本 decision record，不能运行后临时改口径。
 
-### 6.2 16-deck catalog 资产
+### 6.2 48-deck catalog 资产
 
 正式 catalog 不是现在预先写死的名单。每个 deck 候选必须满足：
 
@@ -200,7 +209,7 @@ BC 完成后，0022 必须先进行三臂 benchmark，保持 exact deck、checkp
 - 使用频率足够高，能在 BC 数据与环境分析中找到可追溯 evidence；
 - 关键卡牌与构筑语义已经被 BC 数据覆盖，而不是完全未学习的新机制；
 - 能通过 package、deck hash、card ontology 和 official engine runtime validation；
-- 代表不同的资源、攻击、控制、进化、Prize race 或接力模式，避免 16 个近似构筑只重复一种梯度；
+- 代表不同的资源、攻击、控制、进化、Prize race 或接力模式，避免近似构筑只重复一种梯度；
 - 进入 catalog 前记录来源、选择理由、风险、数据覆盖和 exact deck identity。
 
 新增卡牌或新机制的探索属于后续项目：可以通过定向 card embedding/ontology 适配，或让新 deck 加入已进化 Arena 后进行独立适应，但不能把新卡实验无记录地混入 0022 第一版 catalog。
@@ -213,7 +222,7 @@ Live pool 可能共同学会利用当前 pool 的漏洞。Frozen anchors、histo
 
 ### 策略循环
 
-16 个 deck 可能出现非传递循环。必须报告 cross-play matrix、按先后手胜率、滚动 Elo/结果和 Frozen anchor 结果；不能只看平均 Live 胜率。
+48 个 deck 可能出现非传递循环。必须报告 cross-play matrix、按先后手胜率、滚动 Elo/结果和 Frozen anchor 结果；不能只看平均 Live 胜率。
 
 ### 终局 reward 稀疏
 
@@ -292,6 +301,9 @@ python3 -m train.0022_league_training verify-foundation
 python3 -m train.0022_league_training validate-decks
 python3 -m train.0022_league_training initialize --version V1_initial_league
 python3 -m train.0022_league_training audit-version --version V1_initial_league
+python3 -m train.0022_league_training smoke-rollout --device cuda:0 --workers 4
+python3 -m train.0022_league_training canary-ppo --device cuda:0 --workers 4
+python3 -m train.0022_league_training train --version V1_dragapult_focal_20h
 ```
 
 `initialize` 只建立不可变 League 状态，不采集对局、不做 backward、不启用 W&B，因此不是
@@ -311,11 +323,13 @@ deck/package/hash；不训练 Live。
 
 ### Gate C：Frozen-only Decoder RL
 
-只训练一个 focal deck，对 16 Frozen opponents 运行 decoder/value RL。确认 Frozen anchor 胜率、吞吐和 checkpoint 版本合同正确。
+只训练 `dragapult_ex_001`，对 48 Frozen + 48 Live views 运行 decoder/value RL。确认
+Frozen anchor 胜率、吞吐和 checkpoint 版本合同正确。
 
 ### Gate D：Frozen + Live league
 
-加入 16 Live 分支；执行 focal schedule 和 round-robin sampling；每轮保留 Frozen anchor evaluation，观察 Live curriculum 是否带来额外增益。
+在新版本中启用 48 Live 分支各自的 actor trajectory 和独立 backward；执行 round-robin
+sampling，并保留 Frozen anchor evaluation。
 
 ### Gate E：晋级和长期进化
 
@@ -328,7 +342,7 @@ deck/package/hash；不训练 Live。
 1. 常驻 opponent service 在相同完成率和策略质量下显著提升真实 end-to-end RL throughput；
 2. Decoder-only RL 能在冻结共享表示中相对 zero-shot/Frozen baseline 获得稳定改进；
 3. Frozen + Live pool 不会把 quality regression 隐藏在 Live-only 结果中；
-4. 16-deck catalog、policy version、reward、opponent snapshot 和 official-engine evaluation 全部可追溯；
+4. 48-deck catalog、policy version、reward、opponent snapshot 和 official-engine evaluation 全部可追溯；
 5. 如果 Decoder-only plateau，能从对照实验明确判断瓶颈是表示容量、探索、value calibration 还是 opponent distribution。
 
 0022 的终极形态是“常驻 Arena Training”，但第一步必须先证明它是一个可测的 throughput 和局部策略改进系统，而不是把快速自我对打误认为绝对能力提升。
