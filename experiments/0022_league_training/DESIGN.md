@@ -2,7 +2,8 @@
 
 **项目 ID：** `0022_league_training`
 
-**当前阶段：** 吞吐 feasibility 已实测；end-to-end gate 通过，opponent-only 2.0x gate 待优化；尚未开始正式 PPO 训练
+**当前阶段：** 工程框架已完成、deck catalog 待填充；吞吐 feasibility 的 end-to-end gate
+通过，opponent-only 2.0x gate 待优化；尚未开始正式 PPO 训练
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
 
@@ -12,7 +13,8 @@
 
 项目的理想实验条件是：
 
-- BC foundation 已完成，并通过 source-free deployment 合同和多 deck zero-shot 审计；
+- 0019 Epoch 13 BC Foundation 已冻结，并以固定 `source_id=0` 的 persona-neutral deployment
+  合同运行；
 - 共享 Encoder 长期冻结；
 - 每个 exact deck 拥有独立的 Decoder/Value 分支；
 - Frozen pool 保存固定的完整策略，作为质量回归和稳定 opponent；
@@ -42,7 +44,17 @@
 
 ### 3.1 Shared Foundation
 
-0022 使用 BC 完成后的 source-free foundation。输入保留 exact deck conditioning、actor-visible state、causal ledger、event memory、known/unknown opponent hand 边界和 official legal options。共享 Encoder、card ontology、feature compiler 和 action contract 在整个 0022 run 中冻结。
+0022 严格使用归档资产 `0019-0730-epoch13`：Epoch 13、global step 337194、17,756,162
+参数、权重 SHA-256
+`da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb`。0019 的
+`SourceConditionedR15Policy` 结构仍包含历史 persona residual，但 0022 永远提供全零
+`source_id: int64[B]`，不允许 deck、team 或玩家身份进入该字段。source/team identity 只保留在
+provenance；deck 差异来自既有 exact registered-deck feature 和真实场面输入。
+
+0022 在 `train/0022_league_training/foundation/` 物理固化模型、feature compiler、causal
+ledger 和 action contract，在 `assets/card_ontology.json` 固化 ontology；运行时不 import 0019、
+0020 或其他编号训练项目。归档 `model.pt` 仅作为按 SHA 校验的不可变数据来源。共享 Encoder、
+persona residual、card ontology、feature compiler 和 action contract 在整个 run 中冻结。
 
 Decoder-only 研究假设是：既有表示已经包含足够的卡牌、场面和资源语义，Decoder 可以重新排序合法 option、改进 ordered full-action 序列和 STOP 时机。若多个 deck 在 Frozen anchor 上长期 plateau，才允许创建新的实验版本，开放显式 deck residual、option adapter 或最后 scenario layer；不能在同一版本内悄悄解冻 Encoder。
 
@@ -57,7 +69,11 @@ Frozen pool 是 16 个**完整策略 package**，不是只有 Encoder 的权重�
 - package 和 catalog 版本；
 - official engine runtime / `cg` hash。
 
-第一版 Frozen pool 使用 BC zero-shot 策略和后续明确晋级的 historical best snapshot。它永远不因 Live update 改写，承担三项职责：
+第一版 Frozen pool 使用 BC zero-shot 策略和后续明确晋级的 historical best snapshot。逻辑上每项
+仍绑定完整 Foundation、deck、decoder 和 feature contract；物理存储上，zero-shot baseline 以
+`decoder_ref: foundation` sentinel 引用 Foundation decoder，不重复保存权重。只有晋级后的
+historical decoder snapshot 才引用不可变 `.pt` 和 SHA-256。它永远不因 Live update 改写，承担
+三项职责：
 
 1. 提供不随训练漂移的高质量 opponent；
 2. 给主视角提供固定回归指标；
@@ -227,6 +243,60 @@ rl_runs/0022_league_training/versions/V<n>_<tag>/wandb/
 ```
 
 每个版本必须记录 BC checkpoint hash、Encoder/Decoder schema、Frozen pool snapshot、Live pool versions、exact deck hashes、official engine hash、catalog manifest、sampling weights、先后手 schedule、W&B run identity 和吞吐 benchmark。版本之间不能覆盖 artifact、checkpoint、metrics 或 evaluation HTML。
+
+### 8.1 已实现的插件与 checkpoint 合同
+
+用户维护的 tracked 插件只放身份和 exact deck：
+
+```text
+train/0022_league_training/deck/<deck_id>/
+  manifest.json   # role、focal、decoder_ref、provenance
+  deck.csv        # 恰好 60 行正整数 card ID
+```
+
+`deck_id` 必须是 ASCII snake_case；catalog 拒绝未知文件、未知 manifest 字段、重复 deck ID、
+重复 exact-deck hash、Frozen focal 和不完整 provenance。空 staging 可执行 validation，但
+`initialize` 必须至少有一个 `role=live, focal=true` 的插件。
+
+Live 的可变参数写入新版本，而不是 `train/`：
+
+```text
+rl_runs/0022_league_training/versions/V<n>_<tag>/
+  artifact/training_config.json
+  artifact/league_catalog.json
+  artifact/status.json
+  checkpoint/decks/<deck_id>.pt
+  checkpoint/decks/<deck_id>.pt.sha256
+```
+
+每个 Live checkpoint 只包含以下 tensor，合计 1,130,883 参数：
+
+| 组件 | shape / 参数 |
+|---|---:|
+| `pointer_key.weight`, `pointer_query.weight` | 各 `[320,320]` |
+| `option_bias.weight/bias` | `[1,320]`, `[1]` |
+| `decoder_init.weight/bias` | `[320,320]`, `[320]` |
+| GRU `decoder.weight_ih/weight_hh` | 各 `[960,320]` |
+| GRU `decoder.bias_ih/bias_hh` | 各 `[960]` |
+| `stop` 两个 Linear | `[320,320]`, `[320]`, `[1,320]`, `[1]` |
+| scalar value head | LayerNorm 320 + `320→320→1` + Tanh，103,681 参数 |
+
+actor decoder 为 1,027,202 参数。checkpoint 顶层只允许 schema、Foundation SHA、deck
+ID/hash、policy role/version、update 和 tensor state；optimizer、scheduler、GradScaler、RNG、
+rollout、replay 和未知 tensor key 一律拒绝。写入采用临时文件原子替换并生成 SHA sidecar。
+
+操作入口：
+
+```bash
+python3 -m train.0022_league_training verify-foundation
+python3 -m train.0022_league_training validate-decks
+python3 -m train.0022_league_training initialize --version V1_initial_league
+python3 -m train.0022_league_training audit-version --version V1_initial_league
+```
+
+`initialize` 只建立不可变 League 状态，不采集对局、不做 backward、不启用 W&B，因此不是
+策略强度证据。正式 PPO 开始后必须启用 W&B online，并以 official-engine on-policy Episode、
+固定 Frozen evaluation 和逐 policy trajectory 为准。
 
 ## 9. 阶段路线
 

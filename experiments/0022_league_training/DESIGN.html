@@ -11,13 +11,13 @@ table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid v
 .good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}ul{padding-left:22px}.flow{text-align:center;font-weight:650;color:#26374a}
 </style></head><body>
 <h1>0022 League Training</h1>
-<p class="meta"><strong>当前阶段：</strong>吞吐 feasibility 已实测；end-to-end gate 通过，opponent-only 2.0x gate 待优化；正式 PPO 尚未开始。</p>
+<p class="meta"><strong>当前阶段：</strong>工程框架已完成、deck catalog 待填充；end-to-end gate 通过，opponent-only 2.0x gate 待优化；正式 PPO 尚未开始。</p>
 <p class="lede">目标是在 BC foundation 完成后，验证常驻、批量化 opponent pool 是否能显著提高真实 RL rollout 与迭代吞吐，同时用一个不会随训练漂移的 Frozen League 保持质量锚点。</p>
 
 <h2>核心结论</h2>
 <div class="grid">
-<div class="card"><h3>Frozen pool</h3><p>16 个完整冻结策略：exact deck、共享 Encoder、Decoder/Value、checkpoint、package 和 engine hash 全部固定。它们是质量锚点，不只是 Frozen Encoder。</p></div>
-<div class="card"><h3>Live pool</h3><p>16 个 deck-specific Decoder/Value 分支，共享长期冻结的 source-free Encoder。每个 policy 只从自己的 actor trajectory 和终局 reward 更新。</p></div>
+<div class="card"><h3>Frozen pool</h3><p>完整策略身份全部固定；zero-shot baseline 用 Foundation sentinel 避免重复权重，historical snapshot 绑定不可变 checkpoint SHA。它们是质量锚点，不只是 Frozen Encoder。</p></div>
+<div class="card"><h3>Live pool</h3><p>16 个 deck-specific Decoder/Value 分支，共享长期冻结的 0019 Foundation。每个 policy 只从自己的 actor trajectory 和终局 reward 更新。</p></div>
 <div class="card"><h3>吞吐目标</h3><p>通过一个常驻 GPU inference service 批量执行共享 Encoder，再按 <code>policy_id</code> 路由 Decoder，消除 per-game package load 和独立 CPU opponent inference。</p></div>
 <div class="card"><h3>研究边界</h3><p>研究 Decoder-only 局部改进与 opponent throughput；不声称全局最优、完整 self-play equilibrium 或 CUDA battle engine parity。</p></div>
 </div>
@@ -37,11 +37,12 @@ official-engine workers → trajectories → owner-specific PPO updates</pre>
 
 <h2>模型和梯度所有权</h2>
 <table><thead><tr><th>组件</th><th>是否训练</th><th>职责</th></tr></thead><tbody>
-<tr><td>Shared source-free Encoder</td><td>长期冻结</td><td>卡牌、场面、资源、事件、exact deck 和 legal option 表示</td></tr>
+<tr><td>Shared 0019 Foundation</td><td>长期冻结</td><td>卡牌、场面、资源、事件、exact deck、neutral persona residual 和 legal option 表示</td></tr>
 <tr><td>Frozen Decoder/Value</td><td>永不更新</td><td>固定强度 anchor、回归指标和 historical snapshot</td></tr>
 <tr><td>Live Decoder/Value</td><td>按 deck 独立更新</td><td>在现有表示空间中重新排序合法动作、ordered action 和 STOP</td></tr>
 <tr><td>Official engine</td><td>不修改</td><td>合法动作、卡牌效果、随机结果、Prize 和终局判定</td></tr>
 </tbody></table>
+<p>Foundation 严格绑定归档 <code>0019-0730-epoch13</code>：Epoch 13、global step 337194、17,756,162 参数，权重 SHA-256 <code>da9b13d6…e5bb</code>。模型结构仍包含 0019 历史 persona residual，但 0022 的 <code>source_id: int64[B]</code> 永远为 0；deck、team 和玩家身份不得写入该字段。模型、feature、ledger 和 ontology 源码均物理固化在 0022，运行时不 import 其他编号训练项目。</p>
 <p>Frozen 对局中只有 Live/focal actor 的轨迹进入梯度。Live 对局中双方都可以更新，但必须分别保存自己的 observation、action、behavior log-prob、value、advantage、reward sign 和 policy version。</p>
 
 <h2>第一版 focal iteration</h2>
@@ -85,6 +86,32 @@ official-engine workers → trajectories → owner-specific PPO updates</pre>
 </ul>
 <p>新卡牌、定向 card embedding 或开放 Encoder/adapter 是验证第一版 League 可行后的独立实验，不能无记录地混入第一版 catalog。</p>
 
+<h2>已实现的插件与权重合同</h2>
+<pre>train/0022_league_training/deck/&lt;deck_id&gt;/
+  manifest.json
+  deck.csv                         # exactly 60 positive card IDs
+
+rl_runs/0022_league_training/versions/V&lt;n&gt;_&lt;tag&gt;/
+  artifact/training_config.json
+  artifact/league_catalog.json
+  artifact/status.json
+  checkpoint/decks/&lt;deck_id&gt;.pt
+  checkpoint/decks/&lt;deck_id&gt;.pt.sha256</pre>
+<p>staging 为空时可以验证 Foundation 和 deck 合同，但初始化必须至少有一个 focal Live deck。插件拒绝非 ASCII snake_case ID、未知字段/文件、重复 deck/hash、Frozen focal 和不完整 provenance。Frozen Foundation entry 不生成 checkpoint；每个 Live entry 生成独立 tensor storage。</p>
+<table><thead><tr><th>可变组件</th><th>shape / 参数</th></tr></thead><tbody>
+<tr><td>pointer key/query</td><td>各 <code>[320,320]</code></td></tr>
+<tr><td>option bias、decoder init</td><td><code>[1,320]</code> + <code>[1]</code>；<code>[320,320]</code> + <code>[320]</code></td></tr>
+<tr><td>GRU decoder</td><td>两个 <code>[960,320]</code> weight + 两个 <code>[960]</code> bias</td></tr>
+<tr><td>STOP head</td><td><code>320→320→1</code></td></tr>
+<tr><td>Value head</td><td>LayerNorm + <code>320→320→1</code> + Tanh，103,681 参数</td></tr>
+</tbody></table>
+<p>actor decoder 为 1,027,202 参数；连同 value head 合计 1,130,883。model-only payload 只允许 schema、Foundation SHA、deck ID/hash、policy role/version、update 和这些 tensor；optimizer、scheduler、scaler、RNG、rollout、replay 与未知 tensor key 均拒绝。</p>
+<pre>python3 -m train.0022_league_training verify-foundation
+python3 -m train.0022_league_training validate-decks
+python3 -m train.0022_league_training initialize --version V1_initial_league
+python3 -m train.0022_league_training audit-version --version V1_initial_league</pre>
+<p class="warn">初始化不采集 Episode、不做 backward，也不是 official-engine 强度证据。正式 PPO 启动时才启用 W&amp;B online，并继续受 Frozen evaluation 与 on-policy trajectory 合同约束。</p>
+
 <h2>风险与护栏</h2>
 <div class="grid">
 <div class="card"><h3>共同退化</h3><p>保留 zero-shot Frozen、historical best 和固定外部 anchors；Live-only 胜率不晋级。</p></div>
@@ -95,7 +122,7 @@ official-engine workers → trajectories → owner-specific PPO updates</pre>
 
 <h2>阶段路线</h2>
 <table><thead><tr><th>Gate</th><th>交付</th><th>通过条件</th></tr></thead><tbody>
-<tr><td>A · BC/catalog</td><td>source-free BC、候选 evidence、exact packages</td><td>checkpoint 与 catalog 可审计</td></tr>
+<tr><td>A · BC/catalog</td><td>0019 neutral-source Foundation、候选 evidence、exact packages</td><td>checkpoint 与 catalog 可审计</td></tr>
 <tr><td>B · Throughput</td><td>CPU baseline / resident CPU / resident GPU / unified stacked GPU</td><td>end-to-end 1.79x 已通过；opponent 1.73x 尚未达到 2.0x，继续优化后再进入 C</td></tr>
 <tr><td>C · Frozen-only RL</td><td>一个 focal deck 的 Decoder/Value RL</td><td>Frozen anchor 改善且版本合同正确</td></tr>
 <tr><td>D · Frozen + Live</td><td>16 Live 分支和 focal/round-robin schedule</td><td>Live curriculum 提供额外收益且不隐藏退化</td></tr>

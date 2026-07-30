@@ -1,0 +1,33 @@
+# 0022 League Training
+
+This package binds the archived 0019 Universal Winner BC Epoch 13 model as a frozen shared
+Foundation and manages exact-deck Decoder/Value plugins. It is self-contained: model and feature
+code are frozen under `foundation/`; only the immutable archived `model.pt` is read as data.
+
+Tracked deck identity lives in `deck/<deck_id>/`. Mutable Live weights never live beside source
+code; they are atomically created under the allocated run version:
+
+```text
+rl_runs/0022_league_training/versions/V<n>_<tag>/
+  artifact/training_config.json
+  artifact/league_catalog.json
+  artifact/status.json
+  checkpoint/decks/<deck_id>.pt
+  checkpoint/decks/<deck_id>.pt.sha256
+```
+
+Frozen zero-shot policies reference the Foundation sentinel and use no duplicate checkpoint.
+Live policies receive independent copies of `pointer_key`, `pointer_query`, `option_bias`,
+`decoder_init`, `decoder`, `stop`, plus an independent scalar value head. Actor `source_id` is
+always neutral `0`; source/team identity remains provenance only.
+
+```bash
+python3 -m train.0022_league_training verify-foundation
+python3 -m train.0022_league_training validate-decks
+python3 -m train.0022_league_training initialize --version V1_initial_league
+python3 -m train.0022_league_training audit-version --version V1_initial_league
+```
+
+Initialization does not run PPO and is not official-engine strength evidence. Formal training must
+start from a validated immutable version, use official-engine on-policy episodes, record Frozen and
+Live policy versions separately, and enable the project W&B contract when optimization begins.
