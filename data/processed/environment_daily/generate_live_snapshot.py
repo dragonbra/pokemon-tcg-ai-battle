@@ -830,6 +830,8 @@ def _render_report(
     for player in players:
         high_rate = reward_rate(player["high_rewards"])
         other_rate = reward_rate(player["other_rewards"])
+        current_user_class = " current-user" if is_current_user(player) else ""
+        current_user_data = 'data-current-user="true" ' if is_current_user(player) else ""
 
         def rate_card(label: str, rate: float | None, n: int) -> str:
             rate_class = "good" if rate is not None and rate >= 0.60 else "bad" if rate is not None and rate < 0.45 else "mid"
@@ -837,8 +839,8 @@ def _render_report(
 
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
         person_cards.append(
-            f'<article class="person-card{" current-user" if is_current_user(player) else ""}" data-person-card '
-            f'{"data-current-user=\"true\" " if is_current_user(player) else ""}'
+            f'<article class="person-card{current_user_class}" data-person-card '
+            f'{current_user_data}'
             f'data-archetype="{html.escape(str(player["archetype"]))}" '
             f'data-search="{html.escape(search)}"><div class="person-head"><span class="rank-chip">#{player["rank"]}</span>'
             f'<div><a href="#player-{int(player["rank"]):03d}"><b>{html.escape(str(player["team_name"]))}</b></a>'
@@ -978,10 +980,12 @@ def _render_report(
             if matchup_rows else '<p class="empty">冻结边界内没有当前 Top100 最终 submission 的直接对局。</p>'
         )
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
+        current_user_class = " current-user" if is_current_user(player) else ""
+        current_user_data = 'data-current-user="true" ' if is_current_user(player) else ""
         detail_blocks.append(
-            f'<details class="person-card{" current-user" if is_current_user(player) else ""}" '
+            f'<details class="person-card{current_user_class}" '
             f'id="player-{int(player["rank"]):03d}" data-player-detail '
-            f'{"data-current-user=\"true\" " if is_current_user(player) else ""}'
+            f'{current_user_data}'
             f'data-archetype="{html.escape(str(player["archetype"]))}" data-search="{html.escape(search)}">'
             f'<summary><span><b>#{player["rank"]} {html.escape(str(player["team_name"]))}</b>'
             f'{current_user_badge(player)} · {badge(player)}</span>'

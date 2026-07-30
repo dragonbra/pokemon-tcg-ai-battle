@@ -38,6 +38,8 @@ are not League training results and do not authorize a deck to enter the League 
 | Mega Kangaskhan ex / Crustle 008 | shared CUDA | 214-86-0 | 71.33% | 70.67% | 72.00% | 0 | 135.64 s |
 | Festival Lead / Dipplin 003 | shared CUDA | 169-131-0 | 56.33% | 61.33% | 51.33% | 0 | 141.34 s |
 | Dragapult ex / Dudunsparce 002 | shared CUDA | 147-153-0 | 49.00% | 51.33% | 46.67% | 0 | 201.58 s |
+| Marnie's Grimmsnarl ex / Froslass - Limitless | shared CUDA | 157-143-0 | 52.33% | 53.33% | 51.33% | 0 | 175.74 s |
+| Festival Lead / Dipplin 002 | shared CUDA | 218-82-0 | 72.67% | 79.33% | 66.00% | 0 | 153.80 s |
 
 `mega_lucario_ex_solrock.html` is a physical copy of the existing 0020 report because the supplied
 `mega_lucario_ex.csv` has the exact same sorted 60-card multiset as the previously evaluated 0020

@@ -302,6 +302,40 @@
       "completed_games": 300,
       "errors": 0,
       "wall_time_seconds": 201.577546215005
+    },
+    {
+      "deck_id": "marnies_grimmsnarl_ex_froslass_limitless",
+      "source_path": "train/0022_league_training/deck/marnies_grimmsnarl_ex_froslass_limitless",
+      "sorted_card_multiset_sha256": "c39e7d9e07202667c417d8728469b8449dc8b1cbaff95617f9bad6c5d07a9605",
+      "report": "marnies_grimmsnarl_ex_froslass_limitless.html",
+      "run_id": "run-af899a77a8d841e3a7f16d16ad40c4d6",
+      "inference_device": "shared_cuda",
+      "wins": 157,
+      "losses": 143,
+      "draws": 0,
+      "win_rate": 0.5233333333333333,
+      "first_win_rate": 0.5333333333333333,
+      "second_win_rate": 0.5133333333333333,
+      "completed_games": 300,
+      "errors": 0,
+      "wall_time_seconds": 175.7371882169973
+    },
+    {
+      "deck_id": "festival_lead_dipplin_002",
+      "source_path": "train/0022_league_training/deck/festival_lead_dipplin_002",
+      "sorted_card_multiset_sha256": "79e43c0a0b83e17a0b5264163000f8b656749d1878141864a863fb34818a1422",
+      "report": "festival_lead_dipplin_002.html",
+      "run_id": "run-15bd85235343495caf94e3b235b6985d",
+      "inference_device": "shared_cuda",
+      "wins": 218,
+      "losses": 82,
+      "draws": 0,
+      "win_rate": 0.7266666666666667,
+      "first_win_rate": 0.7933333333333333,
+      "second_win_rate": 0.66,
+      "completed_games": 300,
+      "errors": 0,
+      "wall_time_seconds": 153.79945742299606
     }
   ]
 }

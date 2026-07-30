@@ -704,7 +704,9 @@ class OverridePlugin:
         peak = 0
         lock = threading.Lock()
 
-        def fake_worker(request, trace_path, _temp_root, _timeout_seconds, _cpu_threads):
+        def fake_worker(
+            request, trace_path, _temp_root, _timeout_seconds, _cpu_threads, _inference_socket
+        ):
             nonlocal active, peak
             with lock:
                 active += 1
@@ -793,7 +795,9 @@ class OverridePlugin:
             "opponent-b-002": (False, None, "worker_crash", "worker_crash"),
         }
 
-        def fake_worker(request, trace_path, _temp_root, _timeout_seconds, _cpu_threads):
+        def fake_worker(
+            request, trace_path, _temp_root, _timeout_seconds, _cpu_threads, _inference_socket
+        ):
             finished, winner, status, error_kind = outcomes[request.game_id]
             result = GameResult(
                 game_id=request.game_id,

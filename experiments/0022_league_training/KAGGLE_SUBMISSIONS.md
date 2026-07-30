@@ -17,8 +17,8 @@ submission on 2026-07-31. Both use the 0019 Universal Winner BC epoch-13 checkpo
 - Extracted-package smoke: `run-4fe5e76631b1494d841a60ec183d6166`, 10/10 finished,
   0 errors, 9-1
 - Message: `愿裹着蜜糖的裹蜜虫随庆典节拍起舞，让每一回合的鼓点都通向胜利。`
-- Current status: `PENDING`
-- Public score: pending
+- Final status: `COMPLETE`
+- Public score: `600.0`
 
 ## Mega Kangaskhan ex / Crustle 004
 
@@ -33,8 +33,8 @@ submission on 2026-07-31. Both use the 0019 Universal Winner BC epoch-13 checkpo
 - Extracted-package smoke: `run-8202dcc04ef54a55a5f2183d5cf15f4e`, 10/10 finished,
   0 errors, 10-0
 - Message: `愿袋兽守护前路，岩殿居蟹稳住阵地，把每一次重击都化作通往冠军的台阶。`
-- Current status: `PENDING`
-- Public score: pending
+- Final status: `COMPLETE`
+- Public score: `600.0`
 
 Exactly two successful `kaggle competitions submit` commands were issued for this authorization.
 An earlier Festival upload was stopped before Kaggle created a submission because the extracted

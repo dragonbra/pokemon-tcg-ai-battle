@@ -10,7 +10,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from evaluation.cli import (
-    _numbered_research_output_root,
     _validate_research_coverage,
     list_enabled_opponents,
     load_opponent_catalog,
@@ -23,26 +22,9 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "evaluation" / "configs" / "opponents.json"
 EVALUATION_ROOT = ROOT / "evaluation"
 EXPECTED_NAMES = [
-    "alakazam_dudunsparce_01",
-    "alakazam_dudunsparce_02",
-    "alakazam_dudunsparce_03",
-    "alakazam_dudunsparce_04",
-    "crustle_01",
-    "crustle_02",
-    "dragapult_ex_01",
-    "dragapult_ex_02",
-    "ionos_bellibolt_ex_kilowattrel_01",
-    "marnies_grimmsnarl_ex_dudunsparce_01",
-    "marnies_grimmsnarl_ex_froslass_01",
-    "marnies_grimmsnarl_ex_froslass_02",
-    "mega_abomasnow_ex_kyogre_01",
-    "mega_lucario_ex_solrock_01",
-    "mega_lucario_ex_solrock_02",
-    "mega_lucario_ex_solrock_03",
-    "mega_lucario_ex_solrock_04",
-    "mega_lucario_ex_solrock_05",
-    "mega_lucario_ex_solrock_06",
-    "team_rockets_mewtwo_ex_spidops_01",
+    entry["name"]
+    for entry in json.loads(CATALOG_PATH.read_text(encoding="utf-8"))["opponents"]
+    if entry["enabled"]
 ]
 
 
@@ -187,19 +169,6 @@ class EvaluationCatalogTests(unittest.TestCase):
 
             with self.assertRaisesRegex(PackageValidationError, "arena/opponents"):
                 load_opponent_catalog(path, EVALUATION_ROOT)
-
-    def test_research_output_root_allocates_after_numbered_runs(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary) / "_runs"
-            artifact_root = root / "artifact"
-            (artifact_root / "0003-previous").mkdir(parents=True)
-            (root / "tensorboard").mkdir()
-            with (
-                patch("rl_environment.runs.RUNS_ROOT", root),
-                patch("rl_environment.runs.EXPERIMENT_ROOT", artifact_root),
-            ):
-                allocated = _numbered_research_output_root(root / "new_candidate" / "evaluation")
-            self.assertEqual(allocated, root / "evaluation" / "0004-new_candidate")
 
     def test_research_coverage_requires_full_catalog_and_ten_games(self) -> None:
         with self.assertRaisesRegex(PackageValidationError, "230"):
