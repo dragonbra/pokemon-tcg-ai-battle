@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>0022 League Training - Frozen Baseline</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; color: #18211d; background: #f5f7f6; }
+    main { width: min(1120px, calc(100% - 32px)); margin: 40px auto; }
+    h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: 0; }
+    p { color: #52605a; line-height: 1.55; }
+    .contract { padding: 16px 0 22px; border-bottom: 1px solid #cad2ce; }
+    .contract code { color: #1e664b; overflow-wrap: anywhere; }
+    table { width: 100%; margin-top: 24px; border-collapse: collapse; background: #fff; }
+    th, td { padding: 13px 14px; border-bottom: 1px solid #dce2df; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: #4f5d57; font-size: 13px; background: #edf1ef; }
+    td { font-variant-numeric: tabular-nums; }
+    a { color: #126846; font-weight: 650; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .high { color: #126846; font-weight: 750; }
+    .note { margin-top: 22px; padding-left: 12px; border-left: 3px solid #d09b2c; }
+    h2 { margin-top: 34px; font-size: 20px; letter-spacing: 0; }
+    @media (max-width: 760px) {
+      main { width: min(100% - 20px, 1120px); margin-top: 24px; }
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 760px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>0022 Frozen Baseline</h1>
+  <p class="contract">
+    0019 Universal Winner BC Epoch 13 · neutral <code>source_id=0</code> · official engine ·
+    30 Arena opponents × 10 games · balanced first/second seat · 8 workers × 1 CPU thread
+  </p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Exact deck</th><th>W-L-D</th><th>Win rate</th><th>First</th><th>Second</th><th>Errors</th><th>Report</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mega Lucario ex / Solrock</td><td>163-137-0</td><td>54.33%</td><td>61.33%</td><td>47.33%</td><td>0</td><td><a href="mega_lucario_ex_solrock.html">open</a></td></tr>
+        <tr><td>Mega Lucario ex / Hariyama</td><td>135-165-0</td><td>45.00%</td><td>48.00%</td><td>42.00%</td><td>0</td><td><a href="mega_lucario_ex_hariyama.html">open</a></td></tr>
+        <tr><td>Mega Lopunny ex / Mega Froslass ex</td><td>150-150-0</td><td>50.00%</td><td>57.33%</td><td>42.67%</td><td>0</td><td><a href="mega_lopunny_ex_mega_froslass_ex_001.html">open</a></td></tr>
+        <tr><td>Festival Lead / Dipplin</td><td>230-70-0</td><td class="high">76.67%</td><td>75.33%</td><td>78.00%</td><td>0</td><td><a href="festival_lead_dipplin_001.html">open</a></td></tr>
+        <tr><td>N's Zoroark ex / N's Zekrom</td><td>71-229-0</td><td>23.67%</td><td>29.33%</td><td>18.00%</td><td>0</td><td><a href="ns_zoroark_ex_001.html">open</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">
+    The supplied file <code>N's_zoroark.csv</code> contains Mega Lucario ex / Hariyama and no
+    Zoroark cards. The baseline is therefore named from its exact card contents. Mega Lucario ex /
+    Solrock reuses the 0020 report because its sorted 60-card multiset is identical.
+  </p>
+  <h2>Exact-deck reports imported from 0020</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>0022 deck</th><th>0020 report</th><th>Policy</th><th>Win rate</th><th>Report</th></tr></thead>
+      <tbody>
+        <tr><td>Alakazam / Dudunsparce 001</td><td>V3</td><td>neutral zero-shot</td><td>73.00%</td><td><a href="imported_0020/V3_zero_shot_alakazam.html">open</a></td></tr>
+        <tr><td>Marnie's Grimmsnarl ex / Froslass 001</td><td>V4</td><td>neutral zero-shot</td><td>80.00%</td><td><a href="imported_0020/V4_zero_shot_marnie.html">open</a></td></tr>
+        <tr><td>Mega Lucario ex / Solrock 002</td><td>V5</td><td>neutral zero-shot</td><td>54.33%</td><td><a href="imported_0020/V5_zero_shot_lucario.html">open</a></td></tr>
+        <tr><td>Mega Kangaskhan ex / Crustle 004</td><td>V6</td><td>neutral zero-shot</td><td>71.67%</td><td><a href="imported_0020/V6_zero_shot_kangaskhan.html">open</a></td></tr>
+        <tr><td>Raging Bolt ex 001</td><td>V8</td><td>neutral zero-shot</td><td>28.00%</td><td><a href="imported_0020/V8_zero_shot_region_bot.html">open</a></td></tr>
+        <tr><td>Raging Bolt ex 001</td><td>V10</td><td>source98 persona POC</td><td>26.33%</td><td><a href="imported_0020/V10_raging_bolt_source98_persona_poc.html">open</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">
+    V2, V11, V14, and V15 share one historical Dragapult deck that does not exactly match any
+    current 0022 Dragapult list, so those reports were not copied.
+  </p>
+</main>
+</body>
+</html>
