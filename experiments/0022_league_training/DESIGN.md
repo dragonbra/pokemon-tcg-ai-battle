@@ -64,7 +64,7 @@ Frozen pool 是 16 个**完整策略 package**，不是只有 Encoder 的权重�
 
 - exact 60-card `deck.csv` 与 deck SHA-256；
 - BC checkpoint、模型 schema、ontology 和 feature compiler hash；
-- source-free inference contract；
+- 固定 `source_id=0` 的 neutral-source inference contract；
 - decoder/value 权重；
 - package 和 catalog 版本；
 - official engine runtime / `cg` hash。
@@ -302,7 +302,8 @@ python3 -m train.0022_league_training audit-version --version V1_initial_league
 
 ### Gate A：BC 和 catalog 准备
 
-完成 source-free BC checkpoint；建立候选 deck evidence；为每个候选准备 exact deck/package/hash；不训练 Live。
+完成 0019 neutral-source Foundation 绑定；建立候选 deck evidence；为每个候选准备 exact
+deck/package/hash；不训练 Live。
 
 ### Gate B：opponent throughput feasibility
 
