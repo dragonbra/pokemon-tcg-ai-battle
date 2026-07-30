@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import random
+import signal
 from multiprocessing.connection import Connection
 from typing import Any
 
@@ -23,6 +24,9 @@ def _result(job: RolloutJob, *, valid: bool, reward: float | None, status: str,
 
 
 def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
+    # The parent converts terminal Ctrl-C into an update-boundary stop request.
+    # Keep SIGTERM available for collector cleanup of a stuck worker.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     os.environ.setdefault("OMP_NUM_THREADS", "1")
     os.environ.setdefault("MKL_NUM_THREADS", "1")
     os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")

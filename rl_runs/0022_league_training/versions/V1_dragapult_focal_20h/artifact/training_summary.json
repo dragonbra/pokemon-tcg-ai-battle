@@ -1,0 +1,26 @@
+{
+  "checkpoint_update": 1,
+  "decisions": 53983,
+  "episodes": 512,
+  "frozen_gate": {
+    "errors": 0,
+    "finished": 96,
+    "wall_seconds": 162.0716609730007,
+    "win_rate": 0.5104166666666666
+  },
+  "rollout": {
+    "episodes_per_second": 0.6372988285329098,
+    "errors": 0,
+    "finished": 512,
+    "mean_inference_batch_size": 6.916224970553593,
+    "source_policy_update": 0,
+    "wall_seconds": 803.3907753740059
+  },
+  "state": "stopped_after_update_1_for_throughput_scaling",
+  "stop_reason": "The complete update-1 asset is valid; V1 was stopped before spending the 20-hour budget on an 8-worker supply bottleneck.",
+  "wandb": {
+    "run_id": "0022_league_training--v1_dragapult_focal_20h-b471d7daa0",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0022_league_training--v1_dragapult_focal_20h-b471d7daa0"
+  }
+}

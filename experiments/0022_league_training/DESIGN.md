@@ -2,9 +2,9 @@
 
 **项目 ID：** `0022_league_training`
 
-**当前阶段：** 48-deck catalog、共享 GPU 双边推理、official-engine rollout、focal PPO、
-model-only checkpoint、W&B 和 SSD 门禁均已实现；4 局 smoke 与一次 PPO canary 已通过，
-等待正式版本的 update-0 Frozen greedy gate 后启动约 20 小时训练。
+**当前阶段：** V1 已完成 update-0 Frozen gate 与首个 512 局 PPO update，证明训练合同正确，
+同时测得 8-worker rollout 只有 0.6373 games/s。Torch-light worker 修复后，128-worker /
+5 ms coalescing 达到 2.4506 games/s；下一正式版本采用该配置继续约 20 小时训练。
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
 
@@ -160,7 +160,9 @@ BC 完成后，0022 必须先进行三臂 benchmark，保持 exact deck、checkp
 2. 常驻 CPU batched opponent service；
 3. 常驻 GPU batched opponent service。
 
-当前正式实现把主视角与 opponent request 在 0.5 ms 窗口内合批，共享一次 Encoder forward；
+V1 把主视角与 opponent request 在 0.5 ms 窗口内合批，但 8 workers 只形成平均 6.92 的
+batch。V2 改为 128 个 Torch-light engine workers 与 5 ms coalescing，平均 batch 90.28，
+同时共享一次 Encoder forward；
 主视角路由到可训练 Decoder/Value 并随机采样，opponent 路由到只读 Foundation Decoder 并
 greedy decode。未分叉的 47 个 Live head 使用写时复制语义，不在 GPU 上重复相同 tensor。
 
@@ -186,6 +188,12 @@ greedy decode。未分叉的 47 个 Live head 使用写时复制语义，不在 
 如果只提高了 policy inference 而 end-to-end rollout 没有提升，不能把结果称为 RL iteration speedup。
 
 当前证据是 partial pass：512 局 D 为 3.568 episodes/s、582.17 engine selections/s、264.44 opponent decisions/s，300 局 A sample 为 1.990、339.14、152.62；完成率均 100%，trajectory scalar 非有限数均为 0。end-to-end 1.79x 已通过，但 opponent-only 为 1.73x，不能绕过 2.0x gate 开始 Live self-evolution。
+
+正式 V1 又提供了 PPO-ready 实测：512/512、0 error、0.6373 games/s，93,950 requests /
+13,584 batches。根因不是 GPU/SSD，而是 8-worker 供给不足。相同 256-game workload 在
+Torch-light worker 修复后分别达到 64 workers 1.4081、128 workers 2.4506、256 workers
+2.7039 games/s；128 已达到最佳值的 90.63%，因此按预先约定选择最小的 10% 带宽内配置。
+完整证据见 [`decisions/003_v1_throughput_and_v2_scaling.md`](decisions/003_v1_throughput_and_v2_scaling.md)。
 
 ## 6. 质量和准入合同
 
@@ -303,7 +311,8 @@ python3 -m train.0022_league_training initialize --version V1_initial_league
 python3 -m train.0022_league_training audit-version --version V1_initial_league
 python3 -m train.0022_league_training smoke-rollout --device cuda:0 --workers 4
 python3 -m train.0022_league_training canary-ppo --device cuda:0 --workers 4
-python3 -m train.0022_league_training train --version V1_dragapult_focal_20h
+python3 -m train.0022_league_training benchmark-workers --workers 128 --games 256 --coalesce-ms 5 --output .tmp/evaluation/0022_worker_scaling/workers-128.json
+python3 -m train.0022_league_training train --version V2_dragapult_focal_20h_w128 --workers 128 --coalesce-ms 5
 ```
 
 `initialize` 只建立不可变 League 状态，不采集对局、不做 backward、不启用 W&B，因此不是
@@ -323,7 +332,8 @@ deck/package/hash；不训练 Live。
 
 ### Gate C：Frozen-only Decoder RL
 
-只训练 `dragapult_ex_001`，对 48 Frozen + 48 Live views 运行 decoder/value RL。确认
+只训练 `dragapult_ex_001`，对 48 Frozen + 48 Live views 运行 decoder/value RL。V1 在首个
+完整 update 后因低吞吐停止并保留 checkpoint；V2 使用 128-worker 合同继续。确认
 Frozen anchor 胜率、吞吐和 checkpoint 版本合同正确。
 
 ### Gate D：Frozen + Live league

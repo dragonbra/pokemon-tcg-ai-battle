@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from pathlib import Path
 
-from torch import Tensor
+if TYPE_CHECKING:
+    from torch import Tensor
+else:
+    Tensor = Any
 
 
 class LeaguePolicyView(StrEnum):

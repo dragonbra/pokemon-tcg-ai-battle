@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import signal
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -40,6 +41,29 @@ class LeagueTrainingConfig:
     launch_minimum_free_gib: float = 100.0
     runtime_stop_free_gib: float = 80.0
     version_cap_gib: float = 10.0
+
+
+class StopRequest:
+    """Turn SIGINT/SIGTERM into an update-boundary stop request."""
+
+    def __init__(self) -> None:
+        self.requested = False
+        self.signal_number: int | None = None
+        self._previous: dict[int, object] = {}
+
+    def _handle(self, signal_number: int, _frame: object) -> None:
+        self.requested = True
+        self.signal_number = signal_number
+
+    def install(self) -> None:
+        for signal_number in (signal.SIGINT, signal.SIGTERM):
+            self._previous[signal_number] = signal.getsignal(signal_number)
+            signal.signal(signal_number, self._handle)
+
+    def restore(self) -> None:
+        for signal_number, handler in self._previous.items():
+            signal.signal(signal_number, handler)
+        self._previous.clear()
 
 
 def _atomic_json(path: Path, payload: dict[str, object]) -> None:
@@ -117,7 +141,8 @@ def _frozen_eval(model, plugins, config, update, runtime_root):
 
 
 def run_training(config: LeagueTrainingConfig, *, deck_root: Path = DEFAULT_DECK_ROOT) -> int:
-    if config.games_per_update < 1 or config.duration_hours <= 0 or config.frozen_eval_interval < 1:
+    if (config.games_per_update < 1 or config.duration_hours <= 0
+            or config.frozen_eval_interval < 1 or config.workers < 1 or config.coalesce_ms < 0):
         raise ValueError("training counts, duration, and evaluation interval must be positive")
     prospective = project_version_paths(PROJECT_ID, config.version)
     preflight_storage(prospective.run_root.parent, minimum_free_gib=config.launch_minimum_free_gib)
@@ -154,12 +179,14 @@ def run_training(config: LeagueTrainingConfig, *, deck_root: Path = DEFAULT_DECK
     started = time.time(); deadline = started + config.duration_hours * 3600; update = 0
     episodes_total = 0; decisions_total = 0; best_checkpoints: list[tuple[float, Path]] = []
     write_version_status(paths, {"state": "preflight_frozen_eval", "training_started": False})
+    stop = StopRequest()
+    stop.install()
     try:
         with TrainingLogger(paths.metrics, paths.tensorboard) as logger:
             eval_metrics = _frozen_eval(model, plugins, config, 0, runtime_root)
             logger.log(0, {"trainer/update": 0, "env/episodes": 0, "env/decisions": 0, **eval_metrics})
             write_version_status(paths, {"state": "running", "training_started": True, "started_at_unix": started})
-            while time.time() < deadline:
+            while time.time() < deadline and not stop.requested:
                 disk = runtime_storage(paths.run_root, stop_free_gib=config.runtime_stop_free_gib, version_cap_gib=config.version_cap_gib)
                 if disk.stop_requested: break
                 collector = LeagueRolloutCollector(model, device=device, workers=config.workers, mode="sample", coalesce_ms=config.coalesce_ms)
@@ -191,12 +218,19 @@ def run_training(config: LeagueTrainingConfig, *, deck_root: Path = DEFAULT_DECK
                     log.update({"system/gpu/allocated_bytes": torch.cuda.memory_allocated(device), "system/gpu/reserved_bytes": torch.cuda.memory_reserved(device), "system/gpu/peak_allocated_bytes": torch.cuda.max_memory_allocated(device)})
                 logger.log(update, log)
                 write_version_status(paths, {"state": "running", "checkpoint_update": update, "rollout_source_policy_update": update - 1, "episodes": episodes_total, "decisions": decisions_total, "disk_free_gib": disk.free_bytes / (1024**3)})
-        final_state = "completed_time_budget" if time.time() >= deadline else "completed_disk_low_water"
-        summary = {"state": final_state, "updates": update, "episodes": episodes_total, "decisions": decisions_total, "best_frozen_eval_win_rate": best_checkpoints[0][0] if best_checkpoints else None, "elapsed_hours": (time.time() - started) / 3600}
+        if stop.requested:
+            final_state = "completed_stop_requested"
+        elif time.time() >= deadline:
+            final_state = "completed_time_budget"
+        else:
+            final_state = "completed_disk_low_water"
+        summary = {"state": final_state, "updates": update, "episodes": episodes_total, "decisions": decisions_total, "best_frozen_eval_win_rate": best_checkpoints[0][0] if best_checkpoints else None, "elapsed_hours": (time.time() - started) / 3600, "stop_signal": stop.signal_number}
         _atomic_json(paths.summary, summary); write_version_status(paths, summary); return 0
     except BaseException as error:
         write_version_status(paths, {"state": "failed", "error": f"{type(error).__name__}: {error}", "checkpoint_update": update})
         raise
+    finally:
+        stop.restore()
 
 
-__all__ = ["LeagueTrainingConfig", "compose_training_config", "run_training", "schedule_jobs"]
+__all__ = ["LeagueTrainingConfig", "StopRequest", "compose_training_config", "run_training", "schedule_jobs"]

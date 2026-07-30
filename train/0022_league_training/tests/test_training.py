@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import subprocess
+import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import torch
 
@@ -12,7 +15,8 @@ from ..rollout import (
     TrajectoryDecision,
 )
 from ..training.batch import _episode_gae, prepare_episodes
-from ..training.run import LeagueTrainingConfig, compose_training_config, schedule_jobs
+from ..cli import build_parser
+from ..training.run import LeagueTrainingConfig, StopRequest, compose_training_config, schedule_jobs
 from ..decks import load_deck_plugins
 from ..league import DEFAULT_DECK_ROOT
 
@@ -39,7 +43,45 @@ class LeagueTrainingTest(unittest.TestCase):
         self.assertEqual(result["checkpoints"], initial["checkpoints"])
         self.assertFalse(result["live_opponent_updates_enabled"])
         self.assertEqual(result["run"]["games_per_update"], 512)
+        self.assertEqual(result["run"]["coalesce_ms"], 0.5)
         self.assertEqual(result["schema_version"], "0022_focal_league_ppo_v1")
+
+    def test_cli_propagates_versioned_coalescing_value(self) -> None:
+        args = build_parser().parse_args([
+            "train", "--version", "V2_test", "--workers", "64",
+            "--coalesce-ms", "5",
+        ])
+        self.assertEqual(args.workers, 64)
+        self.assertEqual(args.coalesce_ms, 5.0)
+
+    def test_worker_benchmark_cli_requires_explicit_output(self) -> None:
+        args = build_parser().parse_args([
+            "benchmark-workers", "--workers", "128", "--games", "256",
+            "--output", ".tmp/evaluation/0022_worker_scaling/workers-128.json",
+        ])
+        self.assertEqual(args.workers, 128)
+        self.assertEqual(args.games, 256)
+        self.assertEqual(args.coalesce_ms, 5.0)
+
+    def test_engine_worker_import_path_is_torch_light(self) -> None:
+        completed = subprocess.run(
+            [sys.executable, "-c", (
+                "import importlib, sys; "
+                "importlib.import_module('train.0022_league_training.rollout.worker'); "
+                "assert 'torch' not in sys.modules"
+            )],
+            check=False, capture_output=True, text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+
+    def test_stop_request_records_signal_without_raising(self) -> None:
+        stop = StopRequest()
+        with patch("signal.getsignal"), patch("signal.signal"):
+            stop.install()
+            stop._handle(2, None)
+            self.assertTrue(stop.requested)
+            self.assertEqual(stop.signal_number, 2)
+            stop.restore()
 
     def test_schedule_balances_seats_and_preserves_policy_update(self) -> None:
         plugins = load_deck_plugins(DEFAULT_DECK_ROOT)

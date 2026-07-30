@@ -28,7 +28,8 @@ python3 -m train.0022_league_training initialize --version V1_initial_league
 python3 -m train.0022_league_training audit-version --version V1_initial_league
 python3 -m train.0022_league_training smoke-rollout --device cuda:0 --workers 4
 python3 -m train.0022_league_training canary-ppo --device cuda:0 --workers 4
-python3 -m train.0022_league_training train --version V1_dragapult_focal_20h
+python3 -m train.0022_league_training benchmark-workers --device cuda:0 --workers 128 --games 256 --coalesce-ms 5 --output .tmp/evaluation/0022_worker_scaling/workers-128.json
+python3 -m train.0022_league_training train --version V2_dragapult_focal_20h_w128 --device cuda:0 --workers 128 --coalesce-ms 5 --games-per-update 512 --duration-hours 20
 ```
 
 The catalog contains 48 exact decks. The first formal run schedules 512 games per update across

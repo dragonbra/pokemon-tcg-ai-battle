@@ -10,7 +10,7 @@ table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid v
 .card{border:1px solid var(--line);border-radius:8px;padding:16px;background:#fff}.gate{border-left:5px solid var(--blue)}.good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}
 </style></head><body>
 <h1>0022 League Training</h1>
-<p class="meta"><strong>当前阶段：</strong>48-deck catalog 与训练框架已完成；official-engine smoke、PPO canary、W&amp;B 与 SSD preflight 已通过，等待 update-0 Frozen greedy gate 后启动约 20 小时正式训练。</p>
+<p class="meta"><strong>当前阶段：</strong>V1 已完成 update-0 Frozen gate 和首个 512 局 PPO update；8-worker 吞吐基线仅 0.6373 games/s。Torch-light worker 修复后，V2 采用 128 workers / 5 ms coalescing，实测 2.4506 games/s。</p>
 <p class="lede">第一版验证冻结 0019 Foundation 后，仅调整 Dragapult ex 001 - Limitless 的 Decoder/Value，能否在高吞吐、可审计的 48-deck League 中持续获得局部策略改进。</p>
 
 <h2>当前合同</h2><div class="grid">
@@ -21,7 +21,7 @@ table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid v
 </div>
 
 <h2>运行拓扑</h2><pre>isolated official-engine workers
-    │ focal + opponent observation requests (0.5 ms coalesce)
+    │ 128 Torch-light workers · focal + opponent requests (5 ms coalesce)
     ▼
 one resident GPU service
     shared frozen Encoder ── one mixed batched forward
@@ -59,11 +59,19 @@ every 5 updates: 48 Frozen decks × both seats = 96 greedy games</pre>
 <div class="card gate"><h3>资源</h3><p>RTX 5080 16 GiB；canary CUDA peak 477,429,760 bytes。当前磁盘约 817 GiB free，canary 资产约 4.3 MiB。</p></div>
 <div class="card gate"><h3>Tracking</h3><p>W&amp;B 身份 <code>dragon_bra</code> 联网预检通过。正式标量按 JSONL flush → TensorBoard → W&amp;B online 顺序写入。</p></div>
 </div>
+<h2>V1 与并发选择</h2><table><thead><tr><th>配置</th><th>完成</th><th>games/s</th><th>平均 batch</th><th>结论</th></tr></thead><tbody>
+<tr><td>V1 · 8 workers / 0.5 ms · 512 games</td><td>512/512，0 error</td><td>0.6373</td><td>6.92</td><td>update-1 健康落盘后停止</td></tr>
+<tr><td>64 workers / 5 ms · 256 games</td><td>256/256，0 error</td><td>1.4081</td><td>53.21</td><td>通过</td></tr>
+<tr><td>128 workers / 5 ms · 256 games</td><td>256/256，0 error</td><td>2.4506</td><td>90.28</td><td class="good">V2 选择</td></tr>
+<tr><td>256 workers / 5 ms · 256 games</td><td>256/256，0 error</td><td>2.7039</td><td>140.48</td><td>只比 128 快 10.33%</td></tr>
+</tbody></table>
+<p>128 workers 达到最佳测量值的 90.63%，满足“距离最佳 10% 内选择最小并发”的资源规则。首次 128-worker 尝试因 engine 子进程错误地 eager import PyTorch 触发系统 OOM；worker import 路径已隔离，并由 subprocess 测试保证不加载 <code>torch</code>。</p>
 
 <h2>运行与存储</h2><table><thead><tr><th>边界</th><th>行为</th></tr></thead><tbody>
 <tr><td>启动磁盘</td><td>少于 100 GiB free 则拒绝分配 version</td></tr><tr><td>运行磁盘</td><td>少于 80 GiB free 时在完整 update 边界干净停止</td></tr>
 <tr><td>Version cap</td><td>超过 10 GiB 立即失败；不保存 rollout buffer 或 optimizer</td></tr><tr><td>Checkpoint</td><td>保留最新 2、Frozen eval 最佳 2 和显式分支；每个文件原子写入并带 SHA sidecar</td></tr>
 <tr><td>训练时限</td><td>约 20 GPU 小时；到时间后完成当前 update 再结束</td></tr>
+<tr><td>人工停止</td><td>SIGINT/SIGTERM 只设置 stop request；完成当前 update、checkpoint 与指标后在边界退出</td></tr>
 </tbody></table>
 
 <h2>资产布局</h2><pre>train/0022_league_training/deck/&lt;deck_id&gt;/{manifest.json,deck.csv}
@@ -76,6 +84,6 @@ rl_runs/0022_league_training/versions/V&lt;n&gt;_&lt;tag&gt;/
 experiments/0022_league_training/evaluation/V&lt;n&gt;_&lt;tag&gt;.html</pre>
 
 <h2>证据边界</h2><p>Frozen 胜率改善只能证明相对当前 48-deck anchor 的局部改进，不能证明全局最优。Live-view rollout、loss、KL 和 reward 不能冒充 checkpoint 强度。真正启用其他 Live deck 的 actor gradient、League 共进化、开放 Encoder 或加入新机制，均必须创建新的不可变版本并重新执行 smoke、Frozen gate 与设计同步。</p>
-<p class="warn">当前尚未产生正式训练结果；smoke 与 canary 只证明工程和优化合同可运行。</p>
+<p class="warn">V1 的 sampled rollout 胜率是 update-0 behavior policy 诊断，不是 update-1 checkpoint 强度；V2 仍需独立 Frozen greedy evaluation 判断真实改善。</p>
 <p>完整字段、准入、风险与阶段说明见 <a href="DESIGN.md">DESIGN.md</a>；Frozen 起点见 <a href="frozen_baseline/index.html">frozen baseline</a>。</p>
 </body></html>

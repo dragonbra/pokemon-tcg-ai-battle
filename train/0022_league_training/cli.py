@@ -12,6 +12,7 @@ from .foundation import verify_foundation
 from .league import DEFAULT_DECK_ROOT, audit_league_version, initialize_league_version
 from .smoke import run_rollout_smoke
 from .canary import run_ppo_canary
+from .benchmark import run_worker_benchmark
 from .training.run import LeagueTrainingConfig, run_training
 
 
@@ -34,10 +35,18 @@ def build_parser() -> argparse.ArgumentParser:
     canary.add_argument("--device", default="cuda:0")
     canary.add_argument("--workers", type=int, default=4)
     canary.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
+    benchmark = subparsers.add_parser("benchmark-workers")
+    benchmark.add_argument("--device", default="cuda:0")
+    benchmark.add_argument("--workers", type=int, required=True)
+    benchmark.add_argument("--games", type=int, default=256)
+    benchmark.add_argument("--coalesce-ms", type=float, default=5.0)
+    benchmark.add_argument("--output", type=Path, required=True)
+    benchmark.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
     train = subparsers.add_parser("train")
     train.add_argument("--version", required=True)
     train.add_argument("--device", default="cuda:0")
     train.add_argument("--workers", type=int, default=8)
+    train.add_argument("--coalesce-ms", type=float, default=0.5)
     train.add_argument("--games-per-update", type=int, default=512)
     train.add_argument("--duration-hours", type=float, default=20.0)
     train.add_argument("--frozen-eval-interval", type=int, default=5)
@@ -69,9 +78,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = run_rollout_smoke(device=args.device, workers=args.workers, deck_root=args.deck_root)
     elif args.command == "canary-ppo":
         result = run_ppo_canary(device=args.device, workers=args.workers, deck_root=args.deck_root)
+    elif args.command == "benchmark-workers":
+        result = run_worker_benchmark(
+            workers=args.workers, games=args.games, coalesce_ms=args.coalesce_ms,
+            device=args.device, output=args.output, deck_root=args.deck_root,
+        )
     else:
         return run_training(LeagueTrainingConfig(
             version=args.version, device=args.device, workers=args.workers,
+            coalesce_ms=args.coalesce_ms,
             games_per_update=args.games_per_update, duration_hours=args.duration_hours,
             frozen_eval_interval=args.frozen_eval_interval,
         ), deck_root=args.deck_root)
