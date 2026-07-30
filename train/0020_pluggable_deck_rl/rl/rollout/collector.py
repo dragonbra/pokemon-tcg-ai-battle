@@ -95,6 +95,7 @@ class RolloutCollector:
         request_timeout_seconds: float = 60.0,
         resident_opponents: ResidentOpponentPool | None = None,
         coalesce_seconds: float = 0.0,
+        unified_league_inference: bool = False,
     ) -> None:
         if workers < 1:
             raise ValueError("workers must be positive")
@@ -109,6 +110,14 @@ class RolloutCollector:
         self.request_timeout_seconds = request_timeout_seconds
         self.resident_opponents = resident_opponents
         self.coalesce_seconds = coalesce_seconds
+        self.unified_league_inference = unified_league_inference
+        if unified_league_inference:
+            if resident_opponents is None:
+                raise ValueError(
+                    "unified League inference requires a resident pool"
+                )
+            if not callable(getattr(resident_opponents, "select_mixed", None)):
+                raise ValueError("resident pool does not support unified League inference")
         self.inference_batch_count = 0
         self.inference_request_count = 0
         self.inference_batch_size_max = 0
@@ -220,6 +229,89 @@ class RolloutCollector:
                         del live_by_connection[connection]
                     else:
                         raise RuntimeError("rollout worker sent an unknown message")
+                if self.unified_league_inference and (
+                    decision_requests or opponent_requests
+                ):
+                    candidate_features = []
+                    for live, observation in decision_requests:
+                        item = live.encoder.encode(observation)
+                        item["source_id"] = torch.tensor(
+                            [TARGET_SOURCE_ID], dtype=torch.long
+                        )
+                        candidate_features.append(item)
+                    opponent_payload = [
+                        OpponentRequest(
+                            session_id=live.job.episode_id,
+                            package_name=live.job.opponent.name,
+                            observation=observation,
+                        )
+                        for live, observation in opponent_requests
+                    ]
+                    candidate_actions, opponent_actions = (
+                        self.resident_opponents.select_mixed(
+                            candidate_features,
+                            opponent_payload,
+                            sample_candidate=self.mode == "sample",
+                        )
+                    )
+                    latency_seconds = float(self.resident_opponents.last_select_seconds)
+                    total_requests = len(candidate_actions) + len(opponent_actions)
+                    self.inference_batch_count += 1
+                    self.inference_request_count += total_requests
+                    self.inference_batch_size_max = max(
+                        self.inference_batch_size_max, total_requests
+                    )
+                    self.inference_seconds += latency_seconds
+                    for (live, observation), features, action in zip(
+                        decision_requests,
+                        candidate_features,
+                        candidate_actions,
+                        strict=True,
+                    ):
+                        if self.mode == "sample":
+                            indices = tuple(action.indices)
+                            stopped = bool(action.stopped)
+                            old_log_prob = float(action.log_prob)
+                            old_value = float(action.value)
+                            entropy = float(action.entropy)
+                        else:
+                            indices = tuple(action)
+                            select = observation.get("select") or {}
+                            stopped = len(indices) < int(
+                                select.get("maxCount", 0) or 0
+                            )
+                            old_log_prob = 0.0
+                            old_value = 0.0
+                            entropy = 0.0
+                        selected = _selected_options(observation, indices)
+                        _update_diagnostics(live.diagnostics, selected)
+                        current = observation.get("current") or {}
+                        live.decisions.append(
+                            TrajectoryDecision(
+                                features=cpu_batch(features),
+                                action=indices,
+                                stopped=stopped,
+                                old_log_prob=old_log_prob,
+                                old_value=old_value,
+                                entropy=entropy,
+                                turn=int(current.get("turn", 0)),
+                                inference_ms=(
+                                    latency_seconds * 1_000.0 / total_requests
+                                    if total_requests
+                                    else 0.0
+                                ),
+                                selected_options=selected,
+                            )
+                        )
+                        live.connection.send(
+                            {"kind": "action", "action": list(indices)}
+                        )
+                    for (live, _observation), action in zip(
+                        opponent_requests, opponent_actions, strict=True
+                    ):
+                        live.connection.send({"kind": "action", "action": action})
+                    fill_workers()
+                    continue
                 if opponent_requests:
                     if self.resident_opponents is None:
                         raise RuntimeError("worker requested unavailable resident opponent")

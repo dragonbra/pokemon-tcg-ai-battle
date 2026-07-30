@@ -2,7 +2,7 @@
 
 **项目 ID：** `0022_league_training`
 
-**当前阶段：** 设计与可行性 gate；尚未选择正式 16-deck catalog，也尚未开始正式 PPO 训练
+**当前阶段：** 吞吐 feasibility 已实测；end-to-end gate 通过，opponent-only 2.0x gate 待优化；尚未开始正式 PPO 训练
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
 
@@ -19,7 +19,7 @@
 - Live pool 保存正在进行 Decoder-only RL 的策略，作为可进化 opponent；
 - 所有战斗仍由 official engine runtime 执行，`engine_cuda/` 在 parity gate 通过前不能产生正式 rollout 或强度结论。
 
-0022 研究的是“Foundation 表示空间内的可塑性”和“常驻 opponent 服务的吞吐收益”，不是全局最优、完整 self-play equilibrium 或新的官方规则引擎。
+0022 研究的是“Foundation 表示空间内的可塑性”和“常驻 opponent 服务的吞吐收益”，不是全局最优、完整 self-play equilibrium 或新的官方规则引擎。实测结论记录在 [`decisions/002_throughput_measurement.md`](decisions/002_throughput_measurement.md)：PPO-ready stacked shared GPU League 达到 1.79x end-to-end 和 1.73x opponent decisions；前者通过，后者仍待优化。
 
 ## 2. 证据边界
 
@@ -137,6 +137,8 @@ BC 完成后，0022 必须先进行三臂 benchmark，保持 exact deck、checkp
 2. 常驻 CPU batched opponent service；
 3. 常驻 GPU batched opponent service。
 
+实现中增加了 unified League 对照：主视角与 opponent request 在 5 ms 窗口内合批，共享一次 encoder，再用带 expert 维度的 stacked GEMM 路由 16 个独立 decoder 参数切片。PPO-ready sample 路径同时返回 candidate behavior log-prob、entropy 和 value；纯 greedy serving 数字不能冒充 PPO throughput。
+
 必须分别记录：
 
 - completed episodes / errors / unfinished；
@@ -157,6 +159,8 @@ BC 完成后，0022 必须先进行三臂 benchmark，保持 exact deck、checkp
 - profiling 证明收益来自常驻与批量推理，而不是减少局数、改变 engine 合同或降低策略质量。
 
 如果只提高了 policy inference 而 end-to-end rollout 没有提升，不能把结果称为 RL iteration speedup。
+
+当前证据是 partial pass：512 局 D 为 3.568 episodes/s、582.17 engine selections/s、264.44 opponent decisions/s，300 局 A sample 为 1.990、339.14、152.62；完成率均 100%，trajectory scalar 非有限数均为 0。end-to-end 1.79x 已通过，但 opponent-only 为 1.73x，不能绕过 2.0x gate 开始 Live self-evolution。
 
 ## 6. 质量和准入合同
 
@@ -232,7 +236,7 @@ rl_runs/0022_league_training/versions/V<n>_<tag>/wandb/
 
 ### Gate B：opponent throughput feasibility
 
-在相同 official engine workload 上比较 tuned CPU、resident CPU 和 resident GPU opponent service。未通过速度和完成率 gate 时，不开始 Arena self-evolution。
+在相同 official engine workload 上比较 tuned CPU、resident CPU、resident GPU 和 unified stacked GPU opponent service。当前 end-to-end gate 已通过，但 opponent 2.0x gate 尚未通过；未完成该 gate 前不开始 Arena self-evolution。
 
 ### Gate C：Frozen-only Decoder RL
 

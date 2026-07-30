@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from torch import Tensor
+if TYPE_CHECKING:
+    from torch import Tensor
 
 from evaluation.packages.loader import SubmissionPackage
 

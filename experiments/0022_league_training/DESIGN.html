@@ -11,7 +11,7 @@ table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid v
 .good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}ul{padding-left:22px}.flow{text-align:center;font-weight:650;color:#26374a}
 </style></head><body>
 <h1>0022 League Training</h1>
-<p class="meta"><strong>当前阶段：</strong>设计与可行性 gate；16-deck catalog 尚未冻结，正式 PPO 尚未开始。</p>
+<p class="meta"><strong>当前阶段：</strong>吞吐 feasibility 已实测；end-to-end gate 通过，opponent-only 2.0x gate 待优化；正式 PPO 尚未开始。</p>
 <p class="lede">目标是在 BC foundation 完成后，验证常驻、批量化 opponent pool 是否能显著提高真实 RL rollout 与迭代吞吐，同时用一个不会随训练漂移的 Frozen League 保持质量锚点。</p>
 
 <h2>核心结论</h2>
@@ -62,6 +62,7 @@ official-engine workers → trajectories → owner-specific PPO updates</pre>
 <li>profiling 证明收益来自常驻和批量推理，而不是减少局数或降低 opponent 质量。</li>
 </ul></div>
 <p class="warn">只有 policy inference 变快、但 end-to-end rollout 没有提升时，不能称为 RL iteration speedup。</p>
+<p>2026-07-31 PPO-ready 实测：A sample 300 局为 1.990 episodes/s、339.14 selections/s；unified stacked GPU D 512 局为 3.568 episodes/s、582.17 selections/s、264.44 opponent decisions/s，完成率均 100%，trajectory log-prob/entropy/value 非有限数均为 0。end-to-end 1.79x 通过，opponent-only 1.73x 尚未达到 2.0x，因此仍不能开始 Live self-evolution。</p>
 
 <h2>Frozen / Live 质量合同</h2>
 <table><thead><tr><th>证据</th><th>用途</th><th>不能证明</th></tr></thead><tbody>
@@ -95,7 +96,7 @@ official-engine workers → trajectories → owner-specific PPO updates</pre>
 <h2>阶段路线</h2>
 <table><thead><tr><th>Gate</th><th>交付</th><th>通过条件</th></tr></thead><tbody>
 <tr><td>A · BC/catalog</td><td>source-free BC、候选 evidence、exact packages</td><td>checkpoint 与 catalog 可审计</td></tr>
-<tr><td>B · Throughput</td><td>CPU baseline / resident CPU / resident GPU</td><td>2.0x opponent、1.5x end-to-end、质量不退化</td></tr>
+<tr><td>B · Throughput</td><td>CPU baseline / resident CPU / resident GPU / unified stacked GPU</td><td>end-to-end 1.79x 已通过；opponent 1.73x 尚未达到 2.0x，继续优化后再进入 C</td></tr>
 <tr><td>C · Frozen-only RL</td><td>一个 focal deck 的 Decoder/Value RL</td><td>Frozen anchor 改善且版本合同正确</td></tr>
 <tr><td>D · Frozen + Live</td><td>16 Live 分支和 focal/round-robin schedule</td><td>Live curriculum 提供额外收益且不隐藏退化</td></tr>
 <tr><td>E · Promotion</td><td>historical Frozen snapshots</td><td>package、official evaluation、snapshot audit 全部通过</td></tr>
