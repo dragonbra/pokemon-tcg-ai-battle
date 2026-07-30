@@ -1,0 +1,145 @@
+{
+  "schema_version": "daily_deck_catalog_v1",
+  "directory": "mega_kangaskhan_ex_crustle_008",
+  "deck_sha256": "eef05267c0249d555efd0500c1012c4b2b0531cfa155dbee4a5092e56d03ea94",
+  "short_hash": "eef05267c024",
+  "archetype": "Mega Kangaskhan ex / Crustle",
+  "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
+  "source_date": "2026-07-30",
+  "member_count": 1,
+  "best_rank": 83,
+  "best_score": 1032.2,
+  "aggregate_record": {
+    "wins": 38,
+    "losses": 24,
+    "draws": 0
+  },
+  "aggregate_effective_win_rate": 0.6129032258064516,
+  "members": [
+    {
+      "rank": 83,
+      "team_name": "monnosuke",
+      "submission_id": 55077489,
+      "episode_id": 88834574,
+      "episode_create_time": "2026-07-29T16:55:59.350000+00:00",
+      "player_index": 0,
+      "leaderboard_score": 1032.2,
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "wins": 38,
+      "losses": 24,
+      "draws": 0
+    }
+  ],
+  "cards": [
+    {
+      "card_id": 117,
+      "name": "Cornerstone Mask Ogerpon ex",
+      "count": 2
+    },
+    {
+      "card_id": 345,
+      "name": "Crustle",
+      "count": 3
+    },
+    {
+      "card_id": 344,
+      "name": "Dwebble",
+      "count": 3
+    },
+    {
+      "card_id": 756,
+      "name": "Mega Kangaskhan ex",
+      "count": 2
+    },
+    {
+      "card_id": 1182,
+      "name": "Boss’s Orders",
+      "count": 4
+    },
+    {
+      "card_id": 1086,
+      "name": "Buddy-Buddy Poffin",
+      "count": 2
+    },
+    {
+      "card_id": 1212,
+      "name": "Cook",
+      "count": 1
+    },
+    {
+      "card_id": 1120,
+      "name": "Crushing Hammer",
+      "count": 4
+    },
+    {
+      "card_id": 1159,
+      "name": "Hero’s Cape",
+      "count": 1
+    },
+    {
+      "card_id": 1225,
+      "name": "Hilda",
+      "count": 3
+    },
+    {
+      "card_id": 1147,
+      "name": "Jumbo Ice Cream",
+      "count": 4
+    },
+    {
+      "card_id": 1227,
+      "name": "Lillie's Determination",
+      "count": 4
+    },
+    {
+      "card_id": 1145,
+      "name": "Mega Signal",
+      "count": 1
+    },
+    {
+      "card_id": 1122,
+      "name": "Pokégear 3.0",
+      "count": 4
+    },
+    {
+      "card_id": 1123,
+      "name": "Switch",
+      "count": 2
+    },
+    {
+      "card_id": 1219,
+      "name": "Team Rocket's Petrel",
+      "count": 4
+    },
+    {
+      "card_id": 1127,
+      "name": "Tera Orb",
+      "count": 1
+    },
+    {
+      "card_id": 1197,
+      "name": "Xerosic’s Machinations",
+      "count": 1
+    },
+    {
+      "card_id": 18,
+      "name": "Grow Grass Energy",
+      "count": 4
+    },
+    {
+      "card_id": 11,
+      "name": "Mist Energy",
+      "count": 4
+    },
+    {
+      "card_id": 20,
+      "name": "Rock Fighting Energy",
+      "count": 4
+    },
+    {
+      "card_id": 14,
+      "name": "Spiky Energy",
+      "count": 2
+    }
+  ]
+}

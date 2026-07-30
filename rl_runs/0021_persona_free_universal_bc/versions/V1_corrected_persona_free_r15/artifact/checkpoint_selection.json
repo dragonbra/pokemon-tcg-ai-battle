@@ -1,0 +1,7 @@
+{
+  "best_deck_ood_greedy_exact": "maximum deck-OOD free greedy exact action",
+  "best_greedy_exact": "maximum IID free greedy exact action",
+  "best_teacher_exact": "maximum IID teacher-forced exact action",
+  "best_validation_loss": "minimum IID mean per-decision sequence NLL",
+  "latest": "final completed epoch"
+}

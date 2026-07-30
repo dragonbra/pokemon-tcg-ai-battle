@@ -1,0 +1,9 @@
+{
+  "candidate": "0020_zero_shot_marnie",
+  "checkpoint_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "deck_source": "marnies_grimmsnarl_ex_froslass_05_bc",
+  "foundation_version": "V1_frozen_0019_epoch13",
+  "schema_version": "0020_zero_shot_candidate_v1",
+  "source_id": 0,
+  "training_updates": 0
+}

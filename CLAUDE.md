@@ -159,6 +159,32 @@ TensorBoard 默认读取 `rl_runs` 中的嵌套项目版本目录，监听 `127.
 
 新增 evaluation opponent 时，先在 `evaluation/arena/candidates/<name>/` 建立自包含标准 package，保证 `main.py` 从同目录读取 deck、`deck.csv` 恰为 60 行且 `cg/` 与基线 hash 一致；完成独立验证后由用户确认是否准入。只有获得确认才可按关键宝可梦组合分配正式 `<archetype>_<NN>` 名称、迁入 `evaluation/arena/opponents/`、添加 display name 与代表卡 ID、更新 catalog 和资产测试，并运行 `python3 -m unittest -v tests.test_evaluation_assets`。catalog 只能引用 `arena/opponents/`，不得引用 `arena/candidates/`；不要把 opponent adapter、共享 cg 目录、symlink 或其他仓库的绝对路径带入运行时。
 
+### Kaggle 最终提交包硬约束
+
+- 任何称为“可直接提交 Kaggle”的最终产物必须是
+  `archive/submission/dist/<project_numbered_name>.tar.gz`；对应的可运行完整目录必须保存在
+  `archive/submission/<project_numbered_name>/`。根目录 `submission/` 已退役，不得恢复使用。
+- 压缩包解开后，`main.py`、`deck.csv`、`cg/`、策略代码与模型权重必须直接位于解包根目录；
+  禁止额外包一层 `<project_name>/`。`deck.csv` 必须是 exact 60 行合法 card ID，`main.py`
+  必须暴露 `agent(observation)` 和 `read_deck_csv()`，初始化 observation
+  `{"select": null}` 必须返回同一 exact 60-card deck。
+- 最终包必须完全自包含：不得包含 symlink、仓库绝对路径、相邻项目运行时依赖、缺失的模型或
+  ontology，也不得依赖当前 shell 的 `PYTHONPATH`。不得打入 `__pycache__/`、`.pyc`、临时报告、
+  trace、optimizer、rollout buffer 或其他非提交资产；`cg/` 必须包含 Kaggle 目标环境需要的运行库。
+- Kaggle runner 可能以动态 `exec` 方式加载 `main.py`，不保证定义 `__file__`。入口必须在
+  `__file__` 缺失时安全回退到当前工作目录或 `/kaggle_simulations/agent`，并在导入 PyTorch、
+  NumPy 或 OpenMP 相关模块前完成线程环境配置。直接无保护地执行 `Path(__file__)` 的 package
+  一律视为不可提交。
+- 打包完成后必须把最终 `.tar.gz` 解压到全新临时目录，以该目录而非源 candidate 执行全部门禁：
+  1) 检查顶层结构、60-card deck、无 symlink/缓存/额外目录层；2) 运行
+  `python3 -m evaluation validate <extracted-root>`；3) 在不定义 `__file__`、不注入仓库
+  `PYTHONPATH` 的独立 Python 进程中动态执行根目录 `main.py`，调用初始化 observation 并核对
+  60-card 返回；4) 使用解包后的 package 通过 official engine runtime 至少完成一个 opponent
+  ×10 局的 smoke，要求 10/10 finished、0 error。任何一步失败都必须 fail closed、修复并重新打包，
+  不得把只通过源目录验证或普通本地 import 的产物交付给用户。
+- 交付时必须同时给出完整目录、最终压缩包、压缩包 SHA-256、上述门禁结果，并明确是否执行过
+  Kaggle submission。除非用户另行明确授权，本流程只打包和验证，绝不提交或重试提交。
+
 ### Replay 可视化工具
 
 - 当用户要求查看、展示、播放或可视化某一局对战时，优先调用统一入口：`python3 -m visualization.replay.cli <replay.json>`。默认生成临时 HTML launcher 并在当前标签页 POST 跳转到 viewer，不创建弹窗；无图形环境或只需要路径时使用 `--no-open`。

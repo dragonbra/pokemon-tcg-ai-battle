@@ -1,0 +1,130 @@
+{
+  "schema_version": "daily_deck_catalog_v1",
+  "directory": "mega_lucario_ex_solrock_001",
+  "deck_sha256": "5a1a6ac264ccfd017ae137a035205d769fe57512323d474c22be9107177e36a8",
+  "short_hash": "5a1a6ac264cc",
+  "archetype": "Mega Lucario ex / Solrock",
+  "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
+  "source_date": "2026-07-30",
+  "member_count": 1,
+  "best_rank": 94,
+  "best_score": 1024.7,
+  "aggregate_record": {
+    "wins": 48,
+    "losses": 31,
+    "draws": 0
+  },
+  "aggregate_effective_win_rate": 0.6075949367088608,
+  "members": [
+    {
+      "rank": 94,
+      "team_name": "Asa-sotta ",
+      "submission_id": 55069184,
+      "episode_id": 88835104,
+      "episode_create_time": "2026-07-29T17:00:00.067000+00:00",
+      "player_index": 0,
+      "leaderboard_score": 1024.7,
+      "archetype": "Mega Lucario ex / Solrock",
+      "wins": 48,
+      "losses": 31,
+      "draws": 0
+    }
+  ],
+  "cards": [
+    {
+      "card_id": 117,
+      "name": "Cornerstone Mask Ogerpon ex",
+      "count": 1
+    },
+    {
+      "card_id": 675,
+      "name": "Lunatone",
+      "count": 2
+    },
+    {
+      "card_id": 678,
+      "name": "Mega Lucario ex",
+      "count": 4
+    },
+    {
+      "card_id": 677,
+      "name": "Riolu",
+      "count": 4
+    },
+    {
+      "card_id": 676,
+      "name": "Solrock",
+      "count": 4
+    },
+    {
+      "card_id": 1182,
+      "name": "Boss’s Orders",
+      "count": 1
+    },
+    {
+      "card_id": 1192,
+      "name": "Carmine",
+      "count": 2
+    },
+    {
+      "card_id": 1102,
+      "name": "Dusk Ball",
+      "count": 4
+    },
+    {
+      "card_id": 1142,
+      "name": "Fighting Gong",
+      "count": 4
+    },
+    {
+      "card_id": 1252,
+      "name": "Gravity Mountain",
+      "count": 1
+    },
+    {
+      "card_id": 1159,
+      "name": "Hero’s Cape",
+      "count": 1
+    },
+    {
+      "card_id": 1227,
+      "name": "Lillie's Determination",
+      "count": 4
+    },
+    {
+      "card_id": 1152,
+      "name": "Poké Pad",
+      "count": 3
+    },
+    {
+      "card_id": 1141,
+      "name": "Premium Power Pro",
+      "count": 4
+    },
+    {
+      "card_id": 1123,
+      "name": "Switch",
+      "count": 3
+    },
+    {
+      "card_id": 1229,
+      "name": "Wally's Compassion",
+      "count": 3
+    },
+    {
+      "card_id": 1197,
+      "name": "Xerosic’s Machinations",
+      "count": 2
+    },
+    {
+      "card_id": 6,
+      "name": "Basic {F} Energy",
+      "count": 10
+    },
+    {
+      "card_id": 20,
+      "name": "Rock Fighting Energy",
+      "count": 3
+    }
+  ]
+}

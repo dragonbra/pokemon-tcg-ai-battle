@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import os
 from importlib import import_module
 from pathlib import Path
 import tempfile
@@ -47,6 +48,28 @@ class PackageBuilderTests(unittest.TestCase):
             manifest = json.loads((package / "manifest.json").read_text())
             self.assertEqual(manifest["source_id"], 0)
             self.assertEqual(manifest["training_updates"], 0)
+
+    def test_entrypoint_loads_without_file_like_kaggle(self) -> None:
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            BUILDER, "CANDIDATE_ROOT", Path(directory)
+        ):
+            package = BUILDER.build_candidate("marnie")
+            source = (package / "main.py").read_text(encoding="utf-8")
+            previous_cwd = Path.cwd()
+            try:
+                os.chdir(package)
+                namespace = {"__name__": "__kaggle_agent__"}
+                exec(compile(source, "<kaggle-agent>", "exec"), namespace)
+                self.assertEqual(len(namespace["read_deck_csv"]()), 60)
+            finally:
+                os.chdir(previous_cwd)
+
+    def test_all_package_templates_use_kaggle_safe_root_resolution(self) -> None:
+        for template in (BUILDER.PROJECT_ROOT / "package_main.py", BUILDER.RL_PACKAGE_MAIN):
+            source = template.read_text(encoding="utf-8")
+            self.assertIn("def _agent_directory()", source)
+            self.assertIn('Path("/kaggle_simulations/agent")', source)
+            self.assertNotIn("ROOT = Path(__file__)", source)
 
     def test_builds_region_bot_from_audited_kaggle_deck(self) -> None:
         with tempfile.TemporaryDirectory() as directory, patch.object(

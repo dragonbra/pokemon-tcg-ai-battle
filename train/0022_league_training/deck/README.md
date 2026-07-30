@@ -1,3 +1,10 @@
+# Daily Deck Catalog
+
+This catalog is generated from the frozen 2026-07-30 daily report. Each directory is one unique full `deck_sha256`; `deck.csv` contains exactly 60 engine Card IDs. Use `index.html` for readable card names, images, leaderboard evidence, and aggregate records.
+
+Regenerate with `python3 deck/build_catalog.py --report docs/environment-daily_kaggle_top100/daily/2026-07-30.html --output deck`.
+
+
 # League deck plugin staging
 
 One immediate child directory is one exact-deck plugin. The staging root may remain empty while

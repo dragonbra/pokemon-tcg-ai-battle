@@ -1,7 +1,17 @@
 {
+  "completed_at": 1785426674.3519156,
+  "deck_ood_greedy_exact": 0.7047339286646822,
   "device": "cuda",
+  "gpu_training_seconds": 44329.15615939302,
+  "greedy_exact": 0.7818783947656178,
+  "loss": 0.5668566993295021,
+  "minimum_gpu_training_seconds": 43200.0,
+  "optimizer_state_saved": true,
+  "resumable_training_state_saved": true,
+  "retained_checkpoint_bytes": 627926205,
   "started_at": 1785384975.3567824,
-  "state": "training",
+  "state": "completed",
+  "teacher_exact": 0.7818783947656178,
   "version": "V1_corrected_persona_free_r15",
   "wandb": {
     "entity": "dragon_bra",
@@ -9,8 +19,8 @@
     "project": "pokemon-tcg-policy-learning",
     "reason": null,
     "run_id": "0021_persona_free_universal_bc--v1_corrected_persona-8347486882",
-    "state": "active",
-    "sync_state": "active",
+    "state": "synced",
+    "sync_state": "synced",
     "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0021_persona_free_universal_bc--v1_corrected_persona-8347486882"
   },
   "wandb_expected_mode": "online"
