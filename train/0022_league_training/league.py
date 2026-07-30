@@ -83,6 +83,15 @@ def initialize_league_version(
     try:
         catalog_path = paths.artifact / "league_catalog.json"
         catalog_sha = write_catalog_snapshot(catalog_path, plugins)
+        frozen_anchors = {
+            plugin.deck_id: {
+                "decoder_ref": "foundation",
+                "deck_sha256": plugin.deck_sha256,
+                "materialized": False,
+            }
+            for plugin in plugins
+            if plugin.frozen_anchor
+        }
         checkpoints: dict[str, dict[str, object]] = {}
         deck_checkpoint_root = paths.checkpoints / "decks"
         for plugin in plugins:
@@ -136,9 +145,11 @@ def initialize_league_version(
                 "path": str(catalog_path.relative_to(REPOSITORY_ROOT)),
                 "sha256": catalog_sha,
                 "deck_count": len(plugins),
-                "frozen_count": sum(p.role is DeckRole.FROZEN for p in plugins),
+                "frozen_count": sum(p.frozen_anchor for p in plugins),
                 "live_count": sum(p.role is DeckRole.LIVE for p in plugins),
+                "focal_deck_ids": [p.deck_id for p in plugins if p.focal],
             },
+            "frozen_anchors": frozen_anchors,
             "checkpoints": checkpoints,
             "training": {
                 "encoder_frozen": True,
@@ -182,6 +193,18 @@ def audit_league_version(version_name: str) -> dict[str, object]:
         raise ValueError("League catalog snapshot SHA mismatch")
     raw_catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
     deck_by_id = {deck["deck_id"]: deck for deck in raw_catalog.get("decks", [])}
+    frozen_audits: dict[str, object] = {}
+    for deck_id, anchor in (config.get("frozen_anchors") or {}).items():
+        deck = deck_by_id.get(deck_id)
+        if deck is None:
+            raise ValueError(f"Frozen anchor deck is absent from catalog: {deck_id}")
+        if anchor != {
+            "decoder_ref": "foundation",
+            "deck_sha256": deck["deck_sha256"],
+            "materialized": False,
+        }:
+            raise ValueError(f"invalid Foundation Frozen anchor for {deck_id}")
+        frozen_audits[deck_id] = {"sentinel": "foundation"}
     audits: dict[str, object] = {}
     for deck_id, checkpoint in (config.get("checkpoints") or {}).items():
         deck = deck_by_id.get(deck_id)
@@ -196,6 +219,7 @@ def audit_league_version(version_name: str) -> dict[str, object]:
                     deck_id=deck_id,
                     display_name=deck["display_name"],
                     role=DeckRole(deck["role"]),
+                    frozen_anchor=bool(deck["frozen_anchor"]),
                     focal=deck["focal"],
                     decoder_ref=checkpoint["decoder_ref"],
                     decoder_sha256=checkpoint["decoder_sha256"],
@@ -229,6 +253,7 @@ def audit_league_version(version_name: str) -> dict[str, object]:
         "version": version_name,
         "foundation": identity.as_dict(),
         "catalog_sha256": catalog["sha256"],
+        "frozen_anchors": frozen_audits,
         "decks": audits,
         "valid": True,
     }

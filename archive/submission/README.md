@@ -7,6 +7,8 @@ historical archives:
 - `0011_alakazam_sota_reward_weighted_bc_v3_loss_best/` — source metadata retained, but its ignored `strategy/model.bin` and packaged `.tar.gz` were not present during cleanup, so this package is not currently runnable.
 - `0012_alakazam_sota_feature_engineering_v9_v1_exact_best/`
 - `0013_v5_m0_epoch14_loss_best/` - M0 epoch 14 validation-loss-best self-contained payload and local official-engine evaluation candidate.
+- `0022_frozen_festival_lead_dipplin_001/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Festival Lead / Dipplin 001 deck.
+- `0022_frozen_mega_kangaskhan_ex_crustle_004/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Mega Kangaskhan ex / Crustle 004 deck.
 
 Each package remains self-contained with `main.py`, `deck.csv`, and its own `cg/` runtime. They are
 not current training entry points. New trainable candidates belong in `evaluation/arena/candidates/`.

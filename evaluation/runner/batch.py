@@ -6,9 +6,9 @@ import os
 import subprocess
 import sys
 import tempfile
-import uuid
 import time
 import uuid
+from contextlib import contextmanager
 from collections.abc import Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
@@ -73,6 +73,9 @@ class BatchConfig:
     worker_timeout_seconds: float = 30.0
     workers: int = field(default_factory=default_worker_count)
     worker_cpu_threads: int | None = 1
+    candidate_inference_device: str | None = None
+    candidate_inference_batch_size: int = 32
+    candidate_inference_batch_wait_ms: float = 2.0
 
 
 @dataclass(frozen=True)
@@ -97,6 +100,10 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("workers must be at least one")
     if config.worker_cpu_threads is not None and config.worker_cpu_threads < 1:
         raise ValueError("worker_cpu_threads must be at least one")
+    if config.candidate_inference_batch_size < 1:
+        raise ValueError("candidate_inference_batch_size must be at least one")
+    if config.candidate_inference_batch_wait_ms < 0:
+        raise ValueError("candidate_inference_batch_wait_ms cannot be negative")
 
     run_id = f"run-{uuid.uuid4().hex}"
     explicit_report_path = config.report_path.resolve() if config.report_path else None
@@ -126,21 +133,24 @@ def run_batch(config: BatchConfig) -> BatchResult:
     try:
         jobs = _game_jobs(config, run_id, store)
         actual_workers = min(config.workers, len(jobs))
-        for request, trace_path, result in _run_workers(config, jobs, store.temp_root):
-            result, trace = _read_or_create_trace(request, result, trace_path)
-            context = GameContext(
-                game_id=result.game_id,
-                candidate_name=config.candidate.name,
-                opponent_name=request.opponent.name,
-                candidate_physical_index=result.candidate_physical_index,
-                candidate_first=result.candidate_first,
-            )
-            game_metrics = registry.analyze(_trace_for_metrics(trace, result), context)
-            for metric_id, metric in game_metrics.items():
-                metric_values[metric_id].append(metric)
-            trace["metric_refs"] = _metric_refs(game_metrics)
-            store.write_game_record(result, trace)
-            case_candidates.append(_case_candidate(result, game_metrics))
+        with _candidate_inference_server(config, store.temp_root) as inference_socket:
+            for request, trace_path, result in _run_workers(
+                config, jobs, store.temp_root, inference_socket
+            ):
+                result, trace = _read_or_create_trace(request, result, trace_path)
+                context = GameContext(
+                    game_id=result.game_id,
+                    candidate_name=config.candidate.name,
+                    opponent_name=request.opponent.name,
+                    candidate_physical_index=result.candidate_physical_index,
+                    candidate_first=result.candidate_first,
+                )
+                game_metrics = registry.analyze(_trace_for_metrics(trace, result), context)
+                for metric_id, metric in game_metrics.items():
+                    metric_values[metric_id].append(metric)
+                trace["metric_refs"] = _metric_refs(game_metrics)
+                store.write_game_record(result, trace)
+                case_candidates.append(_case_candidate(result, game_metrics))
 
         aggregate_metrics = registry.aggregate(metric_values)
         metric_results = {
@@ -375,10 +385,73 @@ def _game_jobs(
     return jobs
 
 
+def _candidate_socket_path() -> Path:
+    """Return a unique AF_UNIX path that stays below Linux's 108-byte sockaddr limit."""
+    return Path(tempfile.gettempdir()) / f"ptcg-eval-{uuid.uuid4().hex}.sock"
+
+
+@contextmanager
+def _candidate_inference_server(
+    config: BatchConfig,
+    temp_root: Path,
+) -> Iterator[Path | None]:
+    device = config.candidate_inference_device
+    if device is None:
+        yield None
+        return
+
+    del temp_root
+    socket_path = _candidate_socket_path()
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "evaluation.runner.inference_server",
+            "--candidate",
+            str(config.candidate.root),
+            "--socket",
+            str(socket_path),
+            "--device",
+            device,
+            "--batch-size",
+            str(config.candidate_inference_batch_size),
+            "--batch-wait-ms",
+            str(config.candidate_inference_batch_wait_ms),
+        ],
+        cwd=Path(__file__).resolve().parents[2],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    deadline = time.monotonic() + 60.0
+    try:
+        while not socket_path.exists():
+            if process.poll() is not None:
+                stderr = process.stderr.read().strip() if process.stderr else ""
+                raise RuntimeError(
+                    "candidate inference server failed to start"
+                    + (f": {stderr}" if stderr else "")
+                )
+            if time.monotonic() >= deadline:
+                raise RuntimeError("candidate inference server did not become ready in 60 seconds")
+            time.sleep(0.05)
+        yield socket_path
+    finally:
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+        socket_path.unlink(missing_ok=True)
+
+
 def _run_workers(
     config: BatchConfig,
     jobs: list[tuple[GameRequest, Path]],
     temp_root: Path,
+    inference_socket: Path | None = None,
 ) -> Iterator[tuple[GameRequest, Path, GameResult]]:
     if config.workers == 1:
         for request, trace_path in jobs:
@@ -388,6 +461,7 @@ def _run_workers(
                 temp_root,
                 config.worker_timeout_seconds,
                 config.worker_cpu_threads,
+                inference_socket,
             )
         return
 
@@ -400,6 +474,7 @@ def _run_workers(
                 temp_root,
                 config.worker_timeout_seconds,
                 config.worker_cpu_threads,
+                inference_socket,
             )
             for request, trace_path in jobs
         ]
@@ -413,6 +488,7 @@ def _run_worker(
     temp_root: Path,
     timeout_seconds: float,
     cpu_threads: int | None = None,
+    inference_socket: Path | None = None,
 ) -> GameResult:
     request_path = temp_root / f"{request.game_id}.request.json"
     result_path = temp_root / f"{request.game_id}.result.json"
@@ -426,6 +502,8 @@ def _run_worker(
     if environment.get("PYTHONPATH"):
         python_path.append(environment["PYTHONPATH"])
     environment["PYTHONPATH"] = os.pathsep.join(python_path)
+    if inference_socket is not None:
+        environment["EVALUATION_CANDIDATE_INFERENCE_SOCKET"] = str(inference_socket)
     if cpu_threads is not None:
         thread_count = str(cpu_threads)
         environment.update(
@@ -811,6 +889,20 @@ def _manifest(
         "workers": actual_workers,
         "requested_workers": config.workers,
         "worker_cpu_threads": config.worker_cpu_threads,
+        "candidate_inference": {
+            "mode": "shared_server" if config.candidate_inference_device else "in_worker",
+            "device": config.candidate_inference_device or "cpu",
+            "batch_size": (
+                config.candidate_inference_batch_size
+                if config.candidate_inference_device
+                else 1
+            ),
+            "batch_wait_ms": (
+                config.candidate_inference_batch_wait_ms
+                if config.candidate_inference_device
+                else 0.0
+            ),
+        },
         "swap_policy": "alternate_candidate_first",
         "plugins": list(metric_ids),
         "metric_profile": profile.manifest(),

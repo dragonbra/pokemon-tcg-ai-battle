@@ -33,20 +33,38 @@
 <main>
   <h1>0022 Frozen Baseline</h1>
   <p class="contract">
-    0019 Universal Winner BC Epoch 13 · neutral <code>source_id=0</code> · official engine ·
-    30 Arena opponents × 10 games · balanced first/second seat · 8 workers × 1 CPU thread
+    0019 Universal Winner BC Epoch 13 · official engine · 30 Arena opponents × 10 games ·
+    balanced first/second seat · 8 workers × 1 CPU thread. Policy and inference device are shown
+    per row; all rows use the same opponent and game contract.
   </p>
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>Exact deck</th><th>W-L-D</th><th>Win rate</th><th>First</th><th>Second</th><th>Errors</th><th>Report</th></tr>
+        <tr><th>Exact deck</th><th>Policy</th><th>Device</th><th>W-L-D</th><th>Win rate</th><th>First</th><th>Second</th><th>Errors</th><th>Report</th></tr>
       </thead>
       <tbody>
-        <tr><td>Mega Lucario ex / Solrock</td><td>163-137-0</td><td>54.33%</td><td>61.33%</td><td>47.33%</td><td>0</td><td><a href="mega_lucario_ex_solrock.html">open</a></td></tr>
-        <tr><td>Mega Lucario ex / Hariyama</td><td>135-165-0</td><td>45.00%</td><td>48.00%</td><td>42.00%</td><td>0</td><td><a href="mega_lucario_ex_hariyama.html">open</a></td></tr>
-        <tr><td>Mega Lopunny ex / Mega Froslass ex</td><td>150-150-0</td><td>50.00%</td><td>57.33%</td><td>42.67%</td><td>0</td><td><a href="mega_lopunny_ex_mega_froslass_ex_001.html">open</a></td></tr>
-        <tr><td>Festival Lead / Dipplin</td><td>230-70-0</td><td class="high">76.67%</td><td>75.33%</td><td>78.00%</td><td>0</td><td><a href="festival_lead_dipplin_001.html">open</a></td></tr>
-        <tr><td>N's Zoroark ex / N's Zekrom</td><td>71-229-0</td><td>23.67%</td><td>29.33%</td><td>18.00%</td><td>0</td><td><a href="ns_zoroark_ex_001.html">open</a></td></tr>
+        <tr><td>Alakazam / Dudunsparce 001</td><td>neutral zero-shot</td><td>CPU</td><td>219-81-0</td><td>73.00%</td><td>76.67%</td><td>69.33%</td><td>0</td><td><a href="imported_0020/V3_zero_shot_alakazam.html">open</a></td></tr>
+        <tr><td>Marnie's Grimmsnarl ex / Froslass 001</td><td>neutral zero-shot</td><td>CPU</td><td>240-60-0</td><td class="high">80.00%</td><td>84.67%</td><td>75.33%</td><td>0</td><td><a href="imported_0020/V4_zero_shot_marnie.html">open</a></td></tr>
+        <tr><td>Mega Lucario ex / Solrock 002</td><td>neutral zero-shot</td><td>CPU</td><td>163-137-0</td><td>54.33%</td><td>61.33%</td><td>47.33%</td><td>0</td><td><a href="imported_0020/V5_zero_shot_lucario.html">open</a></td></tr>
+        <tr><td>Mega Kangaskhan ex / Crustle 004</td><td>neutral zero-shot</td><td>CPU</td><td>215-85-0</td><td>71.67%</td><td>74.67%</td><td>68.67%</td><td>0</td><td><a href="imported_0020/V6_zero_shot_kangaskhan.html">open</a></td></tr>
+        <tr><td>Raging Bolt ex 001</td><td>neutral zero-shot</td><td>CPU</td><td>84-216-0</td><td>28.00%</td><td>26.67%</td><td>29.33%</td><td>0</td><td><a href="imported_0020/V8_zero_shot_region_bot.html">open</a></td></tr>
+        <tr><td>Raging Bolt ex 001</td><td>source98 persona POC</td><td>CPU</td><td>79-221-0</td><td>26.33%</td><td>25.33%</td><td>27.33%</td><td>0</td><td><a href="imported_0020/V10_raging_bolt_source98_persona_poc.html">open</a></td></tr>
+        <tr><td>Mega Lucario ex / Hariyama</td><td>neutral zero-shot</td><td>CPU</td><td>135-165-0</td><td>45.00%</td><td>48.00%</td><td>42.00%</td><td>0</td><td><a href="mega_lucario_ex_hariyama.html">open</a></td></tr>
+        <tr><td>Mega Lopunny ex / Mega Froslass ex</td><td>neutral zero-shot</td><td>CPU</td><td>150-150-0</td><td>50.00%</td><td>57.33%</td><td>42.67%</td><td>0</td><td><a href="mega_lopunny_ex_mega_froslass_ex_001.html">open</a></td></tr>
+        <tr><td>Festival Lead / Dipplin</td><td>neutral zero-shot</td><td>CPU</td><td>230-70-0</td><td>76.67%</td><td>75.33%</td><td>78.00%</td><td>0</td><td><a href="festival_lead_dipplin_001.html">open</a></td></tr>
+        <tr><td>N's Zoroark ex / N's Zekrom</td><td>neutral zero-shot</td><td>CPU</td><td>71-229-0</td><td>23.67%</td><td>29.33%</td><td>18.00%</td><td>0</td><td><a href="ns_zoroark_ex_001.html">open</a></td></tr>
+        <tr><td>Dragapult ex / Mega Froslass ex</td><td>neutral zero-shot</td><td>shared CUDA</td><td>113-187-0</td><td>37.67%</td><td>42.00%</td><td>33.33%</td><td>0</td><td><a href="dragapult_ex_mega_froslass_ex_001.html">open</a></td></tr>
+        <tr><td>Hydrapple ex / Meganium</td><td>neutral zero-shot</td><td>shared CUDA</td><td>121-179-0</td><td>40.33%</td><td>42.67%</td><td>38.00%</td><td>0</td><td><a href="hydrapple_ex_meganium_001.html">open</a></td></tr>
+        <tr><td>Arboliva ex / Meganium</td><td>neutral zero-shot</td><td>shared CUDA</td><td>120-180-0</td><td>40.00%</td><td>43.33%</td><td>36.67%</td><td>0</td><td><a href="arboliva_ex_meganium_001.html">open</a></td></tr>
+        <tr><td>Raging Bolt ex / Mega Kangaskhan ex 002</td><td>neutral zero-shot</td><td>shared CUDA</td><td>59-241-0</td><td>19.67%</td><td>20.67%</td><td>18.67%</td><td>0</td><td><a href="raging_bolt_ex_mega_kangaskhan_ex_002.html">open</a></td></tr>
+        <tr><td>Raging Bolt ex / Mega Kangaskhan ex 003</td><td>neutral zero-shot</td><td>shared CUDA</td><td>68-232-0</td><td>22.67%</td><td>24.00%</td><td>21.33%</td><td>0</td><td><a href="raging_bolt_ex_mega_kangaskhan_ex_003.html">open</a></td></tr>
+        <tr><td>Dragapult ex / Crushing Hammer</td><td>neutral zero-shot</td><td>shared CUDA</td><td>176-124-0</td><td>58.67%</td><td>63.33%</td><td>54.00%</td><td>0</td><td><a href="dragapult_ex_crushing_hammer_001.html">open</a></td></tr>
+        <tr><td>Dragapult ex / Dusknoir 002</td><td>neutral zero-shot</td><td>shared CUDA</td><td>123-177-0</td><td>41.00%</td><td>44.67%</td><td>37.33%</td><td>0</td><td><a href="dragapult_ex_dusknoir_002.html">open</a></td></tr>
+        <tr><td>Dragapult ex / Blaziken ex</td><td>neutral zero-shot</td><td>shared CUDA</td><td>144-156-0</td><td>48.00%</td><td>52.67%</td><td>43.33%</td><td>0</td><td><a href="dragapult_ex_blaziken_ex_001.html">open</a></td></tr>
+        <tr><td>Dragapult ex 001 - Limitless</td><td>neutral zero-shot</td><td>shared CUDA</td><td>172-128-0</td><td>57.33%</td><td>62.67%</td><td>52.00%</td><td>0</td><td><a href="dragapult_ex_001.html">open</a></td></tr>
+        <tr><td>Mega Kangaskhan ex / Crustle 008</td><td>neutral zero-shot</td><td>shared CUDA</td><td>214-86-0</td><td>71.33%</td><td>70.67%</td><td>72.00%</td><td>0</td><td><a href="mega_kangaskhan_ex_crustle_008.html">open</a></td></tr>
+        <tr><td>Festival Lead / Dipplin 003</td><td>neutral zero-shot</td><td>shared CUDA</td><td>169-131-0</td><td>56.33%</td><td>61.33%</td><td>51.33%</td><td>0</td><td><a href="festival_lead_dipplin_003.html">open</a></td></tr>
+        <tr><td>Dragapult ex / Dudunsparce 002</td><td>neutral zero-shot</td><td>shared CUDA</td><td>147-153-0</td><td>49.00%</td><td>51.33%</td><td>46.67%</td><td>0</td><td><a href="dragapult_ex_dunsparce_002.html">open</a></td></tr>
       </tbody>
     </table>
   </div>
@@ -55,20 +73,6 @@
     Zoroark cards. The baseline is therefore named from its exact card contents. Mega Lucario ex /
     Solrock reuses the 0020 report because its sorted 60-card multiset is identical.
   </p>
-  <h2>Exact-deck reports imported from 0020</h2>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>0022 deck</th><th>0020 report</th><th>Policy</th><th>Win rate</th><th>Report</th></tr></thead>
-      <tbody>
-        <tr><td>Alakazam / Dudunsparce 001</td><td>V3</td><td>neutral zero-shot</td><td>73.00%</td><td><a href="imported_0020/V3_zero_shot_alakazam.html">open</a></td></tr>
-        <tr><td>Marnie's Grimmsnarl ex / Froslass 001</td><td>V4</td><td>neutral zero-shot</td><td>80.00%</td><td><a href="imported_0020/V4_zero_shot_marnie.html">open</a></td></tr>
-        <tr><td>Mega Lucario ex / Solrock 002</td><td>V5</td><td>neutral zero-shot</td><td>54.33%</td><td><a href="imported_0020/V5_zero_shot_lucario.html">open</a></td></tr>
-        <tr><td>Mega Kangaskhan ex / Crustle 004</td><td>V6</td><td>neutral zero-shot</td><td>71.67%</td><td><a href="imported_0020/V6_zero_shot_kangaskhan.html">open</a></td></tr>
-        <tr><td>Raging Bolt ex 001</td><td>V8</td><td>neutral zero-shot</td><td>28.00%</td><td><a href="imported_0020/V8_zero_shot_region_bot.html">open</a></td></tr>
-        <tr><td>Raging Bolt ex 001</td><td>V10</td><td>source98 persona POC</td><td>26.33%</td><td><a href="imported_0020/V10_raging_bolt_source98_persona_poc.html">open</a></td></tr>
-      </tbody>
-    </table>
-  </div>
   <p class="note">
     V2, V11, V14, and V15 share one historical Dragapult deck that does not exactly match any
     current 0022 Dragapult list, so those reports were not copied.

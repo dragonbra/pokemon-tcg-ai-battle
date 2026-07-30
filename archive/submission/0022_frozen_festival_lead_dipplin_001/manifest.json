@@ -1,0 +1,13 @@
+{
+  "schema_version": "0022_frozen_submission_v1",
+  "candidate": "0022_frozen_festival_lead_dipplin_001",
+  "deck_source": "train/0022_league_training/deck/festival_lead_dipplin_001",
+  "deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+  "foundation_version": "0019_universal_winner_bc_epoch_13",
+  "checkpoint_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "source_id": 0,
+  "training_updates": 0,
+  "frozen_baseline_report": "experiments/0022_league_training/frozen_baseline/festival_lead_dipplin_001.html",
+  "frozen_baseline_record": "230-70-0",
+  "frozen_baseline_win_rate": 0.7666666666666667
+}

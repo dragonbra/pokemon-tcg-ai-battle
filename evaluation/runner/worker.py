@@ -7,6 +7,7 @@ import os
 import sys
 from contextlib import contextmanager
 from dataclasses import asdict
+from multiprocessing.connection import Client
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -134,6 +135,20 @@ def _isolated_agent(
     return call
 
 
+def _remote_candidate_agent(socket_path: str):
+    connection = Client(socket_path, family="AF_UNIX")
+
+    def call(observation: dict[str, Any]) -> Any:
+        connection.send({"observation": observation})
+        response = connection.recv()
+        if not isinstance(response, dict) or not response.get("ok"):
+            detail = response.get("error") if isinstance(response, dict) else response
+            raise RuntimeError(f"shared candidate inference failed: {detail}")
+        return response.get("action")
+
+    return call
+
+
 def _load_game_api_with_runtime(runtime_root: Path) -> object:
     """加载 cg.game，并让 cg 包在整个 worker 对局期间保持可导入。"""
     cg_root = (runtime_root / "cg").resolve()
@@ -164,11 +179,21 @@ def _load_agents(request: GameRequest) -> tuple[Any, Any]:
     game_module = _load_game_api_with_runtime(request.candidate.root)
     candidate_exclusions = (request.opponent.root,)
     opponent_exclusions = (request.candidate.root,)
-    candidate_module = _load_agent_module(
-        request.candidate,
-        "candidate",
-        candidate_exclusions,
-    )
+    inference_socket = os.environ.get("EVALUATION_CANDIDATE_INFERENCE_SOCKET")
+    candidate_agent = None
+    if inference_socket:
+        candidate_agent = _remote_candidate_agent(inference_socket)
+    else:
+        candidate_module = _load_agent_module(
+            request.candidate,
+            "candidate",
+            candidate_exclusions,
+        )
+        candidate_agent = _isolated_agent(
+            request.candidate,
+            candidate_module.agent,
+            candidate_exclusions,
+        )
     opponent_module = _load_agent_module(
         request.opponent,
         "opponent",
@@ -176,7 +201,7 @@ def _load_agents(request: GameRequest) -> tuple[Any, Any]:
     )
     return (
         game_module,
-        _isolated_agent(request.candidate, candidate_module.agent, candidate_exclusions),
+        candidate_agent,
         _isolated_agent(request.opponent, opponent_module.agent, opponent_exclusions),
     )
 

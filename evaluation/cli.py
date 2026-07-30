@@ -360,6 +360,23 @@ def _parser() -> argparse.ArgumentParser:
         help="限制每个 worker 的 OMP/MKL CPU 线程数",
     )
     run.add_argument(
+        "--candidate-device",
+        default=None,
+        help="在共享推理服务中常驻 candidate，例如 cuda:0；默认仍在各 worker 的 CPU 推理",
+    )
+    run.add_argument(
+        "--candidate-batch-size",
+        type=int,
+        default=32,
+        help="共享 candidate 推理服务的最大 batch size",
+    )
+    run.add_argument(
+        "--candidate-batch-wait-ms",
+        type=float,
+        default=2.0,
+        help="共享 candidate 推理服务聚合并发请求的最长等待毫秒数",
+    )
+    run.add_argument(
         "--metric-profile",
         choices=available_metric_profiles(),
         default="core",
@@ -384,6 +401,9 @@ def _run(args: argparse.Namespace) -> str:
         _validate_positive(args.workers, "--workers")
     if args.worker_cpu_threads is not None:
         _validate_positive(args.worker_cpu_threads, "--worker-cpu-threads")
+    _validate_positive(args.candidate_batch_size, "--candidate-batch-size")
+    if args.candidate_batch_wait_ms < 0:
+        raise ValueError("--candidate-batch-wait-ms cannot be negative")
 
     candidate = load_submission_package(args.candidate, official_card_ids)
     control = (
@@ -421,6 +441,9 @@ def _run(args: argparse.Namespace) -> str:
             keep_temp=args.keep_temp,
             workers=args.workers if args.workers is not None else default_worker_count(),
             worker_cpu_threads=args.worker_cpu_threads,
+            candidate_inference_device=args.candidate_device,
+            candidate_inference_batch_size=args.candidate_batch_size,
+            candidate_inference_batch_wait_ms=args.candidate_batch_wait_ms,
         )
     )
     return result.run_id

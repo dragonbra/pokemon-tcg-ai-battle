@@ -361,12 +361,76 @@
   ],
   "external_references": [
     {
-      "directory": "dragapult_ex_limitless",
+      "directory": "arboliva_ex_meganium_001",
+      "deck_sha256": "b334db5c427bbf154d43900e06f05da176938b28cc8caa474d2ae36a7265b11b",
+      "short_hash": "b334db5c427b",
+      "archetype": "Arboliva ex / Meganium / Teal Mask Ogerpon ex",
+      "catalog_label": "Arboliva ex / Meganium / Teal Mask Ogerpon ex - External 01",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "dragapult_ex_001",
       "deck_sha256": "6f784c7049ab4a4cfbc012c5bee8cc040d1030d54b4e572e4a4a9f35d0f6ea81",
       "short_hash": "6f784c7049ab",
       "archetype": "Dragapult ex",
       "catalog_label": "Dragapult ex - Limitless",
       "source_kind": "limitless_human_tournament"
+    },
+    {
+      "directory": "dragapult_ex_blaziken_ex_001",
+      "deck_sha256": "0a78adbfd08f99ec83b3d7c10043e06c3c349a5d9708e44df41275f169b0b9fc",
+      "short_hash": "0a78adbfd08f",
+      "archetype": "Dragapult ex / Blaziken ex",
+      "catalog_label": "Dragapult ex / Blaziken ex - External 01",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "dragapult_ex_crushing_hammer_001",
+      "deck_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+      "short_hash": "7bdb3bb18300",
+      "archetype": "Dragapult ex / Crushing Hammer",
+      "catalog_label": "Dragapult ex / Crushing Hammer - External 01",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "dragapult_ex_dunsparce_002",
+      "deck_sha256": "c49e78d7cb256803274aa87d2d783b17ca5e4a64bea41cbe616dfced953579b1",
+      "short_hash": "c49e78d7cb25",
+      "archetype": "Dragapult ex / Dudunsparce",
+      "catalog_label": "Dragapult ex / Dudunsparce - External 02",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "dragapult_ex_dusknoir_002",
+      "deck_sha256": "1b8e9548e4b69cad198801fc244290d96873517a390cb357dc3689a01c194cc3",
+      "short_hash": "1b8e9548e4b6",
+      "archetype": "Dragapult ex / Dusknoir",
+      "catalog_label": "Dragapult ex / Dusknoir - External 02",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "dragapult_ex_mega_froslass_ex_001",
+      "deck_sha256": "d3d18fe9f0fea53376b4ff54889dc6e58402f5b3b3bd5e542e9ddbb3c8fa08be",
+      "short_hash": "d3d18fe9f0fe",
+      "archetype": "Dragapult ex / Mega Froslass ex",
+      "catalog_label": "Dragapult ex / Mega Froslass ex - External 01",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "festival_lead_dipplin_003",
+      "deck_sha256": "5adce4b9b664bbee40748fd146283877db16189ee0baf8dce0ab8d5ab44e2302",
+      "short_hash": "5adce4b9b664",
+      "archetype": "Festival Lead / Dipplin",
+      "catalog_label": "Festival Lead / Dipplin - External 03",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "hydrapple_ex_meganium_001",
+      "deck_sha256": "9cf402085661342b7b73a5c502ce7d807d061f1d5117b8e59690b4637b98ea6c",
+      "short_hash": "9cf402085661",
+      "archetype": "Hydrapple ex / Meganium / Teal Mask Ogerpon ex",
+      "catalog_label": "Hydrapple ex / Meganium / Teal Mask Ogerpon ex - External 01",
+      "source_kind": "user_provided_exact_deck"
     },
     {
       "directory": "ionos_bellibolt_ex_kilowattrel_01",
@@ -375,6 +439,22 @@
       "archetype": "Iono's Bellibolt ex / Kilowattrel",
       "catalog_label": "Iono's Bellibolt ex / Kilowattrel - Arena 01",
       "source_kind": "official_arena_opponent"
+    },
+    {
+      "directory": "marnies_grimmsnarl_ex_froslass_limitless",
+      "deck_sha256": "c39e7d9e07202667c417d8728469b8449dc8b1cbaff95617f9bad6c5d07a9605",
+      "short_hash": "c39e7d9e0720",
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "catalog_label": "Marnie's Grimmsnarl ex / Froslass - Limitless",
+      "source_kind": "limitless_exact_deck"
+    },
+    {
+      "directory": "mega_kangaskhan_ex_crustle_008",
+      "deck_sha256": "c81ed99fdb4b3b6a36968586bed9208273e93123f4344f46decd3ad6783dc6fb",
+      "short_hash": "c81ed99fdb4b",
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "catalog_label": "Mega Kangaskhan ex / Crustle - External 08",
+      "source_kind": "user_provided_exact_deck"
     },
     {
       "directory": "mega_lucario_ex_solrock_002",
@@ -390,6 +470,22 @@
       "short_hash": "88c48ab1fd0b",
       "archetype": "N's Zoroark ex / N's Zekrom",
       "catalog_label": "N's Zoroark ex / N's Zekrom - External 01",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "raging_bolt_ex_mega_kangaskhan_ex_002",
+      "deck_sha256": "02d02fb28d5f445d6e1295dcb2b0c4e4e2b5c05c75db108749f69af8deb9ce51",
+      "short_hash": "02d02fb28d5f",
+      "archetype": "Raging Bolt ex / Mega Kangaskhan ex",
+      "catalog_label": "Raging Bolt ex / Mega Kangaskhan ex - External 02",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
+      "directory": "raging_bolt_ex_mega_kangaskhan_ex_003",
+      "deck_sha256": "cb094a756dc32dfe8450372a44e3ff0e4c9cc71658217d0cecd0bc327680f351",
+      "short_hash": "cb094a756dc3",
+      "archetype": "Raging Bolt ex / Mega Kangaskhan ex",
+      "catalog_label": "Raging Bolt ex / Mega Kangaskhan ex - External 03",
       "source_kind": "user_provided_exact_deck"
     }
   ]

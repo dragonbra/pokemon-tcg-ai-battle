@@ -27,6 +27,7 @@ class DeckPlugin:
     deck_id: str
     display_name: str
     role: DeckRole
+    frozen_anchor: bool
     focal: bool
     decoder_ref: str
     decoder_sha256: str | None
@@ -76,7 +77,7 @@ def _read_deck(path: Path) -> tuple[tuple[int, ...], str]:
         cards.append(card_id)
     if len(cards) != 60:
         raise ValueError(f"deck.csv must contain exactly 60 card IDs, got {len(cards)}")
-    canonical = "".join(f"{card_id}\n" for card_id in cards).encode("ascii")
+    canonical = ",".join(str(card_id) for card_id in sorted(cards)).encode("ascii")
     return tuple(cards), _sha256_bytes(canonical)
 
 
@@ -87,16 +88,71 @@ def _require_text(mapping: dict[str, Any], key: str) -> str:
     return value.strip()
 
 
-def _load_plugin(root: Path) -> DeckPlugin:
+def _catalog_fields(
+    root: Path, manifest: dict[str, Any], deck_sha: str
+) -> tuple[str, str, DeckRole, bool, bool, str, str | None, dict[str, str]]:
+    schema = manifest.get("schema_version")
+    deck_id = root.name
+    if manifest.get("directory") != deck_id:
+        raise ValueError(f"deck directory {deck_id} does not match manifest directory")
+    declared_hash = _require_text(manifest, "deck_sha256")
+    if declared_hash != deck_sha:
+        raise ValueError(
+            f"declared deck SHA mismatch for {deck_id}: {declared_hash} != {deck_sha}"
+        )
+    if schema == "daily_deck_catalog_v1":
+        display_name = _require_text(manifest, "archetype")
+        provenance = {
+            "source": _require_text(manifest, "source_report"),
+            "evidence": (
+                f"2026-07-30 Kaggle Top 100 exact deck; "
+                f"best rank {manifest.get('best_rank')}; members {manifest.get('member_count')}"
+            ),
+            "captured_at": _require_text(manifest, "source_date"),
+        }
+    elif schema == "external_deck_reference_v1":
+        display_name = str(manifest.get("catalog_label") or manifest.get("archetype") or "").strip()
+        if not display_name:
+            raise ValueError("external deck manifest has no display label")
+        source = str(
+            manifest.get("source_url")
+            or manifest.get("source_path")
+            or manifest.get("source_snapshot")
+            or manifest.get("source_kind")
+            or ""
+        ).strip()
+        if not source:
+            raise ValueError("external deck manifest has no provenance source")
+        provenance = {
+            "source": source,
+            "evidence": str(
+                manifest.get("classification_note")
+                or manifest.get("usage_note")
+                or manifest.get("source_label")
+                or manifest.get("source_kind")
+            ),
+            "captured_at": str(manifest.get("source_date") or "2026-07-31"),
+        }
+    else:
+        raise ValueError(f"unsupported curated deck schema: {schema}")
+    return (
+        deck_id,
+        display_name,
+        DeckRole.LIVE,
+        True,
+        deck_id == "dragapult_ex_001",
+        "foundation",
+        None,
+        provenance,
+    )
+
+
+def _native_fields(
+    root: Path, manifest: dict[str, Any]
+) -> tuple[str, str, DeckRole, bool, bool, str, str | None, dict[str, str]]:
     unknown = {path.name for path in root.iterdir()} - ALLOWED_FILES
     if unknown:
         raise ValueError(f"unknown files in deck plugin {root.name}: {sorted(unknown)}")
-    try:
-        manifest: dict[str, Any] = json.loads(
-            (root / "manifest.json").read_text(encoding="utf-8")
-        )
-    except (OSError, json.JSONDecodeError) as error:
-        raise ValueError(f"unreadable deck manifest: {root / 'manifest.json'}") from error
     allowed_fields = {
         "schema_version", "deck_id", "display_name", "role", "focal",
         "decoder_ref", "decoder_sha256", "provenance",
@@ -137,14 +193,51 @@ def _load_plugin(root: Path) -> DeckPlugin:
     if set(raw_provenance) != required_provenance:
         raise ValueError(f"provenance fields must be {sorted(required_provenance)}")
     provenance = {key: _require_text(raw_provenance, key) for key in sorted(raw_provenance)}
+    return (
+        deck_id,
+        _require_text(manifest, "display_name"),
+        role,
+        True,
+        focal,
+        decoder_ref,
+        decoder_sha,
+        provenance,
+    )
+
+
+def _load_plugin(root: Path) -> DeckPlugin:
+    unknown = {path.name for path in root.iterdir()} - ALLOWED_FILES
+    if unknown:
+        raise ValueError(f"unknown files in deck plugin {root.name}: {sorted(unknown)}")
+    try:
+        manifest: dict[str, Any] = json.loads(
+            (root / "manifest.json").read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"unreadable deck manifest: {root / 'manifest.json'}") from error
     deck, deck_sha = _read_deck(root / "deck.csv")
+    if manifest.get("schema_version") == PLUGIN_SCHEMA:
+        fields = _native_fields(root, manifest)
+    else:
+        fields = _catalog_fields(root, manifest, deck_sha)
+    (
+        deck_id,
+        display_name,
+        role,
+        frozen_anchor,
+        focal,
+        decoder_ref,
+        decoder_sha,
+        provenance,
+    ) = fields
     identity = dict(manifest)
     identity["deck_sha256"] = deck_sha
     plugin_sha = _sha256_bytes(_canonical_json(identity))
     return DeckPlugin(
         deck_id=deck_id,
-        display_name=_require_text(manifest, "display_name"),
+        display_name=display_name,
         role=role,
+        frozen_anchor=frozen_anchor,
         focal=focal,
         decoder_ref=decoder_ref,
         decoder_sha256=decoder_sha,
@@ -160,7 +253,9 @@ def load_deck_plugins(root: Path) -> tuple[DeckPlugin, ...]:
     """Load all immediate plugin directories in deterministic ID order."""
     if not root.is_dir():
         raise ValueError(f"deck staging directory does not exist: {root}")
-    allowed_root_files = {"README.md", ".gitkeep"}
+    allowed_root_files = {
+        "README.md", ".gitkeep", "build_catalog.py", "index.html", "manifest.json"
+    }
     stray_files = [
         path.name
         for path in root.iterdir()
@@ -168,7 +263,12 @@ def load_deck_plugins(root: Path) -> tuple[DeckPlugin, ...]:
     ]
     if stray_files:
         raise ValueError(f"unknown files in deck staging root: {sorted(stray_files)}")
-    plugins = tuple(_load_plugin(path) for path in sorted(root.iterdir()) if path.is_dir())
+    plugin_roots = [
+        path
+        for path in sorted(root.iterdir())
+        if path.is_dir() and path.name != "__pycache__"
+    ]
+    plugins = tuple(_load_plugin(path) for path in plugin_roots)
     ids = [plugin.deck_id for plugin in plugins]
     hashes = [plugin.deck_sha256 for plugin in plugins]
     if len(ids) != len(set(ids)):

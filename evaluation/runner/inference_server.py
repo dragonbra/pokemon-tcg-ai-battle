@@ -8,7 +8,6 @@ The official engine remains in the client worker process.
 from __future__ import annotations
 
 import argparse
-import copy
 import importlib.util
 import queue
 import sys
@@ -40,20 +39,24 @@ class PolicyServer:
         sys.modules[spec.name] = module
         spec.loader.exec_module(module)
         self._agent = module.agent
-        self._policy = getattr(module, "_POLICY", None)
+        self._policy = getattr(module, "POLICY", getattr(module, "_POLICY", None))
         if self._policy is None:
-            raise RuntimeError("candidate must expose a _POLICY for session history isolation")
+            raise RuntimeError("candidate must expose POLICY for shared inference")
         import torch
-        from strategy.features import encode_observation
+        from strategy.inference import legal_fallback
+        from strategy.online_runtime import OnlineCausalEncoder
 
         self._policy.model = self._policy.model.to(device).eval()
-        self._policy.device = torch.device(device)
+        self._device = torch.device(device)
+        if self._device.type == "cuda" and not torch.cuda.is_available():
+            raise RuntimeError(f"CUDA device requested but unavailable: {device}")
         self._torch = torch
-        self._encode_observation = encode_observation
+        self._encoder_type = OnlineCausalEncoder
+        self._legal_fallback = legal_fallback
         self._batch_size = batch_size
         self._batch_wait_seconds = batch_wait_ms / 1000.0
         self._requests: queue.Queue[_InferenceRequest] = queue.Queue()
-        self._histories: dict[str, list[dict[str, int]]] = {}
+        self._encoders: dict[str, Any] = {}
         self._thread = threading.Thread(target=self._dispatch, daemon=True)
         self._thread.start()
 
@@ -66,7 +69,7 @@ class PolicyServer:
         return request.action
 
     def close_session(self, session_id: str) -> None:
-        self._histories.pop(session_id, None)
+        self._encoders.pop(session_id, None)
 
     def _dispatch(self) -> None:
         while True:
@@ -94,87 +97,88 @@ class PolicyServer:
         ]
         for request in requests:
             if request not in model_requests:
-                self._policy.history = []
                 request.action = self._agent(request.observation)
-                self._histories[request.session_id] = []
+                self._encoders.pop(request.session_id, None)
                 request.ready.set()
         if not model_requests:
             return
 
-        encoded = []
+        encoded: list[dict[str, Any]] = []
+        active_requests: list[_InferenceRequest] = []
         for request in model_requests:
-            observation = copy.deepcopy(request.observation)
-            observation["rl_history"] = list(self._histories.get(request.session_id, []))
-            observation["rl_deck"] = list(self._policy.deck)
-            observation["rl_expert_id"] = self._policy.expert_id
-            observation["rl_card_metadata"] = self._policy.card_metadata
-            encoded.append(self._encode_observation(observation, self._policy.feature_config))
-        dtypes = {
-            "state_numeric": self._torch.float32,
-            "state_card_ids": self._torch.long,
-            "action_type_ids": self._torch.long,
-            "action_card_ids": self._torch.long,
-            "action_target_ids": self._torch.long,
-            "action_numeric": self._torch.float32,
-            "action_mask": self._torch.bool,
-            "deck_card_ids": self._torch.long,
-            "deck_card_numeric": self._torch.float32,
-            "entity_card_ids": self._torch.long,
-            "entity_numeric": self._torch.float32,
-            "history_card_ids": self._torch.long,
-            "history_numeric": self._torch.float32,
-            "expert_ids": self._torch.long,
-        }
-        batch = {
-            key: self._torch.tensor([item[key] for item in encoded], dtype=dtype).to(
-                self._policy.device
+            observation = request.observation
+            current = observation.get("current") or {}
+            actor = current.get("yourIndex")
+            select = observation.get("select") or {}
+            options = select.get("option") or []
+            minimum = select.get("minCount", 0)
+            if actor not in (0, 1) or len(options) > self._policy.config.max_options or (
+                isinstance(minimum, int)
+                and not isinstance(minimum, bool)
+                and minimum > self._policy.config.max_action_steps
+            ):
+                request.action = self._legal_fallback(observation)
+                request.ready.set()
+                continue
+            encoder = self._encoders.get(request.session_id)
+            if encoder is None or encoder.actor != actor:
+                encoder = self._encoder_type(actor, self._policy.deck, self._policy.config)
+                self._encoders[request.session_id] = encoder
+            try:
+                row = encoder.encode(observation)
+            except (IndexError, RuntimeError, ValueError):
+                self._encoders.pop(request.session_id, None)
+                request.action = self._legal_fallback(observation)
+                request.ready.set()
+                continue
+            row["source_id"] = self._torch.zeros(1, dtype=self._torch.long)
+            encoded.append(row)
+            active_requests.append(request)
+        if not encoded:
+            return
+
+        batch = _stack_batches(self._torch, encoded, self._device)
+        with self._torch.inference_mode():
+            result = self._policy.model.deterministic_action_tensors(batch)
+        sequences = result.sequences.cpu().tolist()
+        lengths = result.lengths.cpu().tolist()
+        legal = result.legal.cpu().tolist()
+        for index, request in enumerate(active_requests):
+            request.action = (
+                [int(value) for value in sequences[index][: lengths[index]]]
+                if legal[index]
+                else self._legal_fallback(request.observation)
             )
-            for key, dtype in dtypes.items()
-            if key in encoded[0]
-        }
-        with self._torch.no_grad():
-            _, logits, count_logits = self._policy.model.forward_with_count(**batch)
-        for index, request in enumerate(model_requests):
-            select = request.observation["select"]
-            minimum = max(0, _int(select.get("minCount"), 0))
-            maximum = min(
-                self._policy.model.max_selection_count,
-                _int(select.get("maxCount"), minimum),
-            )
-            count_mask = self._torch.zeros_like(count_logits[index], dtype=self._torch.bool)
-            count_mask[minimum : maximum + 1] = True
-            masked_counts = count_logits[index].masked_fill(
-                ~count_mask,
-                self._torch.finfo(count_logits.dtype).min,
-            )
-            count = int(masked_counts.argmax())
-            count = min(count, sum(encoded[index]["action_mask"]))
-            action = (
-                sorted(
-                    int(value)
-                    for value in self._torch.topk(logits[index], k=count).indices.tolist()
-                )
-                if count
-                else []
-            )
-            is_main_selection = (
-                _int(select.get("type")) == 0 and _int(select.get("context")) == 0
-            )
-            if is_main_selection and len(action) == 1:
-                options = select.get("option") or []
-                if 0 <= action[0] < len(options) and isinstance(options[action[0]], dict):
-                    option = options[action[0]]
-                    history = self._histories.setdefault(request.session_id, [])
-                    history.append(
-                        {
-                            "type": _int(option.get("type"), 0),
-                            "cardId": _int(option.get("cardId"), 0),
-                            "attackId": _int(option.get("attackId"), 0),
-                        }
-                    )
-                    del history[:-32]
-            request.action = action
             request.ready.set()
+
+
+def _stack_batches(torch: Any, rows: list[dict[str, Any]], device: Any) -> dict[str, Any]:
+    """Pad one-observation online batches and move one combined batch to the device."""
+    if not rows:
+        raise ValueError("cannot stack an empty inference batch")
+    keys = set(rows[0])
+    if any(set(row) != keys for row in rows[1:]):
+        raise ValueError("online inference rows have different tensor fields")
+    batch: dict[str, Any] = {}
+    for key in sorted(keys):
+        tensors = [row[key] for row in rows]
+        dimensions = tensors[0].ndim
+        if any(tensor.size(0) != 1 or tensor.ndim != dimensions for tensor in tensors):
+            raise ValueError(f"{key} is not a compatible one-observation tensor")
+        target_shape = [len(tensors)] + [
+            max(tensor.size(axis) for tensor in tensors)
+            for axis in range(1, dimensions)
+        ]
+        combined = torch.full(
+            target_shape,
+            -100 if key == "targets" else 0,
+            dtype=tensors[0].dtype,
+        )
+        for index, tensor in enumerate(tensors):
+            slices = (index, *(slice(0, tensor.size(axis)) for axis in range(1, dimensions)))
+            combined[slices] = tensor[0]
+        batch[key] = combined.to(device, non_blocking=device.type == "cuda")
+    return batch
 
 
 @dataclass
@@ -184,13 +188,6 @@ class _InferenceRequest:
     action: Any = None
     error: BaseException | None = None
     ready: threading.Event = field(default_factory=threading.Event)
-
-
-def _int(value: Any, default: int = -1) -> int:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def serve(
