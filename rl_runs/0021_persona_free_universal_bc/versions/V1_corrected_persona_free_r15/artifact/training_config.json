@@ -1,0 +1,91 @@
+{
+  "amp_dtype": "bfloat16",
+  "batch_size": 512,
+  "checkpoint_candidates": [
+    "best_validation_loss",
+    "best_teacher_exact",
+    "best_greedy_exact",
+    "best_deck_ood_greedy_exact",
+    "latest"
+  ],
+  "checkpoint_max_retained": 8,
+  "checkpoint_optimizer_state": true,
+  "checkpoint_payload": "exact_epoch_boundary_resume_state",
+  "checkpoint_resume_boundary": "completed_epoch",
+  "checkpoint_rng_state": [
+    "python",
+    "numpy",
+    "torch_cpu",
+    "torch_cuda"
+  ],
+  "dataset_content_sha256": "23073583eafff7f4ddb1f1c13ef592b006a41d3dac4667d0dc6dbe34a829688a",
+  "dataset_counts": {
+    "train": 6292898,
+    "validation_deck_ood": 382980,
+    "validation_iid": 671254
+  },
+  "dataset_path": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0021_persona_free_universal_bc/dataset/V1_corrected_model_ready",
+  "decision_balanced_sequence_loss": true,
+  "early_stopping_metric": "bc/validation_iid/loss",
+  "early_stopping_min_delta": 0.001,
+  "early_stopping_patience": 5,
+  "epochs": 100,
+  "feature_compiler_sha256": "b4095d1e9a090243d31ea1fa23b598f672e1cb7e72394e0ec058f80bd178ef8c",
+  "feature_switches": {
+    "card_capability": true,
+    "event_memory": true,
+    "goal_qkv": true,
+    "own_resource_ledger": true,
+    "public_zone_inventory": true,
+    "registered_deck": true,
+    "relation_graph": true
+  },
+  "grad_scaler": false,
+  "learning_rate": 0.0003,
+  "minimum_gpu_training_hours": 12.0,
+  "minimum_gpu_training_seconds": 43200.0,
+  "model": {
+    "ac": {
+      "auxiliary_ffn_multiplier": 2,
+      "base": {
+        "d_model": 320,
+        "dropout": 0.1,
+        "encoder_layers": 4,
+        "ffn_multiplier": 3,
+        "heads": 8,
+        "max_action_steps": 64,
+        "max_card_id": 2048,
+        "max_entities": 192,
+        "max_options": 128
+      },
+      "event_layers": 1,
+      "goal_roles": 4
+    },
+    "option_initial_scale": 0.35,
+    "scale_gate_ffn_multiplier": 2,
+    "scenario_ffn_multiplier": 3,
+    "scenario_layers": 2
+  },
+  "model_config_sha256": "a27289955a540638a9cea829325e652a30893fb89ca0ae1cb66f89139a663f58",
+  "ontology_file_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+  "option_permutation_equivariance": true,
+  "parameter_count": 17346562,
+  "project_id": "0021_persona_free_universal_bc",
+  "schema_version": "0021_corrected_persona_free_training_v1",
+  "seed": 20260723,
+  "termination_aware_stop_objective": true,
+  "train_greedy_decode": false,
+  "train_static_evaluation": false,
+  "training_config_sha256": "67b5d9fc9c925ec8578fee2a0f6edd0491c43e4e62749f783aa624e626d78d21",
+  "validation_batch_size": 512,
+  "version": "V1_corrected_persona_free_r15",
+  "wandb": {
+    "entity": "dragon_bra",
+    "group": "0021_persona_free_universal_bc",
+    "job_type": "bc",
+    "mode": "online",
+    "name": "0021 \u00b7 persona_free_universal_bc \u00b7 V1_corrected_persona_free_r15",
+    "project": "pokemon-tcg-policy-learning"
+  },
+  "weight_decay": 0.02
+}

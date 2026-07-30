@@ -155,6 +155,119 @@ mismatch: this snapshot has no executable that can represent and start an
 arbitrary Arena battle. Setup is usable as a tested primitive; complete rollout
 collection is not.
 
+### Arena-only policy-placement A/B (not an RL engine benchmark)
+
+This experiment was initially run as a throughput proxy, but it does not match
+the project's RL topology and must not be used to estimate engine acceleration.
+It moved an Arena package's batch-one inference from CPU to independent CUDA
+contexts; it did not keep one centralized GPU learner or replace any official
+engine work.
+
+A separate throughput test kept the official CPU battle runtime, the exact
+Alakazam and Dragapult decks, 100 games, eight game workers, one CPU thread per
+worker, and the same Alakazam checkpoint. The only operational change was the
+Alakazam policy device: packaged CPU inference versus CUDA inference on the RTX
+5080. The Dragapult opponent remained on CPU in both arms.
+
+| Mode | Completed | Errors | Selections | Wall time | Games/s | Selections/s |
+|---|---:|---:|---:|---:|---:|---:|
+| official engine + CPU candidate policy | 100/100 | 0 | 13,933 | 82.714 s | 1.209 | 168.449 |
+| official engine + CUDA candidate policy | 100/100 | 0 | 13,738 | 112.803 s | 0.887 | 121.788 |
+
+The naive CUDA-policy arm was 26.7% lower in games/s and took 36.4% more wall
+time. The evaluation runner intentionally isolates every game in its own
+process, so this arm created independent CUDA contexts and performed batch-one
+inference with per-decision CPU-to-device tensor movement. It did not use the
+prototype's centralized policy pool or device codec because neither is wired
+to the Arena runtime or compatible with the current 0020 model contract.
+
+The two runs were not seeded paired replays, so their identical 95-5 outcome is
+not parity evidence. Throughput is compared using completed games and
+selection-normalized rates; both arms completed without errors. Reports:
+
+- CPU: `.tmp/evaluation/0020_hybrid_throughput_cpu/run-289b8115e46d447bbfe4bc8492569776/report.html`
+- CUDA policy: `.tmp/evaluation/0020_hybrid_throughput_gpu/run-0904d5428f5046c9a914c671e19bd5e9/report.html`
+
+This result does not show that GPU inference is intrinsically slower. It shows
+that the currently runnable composition is the wrong execution topology. A
+credible hybrid speedup requires one resident batched GPU policy service (or an
+equivalent centralized router), persistent official-engine environments, and
+amortized transfers across many simultaneous decisions.
+
+### Real RL-topology baseline
+
+The corrected benchmark used the current 0020 rollout collector: one centralized
+Dragapult learner on CUDA, 16 official-engine worker processes, CPU opponent
+inference inside each worker, two-millisecond learner-request coalescing, and
+sample-mode actions. It fixed `alakazam_dudunsparce_04_sota` as the opponent for
+100 games.
+
+| Metric | Result |
+|---|---:|
+| valid episodes / errors | 100 / 0 |
+| wall time | 131.592 s |
+| episodes/s | 0.760 |
+| official engine selections | 13,613 |
+| learner decisions | 7,838 |
+| learner decisions/s | 59.563 |
+| learner inference batches | 904 |
+| mean / maximum learner batch | 8.670 / 16 |
+| measured learner inference time | 48.881 s |
+| learner inference share of wall time | 37.1% |
+
+The remaining 82.711 seconds (62.9%) is not an engine-only measurement. It
+combines official `battle_start`/`battle_select`, CPU opponent inference,
+observation serialization and IPC, CPU feature encoding, process startup, and
+scheduling. The machine-readable output is
+`.tmp/evaluation/0020_engine_accel_rl_baseline/official_cpu_engine_gpu_0020_learner_cpu_opponent.json`.
+
+No partial-CUDA engine arm exists for a paired comparison in this snapshot.
+The official worker owns a complete opaque battle and advances it through
+`battle_select`. In contrast, the CUDA prototype resets from only seed, two
+Active IDs/HP values, deck/hand counts, and policy IDs. It has no import/export
+bridge for the official state, legal options, effect stack, or RNG position.
+Consequently, its setup, status-core, and smoke kernels cannot replace a slice
+of `battle_select` and then return control to the official engine.
+
+### Real RL-topology timing decomposition
+
+An opt-in temporary profiler then timed the same logical topology without
+changing official source or substituting a CUDA engine. This independent
+sample-mode run completed 100/100 games with 0 errors, 13,923 engine selections,
+and 7,876 learner decisions in 85.182 seconds. Its different wall time from the
+baseline is not treated as a policy or engine comparison: the official runtime
+uses uncontrolled randomness and sample-mode trajectories are not paired.
+
+| Surface | Measured time | Normalized cost |
+|---|---:|---:|
+| official `battle_start` | 0.301 s worker aggregate | 3.012 ms/game |
+| official `battle_select` including observation JSON | 4.939 s worker aggregate | 0.355 ms/selection |
+| CPU opponent inference | 221.725 s worker aggregate | 2.217 s/game |
+| CPU opponent/package load | 139.812 s worker aggregate | 1.398 s/game |
+| main-agent feature encoding | 7.461 s parent wall | 0.947 ms/decision |
+| collate plus H2D | 1.245 s parent wall | 1.334 ms/batch |
+| CUDA learner action sampling | 29.846 s parent wall | 31.989 ms/batch |
+| trajectory D2H | 0.319 s parent wall | 0.041 ms/decision |
+
+The worker times overlap across 16 processes, so aggregate worker seconds are
+not wall-time shares. The official calls averaged 52.4 ms against 11.070 seconds
+of worker wall time per game, about 0.47% of the per-game worker path; the
+largest per-game official-call total was 86.7 ms. Ideal 16-way overlap would
+assign only about 0.328 seconds, or 0.4%, of this run's makespan directly to all
+measured official calls. This is an estimate, not a strict speedup bound, because
+scheduling imbalance and CPU contention can alter makespan.
+
+The important engineering conclusion is nevertheless robust: in this workload,
+the official engine calls are much smaller than CPU opponent execution,
+per-episode opponent loading, centralized learner service, and CPU feature
+encoding. A setup-only CUDA bridge targets about 3 ms/game before bridge costs.
+Per-opcode CPU/GPU migration would add state serialization, transfers, and host
+synchronization around a roughly 0.355-ms official call and is therefore not a
+credible acceleration boundary. The machine-readable profile is
+`.tmp/evaluation/0020_engine_accel_rl_profile/official_cpu_profile.json`; its
+implementation plan is
+`docs/superpowers/plans/2026-07-30-0020-hybrid-engine-feasibility.md`.
+
 ## Promotion contract for 0020
 
 `engine_cuda/` may enter 0020 rollout collection only when all of the following

@@ -212,9 +212,16 @@ candidate decisions, with cumulative 35,586 wins, 15,583 losses and 10 draws. At
 75.4% at U92 and 72.7% at U92. Reference-KL surrogate ended at 0.02694, behavior KL at 4.19e-5,
 and actor relative L2 versus the BC reference at 2.012%.
 
-These rolling rates remain sampled optimization diagnostics. The two long-distance candidates
-selected during training were U39 and U63. Their official Kaggle scores were 943.4 and 600.0,
-respectively, while the earlier U6/U11 submissions scored 974.5/999.5. This is direct evidence that
-later rollout rolling-rate peaks do not monotonically predict the competition score. No automatic
-promotion is claimed from V4 completion; future selection still requires comparable frozen greedy
-official-engine evaluation or an explicitly authorized official submission.
+These rolling rates remain sampled optimization diagnostics. V5/V6/V7 froze U39/U63/U92 and ran
+each against the same 30-opponent official-engine Arena catalog for 10 balanced-seat games per
+opponent. U39 finished 235-65 (`78.33%`, zero errors), U63 finished 219-80 with one step-zero worker
+crash (`73.00%` over all 300 scheduled games), and U92 finished 231-69 (`77.00%`, zero errors).
+The authoritative reports and project index are under `experiments/0018_alakazam_terminal_rl/evaluation/`.
+This independent-randomness 300-game screen selects U39 on observed overall win rate while retaining
+U92 as the strongest post-U63 candidate; the four-win U39/U92 gap is not a paired significance claim.
+
+The user explicitly authorized one new Kaggle submission each for U39 and U92. Kaggle accepted both:
+U39 ref `55097268` and U92 ref `55097478` reached `SubmissionStatus.COMPLETE` with visible live public
+scores, proving archive Validation passed and official evaluation started. Point-in-time receipts are
+stored with V5 and V7; competition scores are rolling observations and may continue to change. Neither
+submission automatically promotes either package into the fixed local opponent catalog.

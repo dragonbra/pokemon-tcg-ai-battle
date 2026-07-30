@@ -55,6 +55,32 @@ class InferenceTests(unittest.TestCase):
         )
         self.assertIsNone(policy.encoder)
 
+    def test_audit_persona_checkpoint_loads_explicit_source(self) -> None:
+        root = (
+            REPOSITORY_ROOT
+            / "rl_runs/0020_pluggable_deck_rl/versions/V1_frozen_0019_epoch13"
+        )
+        policy = INFERENCE.FrozenNeutralPolicy.from_checkpoint(
+            root / "checkpoint/epoch-0013-da9b13d6f82d19d4.pt",
+            root / "artifact/card_ontology.json",
+            _deck("dragapult_ex_03_v20260729_rl"),
+            source_id=98,
+        )
+        self.assertEqual(policy.source_id, 98)
+
+    def test_audit_persona_rejects_unknown_source(self) -> None:
+        root = (
+            REPOSITORY_ROOT
+            / "rl_runs/0020_pluggable_deck_rl/versions/V1_frozen_0019_epoch13"
+        )
+        with self.assertRaisesRegex(ValueError, "outside the frozen vocabulary"):
+            INFERENCE.FrozenNeutralPolicy.from_checkpoint(
+                root / "checkpoint/epoch-0013-da9b13d6f82d19d4.pt",
+                root / "artifact/card_ontology.json",
+                _deck("dragapult_ex_03_v20260729_rl"),
+                source_id=510,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

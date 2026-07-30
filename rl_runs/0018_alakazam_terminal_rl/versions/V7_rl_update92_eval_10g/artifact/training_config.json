@@ -1,0 +1,20 @@
+{
+  "candidate_package": "archive/submission/0018_alakazam_terminal_rl_v4_update92",
+  "catalog": "evaluation/configs/opponents.json",
+  "catalog_sha256": "92221e5a6b080d46f85d499e491a371a610a94087d7f001a1663bc657cfbe5c0",
+  "checkpoint": "rl_runs/0018_alakazam_terminal_rl/versions/V4_ppo_decoder_lambda1_lr1e5/checkpoint/update-000092.pt",
+  "checkpoint_sha256": "33f7e2a3b5114a90708516e2d0d79771d5e80e1ce3841b28beff3abced958ec6",
+  "enabled_opponents": 30,
+  "games_per_opponent": 10,
+  "metric_profile": "auto_iteration_v8_setup_relay",
+  "project_id": "0018_alakazam_terminal_rl",
+  "randomness_contract": "independent_official_runtime_random_device_not_seed_pairable",
+  "schema_version": "0018_frozen_policy_evaluation_v1",
+  "seat_contract": "alternate_candidate_first_5_each_per_opponent",
+  "stage": "frozen_policy_evaluation",
+  "total_games": 300,
+  "version": "V7_rl_update92_eval_10g",
+  "wandb": {"enabled": false, "reason": "evaluation_only_no_training"},
+  "worker_cpu_threads": 1,
+  "workers": 8
+}

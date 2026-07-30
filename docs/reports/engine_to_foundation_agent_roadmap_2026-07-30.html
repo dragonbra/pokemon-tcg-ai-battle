@@ -354,6 +354,209 @@
     .yes { color: var(--green); }
     .not-yet { color: var(--amber); }
 
+    .learning-note {
+      padding: 14px 16px;
+      border-left: 5px solid var(--amber);
+      background: var(--amber-soft);
+      color: #654817;
+      font-size: 13px;
+    }
+    .concept-ladder {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0,1fr));
+      gap: 22px;
+      margin: 28px 0;
+      overflow-x: auto;
+      padding: 2px 2px 12px;
+    }
+    .concept-step {
+      position: relative;
+      min-width: 164px;
+      min-height: 170px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--blue);
+      background: var(--paper);
+      border-radius: var(--radius);
+    }
+    .concept-step:nth-child(2) { border-color: var(--teal); }
+    .concept-step:nth-child(3) { border-color: var(--amber); }
+    .concept-step:nth-child(4) { border-color: var(--violet); }
+    .concept-step:nth-child(5) { border-color: var(--red); }
+    .concept-step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -21px;
+      top: 70px;
+      color: var(--muted);
+      font-weight: 900;
+    }
+    .concept-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 12px;
+      border: 1px solid currentColor;
+      border-radius: 4px;
+      color: var(--blue);
+      background: var(--blue-soft);
+      font: 800 13px/1 "SFMono-Regular", Consolas, monospace;
+    }
+    .concept-step:nth-child(2) .concept-icon { color: var(--teal); background: var(--teal-soft); }
+    .concept-step:nth-child(3) .concept-icon { color: var(--amber); background: var(--amber-soft); }
+    .concept-step:nth-child(4) .concept-icon { color: var(--violet); background: var(--violet-soft); }
+    .concept-step:nth-child(5) .concept-icon { color: var(--red); background: var(--red-soft); }
+    .concept-step h3 { font-size: 15px; }
+    .concept-step p { margin: 0; color: var(--muted); font-size: 12px; }
+    .model-equation {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto minmax(0,1.25fr) auto minmax(0,1fr);
+      align-items: center;
+      gap: 12px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: var(--radius);
+      text-align: center;
+    }
+    .equation-part { min-width: 0; padding: 12px; background: var(--wash); }
+    .equation-part strong { display: block; font-size: 15px; }
+    .equation-part span { color: var(--muted); font-size: 12px; }
+    .equation-arrow { color: var(--red); font-size: 22px; font-weight: 900; }
+
+    .lab-shell { margin-top: 30px; }
+    .lab-grid {
+      display: grid;
+      grid-template-columns: minmax(260px,.8fr) minmax(0,1.5fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+    .lab-controls, .lab-canvas {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid var(--line);
+      background: var(--paper);
+      border-radius: var(--radius);
+    }
+    .lab-controls h3, .lab-canvas h3 { font-size: 17px; }
+    .lab-caption { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+    .control-stack { display: grid; gap: 16px; }
+    .range-control { display: grid; gap: 7px; }
+    .range-heading { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .range-heading label { font-size: 13px; font-weight: 760; }
+    .range-heading output { min-width: 62px; text-align: right; color: var(--red); font: 750 12px/1 "SFMono-Regular", monospace; }
+    input[type="range"] { width: 100%; accent-color: var(--red); cursor: pointer; }
+    .range-ends { display: flex; justify-content: space-between; color: var(--muted); font-size: 10px; }
+    .live-summary {
+      min-height: 56px;
+      margin-top: 16px;
+      padding: 12px;
+      border-left: 4px solid var(--teal);
+      background: var(--teal-soft);
+      color: #235c58;
+      font-size: 13px;
+    }
+
+    .depth-visual { display: grid; gap: 18px; min-height: 282px; align-content: start; }
+    .depth-route { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
+    .depth-node {
+      min-height: 76px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      background: var(--wash);
+      color: var(--muted);
+      font-size: 11px;
+      transition: background .2s, border-color .2s, transform .2s;
+    }
+    .depth-node.active { border-color: var(--teal); background: var(--teal-soft); color: #215c58; transform: translateY(-3px); }
+    .depth-node strong { display: block; color: inherit; font-size: 12px; }
+    .vector-cells { display: grid; grid-template-columns: repeat(8, minmax(22px,1fr)); gap: 5px; }
+    .vector-cell {
+      display: grid;
+      place-items: center;
+      aspect-ratio: 1;
+      min-height: 28px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font: 700 10px/1 monospace;
+      transition: background .2s, color .2s;
+    }
+
+    .decision-grid { display: grid; grid-template-columns: minmax(260px,.75fr) minmax(0,1.55fr); gap: 18px; }
+    .option-board { display: grid; gap: 10px; }
+    .option-row {
+      display: grid;
+      grid-template-columns: minmax(150px,.9fr) minmax(120px,1.5fr) 64px;
+      gap: 12px;
+      align-items: center;
+      min-height: 76px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--line);
+      background: var(--paper);
+      transition: border-color .2s, background .2s;
+    }
+    .option-row.winner { border-left-color: var(--red); background: var(--red-soft); }
+    .option-name strong { display: block; font-size: 13px; }
+    .option-name small { color: var(--muted); font-size: 10px; }
+    .prob-track { height: 12px; overflow: hidden; background: #e6eaec; border-radius: 2px; }
+    .prob-fill { width: 0; height: 100%; background: var(--blue); transition: width .25s; }
+    .option-row.winner .prob-fill { background: var(--red); }
+    .prob-value { text-align: right; font: 750 12px/1 monospace; }
+    .reason-line { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+    .softmax-strip { margin-top: 14px; display: flex; height: 12px; overflow: hidden; border-radius: 2px; background: #e6eaec; }
+    .softmax-slice { height: 100%; transition: width .25s; }
+
+    .freeze-layout { display: grid; grid-template-columns: minmax(260px,.75fr) minmax(0,1.5fr); gap: 18px; }
+    .layer-stack { display: grid; gap: 8px; }
+    .layer-node {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 52px;
+      padding: 10px 12px;
+      border-left: 5px solid #8b969c;
+      background: #edf0f1;
+      transition: background .2s, border-color .2s;
+    }
+    .layer-node.trainable { border-color: var(--green); background: var(--green-soft); }
+    .layer-node.adapter { border-color: var(--amber); background: var(--amber-soft); }
+    .layer-node strong { display: block; font-size: 13px; }
+    .layer-node span { color: var(--muted); font-size: 11px; }
+    .tradeoff-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; margin-top: 14px; }
+    .tradeoff { padding: 12px; border: 1px solid var(--line); background: var(--paper); }
+    .tradeoff header { display: flex; justify-content: space-between; font-size: 11px; }
+    .meter { height: 8px; margin-top: 8px; overflow: hidden; background: #e5e9eb; }
+    .meter-fill { height: 100%; width: 0; background: var(--green); transition: width .25s; }
+    .meter-fill.risk { background: var(--red); }
+
+    .credit-timeline { display: grid; grid-template-columns: repeat(6,minmax(92px,1fr)); gap: 8px; overflow-x: auto; padding-bottom: 10px; }
+    .credit-step { min-width: 92px; padding: 12px 10px; border: 1px solid var(--line); background: var(--paper); }
+    .credit-step strong { display: block; min-height: 38px; font-size: 12px; }
+    .credit-bar-box { height: 110px; display: flex; align-items: flex-end; margin: 10px 0; background: var(--wash); }
+    .credit-bar { width: 100%; min-height: 2px; background: var(--teal); transition: height .25s; }
+    .credit-value { display: block; text-align: center; color: var(--muted); font: 700 10px/1 monospace; }
+
+    .generation-control { max-width: 620px; margin: 0 0 22px; }
+    .evolution-target { transition: opacity .2s, filter .2s, border-color .2s; }
+    .evolution-target.dormant { opacity: .32; filter: grayscale(1); }
+    .evolution-target.current { outline: 3px solid rgba(196,61,53,.24); outline-offset: 2px; }
+    .generation-summary { min-height: 64px; margin-top: 20px; padding: 14px; background: var(--blue-soft); border-left: 5px solid var(--blue); font-size: 13px; }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .sources { background: var(--charcoal); color: #e8edef; }
     .sources a { color: #a9c9e7; }
     .sources h2 { color: #fff; }
@@ -363,7 +566,9 @@
     @media (max-width: 900px) {
       .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .boundary-grid, .three-grid, .architecture, .arena-layout { grid-template-columns: minmax(0,1fr); }
+      .lab-grid, .decision-grid, .freeze-layout { grid-template-columns: minmax(0,1fr); }
       .pipeline { grid-template-columns: repeat(6, 180px); }
+      .concept-ladder { grid-template-columns: repeat(5, 180px); }
       .phase-panel { grid-template-columns: minmax(0,1fr); }
       .math-grid { grid-template-columns: minmax(0,1fr); }
       .topbar-inner { align-items: flex-start; flex-direction: column; padding: 10px 0; gap: 7px; }
@@ -378,6 +583,15 @@
       .lede { font-size: 16px; }
       section { padding: 46px 0; }
       .metrics { grid-template-columns: 1fr; }
+      .concept-ladder { grid-template-columns: minmax(0,1fr); gap: 26px; overflow-x: visible; }
+      .concept-step { min-width: 0; min-height: 0; }
+      .concept-step:not(:last-child)::after { right: auto; left: 50%; top: auto; bottom: -25px; transform: translateX(-50%); content: "↓"; }
+      .model-equation { grid-template-columns: minmax(0,1fr); }
+      .equation-arrow { transform: rotate(90deg); }
+      .depth-route { grid-template-columns: minmax(0,1fr); }
+      .option-row { grid-template-columns: minmax(0,1fr) 54px; }
+      .option-name { grid-column: 1 / -1; }
+      .tradeoff-grid { grid-template-columns: minmax(0,1fr); }
       .attention-block { grid-template-columns: 1fr; }
       .attn-arrow { transform: rotate(90deg); }
       th, td { padding: 10px; }
@@ -389,11 +603,12 @@
     <div class="wrap topbar-inner">
       <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>Foundation Agent 路线</a>
       <nav class="nav" aria-label="文档章节">
+        <a href="#essence">模型本质</a>
+        <a href="#decision-lab">决策显微镜</a>
         <a href="#evidence">证据</a>
         <a href="#pipeline">路径</a>
         <a href="#model">模型</a>
         <a href="#training">训练</a>
-        <a href="#physics">引擎预训练</a>
         <a href="#arena">Arena</a>
         <a href="#math">数学依据</a>
       </nav>
@@ -415,9 +630,96 @@
       </div>
     </div>
 
-    <section id="evidence" class="alt">
+    <section id="essence">
       <div class="wrap">
-        <div class="section-kicker">01 · Evidence</div>
+        <div class="section-kicker">01 · Model Essence</div>
+        <h2>先把“模型”还原成一件朴素的东西</h2>
+        <p class="section-intro">你已经认识激活函数，这正是起点。一个 policy model 本质上是一个由 17,756,162 个可调数字组成的可微函数：它把“我现在看见什么”变成“每个合法动作值多少分”。训练没有给模型装入一段规则文字，而是在改变这些数字。</p>
+
+        <div class="concept-ladder" aria-label="从激活函数到策略的五步">
+          <article class="concept-step"><div class="concept-icon">x</div><h3>1. 原始事实</h3><p>卡牌 ID、区域、伤害、能量、牌库数量、合法 options。它们是数字，但还没有关系。</p></article>
+          <article class="concept-step"><div class="concept-icon">z</div><h3>2. Embedding</h3><p>把离散 ID 映射成向量。相似用法的卡牌可以在表示空间中靠近，但不是人工写死。</p></article>
+          <article class="concept-step"><div class="concept-icon">α</div><h3>3. Attention</h3><p>让一个 token 带着问题读取其他 token。攻击 option 会重点读取伤害、能量和 Prize。</p></article>
+          <article class="concept-step"><div class="concept-icon">ℓ</div><h3>4. Logit</h3><p>Decoder 给每个合法 option 一个未归一化分数。分数只表示相对排序，没有概率含义。</p></article>
+          <article class="concept-step"><div class="concept-icon">π</div><h3>5. Softmax</h3><p>把所有 logits 变成总和为 1 的概率分布，再采样或选择最高分动作。</p></article>
+        </div>
+
+        <div class="model-equation" aria-label="策略模型核心等式">
+          <div class="equation-part"><strong>Observation + Legal Options</strong><span>当前可见世界与可以做什么</span></div>
+          <div class="equation-arrow" aria-hidden="true">→</div>
+          <div class="equation-part"><strong>f<sub>θ</sub>(x)</strong><span>θ 是训练真正改变的全部参数</span></div>
+          <div class="equation-arrow" aria-hidden="true">→</div>
+          <div class="equation-part"><strong>π(a | s, deck, history)</strong><span>合法动作上的条件概率</span></div>
+        </div>
+
+        <div class="lab-shell lab-grid">
+          <div class="lab-controls">
+            <h3>表示深度</h3>
+            <p class="lab-caption">同一份输入经过更多层后，不是“知道更多文字”，而是被改写成更适合做下一步计算的向量。</p>
+            <div class="range-control">
+              <div class="range-heading"><label for="representation-depth">当前观察层次</label><output id="representation-depth-value" for="representation-depth">0 / 4</output></div>
+              <input id="representation-depth" type="range" min="0" max="4" step="1" value="0">
+              <div class="range-ends"><span>原始输入</span><span>动作分布</span></div>
+            </div>
+            <div id="representation-summary" class="live-summary" aria-live="polite"></div>
+          </div>
+          <div class="lab-canvas depth-visual">
+            <div class="depth-route" aria-label="表示转换路径">
+              <div class="depth-node" data-depth="0"><strong>IDs / 数值</strong>Card 27，Bench 2，HP 80</div>
+              <div class="depth-node" data-depth="1"><strong>Entity tokens</strong>“受伤的对手 Bench”</div>
+              <div class="depth-node" data-depth="2"><strong>Board memory</strong>资源、时机与对象关系</div>
+              <div class="depth-node" data-depth="3"><strong>Option context</strong>“Boss 能否形成 KO”</div>
+              <div class="depth-node" data-depth="4"><strong>Policy output</strong>每个合法动作的概率</div>
+            </div>
+            <div>
+              <h3 id="depth-title">原始事实还不是知识</h3>
+              <p id="depth-question" class="lab-caption"></p>
+              <div id="depth-vector" class="vector-cells" aria-label="教学向量"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="decision-lab" class="alt">
+      <div class="wrap">
+        <div class="section-kicker">02 · Decision Microscope</div>
+        <h2>亲手看见：为什么只改 Decoder，也可能让动作完全反转</h2>
+        <p class="section-intro">Encoder 先把场面证据提炼出来；每个 option 再读取与自己有关的证据；Decoder 把这些证据压成 logits。两个动作分数很接近时，末端很小的调整也会改变 argmax，最终在引擎里走向完全不同的后续局面。</p>
+
+        <div class="decision-grid">
+          <div class="lab-controls">
+            <h3>当前场面证据</h3>
+            <p class="lab-caption">这些滑块代表 Encoder 已经提炼出的几个方向，不是原始 JSON 字段。</p>
+            <div class="control-stack">
+              <div class="range-control"><div class="range-heading"><label for="board-ready">进攻准备度</label><output id="board-ready-value" for="board-ready">75</output></div><input id="board-ready" data-evidence type="range" min="0" max="100" value="75"><div class="range-ends"><span>没有攻击线</span><span>攻击线成熟</span></div></div>
+              <div class="range-control"><div class="range-heading"><label for="setup-need">后场建设需求</label><output id="setup-need-value" for="setup-need">42</output></div><input id="setup-need" data-evidence type="range" min="0" max="100" value="42"><div class="range-ends"><span>无需展开</span><span>急需资源</span></div></div>
+              <div class="range-control"><div class="range-heading"><label for="ko-chance">Boss 后 KO 机会</label><output id="ko-chance-value" for="ko-chance">55</output></div><input id="ko-chance" data-evidence type="range" min="0" max="100" value="55"><div class="range-ends"><span>没有目标</span><span>确定拿 Prize</span></div></div>
+              <div class="range-control"><div class="range-heading"><label for="deck-pressure">牌库压力</label><output id="deck-pressure-value" for="deck-pressure">25</output></div><input id="deck-pressure" data-evidence type="range" min="0" max="100" value="25"><div class="range-ends"><span>资源充足</span><span>接近耗尽</span></div></div>
+              <div class="range-control"><div class="range-heading"><label for="decoder-nudge">Deck-specific Decoder 偏移</label><output id="decoder-nudge-value" for="decoder-nudge">0.00</output></div><input id="decoder-nudge" data-evidence type="range" min="-100" max="100" value="0"><div class="range-ends"><span>偏向立即攻击</span><span>偏向先完成进化</span></div></div>
+            </div>
+          </div>
+
+          <div class="lab-canvas">
+            <h3>合法 Options 的实时 Softmax</h3>
+            <p class="lab-caption"><span class="mono">option as Q</span> 决定读取哪些证据；<span class="mono">hidden as Q</span> 把 contextualized options 排成 logits。</p>
+            <div class="option-board" aria-label="教学动作概率">
+              <div class="option-row" data-action="evolve"><div class="option-name"><strong>进化 Active</strong><small>读取准备度、展开需求和 Decoder 偏移</small></div><div class="prob-track"><div class="prob-fill"></div></div><div class="prob-value">0.0%</div><div class="reason-line"></div></div>
+              <div class="option-row" data-action="draw"><div class="option-name"><strong>使用过牌能力</strong><small>读取展开需求与牌库压力</small></div><div class="prob-track"><div class="prob-fill"></div></div><div class="prob-value">0.0%</div><div class="reason-line"></div></div>
+              <div class="option-row" data-action="boss"><div class="option-name"><strong>Boss 对手 Bench</strong><small>读取 KO 机会、Prize 与进攻准备度</small></div><div class="prob-track"><div class="prob-fill"></div></div><div class="prob-value">0.0%</div><div class="reason-line"></div></div>
+              <div class="option-row" data-action="attack"><div class="option-name"><strong>立即攻击</strong><small>读取准备度、牌库压力和回合终止价值</small></div><div class="prob-track"><div class="prob-fill"></div></div><div class="prob-value">0.0%</div><div class="reason-line"></div></div>
+            </div>
+            <div class="softmax-strip" aria-hidden="true"><div class="softmax-slice" data-slice="evolve" style="background:#c43d35"></div><div class="softmax-slice" data-slice="draw" style="background:#147d78"></div><div class="softmax-slice" data-slice="boss" style="background:#b87808"></div><div class="softmax-slice" data-slice="attack" style="background:#77558c"></div></div>
+            <div id="decision-summary" class="live-summary" aria-live="polite"></div>
+            <div class="learning-note" style="margin-top:14px"><strong>教学边界：</strong>这里使用可读的四项线性公式演示 attention → logit → softmax。数值不是从 0019 checkpoint 提取的真实权重；真实模型在 320 维表示和多层非线性中完成同类计算。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="evidence">
+      <div class="wrap">
+        <div class="section-kicker">03 · Evidence</div>
         <h2>不是概念起跑：已经有两块关键证据</h2>
         <p class="section-intro">0019 证明大规模多构筑训练没有压垮模仿能力；0020 多龙 zero-shot 证明同一 Foundation 能在未做专属 BC/RL 的构筑上产生真实竞争力。数字仍受评测分布约束，但方向已经可验证。</p>
         <div class="metrics">
@@ -455,9 +757,9 @@
       </div>
     </section>
 
-    <section id="pipeline">
+    <section id="pipeline" class="alt">
       <div class="wrap">
-        <div class="section-kicker">02 · Full Path</div>
+        <div class="section-kicker">04 · Full Path</div>
         <h2>Engine 是物理世界，BC 是人类先验，RL 是价值优化</h2>
         <p class="section-intro">三者不是互相替代。Engine 提供“会发生什么”，BC 提供“高手通常怎样开始”，RL 提供“在目标环境中怎样更能赢”。</p>
         <div class="pipeline" aria-label="完整学习路径">
@@ -471,9 +773,9 @@
       </div>
     </section>
 
-    <section id="model" class="alt">
+    <section id="model">
       <div class="wrap">
-        <div class="section-kicker">03 · Current Model</div>
+        <div class="section-kicker">05 · Current Model</div>
         <h2>0019 每一步：先让动作理解场面，再让场面选择动作</h2>
         <p class="section-intro">Encoder/Decoder 是工程边界，不是语义边界。当前 <code>encode()</code> 已包含 option-conditioned attention；末端 pointer head 只负责在已经语境化的合法 options 中生成 ordered full-action。</p>
         <div class="architecture">
@@ -522,9 +824,9 @@
       </div>
     </section>
 
-    <section id="training">
+    <section id="training" class="alt">
       <div class="wrap">
-        <div class="section-kicker">04 · Freeze / Train</div>
+        <div class="section-kicker">06 · Freeze / Train</div>
         <h2>阶段不是简单地“越训越多”，而是逐层释放可塑性</h2>
         <p class="section-intro">点击阶段查看目标和边界。Foundation 永远保留不可变原件；新策略先使用小型 heads/adapters，只有出现可测平台期才开放更深层。</p>
 
@@ -573,9 +875,70 @@
       </div>
     </section>
 
+    <section id="freeze-lab">
+      <div class="wrap">
+        <div class="section-kicker">07 · Training Microscope</div>
+        <h2>训练的核心张力：既要能改变，又不能把旧知识擦掉</h2>
+        <p class="section-intro">冻结不是“这一层没有用”，而是“保留这部分函数不动”。开放得越深，模型越能重新解释新卡和新机制；同时也越可能破坏 BC 已经学会的通用表示。下面两个实验分别展示参数边界和长程信用。</p>
+
+        <div class="freeze-layout">
+          <div class="lab-controls">
+            <h3>可塑性边界</h3>
+            <p class="lab-caption">从只校准 Value，到重训完整模型。中间 adapter 是新增旁路，不覆盖冻结的 Foundation 原参数。</p>
+            <div class="range-control">
+              <div class="range-heading"><label for="freeze-depth">开放训练的深度</label><output id="freeze-depth-value" for="freeze-depth">1 / 4</output></div>
+              <input id="freeze-depth" type="range" min="0" max="4" step="1" value="1">
+              <div class="range-ends"><span>只训练 Value</span><span>全模型训练</span></div>
+            </div>
+            <div id="freeze-summary" class="live-summary" aria-live="polite"></div>
+            <div class="tradeoff-grid" aria-label="可塑性与遗忘风险相对趋势">
+              <div class="tradeoff"><header><span>表达新策略的能力</span><output id="plasticity-value">32%</output></header><div class="meter"><div id="plasticity-meter" class="meter-fill"></div></div></div>
+              <div class="tradeoff"><header><span>遗忘风险</span><output id="forgetting-value">12%</output></header><div class="meter"><div id="forgetting-meter" class="meter-fill risk"></div></div></div>
+            </div>
+            <p class="lab-caption" style="margin-top:10px">百分比只表达相对趋势，不是实测概率。</p>
+          </div>
+          <div class="lab-canvas">
+            <h3>梯度会流到哪里</h3>
+            <div class="layer-stack" aria-label="模型层冻结状态">
+              <div class="layer-node" data-layer="foundation"><div><strong>Card / Board / Event Foundation</strong><span>跨构筑世界表示</span></div><b class="layer-state">冻结</b></div>
+              <div class="layer-node" data-layer="scenario"><div><strong>Goal / Scenario Reasoning</strong><span>局面目标与时机关系</span></div><b class="layer-state">冻结</b></div>
+              <div class="layer-node" data-layer="option"><div><strong>Option-to-memory Adapter</strong><span>让新 option 重新读取 Foundation</span></div><b class="layer-state">未启用</b></div>
+              <div class="layer-node" data-layer="decoder"><div><strong>Pointer Decoder</strong><span>合法 options 的最终排序</span></div><b class="layer-state">训练</b></div>
+              <div class="layer-node" data-layer="value"><div><strong>Value Head</strong><span>预测 actor-visible state 的终局价值</span></div><b class="layer-state">训练</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="lab-shell lab-grid">
+          <div class="lab-controls">
+            <h3>终局胜负怎样传回第一步</h3>
+            <p class="lab-caption">假设这一局最后赢了，终局 reward 为 +1。λ 越大，越愿意把信用传给更早的准备动作；越小，越偏向最近几步。</p>
+            <div class="range-control">
+              <div class="range-heading"><label for="credit-lambda">GAE λ</label><output id="credit-lambda-value" for="credit-lambda">0.95</output></div>
+              <input id="credit-lambda" type="range" min="0" max="100" step="5" value="95">
+              <div class="range-ends"><span>短信用</span><span>长信用</span></div>
+            </div>
+            <div id="credit-summary" class="live-summary" aria-live="polite"></div>
+          </div>
+          <div class="lab-canvas">
+            <h3>一条获胜 Episode 的教学时间线</h3>
+            <div class="credit-timeline" aria-label="终局奖励向早期动作传播">
+              <div class="credit-step" data-distance="5"><strong>铺下关键 Basic</strong><div class="credit-bar-box"><div class="credit-bar"></div></div><span class="credit-value">0.00</span></div>
+              <div class="credit-step" data-distance="4"><strong>检索进化资源</strong><div class="credit-bar-box"><div class="credit-bar"></div></div><span class="credit-value">0.00</span></div>
+              <div class="credit-step" data-distance="3"><strong>保留接力路线</strong><div class="credit-bar-box"><div class="credit-bar"></div></div><span class="credit-value">0.00</span></div>
+              <div class="credit-step" data-distance="2"><strong>完成关键进化</strong><div class="credit-bar-box"><div class="credit-bar"></div></div><span class="credit-value">0.00</span></div>
+              <div class="credit-step" data-distance="1"><strong>Boss 目标</strong><div class="credit-bar-box"><div class="credit-bar"></div></div><span class="credit-value">0.00</span></div>
+              <div class="credit-step" data-distance="0"><strong>攻击并获胜</strong><div class="credit-bar-box"><div class="credit-bar"></div></div><span class="credit-value">1.00</span></div>
+            </div>
+            <div class="learning-note"><strong>真实 PPO：</strong>并不是把同一个 +1 原样复制给所有动作。GAE 使用 reward、折扣、下一状态 Value 与当前 Value 形成 advantage；图中只隔离展示 λ 对时间跨度的影响。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="physics" class="alt">
       <div class="wrap">
-        <div class="section-kicker">05 · Engine Physics</div>
+        <div class="section-kicker">08 · Engine Physics</div>
         <h2>没有人类 JSON，也能先学习卡牌世界如何运转</h2>
         <p class="section-intro">这一阶段不是随机模仿自己，而是使用真实 transition 做自监督表示学习。错误时机打出的卡仍能提供正确效果；策略价值由后续 BC/RL 决定。</p>
         <div class="three-grid">
@@ -594,30 +957,37 @@
 
     <section id="arena">
       <div class="wrap">
-        <div class="section-kicker">06 · Arena Evolution</div>
+        <div class="section-kicker">09 · Arena Evolution</div>
         <h2>一份 GPU 常驻 Foundation，多套牌独立分化</h2>
         <p class="section-intro">共享的是权重、批量 forward 与静态卡牌/构筑计算；每次动态 observation 仍要编码。Adapter 足够小时可以全部常驻，并按 adapter ID 分组完成异构 batch。</p>
+        <div class="generation-control range-control">
+          <div class="range-heading"><label for="arena-generation">Arena 演进阶段</label><output id="arena-generation-value" for="arena-generation">G0</output></div>
+          <input id="arena-generation" type="range" min="0" max="4" step="1" value="0">
+          <div class="range-ends"><span>冻结基石</span><span>蒸馏下一代</span></div>
+        </div>
         <div class="arena-layout">
-          <div class="foundation-node"><strong>Foundation G0</strong><span>共享 Card / Board / Event / Option memories<br>不可变资产</span></div>
+          <div class="foundation-node evolution-target" data-generation-step="0"><strong id="foundation-generation-label">Foundation G0</strong><span>共享 Card / Board / Event / Option memories<br>不可变资产</span></div>
           <div class="branch-list">
-            <div class="branch"><strong>Dragapult</strong><br><span class="mono">adapter + pointer + value</span></div>
-            <div class="branch"><strong>Alakazam</strong><br><span class="mono">adapter + pointer + value</span></div>
-            <div class="branch"><strong>Marnie</strong><br><span class="mono">adapter + pointer + value</span></div>
-            <div class="branch"><strong>Candidate Deck</strong><br><span class="mono">zero-shot → short RL → finalist</span></div>
+            <div class="branch evolution-target" data-generation-step="1"><strong>Dragapult</strong><br><span class="mono">adapter + pointer + value</span></div>
+            <div class="branch evolution-target" data-generation-step="1"><strong>Alakazam</strong><br><span class="mono">adapter + pointer + value</span></div>
+            <div class="branch evolution-target" data-generation-step="1"><strong>Marnie</strong><br><span class="mono">adapter + pointer + value</span></div>
+            <div class="branch evolution-target" data-generation-step="2"><strong>Candidate Deck</strong><br><span class="mono">zero-shot → short RL → finalist</span></div>
           </div>
           <div class="loop">
-            <div class="loop-step">冻结历史快照</div><div class="loop-arrow">↓</div>
-            <div class="loop-step">完整 matchup 向量</div><div class="loop-arrow">↓</div>
-            <div class="loop-step">稳健分支筛选</div><div class="loop-arrow">↓</div>
-            <div class="loop-step">蒸馏 Foundation G1</div>
+            <div class="loop-step evolution-target" data-generation-step="2">冻结历史快照</div><div class="loop-arrow">↓</div>
+            <div class="loop-step evolution-target" data-generation-step="3">完整 matchup 向量</div><div class="loop-arrow">↓</div>
+            <div class="loop-step evolution-target" data-generation-step="3">稳健分支筛选</div><div class="loop-arrow">↓</div>
+            <div class="loop-step evolution-target" data-generation-step="4">蒸馏 Foundation G1</div>
           </div>
         </div>
+        <div id="generation-summary" class="generation-summary" aria-live="polite"></div>
+        <p class="lab-caption" style="margin-top:10px">阶段编号是机制教学，不代表项目已经完成四代 Arena 训练。</p>
       </div>
     </section>
 
     <section id="math" class="alt">
       <div class="wrap">
-        <div class="section-kicker">07 · Why It Can Work</div>
+        <div class="section-kicker">10 · Why It Can Work</div>
         <h2>数学上是同一个条件策略函数的逐层求解</h2>
         <p class="section-intro">目标不是证明唯一全局最优，而是在 official engine 定义的部分可观测随机博弈中，以更好的表示和更低的每构筑样本成本优化期望终局回报。</p>
         <div class="math-grid">
@@ -644,7 +1014,7 @@
 
     <section class="sources">
       <div class="wrap">
-        <div class="section-kicker">08 · Sources</div>
+        <div class="section-kicker">11 · Sources</div>
         <h2>事实来源与完整论证</h2>
         <ul>
           <li><a href="../../experiments/0019_universal_winner_bc/DESIGN.html">0019 通用胜者 BC 权威设计</a></li>
@@ -684,6 +1054,188 @@
         selectPhase(next.dataset.phase);
       });
     });
+
+    const depthStates = [
+      {
+        title: '原始事实还不是知识',
+        question: '模型只拿到离散 ID 和数值。此时 Card 27 与 Bench 2 没有自动形成“可被 Boss 击倒的目标”。',
+        cells: ['C27', 'P1', '80', 'B2', 'D3', 'E1', 'T4', 'O6'],
+        summary: '输入层：保留事实身份，但尚未表达卡牌之间的策略关系。'
+      },
+      {
+        title: 'Embedding 把符号变成可学习坐标',
+        question: '每个 ID 被映射为向量；梯度可以让用法相近的卡牌和区域形成相近方向。',
+        cells: ['.18', '-.4', '.71', '.09', '.52', '-.2', '.33', '.61'],
+        summary: 'Entity 层：从“编号是什么”走向“这个对象具有什么可学习语义”。'
+      },
+      {
+        title: 'Board Encoder 建立对象关系',
+        question: 'Self-attention 把 Active、Bench、Energy、伤害和回合预算组织为同一个局面记忆。',
+        cells: ['HP↓', 'KO?', 'BEN', 'ENG', 'PRZ', 'CLK', 'OWN', 'ZONE'],
+        summary: '场面层：表示不再是一堆孤立卡牌，而是当前 actor 能看见的关系网络。'
+      },
+      {
+        title: 'Option 带着自己的问题读取局面',
+        question: 'Boss option 问“Bench 有没有 Prize 路线”；Attack option 问“攻击是否值得终止回合”。',
+        cells: ['BOSS', 'KO', 'ATK', 'END', 'EVO', 'CLK', 'DRAW', 'RISK'],
+        summary: '条件推理层：同一份 Board memory 会因候选动作不同而被读取成不同证据。'
+      },
+      {
+        title: 'Decoder 只需比较合法候选',
+        question: 'Pointer Decoder 产生 logits，Softmax 形成动作分布；最高分动作成为 greedy choice。',
+        cells: ['.41', '.08', '.29', '.22', 'Σ1', 'TOP', 'STOP', 'π(a)'],
+        summary: '输出层：知识最终表现为合法 options 之间的相对排序，而不是一句自然语言答案。'
+      }
+    ];
+
+    const depthInput = document.querySelector('#representation-depth');
+    function updateDepthLab() {
+      const depth = Number(depthInput.value);
+      const state = depthStates[depth];
+      document.querySelector('#representation-depth-value').value = `${depth} / 4`;
+      document.querySelector('#depth-title').textContent = state.title;
+      document.querySelector('#depth-question').textContent = state.question;
+      document.querySelector('#representation-summary').textContent = state.summary;
+      document.querySelectorAll('[data-depth]').forEach((node) => {
+        node.classList.toggle('active', Number(node.dataset.depth) <= depth);
+      });
+      const vector = document.querySelector('#depth-vector');
+      vector.replaceChildren(...state.cells.map((value, index) => {
+        const cell = document.createElement('span');
+        cell.className = 'vector-cell';
+        cell.textContent = value;
+        cell.style.background = index % 3 === 0 ? 'var(--teal-soft)' : index % 3 === 1 ? 'var(--amber-soft)' : 'var(--blue-soft)';
+        return cell;
+      }));
+    }
+    depthInput.addEventListener('input', updateDepthLab);
+
+    const actionNames = {
+      evolve: '进化 Active',
+      draw: '使用过牌能力',
+      boss: 'Boss 对手 Bench',
+      attack: '立即攻击'
+    };
+    const actionReasons = {
+      evolve: '准备度 + 展开需求 + deck-specific 偏移',
+      draw: '展开需求 - 牌库压力',
+      boss: 'KO 机会 + 进攻准备度',
+      attack: '准备度 + 终局压力 - 继续展开成本'
+    };
+    const evidenceInputs = Array.from(document.querySelectorAll('[data-evidence]'));
+    function stableSoftmax(values, temperature = 0.45) {
+      const scaled = values.map((value) => value / temperature);
+      const maxValue = Math.max(...scaled);
+      const exps = scaled.map((value) => Math.exp(value - maxValue));
+      const total = exps.reduce((sum, value) => sum + value, 0);
+      return exps.map((value) => value / total);
+    }
+    function updateDecisionLab() {
+      const board = Number(document.querySelector('#board-ready').value) / 100;
+      const setup = Number(document.querySelector('#setup-need').value) / 100;
+      const ko = Number(document.querySelector('#ko-chance').value) / 100;
+      const pressure = Number(document.querySelector('#deck-pressure').value) / 100;
+      const nudge = Number(document.querySelector('#decoder-nudge').value) / 100;
+      ['board-ready', 'setup-need', 'ko-chance', 'deck-pressure'].forEach((id) => {
+        document.querySelector(`#${id}-value`).value = document.querySelector(`#${id}`).value;
+      });
+      document.querySelector('#decoder-nudge-value').value = `${nudge >= 0 ? '+' : ''}${nudge.toFixed(2)}`;
+
+      const keys = ['evolve', 'draw', 'boss', 'attack'];
+      const logits = [
+        1.05 * board + 0.55 * setup + 0.10 * (1 - pressure) - 0.15 * ko + 0.80 * nudge,
+        0.15 * board + 1.15 * setup - 0.95 * pressure - 0.25 * ko,
+        0.30 * board - 0.15 * setup + 1.30 * ko + 0.10 * pressure,
+        0.95 * board - 0.45 * setup + 0.45 * ko + 0.55 * pressure - 0.35 * nudge
+      ];
+      const probabilities = stableSoftmax(logits);
+      const winnerIndex = probabilities.indexOf(Math.max(...probabilities));
+      const ordered = probabilities.map((value, index) => ({value, index})).sort((a, b) => b.value - a.value);
+      keys.forEach((key, index) => {
+        const row = document.querySelector(`[data-action="${key}"]`);
+        const percent = probabilities[index] * 100;
+        row.classList.toggle('winner', index === winnerIndex);
+        row.querySelector('.prob-fill').style.width = `${percent}%`;
+        row.querySelector('.prob-value').textContent = `${percent.toFixed(1)}%`;
+        row.querySelector('.reason-line').textContent = `toy logit ${logits[index].toFixed(2)} · ${actionReasons[key]}`;
+        document.querySelector(`[data-slice="${key}"]`).style.width = `${percent}%`;
+      });
+      const margin = (ordered[0].value - ordered[1].value) * 100;
+      document.querySelector('#decision-summary').textContent =
+        `当前 greedy choice：${actionNames[keys[winnerIndex]]}。领先第二名 ${margin.toFixed(1)} 个百分点；领先越小，末端轻微更新越容易反转动作。`;
+    }
+    evidenceInputs.forEach((input) => input.addEventListener('input', updateDecisionLab));
+
+    const freezeStates = [
+      {name: 'Value-only calibration', params: '103,681 个已知参数', train: ['value'], plasticity: 8, risk: 2, note: '只让 critic 学会估计胜负，不改变 actor 的动作排序。'},
+      {name: '0018 保守 PPO 边界', params: '1,130,883 个已知参数', train: ['decoder', 'value'], plasticity: 32, risk: 12, note: '保住全部状态与 option 表示，只微调末端选择和价值；适合 BC 已经很强的构筑。'},
+      {name: '跨层 Adapter', params: '新增参数随 adapter 宽度确定', train: ['option', 'decoder', 'value'], plasticity: 55, risk: 18, note: 'Foundation 原件不动，但新卡和新构筑可以改变 option 读取共享记忆的方式。'},
+      {name: '开放末层语义', params: '参数量需由具体解冻边界审计', train: ['scenario', 'option', 'decoder', 'value'], plasticity: 75, risk: 42, note: '允许重新组织局面目标与时机表示；应使用更低学习率和旧状态 anchor。'},
+      {name: '完整模型训练', params: '17,756,162 个参数', train: ['foundation', 'scenario', 'option', 'decoder', 'value'], plasticity: 100, risk: 90, note: '表达能力最大，也最容易覆盖通用 BC。适合代际蒸馏，不是单 deck RL 的默认起点。'}
+    ];
+    const freezeInput = document.querySelector('#freeze-depth');
+    function updateFreezeLab() {
+      const depth = Number(freezeInput.value);
+      const state = freezeStates[depth];
+      document.querySelector('#freeze-depth-value').value = `${depth} / 4`;
+      document.querySelector('#freeze-summary').textContent = `${state.name} · ${state.params}。${state.note}`;
+      document.querySelector('#plasticity-value').value = `${state.plasticity}%`;
+      document.querySelector('#forgetting-value').value = `${state.risk}%`;
+      document.querySelector('#plasticity-meter').style.width = `${state.plasticity}%`;
+      document.querySelector('#forgetting-meter').style.width = `${state.risk}%`;
+      document.querySelectorAll('[data-layer]').forEach((node) => {
+        const layer = node.dataset.layer;
+        const active = state.train.includes(layer);
+        node.classList.toggle('trainable', active);
+        node.classList.toggle('adapter', active && layer === 'option' && depth < 4);
+        node.querySelector('.layer-state').textContent = active ? (layer === 'option' && depth < 4 ? '新增 Adapter' : '训练') : (layer === 'option' ? '未启用' : '冻结');
+      });
+    }
+    freezeInput.addEventListener('input', updateFreezeLab);
+
+    const creditInput = document.querySelector('#credit-lambda');
+    function updateCreditLab() {
+      const lambda = Number(creditInput.value) / 100;
+      document.querySelector('#credit-lambda-value').value = lambda.toFixed(2);
+      let earliest = 0;
+      document.querySelectorAll('[data-distance]').forEach((step) => {
+        const distance = Number(step.dataset.distance);
+        const credit = Math.pow(0.99 * lambda, distance);
+        if (distance === 5) earliest = credit;
+        step.querySelector('.credit-bar').style.height = `${Math.max(2, credit * 100)}%`;
+        step.querySelector('.credit-value').textContent = credit.toFixed(2);
+      });
+      document.querySelector('#credit-summary').textContent =
+        `在这个隔离示例中，距离终局 5 步的动作获得 ${earliest.toFixed(2)} 相对信用。λ=${lambda.toFixed(2)} 控制时间跨度，Value baseline 决定它相对预期究竟有多“惊喜”。`;
+    }
+    creditInput.addEventListener('input', updateCreditLab);
+
+    const generationStates = [
+      'G0 是不可变共享基石。所有新构筑从同一份卡牌、场面和 option 表示出发。',
+      '为各套构筑挂载独立 adapter、pointer 与 value。共享知识不复制，策略开始分化。',
+      '各分支与冻结历史对手进行 RL。新构筑先 zero-shot，再用相同可审计预算适配。',
+      '使用完整 matchup 向量筛选稳健分支。不能只凭单个 rolling win rate 晋级。',
+      '把通过验证的局部创新、旧 BC anchors 和 dynamics 数据蒸馏为新的 Foundation G1；G0 永远保留。'
+    ];
+    const generationInput = document.querySelector('#arena-generation');
+    function updateGenerationLab() {
+      const generation = Number(generationInput.value);
+      document.querySelector('#arena-generation-value').value = generation === 4 ? 'G0 → G1' : `阶段 ${generation}`;
+      document.querySelector('#generation-summary').textContent = generationStates[generation];
+      document.querySelector('#foundation-generation-label').textContent = generation === 4 ? 'Foundation G0 → G1' : 'Foundation G0';
+      document.querySelectorAll('[data-generation-step]').forEach((node) => {
+        const step = Number(node.dataset.generationStep);
+        node.classList.toggle('dormant', step > generation);
+        node.classList.toggle('current', step === generation);
+      });
+    }
+    generationInput.addEventListener('input', updateGenerationLab);
+
+    updateDepthLab();
+    updateDecisionLab();
+    updateFreezeLab();
+    updateCreditLab();
+    updateGenerationLab();
   </script>
 </body>
 </html>

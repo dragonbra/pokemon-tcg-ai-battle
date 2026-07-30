@@ -1,0 +1,40 @@
+{
+  "schema_version": "0020_version_status_v1",
+  "project_id": "0020_pluggable_deck_rl",
+  "version": "V12_dragapult_ppo_update10_probe",
+  "phase": "ppo_checkpoint_official_engine_probe",
+  "state": "failed",
+  "candidate": "evaluation/arena/candidates/0020_dragapult_ppo_u0010",
+  "source_training_version": "V9_dragapult_ppo_initial",
+  "source_update": 10,
+  "source_checkpoint": "rl_runs/0020_pluggable_deck_rl/versions/V9_dragapult_ppo_initial/checkpoint/update-000010.pt",
+  "checkpoint_sha256": "ebf63966efc06e75734a258c3b5cb4bf7f17bda758983d5bbf33d991b8c3e249",
+  "package_manifest_sha256": "e484d1defa05bdfc1d959c34fa69dfc5c6d8d8c8de116c47a8db83ad4d3f53e3",
+  "deck_source": "dragapult_ex_03_v20260729_rl",
+  "deck_sha256": "00468e64b7c5eefb1cc4586ba9351a7f2a5bce223ef209d2b9e4b0bb0ca42e17",
+  "training_diagnostics": {
+    "env_episodes": 5120,
+    "env_decisions": 468177,
+    "discarded_episodes": 0,
+    "rollout_error_rate": 0.0,
+    "behavior_kl": 0.00003655027806683518,
+    "reference_kl_surrogate": 0.002224641325681106,
+    "canary_greedy_action_flip_rate": 0.0087890625,
+    "actor_relative_l2_vs_reference": 0.004226203633342775,
+    "rolling_2000_win_rate": 0.2825
+  },
+  "selection_reason": "First stable post-initialization PPO checkpoint with zero rollout loss and low policy drift; selected as an early plasticity probe, not as a claimed best policy.",
+  "failure": {
+    "reason": "Evaluation package_hash omitted strategy/model.bin and manifest.json.",
+    "action": "Run terminated before report publication; package hashing was fixed and the same checkpoint was reallocated to V13."
+  },
+  "opponent_catalog_sha256": "92221e5a6b080d46f85d499e491a371a610a94087d7f001a1663bc657cfbe5c0",
+  "games_per_opponent": 10,
+  "enabled_opponents": 30,
+  "workers": 2,
+  "worker_cpu_threads": 1,
+  "wandb": {
+    "enabled": false,
+    "reason": "Official-engine evaluation-only child version; training metrics are owned by V9."
+  }
+}

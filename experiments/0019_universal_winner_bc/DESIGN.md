@@ -113,15 +113,33 @@ Epoch 13 同时是 conditioned loss、teacher exact 和 greedy exact 的最佳�
 `source_id=0` 部署目标之间存在可测差距。上述 BC 指标只证明模仿质量，不构成 official-engine
 胜率证据。
 
+## 2026-07-30 source persona 设计复核
+
+source conditioning 最早在 `0015_dragapult_conditioned_bc` 引入。0014 R15 没有 persona；
+0015 为避免多个 team 的动作标签无条件冲突，将研究目标显式定义为 `pi(a|s,D,E)`，并在
+目标 candidate 固定 THIRD PTCG Club persona。0016 继承该结构，0017 使用 target source 1，
+0018 使用 source 0；0019 又将相同结构扩大到 509 个非中性 source。这个设计适合“复刻指定
+老师”的 conditioned imitation，但不等于项目现在要求的 source-agnostic `pi(a|s,D)`。
+
+Epoch 13 在完全相同的 707,126 个 validation decisions 上，conditioned greedy exact 为
+`81.2871%`，neutral greedy exact 为 `74.8431%`，相差 `6.4440` percentage points；conditioned
+loss 为 `0.253080647`，neutral loss 为 `0.368793374`。因此 81.2871% 不能再被解释成最终
+neutral deployment 的离线模仿能力。checkpoint 中 persona 分支共有 368,320 个参数；source 98
+的 embedding norm 为 `1.2938`（接近全部非中性 source 的中位数 `1.2966`），经过 gate 与投影后
+产生 state residual norm `3.8120`、option residual norm `1.0897`。这证明 persona 路径不是仅供
+报告的标签，但参数规模和 norm 本身不能替代 official-engine 行为对照。
+
+复核结论是：V1 数据、因果 feature、exact-deck conditioning 和共享权重仍是有效历史资产，
+但 conditioned checkpoint selection 高估了与最终 source-0 forward 对齐的 BC 指标，并允许
+模型把一部分老师特定决策放入部署时被清零的 residual。后续通用 BC 不再使用 persona embedding、
+source dropout 或 conditioned-to-neutral persona distillation；team/source 只保留为 provenance、
+Episode split、去重、分层采样和分组评测字段。模型目标改为 `pi(a|s,D)`，并必须按同一个
+source-free forward 的 validation 指标选 checkpoint。
+
 ## 下一阶段
 
-V1 baseline 已完成。后续优先做可解释的单变量方案：
-
-1. **中性 persona 蒸馏：** 训练时同时约束 `source_id=0` 输出接近各 expert 条件输出，减少部署时 persona 落差；
-2. **deck/source dropout：** 小概率将 source 置 0，但始终保留 exact deck，迫使共享 Encoder 学习跨玩家知识；V1 已记录 neutral validation，但不执行此 dropout；
-3. **分层采样：** 只在超大来源明显支配梯度时，对 source/deck 做温和上限，不丢弃长尾数据；
-4. **通用 Encoder + deck adapter：** 0019 作为共享预训练，后续冻结大部分 Encoder，只对特定构筑 Decoder/末层做 BC 或 RL。
-
-上述方案必须使用新的严格递增版本，不向 V1 追加训练轨迹。优先级最高的是 source dropout
-或中性 persona 蒸馏，并以 neutral validation 与后续 deck-specific official-engine 评测共同
-判断通用 Encoder 的可迁移性。
+V1 baseline 已完成并作为 legacy source-conditioned checkpoint 保留。下一项干净对照应从
+相同 audited winner 数据训练一个完全没有 source 参数或 source tensor 的通用 Actor：始终保留
+exact deck，按 source/deck 分组报告冲突与长尾表现，必要时仅在采样层限制超大来源，最终按
+source-free validation 与 deck-specific official-engine 评测共同选点。该工作必须使用新的严格
+递增版本，不向 V1 追加训练轨迹，也不得把 0020 的单 deck PPO 曲线当成 persona-free BC 的替代证据。

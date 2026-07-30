@@ -1,0 +1,17 @@
+{
+  "device": "cuda",
+  "started_at": 1785384975.3567824,
+  "state": "training",
+  "version": "V1_corrected_persona_free_r15",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0021_persona_free_universal_bc--v1_corrected_persona-8347486882",
+    "state": "active",
+    "sync_state": "active",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0021_persona_free_universal_bc--v1_corrected_persona-8347486882"
+  },
+  "wandb_expected_mode": "online"
+}

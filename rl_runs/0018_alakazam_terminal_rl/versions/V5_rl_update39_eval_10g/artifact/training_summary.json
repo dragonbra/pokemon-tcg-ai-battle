@@ -1,0 +1,17 @@
+{
+  "completed_games": 300,
+  "draws": 0,
+  "errors": 0,
+  "games": 300,
+  "losses": 65,
+  "report": "experiments/0018_alakazam_terminal_rl/evaluation/V5_rl_update39_eval_10g.html",
+  "run_id": "run-203f2ad8ac964766bbd75f9c3e0e5882",
+  "stage": "frozen_policy_evaluation",
+  "state": "completed",
+  "unfinished": 0,
+  "version": "V5_rl_update39_eval_10g",
+  "wall_time_seconds": 425.77980328299964,
+  "wandb": {"reason": "evaluation_only_no_training", "state": "disabled"},
+  "win_rate": 0.7833333333333333,
+  "wins": 235
+}

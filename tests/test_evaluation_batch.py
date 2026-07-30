@@ -20,6 +20,7 @@ from evaluation.runner.batch import (
     _case_candidate,
     _finalize_formal_report,
     _metric_refs,
+    _manifest_package,
     _write_evaluation_backlink_atomic,
     _metric_registry,
     _summary,
@@ -354,6 +355,19 @@ class OverridePlugin:
         self.assertEqual(library_case.metric_ids, ("library_pressure",))
         self.assertEqual(visualization_case.failure_class, "visualization_error")
         self.assertFalse(visualization_case.is_loss)
+
+    def test_manifest_package_embeds_checkpoint_manifest(self) -> None:
+        candidate = replace(
+            self.make_package("candidate", 7),
+            package_manifest={"checkpoint_sha256": "abc", "training_updates": 10},
+        )
+
+        payload = _manifest_package(candidate)
+
+        self.assertEqual(
+            payload["package_manifest"],
+            {"checkpoint_sha256": "abc", "training_updates": 10},
+        )
 
     def test_batch_alternates_side_and_embeds_compact_records_in_report(self) -> None:
         candidate = self.make_package("candidate", 7)

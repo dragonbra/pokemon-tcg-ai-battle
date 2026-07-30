@@ -836,7 +836,7 @@ def _manifest(
 
 
 def _manifest_package(package: SubmissionPackage) -> dict[str, object]:
-    return {
+    payload = {
         "name": package.name,
         "display_name": package.display_name or package.name,
         "representative_cards": list(package.representative_cards),
@@ -844,6 +844,9 @@ def _manifest_package(package: SubmissionPackage) -> dict[str, object]:
         "deck_hash": package.deck_hash,
         "cg_hash": package.cg_manifest.get("tree_hash"),
     }
+    if package.package_manifest is not None:
+        payload["package_manifest"] = package.package_manifest
+    return payload
 
 
 def _summary(records: tuple[dict[str, object], ...]) -> dict[str, object]:

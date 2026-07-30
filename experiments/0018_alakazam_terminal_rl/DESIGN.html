@@ -142,9 +142,16 @@
       10 平。U100 的 rolling 100/500/2000 胜率为 73.0% / 69.2% / 71.0%；全程对应峰值为
       78.0%（U96）/ 75.4%（U92）/ 72.7%（U92）。最终 reference KL surrogate 为 0.02694，
       behavior KL 为 4.19e-5，Actor 相对 BC 的 L2 位移为 2.012%。</p>
-    <p class="note">滚动胜率只是训练采样诊断。长程候选 U39/U63 的官方分数分别为 943.4 和
-      600.0，而较早的 U6/U11 为 974.5/999.5；这证明后期 rolling 峰值不能单调预测线上分数。
-      V4 完成不等于自动晋级，后续仍需同合同 frozen-greedy 官方引擎评测或用户明确授权的正式提交。</p>
+    <p><strong>冻结 Arena 评测：</strong>V5/V6/V7 在相同 30 个正式 opponent、每个 10 局且
+      平衡先后手的官方引擎合同下分别评测 U39/U63/U92。U39 为 235-65（78.33%，零 error），
+      U63 为 219-80（全部 300 个调度局口径为 73.00%，另有 1 个 step-zero worker crash），
+      U92 为 231-69（77.00%，零 error）。项目权威报告和总览保存在
+      <a href="evaluation/index.html">evaluation/index.html</a>。该独立随机评测按观测总体胜率选择
+      U39，同时保留 U92 为 U63 之后最强候选；U39/U92 相差 4 胜，不构成 paired 显著性结论。</p>
+    <p class="note">用户明确授权 U39 与 U92 各进行一次真实 Kaggle 提交。U39 ref 55097268、
+      U92 ref 55097478 均已达到 <code>SubmissionStatus.COMPLETE</code> 并出现实时 public score，
+      证明归档通过 Validation 且官方评测已经启动。V5/V7 保存提交时点 receipt；线上分数属于滚动
+      快照，后续仍可能变化。提交不自动把任一 package 晋级到固定本地 opponent catalog。</p>
     <p>完整特征 shape、存储限制、模型来源和评测边界见同步维护的
       <a href="DESIGN.md">DESIGN.md</a>。</p>
   </section>

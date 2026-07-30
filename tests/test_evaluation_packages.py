@@ -260,6 +260,26 @@ class EvaluationPackageTests(unittest.TestCase):
 
         self.assertEqual(initial.package_hash, cached.package_hash)
 
+    def test_package_hash_commits_strategy_checkpoint_and_manifest(self) -> None:
+        package_root = self.make_package(deck=[1] * 60)
+        strategy = package_root / "strategy"
+        strategy.mkdir()
+        checkpoint = strategy / "model.bin"
+        checkpoint.write_bytes(b"checkpoint-a")
+        manifest = package_root / "manifest.json"
+        manifest.write_text('{"update": 10}\n', encoding="utf-8")
+        initial = load_submission_package(package_root, {1})
+        self.assertEqual(initial.package_manifest, {"update": 10})
+
+        checkpoint.write_bytes(b"checkpoint-b")
+        changed_checkpoint = load_submission_package(package_root, {1})
+        self.assertNotEqual(initial.package_hash, changed_checkpoint.package_hash)
+
+        checkpoint.write_bytes(b"checkpoint-a")
+        manifest.write_text('{"update": 20}\n', encoding="utf-8")
+        changed_manifest = load_submission_package(package_root, {1})
+        self.assertNotEqual(initial.package_hash, changed_manifest.package_hash)
+
     def test_validator_returns_the_loaded_package(self) -> None:
         package_root = self.make_package(deck=[1] * 60)
 

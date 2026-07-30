@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>0021 Corrected Persona-Free Universal BC</title>
+  <style>
+    body { font: 16px/1.55 system-ui, sans-serif; max-width: 980px; margin: 0 auto; padding: 32px; color: #17212b; }
+    h1, h2 { line-height: 1.2; }
+    code, pre { font-family: ui-monospace, monospace; background: #f3f5f7; }
+    code { padding: 2px 4px; }
+    pre { padding: 16px; overflow: auto; border-left: 4px solid #356859; }
+    .blocked { border: 1px solid #b23a48; background: #fff6f7; padding: 14px; }
+  </style>
+</head>
+<body>
+  <h1>0021 Corrected Persona-Free Universal BC</h1>
+  <p class="blocked"><strong>Status:</strong> non-trainable scaffold. Persona conditioning has
+  been removed and feature/target/loss corrections are tested, but corrected materialization and
+  IID/deck-OOD split audits must pass before V1.</p>
+
+  <h2>Intended Policy</h2>
+  <pre>pi(action | actor-relative causal state, exact own 60-card deck,
+            causal visible history, unordered legal-option set)</pre>
+  <p>Teacher/team identity is provenance only. Winner-side actions remain the only BC targets.</p>
+
+  <h2>Data Flow</h2>
+  <pre>actor-visible observation + exact own deck + legal options
+  -&gt; actor-relative codec
+  -&gt; board/entity encoder + causal resource/event memory
+  -&gt; unordered option-content encoder
+  -&gt; R15 scenario/goal integration
+  -&gt; gradual-option pointer decoder
+  -&gt; legal action; learned STOP only when optional</pre>
+  <p>The scaffold directly instantiates <code>R15DeterministicGradualOptionPolicy</code>. Source
+  embeddings and source residuals are absent. The corrected model has 17,346,562 parameters after
+  removing the 129 x 320 option-position embedding.</p>
+
+  <h2>Required Contract</h2>
+  <ul>
+    <li>No source, persona, team, submission, absolute player identity, or option-list position in Actor input.</li>
+    <li>Global seat, event actors, and public zone rows are Actor-relative; zones are ordered self then opponent.</li>
+    <li>Legal-option permutation equivariance.</li>
+    <li>STOP target for <code>optional_stop</code>, not <code>forced_max</code>.</li>
+    <li>Mean per-decision sequence NLL.</li>
+    <li>Separate Episode-IID and meaningful deck-OOD validation.</li>
+    <li>Atomic, bounded exact epoch-boundary recovery checkpoints and W&amp;B online recording.</li>
+  </ul>
+
+  <h2>Data Boundary</h2>
+  <p>The accepted 0019 winner Episode/player membership is frozen, but its model-ready shards are
+  not trainable 0021 input. Corrected shards require a new schema and commitments. The verified
+  preflight split contains 76,453 train, 8,280 IID-validation, and 4,770 deck-OOD Episodes; the OOD
+  set has 20 exact decks with at least 50 Episodes each.</p>
+
+  <h2>Release Gates</h2>
+  <ol>
+    <li>Relative-seat and Actor identity tests.</li>
+    <li>Randomized option-permutation tests.</li>
+    <li>Termination-aware target and decision-balanced loss tests.</li>
+    <li>New shard and IID/OOD split audit.</li>
+    <li>Rematerialized shapes and the measured 17,346,562 parameter count synchronized into both design documents.</li>
+    <li>Smoke validation of checkpoint, TensorBoard, and W&amp;B contracts.</li>
+  </ol>
+
+  <h2>Checkpoint and Resume Contract</h2>
+  <p>0021 V1 is a user-authorized exception to the model-only default. Each completed epoch saves
+  model and AdamW optimizer state, optional scheduler/GradScaler state, trainer counters and
+  history, plus Python, NumPy, Torch CPU, and all Torch CUDA RNG states. Resume is allowed only in
+  the same repository version and stable W&amp;B run after the dataset, feature compiler, model
+  config, and training config hashes match.</p>
+  <p>The boundary is a fully completed train + IID validation + deck-OOD validation epoch; it does
+  not claim mid-epoch DataLoader recovery. Named criteria retain at most eight full recovery files
+  and publish retained bytes. W&amp;B additionally receives every-100-batch running loss,
+  throughput, gradient norm, learning rate, elapsed time, and GPU memory telemetry.</p>
+  <p>Formal V1 also enforces at least 43,200 accumulated seconds (12 hours) of complete CUDA epoch
+  work before early stopping may fire. This counter is checkpointed and restored across process
+  interruptions.</p>
+
+  <h2>Later Research Boundary</h2>
+  <p>Both players' visible states may be used by a separately versioned representation or transition
+  objective. Loser actions must never become BC labels, and V1 contains no unvalidated auxiliary
+  objective.</p>
+</body>
+</html>

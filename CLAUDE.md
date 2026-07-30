@@ -6,7 +6,7 @@
 - 胡地卡组的单 deck、单 expert BC 已经成功验证 full-action imitation 与官方引擎闭环；这不代表跨卡组泛化、rollout collection、reward/value calibration 或 RL fine-tuning 已经完成。
 - 当前并行推进两条主线：一是建立可审计的 rollout、reward、value calibration 与 RL fine-tuning 闭环；二是使用相近的 BC 结构分别学习常见强力卡组，形成更强、更多样的 arena opponents，为后续 RL 提供 curriculum 和训练环境。
 - 多卡组 BC 默认训练相互隔离的 deck-specific policy。每套卡组必须保持明确的 deck、expert/team policy、dataset manifest、experiment/version 和 candidate package 边界；不得将不同 deck、team 或实现逻辑的动作标签无条件混入同一个 policy。
-- 未来若采用跨卡组共享模型，必须显式加入可审计的 deck/source conditioning，并为冲突标签以及按 deck、source 分组的独立评测建立明确合同。离线 exact-action 或 legal-action 指标只能证明模仿质量和动作合同，不能单独证明真实对战强度。
+- 未来若采用跨卡组共享模型，必须显式加入可审计的 exact-deck conditioning；team/source identity 只允许作为 provenance、分组切分、采样、去重和分来源评测字段，不得进入 actor forward、embedding、adapter 或其他会改变 logits 的路径。冲突标签必须按 deck/source 分组审计，离线 exact-action 或 legal-action 指标只能证明模仿质量和动作合同，不能单独证明真实对战强度。0015–0019 的 source-conditioned checkpoint 是保留的历史实验资产，不再作为新通用 BC 的模型输入范式。
 - 新 BC policy 必须先形成自包含 candidate package，经过 package 验证和官方 engine runtime 真实对局评测，并取得用户明确确认后，才可进入 `evaluation/arena/opponents/`。不得因训练完成、离线指标较高或单一 matchup 表现良好而自动晋级。
 - 每个正式 RL run 必须记录实际 opponent catalog、可复现的 pool snapshot，或足以重建对手集合的 package 标识和版本。opponent 构成、采样权重或 curriculum 阶段变化必须作为显式实验变量，禁止在未记录的情况下跨不同 opponent 池继续同一逻辑版本或直接比较结果。
 
@@ -78,7 +78,7 @@
 - 同步内容至少覆盖受影响的字段与张量 shape、模型数据流与参数结构、训练目标、当前/下一阶段、正式工作包与研究 checkpoint 的边界；不得让页面继续展示已经失效的 schema、数字或阶段结论。
 - 实现或配置已经变化但 `experiments/<project_id>/DESIGN.html` 或 `DESIGN.md` 尚未同步时，该项工作视为未完成。交付前必须用当前代码、数据 audit、checkpoint metadata 和 run manifest 交叉核对页面内容；不能只根据旧报告手工推断。
 - 纯粹的内部重构、文件移动或不改变模型/训练语义的修复不要求制造文档改动；但如果路径发生变化，页面中的事实来源链接也必须保持可用。
-- BC 数据默认只允许来自同一个明确的 team/agent policy；manifest、dataset summary 和 run record 必须记录并校验该来源。不得把不同 team、不同实现逻辑的动作标签直接混成一个无条件 BC policy；只有在模型显式加入可审计的 expert/source conditioning、并单独设计冲突标签与分来源评测时，才可以开启多来源训练。
+- BC 数据默认只允许来自经过明确审计的 team/agent policy；manifest、dataset summary 和 run record 必须记录并校验来源。多来源训练必须保留 source 级 provenance、完整 Episode split、重复/冲突标签审计、分来源指标和必要的分层采样，但 source identity 不得成为 actor-visible 输入。高质量老师用于筛选 demonstrations 和分析标签质量，不代表部署策略要复刻该老师的人格；checkpoint 选择必须匹配最终不带 persona 的部署 forward。
 
 ## RL 实验内迭代版本硬约束
 
@@ -97,6 +97,7 @@
 - W&B SDK 与 CLI 在本机使用宿主机 `python3` 的用户级环境，不安装到项目 `.venv`；登录和诊断统一使用 `python3 -m wandb ...`。真正执行训练的解释器必须能够 `import wandb`，不得一边用宿主机安装、一边用默认不可见宿主 site-packages 的 `.venv/bin/python` 启动正式 online run。
 - 自动 W&B 镜像只允许由 `TrainingLogger` 对 `rl_runs/<project_id>/versions/<V<n>_<tag>>/artifact/` 正式路径启用。一个 repository version 映射到一个稳定 W&B run ID；同一版本的真实断点恢复可以 resume，新训练语义、超参数或策略更新必须分配新的 `V<n>_<tag>` 和 W&B run，禁止复用旧 run 或向旧曲线追加另一项实验。
 - BC 使用 `trainer/epoch` 横轴与 `bc/*` namespace，value calibration 使用 `trainer/epoch` 与 `value/*`，PPO 使用 `trainer/update` 与 `ppo/*`，rollout 诊断使用 `env/decisions`/`env/episodes` 与 `rollout/*`。不同阶段的 loss、训练内 rollout 胜率和吞吐不能互相冒充策略强度。
+- PPO rollout 指标必须记录并按真实 policy 时序汇报。若第 `k` 批 Episode 在参数更新前由 `checkpoint/update=k-1` 的 stochastic behavior policy 采集，则 rolling 100/500/2000 只能称为该采样策略及其历史窗口的训练诊断，不得称为 `checkpoint/update=k` 的 greedy 胜率或策略强度。现有 `trainer/update` 与 `rollout/*` 曲线不得为了对齐 checkpoint 而回写或平移；后续 run 应额外记录 `rollout/source_policy_update`、`checkpoint/update`，并把固定 opponent snapshot、固定 seed、平衡先后手的冻结 greedy 评测单独写入 `eval/*` 与 `eval/checkpoint_update`。Agent 汇报候选 checkpoint 时必须明确区分 sampled rollout、该批数据更新产生的 checkpoint 和 frozen greedy evaluation；rolling 峰值只能用于定位候选区间，checkpoint 强弱结论必须以同合同的 official-engine 冻结评测为准。
 - 每个正式版本的 `status.json`、`training_summary.json` 或等价版本记录必须保留 W&B project、稳定 run ID 或 URL、sync 状态以及失败原因；本地 `rl_runs/<project_id>/versions/<V<n>_<tag>>/wandb/` 只作为可再生 staging 并保持 Git ignore。
 - 默认只镜像有限标量、非秘密 config 和 W&B 自动元数据，不上传 checkpoint、dataset、optimizer state、完整 trace、replay、observation、source patch 或其他大文件。跨 BC/RL 的 policy 强度比较仍必须来自相同 official-engine runtime、opponent catalog、seed/先后手合同和 metric profile 下的正式 `eval/*` 结果。
 

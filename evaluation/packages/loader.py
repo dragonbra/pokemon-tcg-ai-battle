@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import os
 import subprocess
 import sys
@@ -30,6 +31,7 @@ class SubmissionPackage:
     cg_manifest: dict[str, object]
     display_name: str | None = None
     representative_cards: tuple[dict[str, object], ...] = ()
+    package_manifest: dict[str, object] | None = None
 
 
 def _clear_cg_modules() -> None:
@@ -240,18 +242,38 @@ def _hash_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _read_package_manifest(root: Path) -> dict[str, object] | None:
+    path = root / "manifest.json"
+    if not path.exists():
+        return None
+    if not path.is_file() or path.stat().st_size > 1024 * 1024:
+        raise PackageValidationError("manifest.json must be a file no larger than 1 MiB")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise PackageValidationError("manifest.json is not valid UTF-8 JSON") from exc
+    if not isinstance(payload, dict):
+        raise PackageValidationError("manifest.json must contain a JSON object")
+    return payload
+
+
 def _compute_package_hash(
     root: Path,
-    entrypoint: Path,
-    deck_path: Path,
-    cg_manifest: dict[str, object],
 ) -> str:
-    files = cg_manifest["files"]
-    if not isinstance(files, dict):
-        raise PackageValidationError("cg manifest files must be a mapping")
+    """Commit every runtime asset while excluding interpreter cache artifacts."""
     digest = hashlib.sha256()
-    components = [("deck.csv", _hash_file(deck_path)), ("main.py", _hash_file(entrypoint))]
-    components.extend((f"cg/{path}", file_hash) for path, file_hash in files.items())
+    components: list[tuple[str, str]] = []
+    for path in root.rglob("*"):
+        relative = path.relative_to(root)
+        if (
+            not path.is_file()
+            or "__pycache__" in relative.parts
+            or path.suffix in {".pyc", ".pyo"}
+        ):
+            continue
+        components.append((relative.as_posix(), _hash_file(path)))
+    if not components:
+        raise PackageValidationError("package contains no hashable files")
     for relative_path, file_hash in sorted(components):
         digest.update(f"{relative_path}:{file_hash}\n".encode("utf-8"))
     return digest.hexdigest()
@@ -276,13 +298,16 @@ def load_submission_package(
     from evaluation.runtime.loader import compute_cg_manifest
 
     cg_manifest = compute_cg_manifest(package_root / "cg")
+    package_hash = _compute_package_hash(package_root)
+    package_manifest = _read_package_manifest(package_root)
     _validate_agent_in_subprocess(entrypoint, package_root, deck)
     return SubmissionPackage(
         name=name or package_root.name,
         root=package_root,
         deck=deck,
         entrypoint=entrypoint,
-        package_hash=_compute_package_hash(package_root, entrypoint, deck_path, cg_manifest),
+        package_hash=package_hash,
         deck_hash=_hash_file(deck_path),
         cg_manifest=cg_manifest,
+        package_manifest=package_manifest,
     )

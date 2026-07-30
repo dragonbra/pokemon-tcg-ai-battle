@@ -1,4 +1,4 @@
-"""Fail-closed neutral inference for the frozen 0019 epoch-13 foundation."""
+"""Fail-closed inference for the frozen 0019 epoch-13 foundation."""
 from __future__ import annotations
 
 from collections import Counter
@@ -108,12 +108,14 @@ class FrozenNeutralPolicy:
         model: SourceConditionedR15Policy,
         deck: Sequence[int],
         config: IDOnlyConfig,
+        *,
+        source_id: int = DEPLOYMENT_SOURCE_ID,
     ) -> None:
         torch.set_num_threads(1)
         self.model = model.eval()
         self.deck = validate_deck(deck)
         self.config = config
-        self.source_id = DEPLOYMENT_SOURCE_ID
+        self.source_id = source_id
         self.encoder: OnlineCausalEncoder | None = None
         self.fallback_count = 0
         self.last_fallback_reason: str | None = None
@@ -124,6 +126,8 @@ class FrozenNeutralPolicy:
         checkpoint: str | Path,
         ontology_path: str | Path,
         deck: Sequence[int],
+        *,
+        source_id: int = DEPLOYMENT_SOURCE_ID,
     ) -> "FrozenNeutralPolicy":
         checkpoint_path = Path(checkpoint)
         ontology = Path(ontology_path)
@@ -140,11 +144,17 @@ class FrozenNeutralPolicy:
         if metadata.get("deployment_source_id") != DEPLOYMENT_SOURCE_ID:
             raise ValueError("checkpoint deployment source is not neutral")
         config, source_config = _model_config(metadata)
+        if (
+            isinstance(source_id, bool)
+            or not isinstance(source_id, int)
+            or not 0 <= source_id <= source_config.vocabulary_size
+        ):
+            raise ValueError("source_id is outside the frozen vocabulary")
         model = SourceConditionedR15Policy(
             config, source_config, ontology_path=ontology
         )
         model.load_state_dict(payload["model"], strict=True)
-        return cls(model, deck, config.ac.base)
+        return cls(model, deck, config.ac.base, source_id=source_id)
 
     def reset(self) -> None:
         self.encoder = None
@@ -170,7 +180,7 @@ class FrozenNeutralPolicy:
             return legal_fallback(observation)
         try:
             batch = self.encoder.encode(observation)
-            batch["source_id"] = torch.tensor([DEPLOYMENT_SOURCE_ID], dtype=torch.long)
+            batch["source_id"] = torch.tensor([self.source_id], dtype=torch.long)
             with torch.inference_mode():
                 return self.model.greedy_action(batch)
         except (IndexError, RuntimeError, ValueError) as error:

@@ -1,0 +1,310 @@
+{
+  "eligible_ood_decks": 84,
+  "episode_split_counts": {
+    "train": 76453,
+    "validation_deck_ood": 4770,
+    "validation_iid": 8280
+  },
+  "exact_decks": 367,
+  "model_ready": {
+    "a0_eligible_counts": {
+      "train": 6292898,
+      "validation_deck_ood": 382980,
+      "validation_iid": 671254
+    },
+    "actor_source_fields": [],
+    "cache_only_provenance_fields": [
+      "source_id",
+      "source_payload_sha256"
+    ],
+    "content_sha256": "23073583eafff7f4ddb1f1c13ef592b006a41d3dac4667d0dc6dbe34a829688a",
+    "counts": {
+      "train": 6292898,
+      "validation_deck_ood": 382980,
+      "validation_iid": 671254
+    },
+    "feature_compiler_sha256": "b4095d1e9a090243d31ea1fa23b598f672e1cb7e72394e0ec058f80bd178ef8c",
+    "field_shape_ranges": {
+      "a0_eligible": {
+        "maximum": [],
+        "minimum": []
+      },
+      "action_mask": {
+        "maximum": [
+          31
+        ],
+        "minimum": [
+          1
+        ]
+      },
+      "action_termination": {
+        "maximum": [],
+        "minimum": []
+      },
+      "event_cat": {
+        "maximum": [
+          64,
+          8
+        ],
+        "minimum": [
+          64,
+          8
+        ]
+      },
+      "event_mask": {
+        "maximum": [
+          64
+        ],
+        "minimum": [
+          64
+        ]
+      },
+      "event_num": {
+        "maximum": [
+          64,
+          4
+        ],
+        "minimum": [
+          64,
+          4
+        ]
+      },
+      "known_opponent_hand_card_ids": {
+        "maximum": [
+          29
+        ],
+        "minimum": [
+          1
+        ]
+      },
+      "known_opponent_hand_mask": {
+        "maximum": [
+          29
+        ],
+        "minimum": [
+          1
+        ]
+      },
+      "ledger_cat": {
+        "maximum": [
+          28,
+          4
+        ],
+        "minimum": [
+          19,
+          4
+        ]
+      },
+      "ledger_mask": {
+        "maximum": [
+          28
+        ],
+        "minimum": [
+          19
+        ]
+      },
+      "ledger_num": {
+        "maximum": [
+          28,
+          15
+        ],
+        "minimum": [
+          19,
+          15
+        ]
+      },
+      "legacy_entity_cat": {
+        "maximum": [
+          117,
+          7
+        ],
+        "minimum": [
+          82,
+          7
+        ]
+      },
+      "legacy_entity_mask": {
+        "maximum": [
+          117
+        ],
+        "minimum": [
+          82
+        ]
+      },
+      "legacy_entity_num": {
+        "maximum": [
+          117,
+          5
+        ],
+        "minimum": [
+          82,
+          5
+        ]
+      },
+      "legacy_global_cat": {
+        "maximum": [
+          4
+        ],
+        "minimum": [
+          4
+        ]
+      },
+      "legacy_global_num": {
+        "maximum": [
+          12
+        ],
+        "minimum": [
+          12
+        ]
+      },
+      "legacy_option_cat": {
+        "maximum": [
+          78,
+          11
+        ],
+        "minimum": [
+          3,
+          11
+        ]
+      },
+      "legacy_option_mask": {
+        "maximum": [
+          78
+        ],
+        "minimum": [
+          3
+        ]
+      },
+      "max_count": {
+        "maximum": [],
+        "minimum": []
+      },
+      "min_count": {
+        "maximum": [],
+        "minimum": []
+      },
+      "ordered_action": {
+        "maximum": [
+          31
+        ],
+        "minimum": [
+          1
+        ]
+      },
+      "registered_card_ids": {
+        "maximum": [
+          28
+        ],
+        "minimum": [
+          19
+        ]
+      },
+      "registered_mask": {
+        "maximum": [
+          28
+        ],
+        "minimum": [
+          19
+        ]
+      },
+      "registered_multiplicity": {
+        "maximum": [
+          28
+        ],
+        "minimum": [
+          19
+        ]
+      },
+      "source_id": {
+        "maximum": [],
+        "minimum": []
+      },
+      "source_payload_sha256": {
+        "maximum": [
+          32
+        ],
+        "minimum": [
+          32
+        ]
+      },
+      "unknown_opponent_hand_count": {
+        "maximum": [],
+        "minimum": []
+      },
+      "zone_inventory_num": {
+        "maximum": [
+          2,
+          16
+        ],
+        "minimum": [
+          2,
+          16
+        ]
+      }
+    },
+    "materializer_sha256": "bf2cbb1f1ccd6c10d35348aed2424b4abc23e51ac375de09d49833f804e42d3a",
+    "ontology_file_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+    "path": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0021_persona_free_universal_bc/dataset/V1_corrected_model_ready",
+    "raw_dataset_content_sha256": "5de938a691f64282fc10e5cf35eda6e608d283aea429ff7ab2cf927373151c40",
+    "schema_version": "0021_actor_relative_option_set_cache_v1",
+    "shard_bytes": {
+      "train": 45962587834,
+      "validation_deck_ood": 2722718303,
+      "validation_iid": 4900024752
+    },
+    "shard_counts": {
+      "train": 6146,
+      "validation_deck_ood": 375,
+      "validation_iid": 656
+    }
+  },
+  "ood_deck_episode_counts": {
+    "000ce835768739dfb89aafeaa90dc17b663eaac21462bf31840eeefb3a84e361": 440,
+    "06315e5ffe78962b88874ce4d6cba9026d9cb806904ba4311f4ab0b4fbc95fee": 128,
+    "0780639b241f41fe2c5ca7446e14c8eccbb28a874676bfd8a084cf3ffb6214f7": 224,
+    "2049dc0c06331da7cf4e3d83e6b01cf0c8eeff11060b6327a1c3665edf061d60": 106,
+    "274fdba6eada6df7e0a1e8fc1a1c49b0f2c6388d2f43fcc0913ca3ca7dca7f23": 59,
+    "30debe486dd2c747d8f08ff4e025582a87849805135aabf0287ef376281c5486": 115,
+    "3aab81ad9561c9543bcaf9a4ec32a48859e697e6461867c7d99cd8c4d865ec21": 68,
+    "3b422f60af87bea839e87ccb48b7beed7d19051446cb6fb336cabbb36acb45d9": 243,
+    "4c9dda063c06a0985436b3555c2415791bc1b9652469998333eb39d07c30d100": 899,
+    "78f70aa69d21ed2e58cd438451596e5f98986257599b6e1890ab105931156c36": 396,
+    "98762e5f29e5bbb89b1caade08a4486a94bf0d5100051c97e431d138a05b7d14": 65,
+    "9e9d5bf527b28399d9bb54e2ed3f24e8cc0c1f5ad5afc74aba684a67a6f68b9d": 180,
+    "acd6c60eb03113a26f848cf53d82357c0186e7d3d4267f1b697dffe6d82175ad": 358,
+    "af9d3bfe030bb46d49c6cadfc11340e68fd01507f3735326bf1f256c686242fe": 110,
+    "ba734505aa9e4e491f5f3e37039f22ea3209f963ada43903bbbe80a8423328ca": 153,
+    "d49dcedce14c6a5ed99069e8c9671be521399df6f9dfc37210c6d7c0e86180e5": 327,
+    "e7f7d8fb85f7d7711fb9a582b4aa97671fe6f67dd716cdc8684aad40dcf57da7": 346,
+    "f81944bc80f20a54e985d9b94d6d78ed3738e82f6637432edf0f874ae6d97090": 59,
+    "f8aff78673f2454ab0db8d3522b706254043f9824e5755f38783af905bbee30c": 210,
+    "ff470cae3bf761a8df1d51e4ca791995df67ac68d50928bc704f63a61404a5b9": 284
+  },
+  "ood_deck_hashes": [
+    "ba734505aa9e4e491f5f3e37039f22ea3209f963ada43903bbbe80a8423328ca",
+    "30debe486dd2c747d8f08ff4e025582a87849805135aabf0287ef376281c5486",
+    "2049dc0c06331da7cf4e3d83e6b01cf0c8eeff11060b6327a1c3665edf061d60",
+    "274fdba6eada6df7e0a1e8fc1a1c49b0f2c6388d2f43fcc0913ca3ca7dca7f23",
+    "e7f7d8fb85f7d7711fb9a582b4aa97671fe6f67dd716cdc8684aad40dcf57da7",
+    "f81944bc80f20a54e985d9b94d6d78ed3738e82f6637432edf0f874ae6d97090",
+    "f8aff78673f2454ab0db8d3522b706254043f9824e5755f38783af905bbee30c",
+    "06315e5ffe78962b88874ce4d6cba9026d9cb806904ba4311f4ab0b4fbc95fee",
+    "3b422f60af87bea839e87ccb48b7beed7d19051446cb6fb336cabbb36acb45d9",
+    "d49dcedce14c6a5ed99069e8c9671be521399df6f9dfc37210c6d7c0e86180e5",
+    "3aab81ad9561c9543bcaf9a4ec32a48859e697e6461867c7d99cd8c4d865ec21",
+    "acd6c60eb03113a26f848cf53d82357c0186e7d3d4267f1b697dffe6d82175ad",
+    "78f70aa69d21ed2e58cd438451596e5f98986257599b6e1890ab105931156c36",
+    "000ce835768739dfb89aafeaa90dc17b663eaac21462bf31840eeefb3a84e361",
+    "4c9dda063c06a0985436b3555c2415791bc1b9652469998333eb39d07c30d100",
+    "98762e5f29e5bbb89b1caade08a4486a94bf0d5100051c97e431d138a05b7d14",
+    "af9d3bfe030bb46d49c6cadfc11340e68fd01507f3735326bf1f256c686242fe",
+    "0780639b241f41fe2c5ca7446e14c8eccbb28a874676bfd8a084cf3ffb6214f7",
+    "9e9d5bf527b28399d9bb54e2ed3f24e8cc0c1f5ad5afc74aba684a67a6f68b9d",
+    "ff470cae3bf761a8df1d51e4ca791995df67ac68d50928bc704f63a61404a5b9"
+  ],
+  "ood_selection_sha256": "4a9264b4175bff3b7a912f035983db53ea944780f4d410ccf23a8f3c159ca1c5",
+  "schema_version": "0021_data_preflight_audit_v1",
+  "source_trajectory_index_content_sha256": "5e91b0e9e0dd3840969acc4e294a27a0b209c9cf94aeb47acdd4f116f36751ba",
+  "status": "corrected_materialization_verified_training_ready",
+  "winner_episode_players": 89503
+}
