@@ -4,6 +4,7 @@
   "deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
   "short_hash": "d6c573dd89bd",
   "archetype": "Festival Lead / Dipplin",
+  "source_archetype": "Festival Lead / Dipplin",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 1,

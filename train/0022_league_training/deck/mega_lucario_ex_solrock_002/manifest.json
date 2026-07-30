@@ -1,0 +1,32 @@
+{
+  "schema_version": "external_deck_reference_v1",
+  "directory": "mega_lucario_ex_solrock_002",
+  "source_kind": "user_provided_exact_deck",
+  "source_label": "User-provided exact deck",
+  "source_path": "mega_lucario_ex.csv",
+  "deck_sha256": "ff157aaa919099f08416952659f4bc7b203589288ccb477da67c2b245107a514",
+  "short_hash": "ff157aaa9190",
+  "archetype": "Mega Lucario ex / Solrock",
+  "catalog_label": "Mega Lucario ex / Solrock - External 02",
+  "classification_note": "Named from the actual key Pokemon in the 60-card list and numbered after the Kaggle mega_lucario_ex_solrock_001 deck.",
+  "usage_note": "External League Training reference; no Kaggle snapshot metrics are attributed to it.",
+  "cards": [
+    {"card_id": 6, "name": "Basic {F} Energy", "count": 10},
+    {"card_id": 20, "name": "Rock Fighting Energy", "count": 3},
+    {"card_id": 675, "name": "Lunatone", "count": 3},
+    {"card_id": 676, "name": "Solrock", "count": 3},
+    {"card_id": 677, "name": "Riolu", "count": 4},
+    {"card_id": 678, "name": "Mega Lucario ex", "count": 4},
+    {"card_id": 1102, "name": "Dusk Ball", "count": 4},
+    {"card_id": 1123, "name": "Switch", "count": 3},
+    {"card_id": 1141, "name": "Premium Power Pro", "count": 4},
+    {"card_id": 1142, "name": "Fighting Gong", "count": 4},
+    {"card_id": 1152, "name": "Poké Pad", "count": 4},
+    {"card_id": 1159, "name": "Hero’s Cape", "count": 1},
+    {"card_id": 1182, "name": "Boss’s Orders", "count": 2},
+    {"card_id": 1192, "name": "Carmine", "count": 3},
+    {"card_id": 1197, "name": "Xerosic’s Machinations", "count": 2},
+    {"card_id": 1227, "name": "Lillie's Determination", "count": 4},
+    {"card_id": 1229, "name": "Wally's Compassion", "count": 2}
+  ]
+}

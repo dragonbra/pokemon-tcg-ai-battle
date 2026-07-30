@@ -4,6 +4,7 @@
   "deck_sha256": "5a1a6ac264ccfd017ae137a035205d769fe57512323d474c22be9107177e36a8",
   "short_hash": "5a1a6ac264cc",
   "archetype": "Mega Lucario ex / Solrock",
+  "source_archetype": "Mega Lucario ex / Solrock",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 1,

@@ -4,6 +4,7 @@
   "deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
   "short_hash": "c04e65de725b",
   "archetype": "Cynthia's Garchomp ex / Roserade",
+  "source_archetype": "Cynthia's Garchomp ex / Roserade",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 2,

@@ -4,6 +4,7 @@
   "deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
   "short_hash": "cb57ce7f3708",
   "archetype": "Dragapult ex / Dusknoir",
+  "source_archetype": "Dragapult ex / Dusknoir",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 1,

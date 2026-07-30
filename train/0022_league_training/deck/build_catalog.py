@@ -379,11 +379,11 @@ def _render_index(
     html_text = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Daily Deck Catalog</title>
 <style>
 :root{{--bg:#f4f1ea;--ink:#1d2b2b;--muted:#66716e;--panel:#fffdf8;--line:#d9d4c9;--accent:#0d7b75;--accent2:#d66a3d}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}}main{{max-width:1420px;margin:auto;padding:28px 22px 80px}}.eyebrow{{color:var(--accent);font-size:12px;font-weight:800;letter-spacing:.08em}}h1{{font-size:clamp(28px,4vw,48px);margin:5px 0}}h2{{margin:0 0 8px}}h3{{margin:20px 0 8px}}p{{margin:8px 0}}.section-heading{{margin:30px 0 10px}}.hero,.panel,.deck-card{{background:var(--panel);border:1px solid var(--line);box-shadow:0 8px 22px #1d2b2b0b}}.hero,.panel{{padding:22px;margin:16px 0}}.summary-grid,.record-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}}.metric,.record-grid span{{border:1px solid var(--line);padding:12px;background:#faf7f0}}.metric b,.record-grid b{{display:block;font-size:25px;color:var(--accent)}}small,.muted{{color:var(--muted);display:block}}.toolbar{{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}}input,select{{padding:10px;border:1px solid var(--line);background:white;min-width:230px;font:inherit}}.deck-list{{display:grid;gap:12px}}.deck-card{{overflow:hidden}}.deck-card.external{{border-left:4px solid var(--accent2)}}.deck-card summary{{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 20px}}.deck-card summary::-webkit-details-marker{{display:none}}.deck-title small{{font-family:ui-monospace,monospace}}.deck-stats{{color:var(--muted);white-space:nowrap}}.external .deck-stats b{{color:var(--accent2)}}.detail-body{{border-top:1px solid var(--line);padding:4px 20px 22px}}.note{{padding:10px 12px;border-left:3px solid var(--accent2);background:#fff6ef}}.provenance code,code{{font-family:ui-monospace,monospace;font-size:12px;overflow-wrap:anywhere}}.table-scroll{{overflow-x:auto}}table{{width:100%;border-collapse:collapse;background:white}}th,td{{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}}th{{background:#eee9dd}}.card-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}}.card-tile{{border:1px solid var(--line);padding:9px;background:#fff;min-width:0}}.card-art{{display:flex;align-items:center;gap:8px;min-height:94px}}.card-thumb{{position:relative;border:0;background:none;padding:0;width:62px;height:87px;cursor:zoom-in;flex:0 0 auto}}.card-thumb img{{width:62px;height:87px;object-fit:cover;border-radius:4px;display:block}}.thumb-fallback{{display:none;position:absolute;inset:0;background:#e9e3d8;padding:5px;font-size:11px}}.thumb-fallback small{{font-size:9px}}.card-tile b{{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.card-tile small{{font-size:12px}}.modal{{display:none;position:fixed;inset:0;background:#101c1ccc;align-items:center;justify-content:center;padding:20px;z-index:5}}.modal.open{{display:flex}}.modal img{{max-width:min(92vw,520px);max-height:88vh;border-radius:8px}}.modal button{{position:absolute;top:18px;right:22px;font-size:28px;color:white;background:none;border:0;cursor:pointer}}a{{color:var(--accent)}}@media(max-width:700px){{main{{padding:18px 12px 50px}}.deck-card summary{{display:block}}.deck-stats{{margin-top:6px;white-space:normal}}}}
-</style></head><body><main><section class="hero"><div class="eyebrow">KAGGLE DAILY SNAPSHOT · EXACT DECK CATALOG</div><h1>Unique Top 100 Decks</h1><p>Frozen from <code>{html.escape(str(report))}</code>. One directory per full <code>deck_sha256</code>; Card IDs remain machine-readable in <code>deck.csv</code>, while this page uses card names and images.</p><div class="summary-grid"><div class="metric"><b>{row_count}</b><span>audited leaderboard rows</span></div><div class="metric"><b>{len(items)}</b><span>unique full-hash decks</span></div><div class="metric"><b>60</b><span>cards per deck</span></div><div class="metric"><b>2026-07-30</b><span>report date</span></div></div></section><section class="panel"><h2>Filter catalog</h2><div class="toolbar"><input id="search" placeholder="Search archetype or hash"><select id="archetype"><option value="">All archetypes</option>{options}</select><button id="expand">Expand visible</button><button id="collapse">Collapse all</button></div><span id="count" class="muted"></span></section><section class="deck-list" id="decks">{"".join(cards_by_deck)}</section></main><div class="modal" id="modal"><button id="close">×</button><img id="large" alt="Card preview"></div><script>const rows=[...document.querySelectorAll('.deck-card')];const search=document.querySelector('#search');const archetype=document.querySelector('#archetype');const count=document.querySelector('#count');function apply(){{const q=search.value.toLowerCase().trim();let n=0;for(const row of rows){{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok)n++}}count.textContent=n+' unique deck(s) visible';}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);document.querySelector('#expand').onclick=()=>rows.filter(r=>!r.hidden).forEach(r=>r.open=true);document.querySelector('#collapse').onclick=()=>rows.forEach(r=>r.open=false);document.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{{document.querySelector('#large').src=b.dataset.preview;document.querySelector('#modal').classList.add('open')}});document.querySelector('#close').onclick=()=>document.querySelector('#modal').classList.remove('open');document.querySelector('#modal').onclick=e=>{{if(e.target.id==='modal')e.currentTarget.classList.remove('open')}};apply();</script></body></html>'''
+</style></head><body><main><section class="hero"><div class="eyebrow">KAGGLE DAILY SNAPSHOT · EXACT DECK CATALOG</div><h1>Unique Top 100 Decks</h1><p>Frozen from <code>{html.escape(str(report))}</code>. One directory per full <code>deck_sha256</code>; Card IDs remain machine-readable in <code>deck.csv</code>, while this page uses card names and images.</p><div class="summary-grid"><div class="metric"><b>{row_count}</b><span>audited leaderboard rows</span></div><div class="metric"><b>{len(items)}</b><span>unique Kaggle full-hash decks</span></div><div class="metric"><b>{len(external_references)}</b><span>external reference decks</span></div><div class="metric"><b>60</b><span>cards per deck</span></div><div class="metric"><b>2026-07-30</b><span>report date</span></div></div></section><section class="panel"><h2>Filter catalog</h2><div class="toolbar"><input id="search" placeholder="Search archetype or hash"><select id="archetype"><option value="">All archetypes</option>{options}</select><button id="expand">Expand visible</button><button id="collapse">Collapse all</button></div><span id="count" class="muted"></span></section><h2 class="section-heading">Kaggle Top 100 exact decks</h2><p class="muted">These 32 unique hashes account for all 100 audited leaderboard entries. Rank, score, usage, and W-L-D come only from the frozen daily snapshot.</p><section class="deck-list" id="kaggle-decks">{"".join(cards_by_deck)}</section><h2 class="section-heading">External reference decks</h2><p class="muted">These exact lists are useful training or benchmark references. They are not members of the frozen Kaggle Top 100 and therefore have no Kaggle snapshot rank, score, usage count, or win rate.</p><section class="deck-list" id="external-decks">{"".join(external_cards)}</section></main><div class="modal" id="modal"><button id="close">×</button><img id="large" alt="Card preview"></div><script>const rows=[...document.querySelectorAll('.deck-card')];const search=document.querySelector('#search');const archetype=document.querySelector('#archetype');const count=document.querySelector('#count');function apply(){{const q=search.value.toLowerCase().trim();let n=0;for(const row of rows){{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok)n++}}count.textContent=n+' exact deck(s) visible';}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);document.querySelector('#expand').onclick=()=>rows.filter(r=>!r.hidden).forEach(r=>r.open=true);document.querySelector('#collapse').onclick=()=>rows.forEach(r=>r.open=false);document.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{{document.querySelector('#large').src=b.dataset.preview;document.querySelector('#modal').classList.add('open')}});document.querySelector('#close').onclick=()=>document.querySelector('#modal').classList.remove('open');document.querySelector('#modal').onclick=e=>{{if(e.target.id==='modal')e.currentTarget.classList.remove('open')}};apply();</script></body></html>'''
     (output / "index.html").write_text(html_text, encoding="utf-8")
 
 
-def build(report: Path, output: Path, check: bool = False) -> list[dict]:
+def build(report: Path, output: Path, check: bool = False, refresh: bool = False) -> list[dict]:
     repository_root = next(
         parent for parent in Path(__file__).resolve().parents
         if (parent / "data/official/EN_Card_Data.csv").is_file()
@@ -392,18 +392,19 @@ def build(report: Path, output: Path, check: bool = False) -> list[dict]:
     catalog = _read_catalog(catalog_path)
     rows, audit = _parse_report(report)
     items = _aggregate(rows, catalog)
-    if output.exists() and not check:
+    if output.exists() and not check and not refresh:
         existing = [
             path for path in output.iterdir()
             if path.name not in {"build_catalog.py", "__pycache__"}
         ]
         if existing:
             raise FileExistsError(f"refusing to overwrite non-empty output: {output}")
+    external_references = _load_external_references(output, catalog)
     if not check:
         output.mkdir(parents=True, exist_ok=True)
         for item in items:
-            _write_deck(item, output, report, catalog)
-        _render_index(items, len(rows), output, report, catalog)
+            _write_deck(item, output, report, catalog, refresh=refresh)
+        _render_index(items, external_references, len(rows), output, report, catalog)
         manifest = {
             "schema_version": "daily_deck_catalog_v1",
             "source_report": str(report),
@@ -415,16 +416,24 @@ def build(report: Path, output: Path, check: bool = False) -> list[dict]:
                 {key: item[key] for key in ("directory", "deck_sha256", "short_hash", "archetype", "source_archetype", "count", "best_rank", "best_score", "effective_win_rate")}
                 for item in items
             ],
+            "external_references": [
+                {key: item[key] for key in (
+                    "directory", "deck_sha256", "short_hash", "archetype",
+                    "catalog_label", "source_kind",
+                )}
+                for item in external_references
+            ],
         }
         (output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        (output / "README.md").write_text(
+        if not refresh:
+            (output / "README.md").write_text(
             "# Daily Deck Catalog\n\n"
             "This catalog is generated from the frozen 2026-07-30 daily report. "
             "Each directory is one unique full `deck_sha256`; `deck.csv` contains exactly 60 engine Card IDs. "
             "Use `index.html` for readable card names, images, leaderboard evidence, and aggregate records.\n\n"
             "Regenerate with `python3 deck/build_catalog.py --report docs/environment-daily_kaggle_top100/daily/2026-07-30.html --output deck`.\n",
-            encoding="utf-8",
-        )
+                encoding="utf-8",
+            )
     return items
 
 
@@ -433,8 +442,11 @@ def main() -> None:
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--refresh", action="store_true")
     args = parser.parse_args()
-    items = build(args.report, args.output, args.check)
+    if args.check and args.refresh:
+        parser.error("--check and --refresh are mutually exclusive")
+    items = build(args.report, args.output, args.check, args.refresh)
     print(json.dumps({"audited_rows": 100, "unique_full_hashes": len(items), "directories": [item["directory"] for item in items]}, ensure_ascii=False, indent=2))
 
 

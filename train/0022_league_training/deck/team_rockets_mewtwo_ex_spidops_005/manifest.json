@@ -4,6 +4,7 @@
   "deck_sha256": "7851bf5595529f83a95321e237751d6fb9088c02c126b67b83cb9bb2d5b1e190",
   "short_hash": "7851bf559552",
   "archetype": "Team Rocket's Mewtwo ex / Spidops",
+  "source_archetype": "Team Rocket's Mewtwo ex / Spidops",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 1,

@@ -1,8 +1,17 @@
 # Daily Deck Catalog
 
-This catalog is generated from the frozen 2026-07-30 daily report. Each directory is one unique full `deck_sha256`; `deck.csv` contains exactly 60 engine Card IDs. Use `index.html` for readable card names, images, leaderboard evidence, and aggregate records.
+The Kaggle section of this catalog is generated from the frozen 2026-07-30 daily report. Its 32 unique full `deck_sha256` values account for all 100 audited leaderboard rows. Kaggle rank, score, usage count, W-L-D, and effective win rate apply only to those 32 decks.
 
-Regenerate with `python3 deck/build_catalog.py --report docs/environment-daily_kaggle_top100/daily/2026-07-30.html --output deck`.
+The catalog also contains four separately identified external references:
+
+- `dragapult_ex_limitless`: Andrew Hedrick's Los Angeles-winning Limitless list. The exact list includes a 1-1 Dunsparce/Dudunsparce tech line.
+- `ionos_bellibolt_ex_kilowattrel_01`: an exact copy of the enabled official-engine arena opponent, useful as a stable benchmark target.
+- `mega_lucario_ex_solrock_002`: the user-provided `mega_lucario_ex.csv`, numbered after the Kaggle `_001` variant.
+- `ns_zoroark_ex_001`: the corrected user-provided N's Zoroark ex / N's Zekrom list, fully mapped to the current official engine card pool.
+
+External references do not increase `unique_full_hashes` and are not assigned Kaggle snapshot rank, score, usage, or win-rate values. Every `deck.csv` contains exactly 60 engine Card IDs. Use `index.html` for readable card names, images, provenance, leaderboard evidence where available, and aggregate records.
+
+Refresh in place with `python3 train/0022_league_training/deck/build_catalog.py --report docs/environment-daily_kaggle_top100/daily/2026-07-30.html --output train/0022_league_training/deck --refresh`.
 
 
 # League deck plugin staging

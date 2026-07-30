@@ -4,6 +4,7 @@
   "deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
   "short_hash": "c20a8a46f5c6",
   "archetype": "Marnie's Grimmsnarl ex / Froslass",
+  "source_archetype": "Marnie's Grimmsnarl ex / Froslass",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 48,

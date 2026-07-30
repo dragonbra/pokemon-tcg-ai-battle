@@ -1,9 +1,10 @@
 {
   "schema_version": "daily_deck_catalog_v1",
-  "directory": "mega_kangaskhan_ex_crustle_001",
+  "directory": "raging_bolt_ex_james_cox_henry_chao_001",
   "deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
   "short_hash": "f50fa3a23cdf",
-  "archetype": "Mega Kangaskhan ex / Crustle",
+  "archetype": "Raging Bolt ex / Mega Kangaskhan ex",
+  "source_archetype": "Mega Kangaskhan ex / Crustle",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 1,

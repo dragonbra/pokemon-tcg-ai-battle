@@ -1,9 +1,10 @@
 {
   "schema_version": "daily_deck_catalog_v1",
-  "directory": "mega_kangaskhan_ex_crustle_002",
+  "directory": "mega_kangaskhan_ex_crustle_001",
   "deck_sha256": "4bf59ca589c2d685d74e3535424c2dbe3c11389dffba59eddba4567be7e437df",
   "short_hash": "4bf59ca589c2",
   "archetype": "Mega Kangaskhan ex / Crustle",
+  "source_archetype": "Mega Kangaskhan ex / Crustle",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 1,

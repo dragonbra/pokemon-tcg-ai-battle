@@ -4,6 +4,7 @@
   "deck_sha256": "d90a5bc8c699d7c335bc3a52c876add629cb4c446a3b8234515e2345e5a3d751",
   "short_hash": "d90a5bc8c699",
   "archetype": "Archaludon ex / Cinderace",
+  "source_archetype": "Archaludon ex / Cinderace",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 1,

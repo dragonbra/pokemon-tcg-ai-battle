@@ -4,6 +4,7 @@
   "deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
   "short_hash": "3f4515092dc5",
   "archetype": "Alakazam / Dudunsparce",
+  "source_archetype": "Alakazam / Dudunsparce",
   "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
   "source_date": "2026-07-30",
   "member_count": 9,
