@@ -5,7 +5,7 @@ import html
 import json
 import os
 import re
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Iterable, Mapping
@@ -375,6 +375,12 @@ def _render_frozen_deck_report(
 .match-rate span{{position:absolute;inset:0 auto 0 0;background:#66b58d}}
 .match-rate strong{{position:relative;z-index:1;display:block;padding:3px 8px;text-align:right}}
 .deck-nav{{margin-bottom:14px}}.deck-nav a{{font-weight:700}}.runs td{{vertical-align:middle}}
+.deck-group{{margin-top:18px}}.deck-group h3{{margin:0 0 9px;font-size:16px}}
+.deck-grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}}
+.deck-card{{display:grid;grid-template-columns:54px 1fr;gap:9px;min-height:75px;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}}
+.deck-card img{{width:54px;height:75px;object-fit:cover;border-radius:4px;background:#e8eeeb}}
+.deck-card strong{{display:block;font-size:13px;line-height:1.25}}.deck-card .qty{{color:var(--brand);font-size:18px;font-weight:800}}
+.deck-card small{{display:block;color:var(--muted);font-size:10px}}
 </style></head><body><main><div class="deck-nav"><a href="../index.html">← Frozen Combat Matrix</a></div>
 <header class="hero"><div><p class="eyebrow">FROZEN ARENA · 50-DECK FULL ROW</p>
 <h1>{_escape(title)}</h1><p>完整 50 卡组 matchup 视图；self-play 对角线显示为 -</p></div></header>
@@ -384,9 +390,38 @@ def _render_frozen_deck_report(
 {_summary_card('先攻胜率', _percentage(first_wins / first_games if first_games else None))}
 {_summary_card('后攻胜率', _percentage(second_wins / second_games if second_games else None))}
 {_summary_card('Opponent 数', 50)}</div></section>
+{_frozen_deck_section(package)}
 <section><h2>对 50 套 Frozen 卡组的胜率</h2><p class="note">每个非对角 matchup 固定 10 局；Raw evidence 指向实际承载该组对局的不可变采样报告。</p>
 <div class="table-scroll"><table class="runs"><thead><tr><th>Opponent</th><th>W–L</th><th>胜率</th><th>先攻</th><th>后攻</th><th>平均回合</th><th>证据</th></tr></thead>
 <tbody>{''.join(table_rows)}</tbody></table></div></section></main></body></html>"""
+
+
+def _frozen_deck_section(package: Mapping[str, object]) -> str:
+    cards = _mapping_sequence(package.get("deck_cards"))
+    groups = (("pokemon", "Pokémon"), ("trainer", "Trainer"), ("energy", "Energy"))
+    sections = []
+    for group_id, title in groups:
+        group_cards = [card for card in cards if card.get("group") == group_id]
+        count = sum(_integer(card.get("count")) for card in group_cards)
+        items = []
+        for card in group_cards:
+            items.append(
+                f'<article class="deck-card"><img src="{_escape(card.get("image_url"))}" '
+                f'alt="{_escape(card.get("name"))}" loading="lazy">'
+                f'<div><span class="qty">×{card.get("count")}</span>'
+                f'<strong>{_escape(card.get("name"))}</strong>'
+                f'<small>{_escape(card.get("set"))} {card.get("number")} · ID {card.get("card_id")}</small>'
+                f'</div></article>'
+            )
+        sections.append(
+            f'<div class="deck-group"><h3>{title}: {count}</h3>'
+            f'<div class="deck-grid">{"".join(items)}</div></div>'
+        )
+    return (
+        '<section><h2>Exact 60-card 构筑</h2>'
+        '<p class="note">卡图、版本、card ID 与投入数量均来自 Frozen identity 的 deck.csv。</p>'
+        + "".join(sections) + '</section>'
+    )
 
 
 def render_combat_matrix(data: Mapping[str, object], output_root: Path) -> str:
@@ -441,14 +476,40 @@ def _catalog_entries(catalog_path: Path) -> list[dict[str, object]]:
     raw_entries = payload.get("opponents")
     if not isinstance(raw_entries, list):
         raise ValueError("catalog must contain opponents")
+    repository_root = catalog_path.resolve().parents[2]
+    evaluation_root = catalog_path.resolve().parent.parent
     card_catalog = load_card_catalog(
-        catalog_path.resolve().parents[2] / "data" / "official" / "EN_Card_Data.csv"
+        repository_root / "data" / "official" / "EN_Card_Data.csv"
     )
     entries = []
     for raw in raw_entries:
         if not isinstance(raw, dict) or not raw.get("enabled"):
             continue
         name = str(raw["name"])
+        deck_path = evaluation_root / str(raw["package"]) / "deck.csv"
+        deck_counts = Counter(
+            int(value) for value in deck_path.read_text(encoding="utf-8").splitlines()
+        )
+        deck_cards = []
+        for card_id, count in sorted(deck_counts.items()):
+            metadata = card_catalog[card_id]
+            stage = str(metadata["stage_or_type"])
+            group = (
+                "pokemon" if stage.endswith("Pokémon")
+                else "energy" if "Energy" in stage
+                else "trainer"
+            )
+            deck_cards.append({
+                "card_id": card_id,
+                "name": metadata["name"],
+                "count": count,
+                "group": group,
+                "set": metadata["expansion"],
+                "number": metadata["collection_number"],
+                "image_url": card_image_url(
+                    metadata["expansion"], metadata["collection_number"]
+                ),
+            })
         cards = []
         for card_id in raw["representative_card_ids"]:
             metadata = card_catalog[int(card_id)]
@@ -468,6 +529,7 @@ def _catalog_entries(catalog_path: Path) -> list[dict[str, object]]:
                 "archetype_id": ARCHETYPE_SUFFIX.sub("", name),
                 "archetype_name": DISPLAY_SUFFIX.sub("", str(raw["display_name"])),
                 "representative_cards": cards,
+                "deck_cards": deck_cards,
             }
         )
     return entries
