@@ -29,7 +29,7 @@ python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training audit
 python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training smoke-rollout --device cuda:0 --workers 4
 python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training canary-ppo --device cuda:0 --workers 4
 python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training benchmark-workers --device cuda:0 --workers 128 --games 256 --coalesce-ms 5 --output .tmp/evaluation/0023_worker_scaling/workers-128.json
-python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training train-league --version V1_mega_lopunny_ex_mega_froslass_ex_002_continuous_league --device cuda:0 --workers 128 --coalesce-ms 5 --games-per-update 512
+python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training train-league --version V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league --device cuda:0 --workers 128 --coalesce-ms 5 --games-per-update 512
 ```
 
 The catalog contains 50 exact decks. The formal run schedules 512 games per update across Frozen

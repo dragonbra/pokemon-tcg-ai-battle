@@ -45,3 +45,15 @@ rollout buffer, trace, replay, or duplicate full Encoder is serialized.
 
 Sampled rollout and short Frozen/Live probes are diagnostics. Candidate promotion requires
 fixed-seed, balanced-seat official-engine evaluation against the immutable Frozen Arena.
+
+## Launch history
+
+`V1_mega_lopunny_ex_mega_froslass_ex_002_continuous_league` failed before training while
+serializing initialization provenance. Decoder identity validation and the first inherited
+checkpoint load had succeeded, but a repository-relative source path was compared directly
+with an absolute repository root. V1 produced no rollout, PPO update, W&B run, TensorBoard
+event, or Live checkpoint and remains preserved as a failed version.
+
+The fix anchors relative source paths to the repository root before normalization and has a
+dedicated regression test. Formal continuous training therefore starts in strictly increasing
+`V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league`.

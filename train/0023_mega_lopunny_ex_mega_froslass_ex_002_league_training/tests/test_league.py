@@ -44,6 +44,11 @@ def _paths(root: Path, version: str) -> VersionPaths:
 
 
 class LeagueVersionTest(unittest.TestCase):
+    def test_repository_relative_provenance_accepts_relative_source_path(self) -> None:
+        source = Path("rl_runs/0022_league_training/checkpoint.pt")
+        expected = "rl_runs/0022_league_training/checkpoint.pt"
+        self.assertEqual(league._repository_relative(source), expected)
+
     def test_initialization_requires_a_focal_live_deck(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

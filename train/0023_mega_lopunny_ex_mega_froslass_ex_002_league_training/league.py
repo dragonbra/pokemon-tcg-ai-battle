@@ -43,6 +43,11 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _repository_relative(path: Path) -> str:
+    anchored = path if path.is_absolute() else REPOSITORY_ROOT / path
+    return str(anchored.resolve().relative_to(REPOSITORY_ROOT.resolve()))
+
+
 def _deck_initialization_seed(version_name: str, plugin: DeckPlugin) -> int:
     identity = f"{version_name}:{plugin.deck_id}:{plugin.deck_sha256}".encode("utf-8")
     return int.from_bytes(hashlib.sha256(identity).digest()[:8], "big") % (2**31)
@@ -164,7 +169,7 @@ def initialize_league_version(
                 "decoder_sha256": digest,
                 "initialization_seed": initialization_seed,
                 "initialization_source": (
-                    str(source_checkpoint.relative_to(REPOSITORY_ROOT))
+                    _repository_relative(source_checkpoint)
                     if source_checkpoint is not None
                     else "foundation"
                 ),
@@ -209,8 +214,11 @@ def initialize_league_version(
             },
         )
         return paths
-    except Exception:
-        write_version_status(paths, {"state": "initialization_failed"})
+    except Exception as error:
+        write_version_status(paths, {
+            "state": "initialization_failed",
+            "error": f"{type(error).__name__}: {error}",
+        })
         raise
 
 
