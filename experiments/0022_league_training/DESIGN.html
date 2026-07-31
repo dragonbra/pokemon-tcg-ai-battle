@@ -10,7 +10,7 @@ table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid v
 .card{border:1px solid var(--line);border-radius:8px;padding:16px;background:#fff}.gate{border-left:5px solid var(--blue)}.good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}
 </style></head><body>
 <h1>0022 League Training</h1>
-<p class="meta"><strong>当前阶段：</strong>V2 在 update 39 完整写入后因 CUDA illegal-memory-access 失败；update 35/39 的独立 Arena 均为 201-99（67.0%，0 error）。V6 CUDA canary 完成 32/32、0 error、1 个多 decoder PPO update；V7 正式版本从 update 39 分支开始 48 个 deck-local decoder/value 的 League Training，并要求每个正式 update 覆盖 48 个 Live trajectory。</p>
+<p class="meta"><strong>当前阶段：</strong>V2 在 update 39 完整写入后因 CUDA illegal-memory-access 失败；update 35/39 的独立 Arena 均为 201-99（67.0%，0 error）。V10 CUDA canary 完成 512/512、0 error、48/48 Live deck update、Frozen/Live 各 96/96 和两个 League probe；V11 正式版本已从 update 39 分支启动 20 小时 League Training，并要求每个正式 update 覆盖 48 个 Live trajectory。</p>
 <p class="lede">验证共享 0019 Foundation encoder 下，48 套 League deck 是否能各自通过独立 decoder/value 和 on-policy PPO 一起进化，同时保留 Frozen 质量锚点。</p>
 
 <h2>当前合同</h2><div class="grid">
@@ -36,7 +36,7 @@ terminal trajectories → per-deck routed GAE/PPO → decoder/value checkpoints<
 <tr><td>Shared 0019 Encoder</td><td>冻结</td><td>卡牌、场面、资源、event、exact deck 与 legal option 表示；每次更新前后 SHA 必须一致</td></tr>
 <tr><td>Focal action decoder</td><td>训练</td><td>pointer key/query、option bias、decoder init、GRU decoder、STOP，共 1,027,202 参数</td></tr>
 <tr><td>Focal value head</td><td>训练</td><td>LayerNorm + 320→320→1 + Tanh，共 103,681 参数</td></tr>
-<tr><td>48 Live + 48 Frozen</td><td>V7 League</td><td>共享 encoder；每个 Live deck 独立 decoder/value、trajectory、optimizer；Frozen 只提供锚点</td></tr>
+<tr><td>48 Live + 48 Frozen</td><td>V11 League</td><td>共享 encoder；每个 Live deck 独立 decoder/value、trajectory、optimizer；Frozen 只提供锚点</td></tr>
 </tbody></table>
 <p>每个可变 checkpoint 合计 1,130,883 参数，只包含 Decoder/Value tensor、Foundation/deck hash、policy role/version 和 update。optimizer、scheduler、GradScaler、RNG、rollout、replay 与完整 Foundation 一律不保存。</p>
 

@@ -3,9 +3,9 @@
 **项目 ID：** `0022_league_training`
 
 **当前阶段：** V2 在 update 39 完整写入后因 CUDA illegal-memory-access 失败；update 35/39
-均通过独立 300 局 Arena（201-99，67.0%，0 error）。V6 CUDA canary 已完成 32/32、0 error、
-1 个多 decoder PPO update。V7 正式版本从 update 39 分支，启动 48 个 deck-local decoder/value
-的双边 League Training，目标约 20 小时 GPU 运行；正式 update 要求 48 个 Live deck 都有真实
+均通过独立 300 局 Arena（201-99，67.0%，0 error）。V10 CUDA canary 已完成 512/512、0 error、
+48/48 Live deck update、Frozen/Live 各 96/96 以及两个 League probe；V11 正式版本已从 update
+39 分支启动 20 小时双边 League Training。正式 update 要求 48 个 Live deck 都有真实
 trajectory，并按固定 Frozen/Live/probe gate 记录。
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
@@ -345,7 +345,7 @@ Frozen anchor 胜率、吞吐和 checkpoint 版本合同正确。
 
 ### Gate D：Frozen + Live league
 
-在 V7 中启用 48 Live 分支各自的 actor trajectory 和独立 backward；执行 round-robin
+在 V11 中启用 48 Live 分支各自的 actor trajectory 和独立 backward；执行 round-robin
 sampling，并在正式 update gate 中拒绝缺失任一 deck trajectory 的 batch，同时保留 Frozen/Live
 anchor evaluation 和两个固定 League identity probe。
 
