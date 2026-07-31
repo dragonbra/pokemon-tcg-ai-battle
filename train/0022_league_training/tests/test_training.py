@@ -94,7 +94,7 @@ class LeagueTrainingTest(unittest.TestCase):
     def test_frozen_evaluation_covers_every_deck_and_both_seats(self) -> None:
         plugins = load_deck_plugins(DEFAULT_DECK_ROOT)
         jobs = schedule_jobs(plugins, count=0, update=0, seed=3, runtime_root=Path("runtime"), evaluation=True)
-        self.assertEqual(len(jobs), 98)
+        self.assertEqual(len(jobs), 100)
         self.assertEqual({job.opponent_deck_id for job in jobs}, {item.deck_id for item in plugins})
         self.assertTrue(all(job.opponent_view is LeaguePolicyView.FROZEN for job in jobs))
     def test_terminal_gae_gamma_one(self) -> None:

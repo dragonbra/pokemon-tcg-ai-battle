@@ -32,7 +32,7 @@ python3 -m train.0022_league_training benchmark-workers --device cuda:0 --worker
 python3 -m train.0022_league_training train --version V2_dragapult_focal_20h_w128 --device cuda:0 --workers 128 --coalesce-ms 5 --games-per-update 512 --duration-hours 20
 ```
 
-The catalog contains 49 exact decks. The first formal run schedules 512 games per update across
+The catalog contains 50 exact decks. The first formal run schedules 512 games per update across
 49 Frozen and 49 Live views with balanced seats, but updates only the `dragapult_ex_001` decoder
 and value head. Other Live assets remain at update 0; their simultaneous evolution requires a new
 version. Every fifth update runs 96 Frozen greedy games.

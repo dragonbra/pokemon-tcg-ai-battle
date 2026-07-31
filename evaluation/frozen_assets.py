@@ -95,8 +95,8 @@ def materialize(
     if target.exists() or catalog_path.exists():
         raise FileExistsError(f"Frozen Arena assets already exist: {target} or {catalog_path}")
     plugins = load_deck_plugins(source_decks)
-    if len(plugins) != 48:
-        raise ValueError(f"Frozen Arena requires exactly 48 deck plugins, got {len(plugins)}")
+    if len(plugins) != 50:
+        raise ValueError(f"Frozen Arena requires exactly 50 deck plugins, got {len(plugins)}")
     if len({plugin.deck_sha256 for plugin in plugins}) != len(plugins):
         raise ValueError("Frozen Arena source contains duplicate exact decks")
 
@@ -146,7 +146,7 @@ def materialize(
     policy_sha = _tree_sha256(target / "_policy")
     manifest = {
         "schema_version": "evaluation_frozen_arena_v1",
-        "pool_id": "0019_foundation_48_exact_decks_v1",
+        "pool_id": "0019_foundation_50_exact_decks_v3",
         "deck_count": len(entries),
         "policy_path": "_policy",
         "policy_tree_sha256": policy_sha,

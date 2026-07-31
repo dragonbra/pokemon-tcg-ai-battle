@@ -161,8 +161,8 @@ def run_league_training(
     max_updates: int | None = None,
 ) -> int:
     plugins = load_deck_plugins(deck_root)
-    if len(plugins) != 49:
-        raise ValueError(f"League requires exactly 49 deck plugins, got {len(plugins)}")
+    if len(plugins) != 50:
+        raise ValueError(f"League requires exactly 50 deck plugins, got {len(plugins)}")
     identity = verify_foundation()
     if not UPDATE39.is_file():
         raise FileNotFoundError(f"protected update-39 checkpoint is missing: {UPDATE39}")

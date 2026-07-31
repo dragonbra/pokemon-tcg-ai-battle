@@ -1,0 +1,15 @@
+{
+  "deck_id": "mega_lopunny_ex_mega_froslass_ex_002",
+  "deck_sha256": "7fb1536b191c0e0ff5f8819c674ba784e9e0b77927b58b3faea423db66b90e8b",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Mega Lopunny ex / Mega Froslass ex 002",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-08-01",
+    "evidence": "User-provided exact 60-card decklist",
+    "source": "train/0022_league_training/deck/mega_lopunny_ex_mega_froslass_ex_002"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "1d4553c718f748a5cda32cd3b2d8561b871cf79b1deac2d3c948fc3e0a9f6603"
+}

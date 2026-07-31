@@ -313,7 +313,7 @@ def _parser() -> argparse.ArgumentParser:
         "--pool",
         choices=("frozen", "opponents"),
         default="frozen",
-        help="评测池；默认使用共享 0019 Foundation 的 49-deck Frozen Arena",
+        help="评测池；默认使用共享 0019 Foundation 的 50-deck Frozen Arena",
     )
     parser.add_argument("--catalog", type=Path, default=None)
     subparsers = parser.add_subparsers(dest="command", required=True)

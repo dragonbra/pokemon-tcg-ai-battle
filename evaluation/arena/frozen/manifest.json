@@ -1,5 +1,5 @@
 {
-  "deck_count": 49,
+  "deck_count": 50,
   "evaluation": {
     "balanced_seats_for_even_games": true,
     "equal_games_per_deck": true,
@@ -17,6 +17,6 @@
   },
   "policy_path": "_policy",
   "policy_tree_sha256": "3c280e8dc070b5cecbafa582ceec9457d35cb1db78ad6c6d2af85341374402ca",
-  "pool_id": "0019_foundation_49_exact_decks_v2",
+  "pool_id": "0019_foundation_50_exact_decks_v3",
   "schema_version": "evaluation_frozen_arena_v1"
 }

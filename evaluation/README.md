@@ -83,7 +83,7 @@ Frozen League 全量循环评测使用 `--metric-profile league_deck_quality`（
 不复用胡地专属 Powerful Hand 作为全局指标，而是统一提取首次攻击回合、攻击连续率、可攻击却
 未提交的回合、Prize/attack、多 Prize 回合、KO 后攻击间隔、Bench/进化/能量场面、牌库消耗、
 Supporter/手填能量利用、对手攻击受阻、关键主攻成形、Ability 动作、伤害事件和主动离场。
-`evaluation/metrics/league_profiles.py` 将 49 套 Frozen deck 完整覆盖为 22 个策略类别；每类只从
+`evaluation/metrics/league_profiles.py` 将 50 套 Frozen deck 完整覆盖为 22 个策略类别；每类只从
 通用原子指标中选择重点解释字段，并记录独立的 reward warning。过程指标只用于解释 checkpoint、
 定位退化和形成 reward 假设，不能覆盖 official-engine 胜负护栏。
 

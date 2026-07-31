@@ -7,7 +7,7 @@
 更新链可运行，但不再把“每批强制 48 套全部更新”作为终极训练合同。下一阶段一次只指定一个
 focal deck 作为主要优化对象；新版本 catalog 已加入 `mega_lopunny_ex_001` Limitless 冠军构筑，
 其他 48 个 Live decoder 仅利用真实对局作机会式更新；所有 checkpoint 的强度验收统一改走固定的
-49-deck Frozen Arena v2。
+50-deck Frozen Arena v3。
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
 
@@ -232,7 +232,7 @@ official-engine evaluation，并同时保留：
 
 报告必须按 deck、opponent、先后手和 metric profile 分组。任何单一 matchup 的短期上涨都不能自动晋级。Live candidate 至少要在 focal deck 的 Frozen pool aggregate 指标上达到预先记录的非劣性，并在历史 snapshot 上没有明显崩溃；正式阈值写入该版本 decision record，不能运行后临时改口径。
 
-### 6.2 49-deck catalog 资产
+### 6.2 50-deck catalog 资产
 
 正式 catalog 不是现在预先写死的名单。每个 deck 候选必须满足：
 
@@ -251,7 +251,7 @@ official-engine evaluation，并同时保留：
 Frozen League 使用 `league_deck_quality` revision 1。每局 official-engine trace 在清理前提取
 通用原子指标：启动与首次攻击、攻击机会与连续性、Prize 转化、多 Prize 回合、KO 后接力、场面
 规模与进化/能量、Supporter/手填能量、牌库压力、对手攻击受阻、Ability、伤害事件和主动离场。
-49 套 exact deck 由 `evaluation/metrics/league_profiles.py` 完整映射到 22 个策略类别；每类声明
+50 套 exact deck 由 `evaluation/metrics/league_profiles.py` 完整映射到 22 个策略类别；每类声明
 关键卡、重点字段、解释和 reward warning。胡地继续关注 Powerful Hand、Dudunsparce 过桥和
 Post-KO relay；多龙关注 Stage 2 成形、铺伤兑现与多 Prize 回合；Dusknoir 组合不得把自我 KO
 直接当负奖励；Raging Bolt 的弃能只按 KO 和恢复解释；Crustle/control 的长局只按压制与终局
@@ -390,7 +390,7 @@ League identity probe 继续保留，但当前正式强度结论来自 490 局 F
 1. 常驻 opponent service 在相同完成率和策略质量下显著提升真实 end-to-end RL throughput；
 2. Decoder-only RL 能在冻结共享表示中相对 zero-shot/Frozen baseline 获得稳定改进；
 3. Frozen + Live pool 不会把 quality regression 隐藏在 Live-only 结果中；
-4. 49-deck catalog、policy version、reward、opponent snapshot 和 official-engine evaluation 全部可追溯；
+4. 50-deck catalog、policy version、reward、opponent snapshot 和 official-engine evaluation 全部可追溯；
 5. 如果 Decoder-only plateau，能从对照实验明确判断瓶颈是表示容量、探索、value calibration 还是 opponent distribution。
 
 0022 的终极形态是“常驻 Arena Training”，但第一步必须先证明它是一个可测的 throughput 和局部策略改进系统，而不是把快速自我对打误认为绝对能力提升。
