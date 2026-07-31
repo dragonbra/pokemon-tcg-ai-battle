@@ -245,6 +245,17 @@ official-engine evaluation，并同时保留：
 
 新增卡牌或新机制的探索属于后续项目：可以通过定向 card embedding/ontology 适配，或让新 deck 加入已进化 Arena 后进行独立适应，但不能把新卡实验无记录地混入 0022 第一版 catalog。
 
+### 6.3 League 对局质量诊断
+
+Frozen League 使用 `league_deck_quality` revision 1。每局 official-engine trace 在清理前提取
+通用原子指标：启动与首次攻击、攻击机会与连续性、Prize 转化、多 Prize 回合、KO 后接力、场面
+规模与进化/能量、Supporter/手填能量、牌库压力、对手攻击受阻、Ability、伤害事件和主动离场。
+48 套 exact deck 由 `evaluation/metrics/league_profiles.py` 完整映射到 21 个策略类别；每类声明
+关键卡、重点字段、解释和 reward warning。胡地继续关注 Powerful Hand、Dudunsparce 过桥和
+Post-KO relay；多龙关注 Stage 2 成形、铺伤兑现与多 Prize 回合；Dusknoir 组合不得把自我 KO
+直接当负奖励；Raging Bolt 的弃能只按 KO 和恢复解释；Crustle/control 的长局只按压制与终局
+解释。所有过程指标都是 checkpoint 选择的辅助证据，不得替代 480 局 Frozen 胜率门禁。
+
 ## 7. 失败模式和护栏
 
 ### 对手共同退化

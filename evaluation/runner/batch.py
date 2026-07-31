@@ -81,6 +81,7 @@ class BatchConfig:
     opponent_pool_id: str = "legacy_opponents"
     opponent_catalog_sha256: str | None = None
     opponent_policy_hash: str | None = None
+    share_policy_inference_server: bool = False
 
 
 @dataclass(frozen=True)
@@ -121,6 +122,21 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError(
             "Frozen Arena requires shared GPU inference for both candidate and opponents"
         )
+    if config.share_policy_inference_server:
+        if (
+            config.candidate_inference_device is None
+            or config.opponent_inference_root is None
+            or config.opponent_inference_device is None
+        ):
+            raise ValueError("shared policy inference requires both GPU routes")
+        if config.candidate_inference_device != config.opponent_inference_device:
+            raise ValueError("shared policy inference requires one identical device")
+        if config.candidate.root.resolve() != config.opponent_inference_root.resolve():
+            raise ValueError("shared policy inference requires one identical policy root")
+        if config.candidate.entrypoint.resolve() != (
+            config.opponent_inference_root / "main.py"
+        ).resolve():
+            raise ValueError("shared policy inference candidate entrypoint mismatch")
 
     run_id = f"run-{uuid.uuid4().hex}"
     explicit_report_path = config.report_path.resolve() if config.report_path else None
@@ -150,19 +166,10 @@ def run_batch(config: BatchConfig) -> BatchResult:
     try:
         jobs = _game_jobs(config, run_id, store)
         actual_workers = min(config.workers, len(jobs))
-        with _policy_inference_server(
-            root=config.candidate.root,
-            device=config.candidate_inference_device,
-            batch_size=config.candidate_inference_batch_size,
-            batch_wait_ms=config.candidate_inference_batch_wait_ms,
-            label="candidate",
-        ) as candidate_socket, _policy_inference_server(
-            root=config.opponent_inference_root,
-            device=config.opponent_inference_device,
-            batch_size=config.candidate_inference_batch_size,
-            batch_wait_ms=config.candidate_inference_batch_wait_ms,
-            label="opponent",
-        ) as opponent_socket:
+        with _policy_inference_servers(config) as (
+            candidate_socket,
+            opponent_socket,
+        ):
             for request, trace_path, result in _run_workers(
                 config, jobs, store.temp_root, candidate_socket, opponent_socket
             ):
@@ -417,6 +424,30 @@ def _game_jobs(
 def _candidate_socket_path() -> Path:
     """Return a unique AF_UNIX path that stays below Linux's 108-byte sockaddr limit."""
     return Path(tempfile.gettempdir()) / f"ptcg-eval-{uuid.uuid4().hex}.sock"
+
+
+@contextmanager
+def _policy_inference_servers(
+    config: BatchConfig,
+) -> Iterator[tuple[Path | None, Path | None]]:
+    with _policy_inference_server(
+        root=config.candidate.root,
+        device=config.candidate_inference_device,
+        batch_size=config.candidate_inference_batch_size,
+        batch_wait_ms=config.candidate_inference_batch_wait_ms,
+        label="candidate",
+    ) as candidate_socket:
+        if config.share_policy_inference_server:
+            yield candidate_socket, candidate_socket
+            return
+        with _policy_inference_server(
+            root=config.opponent_inference_root,
+            device=config.opponent_inference_device,
+            batch_size=config.candidate_inference_batch_size,
+            batch_wait_ms=config.candidate_inference_batch_wait_ms,
+            label="opponent",
+        ) as opponent_socket:
+            yield candidate_socket, opponent_socket
 
 
 @contextmanager
@@ -964,6 +995,7 @@ def _manifest(
                 else 0.0
             ),
         },
+        "shared_policy_inference_process": config.share_policy_inference_server,
         "swap_policy": "alternate_candidate_first",
         "plugins": list(metric_ids),
         "metric_profile": profile.manifest(),

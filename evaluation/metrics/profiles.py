@@ -17,6 +17,7 @@ from .run_away_draw import RunAwayDrawPlugin
 
 CORE_PROFILE_ID = "core"
 AUTO_ITERATION_PROFILE_ID = "auto_iteration_v8_setup_relay"
+LEAGUE_QUALITY_PROFILE_ID = "league_deck_quality"
 
 CORE_METRIC_IDS = (
     "outcome",
@@ -29,6 +30,14 @@ CORE_METRIC_IDS = (
     "library_pressure",
 )
 AUTO_ITERATION_METRIC_IDS = (*CORE_METRIC_IDS, "setup_relay", "attack_quality")
+LEAGUE_QUALITY_METRIC_IDS = (
+    "outcome",
+    "length",
+    "correctness",
+    "library_pressure",
+    "attack_quality",
+    "league_quality",
+)
 
 
 @dataclass(frozen=True)
@@ -336,10 +345,98 @@ AUTO_ITERATION_PROFILE = MetricProfile(
     ),
 )
 
+LEAGUE_QUALITY_PROFILE = MetricProfile(
+    profile_id=LEAGUE_QUALITY_PROFILE_ID,
+    revision=1,
+    description=(
+        "Generic Frozen League trajectory digestion with auditable deck-category focus profiles"
+    ),
+    priorities=(
+        MetricPriority("outcome", "result_guardrail", "higher"),
+        MetricPriority("correctness", "result_guardrail", "lower"),
+        MetricPriority("league_quality", "diagnostic", "diagnostic"),
+        MetricPriority("attack_quality", "diagnostic", "lower"),
+        MetricPriority("library_pressure", "audit", "lower"),
+    ),
+    metric_ids=LEAGUE_QUALITY_METRIC_IDS,
+    plugin_factories=(
+        OutcomePlugin,
+        LengthPlugin,
+        CorrectnessPlugin,
+        LibraryPressurePlugin,
+        _lazy_factory("evaluation.metrics.attack_quality", "AttackQualityPlugin"),
+        _lazy_factory("evaluation.metrics.league_quality", "LeagueQualityPlugin"),
+    ),
+    semantic_groups=(
+        SemanticGroup(
+            "result_guardrail",
+            "结果与运行护栏",
+            "官方胜负、完成率与错误始终优先，过程指标不能抵消结果回归。",
+        ),
+        SemanticGroup(
+            "generic_game_quality",
+            "通用对局质量",
+            "跨卡组比较启动、攻击连续性、Prize 转化、接力、资源与压制。",
+        ),
+        SemanticGroup(
+            "deck_category_focus",
+            "构筑类别专项关注",
+            "从同一组原子轨迹指标中选择适合当前构筑的解释窗口，并保留 reward hazard。",
+        ),
+    ),
+    metric_semantics=(
+        MetricSemantic(
+            "outcome",
+            "outcome",
+            "result_guardrail",
+            "官方结果",
+            "guardrail",
+            "higher",
+            "aggregate.value",
+            "总体、先攻、后攻和逐 opponent 的真实胜负。",
+            "outcome_turn_order",
+        ),
+        MetricSemantic(
+            "league_quality_generic",
+            "league_quality",
+            "generic_game_quality",
+            "通用轨迹质量",
+            "diagnostic",
+            "diagnostic",
+            "payload",
+            "启动、攻击、Prize、KO 接力、场面、资源、牌库与压制原子指标。",
+            "league_quality",
+        ),
+        MetricSemantic(
+            "league_quality_profile",
+            "league_quality",
+            "deck_category_focus",
+            "构筑专项解释",
+            "diagnostic",
+            "diagnostic",
+            "payload.profile",
+            "当前 deck profile 的重点字段、解释边界与 reward warning。",
+            "league_profile",
+        ),
+        MetricSemantic(
+            "attack_quality",
+            "attack_quality",
+            "generic_game_quality",
+            "攻击到 Prize 的直接转化",
+            "diagnostic",
+            "lower",
+            "payload.non_prize_attacks.rate",
+            "未立即拿奖攻击率只作通用诊断；铺伤与控制构筑必须结合专项 profile。",
+            "payload_ratio",
+        ),
+    ),
+)
+
 
 _PROFILES = {
     CORE_PROFILE_ID: CORE_PROFILE,
     AUTO_ITERATION_PROFILE_ID: AUTO_ITERATION_PROFILE,
+    LEAGUE_QUALITY_PROFILE_ID: LEAGUE_QUALITY_PROFILE,
 }
 
 

@@ -47,6 +47,23 @@ class FrozenCatalogTest(unittest.TestCase):
         self.assertEqual(len(legacy.stdout.splitlines()), 30)
         self.assertIn("alakazam_dudunsparce_01", legacy.stdout.splitlines())
 
+    def test_frozen_candidate_uses_shared_runtime_and_exact_deck_identity(self) -> None:
+        catalog = load_frozen_catalog(FROZEN_CATALOG, EVALUATION_ROOT)
+        identity = next(
+            item for item in catalog.opponents if item.name == "dragapult_ex_001"
+        )
+
+        candidate = catalog.candidate("dragapult_ex_001")
+
+        self.assertEqual(candidate.name, identity.name)
+        self.assertEqual(candidate.deck, identity.deck)
+        self.assertEqual(candidate.deck_hash, identity.deck_hash)
+        self.assertEqual(candidate.package_hash, identity.package_hash)
+        self.assertEqual(candidate.root, catalog.policy.root)
+        self.assertEqual(candidate.entrypoint, catalog.policy.entrypoint)
+        with self.assertRaisesRegex(ValueError, "unknown Frozen candidate"):
+            catalog.candidate("missing")
+
 
 if __name__ == "__main__":
     unittest.main()

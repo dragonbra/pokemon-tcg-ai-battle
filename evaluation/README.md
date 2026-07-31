@@ -79,6 +79,14 @@ Powerful Hand、post-KO relay 和 attack quality 的结构化 payload。Powerful
 分母中，不会被静默删除。profile 的 id、revision、metric ids、聚合 payload、单局轻量
 `metric_refs` 和专属语义展示全部内嵌在独立 `report.html` 中。
 
+Frozen League 全量循环评测使用 `--metric-profile league_deck_quality`（revision 1）。该 profile
+不复用胡地专属 Powerful Hand 作为全局指标，而是统一提取首次攻击回合、攻击连续率、可攻击却
+未提交的回合、Prize/attack、多 Prize 回合、KO 后攻击间隔、Bench/进化/能量场面、牌库消耗、
+Supporter/手填能量利用、对手攻击受阻、关键主攻成形、Ability 动作、伤害事件和主动离场。
+`evaluation/metrics/league_profiles.py` 将 48 套 Frozen deck 完整覆盖为 21 个策略类别；每类只从
+通用原子指标中选择重点解释字段，并记录独立的 reward warning。过程指标只用于解释 checkpoint、
+定位退化和形成 reward 假设，不能覆盖 official-engine 胜负护栏。
+
 `length` 把官方 engine 的先手玩家 phase turn 与紧随其后的后手玩家 phase turn 合成一个完整
 回合，使用 `ceil(engine_turn / 2)` 作为结束回合。页面分别展示获胜和失败对局的平均结束回合与
 分布图，并按 candidate 在该局是先攻还是后攻分色。终局先后手 phase 仍保留在单局 payload 中，

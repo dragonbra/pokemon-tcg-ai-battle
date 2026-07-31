@@ -34,6 +34,18 @@ class FrozenCatalog:
     policy: SubmissionPackage
     opponents: tuple[SubmissionPackage, ...]
 
+    def candidate(self, deck_id: str) -> SubmissionPackage:
+        matches = [package for package in self.opponents if package.name == deck_id]
+        if len(matches) != 1:
+            raise PackageValidationError(f"unknown Frozen candidate deck: {deck_id}")
+        identity = matches[0]
+        return replace(
+            identity,
+            root=self.policy.root,
+            entrypoint=self.policy.entrypoint,
+            cg_manifest=self.policy.cg_manifest,
+        )
+
 
 def _read_json(path: Path, label: str) -> dict[str, Any]:
     try:

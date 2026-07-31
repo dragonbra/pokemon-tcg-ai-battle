@@ -79,6 +79,8 @@ rl_runs/0022_league_training/versions/V&lt;n&gt;_&lt;tag&gt;/
 experiments/0022_league_training/evaluation/V&lt;n&gt;_&lt;tag&gt;.html</pre>
 
 <h2>Checkpoint 身份</h2><p>每套 deck 长期维护不可变 <code>foundation</code>、最新训练产物 <code>latest/challenger</code> 和通过 Frozen Arena 验收的 <code>champion</code>。latest 绝不自动覆盖 champion。</p>
+<h2>League 对局质量</h2><p><code>league_deck_quality</code> revision 1 在原始 trace 清理前提取启动、攻击机会与连续性、Prize 转化、多 Prize 回合、KO 后接力、场面进化/能量、牌库、Supporter/手填能量、压制、Ability、伤害与主动离场。48 套 deck 被完整映射为 21 个策略类别，每类拥有关键卡、重点字段、解释和 reward warning。</p>
+<p>例如多龙允许未立即拿奖的铺伤，但要求后续兑现；Dusknoir 自我 KO 不能直接惩罚；Raging Bolt 弃能要结合 KO 与恢复；Crustle 长局要结合压制与终局。专项指标用于解释 checkpoint 和提出 reward 假设，不替代 Frozen 胜率。</p>
 <h2>证据边界</h2><p>Frozen 胜率改善只能证明相对当前 48-deck anchor 的局部改进，不能证明全局最优。Live-view rollout、loss、KL 和 reward 不能冒充 checkpoint 强度。历史异构池仍可通过 <code>--pool opponents</code> 显式运行，作为 secondary external-generalization evidence。</p>
 <p class="warn">sampled rollout 与 96-game diagnostic 始终只是训练诊断；480-game Frozen Arena 才是标准 checkpoint 验收合同。</p>
 <p>完整字段、准入、风险与阶段说明见 <a href="DESIGN.md">DESIGN.md</a>；Frozen 起点见 <a href="frozen_baseline/index.html">frozen baseline</a>。</p>
