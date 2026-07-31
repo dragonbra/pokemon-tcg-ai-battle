@@ -584,7 +584,11 @@ def _matrix_section(
         for column in columns:
             cell = _mapping(matrix_row.get(str(column["name"])))
             value = _number(cell.get(metric))
-            if metric.endswith("win_rate"):
+            is_self_play = row["name"] == column["name"]
+            if is_self_play:
+                display = "-"
+                style = "background:#f2f5f3;color:#7b8983"
+            elif metric.endswith("win_rate"):
                 display = _percentage(value)
                 style = _win_heat(value)
             else:
