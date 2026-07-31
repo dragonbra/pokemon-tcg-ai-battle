@@ -1,0 +1,22 @@
+{
+  "branch_checkpoint": "rl_runs/0022_league_training/versions/V2_dragapult_focal_20h_w128/checkpoint/selected/update-000039.pt",
+  "catalog_sha256": "d16488e6bb191ddffd626bbdfdaf6b978b1d1d5184922a61c64ec179e2bab97b",
+  "deck_count": 48,
+  "foundation_verified": true,
+  "official_engine_strength_evidence": false,
+  "state": "failed",
+  "error": "Interrupted before rollout while auditing repeated Foundation initialization; no training metrics or checkpoint was published.",
+  "training_started": true,
+  "version": "V7_canary_cuda_gate",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0022_league_training--v7_canary_cuda_gate-5e3f4bc567",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0022_league_training--v7_canary_cuda_gate-5e3f4bc567"
+  },
+  "wandb_sync": "not_applicable_initialization_only"
+}

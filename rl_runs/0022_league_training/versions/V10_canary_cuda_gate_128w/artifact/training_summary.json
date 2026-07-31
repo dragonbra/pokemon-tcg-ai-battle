@@ -1,0 +1,8 @@
+{
+  "branch_checkpoint": "rl_runs/0022_league_training/versions/V2_dragapult_focal_20h_w128/checkpoint/selected/update-000039.pt",
+  "deck_count": 48,
+  "elapsed_hours": 0.15258688913451302,
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "state": "completed_time_budget",
+  "updates": 1
+}

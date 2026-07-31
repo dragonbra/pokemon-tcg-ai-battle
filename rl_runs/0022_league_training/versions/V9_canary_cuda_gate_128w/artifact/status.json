@@ -1,0 +1,24 @@
+{
+  "branch_checkpoint": "rl_runs/0022_league_training/versions/V2_dragapult_focal_20h_w128/checkpoint/selected/update-000039.pt",
+  "catalog_sha256": "d16488e6bb191ddffd626bbdfdaf6b978b1d1d5184922a61c64ec179e2bab97b",
+  "deck_count": 48,
+  "elapsed_hours": 0.11208815336227416,
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "foundation_verified": true,
+  "official_engine_strength_evidence": false,
+  "state": "completed_time_budget",
+  "training_started": true,
+  "updates": 1,
+  "version": "V9_canary_cuda_gate_128w",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0022_league_training--v9_canary_cuda_gate_128w-18fd048097",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0022_league_training--v9_canary_cuda_gate_128w-18fd048097"
+  },
+  "wandb_sync": "not_applicable_initialization_only"
+}

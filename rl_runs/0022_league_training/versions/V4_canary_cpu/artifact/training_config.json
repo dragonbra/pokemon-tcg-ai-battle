@@ -1,0 +1,618 @@
+{
+  "catalog": {
+    "deck_count": 48,
+    "focal_deck_ids": [
+      "dragapult_ex_001"
+    ],
+    "frozen_count": 48,
+    "live_count": 48,
+    "path": "rl_runs/0022_league_training/versions/V4_canary_cpu/artifact/league_catalog.json",
+    "sha256": "d16488e6bb191ddffd626bbdfdaf6b978b1d1d5184922a61c64ec179e2bab97b"
+  },
+  "checkpoints": {
+    "alakazam_dudunsparce_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/alakazam_dudunsparce_001.pt",
+      "decoder_sha256": "5d780587606a0c695c89e50d4c473425b6d37e66dfde35de64677c1de3ee434d",
+      "initialization_seed": 406421851,
+      "materialized": true,
+      "role": "live"
+    },
+    "alakazam_dudunsparce_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/alakazam_dudunsparce_002.pt",
+      "decoder_sha256": "833c6bc479a28228e698f714b4e8742d060b60b4b8d85bb633345393e6df8d57",
+      "initialization_seed": 1377921222,
+      "materialized": true,
+      "role": "live"
+    },
+    "alakazam_dudunsparce_003": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/alakazam_dudunsparce_003.pt",
+      "decoder_sha256": "76bbea3a1548debed9eea3ca79c884bcfa2c0e93170a2d2dd8012ab20407507a",
+      "initialization_seed": 107757760,
+      "materialized": true,
+      "role": "live"
+    },
+    "arboliva_ex_meganium_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/arboliva_ex_meganium_001.pt",
+      "decoder_sha256": "ef56684c58f83611101dfa9028e179c20e9a5af18f608f93e957a64e0594cd9b",
+      "initialization_seed": 508600440,
+      "materialized": true,
+      "role": "live"
+    },
+    "archaludon_ex_cinderace_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/archaludon_ex_cinderace_001.pt",
+      "decoder_sha256": "c06f73d2119d8e9abb04af2f80d10db47683b8f70af47babf35b5eacefe25f9d",
+      "initialization_seed": 979029467,
+      "materialized": true,
+      "role": "live"
+    },
+    "crustle_cornerstone_mask_ogerpon_ex_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/crustle_cornerstone_mask_ogerpon_ex_001.pt",
+      "decoder_sha256": "fc26dfc7ac8fe54f98784cde2d9ae1cdd2ca15085889701c6b6350a28b16d1db",
+      "initialization_seed": 898383912,
+      "materialized": true,
+      "role": "live"
+    },
+    "cynthias_garchomp_ex_roserade_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/cynthias_garchomp_ex_roserade_001.pt",
+      "decoder_sha256": "ebb8d511e61933345999940f8becfc1dc5a41c486354faa957177aee185f60a7",
+      "initialization_seed": 712865526,
+      "materialized": true,
+      "role": "live"
+    },
+    "cynthias_garchomp_ex_roserade_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/cynthias_garchomp_ex_roserade_002.pt",
+      "decoder_sha256": "22747a74efdbc5795f9843cda41f159fb295bef93c0d9f913f9024fbe9229de7",
+      "initialization_seed": 1254133866,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_001.pt",
+      "decoder_sha256": "ffaff4148184fea8ee0d1358c4389c1ab2dbdc103c73e701c96c7268f5496828",
+      "initialization_seed": 718344550,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_blaziken_ex_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_blaziken_ex_001.pt",
+      "decoder_sha256": "46374c4c6ccb567572ffd6ca8f0727a27993b625ddd7f09b9f1e6dc052cf4862",
+      "initialization_seed": 277756391,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_crushing_hammer_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_crushing_hammer_001.pt",
+      "decoder_sha256": "2bed804280000974aa99e3512d3760066c66da3198e337f4ce6e0301978cdf65",
+      "initialization_seed": 583078749,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dunsparce_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_dunsparce_001.pt",
+      "decoder_sha256": "d34dd1afc9bdf4bc7066739b25f6868eb9560e64fda9a12f9e7d7a2455813a6b",
+      "initialization_seed": 1689297118,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dunsparce_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_dunsparce_002.pt",
+      "decoder_sha256": "4b9d7d53045f12fdd74b4d92e0631229d133e2c8a3aae5359bfacc0336879e3d",
+      "initialization_seed": 1018898727,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dusknoir_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_dusknoir_001.pt",
+      "decoder_sha256": "9501d4d205ec7d0e0a1fa2c2e6a8963c26c6cf63e4c5fec730ab1683d9e1f72b",
+      "initialization_seed": 1490954807,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dusknoir_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_dusknoir_002.pt",
+      "decoder_sha256": "b040da9d96bd7bb863fddf281c7da76ff1ef0f580d610db02a88ead107478a7b",
+      "initialization_seed": 842482504,
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_mega_froslass_ex_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/dragapult_ex_mega_froslass_ex_001.pt",
+      "decoder_sha256": "f35f47bbe6af966dbd931ca5a576c2dd942a4b843c9e01e84f6296bfd68e985d",
+      "initialization_seed": 48958040,
+      "materialized": true,
+      "role": "live"
+    },
+    "festival_lead_dipplin_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/festival_lead_dipplin_001.pt",
+      "decoder_sha256": "7c12e42005615d9d8330b091d809458df6186592c7a6cee23304fe8630090cdf",
+      "initialization_seed": 365181147,
+      "materialized": true,
+      "role": "live"
+    },
+    "festival_lead_dipplin_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/festival_lead_dipplin_002.pt",
+      "decoder_sha256": "ebc08e294e2fd7ed8b4beb82530cf67736294c42c1a277ebdb78e7e77a01cc21",
+      "initialization_seed": 634718469,
+      "materialized": true,
+      "role": "live"
+    },
+    "festival_lead_dipplin_003": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/festival_lead_dipplin_003.pt",
+      "decoder_sha256": "288b73a42087d1ab89c0bd9a00205238d76bdfbee81846b3284acd22e3c40fed",
+      "initialization_seed": 1789030002,
+      "materialized": true,
+      "role": "live"
+    },
+    "hydrapple_ex_meganium_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/hydrapple_ex_meganium_001.pt",
+      "decoder_sha256": "dadbf87e6adffc654ebf13f8e13c769092f288d9ff54f134ca3ff21c837b9aa6",
+      "initialization_seed": 33076421,
+      "materialized": true,
+      "role": "live"
+    },
+    "ionos_bellibolt_ex_kilowattrel_01": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/ionos_bellibolt_ex_kilowattrel_01.pt",
+      "decoder_sha256": "0d2e50fc6d2ec31bc9aee9bf2e24d381a75387f8159b30be7c65f4cbb1402a98",
+      "initialization_seed": 1214826120,
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/marnies_grimmsnarl_ex_froslass_001.pt",
+      "decoder_sha256": "53ededf3e9e6d5dd71b50ec745df609d10324054f1cb456c9af9c48102cd9c31",
+      "initialization_seed": 2039249064,
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/marnies_grimmsnarl_ex_froslass_002.pt",
+      "decoder_sha256": "dd51ec82c647169d06d7d7b3ec7d260eb18f5e549ac9565d5a121c665143b99a",
+      "initialization_seed": 2122132696,
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_003": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/marnies_grimmsnarl_ex_froslass_003.pt",
+      "decoder_sha256": "e787afc3e9913521e63796cd2e9ead721b392116554223ef686a74b6517e1a02",
+      "initialization_seed": 308706880,
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_004": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/marnies_grimmsnarl_ex_froslass_004.pt",
+      "decoder_sha256": "07f0a670ef20cf1232c9bfe6624001d9527b7ae2bf76f911468a881166ce6d78",
+      "initialization_seed": 861335618,
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_005": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/marnies_grimmsnarl_ex_froslass_005.pt",
+      "decoder_sha256": "d560da64a8cfc863fdbd3211380668764c7dbf9e0f2d21d66ff423ecfa7cdd55",
+      "initialization_seed": 1880986002,
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_006": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/marnies_grimmsnarl_ex_froslass_006.pt",
+      "decoder_sha256": "a9b153b07252b85e7dce4e19df0b06c0dc028a1b4b8a8457af558c99c6329874",
+      "initialization_seed": 1689930196,
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_limitless": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/marnies_grimmsnarl_ex_froslass_limitless.pt",
+      "decoder_sha256": "a4ffc92ac215a1ac60beee24718476c05a066f327d6c5a55003af40563762d54",
+      "initialization_seed": 1187447895,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_001.pt",
+      "decoder_sha256": "81eb3fbfdebe59d6954b1deb3efac90f27c3e2cb68a1d018c3ed0540aa262e87",
+      "initialization_seed": 761866932,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_002.pt",
+      "decoder_sha256": "b1cecec8a9726575fe6b055dad6a5149c7df3deb2746b7354ee2bbfe1ba53e4a",
+      "initialization_seed": 61429599,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_003": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_003.pt",
+      "decoder_sha256": "270ddc4f1402f86f0730775e9d9c2dc91a7fc5d3c8bfb7ed18c3ee8c73c17d38",
+      "initialization_seed": 1483011526,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_004": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_004.pt",
+      "decoder_sha256": "b7240fa6651f0a0a6aa0898ef70c544ef2a1b547856b4300199595c3833e71fb",
+      "initialization_seed": 576108177,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_005": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_005.pt",
+      "decoder_sha256": "a3d7f5101e9db029d9c478718423386b5486a5638a2dd9801cc0a2030a6183da",
+      "initialization_seed": 854959958,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_006": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_006.pt",
+      "decoder_sha256": "ccc39b045f2fbedffda00712e3d905b92e26ced822c3689eff4e05b9fc460662",
+      "initialization_seed": 900837556,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_007": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_007.pt",
+      "decoder_sha256": "b9adea8cc7cc0ce16cedd09a9f80f5f99bdac427ead0af4562d02973ac87f942",
+      "initialization_seed": 1316980188,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_008": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_kangaskhan_ex_crustle_008.pt",
+      "decoder_sha256": "f4788d57124067e384d29571c95b26981289b6b91fff3e9c0a4194ecddaa35e1",
+      "initialization_seed": 1473343373,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lopunny_ex_mega_froslass_ex_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_lopunny_ex_mega_froslass_ex_001.pt",
+      "decoder_sha256": "a1d521847979cd266c602af2a2dd699ce0af73de3bfdf5f1bec3dcbbad42c61f",
+      "initialization_seed": 1330788583,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lucario_ex_solrock_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_lucario_ex_solrock_001.pt",
+      "decoder_sha256": "4ce7a843596bb2014c93f6003ed3d08af90a9f6c7715fb7907688e6f76e174ec",
+      "initialization_seed": 1141614342,
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lucario_ex_solrock_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/mega_lucario_ex_solrock_002.pt",
+      "decoder_sha256": "e1192342f7c9a7fdd14f50f25c78c73e07f7dfb910bf40290892850ef5a557bc",
+      "initialization_seed": 1191277984,
+      "materialized": true,
+      "role": "live"
+    },
+    "ns_zoroark_ex_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/ns_zoroark_ex_001.pt",
+      "decoder_sha256": "fce610be4dbc9dfeefe593ac38ab43457bb90811ee41759f33c361539d2dda8a",
+      "initialization_seed": 1680290823,
+      "materialized": true,
+      "role": "live"
+    },
+    "raging_bolt_ex_james_cox_henry_chao_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/raging_bolt_ex_james_cox_henry_chao_001.pt",
+      "decoder_sha256": "a54fa9e4aa719d8be238188dd62f4ee2b950102edc1fdb4e56325abe76e14180",
+      "initialization_seed": 1459934561,
+      "materialized": true,
+      "role": "live"
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/raging_bolt_ex_mega_kangaskhan_ex_002.pt",
+      "decoder_sha256": "02def5c9d62493afe34b6f6abf46f10d1e0950db35bfe6cf909bb6a4f6cba9f8",
+      "initialization_seed": 1341910851,
+      "materialized": true,
+      "role": "live"
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_003": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/raging_bolt_ex_mega_kangaskhan_ex_003.pt",
+      "decoder_sha256": "44af360aec6432c6182066b2badc93daa40e8a2611902a7872e822f46aabbce3",
+      "initialization_seed": 947136898,
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_001": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/team_rockets_mewtwo_ex_spidops_001.pt",
+      "decoder_sha256": "b8bdcf9754679f77e1fc9c03370fb590743126f2059703efaa67bec36cc0bebd",
+      "initialization_seed": 926549182,
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_002": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/team_rockets_mewtwo_ex_spidops_002.pt",
+      "decoder_sha256": "6278253c363e6c6a1d46f50fa78214f328965b42a077ab28c226f5d835dd1ed5",
+      "initialization_seed": 1617563263,
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_003": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/team_rockets_mewtwo_ex_spidops_003.pt",
+      "decoder_sha256": "578e92512ae0fe8d8b33cb32a8055e420195c90721a7f83c9e736572f3360c6d",
+      "initialization_seed": 1186360102,
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_004": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/team_rockets_mewtwo_ex_spidops_004.pt",
+      "decoder_sha256": "fa1c3e7d220ac311a8e5cc49288bf3afef90f90b4cfed2922b73ee30044547a3",
+      "initialization_seed": 266848682,
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_005": {
+      "decoder_ref": "rl_runs/0022_league_training/versions/V4_canary_cpu/checkpoint/decks/team_rockets_mewtwo_ex_spidops_005.pt",
+      "decoder_sha256": "7404d919a70e9c988a95d9d3fde7a5f438f596b32b531dd2099db5f52d39d935",
+      "initialization_seed": 896078100,
+      "materialized": true,
+      "role": "live"
+    }
+  },
+  "foundation": {
+    "asset_id": "0019-0730-epoch13",
+    "deployment_source_id": 0,
+    "epoch": 13,
+    "global_step": 337194,
+    "ontology_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+    "parameter_count": 17756162,
+    "weights_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
+  },
+  "frozen_anchors": {
+    "alakazam_dudunsparce_001": {
+      "deck_sha256": "56024e4e17512f2c66e86f08da54552e49b9de9ad7c5df8ab0b8a4fe80f38ea4",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "alakazam_dudunsparce_002": {
+      "deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "alakazam_dudunsparce_003": {
+      "deck_sha256": "1f16d6d486572bf033ef455b38825f370658a95cebd80c40693dc027af97e78d",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "arboliva_ex_meganium_001": {
+      "deck_sha256": "b334db5c427bbf154d43900e06f05da176938b28cc8caa474d2ae36a7265b11b",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "archaludon_ex_cinderace_001": {
+      "deck_sha256": "d90a5bc8c699d7c335bc3a52c876add629cb4c446a3b8234515e2345e5a3d751",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "crustle_cornerstone_mask_ogerpon_ex_001": {
+      "deck_sha256": "c385b53bf42c2af2bc8daedde5b28d921dd913e9886c1e86f326ad229ee20e6a",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "cynthias_garchomp_ex_roserade_001": {
+      "deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "cynthias_garchomp_ex_roserade_002": {
+      "deck_sha256": "d340f23802cf7af508327c234e890041b446e26911db670c93dd2c86eb4dc766",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_001": {
+      "deck_sha256": "6f784c7049ab4a4cfbc012c5bee8cc040d1030d54b4e572e4a4a9f35d0f6ea81",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_blaziken_ex_001": {
+      "deck_sha256": "0a78adbfd08f99ec83b3d7c10043e06c3c349a5d9708e44df41275f169b0b9fc",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_crushing_hammer_001": {
+      "deck_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dunsparce_001": {
+      "deck_sha256": "3edb78cf7f3c83fbf282c4f74832c5b0668a0b7f2f76f6dcbbe01bf15b211d92",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dunsparce_002": {
+      "deck_sha256": "c49e78d7cb256803274aa87d2d783b17ca5e4a64bea41cbe616dfced953579b1",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dusknoir_001": {
+      "deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dusknoir_002": {
+      "deck_sha256": "1b8e9548e4b69cad198801fc244290d96873517a390cb357dc3689a01c194cc3",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_mega_froslass_ex_001": {
+      "deck_sha256": "d3d18fe9f0fea53376b4ff54889dc6e58402f5b3b3bd5e542e9ddbb3c8fa08be",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "festival_lead_dipplin_001": {
+      "deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "festival_lead_dipplin_002": {
+      "deck_sha256": "79e43c0a0b83e17a0b5264163000f8b656749d1878141864a863fb34818a1422",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "festival_lead_dipplin_003": {
+      "deck_sha256": "5adce4b9b664bbee40748fd146283877db16189ee0baf8dce0ab8d5ab44e2302",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "hydrapple_ex_meganium_001": {
+      "deck_sha256": "9cf402085661342b7b73a5c502ce7d807d061f1d5117b8e59690b4637b98ea6c",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "ionos_bellibolt_ex_kilowattrel_01": {
+      "deck_sha256": "7dc29ba6002f31aefaaacab06721d54e39b31e866b54c34e9b973d5133795f8c",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_001": {
+      "deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_002": {
+      "deck_sha256": "978ab31c50aa7fdaf11e38ba108cf0eda7fab6ca3597bfa3b45a7f74cd6a9327",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_003": {
+      "deck_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_004": {
+      "deck_sha256": "882b584691fc15581b9c7d238ea131a933050f9da1694d8418c790d33c13fc54",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_005": {
+      "deck_sha256": "de5b9940c5be5708af75d38f0bbb3fd85600e90fea9349a8ab330fb1f4638ffe",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_006": {
+      "deck_sha256": "22a88f292df485391b7927bdcc4d801945e1fbc31236e0d6eb113e3235e9878f",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_limitless": {
+      "deck_sha256": "c39e7d9e07202667c417d8728469b8449dc8b1cbaff95617f9bad6c5d07a9605",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_001": {
+      "deck_sha256": "4bf59ca589c2d685d74e3535424c2dbe3c11389dffba59eddba4567be7e437df",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_002": {
+      "deck_sha256": "ca60839cba73b0054f0854952ec3a5e98cb8178db1f71e264aafceb44ffd7adb",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_003": {
+      "deck_sha256": "747769779b60ad8db730b0b238414abb1e47936349cc72c83ff79c2ffacf31bc",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_004": {
+      "deck_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_005": {
+      "deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_006": {
+      "deck_sha256": "5626743fc93e949378ab0f050dfd647a32c7e69abca2421ba7755b58c5e1429c",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_007": {
+      "deck_sha256": "eef05267c0249d555efd0500c1012c4b2b0531cfa155dbee4a5092e56d03ea94",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_008": {
+      "deck_sha256": "c81ed99fdb4b3b6a36968586bed9208273e93123f4344f46decd3ad6783dc6fb",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lopunny_ex_mega_froslass_ex_001": {
+      "deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lucario_ex_solrock_001": {
+      "deck_sha256": "5a1a6ac264ccfd017ae137a035205d769fe57512323d474c22be9107177e36a8",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lucario_ex_solrock_002": {
+      "deck_sha256": "ff157aaa919099f08416952659f4bc7b203589288ccb477da67c2b245107a514",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "ns_zoroark_ex_001": {
+      "deck_sha256": "88c48ab1fd0bf50e3d894c0b96543ea6d4fea2d0c36a2833758e10ab810be7de",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "raging_bolt_ex_james_cox_henry_chao_001": {
+      "deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_002": {
+      "deck_sha256": "02d02fb28d5f445d6e1295dcb2b0c4e4e2b5c05c75db108749f69af8deb9ce51",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_003": {
+      "deck_sha256": "cb094a756dc32dfe8450372a44e3ff0e4c9cc71658217d0cecd0bc327680f351",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_001": {
+      "deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_002": {
+      "deck_sha256": "203002de844fcbf3c30d9da6cc79f8311eb5bb21685f3841d62b72656676c0fd",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_003": {
+      "deck_sha256": "b0c6efb1d703092bf7ba09cab3dc5fee1823e302291c9ba14f640f74a7f5a644",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_004": {
+      "deck_sha256": "c13542d5f48acc0c7894e047c1b724ef4c838f0910e54d34ff2d81915ca8789e",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_005": {
+      "deck_sha256": "7851bf5595529f83a95321e237751d6fb9088c02c126b67b83cb9bb2d5b1e190",
+      "decoder_ref": "foundation",
+      "materialized": false
+    }
+  },
+  "project_id": "0022_league_training",
+  "schema_version": "0022_league_initialization_v1",
+  "training": {
+    "deployment_source_id": 0,
+    "encoder_frozen": true,
+    "reward": {
+      "draw": 0.0,
+      "gamma": 1.0,
+      "loss": -1.0,
+      "win": 1.0
+    },
+    "wandb": {
+      "mode": "disabled_until_training_starts",
+      "reason": "version initialization performs no optimization"
+    }
+  },
+  "version": "V4_canary_cpu"
+}

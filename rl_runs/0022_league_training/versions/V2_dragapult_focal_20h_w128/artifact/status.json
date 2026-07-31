@@ -1,0 +1,26 @@
+{
+  "catalog_sha256": "d16488e6bb191ddffd626bbdfdaf6b978b1d1d5184922a61c64ec179e2bab97b",
+  "checkpoint_update": 39,
+  "decisions": 2283155,
+  "disk_free_gib": 816.507884979248,
+  "episodes": 19968,
+  "error": "AcceleratorError: CUDA error: an illegal memory access was encountered\nSearch for `cudaErrorIllegalAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.\nCUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.\nFor debugging consider passing CUDA_LAUNCH_BLOCKING=1\nCompile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.\n",
+  "foundation_verified": true,
+  "official_engine_strength_evidence": false,
+  "rollout_source_policy_update": 38,
+  "started_at_unix": 1785450005.731924,
+  "state": "failed",
+  "training_started": true,
+  "version": "V2_dragapult_focal_20h_w128",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0022_league_training--v2_dragapult_focal_20h_w128-c9ede8613f",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0022_league_training--v2_dragapult_focal_20h_w128-c9ede8613f"
+  },
+  "wandb_sync": "not_applicable_initialization_only"
+}
