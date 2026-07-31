@@ -295,10 +295,98 @@ def write_combat_matrix(
 ) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
     source_data_path.parent.mkdir(parents=True, exist_ok=True)
+    if _mapping(data.get("protocol")).get("pool_kind") == "frozen":
+        data = json.loads(json.dumps(data, ensure_ascii=False))
+        _write_frozen_deck_reports(data, output.parent)
     source_data_path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     output.write_text(render_combat_matrix(data, output.parent), encoding="utf-8")
+
+
+def _write_frozen_deck_reports(data: dict[str, object], output_root: Path) -> None:
+    packages = _mapping_sequence(data.get("packages"))
+    names = [str(package["name"]) for package in packages]
+    package_by_name = {str(package["name"]): package for package in packages}
+    matrix = _mapping(data.get("package_matrix"))
+    protocol = _mapping(data.get("protocol"))
+    prefix = str(protocol.get("report_href_prefix", ""))
+    runs = _mapping_sequence(data.get("candidate_runs"))
+    raw_reports = {
+        str(run["name"]): (Path(prefix) / str(run["report_path"])).as_posix()
+        for run in runs
+    }
+    details_root = output_root / "decks"
+    details_root.mkdir(parents=True, exist_ok=True)
+    for run in runs:
+        name = str(run["name"])
+        detail_path = details_root / f"{name}.html"
+        detail_path.write_text(
+            _render_frozen_deck_report(
+                package_by_name[name], names, package_by_name,
+                _mapping(matrix.get(name)), raw_reports,
+            ),
+            encoding="utf-8",
+        )
+        run["report_path"] = f"decks/{name}.html"
+    protocol["report_href_prefix"] = ""
+
+
+def _render_frozen_deck_report(
+    package: Mapping[str, object], names: list[str],
+    package_by_name: Mapping[str, Mapping[str, object]],
+    row: Mapping[str, object], raw_reports: Mapping[str, str],
+) -> str:
+    name = str(package["name"])
+    name_index = names.index(name)
+    comparative = [_mapping(row.get(opponent)) for opponent in names if opponent != name]
+    games = sum(_integer(cell.get("games")) for cell in comparative)
+    wins = sum(_integer(cell.get("wins")) for cell in comparative)
+    losses = sum(_integer(cell.get("losses")) for cell in comparative)
+    first_games = sum(_integer(cell.get("first_games")) for cell in comparative)
+    first_wins = sum(_integer(cell.get("first_wins")) for cell in comparative)
+    second_games = sum(_integer(cell.get("second_games")) for cell in comparative)
+    second_wins = sum(_integer(cell.get("second_wins")) for cell in comparative)
+    table_rows = []
+    for opponent_index, opponent in enumerate(names):
+        opponent_package = package_by_name[opponent]
+        cell = _mapping(row.get(opponent))
+        self_play = opponent == name
+        source = name if name_index <= opponent_index else opponent
+        evidence = "../" + raw_reports[source]
+        rate = _number(cell.get("win_rate"))
+        rate_text = "-" if self_play else _percentage(rate)
+        record = "-" if self_play else f"{cell.get('wins', 0)}–{cell.get('losses', 0)}"
+        bar = 0 if self_play or rate is None else max(0.0, min(100.0, rate * 100))
+        table_rows.append(
+            f'<tr><td>{_identity(opponent_package)}</td><td>{record}</td>'
+            f'<td><div class="match-rate"><span style="width:{bar:.1f}%"></span>'
+            f'<strong>{rate_text}</strong></div></td>'
+            f'<td>{"-" if self_play else _percentage(cell.get("first_win_rate"))}</td>'
+            f'<td>{"-" if self_play else _percentage(cell.get("second_win_rate"))}</td>'
+            f'<td>{"-" if self_play else _decimal(cell.get("average_turns"))}</td>'
+            f'<td><a href="{_escape(evidence)}">Raw evidence</a></td></tr>'
+        )
+    title = str(package.get("display_name", name))
+    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{_escape(title)} · Frozen Matchups</title><style>{_styles()}
+.match-rate{{position:relative;width:150px;height:26px;overflow:hidden;border-radius:5px;background:#edf2ef}}
+.match-rate span{{position:absolute;inset:0 auto 0 0;background:#66b58d}}
+.match-rate strong{{position:relative;z-index:1;display:block;padding:3px 8px;text-align:right}}
+.deck-nav{{margin-bottom:14px}}.deck-nav a{{font-weight:700}}.runs td{{vertical-align:middle}}
+</style></head><body><main><div class="deck-nav"><a href="../index.html">← Frozen Combat Matrix</a></div>
+<header class="hero"><div><p class="eyebrow">FROZEN ARENA · 50-DECK FULL ROW</p>
+<h1>{_escape(title)}</h1><p>完整 50 卡组 matchup 视图；self-play 对角线显示为 -</p></div></header>
+<section><h2>对阵总览</h2><div class="summary-grid">
+{_summary_card('比较对局', games)}{_summary_card('胜 / 负', f'{wins} / {losses}')}
+{_summary_card('比较胜率', _percentage(wins / games if games else None))}
+{_summary_card('先攻胜率', _percentage(first_wins / first_games if first_games else None))}
+{_summary_card('后攻胜率', _percentage(second_wins / second_games if second_games else None))}
+{_summary_card('Opponent 数', 50)}</div></section>
+<section><h2>对 50 套 Frozen 卡组的胜率</h2><p class="note">每个非对角 matchup 固定 10 局；Raw evidence 指向实际承载该组对局的不可变采样报告。</p>
+<div class="table-scroll"><table class="runs"><thead><tr><th>Opponent</th><th>W–L</th><th>胜率</th><th>先攻</th><th>后攻</th><th>平均回合</th><th>证据</th></tr></thead>
+<tbody>{''.join(table_rows)}</tbody></table></div></section></main></body></html>"""
 
 
 def render_combat_matrix(data: Mapping[str, object], output_root: Path) -> str:
