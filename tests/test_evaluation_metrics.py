@@ -325,6 +325,10 @@ class EvaluationMetricsTests(unittest.TestCase):
         self.assertEqual(aggregate.denominator, 4)
         self.assertEqual(aggregate.value, 0.25)
         self.assertEqual(aggregate.by_opponent["opponent-a"]["attempts"], 4)
+        self.assertEqual(aggregate.by_opponent["opponent-a"]["wins"], 1)
+        self.assertEqual(aggregate.by_opponent["opponent-a"]["losses"], 1)
+        self.assertEqual(aggregate.by_opponent["opponent-a"]["draws"], 1)
+        self.assertEqual(aggregate.by_opponent["opponent-a"]["unfinished"], 1)
 
     def test_outcome_uses_worker_candidate_relative_winner_when_candidate_is_second(self) -> None:
         plugin = OutcomePlugin()

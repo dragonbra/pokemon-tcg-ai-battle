@@ -1,0 +1,20 @@
+{
+  "candidate": "evaluation/arena/candidates/0022_dragapult_ex_001_league_update75",
+  "candidate_deck_id": "dragapult_ex_001",
+  "candidate_decoder_sha256": "42e0f20337838408c912fe736e16c90d3a5d5ca654e372610b1ca0f0120d88f1",
+  "candidate_update": 75,
+  "candidate_device": "cuda:0",
+  "opponent_device": "cuda:0",
+  "opponent_pool_id": "0019_foundation_49_exact_decks_v2",
+  "opponents": "all",
+  "games_per_opponent": 10,
+  "expected_games": 490,
+  "swap_policy": "alternate_candidate_first",
+  "metric_profile": "league_deck_quality",
+  "workers": 32,
+  "worker_cpu_threads": 1,
+  "inference_batch_size": 128,
+  "inference_batch_wait_ms": 5,
+  "official_engine_required": true,
+  "report": "experiments/0022_league_training/evaluation/V13_dragapult_update75_frozen_arena_v2.html"
+}

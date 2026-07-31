@@ -1,0 +1,13 @@
+{
+  "completed_games": 490,
+  "errors": 0,
+  "losses": 161,
+  "report": "experiments/0022_league_training/evaluation/V13_dragapult_update75_frozen_arena_v2.html",
+  "report_sha256": "e52b9d17ea9793a5a4e171c1cf3a24919b8faeb639ad9f0cae97b3f60a771ad7",
+  "run_id": "run-ceb38c8a0a004a6c88634eabad34a894",
+  "state": "completed",
+  "unfinished": 0,
+  "version": "V13_dragapult_update75_frozen_arena_v2",
+  "win_rate": 0.6714285714285714,
+  "wins": 329
+}

@@ -1,4 +1,6 @@
 {
-  "state": "allocated",
+  "invalidated_at": "2026-07-31T00:00:00Z",
+  "reason": "outcome.by_opponent aggregation bug discovered after successful official-engine run; summary and matchup results remain valid",
+  "state": "invalidated",
   "version": "V12_dragapult_update75_frozen_arena"
 }

@@ -140,7 +140,13 @@ def _by_opponent(results: Iterable[GameMetric]) -> dict[str, dict[str, object]]:
         category = str(result.value)
         group = grouped[opponent]
         group["attempts"] = int(group["attempts"]) + result.denominator
-        category_key = "errors" if category == "error" else category
+        category_key = {
+            "win": "wins",
+            "loss": "losses",
+            "draw": "draws",
+            "error": "errors",
+            "unfinished": "unfinished",
+        }.get(category)
         if category_key in group:
             group[category_key] = int(group[category_key]) + 1
     return dict(grouped)
