@@ -96,9 +96,17 @@ def compose_training_config(initialization: dict[str, object], config: LeagueTra
 
 
 def schedule_jobs(plugins: tuple[DeckPlugin, ...], *, count: int, update: int, seed: int, runtime_root: Path, evaluation: bool = False) -> list[RolloutJob]:
-    focal = next(item for item in plugins if item.focal)
     views = [LeaguePolicyView.FROZEN] if evaluation else [LeaguePolicyView.FROZEN, LeaguePolicyView.LIVE]
-    matchups = [(item, view) for view in views for item in plugins]
+    focal = next(item for item in plugins if item.focal)
+    # A focal-vs-itself game puts both +1 and -1 decisions under one
+    # policy_deck_id in the same episode, which cannot form an actor-relative
+    # PPO batch. Keep self-match for the explicit evaluation catalog, but omit
+    # it from on-policy training and retain balanced coverage of every other
+    # Live deck.
+    matchups = [
+        (item, view) for view in views for item in plugins
+        if evaluation or item.deck_id != focal.deck_id
+    ]
     if evaluation:
         count = len(matchups) * 2
     rng = random.Random(seed + update * 1_000_003 + int(evaluation) * 97)
@@ -161,7 +169,6 @@ def run_training(config: LeagueTrainingConfig, *, deck_root: Path = DEFAULT_DECK
         "WANDB_PROJECT": "pokemon-tcg-policy-learning", "WANDB_JOB_TYPE": "ppo_train",
         "WANDB_TAGS": "0022,league,ppo,dragapult,focal_only",
     })
-    focal = next(item for item in plugins if item.focal)
     focal_record = training_config["checkpoints"][focal.deck_id]
     if not isinstance(focal_record, dict) or not focal_record.get("materialized"):
         raise RuntimeError("focal update-0 decoder asset was not materialized")
@@ -194,7 +201,7 @@ def run_training(config: LeagueTrainingConfig, *, deck_root: Path = DEFAULT_DECK
                 rollout_started = time.perf_counter(); episodes = collector.collect(jobs); rollout_wall = time.perf_counter() - rollout_started
                 if sum(item.valid for item in episodes) != len(jobs):
                     raise RuntimeError(f"rollout update {update} has worker errors: {[item.error for item in episodes if not item.valid][:5]}")
-                batch = prepare_episodes(episodes, gamma=1.0, gae_lambda=0.95)
+                batch = prepare_episodes(episodes, policy_deck_id=focal.deck_id, gamma=1.0, gae_lambda=0.95)
                 metrics = trainer.update(batch); update += 1
                 episodes_total += len(episodes); decisions_total += batch.decisions
                 checkpoint = checkpoint_dir / f"update-{update:06d}.pt"

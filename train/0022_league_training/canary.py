@@ -51,7 +51,7 @@ def run_ppo_canary(*, device: str = "cuda:0", workers: int = 4,
     started = time.perf_counter(); episodes = collector.collect(jobs); rollout_seconds = time.perf_counter() - started
     if sum(item.valid for item in episodes) != len(jobs):
         raise RuntimeError(f"canary rollout errors: {[item.error for item in episodes if not item.valid]}")
-    batch = prepare_episodes(episodes, gamma=1.0, gae_lambda=0.95)
+    batch = prepare_episodes(episodes, policy_deck_id=focal.deck_id, gamma=1.0, gae_lambda=0.95)
     reference = frozen_reference(model, torch_device)
     trainer = PPOTrainer(model, reference, device=torch_device, config=PPOConfig(
         epochs=2, batch_size=128, actor_learning_rate=1e-5, value_learning_rate=1e-4,

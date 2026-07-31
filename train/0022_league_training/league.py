@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import copy
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ from rl_environment.runs import (
 )
 
 from . import PROJECT_ID
-from .decoder import create_value_head, load_decoder_checkpoint, save_decoder_checkpoint
+from .decoder import DECODER_COMPONENTS, create_value_head, load_decoder_checkpoint, save_decoder_checkpoint
 from .decks import DeckPlugin, DeckRole, load_deck_plugins, write_catalog_snapshot
 from .foundation import REPOSITORY_ROOT, load_foundation, verify_foundation
 
@@ -94,6 +95,14 @@ def initialize_league_version(
         }
         checkpoints: dict[str, dict[str, object]] = {}
         deck_checkpoint_root = paths.checkpoints / "decks"
+        # Construct the immutable Foundation exactly once.  Initializing 48
+        # deck-local heads must not repeatedly instantiate the full Transformer
+        # (and must not accidentally turn initialization into 48 encoders).
+        foundation_model, _ = load_foundation("cpu")
+        foundation_decoder_state = {
+            component: copy.deepcopy(getattr(foundation_model, component).state_dict())
+            for component in DECODER_COMPONENTS
+        }
         for plugin in plugins:
             if plugin.role is DeckRole.FROZEN:
                 checkpoints[plugin.deck_id] = {
@@ -103,7 +112,9 @@ def initialize_league_version(
                     "role": plugin.role.value,
                 }
                 continue
-            model, _ = load_foundation("cpu")
+            model = foundation_model
+            for component, state in foundation_decoder_state.items():
+                getattr(model, component).load_state_dict(state)
             initialization_seed = _deck_initialization_seed(version_name, plugin)
             with torch.random.fork_rng(devices=[]):
                 torch.manual_seed(initialization_seed)

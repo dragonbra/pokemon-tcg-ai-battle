@@ -14,6 +14,7 @@ from .smoke import run_rollout_smoke
 from .canary import run_ppo_canary
 from .benchmark import run_worker_benchmark
 from .training.run import LeagueTrainingConfig, run_training
+from .training.league_run import run_league_training
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -51,6 +52,16 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument("--duration-hours", type=float, default=20.0)
     train.add_argument("--frozen-eval-interval", type=int, default=5)
     train.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
+    league = subparsers.add_parser("train-league")
+    league.add_argument("--version", required=True)
+    league.add_argument("--device", default="cuda:0")
+    league.add_argument("--workers", type=int, default=128)
+    league.add_argument("--coalesce-ms", type=float, default=5.0)
+    league.add_argument("--games-per-update", type=int, default=512)
+    league.add_argument("--duration-hours", type=float, default=20.0)
+    league.add_argument("--frozen-eval-interval", type=int, default=5)
+    league.add_argument("--max-updates", type=int)
+    league.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
     return parser
 
 
@@ -83,6 +94,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             workers=args.workers, games=args.games, coalesce_ms=args.coalesce_ms,
             device=args.device, output=args.output, deck_root=args.deck_root,
         )
+    elif args.command == "train-league":
+        return run_league_training(LeagueTrainingConfig(
+            version=args.version, device=args.device, workers=args.workers,
+            coalesce_ms=args.coalesce_ms, games_per_update=args.games_per_update,
+            duration_hours=args.duration_hours, frozen_eval_interval=args.frozen_eval_interval,
+        ), deck_root=args.deck_root, max_updates=args.max_updates)
     else:
         return run_training(LeagueTrainingConfig(
             version=args.version, device=args.device, workers=args.workers,

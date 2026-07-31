@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import torch
 
+from ..decoder import DECODER_COMPONENTS
 from ..policy.action_distribution import evaluate_actions
 from ..policy.actor_critic import LeagueActorCritic
 from ..policy.batching import collate_feature_batches, move_batch
@@ -28,6 +29,20 @@ class PPOConfig:
 
 
 def frozen_reference(model: LeagueActorCritic, device: torch.device) -> LeagueActorCritic:
+    # LeaguePolicyPool.RoutedActor keeps the Foundation encoder in an
+    # intentionally unregistered shared attribute.  Reusing that object here
+    # prevents one full encoder copy per deck (48 references would otherwise
+    # defeat the shared-encoder memory contract).  Only the decoder/value are
+    # immutable reference state for a deck-local PPO trainer.
+    if hasattr(model.actor, "shared_actor"):
+        routed_type = type(model.actor)
+        actor = routed_type(model.actor.shared_actor)
+        for component in DECODER_COMPONENTS:
+            setattr(actor, component, copy.deepcopy(getattr(model.actor, component)))
+        reference = LeagueActorCritic(actor, copy.deepcopy(model.value_head)).to(device).eval()
+        for parameter in reference.parameters():
+            parameter.requires_grad_(False)
+        return reference
     reference = copy.deepcopy(model).to(device).eval()
     for parameter in reference.parameters():
         parameter.requires_grad_(False)

@@ -26,8 +26,8 @@ def _episode(update: int, reward: float) -> EpisodeTrajectory:
     job = RolloutJob("g", "dragapult_ex_001", "opponent", LeaguePolicyView.FROZEN, True, 1, update, deck, deck, Path("runtime"))
     episode = EpisodeTrajectory(job)
     episode.decisions = [
-        TrajectoryDecision({}, (0,), True, -0.2, 0.1, 0.0),
-        TrajectoryDecision({}, (1,), True, -0.3, 0.2, 0.0),
+        TrajectoryDecision({}, (0,), True, -0.2, 0.1, 0.0, "dragapult_ex_001", update, 1),
+        TrajectoryDecision({}, (1,), True, -0.3, 0.2, 0.0, "dragapult_ex_001", update, 1),
     ]
     episode.finish(reward, 4)
     return episode
@@ -104,12 +104,24 @@ class LeagueTrainingTest(unittest.TestCase):
 
     def test_prepare_rejects_mixed_behavior_policy_updates(self) -> None:
         with self.assertRaisesRegex(ValueError, "mixes source_policy_update"):
-            prepare_episodes([_episode(0, 1.0), _episode(1, -1.0)])
+            prepare_episodes([_episode(0, 1.0), _episode(1, -1.0)], policy_deck_id="dragapult_ex_001")
 
     def test_prepare_records_single_behavior_policy_update(self) -> None:
-        batch = prepare_episodes([_episode(7, 1.0)])
+        batch = prepare_episodes([_episode(7, 1.0)], policy_deck_id="dragapult_ex_001")
         self.assertEqual(batch.source_policy_update, 7)
         self.assertEqual(batch.decisions, 2)
+        self.assertEqual(batch.policy_deck_id, "dragapult_ex_001")
+
+    def test_prepare_filters_exact_policy_and_flips_opponent_reward(self) -> None:
+        episode = _episode(7, 1.0)
+        episode.decisions.append(
+            TrajectoryDecision({}, (2,), True, -0.4, 0.3, 0.0, "alakazam_dudunsparce_001", 4, -1)
+        )
+        batch = prepare_episodes([episode], policy_deck_id="alakazam_dudunsparce_001")
+        self.assertEqual(batch.policy_deck_id, "alakazam_dudunsparce_001")
+        self.assertEqual(batch.source_policy_update, 4)
+        self.assertEqual(batch.decisions, 1)
+        self.assertEqual(float(batch.terminal_return[0]), -1.0)
 
 
 if __name__ == "__main__":

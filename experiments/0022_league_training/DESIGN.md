@@ -2,9 +2,11 @@
 
 **项目 ID：** `0022_league_training`
 
-**当前阶段：** V1 已完成 update-0 Frozen gate 与首个 512 局 PPO update，证明训练合同正确，
-同时测得 8-worker rollout 只有 0.6373 games/s。Torch-light worker 修复后，128-worker /
-5 ms coalescing 达到 2.4506 games/s；下一正式版本采用该配置继续约 20 小时训练。
+**当前阶段：** V2 在 update 39 完整写入后因 CUDA illegal-memory-access 失败；update 35/39
+均通过独立 300 局 Arena（201-99，67.0%，0 error）。V6 CUDA canary 已完成 32/32、0 error、
+1 个多 decoder PPO update。V7 正式版本从 update 39 分支，启动 48 个 deck-local decoder/value
+的双边 League Training，目标约 20 小时 GPU 运行；正式 update 要求 48 个 Live deck 都有真实
+trajectory，并按固定 Frozen/Live/probe gate 记录。
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
 
@@ -82,10 +84,10 @@ historical decoder snapshot 才引用不可变 `.pt` 和 SHA-256。它永远不�
 
 ### 3.3 Live pool
 
-Live pool 由 48 个独立的 deck-specific Decoder/Value 资产组成，共享 Frozen Encoder。首个
-正式版本只更新 `dragapult_ex_001` 的 Decoder/Value；另外 47 个 Live 资产固定在 update 0。
-它们和 Frozen 在初始动作上等价，但身份、路由和 checkpoint 独立，为后续版本的真正 Live
-更新保留合同。对手动作绝不混入 focal loss。
+Live pool 由 48 个独立的 deck-specific Decoder/Value 资产组成，共享 Frozen Encoder。V7 从
+update 39 初始化 `dragapult_ex_001`，另外 47 个 Live 资产从各自 update-0 decoder 初始化；
+在每个 512-game update 收集到轨迹后，48 个 Live deck 分别用自己的 trajectory、reference、
+optimizer 和 checkpoint 更新。对手动作只进入其自身 deck 的 loss，绝不混入 focal loss。
 
 Live pool 是 curriculum 和探索资产，不是自动晋级的正式 opponent。只有通过固定 Frozen pool、历史 snapshot 和完整 package audit 后，才可以创建新的 Frozen snapshot。
 
@@ -105,9 +107,10 @@ official_engine_hash
 reward / terminal_reason
 ```
 
-主视角固定为 `dragapult_ex_001`。Frozen 和 Live-view 对局中都只有主视角的
-action/log-prob/value/advantage 进入 PPO；第一版不收集或更新 opponent trajectory。双方独立更新
-属于后续新版本，届时必须分别保存 policy version、action mask 和 reward sign。
+主视角仍为 `dragapult_ex_001`。V3+ 的 focal 与 Live opponent 都记录 action/log-prob/value，
+每条决策携带 exact `policy_deck_id`、`policy_update` 和 actor-relative `reward_sign`；Frozen
+opponent 只提供不可训练的质量锚点。每个 deck 只从自己的轨迹过滤出 PPO batch，分别更新自己的
+decoder/value 和 optimizer；双方不会共享 loss、optimizer 或 rollout buffer。
 
 ### 4.2 初始批次
 
@@ -119,10 +122,13 @@ action/log-prob/value/advantage 进入 PPO；第一版不收集或更新 opponen
 严格 256 先手 + 256 后手，确定性轮转覆盖整个 catalog
 ```
 
-先后手按固定平衡日程分配。`10 games / matchup` 只用于 rollout 和快速诊断，单个 matchup 的胜率不得作为强结论；正式趋势使用跨 iteration 滚动窗口和 Wilson 区间。
+先后手按固定平衡日程分配。`10 games / matchup` 只用于 rollout 和快速诊断，单个 matchup 的胜率不得作为强结论；正式趋势使用跨 iteration 滚动窗口和 Wilson 区间。固定 League probes 为 `alakazam_dudunsparce_001` 与 `marnies_grimmsnarl_ex_froslass_001`，分别报告 focal-vs-Frozen、focal-vs-Live 和 probe-Live-vs-focal。
 
-不能把 focal 的 512 局误称为另外 47 个 deck 获得了 actor 数据。每 5 个 PPO update 运行
-48 Frozen × 双座位 = 96 局 greedy evaluation；该 `eval/*` 与 sampled rollout 分开记录。
+不能把 focal 的 512 局误称为另外 47 个 deck 获得了 actor 数据；只有被标记为该 deck 的 Live
+决策才可进入它的 loss。每 5 个 PPO update 运行 48 Frozen × 双座位和 48 Live × 双座位，
+各 96 局 greedy evaluation；该 `eval/*` 与 sampled rollout 分开记录。每次 gate 还记录
+`alakazam_dudunsparce_001`、`marnies_grimmsnarl_ex_froslass_001` 的 focal-vs-Frozen、
+focal-vs-Live、Live-vs-focal-Live 三组双先后手 probe。
 
 ### 4.3 PPO 更新边界
 
@@ -284,6 +290,7 @@ rl_runs/0022_league_training/versions/V<n>_<tag>/
   artifact/status.json
   checkpoint/decks/<deck_id>.pt
   checkpoint/decks/<deck_id>.pt.sha256
+  checkpoint/live/<deck_id>/update-<n>.pt  # latest 2 + every gate snapshot
 ```
 
 每个 Live checkpoint 只包含以下 tensor，合计 1,130,883 参数：
@@ -312,7 +319,7 @@ python3 -m train.0022_league_training audit-version --version V1_initial_league
 python3 -m train.0022_league_training smoke-rollout --device cuda:0 --workers 4
 python3 -m train.0022_league_training canary-ppo --device cuda:0 --workers 4
 python3 -m train.0022_league_training benchmark-workers --workers 128 --games 256 --coalesce-ms 5 --output .tmp/evaluation/0022_worker_scaling/workers-128.json
-python3 -m train.0022_league_training train --version V2_dragapult_focal_20h_w128 --workers 128 --coalesce-ms 5
+python3 -m train.0022_league_training train-league --version V11_multidecoder_league_20h --workers 128 --coalesce-ms 5 --games-per-update 512 --duration-hours 20
 ```
 
 `initialize` 只建立不可变 League 状态，不采集对局、不做 backward、不启用 W&B，因此不是
@@ -338,8 +345,9 @@ Frozen anchor 胜率、吞吐和 checkpoint 版本合同正确。
 
 ### Gate D：Frozen + Live league
 
-在新版本中启用 48 Live 分支各自的 actor trajectory 和独立 backward；执行 round-robin
-sampling，并保留 Frozen anchor evaluation。
+在 V7 中启用 48 Live 分支各自的 actor trajectory 和独立 backward；执行 round-robin
+sampling，并在正式 update gate 中拒绝缺失任一 deck trajectory 的 batch，同时保留 Frozen/Live
+anchor evaluation 和两个固定 League identity probe。
 
 ### Gate E：晋级和长期进化
 

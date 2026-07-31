@@ -7,6 +7,9 @@ from pathlib import Path
 import torch
 
 from ..policy import load_league_actor_critic
+from ..policy.league_pool import LeaguePolicyPool
+from ..decks import load_deck_plugins
+from ..league import DEFAULT_DECK_ROOT
 
 
 class LeaguePolicyTest(unittest.TestCase):
@@ -35,6 +38,21 @@ class LeaguePolicyTest(unittest.TestCase):
                     names = [alias.name for alias in node.names] if isinstance(node, ast.Import) else [node.module or ""]
                     violations.extend(name for name in names if name.startswith("train.00") and not name.startswith("train.0022"))
         self.assertEqual(violations, [])
+
+    def test_pool_shares_one_encoder_and_isolates_deck_heads(self) -> None:
+        plugins = load_deck_plugins(DEFAULT_DECK_ROOT)[:2]
+        pool = LeaguePolicyPool.from_foundation(plugins, device=torch.device("cpu"))
+        first = pool.policy(plugins[0].deck_id)
+        second = pool.policy(plugins[1].deck_id)
+        self.assertIs(first.actor.shared_actor, second.actor.shared_actor)
+        self.assertIsNot(first.actor.decoder, second.actor.decoder)
+        before = second.actor.decoder.weight_ih.detach().clone()
+        with torch.no_grad():
+            first.actor.decoder.weight_ih.add_(1.0)
+        self.assertTrue(torch.equal(second.actor.decoder.weight_ih, before))
+        self.assertTrue(all(not parameter.requires_grad for parameter in first.actor.shared_actor.parameters()))
+        self.assertGreater(pool.trainable_parameter_count, 0)
+        self.assertLess(pool.total_parameter_storage_count, 18_000_000 + 2 * 1_200_000)
 
 
 if __name__ == "__main__":

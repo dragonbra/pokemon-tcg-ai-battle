@@ -24,6 +24,7 @@ class PreparedBatch:
     turns: Tensor
     candidate_first: Tensor
     opponents: tuple[str, ...]
+    policy_deck_id: str
     source_policy_update: int
 
     @property
@@ -81,12 +82,20 @@ def _episode_gae(
 
 
 def prepare_episodes(
-    episodes: list[EpisodeTrajectory], *, gamma: float = 1.0, gae_lambda: float = 0.95
+    episodes: list[EpisodeTrajectory], *, policy_deck_id: str, gamma: float = 1.0, gae_lambda: float = 0.95
 ) -> PreparedBatch:
     valid = [episode for episode in episodes if episode.valid and episode.reward is not None]
     if not valid:
         raise ValueError("no valid terminal episodes to prepare")
-    policy_updates = {episode.job.source_policy_update for episode in valid}
+    decisions_for_policy = [
+        decision
+        for episode in valid
+        for decision in episode.decisions
+        if decision.policy_deck_id == policy_deck_id
+    ]
+    policy_updates = {decision.policy_update for decision in decisions_for_policy}
+    if not policy_updates:
+        raise ValueError(f"no decisions for policy deck: {policy_deck_id}")
     if len(policy_updates) != 1:
         raise ValueError("PPO batch mixes source_policy_update values")
     features: list[dict[str, Tensor]] = []
@@ -103,22 +112,28 @@ def prepare_episodes(
     candidate_first: list[bool] = []
     opponents: list[str] = []
     for ep_index, episode in enumerate(valid):
-        if not episode.decisions:
+        policy_decisions = [
+            decision for decision in episode.decisions
+            if decision.policy_deck_id == policy_deck_id
+        ]
+        if not policy_decisions:
             continue
-        values = [decision.value for decision in episode.decisions]
+        values = [decision.value for decision in policy_decisions]
         ep_advantage, ep_returns = _episode_gae(
-            values, float(episode.reward), gamma=gamma, gae_lambda=gae_lambda
+            values, episode.reward_for(policy_decisions[0]), gamma=gamma, gae_lambda=gae_lambda
         )
-        weight = 1.0 / len(episode.decisions)
+        if any(decision.reward_sign != policy_decisions[0].reward_sign for decision in policy_decisions):
+            raise ValueError("one policy has inconsistent reward signs within an episode")
+        weight = 1.0 / len(policy_decisions)
         for decision, item_advantage, item_return in zip(
-            episode.decisions, ep_advantage, ep_returns, strict=True
+            policy_decisions, ep_advantage, ep_returns, strict=True
         ):
             features.append(decision.features)
             actions.append(decision.indices)
             stopped.append(decision.stopped)
             old_log_prob.append(decision.log_prob)
             old_value.append(decision.value)
-            terminal_return.append(float(episode.reward))
+            terminal_return.append(episode.reward_for(decision))
             gae_return.append(item_return)
             advantage.append(item_advantage)
             episode_weight.append(weight)
@@ -154,6 +169,7 @@ def prepare_episodes(
         turns=torch.tensor(turns, dtype=torch.long),
         candidate_first=torch.tensor(candidate_first, dtype=torch.bool),
         opponents=tuple(opponents),
+        policy_deck_id=policy_deck_id,
         source_policy_update=next(iter(policy_updates)),
     )
 

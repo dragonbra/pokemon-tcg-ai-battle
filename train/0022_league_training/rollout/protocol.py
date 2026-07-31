@@ -41,6 +41,9 @@ class TrajectoryDecision:
     log_prob: float
     entropy: float
     value: float
+    policy_deck_id: str
+    policy_update: int
+    reward_sign: int
 
 
 @dataclass
@@ -59,3 +62,16 @@ class EpisodeTrajectory:
         self.reward = reward
         self.turns = turns
         self.valid = True
+
+    def reward_for(self, decision: TrajectoryDecision) -> float:
+        if self.reward is None:
+            raise ValueError("episode has no terminal reward")
+        if decision.reward_sign not in (-1, 1):
+            raise ValueError("trajectory reward_sign must be -1 or 1")
+        return float(self.reward) * decision.reward_sign
+
+    def policy_updates(self) -> dict[str, set[int]]:
+        updates: dict[str, set[int]] = {}
+        for decision in self.decisions:
+            updates.setdefault(decision.policy_deck_id, set()).add(decision.policy_update)
+        return updates

@@ -13,9 +13,10 @@ import torch
 from ..decoder import DECODER_COMPONENTS
 from ..policy.action_distribution import greedy_actions_encoded, sample_actions_encoded
 from ..policy.actor_critic import LeagueActorCritic, load_league_actor_critic
+from ..policy.league_pool import LeaguePolicyPool
 from ..policy.batching import collate_feature_batches, cpu_batch, move_batch
 from ..policy.online_runtime import OnlineCausalEncoder
-from .protocol import EpisodeTrajectory, RolloutJob, TrajectoryDecision
+from .protocol import EpisodeTrajectory, LeaguePolicyView, RolloutJob, TrajectoryDecision
 from .worker import run_engine_episode
 
 
@@ -36,10 +37,12 @@ def _slice(batch: dict[str, torch.Tensor], indices: list[int]) -> dict[str, torc
 class LeagueRolloutCollector:
     def __init__(self, model: LeagueActorCritic, *, device: torch.device, workers: int = 8,
                  mode: Literal["sample", "greedy"] = "sample", coalesce_ms: float = 0.5,
-                 timeout_seconds: float = 60.0) -> None:
+                 timeout_seconds: float = 60.0,
+                 policy_pool: LeaguePolicyPool | None = None) -> None:
         if workers < 1 or coalesce_ms < 0:
             raise ValueError("invalid collector concurrency configuration")
         self.model = model.eval()
+        self.policy_pool = policy_pool
         self.device = device
         self.workers = workers
         self.mode = mode
@@ -119,29 +122,48 @@ class LeagueRolloutCollector:
                     batch = move_batch(collate_feature_batches(rows), self.device)
                     started = time.perf_counter()
                     with torch.no_grad():
-                        state, options = self.model.actor.encode(batch)
-                    focal_indices = [i for i, (_, role, _) in enumerate(requests) if role == "focal"]
-                    opponent_indices = [i for i, (_, role, _) in enumerate(requests) if role == "opponent"]
+                        encoder = self.policy_pool.shared_actor if self.policy_pool is not None else self.model.actor
+                        state, options = encoder.encode(batch)
                     actions: dict[int, object] = {}
-                    if focal_indices:
-                        sub = _slice(batch, focal_indices); s = state[focal_indices]; o = options[focal_indices]
-                        values = self.model.value_head(s).squeeze(-1)
-                        decoded = sample_actions_encoded(self.model, sub, s, o, values) if self.mode == "sample" else greedy_actions_encoded(self.model, sub, s, o, values)
-                        actions.update(zip(focal_indices, decoded, strict=True))
-                    if opponent_indices:
-                        sub = _slice(batch, opponent_indices); s = state[opponent_indices]; o = options[opponent_indices]
-                        values = torch.zeros(len(opponent_indices), device=self.device)
-                        decoded = greedy_actions_encoded(self.frozen_head, sub, s, o, values)
-                        actions.update(zip(opponent_indices, decoded, strict=True))
+                    route_groups: dict[tuple[str, str], list[int]] = {}
+                    for index, (item, role, _) in enumerate(requests):
+                        if role == "focal":
+                            route = item.job.focal_deck_id
+                        elif item.job.opponent_view is LeaguePolicyView.LIVE:
+                            route = item.job.opponent_deck_id
+                        else:
+                            route = "__frozen__"
+                        route_groups.setdefault((route, role), []).append(index)
+                    for (route, role), route_indices in route_groups.items():
+                        sub = _slice(batch, route_indices)
+                        s = state[route_indices]; o = options[route_indices]
+                        policy = self.frozen_head if route == "__frozen__" else (
+                            self.policy_pool.policy(route) if self.policy_pool is not None else self.model
+                        )
+                        values = (
+                            torch.zeros(len(route_indices), device=self.device)
+                            if route == "__frozen__"
+                            else policy.value_head(s).squeeze(-1)
+                        )
+                        sampled = role == "focal"
+                        decoded = (
+                            sample_actions_encoded(policy, sub, s, o, values)
+                            if sampled and self.mode == "sample"
+                            else greedy_actions_encoded(policy, sub, s, o, values)
+                        )
+                        actions.update(zip(route_indices, decoded, strict=True))
                     elapsed = time.perf_counter() - started
                     self.inference_batches += 1; self.inference_requests += len(requests)
                     self.max_batch_size = max(self.max_batch_size, len(requests)); self.inference_seconds += elapsed
                     for index, (item, role, observation) in enumerate(requests):
                         action = actions[index]
-                        if role == "focal":
+                        if role == "focal" or item.job.opponent_view is LeaguePolicyView.LIVE:
+                            policy_deck_id = item.job.focal_deck_id if role == "focal" else item.job.opponent_deck_id
                             item.decisions.append(TrajectoryDecision(
                                 cpu_batch(rows[index]), tuple(action.indices), bool(action.stopped),
                                 float(action.log_prob), float(action.entropy), float(action.value),
+                                policy_deck_id, item.job.source_policy_update,
+                                1 if role == "focal" else -1,
                             ))
                         item.connection.send({"kind": "action", "action": list(action.indices)})
                 fill()
