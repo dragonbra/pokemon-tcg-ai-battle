@@ -20,7 +20,8 @@ from evaluation.packages.loader import (
 EXPECTED_FOUNDATION_SHA256 = (
     "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
 )
-EXPECTED_POOL_ID = "0019_foundation_48_exact_decks_v1"
+EXPECTED_POOL_ID = "0019_foundation_49_exact_decks_v2"
+EXPECTED_DECK_COUNT = 49
 EXPECTED_ENTRY_FIELDS = frozenset(
     {"name", "package", "display_name", "representative_card_ids", "enabled", "tags"}
 )
@@ -98,7 +99,7 @@ def _entry_list(catalog_path: Path) -> list[dict[str, Any]]:
 
 
 def load_frozen_catalog(path: Path, evaluation_root: Path) -> FrozenCatalog:
-    """Load 48 deck identities bound to one immutable Foundation policy."""
+    """Load 49 deck identities bound to one immutable Foundation policy."""
     frozen_root = (evaluation_root / "arena" / "frozen").resolve()
     manifest_path = frozen_root / "manifest.json"
     manifest = _read_json(manifest_path, "Arena manifest")
@@ -106,7 +107,7 @@ def load_frozen_catalog(path: Path, evaluation_root: Path) -> FrozenCatalog:
     if (
         manifest.get("schema_version") != "evaluation_frozen_arena_v1"
         or manifest.get("pool_id") != EXPECTED_POOL_ID
-        or manifest.get("deck_count") != 48
+        or manifest.get("deck_count") != EXPECTED_DECK_COUNT
         or not isinstance(foundation, dict)
         or foundation.get("weights_sha256") != EXPECTED_FOUNDATION_SHA256
         or foundation.get("deployment_source_id") != 0
@@ -130,8 +131,10 @@ def load_frozen_catalog(path: Path, evaluation_root: Path) -> FrozenCatalog:
         evaluation_root.parent / "data" / "official" / "EN_Card_Data.csv"
     )
     entries = _entry_list(path)
-    if len(entries) != 48:
-        raise PackageValidationError(f"Frozen catalog must contain 48 entries, got {len(entries)}")
+    if len(entries) != EXPECTED_DECK_COUNT:
+        raise PackageValidationError(
+            f"Frozen catalog must contain {EXPECTED_DECK_COUNT} entries, got {len(entries)}"
+        )
     names: set[str] = set()
     deck_hashes: set[str] = set()
     opponents: list[SubmissionPackage] = []

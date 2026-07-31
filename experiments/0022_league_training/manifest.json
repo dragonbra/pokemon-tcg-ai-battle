@@ -2,9 +2,13 @@
   "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0022_league_training",
   "title": "Shared-Foundation League Training",
-  "status": "preflight_passed_formal_training_pending",
+  "status": "initialized",
   "created_at": "2026-07-31T00:00:00+08:00",
   "objective": "Train pluggable exact-deck Decoder/Value branches against Frozen and Live League pools while sharing one frozen resident Foundation",
+  "deck": "49 exact-deck League identities; dragapult_ex_001 is the current focal policy",
+  "expert_source": "0019 universal winner BC epoch 13 Foundation; deployment source_id=0",
+  "dataset_contract": "on-policy complete official-engine episodes grouped by exact deck; terminal outcome reward; no cross-deck action-label mixing",
+  "opponent_pool_snapshot": "0019_foundation_49_exact_decks_v2; evaluation/configs/frozen.json; shared frozen Foundation with 49 exact decks",
   "engine_revision": "unmodified official engine runtime remains authoritative",
   "foundation": {
     "asset_id": "0019-0730-epoch13",
@@ -20,12 +24,12 @@
   },
   "catalog": {
     "state": "validated",
-    "deck_count": 48,
+    "deck_count": 49,
     "focal_deck_id": "dragapult_ex_001",
     "views_per_deck": ["frozen", "live"]
   },
   "training": {
-    "started": false,
+    "started": true,
     "first_formal_run_updates": ["dragapult_ex_001.decoder", "dragapult_ex_001.value_head"],
     "other_live_updates_enabled": false,
     "games_per_update": 512,

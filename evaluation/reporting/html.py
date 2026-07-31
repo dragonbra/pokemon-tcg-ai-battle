@@ -32,9 +32,7 @@ REPORT_STYLES = """
 *{box-sizing:border-box}
 body{
   margin:0;
-  background:
-    radial-gradient(circle at 12% 0%,rgba(58,155,112,.12),transparent 32rem),
-    linear-gradient(180deg,#f8fbf9 0,var(--bg) 24rem);
+  background:var(--bg);
   color:var(--ink);
   font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif;
 }
@@ -46,20 +44,19 @@ main{max-width:1240px;margin:0 auto;padding:36px 28px 64px}
   gap:24px;
   margin-bottom:22px;
   padding:30px 32px;
-  border-radius:18px;
+  border-radius:8px;
   color:#fff;
-  background:linear-gradient(135deg,var(--brand-dark),#23835d 68%,#3b9c71);
-  box-shadow:0 18px 44px rgba(20,86,61,.2);
+  background:var(--brand-dark);
 }
 .eyebrow{margin:0 0 6px;color:#c8eadb;font-size:12px;font-weight:700;letter-spacing:.12em}
-h1{margin:0;font-size:32px;line-height:1.2;letter-spacing:-.02em}
-h2{margin:0 0 6px;font-size:20px;line-height:1.35;letter-spacing:-.01em}
+h1{margin:0;font-size:32px;line-height:1.2;letter-spacing:0}
+h2{margin:0 0 6px;font-size:20px;line-height:1.35;letter-spacing:0}
 h3{margin:0 0 10px}
 .run-id{
   max-width:48%;
   padding:8px 12px;
   border:1px solid rgba(255,255,255,.22);
-  border-radius:999px;
+  border-radius:6px;
   background:rgba(255,255,255,.1);
   color:#eaf7f1;
   font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;
@@ -70,9 +67,8 @@ section{
   padding:22px;
   overflow-x:auto;
   border:1px solid var(--line);
-  border-radius:14px;
+  border-radius:8px;
   background:rgba(255,255,255,.96);
-  box-shadow:var(--shadow);
 }
 .profile-grid{display:grid;grid-template-columns:1fr 110px 2fr;gap:12px}
 .profile-item{padding:12px 14px;border-radius:10px;background:var(--surface-soft)}
@@ -84,7 +80,7 @@ section{
   padding:15px 16px;
   border:1px solid var(--line);
   border-radius:11px;
-  background:linear-gradient(180deg,#fff,var(--surface-soft));
+  background:#fff;
 }
 .label{color:var(--muted);font-size:12px;font-weight:600;letter-spacing:.02em}
 .value{margin-top:5px;font-size:23px;font-weight:750;letter-spacing:-.02em}
@@ -172,16 +168,51 @@ td:first-child{font-weight:600}
 .length-legend span{display:inline-flex;align-items:center;gap:5px}
 .length-legend i{width:9px;height:9px;border-radius:2px;background:#526e64}
 .length-legend .second i{opacity:.48}
+.candidate-overview{padding:0;overflow:hidden}
+.candidate-lead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;padding:24px;border-bottom:1px solid var(--line);background:#fff}
+.candidate-kicker{margin:0 0 5px;color:var(--brand);font-size:12px;font-weight:750;text-transform:uppercase}
+.candidate-title{font-size:26px}
+.candidate-meta{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;color:var(--muted);font-size:12px}
+.candidate-representatives{display:flex;align-items:center;gap:10px}
+.candidate-representatives img{width:112px;aspect-ratio:2.5/3.5;object-fit:cover;border:1px solid #cbd9d2;border-radius:6px;background:#e7eeea}
+.deck-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:18px 24px 24px}
+.deck-group{min-width:0;padding:0 20px;border-left:1px solid var(--line)}
+.deck-group:first-child{padding-left:0;border-left:0}.deck-group:last-child{padding-right:0}
+.deck-group-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.deck-group-head h3{margin:0;font-size:15px}.deck-count{color:var(--muted);font-size:12px}
+.deck-list{display:grid;gap:3px}
+.deck-entry{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:48px;padding:4px 0;border-top:1px solid #edf2ef}
+.deck-entry:first-child{border-top:0}
+.deck-entry img{width:38px;height:52px;object-fit:cover;border:1px solid #d2ddd7;border-radius:3px;background:#e7eeea}
+.deck-card-name{display:block;font-size:12px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
+.deck-card-set{display:block;color:var(--muted);font-size:10px}
+.deck-card-count{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums}
+.league-contract{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(240px,.7fr);gap:18px}
+.quality-callout{padding:16px;border-left:4px solid var(--brand);background:var(--surface-soft)}
+.quality-callout p{margin:6px 0 0}.reward-warning{color:#7b4a24}
+.quality-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:16px;border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.quality-item{min-height:88px;padding:12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:#fff}
+.quality-item.focus{box-shadow:inset 0 3px 0 var(--brand)}
+.quality-value{margin-top:5px;font-size:18px;font-weight:750;font-variant-numeric:tabular-nums}
+.quality-detail{margin-top:3px;color:var(--muted);font-size:11px}
+.evidence-note{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
 @media (max-width:760px){
   main{padding:18px 12px 40px}
-  .hero{align-items:flex-start;flex-direction:column;padding:24px 20px;border-radius:14px}
+  .hero{align-items:flex-start;flex-direction:column;padding:24px 20px;border-radius:8px}
   .run-id{max-width:100%}
-  section{padding:17px 14px;border-radius:12px}
+  section{padding:17px 14px;border-radius:8px}
   .profile-grid{grid-template-columns:1fr}
   .matchup-chart{grid-template-columns:1fr}
   .chart-row{grid-template-columns:minmax(170px,1fr) 1fr 54px;gap:7px;padding:4px 0}
   .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
   .length-distribution-grid{grid-template-columns:1fr}
+  .candidate-lead{grid-template-columns:1fr;padding:18px}
+  .candidate-representatives img{width:88px}
+  .deck-groups{grid-template-columns:1fr;padding:10px 18px 18px}
+  .deck-group,.deck-group:first-child,.deck-group:last-child{padding:14px 0;border-left:0;border-top:1px solid var(--line)}
+  .deck-group:first-child{border-top:0}
+  .league-contract{grid-template-columns:1fr}
+  .quality-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 """.strip()
 
@@ -224,6 +255,11 @@ def render_html(data: ReportData) -> str:
     ).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     semantic_metrics = _semantic_metrics_html(data.metric_profile, data.metrics)
     visible_metrics = semantic_metrics or _metrics_html(data.metrics)
+    candidate = as_mapping(manifest.get("candidate"))
+    candidate_title = candidate.get("display_name") or candidate.get("name") or "评测报告"
+    package_manifest = as_mapping(candidate.get("package_manifest"))
+    update = package_manifest.get("update")
+    hero_label = f"League update {update}" if update is not None else "Official-engine evaluation"
     return "\n".join(
         (
             "<!doctype html>",
@@ -231,21 +267,142 @@ def render_html(data: ReportData) -> str:
             "<head>",
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
-            f"<title>评测报告 - {run_id}</title>",
+            f"<title>{_text(candidate_title)} - {run_id}</title>",
             f"<style>{REPORT_STYLES}</style>",
             "</head>",
             "<body><main>",
             '<header class="hero"><div>'
             '<p class="eyebrow">POKÉMON TCG · EVALUATION</p>'
-            '<h1>评测报告</h1></div>'
+            f'<h1>{_text(candidate_title)}</h1><p>{_text(hero_label)}</p></div>'
             f'<div class="run-id">{run_id}</div></header>',
+            _candidate_overview_html(manifest, data.metric_profile),
             _profile_html(data.metric_profile),
             _summary_html(summary),
             _matchup_html(summary, manifest),
+            _league_quality_html(data.metric_profile, data.metrics),
             visible_metrics,
             f'<script id="report-data" type="application/json">{document_data}</script>',
             "</main></body></html>",
         )
+    )
+
+
+def _candidate_overview_html(
+    manifest: Mapping[str, object], profile: Mapping[str, object]
+) -> str:
+    if as_mapping(profile).get("id") != "league_deck_quality":
+        return ""
+    candidate = as_mapping(manifest.get("candidate"))
+    cards = candidate.get("deck_cards")
+    if not isinstance(cards, list | tuple):
+        return ""
+    package_manifest = as_mapping(candidate.get("package_manifest"))
+    title = candidate.get("display_name") or candidate.get("name") or "Candidate"
+    update = package_manifest.get("update", "-")
+    representatives = "".join(
+        f'<img src="{_text(as_mapping(card).get("image_url"))}" '
+        f'alt="{_text(as_mapping(card).get("name", "代表宝可梦"))}" loading="eager" '
+        'onerror="this.hidden=true">'
+        for card in candidate.get("representative_cards", ())
+        if as_mapping(card).get("image_url")
+    )
+    labels = (("pokemon", "Pokémon"), ("trainer", "Trainer"), ("energy", "Energy"))
+    groups = []
+    for category, label in labels:
+        entries = [as_mapping(card) for card in cards if as_mapping(card).get("category") == category]
+        total = sum(int(card.get("count", 0)) for card in entries)
+        rows = "".join(_deck_entry_html(card) for card in entries)
+        groups.append(
+            '<div class="deck-group"><div class="deck-group-head">'
+            f'<h3>{label}</h3><span class="deck-count">{total} 张</span></div>'
+            f'<div class="deck-list">{rows}</div></div>'
+        )
+    return (
+        '<section class="candidate-overview">'
+        '<div class="candidate-lead"><div><p class="candidate-kicker">主视角卡组</p>'
+        f'<h2 class="candidate-title">{_text(title)}</h2>'
+        '<div class="candidate-meta">'
+        f'<span>Update {_text(update)}</span><span>Exact {_text(candidate.get("deck_total", "-"))} cards</span>'
+        f'<span>Frozen Arena · {_text(manifest.get("opponent_pool", {}).get("pool_id", "-"))}</span>'
+        '</div></div>'
+        f'<div class="candidate-representatives">{representatives}</div></div>'
+        f'<div class="deck-groups">{"".join(groups)}</div></section>'
+    )
+
+
+def _deck_entry_html(card: Mapping[str, object]) -> str:
+    image_url = card.get("image_url")
+    image = (
+        f'<img src="{_text(image_url)}" alt="{_text(card.get("name", "卡牌"))}" loading="lazy" '
+        'onerror="this.hidden=true">'
+        if image_url
+        else '<span></span>'
+    )
+    set_number = " ".join(
+        str(value) for value in (card.get("expansion"), card.get("collection_number")) if value
+    )
+    return (
+        f'<div class="deck-entry">{image}<span><span class="deck-card-name">'
+        f'{_text(card.get("name", card.get("card_id", "-")))}</span>'
+        f'<span class="deck-card-set">{_text(set_number)} · ID {_text(card.get("card_id", "-"))}</span></span>'
+        f'<span class="deck-card-count">×{_text(card.get("count", 0))}</span></div>'
+    )
+
+
+def _league_quality_html(
+    profile: Mapping[str, object], metrics: Mapping[str, object]
+) -> str:
+    if as_mapping(profile).get("id") != "league_deck_quality":
+        return ""
+    league = as_mapping(metrics.get("league_quality"))
+    payload = as_mapping(league.get("payload"))
+    deck_profile = as_mapping(payload.get("profile"))
+    outcome = as_mapping(as_mapping(metrics.get("outcome")).get("payload"))
+    turn_order = as_mapping(outcome.get("by_turn_order"))
+    focus = set(deck_profile.get("focus_metrics", ()))
+    specs = (
+        ("first_attack_round", "首次攻击", "回合", "number"),
+        ("attack_continuity", "攻击连续率", "首次攻击后的持续施压", "percentage"),
+        ("missed_attack_opportunities", "错过攻击窗口", "总次数", "number"),
+        ("prizes_per_attack", "每次攻击拿奖", "Prize / attack", "number"),
+        ("multi_prize_turns", "多奖赏回合", "总次数", "number"),
+        ("post_ko_attack_gap", "被击倒后断档", "平均回合", "number"),
+        ("key_setup_round", "关键攻击手就位", "平均回合", "number"),
+        ("max_evolved_pokemon", "进化场面峰值", "平均只数", "number"),
+        ("max_bench", "Bench 峰值", "平均只数", "number"),
+        ("max_attached_energy", "场上能量峰值", "平均张数", "number"),
+        ("damage_events", "伤害事件", "含铺伤事件", "number"),
+        ("opponent_attack_denial_rate", "压制后拒攻率", "对手未能攻击", "percentage"),
+        ("minimum_deck_count", "最低牌库", "平均剩余张数", "number"),
+        ("supporter_turn_rate", "Supporter 回合率", "资源执行", "percentage"),
+        ("energy_attach_turn_rate", "附能回合率", "资源执行", "percentage"),
+    )
+    items = []
+    for key, label, detail, kind in specs:
+        value = payload.get(key)
+        rendered = percentage(value) if kind == "percentage" else display_value(value)
+        items.append(
+            f'<div class="quality-item{" focus" if key in focus else ""}">'
+            f'<div class="label">{_text(label)}</div><div class="quality-value">{_text(rendered)}</div>'
+            f'<div class="quality-detail">{_text(detail)}</div></div>'
+        )
+    split = " · ".join(
+        f'{label} {_text(percentage(as_mapping(turn_order.get(key)).get("value")))} '
+        f'({_text(display_value(as_mapping(turn_order.get(key)).get("wins")))}/'
+        f'{_text(display_value(as_mapping(turn_order.get(key)).get("denominator")))})'
+        for key, label in (("first", "先手"), ("second", "后手"))
+    )
+    return (
+        '<section><div class="league-contract"><div><h2>卡组质量诊断</h2>'
+        f'<p class="muted">{_text(deck_profile.get("title", "League 通用画像"))}</p></div>'
+        f'<div class="quality-callout"><strong>先后手结果</strong><p>{split or "-"}</p></div></div>'
+        '<div class="quality-callout" style="margin-top:16px">'
+        f'<strong>关注逻辑</strong><p>{_text(deck_profile.get("interpretation", "-"))}</p>'
+        f'<p class="reward-warning">奖励边界：{_text(deck_profile.get("reward_warning", "-"))}</p></div>'
+        f'<div class="quality-grid">{"".join(items)}</div>'
+        '<p class="evidence-note">证据边界：每个 matchup 仅 10 局，单项胜率方差较大；'
+        '过程指标用于解释策略行为，checkpoint 强弱仍以相同 Frozen Arena 合同下的 official-engine 结果为准。</p>'
+        '</section>'
     )
 
 

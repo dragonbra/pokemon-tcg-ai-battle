@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import csv
 import json
 import re
@@ -312,7 +313,7 @@ def _parser() -> argparse.ArgumentParser:
         "--pool",
         choices=("frozen", "opponents"),
         default="frozen",
-        help="评测池；默认使用共享 0019 Foundation 的 48-deck Frozen Arena",
+        help="评测池；默认使用共享 0019 Foundation 的 49-deck Frozen Arena",
     )
     parser.add_argument("--catalog", type=Path, default=None)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -435,6 +436,7 @@ def _run(args: argparse.Namespace) -> str:
     if args.pool == "frozen":
         frozen_catalog = load_frozen_catalog(catalog_path, evaluation_root)
         available_opponents = frozen_catalog.opponents
+        candidate = _decorate_candidate_from_frozen_identity(candidate, frozen_catalog)
     else:
         available_opponents = tuple(load_opponent_catalog(catalog_path, evaluation_root))
     opponents = _selected_opponents(args.opponents, available_opponents)
@@ -483,6 +485,29 @@ def _run(args: argparse.Namespace) -> str:
         )
     )
     return result.run_id
+
+
+def _decorate_candidate_from_frozen_identity(
+    candidate: SubmissionPackage, frozen_catalog: FrozenCatalog
+) -> SubmissionPackage:
+    """Attach the canonical exact-deck identity used by Frozen Arena reports."""
+    requested_deck_id = str((candidate.package_manifest or {}).get("deck_id", ""))
+    matches = [
+        identity
+        for identity in frozen_catalog.opponents
+        if Counter(identity.deck) == Counter(candidate.deck)
+        and (not requested_deck_id or identity.name == requested_deck_id)
+    ]
+    if len(matches) != 1:
+        return candidate
+    identity = matches[0]
+    display_name = (identity.display_name or identity.name).removeprefix("[Frozen 0019] ")
+    return replace(
+        candidate,
+        name=identity.name,
+        display_name=display_name,
+        representative_cards=identity.representative_cards,
+    )
 
 
 def main(argv: list[str] | None = None) -> int:

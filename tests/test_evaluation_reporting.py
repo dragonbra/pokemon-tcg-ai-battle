@@ -114,6 +114,101 @@ def visible_html(html: str) -> str:
 
 
 class EvaluationReportingTests(unittest.TestCase):
+    def test_league_report_starts_with_focal_exact_deck_and_quality_contract(self) -> None:
+        data = report_data()
+        candidate = {
+            "name": "dragapult_ex_001",
+            "display_name": "Dragapult ex - Limitless",
+            "package_manifest": {"update": 75, "deck_id": "dragapult_ex_001"},
+            "deck_total": 60,
+            "representative_cards": [
+                {"name": "Dragapult ex", "image_url": "https://cards.test/dragapult.png"}
+            ],
+            "deck_cards": [
+                {
+                    "card_id": 121,
+                    "count": 20,
+                    "name": "Dragapult ex",
+                    "expansion": "TWM",
+                    "collection_number": "130",
+                    "category": "pokemon",
+                    "image_url": "https://cards.test/dragapult.png",
+                },
+                {
+                    "card_id": 1086,
+                    "count": 30,
+                    "name": "Buddy-Buddy Poffin",
+                    "expansion": "TEF",
+                    "collection_number": "144",
+                    "category": "trainer",
+                    "image_url": "https://cards.test/poffin.png",
+                },
+                {
+                    "card_id": 2,
+                    "count": 10,
+                    "name": "Basic Fire Energy",
+                    "expansion": "SVE",
+                    "collection_number": "2",
+                    "category": "energy",
+                    "image_url": "https://cards.test/fire.png",
+                },
+            ],
+        }
+        profile = get_metric_profile("league_deck_quality").manifest()
+        league_metrics = {
+            "outcome": {
+                "payload": {
+                    "by_turn_order": {
+                        "first": {"wins": 3, "denominator": 5, "value": 0.6},
+                        "second": {"wins": 2, "denominator": 5, "value": 0.4},
+                    }
+                }
+            },
+            "league_quality": {
+                "payload": {
+                    "profile": {
+                        "title": "Dragapult ex",
+                        "focus_metrics": ["key_setup_round", "damage_events"],
+                        "interpretation": "关注 Stage 2、铺伤与多奖赏转化。",
+                        "reward_warning": "铺伤必须按最终 Prize 转化解释。",
+                    },
+                    "key_setup_round": 2.4,
+                    "damage_events": 28,
+                    "attack_continuity": 0.75,
+                }
+            },
+        }
+        league_data = ReportData(
+            manifest={
+                **data.manifest,
+                "candidate": candidate,
+                "opponent_pool": {"pool_id": "0019_foundation_48_exact_decks_v1"},
+            },
+            summary=data.summary,
+            games=data.games,
+            metrics=league_metrics,
+            cases=data.cases,
+            metric_profile=profile,
+        )
+
+        page = render_html(league_data)
+        visible = visible_html(page)
+
+        self.assertLess(visible.index("主视角卡组"), visible.index("总体结果"))
+        for value in (
+            "Dragapult ex - Limitless",
+            "Update 75",
+            "Exact 60 cards",
+            "Pokémon",
+            "Trainer",
+            "Energy",
+            "Stage 2、铺伤与多奖赏转化",
+            "奖励边界",
+            "先手 60.00% (3/5)",
+            "每个 matchup 仅 10 局",
+        ):
+            self.assertIn(value, visible)
+
     def test_auto_iteration_html_maps_metric_ids_to_semantic_stages(self) -> None:
         metrics = {
             "outcome": {

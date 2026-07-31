@@ -541,6 +541,22 @@
       ]
     },
     {
+      "display_name": "[Frozen 0019] Mega Lopunny ex - Limitless Champion",
+      "enabled": true,
+      "name": "mega_lopunny_ex_001",
+      "package": "arena/frozen/mega_lopunny_ex_001",
+      "representative_card_ids": [
+        849,
+        66
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60",
+        "limitless_champion"
+      ]
+    },
+    {
       "display_name": "[Frozen 0019] Mega Lopunny ex / Mega Froslass ex",
       "enabled": true,
       "name": "mega_lopunny_ex_mega_froslass_ex_001",

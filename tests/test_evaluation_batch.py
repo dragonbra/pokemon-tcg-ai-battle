@@ -380,6 +380,26 @@ class OverridePlugin:
             {"checkpoint_sha256": "abc", "training_updates": 10},
         )
 
+    def test_manifest_package_embeds_exact_deck_presentation_only_when_requested(self) -> None:
+        candidate = replace(
+            self.make_package("candidate", 119),
+            deck=[119] * 20 + [1086] * 30 + [2] * 10,
+        )
+
+        compact = _manifest_package(candidate)
+        presented = _manifest_package(candidate, include_deck=True)
+
+        self.assertNotIn("deck", compact)
+        self.assertEqual(presented["deck_total"], 60)
+        self.assertEqual(
+            presented["deck_category_counts"],
+            {"pokemon": 20, "trainer": 30, "energy": 10},
+        )
+        self.assertEqual(
+            {card["name"] for card in presented["deck_cards"]},
+            {"Dreepy", "Buddy-Buddy Poffin", "Basic {R} Energy"},
+        )
+
     def test_batch_alternates_side_and_embeds_compact_records_in_report(self) -> None:
         candidate = self.make_package("candidate", 7)
         opponent = self.make_package("opponent", 8)

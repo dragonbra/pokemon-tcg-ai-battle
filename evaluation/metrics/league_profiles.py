@@ -185,6 +185,15 @@ PROFILES = (
         "拖长比赛、治疗或切换本身都不能作为奖励，必须服务于终局胜率。",
     ),
     DeckQualityProfile(
+        "lopunny_pivot_tempo",
+        "Mega Lopunny ex",
+        ("mega_lopunny_ex_001",),
+        (849, 848, 66, 174),
+        ("first_attack_round", "attack_continuity", "prizes_per_attack", "post_ko_attack_gap"),
+        "关注 Mega Lopunny 进化、Dudunsparce/Fan Rotom 引擎、换位后 Gale Thrust 的有效攻击与持续接力。",
+        "频繁换位、治疗或抽牌本身都不是奖励；必须服务于 Gale Thrust、Prize 转化和最终胜率。",
+    ),
+    DeckQualityProfile(
         "lopunny_froslass_tempo",
         "Mega Lopunny ex / Mega Froslass ex",
         ("mega_lopunny_ex_mega_froslass_ex_001",),

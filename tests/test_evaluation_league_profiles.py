@@ -24,7 +24,7 @@ class LeagueQualityProfileTest(unittest.TestCase):
         frozen_names = tuple(sorted(package.name for package in catalog.opponents))
 
         self.assertEqual(all_profiled_decks(), frozen_names)
-        self.assertEqual(len(PROFILES), 21)
+        self.assertEqual(len(PROFILES), 22)
         for name in frozen_names:
             profile = profile_for_deck(name)
             self.assertIn(name, profile.deck_ids)

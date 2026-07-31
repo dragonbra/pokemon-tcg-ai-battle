@@ -8,6 +8,7 @@ import sys
 import tempfile
 import time
 import uuid
+from collections import Counter
 from contextlib import contextmanager
 from collections.abc import Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -17,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from evaluation.cases import CaseCandidate, case_record, select_cases
+from evaluation.cards import card_image_url, load_card_catalog
 from evaluation.metrics import GameContext, GameMetric
 from evaluation.metrics.profiles import get_metric_profile
 from evaluation.metrics.registry import MetricRegistry, create_metric_registry
@@ -114,7 +116,7 @@ def run_batch(config: BatchConfig) -> BatchResult:
         config.opponent_inference_device is None
     ):
         raise ValueError("opponent inference root and device must be supplied together")
-    if config.opponent_pool_id == "0019_foundation_48_exact_decks_v1" and (
+    if config.opponent_pool_id.startswith("0019_foundation_") and "_exact_decks_" in config.opponent_pool_id and (
         config.candidate_inference_device is None
         or config.opponent_inference_root is None
         or config.opponent_inference_device is None
@@ -955,7 +957,7 @@ def _manifest(
     profile = get_metric_profile(config.metric_profile_id)
     return {
         "run_id": run_id,
-        "candidate": _manifest_package(config.candidate),
+        "candidate": _manifest_package(config.candidate, include_deck=True),
         "opponents": [_manifest_package(opponent) for opponent in config.opponents],
         "control": _manifest_package(config.control) if config.control else None,
         "games": len(config.opponents) * config.games_per_opponent,
@@ -1020,8 +1022,10 @@ def _manifest(
     }
 
 
-def _manifest_package(package: SubmissionPackage) -> dict[str, object]:
-    payload = {
+def _manifest_package(
+    package: SubmissionPackage, *, include_deck: bool = False
+) -> dict[str, object]:
+    payload: dict[str, object] = {
         "name": package.name,
         "display_name": package.display_name or package.name,
         "representative_cards": list(package.representative_cards),
@@ -1029,9 +1033,61 @@ def _manifest_package(package: SubmissionPackage) -> dict[str, object]:
         "deck_hash": package.deck_hash,
         "cg_hash": package.cg_manifest.get("tree_hash"),
     }
+    if include_deck:
+        card_catalog = load_card_catalog(
+            Path(__file__).resolve().parents[2]
+            / "data"
+            / "official"
+            / "EN_Card_Data.csv"
+        )
+        deck_cards = []
+        category_counts = {"pokemon": 0, "trainer": 0, "energy": 0}
+        for card_id, count in sorted(
+            Counter(package.deck).items(),
+            key=lambda item: (
+                _deck_card_category(card_catalog.get(item[0], {})),
+                str(card_catalog.get(item[0], {}).get("name", "")),
+                item[0],
+            ),
+        ):
+            metadata = card_catalog.get(card_id, {})
+            category = _deck_card_category(metadata)
+            category_counts[category] += count
+            deck_cards.append(
+                {
+                    "card_id": card_id,
+                    "count": count,
+                    "name": metadata.get("name") or f"Card {card_id}",
+                    "expansion": metadata.get("expansion", ""),
+                    "collection_number": metadata.get("collection_number", ""),
+                    "stage_or_type": metadata.get("stage_or_type", ""),
+                    "category": category,
+                    "image_url": card_image_url(
+                        str(metadata.get("expansion", "")),
+                        str(metadata.get("collection_number", "")),
+                    ),
+                }
+            )
+        payload.update(
+            {
+                "deck": list(package.deck),
+                "deck_cards": deck_cards,
+                "deck_category_counts": category_counts,
+                "deck_total": len(package.deck),
+            }
+        )
     if package.package_manifest is not None:
         payload["package_manifest"] = package.package_manifest
     return payload
+
+
+def _deck_card_category(metadata: dict[str, str]) -> str:
+    stage_or_type = str(metadata.get("stage_or_type", ""))
+    if "Pokémon" in stage_or_type:
+        return "pokemon"
+    if "Energy" in stage_or_type:
+        return "energy"
+    return "trainer"
 
 
 def _summary(records: tuple[dict[str, object], ...]) -> dict[str, object]:

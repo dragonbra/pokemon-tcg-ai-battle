@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from evaluation import cli
+from evaluation.frozen import FrozenCatalog
 from evaluation.packages.loader import PackageValidationError, SubmissionPackage
 
 
@@ -61,6 +62,37 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertFalse(args.visualize)
         self.assertIsNone(args.workers)
         self.assertEqual(args.worker_cpu_threads, 1)
+
+    def test_frozen_exact_deck_decorates_live_candidate_with_canonical_identity(self) -> None:
+        live = package("0022_dragapult_update75", self.root / "live")
+        live = SubmissionPackage(
+            **{
+                **live.__dict__,
+                "package_manifest": {"deck_id": "dragapult_ex_001", "update": 75},
+            }
+        )
+        identity = package("dragapult_ex_001", self.root / "frozen")
+        identity = SubmissionPackage(
+            **{
+                **identity.__dict__,
+                "display_name": "[Frozen 0019] Dragapult ex - Limitless",
+                "representative_cards": ({"card_id": 1, "name": "Dragapult ex"},),
+            }
+        )
+        catalog = FrozenCatalog(
+            pool_id="fixture",
+            manifest={},
+            manifest_sha256="catalog-sha",
+            policy=identity,
+            opponents=(identity,),
+        )
+
+        decorated = cli._decorate_candidate_from_frozen_identity(live, catalog)
+
+        self.assertEqual(decorated.name, "dragapult_ex_001")
+        self.assertEqual(decorated.display_name, "Dragapult ex - Limitless")
+        self.assertEqual(decorated.package_manifest["update"], 75)
+        self.assertEqual(decorated.root, live.root)
 
     def test_formal_output_is_one_versioned_html_in_project_evaluation_directory(self) -> None:
         requested = Path(

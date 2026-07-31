@@ -457,6 +457,14 @@
       "source_kind": "user_provided_exact_deck"
     },
     {
+      "directory": "mega_lopunny_ex_001",
+      "deck_sha256": "f03203e5bc6fc1cd4c29b4e3e728f360d37abe55aaaf34a73b053085dbe21553",
+      "short_hash": "f03203e5bc6f",
+      "archetype": "Mega Lopunny ex",
+      "catalog_label": "Mega Lopunny ex - Limitless Champion",
+      "source_kind": "limitless_champion_exact_deck"
+    },
+    {
       "directory": "mega_lucario_ex_solrock_002",
       "deck_sha256": "ff157aaa919099f08416952659f4bc7b203589288ccb477da67c2b245107a514",
       "short_hash": "ff157aaa9190",

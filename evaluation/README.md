@@ -15,14 +15,14 @@ python3 -m evaluation run \
   --output .tmp/evaluation/<candidate>
 ```
 
-默认 pool 是 `frozen`：固定 0019 Epoch 13 Foundation policy、`source_id=0` 与 48 个 exact-deck
-identity。48 个 opponent 共用一个常驻 batched GPU policy service；被评测 candidate 使用第二个
+默认 pool 是 `frozen`：固定 0019 Epoch 13 Foundation policy、`source_id=0` 与 49 个 exact-deck
+identity。49 个 opponent 共用一个常驻 batched GPU policy service；被评测 candidate 使用第二个
 常驻 GPU service。每个 request 都携带本方 exact 60-card deck，因此共享权重不会丢失卡组身份。
 CPU worker 只执行未修改的 official engine 状态转移。Frozen 模式默认双方使用 `cuda:0`，可用
 `--candidate-device` 与 `--opponent-device` 显式选择 GPU；缺少双边共享 GPU inference 时 fail
 closed。
 
-标准 checkpoint 验收使用 `--opponents all --games 10`，即 48×10=480 局、每套先后手各 5 局。
+标准 checkpoint 验收使用 `--opponents all --games 10`，即 49×10=490 局、每套先后手各 5 局。
 48×2=96 局只用于快速 diagnostic。旧异构 Kaggle-derived pool 保留在 `arena/opponents/`，通过
 全局参数 `--pool opponents` 显式选择，只作为 secondary external-generalization evidence。
 
@@ -83,7 +83,7 @@ Frozen League 全量循环评测使用 `--metric-profile league_deck_quality`（
 不复用胡地专属 Powerful Hand 作为全局指标，而是统一提取首次攻击回合、攻击连续率、可攻击却
 未提交的回合、Prize/attack、多 Prize 回合、KO 后攻击间隔、Bench/进化/能量场面、牌库消耗、
 Supporter/手填能量利用、对手攻击受阻、关键主攻成形、Ability 动作、伤害事件和主动离场。
-`evaluation/metrics/league_profiles.py` 将 48 套 Frozen deck 完整覆盖为 21 个策略类别；每类只从
+`evaluation/metrics/league_profiles.py` 将 49 套 Frozen deck 完整覆盖为 22 个策略类别；每类只从
 通用原子指标中选择重点解释字段，并记录独立的 reward warning。过程指标只用于解释 checkpoint、
 定位退化和形成 reward 假设，不能覆盖 official-engine 胜负护栏。
 
@@ -122,7 +122,7 @@ Evaluation 只负责指标测量、证据审计和可视化，不执行自动迭
 启动对局前退出。
 
 默认 Frozen catalog 是 [`configs/frozen.json`](configs/frozen.json)，只引用
-`arena/frozen/` 下的 48 个轻量 exact-deck identity，并绑定 `arena/frozen/_policy/` 中唯一的
+`arena/frozen/` 下的 49 个轻量 exact-deck identity，并绑定 `arena/frozen/_policy/` 中唯一的
 Foundation package。legacy catalog 是 [`configs/opponents.json`](configs/opponents.json)。`all`
 按所选 catalog 启用项的固定顺序选择；传入逗号分隔名称时，
 只能选择 catalog 中已启用的项。新增的候选 opponent 先作为标准 package 放入
