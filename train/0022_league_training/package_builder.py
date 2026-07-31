@@ -96,7 +96,7 @@ def _config():
 
 class PortablePolicy:
     def __init__(self, actor: SourceConditionedR15Policy, deck: Sequence[int]):
-        torch.set_num_threads(1); self.actor = actor.eval(); self.deck = tuple(int(x) for x in deck); self.encoder = None
+        torch.set_num_threads(1); self.model = actor.eval(); self.actor = self.model; self.config = actor.config; self.deck = tuple(int(x) for x in deck); self.encoder = None
     @classmethod
     def from_checkpoint(cls, checkpoint: Path, ontology: Path, deck: Sequence[int]):
         payload = torch.load(checkpoint, map_location="cpu", weights_only=True); config, source = _config()
@@ -120,11 +120,24 @@ class PortablePolicy:
         .replace("self.actor.config.ac.base", "self.actor.config"),
         encoding="utf-8",
     )
+    (target / "strategy/inference.py").write_text(
+        '"""Shared-evaluation inference contract for exported 0022 policies."""\n'
+        "from .portable_inference import legal_fallback\n"
+        "__all__ = [\"legal_fallback\"]\n",
+        encoding="utf-8",
+    )
 
 
 def build(checkpoint: Path, target_name: str, *, overwrite: bool = False) -> Path:
-    deck_id = "dragapult_ex_001"
+    checkpoint_payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    if not isinstance(checkpoint_payload, dict):
+        raise ValueError("decoder checkpoint payload must be an object")
+    deck_id = checkpoint_payload.get("deck_id")
+    if not isinstance(deck_id, str) or not deck_id:
+        raise ValueError("decoder checkpoint has no valid deck_id")
     plugins = {plugin.deck_id: plugin for plugin in load_deck_plugins(PROJECT / "deck")}
+    if deck_id not in plugins:
+        raise ValueError(f"decoder checkpoint references unknown League deck: {deck_id}")
     plugin = plugins[deck_id]
     target = ROOT / "evaluation/arena/candidates" / target_name
     if target.exists():
@@ -138,7 +151,7 @@ def build(checkpoint: Path, target_name: str, *, overwrite: bool = False) -> Pat
     model, identity = load_league_actor_critic("cpu", decoder_checkpoint=checkpoint, deck_id=deck_id, deck_sha256=plugin.deck_sha256)
     payload = {
         "schema_version": "0022_arena_actor_model_only_v1",
-        "update": int(torch.load(checkpoint, map_location="cpu", weights_only=True)["update"]),
+        "update": int(checkpoint_payload["update"]),
         "foundation_sha256": identity.weights_sha256,
         "decoder_sha256": sha256(checkpoint),
         "deck_id": deck_id,
@@ -157,7 +170,7 @@ def build(checkpoint: Path, target_name: str, *, overwrite: bool = False) -> Pat
         "decoder_checkpoint": str(checkpoint),
         "decoder_sha256": sha256(checkpoint),
         "update": payload["update"],
-        "policy_role": "focal_live_snapshot",
+        "policy_role": "live_snapshot",
         "model_only": True,
     }
     (target / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
