@@ -135,6 +135,161 @@ def build_combat_matrix_data(catalog_path: Path, reports_root: Path) -> dict[str
     }
 
 
+def build_frozen_combat_matrix_data(
+    catalog_path: Path, reports_root: Path, *, pool_id: str
+) -> dict[str, object]:
+    """Build a full two-perspective matrix from one sampled unordered matchup."""
+    entries = _catalog_entries(catalog_path)
+    names = [entry["name"] for entry in entries]
+    matrix: dict[str, dict[str, dict[str, object]]] = {name: {} for name in names}
+    report_paths: dict[str, Path] = {}
+    wall_times: dict[str, float] = {}
+    physical_games = physical_turns = physical_turn_samples = 0
+    physical_errors = physical_unfinished = 0
+
+    for index, candidate in enumerate(entries):
+        name = str(candidate["name"])
+        report_path, report = _load_latest_report(reports_root / name)
+        report_paths[name] = report_path
+        manifest = _mapping(report.get("manifest"))
+        summary = _mapping(report.get("summary"))
+        metrics = _mapping(report.get("metrics"))
+        games = _mapping_sequence(report.get("games"))
+        expected_opponents = names[index:]
+        _validate_frozen_unordered_report(
+            name, expected_opponents, pool_id, manifest, summary
+        )
+        wall_times[name] = _number(
+            _mapping(summary.get("performance")).get("wall_time_seconds")
+        ) or 0.0
+        by_opponent = _mapping(summary.get("by_opponent"))
+        turns_by_opponent = _turns_by_opponent(metrics)
+        turn_order = _turn_order_by_opponent(games, expected_opponents)
+        for opponent in expected_opponents:
+            cell = _matrix_cell(
+                _mapping(by_opponent.get(opponent)),
+                _mapping(turns_by_opponent.get(opponent)),
+                _mapping(turn_order.get(opponent)),
+            )
+            matrix[name][opponent] = cell
+            if opponent != name:
+                matrix[opponent][name] = _mirror_cell(cell)
+            physical_games += int(cell["games"])
+            physical_turns += int(cell["turn_numerator"])
+            physical_turn_samples += int(cell["turn_denominator"])
+            physical_errors += int(cell["errors"])
+            physical_unfinished += int(cell["unfinished"])
+
+    candidate_runs = []
+    for candidate in entries:
+        name = str(candidate["name"])
+        row = matrix[name]
+        games = sum(_integer(cell.get("games")) for cell in row.values())
+        wins = sum(_integer(cell.get("wins")) for cell in row.values())
+        losses = sum(_integer(cell.get("losses")) for cell in row.values())
+        draws = sum(_integer(cell.get("draws")) for cell in row.values())
+        first_games = sum(_integer(cell.get("first_games")) for cell in row.values())
+        first_wins = sum(_integer(cell.get("first_wins")) for cell in row.values())
+        second_games = sum(_integer(cell.get("second_games")) for cell in row.values())
+        second_wins = sum(_integer(cell.get("second_wins")) for cell in row.values())
+        candidate_runs.append({
+            "name": name,
+            "display_name": candidate["display_name"],
+            "games": games,
+            "wins": wins,
+            "losses": losses,
+            "draws": draws,
+            "errors": sum(_integer(cell.get("errors")) for cell in row.values()),
+            "unfinished": sum(_integer(cell.get("unfinished")) for cell in row.values()),
+            "win_rate": wins / games if games else None,
+            "first_games": first_games,
+            "first_wins": first_wins,
+            "first_win_rate": first_wins / first_games if first_games else None,
+            "second_games": second_games,
+            "second_wins": second_wins,
+            "second_win_rate": second_wins / second_games if second_games else None,
+            "wall_time_seconds": wall_times[name],
+            "run_id": "unordered-frozen",
+            "report_path": report_paths[name].relative_to(reports_root).as_posix(),
+        })
+
+    archetypes = _archetypes(entries)
+    return {
+        "generated_at": datetime.now(UTC).isoformat(),
+        "protocol": {
+            "pool_kind": "frozen",
+            "pool_id": pool_id,
+            "packages": len(entries),
+            "archetypes": len(archetypes),
+            "games_per_cell": 10,
+            "matrix_shape": f"{len(entries)}×{len(entries)}",
+            "sampling": "one unordered matchup projected to both player perspectives",
+            "physical_games": physical_games,
+            "report_href_prefix": f"../../reports_frozen/{pool_id}",
+        },
+        "summary": {
+            "total_games": physical_games,
+            "projected_directional_games": len(entries) * len(entries) * 10,
+            "total_wall_time_seconds": sum(wall_times.values()),
+            "average_turns": physical_turns / physical_turn_samples if physical_turn_samples else None,
+            "turn_samples": physical_turn_samples,
+            "errors": physical_errors,
+            "unfinished": physical_unfinished,
+        },
+        "packages": entries,
+        "archetypes": archetypes,
+        "candidate_runs": candidate_runs,
+        "package_matrix": matrix,
+        "archetype_matrix": _aggregate_archetypes(matrix, archetypes),
+    }
+
+
+def _matrix_cell(outcome: Mapping[str, object], turns: Mapping[str, object], turn_order: Mapping[str, object]) -> dict[str, object]:
+    return {
+        "games": _integer(outcome.get("games")), "wins": _integer(outcome.get("wins")),
+        "losses": _integer(outcome.get("losses")), "draws": _integer(outcome.get("draws")),
+        "errors": _integer(outcome.get("errors")), "unfinished": _integer(outcome.get("unfinished")),
+        "win_rate": _number(outcome.get("win_rate")),
+        "turn_numerator": _integer(turns.get("numerator")), "turn_denominator": _integer(turns.get("denominator")),
+        "average_turns": _number(turns.get("value")),
+        "first_games": _integer(turn_order.get("first_games")), "first_wins": _integer(turn_order.get("first_wins")),
+        "first_win_rate": _number(turn_order.get("first_win_rate")),
+        "second_games": _integer(turn_order.get("second_games")), "second_wins": _integer(turn_order.get("second_wins")),
+        "second_win_rate": _number(turn_order.get("second_win_rate")),
+    }
+
+
+def _mirror_cell(cell: Mapping[str, object]) -> dict[str, object]:
+    first_games = _integer(cell.get("second_games"))
+    second_games = _integer(cell.get("first_games"))
+    first_wins = first_games - _integer(cell.get("second_wins"))
+    second_wins = second_games - _integer(cell.get("first_wins"))
+    games = _integer(cell.get("games"))
+    wins = _integer(cell.get("losses"))
+    return {
+        **cell, "wins": wins, "losses": _integer(cell.get("wins")),
+        "win_rate": wins / games if games else None,
+        "first_games": first_games, "first_wins": first_wins,
+        "first_win_rate": first_wins / first_games if first_games else None,
+        "second_games": second_games, "second_wins": second_wins,
+        "second_win_rate": second_wins / second_games if second_games else None,
+    }
+
+
+def _validate_frozen_unordered_report(candidate_name: str, opponent_names: list[str], pool_id: str, manifest: Mapping[str, object], summary: Mapping[str, object]) -> None:
+    candidate = _mapping(manifest.get("candidate"))
+    actual_pool = _mapping(manifest.get("opponent_pool")).get("pool_id")
+    actual_opponents = [str(item.get("name")) for item in _mapping_sequence(manifest.get("opponents"))]
+    if candidate.get("name") != candidate_name or actual_pool != pool_id:
+        raise ValueError(f"Frozen identity mismatch for {candidate_name}")
+    if actual_opponents != opponent_names:
+        raise ValueError(f"Frozen opponent suffix mismatch for {candidate_name}")
+    if _integer(summary.get("total_games")) != len(opponent_names) * 10:
+        raise ValueError(f"incomplete Frozen game count for {candidate_name}")
+    if _integer(summary.get("errors")) or _integer(summary.get("unfinished")):
+        raise ValueError(f"invalid Frozen games for {candidate_name}")
+
+
 def write_combat_matrix(
     data: Mapping[str, object], output: Path, source_data_path: Path
 ) -> None:
@@ -156,13 +311,19 @@ def render_combat_matrix(data: Mapping[str, object], output_root: Path) -> str:
     embedded = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace(
         "</", "<\\/"
     )
+    frozen = protocol.get("pool_kind") == "frozen"
+    page_title = "Frozen Arena Combat Matrix" if frozen else "Arena Combat Matrix"
+    page_note = (
+        "Frozen 无序 matchup 共用一组 10 局，并镜像生成双方视角"
+        if frozen else "正式 opponents 全量循环评测"
+    )
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Arena Combat Matrix</title><style>{_styles()}</style></head>
+<title>{page_title}</title><style>{_styles()}</style></head>
 <body><main>
 <header class="hero"><div><p class="eyebrow">POKÉMON TCG · EVALUATION ARENA</p>
-<h1>Combat Matrix</h1><p>正式 opponents 全量循环评测</p></div>
+<h1>{page_title}</h1><p>{page_note}</p></div>
 <div class="run-id">{_escape(data.get('generated_at', ''))}</div></header>
 <section><h2>评测总览</h2><div class="summary-grid">
 {_summary_card('正式卡组', protocol.get('packages'))}
@@ -361,12 +522,13 @@ def _aggregate_archetypes(
 
 def _run_table(data: Mapping[str, object], output_root: Path) -> str:
     rows = []
+    report_prefix = str(_mapping(data.get("protocol")).get("report_href_prefix", ""))
     for order, run in enumerate(_mapping_sequence(data.get("candidate_runs"))):
         report_path = Path(str(run["report_path"]))
         href = (
             os.path.relpath(report_path, output_root)
             if report_path.is_absolute()
-            else report_path.as_posix()
+            else (Path(report_prefix) / report_path).as_posix()
         )
         win_rate = _number(run.get("win_rate"))
         rows.append(
@@ -582,8 +744,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reports-root", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--source-data", type=Path, required=True)
+    parser.add_argument("--frozen-pool-id")
     args = parser.parse_args(argv)
-    data = build_combat_matrix_data(args.catalog, args.reports_root)
+    data = (
+        build_frozen_combat_matrix_data(
+            args.catalog, args.reports_root, pool_id=args.frozen_pool_id
+        )
+        if args.frozen_pool_id
+        else build_combat_matrix_data(args.catalog, args.reports_root)
+    )
     write_combat_matrix(data, args.output, args.source_data)
     return 0
 
