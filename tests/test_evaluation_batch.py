@@ -23,6 +23,7 @@ from evaluation.runner.batch import (
     _manifest_package,
     _write_evaluation_backlink_atomic,
     _metric_registry,
+    _stable_game_seed,
     _summary,
     run_batch,
 )
@@ -40,6 +41,12 @@ class TraceStoreTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
+
+    def test_stable_game_seed_is_reproducible_and_matchup_specific(self) -> None:
+        seed = _stable_game_seed(22022, "deck-a", "deck-b", 3)
+        self.assertEqual(seed, _stable_game_seed(22022, "deck-a", "deck-b", 3))
+        self.assertNotEqual(seed, _stable_game_seed(22022, "deck-b", "deck-a", 3))
+        self.assertNotEqual(seed, _stable_game_seed(22022, "deck-a", "deck-b", 4))
 
     def test_rejects_report_root_inside_temp_root(self) -> None:
         with self.assertRaises(ValueError):

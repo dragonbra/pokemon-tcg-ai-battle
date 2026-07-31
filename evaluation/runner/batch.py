@@ -84,6 +84,8 @@ class BatchConfig:
     opponent_catalog_sha256: str | None = None
     opponent_policy_hash: str | None = None
     share_policy_inference_server: bool = False
+    seed: int = 22022
+    worker_crash_retries: int = 0
 
 
 @dataclass(frozen=True)
@@ -106,6 +108,8 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("worker_timeout_seconds must be greater than zero")
     if config.workers < 1:
         raise ValueError("workers must be at least one")
+    if config.worker_crash_retries < 0:
+        raise ValueError("worker_crash_retries cannot be negative")
     if config.worker_cpu_threads is not None and config.worker_cpu_threads < 1:
         raise ValueError("worker_cpu_threads must be at least one")
     if config.candidate_inference_batch_size < 1:
@@ -418,9 +422,20 @@ def _game_jobs(
                 candidate_first=game_number % 2 == 1,
                 max_steps=config.max_steps,
                 visualize=config.visualize,
+                seed=_stable_game_seed(
+                    config.seed, config.candidate.name, opponent.name, game_number
+                ),
             )
             jobs.append((request, store.temp_path(game_id)))
     return jobs
+
+
+def _stable_game_seed(base_seed: int, candidate: str, opponent: str, game_number: int) -> int:
+    """Derive a reproducible seed independent of UUID/run ordering."""
+    digest = hashlib.sha256(
+        f"{base_seed}:{candidate}:{opponent}:{game_number}".encode("utf-8")
+    ).digest()
+    return int.from_bytes(digest[:8], "big") & 0x7FFFFFFF
 
 
 def _candidate_socket_path() -> Path:
@@ -521,7 +536,8 @@ def _run_workers(
 ) -> Iterator[tuple[GameRequest, Path, GameResult]]:
     if config.workers == 1:
         for request, trace_path in jobs:
-            yield request, trace_path, _run_worker(
+            yield request, trace_path, _run_worker_with_retries(
+                config.worker_crash_retries,
                 request,
                 trace_path,
                 temp_root,
@@ -547,7 +563,50 @@ def _run_workers(
             for request, trace_path in jobs
         ]
         for (request, trace_path), future in zip(jobs, futures, strict=True):
-            yield request, trace_path, future.result()
+            result = future.result()
+            if result.error_kind == "worker_crash":
+                result = _run_worker_with_retries(
+                    config.worker_crash_retries,
+                    request,
+                    trace_path,
+                    temp_root,
+                    config.worker_timeout_seconds,
+                    config.worker_cpu_threads,
+                    candidate_inference_socket,
+                    opponent_inference_socket,
+                    initial_result=result,
+                )
+            yield request, trace_path, result
+
+
+def _run_worker_with_retries(
+    retries: int,
+    request: GameRequest,
+    trace_path: Path,
+    temp_root: Path,
+    timeout_seconds: float,
+    cpu_threads: int | None,
+    candidate_inference_socket: Path | None,
+    opponent_inference_socket: Path | None,
+    *,
+    initial_result: GameResult | None = None,
+) -> GameResult:
+    result = initial_result
+    for _attempt in range(retries + 1):
+        if result is None or result.error_kind == "worker_crash":
+            result = _run_worker(
+                request,
+                trace_path,
+                temp_root,
+                timeout_seconds,
+                cpu_threads,
+                candidate_inference_socket,
+                opponent_inference_socket,
+            )
+        if result.error_kind != "worker_crash":
+            break
+    assert result is not None
+    return result
 
 
 def _run_worker(
@@ -649,6 +708,7 @@ def _request_payload(request: GameRequest, trace_path: Path) -> dict[str, object
         "candidate_first": request.candidate_first,
         "max_steps": request.max_steps,
         "visualize": request.visualize,
+        "seed": request.seed,
         "trace_path": str(trace_path),
     }
 
@@ -961,8 +1021,14 @@ def _manifest(
         "opponents": [_manifest_package(opponent) for opponent in config.opponents],
         "control": _manifest_package(config.control) if config.control else None,
         "games": len(config.opponents) * config.games_per_opponent,
+        "seed": config.seed,
+        "seed_policy": "sha256(base_seed:candidate:opponent:game_number)",
+        "engine_rng_contract": (
+            "python_numpy_torch_only; official engine internal RNG is not exposed by runtime"
+        ),
         "workers": actual_workers,
         "requested_workers": config.workers,
+        "worker_crash_retries": config.worker_crash_retries,
         "worker_cpu_threads": config.worker_cpu_threads,
         "candidate_inference": {
             "mode": "shared_server" if config.candidate_inference_device else "in_worker",

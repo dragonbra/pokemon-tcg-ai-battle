@@ -15,6 +15,7 @@ class GameRequest:
     candidate_first: bool
     max_steps: int
     visualize: bool
+    seed: int = 0
 
 
 @dataclass(frozen=True)

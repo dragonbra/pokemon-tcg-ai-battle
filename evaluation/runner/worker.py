@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import random
 import sys
 from contextlib import contextmanager
 from dataclasses import asdict
@@ -285,6 +286,7 @@ def _serialized_result(result: GameResult) -> dict[str, Any]:
 
 
 def run_game(request: GameRequest, trace_path: Path) -> GameResult:
+    random.seed(request.seed)
     candidate_physical_index = 0 if request.candidate_first else 1
     physical_packages = (
         (request.candidate, request.opponent)
@@ -530,6 +532,7 @@ def _request_from_payload(payload: dict[str, Any]) -> tuple[GameRequest, Path]:
         candidate_first=bool(payload["candidate_first"]),
         max_steps=int(payload["max_steps"]),
         visualize=bool(payload["visualize"]),
+        seed=int(payload.get("seed", 0)),
     )
     return request, Path(payload["trace_path"])
 
