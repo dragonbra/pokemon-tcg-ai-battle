@@ -2,11 +2,11 @@
 
 **项目 ID：** `0022_league_training`
 
-**当前阶段：** V2 在 update 39 完整写入后因 CUDA illegal-memory-access 失败；update 35/39
-均通过独立 300 局 Arena（201-99，67.0%，0 error）。V10 CUDA canary 已完成 512/512、0 error、
-48/48 Live deck update、Frozen/Live 各 96/96 以及两个 League probe；V11 正式版本已从 update
-39 分支启动 20 小时双边 League Training。正式 update 要求 48 个 Live deck 都有真实
-trajectory，并按固定 Frozen/Live/probe gate 记录。
+**当前阶段：** V11 已按用户要求在完整 update 81 后安全停止；该批由 source policy update 80
+采集，512/512 finished、0 rollout error，48/48 Live deck 均有 trajectory。V11 证明多 decoder
+更新链可运行，但不再把“每批强制 48 套全部更新”作为终极训练合同。下一阶段一次只指定一个
+focal deck 作为主要优化对象，其他 47 个 Live decoder 仅利用真实对局作机会式更新；所有
+checkpoint 的强度验收统一改走固定的 48-deck Frozen Arena。
 
 **目标：** 在 BC 基础模型完成后，验证常驻、批量化 opponent pool 是否能显著提高 RL rollout 与迭代吞吐，同时保持一个可审计、不会随 Live pool 退化的 Frozen League 质量锚点。
 
@@ -82,12 +82,19 @@ historical decoder snapshot 才引用不可变 `.pt` 和 SHA-256。它永远不�
 2. 给主视角提供固定回归指标；
 3. 检测 Live pool 的循环、坍缩和共同退化。
 
+权威资产固定在 `evaluation/arena/frozen/`：`_policy/` 物理保存唯一一份 0019 Epoch 13
+Foundation package；48 个 deck identity 目录只保存 exact `deck.csv` 和 manifest。catalog 为
+`evaluation/configs/frozen.json`，pool ID 为 `0019_foundation_48_exact_decks_v1`。默认
+`python3 -m evaluation ...` 使用该池；历史异构 Kaggle-derived `opponents/` 仍可通过
+`--pool opponents` 显式使用，定位为 secondary external-generalization evidence。
+
 ### 3.3 Live pool
 
-Live pool 由 48 个独立的 deck-specific Decoder/Value 资产组成，共享 Frozen Encoder。V7 从
-update 39 初始化 `dragapult_ex_001`，另外 47 个 Live 资产从各自 update-0 decoder 初始化；
-在每个 512-game update 收集到轨迹后，48 个 Live deck 分别用自己的 trajectory、reference、
-optimizer 和 checkpoint 更新。对手动作只进入其自身 deck 的 loss，绝不混入 focal loss。
+Live pool 由 48 个独立的 deck-specific Decoder/Value 资产组成，共享 Frozen Encoder。每个正式
+run 只声明一个 focal deck；focal 获得主要采样预算和更新频率，另外 47 个 Live deck 只有在
+真实对局中积累到足够 actor trajectory 时才作机会式独立更新。每套 deck 仍使用自己的
+trajectory、reference、optimizer 和 checkpoint；对手动作只进入其自身 deck 的 loss，绝不混入
+focal loss。side-deck 的低等效更新量不得被描述成与 focal 等速进化。
 
 Live pool 是 curriculum 和探索资产，不是自动晋级的正式 opponent。只有通过固定 Frozen pool、历史 snapshot 和完整 package audit 后，才可以创建新的 Frozen snapshot。
 
@@ -125,8 +132,9 @@ decoder/value 和 optimizer；双方不会共享 loss、optimizer 或 rollout bu
 先后手按固定平衡日程分配。`10 games / matchup` 只用于 rollout 和快速诊断，单个 matchup 的胜率不得作为强结论；正式趋势使用跨 iteration 滚动窗口和 Wilson 区间。固定 League probes 为 `alakazam_dudunsparce_001` 与 `marnies_grimmsnarl_ex_froslass_001`，分别报告 focal-vs-Frozen、focal-vs-Live 和 probe-Live-vs-focal。
 
 不能把 focal 的 512 局误称为另外 47 个 deck 获得了 actor 数据；只有被标记为该 deck 的 Live
-决策才可进入它的 loss。每 5 个 PPO update 运行 48 Frozen × 双座位和 48 Live × 双座位，
-各 96 局 greedy evaluation；该 `eval/*` 与 sampled rollout 分开记录。每次 gate 还记录
+决策才可进入它的 loss。每 5 个 PPO update 可运行 48 Frozen × 双座位和 48 Live × 双座位，
+各 96 局 greedy diagnostic；该 `eval/*` 与 sampled rollout 分开记录，但 96 局只用于快速定位
+candidate。正式验收固定为 48 Frozen × 每套 10 局 = 480 局，先后手各 5 局。每次 gate 还记录
 `alakazam_dudunsparce_001`、`marnies_grimmsnarl_ex_froslass_001` 的 focal-vs-Frozen、
 focal-vs-Live、Live-vs-focal-Live 三组双先后手 probe。
 
@@ -147,16 +155,18 @@ reference policy、behavior policy、checkpoint/update 和 `rollout/source_polic
 ### 5.1 目标拓扑
 
 ```text
-official-engine workers
-    -> observation/action request queue
-    -> one resident GPU inference service
-         shared frozen Encoder, one batched forward
-         -> policy_id / deck_id routed Decoder heads
-    -> legal ordered action response
-    -> official-engine workers
+official-engine workers (CPU state transition only)
+    ├── candidate requests -> resident batched GPU service -> candidate action
+    └── Frozen requests  -> resident batched GPU service -> Foundation action
+                              exact deck routed per session
 ```
 
-Frozen 和 Live decoder 都常驻同一个 inference service。不同 policy 使用 `policy_id` 路由；相同 schema、dtype 和 tensor shape 的 request 组成 batch。禁止每个 opponent worker 重复加载 checkpoint、创建独立 CUDA context，或在每个决策上进行无批量 H2D/D2H 往返。
+Frozen 的 48 个 exact-deck identity 共用一个 Foundation 模型、一个共享 Encoder 和一个 GPU
+服务；每次 request 携带 exact 60-card deck，并按 session 建立因果 feature state。被评测 candidate
+使用另一常驻 GPU 服务，避免与 Foundation 权重身份混淆，同时也享受跨 worker batching。
+因此一次 Frozen evaluation 只加载两份完整模型，而不是 49 份。禁止每个 opponent worker重复
+加载 checkpoint、创建独立 CUDA context，或在每个决策上进行无批量 H2D/D2H 往返。官方 engine
+始终留在隔离 CPU worker，GPU 加速不改变状态转移和合法 action 合同。
 
 ### 5.2 速度验证 gate
 
@@ -205,7 +215,14 @@ Torch-light worker 修复后分别达到 64 workers 1.4081、128 workers 2.4506�
 
 ### 6.1 Frozen pool quality
 
-每次 Live 晋级前，对固定 Frozen catalog 执行平衡先后手的 official-engine evaluation，并同时保留：
+每个 deck 长期维护三类指针：
+
+- `foundation`：不可变 0019 update-0 起点；
+- `latest/challenger`：最新训练产物，只表示训练进度；
+- `champion`：最近一次通过固定 Frozen Arena 验收的正式最强版本。
+
+`latest` 不得自动覆盖 `champion`。每次晋级前，对固定 Frozen catalog 执行 480 局、平衡先后手的
+official-engine evaluation，并同时保留：
 
 - zero-shot Frozen baseline；
 - 当前 Frozen best；
@@ -345,9 +362,10 @@ Frozen anchor 胜率、吞吐和 checkpoint 版本合同正确。
 
 ### Gate D：Frozen + Live league
 
-在 V11 中启用 48 Live 分支各自的 actor trajectory 和独立 backward；执行 round-robin
-sampling，并在正式 update gate 中拒绝缺失任一 deck trajectory 的 batch，同时保留 Frozen/Live
-anchor evaluation 和两个固定 League identity probe。
+V11 已在 update 81 后由用户停止，验证了 48 Live 分支各自 trajectory 与独立 backward 的工程
+可行性。后续改为 focal-primary：一次集中训练一个 deck，side deck 只作机会式更新；不再因为
+某个 side deck 当批缺少 trajectory 而拒绝 focal update。Frozen/Live diagnostic 和两个固定
+League identity probe 继续保留，但正式强度结论来自 480 局 Frozen Arena。
 
 ### Gate E：晋级和长期进化
 

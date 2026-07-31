@@ -1,0 +1,15 @@
+{
+  "deck_id": "dragapult_ex_crushing_hammer_001",
+  "deck_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Dragapult ex / Crushing Hammer - External 01",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Pure Dragapult ex line identified by the four-copy Crushing Hammer and Risky Ruins disruption package.",
+    "source": "user_provided_exact_deck"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "fbe50d5858406a377a1f4202ec9bca976f4f40aa4fc0bbfec199712378a63129"
+}

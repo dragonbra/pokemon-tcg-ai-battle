@@ -1,0 +1,15 @@
+{
+  "deck_id": "team_rockets_mewtwo_ex_spidops_001",
+  "deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Team Rocket's Mewtwo ex / Spidops",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-30",
+    "evidence": "2026-07-30 Kaggle Top 100 exact deck; best rank 11; members 1",
+    "source": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "226b446376614f631866f20ba7a74d9093f2191cd75aaacb56770a1511e585bc"
+}

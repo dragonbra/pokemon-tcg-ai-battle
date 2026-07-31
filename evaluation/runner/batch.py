@@ -76,6 +76,11 @@ class BatchConfig:
     candidate_inference_device: str | None = None
     candidate_inference_batch_size: int = 32
     candidate_inference_batch_wait_ms: float = 2.0
+    opponent_inference_root: Path | None = None
+    opponent_inference_device: str | None = None
+    opponent_pool_id: str = "legacy_opponents"
+    opponent_catalog_sha256: str | None = None
+    opponent_policy_hash: str | None = None
 
 
 @dataclass(frozen=True)
@@ -104,6 +109,18 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("candidate_inference_batch_size must be at least one")
     if config.candidate_inference_batch_wait_ms < 0:
         raise ValueError("candidate_inference_batch_wait_ms cannot be negative")
+    if (config.opponent_inference_root is None) != (
+        config.opponent_inference_device is None
+    ):
+        raise ValueError("opponent inference root and device must be supplied together")
+    if config.opponent_pool_id == "0019_foundation_48_exact_decks_v1" and (
+        config.candidate_inference_device is None
+        or config.opponent_inference_root is None
+        or config.opponent_inference_device is None
+    ):
+        raise ValueError(
+            "Frozen Arena requires shared GPU inference for both candidate and opponents"
+        )
 
     run_id = f"run-{uuid.uuid4().hex}"
     explicit_report_path = config.report_path.resolve() if config.report_path else None
@@ -133,9 +150,21 @@ def run_batch(config: BatchConfig) -> BatchResult:
     try:
         jobs = _game_jobs(config, run_id, store)
         actual_workers = min(config.workers, len(jobs))
-        with _candidate_inference_server(config, store.temp_root) as inference_socket:
+        with _policy_inference_server(
+            root=config.candidate.root,
+            device=config.candidate_inference_device,
+            batch_size=config.candidate_inference_batch_size,
+            batch_wait_ms=config.candidate_inference_batch_wait_ms,
+            label="candidate",
+        ) as candidate_socket, _policy_inference_server(
+            root=config.opponent_inference_root,
+            device=config.opponent_inference_device,
+            batch_size=config.candidate_inference_batch_size,
+            batch_wait_ms=config.candidate_inference_batch_wait_ms,
+            label="opponent",
+        ) as opponent_socket:
             for request, trace_path, result in _run_workers(
-                config, jobs, store.temp_root, inference_socket
+                config, jobs, store.temp_root, candidate_socket, opponent_socket
             ):
                 result, trace = _read_or_create_trace(request, result, trace_path)
                 context = GameContext(
@@ -391,16 +420,18 @@ def _candidate_socket_path() -> Path:
 
 
 @contextmanager
-def _candidate_inference_server(
-    config: BatchConfig,
-    temp_root: Path,
+def _policy_inference_server(
+    *,
+    root: Path | None,
+    device: str | None,
+    batch_size: int,
+    batch_wait_ms: float,
+    label: str,
 ) -> Iterator[Path | None]:
-    device = config.candidate_inference_device
-    if device is None:
+    if root is None or device is None:
         yield None
         return
 
-    del temp_root
     socket_path = _candidate_socket_path()
     process = subprocess.Popen(
         [
@@ -408,17 +439,18 @@ def _candidate_inference_server(
             "-m",
             "evaluation.runner.inference_server",
             "--candidate",
-            str(config.candidate.root),
+            str(root),
             "--socket",
             str(socket_path),
             "--device",
-            device,
+            str(device),
             "--batch-size",
-            str(config.candidate_inference_batch_size),
+            str(batch_size),
             "--batch-wait-ms",
-            str(config.candidate_inference_batch_wait_ms),
+            str(batch_wait_ms),
         ],
         cwd=Path(__file__).resolve().parents[2],
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         text=True,
@@ -429,11 +461,11 @@ def _candidate_inference_server(
             if process.poll() is not None:
                 stderr = process.stderr.read().strip() if process.stderr else ""
                 raise RuntimeError(
-                    "candidate inference server failed to start"
+                    f"{label} inference server failed to start"
                     + (f": {stderr}" if stderr else "")
                 )
             if time.monotonic() >= deadline:
-                raise RuntimeError("candidate inference server did not become ready in 60 seconds")
+                raise RuntimeError(f"{label} inference server did not become ready in 60 seconds")
             time.sleep(0.05)
         yield socket_path
     finally:
@@ -451,7 +483,8 @@ def _run_workers(
     config: BatchConfig,
     jobs: list[tuple[GameRequest, Path]],
     temp_root: Path,
-    inference_socket: Path | None = None,
+    candidate_inference_socket: Path | None = None,
+    opponent_inference_socket: Path | None = None,
 ) -> Iterator[tuple[GameRequest, Path, GameResult]]:
     if config.workers == 1:
         for request, trace_path in jobs:
@@ -461,7 +494,8 @@ def _run_workers(
                 temp_root,
                 config.worker_timeout_seconds,
                 config.worker_cpu_threads,
-                inference_socket,
+                candidate_inference_socket,
+                opponent_inference_socket,
             )
         return
 
@@ -474,7 +508,8 @@ def _run_workers(
                 temp_root,
                 config.worker_timeout_seconds,
                 config.worker_cpu_threads,
-                inference_socket,
+                candidate_inference_socket,
+                opponent_inference_socket,
             )
             for request, trace_path in jobs
         ]
@@ -488,7 +523,8 @@ def _run_worker(
     temp_root: Path,
     timeout_seconds: float,
     cpu_threads: int | None = None,
-    inference_socket: Path | None = None,
+    candidate_inference_socket: Path | None = None,
+    opponent_inference_socket: Path | None = None,
 ) -> GameResult:
     request_path = temp_root / f"{request.game_id}.request.json"
     result_path = temp_root / f"{request.game_id}.result.json"
@@ -502,8 +538,14 @@ def _run_worker(
     if environment.get("PYTHONPATH"):
         python_path.append(environment["PYTHONPATH"])
     environment["PYTHONPATH"] = os.pathsep.join(python_path)
-    if inference_socket is not None:
-        environment["EVALUATION_CANDIDATE_INFERENCE_SOCKET"] = str(inference_socket)
+    if candidate_inference_socket is not None:
+        environment["EVALUATION_CANDIDATE_INFERENCE_SOCKET"] = str(
+            candidate_inference_socket
+        )
+    if opponent_inference_socket is not None:
+        environment["EVALUATION_OPPONENT_INFERENCE_SOCKET"] = str(
+            opponent_inference_socket
+        )
     if cpu_threads is not None:
         thread_count = str(cpu_threads)
         environment.update(
@@ -900,6 +942,25 @@ def _manifest(
             "batch_wait_ms": (
                 config.candidate_inference_batch_wait_ms
                 if config.candidate_inference_device
+                else 0.0
+            ),
+        },
+        "opponent_pool": {
+            "pool_id": config.opponent_pool_id,
+            "catalog_sha256": config.opponent_catalog_sha256,
+            "policy_hash": config.opponent_policy_hash,
+        },
+        "opponent_inference": {
+            "mode": "shared_server" if config.opponent_inference_device else "in_worker",
+            "device": config.opponent_inference_device or "cpu",
+            "batch_size": (
+                config.candidate_inference_batch_size
+                if config.opponent_inference_device
+                else 1
+            ),
+            "batch_wait_ms": (
+                config.candidate_inference_batch_wait_ms
+                if config.opponent_inference_device
                 else 0.0
             ),
         },

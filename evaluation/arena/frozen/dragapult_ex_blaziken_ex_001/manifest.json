@@ -1,0 +1,15 @@
+{
+  "deck_id": "dragapult_ex_blaziken_ex_001",
+  "deck_sha256": "0a78adbfd08f99ec83b3d7c10043e06c3c349a5d9708e44df41275f169b0b9fc",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Dragapult ex / Blaziken ex - External 01",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Two-one-two Torchic evolution line using DRI Torchic and Combusken with JTG Blaziken ex and three Rare Candy.",
+    "source": "user_provided_exact_deck"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "a35799ed996ac9d99355a526d95deda943720efd8d1fd2538cbaf51c3b0135e2"
+}

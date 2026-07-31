@@ -4,12 +4,18 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import shutil
 from pathlib import Path
+from typing import Any
 
 from evaluation.cards import load_card_catalog
-from train.0022_league_training.decks import DeckPlugin, load_deck_plugins
+
+
+load_deck_plugins = importlib.import_module(
+    "train.0022_league_training.decks"
+).load_deck_plugins
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +48,7 @@ def _tree_sha256(root: Path) -> str:
     return digest.hexdigest()
 
 
-def _representative_cards(plugin: DeckPlugin, official_cards: dict[int, dict]) -> list[int]:
+def _representative_cards(plugin: Any, official_cards: dict[int, dict]) -> list[int]:
     manifest = json.loads((plugin.root / "manifest.json").read_text(encoding="utf-8"))
     declared = manifest.get("cards") or []
     pokemon: list[int] = []
@@ -74,12 +80,13 @@ def _representative_cards(plugin: DeckPlugin, official_cards: dict[int, dict]) -
             selected.append(match)
         if len(selected) == 2:
             break
-    for card_id in pokemon:
-        if card_id not in selected:
-            selected.append(card_id)
-        if len(selected) == 2:
-            break
-    return selected
+    if len(selected) < 2:
+        for card_id in pokemon:
+            if card_id not in selected:
+                selected.append(card_id)
+            if len(selected) >= 2:
+                break
+    return selected[:2]
 
 
 def materialize(

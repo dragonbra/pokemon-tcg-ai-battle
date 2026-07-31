@@ -1,0 +1,724 @@
+{
+  "opponents": [
+    {
+      "display_name": "[Frozen 0019] Alakazam / Dudunsparce",
+      "enabled": true,
+      "name": "alakazam_dudunsparce_001",
+      "package": "arena/frozen/alakazam_dudunsparce_001",
+      "representative_card_ids": [
+        743,
+        66
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Alakazam / Dudunsparce",
+      "enabled": true,
+      "name": "alakazam_dudunsparce_002",
+      "package": "arena/frozen/alakazam_dudunsparce_002",
+      "representative_card_ids": [
+        743,
+        66
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Alakazam / Dudunsparce",
+      "enabled": true,
+      "name": "alakazam_dudunsparce_003",
+      "package": "arena/frozen/alakazam_dudunsparce_003",
+      "representative_card_ids": [
+        743,
+        66
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Arboliva ex / Meganium / Teal Mask Ogerpon ex - External 01",
+      "enabled": true,
+      "name": "arboliva_ex_meganium_001",
+      "package": "arena/frozen/arboliva_ex_meganium_001",
+      "representative_card_ids": [
+        404,
+        710
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Archaludon ex / Cinderace",
+      "enabled": true,
+      "name": "archaludon_ex_cinderace_001",
+      "package": "arena/frozen/archaludon_ex_cinderace_001",
+      "representative_card_ids": [
+        190,
+        666
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Crustle / Cornerstone Mask Ogerpon ex",
+      "enabled": true,
+      "name": "crustle_cornerstone_mask_ogerpon_ex_001",
+      "package": "arena/frozen/crustle_cornerstone_mask_ogerpon_ex_001",
+      "representative_card_ids": [
+        345,
+        117
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Cynthia's Garchomp ex / Roserade",
+      "enabled": true,
+      "name": "cynthias_garchomp_ex_roserade_001",
+      "package": "arena/frozen/cynthias_garchomp_ex_roserade_001",
+      "representative_card_ids": [
+        381,
+        342
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Cynthia's Garchomp ex / Roserade",
+      "enabled": true,
+      "name": "cynthias_garchomp_ex_roserade_002",
+      "package": "arena/frozen/cynthias_garchomp_ex_roserade_002",
+      "representative_card_ids": [
+        381,
+        342
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex - Limitless",
+      "enabled": true,
+      "name": "dragapult_ex_001",
+      "package": "arena/frozen/dragapult_ex_001",
+      "representative_card_ids": [
+        121,
+        119
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex / Blaziken ex - External 01",
+      "enabled": true,
+      "name": "dragapult_ex_blaziken_ex_001",
+      "package": "arena/frozen/dragapult_ex_blaziken_ex_001",
+      "representative_card_ids": [
+        121,
+        326
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex / Crushing Hammer - External 01",
+      "enabled": true,
+      "name": "dragapult_ex_crushing_hammer_001",
+      "package": "arena/frozen/dragapult_ex_crushing_hammer_001",
+      "representative_card_ids": [
+        121,
+        112
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex / Dunsparce",
+      "enabled": true,
+      "name": "dragapult_ex_dunsparce_001",
+      "package": "arena/frozen/dragapult_ex_dunsparce_001",
+      "representative_card_ids": [
+        121,
+        66
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex / Dudunsparce - External 02",
+      "enabled": true,
+      "name": "dragapult_ex_dunsparce_002",
+      "package": "arena/frozen/dragapult_ex_dunsparce_002",
+      "representative_card_ids": [
+        121,
+        66
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex / Dusknoir",
+      "enabled": true,
+      "name": "dragapult_ex_dusknoir_001",
+      "package": "arena/frozen/dragapult_ex_dusknoir_001",
+      "representative_card_ids": [
+        121,
+        133
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex / Dusknoir - External 02",
+      "enabled": true,
+      "name": "dragapult_ex_dusknoir_002",
+      "package": "arena/frozen/dragapult_ex_dusknoir_002",
+      "representative_card_ids": [
+        121,
+        133
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Dragapult ex / Mega Froslass ex - External 01",
+      "enabled": true,
+      "name": "dragapult_ex_mega_froslass_ex_001",
+      "package": "arena/frozen/dragapult_ex_mega_froslass_ex_001",
+      "representative_card_ids": [
+        121,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Festival Lead / Dipplin",
+      "enabled": true,
+      "name": "festival_lead_dipplin_001",
+      "package": "arena/frozen/festival_lead_dipplin_001",
+      "representative_card_ids": [
+        93,
+        92
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Festival Lead / Dipplin",
+      "enabled": true,
+      "name": "festival_lead_dipplin_002",
+      "package": "arena/frozen/festival_lead_dipplin_002",
+      "representative_card_ids": [
+        93,
+        92
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Festival Lead / Dipplin - External 03",
+      "enabled": true,
+      "name": "festival_lead_dipplin_003",
+      "package": "arena/frozen/festival_lead_dipplin_003",
+      "representative_card_ids": [
+        93,
+        73
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Hydrapple ex / Meganium / Teal Mask Ogerpon ex - External 01",
+      "enabled": true,
+      "name": "hydrapple_ex_meganium_001",
+      "package": "arena/frozen/hydrapple_ex_meganium_001",
+      "representative_card_ids": [
+        150,
+        710
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Iono's Bellibolt ex / Kilowattrel - Arena 01",
+      "enabled": true,
+      "name": "ionos_bellibolt_ex_kilowattrel_01",
+      "package": "arena/frozen/ionos_bellibolt_ex_kilowattrel_01",
+      "representative_card_ids": [
+        265,
+        268
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Marnie's Grimmsnarl ex / Froslass",
+      "enabled": true,
+      "name": "marnies_grimmsnarl_ex_froslass_001",
+      "package": "arena/frozen/marnies_grimmsnarl_ex_froslass_001",
+      "representative_card_ids": [
+        648,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Marnie's Grimmsnarl ex / Froslass",
+      "enabled": true,
+      "name": "marnies_grimmsnarl_ex_froslass_002",
+      "package": "arena/frozen/marnies_grimmsnarl_ex_froslass_002",
+      "representative_card_ids": [
+        648,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Marnie's Grimmsnarl ex / Froslass",
+      "enabled": true,
+      "name": "marnies_grimmsnarl_ex_froslass_003",
+      "package": "arena/frozen/marnies_grimmsnarl_ex_froslass_003",
+      "representative_card_ids": [
+        648,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Marnie's Grimmsnarl ex / Froslass",
+      "enabled": true,
+      "name": "marnies_grimmsnarl_ex_froslass_004",
+      "package": "arena/frozen/marnies_grimmsnarl_ex_froslass_004",
+      "representative_card_ids": [
+        648,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Marnie's Grimmsnarl ex / Froslass",
+      "enabled": true,
+      "name": "marnies_grimmsnarl_ex_froslass_005",
+      "package": "arena/frozen/marnies_grimmsnarl_ex_froslass_005",
+      "representative_card_ids": [
+        648,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Marnie's Grimmsnarl ex / Froslass",
+      "enabled": true,
+      "name": "marnies_grimmsnarl_ex_froslass_006",
+      "package": "arena/frozen/marnies_grimmsnarl_ex_froslass_006",
+      "representative_card_ids": [
+        648,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Marnie's Grimmsnarl ex / Froslass - Limitless",
+      "enabled": true,
+      "name": "marnies_grimmsnarl_ex_froslass_limitless",
+      "package": "arena/frozen/marnies_grimmsnarl_ex_froslass_limitless",
+      "representative_card_ids": [
+        648,
+        104
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_001",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_001",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_002",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_002",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_003",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_003",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_004",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_004",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_005",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_005",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_006",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_006",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_007",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_007",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Kangaskhan ex / Crustle - External 08",
+      "enabled": true,
+      "name": "mega_kangaskhan_ex_crustle_008",
+      "package": "arena/frozen/mega_kangaskhan_ex_crustle_008",
+      "representative_card_ids": [
+        756,
+        345
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Lopunny ex / Mega Froslass ex",
+      "enabled": true,
+      "name": "mega_lopunny_ex_mega_froslass_ex_001",
+      "package": "arena/frozen/mega_lopunny_ex_mega_froslass_ex_001",
+      "representative_card_ids": [
+        849,
+        848
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Lucario ex / Solrock",
+      "enabled": true,
+      "name": "mega_lucario_ex_solrock_001",
+      "package": "arena/frozen/mega_lucario_ex_solrock_001",
+      "representative_card_ids": [
+        678,
+        676
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Mega Lucario ex / Solrock - External 02",
+      "enabled": true,
+      "name": "mega_lucario_ex_solrock_002",
+      "package": "arena/frozen/mega_lucario_ex_solrock_002",
+      "representative_card_ids": [
+        678,
+        676
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] N's Zoroark ex / N's Zekrom - External 01",
+      "enabled": true,
+      "name": "ns_zoroark_ex_001",
+      "package": "arena/frozen/ns_zoroark_ex_001",
+      "representative_card_ids": [
+        906,
+        112
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Raging Bolt ex / Mega Kangaskhan ex",
+      "enabled": true,
+      "name": "raging_bolt_ex_james_cox_henry_chao_001",
+      "package": "arena/frozen/raging_bolt_ex_james_cox_henry_chao_001",
+      "representative_card_ids": [
+        63,
+        756
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Raging Bolt ex / Mega Kangaskhan ex - External 02",
+      "enabled": true,
+      "name": "raging_bolt_ex_mega_kangaskhan_ex_002",
+      "package": "arena/frozen/raging_bolt_ex_mega_kangaskhan_ex_002",
+      "representative_card_ids": [
+        63,
+        756
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Raging Bolt ex / Mega Kangaskhan ex - External 03",
+      "enabled": true,
+      "name": "raging_bolt_ex_mega_kangaskhan_ex_003",
+      "package": "arena/frozen/raging_bolt_ex_mega_kangaskhan_ex_003",
+      "representative_card_ids": [
+        63,
+        756
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Team Rocket's Mewtwo ex / Spidops",
+      "enabled": true,
+      "name": "team_rockets_mewtwo_ex_spidops_001",
+      "package": "arena/frozen/team_rockets_mewtwo_ex_spidops_001",
+      "representative_card_ids": [
+        431,
+        401
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Team Rocket's Mewtwo ex / Spidops",
+      "enabled": true,
+      "name": "team_rockets_mewtwo_ex_spidops_002",
+      "package": "arena/frozen/team_rockets_mewtwo_ex_spidops_002",
+      "representative_card_ids": [
+        431,
+        401
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Team Rocket's Mewtwo ex / Spidops",
+      "enabled": true,
+      "name": "team_rockets_mewtwo_ex_spidops_003",
+      "package": "arena/frozen/team_rockets_mewtwo_ex_spidops_003",
+      "representative_card_ids": [
+        431,
+        401
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Team Rocket's Mewtwo ex / Spidops",
+      "enabled": true,
+      "name": "team_rockets_mewtwo_ex_spidops_004",
+      "package": "arena/frozen/team_rockets_mewtwo_ex_spidops_004",
+      "representative_card_ids": [
+        431,
+        401
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    },
+    {
+      "display_name": "[Frozen 0019] Team Rocket's Mewtwo ex / Spidops",
+      "enabled": true,
+      "name": "team_rockets_mewtwo_ex_spidops_005",
+      "package": "arena/frozen/team_rockets_mewtwo_ex_spidops_005",
+      "representative_card_ids": [
+        431,
+        401
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60"
+      ]
+    }
+  ]
+}

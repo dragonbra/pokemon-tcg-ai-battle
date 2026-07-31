@@ -6,7 +6,8 @@
 
 ```bash
 python3 -m evaluation list-opponents
-python3 -m evaluation validate evaluation/arena/opponents/dragapult_ex_01
+python3 -m evaluation --pool opponents list-opponents
+python3 -m evaluation validate evaluation/arena/candidates/<candidate>
 python3 -m evaluation run \
   --candidate evaluation/arena/candidates/<candidate> \
   --opponents all \
@@ -14,13 +15,23 @@ python3 -m evaluation run \
   --output .tmp/evaluation/<candidate>
 ```
 
+默认 pool 是 `frozen`：固定 0019 Epoch 13 Foundation policy、`source_id=0` 与 48 个 exact-deck
+identity。48 个 opponent 共用一个常驻 batched GPU policy service；被评测 candidate 使用第二个
+常驻 GPU service。每个 request 都携带本方 exact 60-card deck，因此共享权重不会丢失卡组身份。
+CPU worker 只执行未修改的 official engine 状态转移。Frozen 模式默认双方使用 `cuda:0`，可用
+`--candidate-device` 与 `--opponent-device` 显式选择 GPU；缺少双边共享 GPU inference 时 fail
+closed。
+
+标准 checkpoint 验收使用 `--opponents all --games 10`，即 48×10=480 局、每套先后手各 5 局。
+48×2=96 局只用于快速 diagnostic。旧异构 Kaggle-derived pool 保留在 `arena/opponents/`，通过
+全局参数 `--pool opponents` 显式选择，只作为 secondary external-generalization evidence。
+
 `run` 也支持 `--control PACKAGE`（只在报告中展示对比）、调试用 `--visualize` / `--keep-temp`、
 `--max-steps N` 和可重复的 `--metric-module MODULE[:Class]`。默认不生成可视化帧。每次 CLI
-评测固定使用完整启用 catalog（当前 20 个 opponent）、每个至少 10 局；小于 10 局或指定 opponent 子集会被
-拒绝。输出到 `rl_runs/<label>/evaluation` 时，实验目录会自动获得 `0001-` 形式的
-顺序前缀。训练记录与 evaluation 放在 `rl_runs/0001-<label>/`，checkpoint 放在
-`rl_runs/checkpoint/0001-<label>/`，TensorBoard 放在
-`rl_runs/tensorboard/0001-<label>/`；三者使用同一个编号。control
+正式报告固定要求完整启用 catalog、每个至少 10 局；写入 `.tmp/evaluation/` 的 smoke 与诊断
+允许显式选择子集。自 0013 起，正式报告写入
+`experiments/<project_id>/evaluation/V<n>_<tag>.html`，并由同名
+`rl_runs/<project_id>/versions/V<n>_<tag>/artifact/evaluation.json` 反向引用。control
 不会触发 promotion、reject 或其他自动晋级决定。动态模块必须是独立的 `MetricPlugin`，
 只能追加统计，不能使用任何核心 metric ID。
 
@@ -31,7 +42,10 @@ python3 -m evaluation run \
 内部线程，避免多个进程过度订阅 CPU。实际 workers、线程限制和 wall time 都内嵌在报告的
 manifest 数据中；其他硬件可显式覆盖并先把小规模校准报告写到 `.tmp/evaluation/benchmarks/`。
 
-本机 8 个物理核心、当时固定 18×10 局官方 engine 对战的实测如下。该表是历史吞吐基准，
+legacy CPU `opponents` 模式仍遵守每局独立策略进程和内部线程限制。Frozen 模式则把双方策略
+推理移到两个 GPU 服务，但每局 official engine 仍在独立 worker，报告仍按固定 catalog/game
+顺序落盘。本机 8 个物理核心、当时固定 18×10 局官方 engine 对战的实测如下。该表是历史
+legacy CPU 吞吐基准，
 不代表当前 catalog 规模；数字只证明吞吐，不构成
 策略强度证据；其他硬件需重新校准。
 
@@ -43,8 +57,8 @@ manifest 数据中；其他硬件可显式覆盖并先把小规模校准报告�
 | 8 workers × 1 thread | 180/180 | 40.23 秒 | 4.47 games/s |
 | 当前 report-only 默认 8 × 1 | 180/180，0 error | 38.27 秒 | 4.70 games/s |
 
-GPU 动态 batch 原型曾达到 24.01 秒，但尚未具备通用 checkpoint 合同、正式 CLI、隔离测试和
-等价性验收，因此不是正式 Evaluation 路径。
+Frozen 双边 GPU dynamic batching 已进入正式 CLI；报告 manifest 分别记录 candidate/opponent
+inference mode、device、batch 参数，以及 Frozen pool/catalog/policy hash。
 
 需要 V8 setup/relay 语义指标时使用内置的 `auto_iteration_v8_setup_relay` profile
 （保留该名称作为兼容 ID），当前为 `revision 7`：
@@ -93,12 +107,16 @@ Evaluation 只负责指标测量、证据审计和可视化，不执行自动迭
 
 ## Package 与 catalog
 
-被评测卡组和 opponent 都必须是标准 package：根目录包含 `main.py`、60 行 `deck.csv` 和
-完整的 `cg/` runtime。`validate` 会打印 package 名称、deck hash、cg tree hash 与
-60-card 校验结果；任何预检、卡组或 cg hash 兼容错误都会在启动对局前退出。
+被评测 candidate 与 legacy opponent 必须是标准 package：根目录包含 `main.py`、60 行
+`deck.csv` 和完整的 `cg/` runtime。Frozen opponent 是特例：每个 deck identity 只保存
+`deck.csv` 与 manifest，共享 `_policy/` 的入口、模型和 `cg` identity。`validate` 会打印 package
+名称、deck hash、cg tree hash 与 60-card 校验结果；任何预检、卡组或 cg hash 兼容错误都会在
+启动对局前退出。
 
-唯一 opponent catalog 是 [`configs/opponents.json`](configs/opponents.json)。`all`
-按其中启用项的固定顺序选择，且 catalog 只能引用 `arena/opponents/`；传入逗号分隔名称时，
+默认 Frozen catalog 是 [`configs/frozen.json`](configs/frozen.json)，只引用
+`arena/frozen/` 下的 48 个轻量 exact-deck identity，并绑定 `arena/frozen/_policy/` 中唯一的
+Foundation package。legacy catalog 是 [`configs/opponents.json`](configs/opponents.json)。`all`
+按所选 catalog 启用项的固定顺序选择；传入逗号分隔名称时，
 只能选择 catalog 中已启用的项。新增的候选 opponent 先作为标准 package 放入
 `arena/candidates/<name>/`，完成验证并经用户确认后，才按实际关键宝可梦分配
 `<archetype>_<NN>` 正式名称并迁入 `arena/opponents/`。正式目录名使用 ASCII snake_case 和

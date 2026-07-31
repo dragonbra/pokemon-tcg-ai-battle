@@ -153,6 +153,8 @@ class EvaluationCliTests(unittest.TestCase):
         ):
             exit_code = cli.main(
                 [
+                    "--pool",
+                    "opponents",
                     "run",
                     "--candidate",
                     str(self.candidate.root),
@@ -214,6 +216,8 @@ class EvaluationCliTests(unittest.TestCase):
         ):
             exit_code = cli.main(
                 [
+                    "--pool",
+                    "opponents",
                     "run",
                     "--candidate",
                     str(self.candidate.root),

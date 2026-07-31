@@ -1,0 +1,15 @@
+{
+  "deck_id": "mega_kangaskhan_ex_crustle_008",
+  "deck_sha256": "c81ed99fdb4b3b6a36968586bed9208273e93123f4344f46decd3ad6783dc6fb",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Mega Kangaskhan ex / Crustle - External 08",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Pokemon Center Lady MEG 123 was unavailable in the official engine card catalog and was replaced, with user approval, by a second Xerosic's Machinations.",
+    "source": "user_provided_exact_deck"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "8c9f37e5842fc8a15628024fbeed0b543e2665c601afde0e61424c96a1319402"
+}

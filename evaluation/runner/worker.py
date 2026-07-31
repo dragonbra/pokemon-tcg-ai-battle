@@ -135,15 +135,21 @@ def _isolated_agent(
     return call
 
 
-def _remote_candidate_agent(socket_path: str):
+def _remote_policy_agent(
+    socket_path: str,
+    *,
+    deck: list[int],
+    role: str,
+):
     connection = Client(socket_path, family="AF_UNIX")
+    exact_deck = tuple(int(card_id) for card_id in deck)
 
     def call(observation: dict[str, Any]) -> Any:
-        connection.send({"observation": observation})
+        connection.send({"observation": observation, "deck": exact_deck})
         response = connection.recv()
         if not isinstance(response, dict) or not response.get("ok"):
             detail = response.get("error") if isinstance(response, dict) else response
-            raise RuntimeError(f"shared candidate inference failed: {detail}")
+            raise RuntimeError(f"shared {role} inference failed: {detail}")
         return response.get("action")
 
     return call
@@ -179,10 +185,19 @@ def _load_agents(request: GameRequest) -> tuple[Any, Any]:
     game_module = _load_game_api_with_runtime(request.candidate.root)
     candidate_exclusions = (request.opponent.root,)
     opponent_exclusions = (request.candidate.root,)
-    inference_socket = os.environ.get("EVALUATION_CANDIDATE_INFERENCE_SOCKET")
+    candidate_inference_socket = os.environ.get(
+        "EVALUATION_CANDIDATE_INFERENCE_SOCKET"
+    )
+    opponent_inference_socket = os.environ.get(
+        "EVALUATION_OPPONENT_INFERENCE_SOCKET"
+    )
     candidate_agent = None
-    if inference_socket:
-        candidate_agent = _remote_candidate_agent(inference_socket)
+    if candidate_inference_socket:
+        candidate_agent = _remote_policy_agent(
+            candidate_inference_socket,
+            deck=request.candidate.deck,
+            role="candidate",
+        )
     else:
         candidate_module = _load_agent_module(
             request.candidate,
@@ -194,15 +209,27 @@ def _load_agents(request: GameRequest) -> tuple[Any, Any]:
             candidate_module.agent,
             candidate_exclusions,
         )
-    opponent_module = _load_agent_module(
-        request.opponent,
-        "opponent",
-        opponent_exclusions,
-    )
+    if opponent_inference_socket:
+        opponent_agent = _remote_policy_agent(
+            opponent_inference_socket,
+            deck=request.opponent.deck,
+            role="opponent",
+        )
+    else:
+        opponent_module = _load_agent_module(
+            request.opponent,
+            "opponent",
+            opponent_exclusions,
+        )
+        opponent_agent = _isolated_agent(
+            request.opponent,
+            opponent_module.agent,
+            opponent_exclusions,
+        )
     return (
         game_module,
         candidate_agent,
-        _isolated_agent(request.opponent, opponent_module.agent, opponent_exclusions),
+        opponent_agent,
     )
 
 

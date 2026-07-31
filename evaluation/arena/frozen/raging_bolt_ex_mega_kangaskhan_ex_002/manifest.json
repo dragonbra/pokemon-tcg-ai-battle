@@ -1,0 +1,15 @@
+{
+  "deck_id": "raging_bolt_ex_mega_kangaskhan_ex_002",
+  "deck_sha256": "02d02fb28d5f445d6e1295dcb2b0c4e4e2b5c05c75db108749f69af8deb9ce51",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Raging Bolt ex / Mega Kangaskhan ex - External 02",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Retains the user's Raging Bolt identity while naming the four-copy Mega Kangaskhan ex line for exact-deck auditability.",
+    "source": "user_provided_exact_deck"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "84b8f099a50d20362793feb965b677c7e7d50d08cc48d585deb6678ade8fa830"
+}

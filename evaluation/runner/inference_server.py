@@ -1,9 +1,4 @@
-"""Small local policy inference server for isolated evaluation workers.
-
-The server is intentionally candidate-specific. It keeps the BC policy model in one
-long-lived process while each client connection represents one isolated game session.
-The official engine remains in the client worker process.
-"""
+"""Deck-routed persistent policy inference for isolated official-engine workers."""
 
 from __future__ import annotations
 
@@ -56,12 +51,22 @@ class PolicyServer:
         self._batch_size = batch_size
         self._batch_wait_seconds = batch_wait_ms / 1000.0
         self._requests: queue.Queue[_InferenceRequest] = queue.Queue()
-        self._encoders: dict[str, Any] = {}
+        self._default_deck = _normalize_request_deck(None, tuple(self._policy.deck))
+        self._encoders: dict[str, tuple[tuple[int, ...], Any]] = {}
         self._thread = threading.Thread(target=self._dispatch, daemon=True)
         self._thread.start()
 
-    def call(self, session_id: str, observation: dict[str, Any]) -> Any:
-        request = _InferenceRequest(session_id, observation)
+    def call(
+        self,
+        session_id: str,
+        observation: dict[str, Any],
+        deck: Any = None,
+    ) -> Any:
+        request = _InferenceRequest(
+            session_id,
+            observation,
+            _normalize_request_deck(deck, self._default_deck),
+        )
         self._requests.put(request)
         request.ready.wait()
         if request.error is not None:
@@ -97,7 +102,7 @@ class PolicyServer:
         ]
         for request in requests:
             if request not in model_requests:
-                request.action = self._agent(request.observation)
+                request.action = list(request.deck)
                 self._encoders.pop(request.session_id, None)
                 request.ready.set()
         if not model_requests:
@@ -120,10 +125,11 @@ class PolicyServer:
                 request.action = self._legal_fallback(observation)
                 request.ready.set()
                 continue
-            encoder = self._encoders.get(request.session_id)
+            cached = self._encoders.get(request.session_id)
+            encoder = cached[1] if cached is not None and cached[0] == request.deck else None
             if encoder is None or encoder.actor != actor:
-                encoder = self._encoder_type(actor, self._policy.deck, self._policy.config)
-                self._encoders[request.session_id] = encoder
+                encoder = self._encoder_type(actor, request.deck, self._policy.config)
+                self._encoders[request.session_id] = (request.deck, encoder)
             try:
                 row = encoder.encode(observation)
             except (IndexError, RuntimeError, ValueError):
@@ -181,10 +187,22 @@ def _stack_batches(torch: Any, rows: list[dict[str, Any]], device: Any) -> dict[
     return batch
 
 
+def _normalize_request_deck(value: Any, fallback: tuple[int, ...]) -> tuple[int, ...]:
+    deck = fallback if value is None else value
+    if (
+        not isinstance(deck, (list, tuple))
+        or len(deck) != 60
+        or not all(type(card_id) is int and card_id > 0 for card_id in deck)
+    ):
+        raise ValueError("inference request deck must contain exactly 60 positive integer card IDs")
+    return tuple(deck)
+
+
 @dataclass
 class _InferenceRequest:
     session_id: str
     observation: dict[str, Any]
+    deck: tuple[int, ...]
     action: Any = None
     error: BaseException | None = None
     ready: threading.Event = field(default_factory=threading.Event)
@@ -221,7 +239,7 @@ def _handle_connection(server: PolicyServer, connection: Any) -> None:
             request = connection.recv()
             if not isinstance(request, dict) or not isinstance(request.get("observation"), dict):
                 raise RuntimeError("invalid inference request")
-            action = server.call(session_id, request["observation"])
+            action = server.call(session_id, request["observation"], request.get("deck"))
             connection.send({"ok": True, "action": action})
     except (EOFError, OSError):
         pass

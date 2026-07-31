@@ -1,0 +1,15 @@
+{
+  "deck_id": "dragapult_ex_dusknoir_001",
+  "deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Dragapult ex / Dusknoir",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-30",
+    "evidence": "2026-07-30 Kaggle Top 100 exact deck; best rank 46; members 1",
+    "source": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "6d87785120c318e8595f86fd0a04619ff101d2ad8c9d0c2eb285485bb54af946"
+}

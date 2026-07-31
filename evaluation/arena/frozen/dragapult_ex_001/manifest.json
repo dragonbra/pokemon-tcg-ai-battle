@@ -1,0 +1,15 @@
+{
+  "deck_id": "dragapult_ex_001",
+  "deck_sha256": "6f784c7049ab4a4cfbc012c5bee8cc040d1030d54b4e572e4a4a9f35d0f6ea81",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Dragapult ex - Limitless",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Limitless base/unlisted Dragapult representative; the exact list contains a 1-1 Dunsparce/Dudunsparce tech line.",
+    "source": "https://labs.limitlesstcg.com/0063/player/546/decklist"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "1c2d541efc282bf13b6ec969bd0e72fbd7255e633efc998462354222eb2c0e1b"
+}

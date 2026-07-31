@@ -14,6 +14,7 @@ from evaluation.packages.loader import (
     load_submission_package,
 )
 from evaluation.cards import card_image_url, load_card_catalog
+from evaluation.frozen import FrozenCatalog, load_frozen_catalog
 from evaluation.metrics.profiles import available_metric_profiles
 from evaluation.runner.batch import BatchConfig, default_worker_count, run_batch
 from evaluation.runtime import assert_cg_compatible
@@ -23,6 +24,7 @@ EXPECTED_FIELDS = frozenset(
     {"name", "package", "display_name", "representative_card_ids", "enabled", "tags"}
 )
 DEFAULT_CATALOG = Path(__file__).resolve().parent / "configs" / "opponents.json"
+DEFAULT_FROZEN_CATALOG = Path(__file__).resolve().parent / "configs" / "frozen.json"
 ARENA_OPPONENTS_RELATIVE = Path("arena") / "opponents"
 DEFAULT_MAX_STEPS = 1_000
 MIN_RESEARCH_GAMES = 10
@@ -306,7 +308,13 @@ def _write_validation(package: SubmissionPackage) -> None:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="宝可梦 TCG 提交 package 评测")
-    parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
+    parser.add_argument(
+        "--pool",
+        choices=("frozen", "opponents"),
+        default="frozen",
+        help="评测池；默认使用共享 0019 Foundation 的 48-deck Frozen Arena",
+    )
+    parser.add_argument("--catalog", type=Path, default=None)
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("list-opponents", help="列出启用的 opponent")
 
@@ -362,7 +370,12 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument(
         "--candidate-device",
         default=None,
-        help="在共享推理服务中常驻 candidate，例如 cuda:0；默认仍在各 worker 的 CPU 推理",
+        help="在共享推理服务中常驻 candidate，例如 cuda:0；Frozen pool 默认 cuda:0",
+    )
+    run.add_argument(
+        "--opponent-device",
+        default=None,
+        help="Frozen Foundation 共享推理设备；Frozen pool 默认与 candidate 相同",
     )
     run.add_argument(
         "--candidate-batch-size",
@@ -392,8 +405,15 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _resolved_catalog(args: argparse.Namespace) -> Path:
+    if args.catalog is not None:
+        return args.catalog
+    return DEFAULT_FROZEN_CATALOG if args.pool == "frozen" else DEFAULT_CATALOG
+
+
 def _run(args: argparse.Namespace) -> str:
-    evaluation_root = args.catalog.resolve().parent.parent
+    catalog_path = _resolved_catalog(args)
+    evaluation_root = catalog_path.resolve().parent.parent
     official_card_ids = _load_official_card_ids(evaluation_root)
     _validate_positive(args.games, "--games")
     _validate_positive(args.max_steps, "--max-steps")
@@ -411,10 +431,13 @@ def _run(args: argparse.Namespace) -> str:
         if args.control is not None
         else None
     )
-    opponents = _selected_opponents(
-        args.opponents,
-        load_opponent_catalog(args.catalog, evaluation_root),
-    )
+    frozen_catalog: FrozenCatalog | None = None
+    if args.pool == "frozen":
+        frozen_catalog = load_frozen_catalog(catalog_path, evaluation_root)
+        available_opponents = frozen_catalog.opponents
+    else:
+        available_opponents = tuple(load_opponent_catalog(catalog_path, evaluation_root))
+    opponents = _selected_opponents(args.opponents, available_opponents)
     args.output, args.report_path = _evaluation_output_paths(args.output)
     _validate_research_coverage(
         args.opponents,
@@ -425,6 +448,10 @@ def _run(args: argparse.Namespace) -> str:
     for opponent in opponents:
         assert_cg_compatible(candidate, opponent)
 
+    candidate_device = args.candidate_device or ("cuda:0" if frozen_catalog else None)
+    opponent_device = (
+        (args.opponent_device or candidate_device) if frozen_catalog else None
+    )
     result = run_batch(
         BatchConfig(
             candidate=candidate,
@@ -441,9 +468,18 @@ def _run(args: argparse.Namespace) -> str:
             keep_temp=args.keep_temp,
             workers=args.workers if args.workers is not None else default_worker_count(),
             worker_cpu_threads=args.worker_cpu_threads,
-            candidate_inference_device=args.candidate_device,
+            candidate_inference_device=candidate_device,
             candidate_inference_batch_size=args.candidate_batch_size,
             candidate_inference_batch_wait_ms=args.candidate_batch_wait_ms,
+            opponent_inference_root=(frozen_catalog.policy.root if frozen_catalog else None),
+            opponent_inference_device=opponent_device,
+            opponent_pool_id=(frozen_catalog.pool_id if frozen_catalog else "legacy_opponents"),
+            opponent_catalog_sha256=(
+                frozen_catalog.manifest_sha256 if frozen_catalog else None
+            ),
+            opponent_policy_hash=(
+                frozen_catalog.policy.package_hash if frozen_catalog else None
+            ),
         )
     )
     return result.run_id
@@ -454,10 +490,20 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "list-opponents":
-            print("\n".join(list_enabled_opponents(args.catalog)))
+            catalog_path = _resolved_catalog(args)
+            if args.pool == "frozen":
+                evaluation_root = catalog_path.resolve().parent.parent
+                names = [
+                    package.name
+                    for package in load_frozen_catalog(catalog_path, evaluation_root).opponents
+                ]
+            else:
+                names = list_enabled_opponents(catalog_path)
+            print("\n".join(names))
             return 0
         if args.command == "validate":
-            evaluation_root = args.catalog.resolve().parent.parent
+            catalog_path = _resolved_catalog(args)
+            evaluation_root = catalog_path.resolve().parent.parent
             package = load_submission_package(
                 args.package,
                 _load_official_card_ids(evaluation_root),

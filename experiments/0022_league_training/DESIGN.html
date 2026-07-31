@@ -10,33 +10,27 @@ table{border-collapse:collapse;width:100%;margin:14px 0}th,td{border:1px solid v
 .card{border:1px solid var(--line);border-radius:8px;padding:16px;background:#fff}.gate{border-left:5px solid var(--blue)}.good{color:var(--green);font-weight:700}.warn{color:var(--amber);font-weight:700}
 </style></head><body>
 <h1>0022 League Training</h1>
-<p class="meta"><strong>当前阶段：</strong>V2 在 update 39 完整写入后因 CUDA illegal-memory-access 失败；update 35/39 的独立 Arena 均为 201-99（67.0%，0 error）。V10 CUDA canary 完成 512/512、0 error、48/48 Live deck update、Frozen/Live 各 96/96 和两个 League probe；V11 正式版本已从 update 39 分支启动 20 小时 League Training，并要求每个正式 update 覆盖 48 个 Live trajectory。</p>
-<p class="lede">验证共享 0019 Foundation encoder 下，48 套 League deck 是否能各自通过独立 decoder/value 和 on-policy PPO 一起进化，同时保留 Frozen 质量锚点。</p>
+<p class="meta"><strong>当前阶段：</strong>V11 已按用户要求在完整 update 81 后安全停止；最后一批由 source policy update 80 采集，512/512 finished、0 rollout error，并覆盖 48/48 Live trajectory。后续改为一次主训一个 focal deck，side decoder 只从自身真实轨迹作机会式更新。</p>
+<p class="lede">以固定 48-deck Frozen Arena 作为所有 checkpoint 的默认强度门禁；训练曲线和 Live cross-play 只作诊断。</p>
 
 <h2>当前合同</h2><div class="grid">
 <div class="card"><h3>Foundation</h3><p>严格绑定 0019 Epoch 13，17,756,162 参数，SHA-256 <code>da9b13d6…e5bb</code>；<code>source_id</code> 永远为 0，Encoder 长期冻结。</p></div>
-<div class="card"><h3>48 Frozen</h3><p>每套 exact deck 都有 Foundation decoder 质量锚点。训练期间永不更新，用于固定 greedy 回归评测。</p></div>
-<div class="card"><h3>48 Live</h3><p>每套拥有独立 Decoder/Value、trajectory、optimizer 和 model-only checkpoint。<code>dragapult_ex_001</code> 从 update 39 分支，其余 47 套从各自 update 0 开始并在完整 update 中独立更新。</p></div>
+<div class="card"><h3>48 Frozen</h3><p><code>evaluation/arena/frozen/</code> 保存一个 Foundation policy 和 48 个轻量 exact-deck identity。训练期间永不更新，是默认 greedy 回归评测池。</p></div>
+<div class="card"><h3>Focal + 47 Live</h3><p>一次只给一个 focal deck 主要采样与更新预算；其他 decoder 保留资产，并仅从自身真实 actor trajectory 作机会式更新。</p></div>
 <div class="card"><h3>Official engine</h3><p>每局在隔离 worker 中执行未修改 official runtime。CPU 负责状态转移，双方策略动作由父进程集中 GPU 推理。</p></div>
 </div>
 
-<h2>运行拓扑</h2><pre>isolated official-engine workers
-    │ 128 Torch-light workers · focal + opponent requests (5 ms coalesce)
-    ▼
-one resident GPU service
-    shared frozen Encoder ── one mixed batched forward
-       ├── focal Decoder/Value: stochastic behavior action
-       └── Foundation Decoder: greedy Frozen/Live-view opponent action
-    │ legal ordered action response
-    ▼
-terminal trajectories → per-deck routed GAE/PPO → decoder/value checkpoints</pre>
-<p>Live 与 Frozen 是同一 exact deck 的两种策略实例：Frozen 永不更新，Live 按自身 trajectory 更新。两种 view 用于记录质量锚点、调度、provenance 和策略漂移；共享 encoder 只保留一份，reference 也只复制 deck-local decoder/value，不在 GPU 上重复 48 份完整 encoder。</p>
+<h2>运行拓扑</h2><pre>isolated official-engine workers (CPU state transition)
+    ├── candidate requests → resident batched GPU service → candidate action
+    └── Frozen requests  → resident batched GPU service → Foundation action
+                             exact 60-card deck routed per session</pre>
+<p>48 个 Frozen identity 共用一个 0019 Foundation 模型与共享 Encoder；candidate 使用另一常驻 GPU 服务。因此所有策略决策都享受 GPU batching，一次评测只加载两份完整模型，而不是 49 份。官方 engine 仍是唯一状态转移来源。</p>
 
 <h2>模型与梯度</h2><table><thead><tr><th>组件</th><th>训练状态</th><th>参数/职责</th></tr></thead><tbody>
 <tr><td>Shared 0019 Encoder</td><td>冻结</td><td>卡牌、场面、资源、event、exact deck 与 legal option 表示；每次更新前后 SHA 必须一致</td></tr>
 <tr><td>Focal action decoder</td><td>训练</td><td>pointer key/query、option bias、decoder init、GRU decoder、STOP，共 1,027,202 参数</td></tr>
 <tr><td>Focal value head</td><td>训练</td><td>LayerNorm + 320→320→1 + Tanh，共 103,681 参数</td></tr>
-<tr><td>48 Live + 48 Frozen</td><td>V11 League</td><td>共享 encoder；每个 Live deck 独立 decoder/value、trajectory、optimizer；Frozen 只提供锚点</td></tr>
+<tr><td>Focal + 47 Live + 48 Frozen</td><td>focal-primary</td><td>focal 主训；side deck 机会式更新；Frozen 只提供不可变锚点</td></tr>
 </tbody></table>
 <p>每个可变 checkpoint 合计 1,130,883 参数，只包含 Decoder/Value tensor、Foundation/deck hash、policy role/version 和 update。optimizer、scheduler、GradScaler、RNG、rollout、replay 与完整 Foundation 一律不保存。</p>
 
@@ -44,8 +38,9 @@ terminal trajectories → per-deck routed GAE/PPO → decoder/value checkpoints<
 512 official-engine games / PPO update
 256 focal-first + 256 focal-second
 terminal reward: win +1 / loss -1 / draw 0, gamma = 1
-every 5 updates: 48 Frozen decks × both seats = 96 greedy games</pre>
-<p><code>rollout/source_policy_update=k</code> 表示对局由 update k 的 behavior policy 采集；该批 PPO 生成 <code>checkpoint/update=k+1</code>。正式 update 若缺失任一 Live deck 的真实 decision 则 fail closed。sampled rollout 胜率只作训练诊断，checkpoint 强度以独立 <code>eval/*</code> Frozen/Live greedy gates 和两个 League identity probes 为准。</p>
+diagnostic: 48 Frozen decks × both seats = 96 greedy games
+acceptance: 48 Frozen decks × 10 = 480 greedy games (5/seat)</pre>
+<p><code>rollout/source_policy_update=k</code> 表示对局由 update k 的 behavior policy 采集；该批 PPO 生成 <code>checkpoint/update=k+1</code>。sampled rollout 与 96-game probe 只作训练诊断；checkpoint 强度以 480 局 fixed Frozen Arena 为准。</p>
 
 <h2>PPO 目标</h2><table><thead><tr><th>项</th><th>合同</th></tr></thead><tbody>
 <tr><td>Policy</td><td>clipped surrogate，ratio clip 0.10</td></tr><tr><td>Value</td><td>GAE λ 0.95，value coefficient 0.5</td></tr>
@@ -83,7 +78,8 @@ rl_runs/0022_league_training/versions/V&lt;n&gt;_&lt;tag&gt;/
   wandb/
 experiments/0022_league_training/evaluation/V&lt;n&gt;_&lt;tag&gt;.html</pre>
 
-<h2>证据边界</h2><p>Frozen 胜率改善只能证明相对当前 48-deck anchor 的局部改进，不能证明全局最优。Live-view rollout、loss、KL 和 reward 不能冒充 checkpoint 强度。真正启用其他 Live deck 的 actor gradient、League 共进化、开放 Encoder 或加入新机制，均必须创建新的不可变版本并重新执行 smoke、Frozen gate 与设计同步。</p>
-<p class="warn">sampled rollout 胜率始终是 source policy 的训练诊断；Frozen/Live greedy gates 与 League 内两个固定 identity probes 才用于 checkpoint 强度判断。</p>
+<h2>Checkpoint 身份</h2><p>每套 deck 长期维护不可变 <code>foundation</code>、最新训练产物 <code>latest/challenger</code> 和通过 Frozen Arena 验收的 <code>champion</code>。latest 绝不自动覆盖 champion。</p>
+<h2>证据边界</h2><p>Frozen 胜率改善只能证明相对当前 48-deck anchor 的局部改进，不能证明全局最优。Live-view rollout、loss、KL 和 reward 不能冒充 checkpoint 强度。历史异构池仍可通过 <code>--pool opponents</code> 显式运行，作为 secondary external-generalization evidence。</p>
+<p class="warn">sampled rollout 与 96-game diagnostic 始终只是训练诊断；480-game Frozen Arena 才是标准 checkpoint 验收合同。</p>
 <p>完整字段、准入、风险与阶段说明见 <a href="DESIGN.md">DESIGN.md</a>；Frozen 起点见 <a href="frozen_baseline/index.html">frozen baseline</a>。</p>
 </body></html>

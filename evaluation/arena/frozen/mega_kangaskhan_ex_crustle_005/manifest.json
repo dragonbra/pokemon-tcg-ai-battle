@@ -1,0 +1,15 @@
+{
+  "deck_id": "mega_kangaskhan_ex_crustle_005",
+  "deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Mega Kangaskhan ex / Crustle",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-30",
+    "evidence": "2026-07-30 Kaggle Top 100 exact deck; best rank 55; members 2",
+    "source": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "7a2cfb1951f787503f5cfac90fdf88faf457ae4b564930207125f2d6d437cec1"
+}

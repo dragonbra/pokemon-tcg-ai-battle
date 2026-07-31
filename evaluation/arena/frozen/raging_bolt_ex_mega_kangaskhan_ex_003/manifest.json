@@ -1,0 +1,15 @@
+{
+  "deck_id": "raging_bolt_ex_mega_kangaskhan_ex_003",
+  "deck_sha256": "cb094a756dc32dfe8450372a44e3ff0e4c9cc71658217d0cecd0bc327680f351",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Raging Bolt ex / Mega Kangaskhan ex - External 03",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Three-copy Mega Kangaskhan ex Raging Bolt variant with Passimian and four Area Zero Underdepths.",
+    "source": "user_provided_exact_deck"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "98ab252bf513c1cb7e1aec900917d76a14bf2f84bdb9fc3b2ba1329c705bd813"
+}

@@ -219,6 +219,17 @@ class BatchRunnerTests(unittest.TestCase):
             CORE_METRIC_IDS,
         )
 
+    def test_frozen_pool_rejects_missing_two_sided_gpu_inference(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        config = replace(
+            self.make_config(candidate, (opponent,), games=1),
+            opponent_pool_id="0019_foundation_48_exact_decks_v1",
+        )
+
+        with self.assertRaisesRegex(ValueError, "both candidate and opponents"):
+            run_batch(config)
+
     def test_metric_refs_include_lightweight_payload_and_denominators(self) -> None:
         metric = GameMetric(
             "fixture",
@@ -705,7 +716,13 @@ class OverridePlugin:
         lock = threading.Lock()
 
         def fake_worker(
-            request, trace_path, _temp_root, _timeout_seconds, _cpu_threads, _inference_socket
+            request,
+            trace_path,
+            _temp_root,
+            _timeout_seconds,
+            _cpu_threads,
+            _candidate_inference_socket,
+            _opponent_inference_socket,
         ):
             nonlocal active, peak
             with lock:
@@ -796,7 +813,13 @@ class OverridePlugin:
         }
 
         def fake_worker(
-            request, trace_path, _temp_root, _timeout_seconds, _cpu_threads, _inference_socket
+            request,
+            trace_path,
+            _temp_root,
+            _timeout_seconds,
+            _cpu_threads,
+            _candidate_inference_socket,
+            _opponent_inference_socket,
         ):
             finished, winner, status, error_kind = outcomes[request.game_id]
             result = GameResult(

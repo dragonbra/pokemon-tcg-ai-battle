@@ -195,6 +195,7 @@ def _validate_agent_in_subprocess(entrypoint: Path, root: Path, deck: list[int])
     if environment.get("PYTHONPATH"):
         python_path.append(environment["PYTHONPATH"])
     environment["PYTHONPATH"] = os.pathsep.join(python_path)
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
     try:
         with _validation_success_pipe() as validation_read_fd:
             try:

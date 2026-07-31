@@ -1,0 +1,15 @@
+{
+  "deck_id": "ionos_bellibolt_ex_kilowattrel_01",
+  "deck_sha256": "7dc29ba6002f31aefaaacab06721d54e39b31e866b54c34e9b973d5133795f8c",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Iono's Bellibolt ex / Kilowattrel - Arena 01",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Exact copy of the enabled evaluation arena opponent deck; it is not part of the frozen Kaggle Top 100 snapshot.",
+    "source": "evaluation/arena/opponents/ionos_bellibolt_ex_kilowattrel_01/deck.csv"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "6ade952b9d5612e39f6f336d265c4b67382dcc34d033e502bf9cbc34c6810710"
+}

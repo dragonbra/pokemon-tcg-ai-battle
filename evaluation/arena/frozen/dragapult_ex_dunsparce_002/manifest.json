@@ -1,0 +1,15 @@
+{
+  "deck_id": "dragapult_ex_dunsparce_002",
+  "deck_sha256": "c49e78d7cb256803274aa87d2d783b17ca5e4a64bea41cbe616dfced953579b1",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Dragapult ex / Dudunsparce - External 02",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Two Dunsparce, two Dudunsparce, and one Dudunsparce ex draw and pivot package.",
+    "source": "user_provided_exact_deck"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "3190a820911fb7192cca8bc95afd95ae57dc3767e98ba749967a4ff966e6a178"
+}

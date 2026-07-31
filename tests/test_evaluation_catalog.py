@@ -80,7 +80,14 @@ class EvaluationCatalogTests(unittest.TestCase):
 
     def test_cli_lists_exactly_enabled_names(self) -> None:
         result = subprocess.run(
-            [sys.executable, "-m", "evaluation", "list-opponents"],
+            [
+                sys.executable,
+                "-m",
+                "evaluation",
+                "--pool",
+                "opponents",
+                "list-opponents",
+            ],
             cwd=ROOT,
             capture_output=True,
             text=True,

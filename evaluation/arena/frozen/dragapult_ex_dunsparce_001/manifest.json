@@ -1,0 +1,15 @@
+{
+  "deck_id": "dragapult_ex_dunsparce_001",
+  "deck_sha256": "3edb78cf7f3c83fbf282c4f74832c5b0668a0b7f2f76f6dcbbe01bf15b211d92",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Dragapult ex / Dunsparce",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-30",
+    "evidence": "2026-07-30 Kaggle Top 100 exact deck; best rank 69; members 1",
+    "source": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "4c8c1806037b563f9658d4321f3586ecd44fcab97c61bfd20157070c5f48ad8a"
+}

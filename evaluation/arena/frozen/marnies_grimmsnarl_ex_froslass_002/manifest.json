@@ -1,0 +1,15 @@
+{
+  "deck_id": "marnies_grimmsnarl_ex_froslass_002",
+  "deck_sha256": "978ab31c50aa7fdaf11e38ba108cf0eda7fab6ca3597bfa3b45a7f74cd6a9327",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Marnie's Grimmsnarl ex / Froslass",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-30",
+    "evidence": "2026-07-30 Kaggle Top 100 exact deck; best rank 7; members 1",
+    "source": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "913adeba20ab09dc3703f7e04a68b7edfa170b6a12ba5b8158d55c95913a35ba"
+}

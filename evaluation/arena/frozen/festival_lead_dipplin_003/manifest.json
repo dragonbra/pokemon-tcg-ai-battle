@@ -1,0 +1,15 @@
+{
+  "deck_id": "festival_lead_dipplin_003",
+  "deck_sha256": "5adce4b9b664bbee40748fd146283877db16189ee0baf8dce0ab8d5ab44e2302",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Festival Lead / Dipplin - External 03",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at": "2026-07-31",
+    "evidence": "Festival Grounds list with the Grookey-Thwackey engine and Rabsca line; reprints use the official engine's canonical Card IDs.",
+    "source": "user_provided_exact_deck"
+  },
+  "schema_version": "evaluation_frozen_deck_v1",
+  "source_plugin_sha256": "e47558e3671197e3c74906b28ab5b39b0d62b7fd3b3cbb7ad1dfdee72b955198"
+}
