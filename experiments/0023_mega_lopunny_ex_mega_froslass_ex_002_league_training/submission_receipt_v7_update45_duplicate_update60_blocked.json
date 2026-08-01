@@ -1,0 +1,41 @@
+{
+  "competition": "pokemon-tcg-ai-battle",
+  "submitted_at_local": "2026-08-02T00:23:40+08:00",
+  "message": "長耳兎よ、健やかに駆け抜けて。Abraの知恵とメガミミロップの力で、一手一手を勝利へつなげよう。",
+  "requested_order": [
+    "0023_mega_lopunny_ex_001_v7_update45",
+    "0023_mega_lopunny_ex_001_v7_update60"
+  ],
+  "submissions": [
+    {
+      "candidate": "0023_mega_lopunny_ex_001_v7_update45",
+      "archive_path": "archive/submission/dist/0023_mega_lopunny_ex_001_v7_update45.tar.gz",
+      "archive_sha256": "78d772a9408af53d21a74377323021eaef39f3784a71b2140746c3d99945d2f4",
+      "submission_ref": "55166627",
+      "status": "COMPLETE",
+      "public_score": 600.0
+    },
+    {
+      "candidate": "0023_mega_lopunny_ex_001_v7_update45",
+      "archive_path": "archive/submission/dist/0023_mega_lopunny_ex_001_v7_update45.tar.gz",
+      "archive_sha256": "78d772a9408af53d21a74377323021eaef39f3784a71b2140746c3d99945d2f4",
+      "submission_ref": "55166649",
+      "status": "COMPLETE",
+      "public_score": 600.0,
+      "note": "Duplicate U45 submission created while confirming the first upload; this consumed the last daily submission slot."
+    }
+  ],
+  "blocked": [
+    {
+      "candidate": "0023_mega_lopunny_ex_001_v7_update60",
+      "archive_path": "archive/submission/dist/0023_mega_lopunny_ex_001_v7_update60.tar.gz",
+      "archive_sha256": "8dc1300e0a4b38891277edc22ba90bf4f7e6136f4e6c5e6ee46a1106b84283ae",
+      "reason": "Kaggle daily submission quota exhausted after duplicate U45 submission.",
+      "quota_after": {
+        "limit": 5,
+        "used": 5,
+        "remaining": 0
+      }
+    }
+  ]
+}

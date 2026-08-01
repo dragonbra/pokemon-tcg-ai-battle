@@ -465,6 +465,14 @@
       "source_kind": "limitless_champion_exact_deck"
     },
     {
+      "directory": "mega_lopunny_ex_mega_froslass_ex_002",
+      "deck_sha256": "7fb1536b191c0e0ff5f8819c674ba784e9e0b77927b58b3faea423db66b90e8b",
+      "short_hash": "7fb1536b191c",
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "catalog_label": "Mega Lopunny ex / Mega Froslass ex 002",
+      "source_kind": "user_provided_exact_deck"
+    },
+    {
       "directory": "mega_lucario_ex_solrock_002",
       "deck_sha256": "ff157aaa919099f08416952659f4bc7b203589288ccb477da67c2b245107a514",
       "short_hash": "ff157aaa9190",

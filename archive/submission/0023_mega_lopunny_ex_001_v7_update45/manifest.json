@@ -1,0 +1,12 @@
+{
+  "candidate": "0023_mega_lopunny_ex_001_v7_update45",
+  "deck_id": "mega_lopunny_ex_001",
+  "deck_sha256": "f03203e5bc6fc1cd4c29b4e3e728f360d37abe55aaaf34a73b053085dbe21553",
+  "decoder_checkpoint": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/live/mega_lopunny_ex_001/update-000045.pt",
+  "decoder_sha256": "8c986dd7796e1e103b77cf6e8fc561a1303f4b3731eae79185e67a0d569e4cee",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "model_only": true,
+  "policy_role": "live_snapshot",
+  "schema_version": "0023_arena_candidate_v1",
+  "update": 45
+}

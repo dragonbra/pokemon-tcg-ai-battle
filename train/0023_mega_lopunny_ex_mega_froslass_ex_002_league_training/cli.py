@@ -62,6 +62,10 @@ def build_parser() -> argparse.ArgumentParser:
     league.add_argument("--games-per-update", type=int, default=512)
     league.add_argument("--frozen-eval-interval", type=int, default=5)
     league.add_argument("--max-updates", type=int)
+    league.add_argument(
+        "--initial-version",
+        help="Initialize Live decks from a prior 0023 version checkpoint instead of 0022 V11.",
+    )
     league.add_argument("--deck-root", type=Path, default=DEFAULT_DECK_ROOT)
     return parser
 
@@ -100,7 +104,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             version=args.version, device=args.device, workers=args.workers,
             coalesce_ms=args.coalesce_ms, games_per_update=args.games_per_update,
             frozen_eval_interval=args.frozen_eval_interval,
-        ), deck_root=args.deck_root, max_updates=args.max_updates)
+        ), deck_root=args.deck_root, max_updates=args.max_updates,
+            initial_version=args.initial_version)
     else:
         return run_training(LeagueTrainingConfig(
             version=args.version, device=args.device, workers=args.workers,

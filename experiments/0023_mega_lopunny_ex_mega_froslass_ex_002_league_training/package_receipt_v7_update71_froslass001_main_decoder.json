@@ -1,0 +1,19 @@
+{
+  "archive_bytes": 68070257,
+  "archive_path": "archive/submission/dist/0023_mega_lopunny_ex_mega_froslass_ex_001_v7_update71_main_decoder.tar.gz",
+  "archive_sha256": "f082b0e2d9e1de8cc8ea69d67e9b2a2b6da47243df138e976862d4e6dee3bcf0",
+  "candidate": "0023_mega_lopunny_ex_mega_froslass_ex_001_v7_update71_main_decoder",
+  "deck_id": "mega_lopunny_ex_mega_froslass_ex_001",
+  "decoder": "main mega_lopunny_ex_001 update71 cross-loaded",
+  "frozen_eval": {
+    "draws": 0,
+    "losses": 154,
+    "marnie_losses": 23,
+    "marnie_win_rate": 0.6714285714285714,
+    "marnie_wins": 47,
+    "win_rate": 0.692,
+    "wins": 346
+  },
+  "smoke": "/tmp/tmp3xnvhlfi/pkg/strategy/model_source/base_model.py:377: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True\n  self.encoder = nn.TransformerEncoder(\n/tmp/tmp3xnvhlfi/pkg/strategy/model_source/ac_model.py:153: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True\n  self.event_encoder = nn.TransformerEncoder(\n/tmp/tmp3xnvhlfi/pkg/strategy/model_source/r2_model.py:79: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True\n  self.scenario_encoder = nn.TransformerEncoder(\nsmoke_ok 60",
+  "source_checkpoint": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/artifact/cross_decoder_checkpoints/mega_lopunny_ex_mega_froslass_ex_001__main_mega_lopunny_ex_001_update-000071.pt"
+}

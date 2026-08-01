@@ -1,15 +1,16 @@
-# 0023 Mega Lopunny ex / Mega Froslass ex 002 League Training
+# 0023 Mega Lopunny ex Limitless Focal / Mega Froslass ex League Training
 
 Updated: 2026-08-01
 
 ## 1. Objective
 
-0023 is a focal-primary continuation of 0022. Its only focal deck is
-`mega_lopunny_ex_mega_froslass_ex_002`, exact deck SHA-256
-`7fb1536b191c0e0ff5f8819c674ba784e9e0b77927b58b3faea423db66b90e8b`.
-The run remains active until the user explicitly stops it, or a fail-closed CUDA,
-official-engine, nonfinite-training, or SSD guard stops it. Twenty GPU hours is a
-durability milestone, not a deadline.
+0023 is a focal-primary continuation of 0022. The next focal deck is the user-provided
+Limitless champion list `mega_lopunny_ex_001`, exact deck SHA-256
+`f03203e5bc6fc1cd4c29b4e3e728f360d37abe55aaaf34a73b053085dbe21553`; it includes one Abra.
+The 50-deck League catalog remains unchanged, with the former focal
+`mega_lopunny_ex_mega_froslass_ex_002` retained as a Live opponent. V7 is requested to run for
+at least 24 GPU hours, or until a fail-closed CUDA, official-engine, nonfinite-training, SSD,
+or explicit user stop condition occurs.
 
 The strength objective is improved fixed-seed, balanced-seat performance against
 the immutable 50-deck Frozen Arena. Sampled rollout and Live-pool results are
@@ -76,16 +77,12 @@ isolated decoder/value branches.
 
 ## 4. Exact Initialization Contract
 
-0022 V11 stopped after the complete publication of update 81. Its catalog contains
-48 decks. 0023 resolves initialization by exact deck ID and exact deck SHA:
-
-- all 48 prior catalog members load their own
-  `V11_multidecoder_league_20h/checkpoint/live/<deck>/update-000081.pt`;
-- `mega_lopunny_ex_001` was added later and starts from the 0019 Foundation;
-- focal `mega_lopunny_ex_mega_froslass_ex_002` was added later and starts from the
-  0019 Foundation;
-- a prior catalog member with a missing update-81 checkpoint is a launch error;
-- a reused deck ID with a changed exact-deck SHA is a launch error.
+V6 stopped after writing update 13 because its official-engine rollout gate failed. V7 deliberately
+inherits every current Live decoder by exact deck ID and exact deck SHA from
+`V6_from_v2_update3_20h_gpu_resume/checkpoint/live/<deck>/update-000013.pt`, including the new
+Limitless focal `mega_lopunny_ex_001`. No V7 deck is initialized from Foundation, and a missing,
+malformed, or hash-mismatched update-13 checkpoint is a launch error. The V6 failure remains a
+provenance fact and is not strength evidence; V7 begins a new version with fresh optimizers.
 
 The accepted 0022 Dragapult strength checkpoint remains update 75. This is
 provenance for the 0022 result, while Live continuation uses each deck's final
@@ -103,8 +100,8 @@ Each deck receives its own new AdamW optimizer. Optimizer state is never inherit
 or serialized. Each deck's fixed reference policy is a frozen copy of its exact
 0023 update-0 decoder/value state:
 
-- inherited deck reference: that deck's 0022 update-81 state;
-- new deck reference: 0019 Foundation decoder plus newly initialized value head.
+- inherited deck reference: that deck's V6 update-13 state;
+- every V7 deck, including the focal Limitless deck, receives its own copied update-0 reference.
 
 The reference is not the behavior snapshot and is not reset every update. PPO also
 constructs a per-update frozen behavior snapshot for ratio/KL calculations. These

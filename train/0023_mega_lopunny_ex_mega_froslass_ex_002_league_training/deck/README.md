@@ -2,7 +2,7 @@
 
 The Kaggle section of this catalog is generated from the frozen 2026-07-30 daily report. Its 32 unique full `deck_sha256` values account for all 100 audited leaderboard rows. Kaggle rank, score, usage count, W-L-D, and effective win rate apply only to those 32 decks.
 
-The catalog also contains sixteen separately identified external references:
+The catalog also contains eighteen separately identified external references:
 
 - `dragapult_ex_001`: Andrew Hedrick's Los Angeles-winning Limitless list. The exact list includes a 1-1 Dunsparce/Dudunsparce tech line.
 - `ionos_bellibolt_ex_kilowattrel_01`: an exact copy of the enabled official-engine arena opponent, useful as a stable benchmark target.
@@ -20,6 +20,8 @@ The catalog also contains sixteen separately identified external references:
 - `marnies_grimmsnarl_ex_froslass_limitless`: the user-designated Limitless Marnie's Grimmsnarl ex / Froslass list.
 - `mega_kangaskhan_ex_crustle_008`: the user-provided control list with Pokemon Center Lady replaced by a second Xerosic's Machinations because the former is absent from the official engine card catalog.
 - `festival_lead_dipplin_003`: the user-provided Festival Grounds list with the Grookey-Thwackey engine and Rabsca line.
+- `mega_lopunny_ex_001`: the user-provided Limitless champion Mega Lopunny ex list.
+- `mega_lopunny_ex_mega_froslass_ex_002`: the user-provided Mega Lopunny ex / Mega Froslass ex focal list for project 0023.
 
 External references do not increase `unique_full_hashes` and are not assigned Kaggle snapshot rank, score, usage, or win-rate values. Every `deck.csv` contains exactly 60 engine Card IDs. Use `index.html` for readable card names, images, provenance, leaderboard evidence where available, and aggregate records.
 

@@ -21,7 +21,10 @@ from ..training.batch import _episode_gae, prepare_episodes
 from ..cli import build_parser
 from ..training.run import LeagueTrainingConfig, StopRequest, compose_training_config, schedule_jobs
 from ..training import league_run
-from ..training.league_run import resolve_initial_checkpoint_map
+from ..training.league_run import (
+    resolve_initial_checkpoint_map,
+    resolve_project_version_checkpoint_map,
+)
 from ..decks import load_deck_plugins
 from ..league import DEFAULT_DECK_ROOT
 
@@ -39,11 +42,11 @@ def _episode(update: int, reward: float) -> EpisodeTrajectory:
 
 
 class LeagueTrainingTest(unittest.TestCase):
-    def test_curated_catalog_has_exact_mega_lopunny_froslass_focal(self) -> None:
+    def test_curated_catalog_uses_limitless_mega_lopunny_focal(self) -> None:
         plugins = load_deck_plugins(DEFAULT_DECK_ROOT)
         self.assertEqual(
             [plugin.deck_id for plugin in plugins if plugin.focal],
-            ["mega_lopunny_ex_mega_froslass_ex_002"],
+            ["mega_lopunny_ex_001"],
         )
 
     def test_initialization_inherits_prior_member_and_foundation_initializes_new_deck(self) -> None:
@@ -111,6 +114,49 @@ class LeagueTrainingTest(unittest.TestCase):
             with self.assertRaisesRegex(FileNotFoundError, "lacks update-81"):
                 resolve_initial_checkpoint_map((plugin,), previous_root=root)
 
+    def test_existing_0023_version_checkpoint_can_initialize_restart(self) -> None:
+        plugin = next(
+            item for item in load_deck_plugins(DEFAULT_DECK_ROOT)
+            if item.deck_id == "mega_lopunny_ex_mega_froslass_ex_002"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "artifact").mkdir()
+            (root / "artifact/status.json").write_text(
+                json.dumps({"checkpoint_update": 3, "state": "failed"}),
+                encoding="utf-8",
+            )
+            (root / "artifact/league_catalog.json").write_text(
+                json.dumps({"decks": [{
+                    "deck_id": plugin.deck_id,
+                    "deck_sha256": plugin.deck_sha256,
+                }]}),
+                encoding="utf-8",
+            )
+            checkpoint = (
+                root / "checkpoint/live" / plugin.deck_id / "update-000003.pt"
+            )
+            checkpoint.parent.mkdir(parents=True)
+            checkpoint.touch()
+            decoder_audit = SimpleNamespace(
+                update=3,
+                checkpoint_sha256="c" * 64,
+                deck_sha256=plugin.deck_sha256,
+                foundation_sha256="d" * 64,
+            )
+            with patch.object(
+                league_run,
+                "load_decoder_checkpoint",
+                return_value=decoder_audit,
+            ):
+                paths, audit, metadata = resolve_project_version_checkpoint_map(
+                    (plugin,), source_version="V2_source", source_root=root,
+                )
+            self.assertEqual(paths[plugin.deck_id], checkpoint)
+            self.assertEqual(audit[plugin.deck_id]["source_update"], 3)
+            self.assertEqual(audit[plugin.deck_id]["source_status_state"], "failed")
+            self.assertEqual(metadata["source_version"], "V2_source")
+
     def test_formal_config_preserves_initialized_decoder_assets(self) -> None:
         initial = {"checkpoints": {"deck": {"decoder_ref": "x"}}, "catalog": {"deck_count": 48}}
         result = compose_training_config(
@@ -130,6 +176,13 @@ class LeagueTrainingTest(unittest.TestCase):
         ])
         self.assertEqual(args.workers, 64)
         self.assertEqual(args.coalesce_ms, 5.0)
+
+    def test_league_cli_accepts_initial_version(self) -> None:
+        args = build_parser().parse_args([
+            "train-league", "--version", "V4_restart",
+            "--initial-version", "V2_source",
+        ])
+        self.assertEqual(args.initial_version, "V2_source")
 
     def test_worker_benchmark_cli_requires_explicit_output(self) -> None:
         args = build_parser().parse_args([

@@ -1,0 +1,19 @@
+{
+  "note": "Strict decoder payloads use target deck metadata and main mega_lopunny_ex_001 decoder weights. Cross-load evaluation only.",
+  "records": [
+    {
+      "checkpoint": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/artifact/cross_decoder_checkpoints/mega_lopunny_ex_mega_froslass_ex_001__main_mega_lopunny_ex_001_update-000071.pt",
+      "sha256": "f8184d5850a8dd5cf8069326fd6749ad8d8c8544dd5915ebeebf8942278f7cc0",
+      "source_decoder_deck_id": "mega_lopunny_ex_001",
+      "target_deck_id": "mega_lopunny_ex_mega_froslass_ex_001"
+    },
+    {
+      "checkpoint": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/artifact/cross_decoder_checkpoints/mega_lopunny_ex_mega_froslass_ex_002__main_mega_lopunny_ex_001_update-000071.pt",
+      "sha256": "9d11cc4142a218a07cd68f5248eb39edbf98ef45358a5478a889e224829ec0f1",
+      "source_decoder_deck_id": "mega_lopunny_ex_001",
+      "target_deck_id": "mega_lopunny_ex_mega_froslass_ex_002"
+    }
+  ],
+  "update": 71,
+  "version": "V7_from_v6_limitless_focal_24h"
+}

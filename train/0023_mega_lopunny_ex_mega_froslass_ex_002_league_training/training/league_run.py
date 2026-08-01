@@ -120,6 +120,92 @@ def resolve_initial_checkpoint_map(
     return checkpoints, audit
 
 
+def resolve_project_version_checkpoint_map(
+    plugins: tuple[DeckPlugin, ...], *, source_version: str,
+    source_root: Path | None = None,
+) -> tuple[dict[str, Path | None], dict[str, dict[str, object]], dict[str, object]]:
+    """Resolve every current Live deck from a prior 0023 version checkpoint."""
+    version_root = source_root or Path("rl_runs") / PROJECT_ID / "versions" / source_version
+    status_path = version_root / "artifact/status.json"
+    catalog_path = version_root / "artifact/league_catalog.json"
+    if not status_path.is_file() or not catalog_path.is_file():
+        raise FileNotFoundError(f"source League version is incomplete: {version_root}")
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+    raw_update = status.get("checkpoint_update", status.get("last_complete_update"))
+    if raw_update is None:
+        raise ValueError(f"source League version lacks checkpoint_update: {version_root}")
+    source_update = int(raw_update)
+    if source_update < 0:
+        raise ValueError(f"source League checkpoint_update is invalid: {source_update}")
+    catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+    records = catalog.get("decks")
+    if not isinstance(records, list):
+        raise ValueError("source League catalog has no deck list")
+    prior = {
+        str(record["deck_id"]): record
+        for record in records
+        if isinstance(record, dict) and isinstance(record.get("deck_id"), str)
+    }
+    current = {plugin.deck_id: plugin for plugin in plugins}
+    missing_current = sorted(set(prior) - set(current))
+    missing_source = sorted(set(current) - set(prior))
+    if missing_current or missing_source:
+        raise ValueError(
+            "source League catalog differs from current 0023 catalog: "
+            f"missing_current={missing_current}, missing_source={missing_source}"
+        )
+
+    checkpoints: dict[str, Path | None] = {}
+    audit: dict[str, dict[str, object]] = {}
+    for plugin in plugins:
+        prior_record = prior[plugin.deck_id]
+        prior_deck_sha = str(prior_record.get("deck_sha256"))
+        if prior_deck_sha != plugin.deck_sha256:
+            raise ValueError(
+                f"source League exact deck changed for {plugin.deck_id}: "
+                f"{prior_deck_sha} != {plugin.deck_sha256}"
+            )
+        checkpoint = (
+            version_root / "checkpoint/live" / plugin.deck_id
+            / f"update-{source_update:06d}.pt"
+        )
+        if source_update == 0:
+            checkpoint = version_root / "checkpoint/decks" / f"{plugin.deck_id}.pt"
+        if not checkpoint.is_file():
+            raise FileNotFoundError(
+                f"source League version lacks update-{source_update}: {plugin.deck_id}"
+            )
+        checkpoint_audit = load_decoder_checkpoint(
+            checkpoint,
+            expected_foundation_sha256=str(
+                status.get("foundation_sha256") or EXPECTED_WEIGHTS_SHA256
+            ),
+            expected_deck_id=plugin.deck_id,
+            expected_deck_sha256=plugin.deck_sha256,
+        )
+        if checkpoint_audit.update != source_update:
+            raise ValueError(f"source checkpoint update mismatch for {plugin.deck_id}")
+        checkpoints[plugin.deck_id] = checkpoint
+        audit[plugin.deck_id] = {
+            "initialization": "inherited_0023_version",
+            "source_project": PROJECT_ID,
+            "source_version": source_version,
+            "source_update": checkpoint_audit.update,
+            "source_checkpoint": str(checkpoint),
+            "source_checkpoint_sha256": checkpoint_audit.checkpoint_sha256,
+            "source_status_state": status.get("state"),
+            "deck_sha256": checkpoint_audit.deck_sha256,
+            "foundation_sha256": checkpoint_audit.foundation_sha256,
+        }
+    metadata = {
+        "source_project": PROJECT_ID,
+        "source_version": source_version,
+        "source_update": source_update,
+        "source_status_state": status.get("state"),
+    }
+    return checkpoints, audit, metadata
+
+
 def _materialized_checkpoint_map(initialized: dict[str, object]) -> dict[str, str]:
     records = initialized.get("checkpoints")
     if not isinstance(records, dict):
@@ -260,6 +346,7 @@ def _prune_live_checkpoints(
 def run_league_training(
     config: LeagueTrainingConfig, *, deck_root: Path = DEFAULT_DECK_ROOT,
     max_updates: int | None = None,
+    initial_version: str | None = None,
 ) -> int:
     if (
         config.games_per_update < 1
@@ -277,7 +364,20 @@ def run_league_training(
     if focal.deck_id != FOCAL_DECK_ID:
         raise ValueError(f"0023 focal deck must be {FOCAL_DECK_ID}, got {focal.deck_id}")
     identity = verify_foundation()
-    initial_sources, initialization_audit = resolve_initial_checkpoint_map(plugins)
+    if initial_version is None:
+        initial_sources, initialization_audit = resolve_initial_checkpoint_map(plugins)
+        initialization_source = {
+            "source_project": "0022_league_training",
+            "source_version": PREVIOUS_VERSION,
+            "source_update": PREVIOUS_COMPLETE_UPDATE,
+            "source_status_state": "completed",
+        }
+    else:
+        initial_sources, initialization_audit, initialization_source = (
+            resolve_project_version_checkpoint_map(
+                plugins, source_version=initial_version,
+            )
+        )
     for record in initialization_audit.values():
         if record["initialization"] == "foundation":
             record["foundation_sha256"] = identity.weights_sha256
@@ -292,15 +392,16 @@ def run_league_training(
     initialized = json.loads(paths.config.read_text(encoding="utf-8"))
     initialization_audit_path = paths.artifact / "initialization_audit.json"
     inherited_count = sum(
-        record["initialization"] == "inherited_live"
+        record["initialization"] in {"inherited_live", "inherited_0023_version"}
         for record in initialization_audit.values()
     )
     foundation_count = len(initialization_audit) - inherited_count
     _atomic_json(initialization_audit_path, {
         "schema_version": "0023_live_initialization_audit_v1",
-        "previous_project": "0022_league_training",
-        "previous_version": PREVIOUS_VERSION,
-        "previous_complete_update": PREVIOUS_COMPLETE_UPDATE,
+        "previous_project": initialization_source["source_project"],
+        "previous_version": initialization_source["source_version"],
+        "previous_complete_update": initialization_source["source_update"],
+        "source_status_state": initialization_source["source_status_state"],
         "accepted_0022_focal_update": ACCEPTED_0022_FOCAL_UPDATE,
         "focal_deck_id": FOCAL_DECK_ID,
         "inherited_live_count": inherited_count,
@@ -321,7 +422,10 @@ def run_league_training(
         "initialization_summary": {
             "inherited_live_count": inherited_count,
             "foundation_initialized_count": foundation_count,
-            "previous_complete_update": PREVIOUS_COMPLETE_UPDATE,
+            "previous_complete_update": initialization_source["source_update"],
+            "source_project": initialization_source["source_project"],
+            "source_version": initialization_source["source_version"],
+            "source_status_state": initialization_source["source_status_state"],
         },
         "probe_deck_ids": [
             "alakazam_dudunsparce_001",
@@ -366,8 +470,12 @@ def run_league_training(
         "foundation_verified": True,
         "focal_deck_id": FOCAL_DECK_ID,
         "continuous_until_explicit_stop": True,
-        "previous_league_version": PREVIOUS_VERSION,
-        "previous_complete_update": PREVIOUS_COMPLETE_UPDATE,
+        "previous_league_version": initialization_source["source_version"],
+        "previous_complete_update": initialization_source["source_update"],
+        "initial_source_project": initialization_source["source_project"],
+        "initial_source_version": initialization_source["source_version"],
+        "initial_source_update": initialization_source["source_update"],
+        "initial_source_status_state": initialization_source["source_status_state"],
         "inherited_live_count": inherited_count,
         "foundation_initialized_count": foundation_count,
         "deck_count": len(plugins),
@@ -511,8 +619,12 @@ def run_league_training(
             "stop_signal": stop.signal_number,
             "foundation_sha256": identity.weights_sha256,
             "focal_deck_id": FOCAL_DECK_ID,
-            "previous_league_version": PREVIOUS_VERSION,
-            "previous_complete_update": PREVIOUS_COMPLETE_UPDATE,
+            "previous_league_version": initialization_source["source_version"],
+            "previous_complete_update": initialization_source["source_update"],
+            "initial_source_project": initialization_source["source_project"],
+            "initial_source_version": initialization_source["source_version"],
+            "initial_source_update": initialization_source["source_update"],
+            "initial_source_status_state": initialization_source["source_status_state"],
             "deck_count": len(plugins),
         }
         _atomic_json(paths.summary, summary)
@@ -530,4 +642,8 @@ def run_league_training(
         stop.restore()
 
 
-__all__ = ["resolve_initial_checkpoint_map", "run_league_training"]
+__all__ = [
+    "resolve_initial_checkpoint_map",
+    "resolve_project_version_checkpoint_map",
+    "run_league_training",
+]

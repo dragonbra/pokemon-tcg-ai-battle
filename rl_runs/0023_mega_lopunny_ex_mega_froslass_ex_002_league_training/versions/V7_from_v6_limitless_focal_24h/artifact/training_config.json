@@ -1,0 +1,744 @@
+{
+  "catalog": {
+    "deck_count": 50,
+    "focal_deck_ids": [
+      "mega_lopunny_ex_001"
+    ],
+    "frozen_count": 50,
+    "live_count": 50,
+    "path": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/artifact/league_catalog.json",
+    "sha256": "630608d32d61a759a6e068944ec65c6f24db9d97aadd3680d5c5c55c8ab931c9"
+  },
+  "checkpoints": {
+    "alakazam_dudunsparce_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/alakazam_dudunsparce_001.pt",
+      "decoder_sha256": "4a70f8fe7a2317221dde067661961d0e9ba88f258cb1c7e5fc296db1d0ac7a10",
+      "initialization_seed": 1955746180,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/alakazam_dudunsparce_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "alakazam_dudunsparce_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/alakazam_dudunsparce_002.pt",
+      "decoder_sha256": "eceb90485d35fafec5819cbd5d3ccab36ffa00045e42e316e377608e68576456",
+      "initialization_seed": 753743423,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/alakazam_dudunsparce_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "alakazam_dudunsparce_003": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/alakazam_dudunsparce_003.pt",
+      "decoder_sha256": "5b7faeb0d9701ab42e8e65638de4bf6a8f185d684deec3965747ac4550f7978d",
+      "initialization_seed": 442449282,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/alakazam_dudunsparce_003/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "arboliva_ex_meganium_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/arboliva_ex_meganium_001.pt",
+      "decoder_sha256": "f13fa4b703d41552e78f08b0fbde58b2db24089d657499eb3690d9c144423c04",
+      "initialization_seed": 1353879781,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/arboliva_ex_meganium_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "archaludon_ex_cinderace_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/archaludon_ex_cinderace_001.pt",
+      "decoder_sha256": "21a4fc9e8f77167da1977ba2ec9e17d556b12ca49d5296e9e53a15af5210584a",
+      "initialization_seed": 258204659,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/archaludon_ex_cinderace_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "crustle_cornerstone_mask_ogerpon_ex_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/crustle_cornerstone_mask_ogerpon_ex_001.pt",
+      "decoder_sha256": "4b5437d776b651466bace9eea3c9817d1d569c2ac66d15ad0ff5ed4f47a22e19",
+      "initialization_seed": 180241668,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/crustle_cornerstone_mask_ogerpon_ex_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "cynthias_garchomp_ex_roserade_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/cynthias_garchomp_ex_roserade_001.pt",
+      "decoder_sha256": "2dbb98cc702c1ecfd6b929b39f76e084a7516f91d424268f89030b7a0a7da271",
+      "initialization_seed": 1794145809,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/cynthias_garchomp_ex_roserade_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "cynthias_garchomp_ex_roserade_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/cynthias_garchomp_ex_roserade_002.pt",
+      "decoder_sha256": "aff536ad04cd8f232dc71f5059ed67e833c09b3f788371cb9bf52188b129dab8",
+      "initialization_seed": 1134178919,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/cynthias_garchomp_ex_roserade_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_001.pt",
+      "decoder_sha256": "6a72647d4960ffba619ad4f8704fb1cc42248c2958375fb248da32b7052c3548",
+      "initialization_seed": 1154281091,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_blaziken_ex_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_blaziken_ex_001.pt",
+      "decoder_sha256": "ec23fe155804db9654f50889883a5510fa5e8ce434ee3b58084644b0961612bc",
+      "initialization_seed": 2044774967,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_blaziken_ex_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_crushing_hammer_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_crushing_hammer_001.pt",
+      "decoder_sha256": "2b7bf7848e84a3ed7863fab6d6c0498ad6bb01e4515af78e1aa023c690f0471c",
+      "initialization_seed": 1090206429,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_crushing_hammer_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dunsparce_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_dunsparce_001.pt",
+      "decoder_sha256": "ad64e271b41c8613c9840ffe6ae2022b34d91b7805a0cb7e50f3761bf8a22170",
+      "initialization_seed": 533033473,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_dunsparce_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dunsparce_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_dunsparce_002.pt",
+      "decoder_sha256": "13548264eb8ffafd1cb0f62e48a47d6900f231646ce285bc53b273966e7c5c19",
+      "initialization_seed": 2047506269,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_dunsparce_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dusknoir_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_dusknoir_001.pt",
+      "decoder_sha256": "b92b4adbbe98f439d2e72c3b8404532851a310619d5c56f8b0399a0e1954f8af",
+      "initialization_seed": 1126053585,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_dusknoir_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_dusknoir_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_dusknoir_002.pt",
+      "decoder_sha256": "1e3eb23a3443b86fb0e03a8d7dc4f4cd8e3f30a8640ce017916188739b8793eb",
+      "initialization_seed": 1185174847,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_dusknoir_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "dragapult_ex_mega_froslass_ex_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/dragapult_ex_mega_froslass_ex_001.pt",
+      "decoder_sha256": "e85e76396202457df913a1e80c4ad0d2051448bff00bec47a7f28fcd8ad57e81",
+      "initialization_seed": 1750641652,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/dragapult_ex_mega_froslass_ex_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "festival_lead_dipplin_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/festival_lead_dipplin_001.pt",
+      "decoder_sha256": "24674562d311f05a2942045d17ccc86a1b695fa283a44092e23b86a608dcca5b",
+      "initialization_seed": 1053542128,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/festival_lead_dipplin_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "festival_lead_dipplin_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/festival_lead_dipplin_002.pt",
+      "decoder_sha256": "1b3cd7aa0699c2f803e7a1468f6aeff1e02174cd11184099fab7715404d53e78",
+      "initialization_seed": 1572450608,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/festival_lead_dipplin_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "festival_lead_dipplin_003": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/festival_lead_dipplin_003.pt",
+      "decoder_sha256": "968d6d412acedb86cb9359e1bd749a2fc2b46318d3f0eb94c6dfeec4080d58c9",
+      "initialization_seed": 595076845,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/festival_lead_dipplin_003/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "hydrapple_ex_meganium_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/hydrapple_ex_meganium_001.pt",
+      "decoder_sha256": "8a6ecf3f35a89194e60e3b865b0342eee81b757842fb7e983c81af02e014b12d",
+      "initialization_seed": 1664883519,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/hydrapple_ex_meganium_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "ionos_bellibolt_ex_kilowattrel_01": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/ionos_bellibolt_ex_kilowattrel_01.pt",
+      "decoder_sha256": "34303958e313cb63fe9af474fb474e99c723f565dd6bc82f65750b3598a2fb8e",
+      "initialization_seed": 275883521,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/ionos_bellibolt_ex_kilowattrel_01/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/marnies_grimmsnarl_ex_froslass_001.pt",
+      "decoder_sha256": "66d8f8bbddefafdb00d5064bc8ca5f9e4d2dcd0ee318f8af50d3c0ffa27dfc6c",
+      "initialization_seed": 184681172,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/marnies_grimmsnarl_ex_froslass_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/marnies_grimmsnarl_ex_froslass_002.pt",
+      "decoder_sha256": "36a2b9c0065e5872dbfed50c3131c53e0ca63d6e06d12b9c1e60442c94647e67",
+      "initialization_seed": 1963257504,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/marnies_grimmsnarl_ex_froslass_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_003": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/marnies_grimmsnarl_ex_froslass_003.pt",
+      "decoder_sha256": "8fc2fbf583d801b629c8d054e4a2540bc2ed49bd09f3161f936fbc093885d278",
+      "initialization_seed": 1964898527,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/marnies_grimmsnarl_ex_froslass_003/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_004": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/marnies_grimmsnarl_ex_froslass_004.pt",
+      "decoder_sha256": "97a9c4a3b8b91e3c58c2324d88584c3efec44d8c932011b063a445b92bd9a02d",
+      "initialization_seed": 1745667960,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/marnies_grimmsnarl_ex_froslass_004/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_005": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/marnies_grimmsnarl_ex_froslass_005.pt",
+      "decoder_sha256": "fe4e988156191439038815ac9683c0f5625e97456bd46b788f6924163fb2a7a8",
+      "initialization_seed": 1586776331,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/marnies_grimmsnarl_ex_froslass_005/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_006": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/marnies_grimmsnarl_ex_froslass_006.pt",
+      "decoder_sha256": "bec71de7c4c44bc51dbf5266280c89c8c7ff0c5fff7ae9a3cb30e47241109510",
+      "initialization_seed": 967197289,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/marnies_grimmsnarl_ex_froslass_006/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "marnies_grimmsnarl_ex_froslass_limitless": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/marnies_grimmsnarl_ex_froslass_limitless.pt",
+      "decoder_sha256": "ae8d450a585915fc18289eee2345fde46ab4a766b1de66da307569985d8c5c6b",
+      "initialization_seed": 1201140411,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/marnies_grimmsnarl_ex_froslass_limitless/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_001.pt",
+      "decoder_sha256": "da254b3144214252d3be10158c3acac3147c0c291789c8657bafc03190ad7d91",
+      "initialization_seed": 1057549572,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_002.pt",
+      "decoder_sha256": "6645ead48c7126dedd76f6ed099902f774d103179d1f2bba1be052e18baf2cc0",
+      "initialization_seed": 137624175,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_003": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_003.pt",
+      "decoder_sha256": "1f0537196ac29ac1bf5efda15460608bf1af7405942d3ac377b237573de30d2b",
+      "initialization_seed": 2144498523,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_003/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_004": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_004.pt",
+      "decoder_sha256": "00a5604bb7d2258b311b537337b80f88a7e25af291e1cc48a80112f53d21b7dd",
+      "initialization_seed": 373553972,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_004/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_005": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_005.pt",
+      "decoder_sha256": "7d58bb97cb3bf0f3b3ccc66f76e165950f7ee496ba471c722e0358d7ae1088f2",
+      "initialization_seed": 9688284,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_005/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_006": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_006.pt",
+      "decoder_sha256": "3f1d383a8a8fb80918931ecee53a7a3feeacc07e50b077a265a396d948ea3074",
+      "initialization_seed": 1820455638,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_006/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_007": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_007.pt",
+      "decoder_sha256": "337641e6eae4c7407604b6853dbaff016980452b60efb14d9b6a743925385739",
+      "initialization_seed": 460237420,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_007/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_kangaskhan_ex_crustle_008": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_kangaskhan_ex_crustle_008.pt",
+      "decoder_sha256": "f0bb6b2f87eb5d8fda9a791b6a17ddf7246b6cd9dd8f9b0467d07b439e08d11c",
+      "initialization_seed": 1212804030,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_kangaskhan_ex_crustle_008/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lopunny_ex_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_lopunny_ex_001.pt",
+      "decoder_sha256": "c0e3bfc0aa2928efa08e1d60f5cb52e812256daad32e1e65f83e4a3fd2be195e",
+      "initialization_seed": 2055479250,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_lopunny_ex_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lopunny_ex_mega_froslass_ex_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_lopunny_ex_mega_froslass_ex_001.pt",
+      "decoder_sha256": "08eb3a021c73541b22c4db894e3ba2f94843b3b6bbe6d5760f88fb066ebe4809",
+      "initialization_seed": 1521773057,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_lopunny_ex_mega_froslass_ex_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lopunny_ex_mega_froslass_ex_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_lopunny_ex_mega_froslass_ex_002.pt",
+      "decoder_sha256": "9a6737fb377fbc32da33113f737b02f602004290d71ff57cdbcd3c8c0892aa75",
+      "initialization_seed": 401778891,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_lopunny_ex_mega_froslass_ex_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lucario_ex_solrock_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_lucario_ex_solrock_001.pt",
+      "decoder_sha256": "bbac04f78b60ad08c2be1a2e9d75281455a0eb5a6864b52d23cf8579c8da91ba",
+      "initialization_seed": 2178729,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_lucario_ex_solrock_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "mega_lucario_ex_solrock_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/mega_lucario_ex_solrock_002.pt",
+      "decoder_sha256": "ddf3984aa8a4b09c3e5c30097d24c6f70db20f5a0ff475d93f4699bcc270491b",
+      "initialization_seed": 97357954,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/mega_lucario_ex_solrock_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "ns_zoroark_ex_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/ns_zoroark_ex_001.pt",
+      "decoder_sha256": "622e00d8a609587de1d9a7468a7227ad870d5c28763aa2839138ff408e81db9d",
+      "initialization_seed": 1919635246,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/ns_zoroark_ex_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "raging_bolt_ex_james_cox_henry_chao_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/raging_bolt_ex_james_cox_henry_chao_001.pt",
+      "decoder_sha256": "deb1bc7ac34f2214f63b2754624a6eeb2f4e6df5c4033b9770f8598b4ac7bef6",
+      "initialization_seed": 1086700420,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/raging_bolt_ex_james_cox_henry_chao_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/raging_bolt_ex_mega_kangaskhan_ex_002.pt",
+      "decoder_sha256": "760b232c18ce17e2d3dc60c3a14e971fe437fbaaf78a7d74851320371ee28e2a",
+      "initialization_seed": 907068333,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/raging_bolt_ex_mega_kangaskhan_ex_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_003": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/raging_bolt_ex_mega_kangaskhan_ex_003.pt",
+      "decoder_sha256": "0ad363fc3758978873e508fb41cbc72909146bfaaca7e18709e86983e5694711",
+      "initialization_seed": 602459368,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/raging_bolt_ex_mega_kangaskhan_ex_003/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_001": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/team_rockets_mewtwo_ex_spidops_001.pt",
+      "decoder_sha256": "7ee8c5ad481fbf024c0436c45b00b5beaa1bb374dde748e4e17c2202128a7664",
+      "initialization_seed": 786139735,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/team_rockets_mewtwo_ex_spidops_001/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_002": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/team_rockets_mewtwo_ex_spidops_002.pt",
+      "decoder_sha256": "4ba65de9d94ab97d4b91bd7da4c651dae42af17f48efd4ca276fbc47a45593b1",
+      "initialization_seed": 1413514818,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/team_rockets_mewtwo_ex_spidops_002/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_003": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/team_rockets_mewtwo_ex_spidops_003.pt",
+      "decoder_sha256": "b16ae21968ad98ce3d84696d38912d7573c4e5a52d7fdbf6b2880bd2b91d9848",
+      "initialization_seed": 906184167,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/team_rockets_mewtwo_ex_spidops_003/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_004": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/team_rockets_mewtwo_ex_spidops_004.pt",
+      "decoder_sha256": "df0d547bc0b43925cf153b2e24e915ed22f14c83c77822fd48ccafb15b67a2f2",
+      "initialization_seed": 924458396,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/team_rockets_mewtwo_ex_spidops_004/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    },
+    "team_rockets_mewtwo_ex_spidops_005": {
+      "decoder_ref": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/checkpoint/decks/team_rockets_mewtwo_ex_spidops_005.pt",
+      "decoder_sha256": "2e333607e1661d76d9874dad937867ac1cb5fb99574d806e0132d41392633ee3",
+      "initialization_seed": 1650610699,
+      "initialization_source": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V6_from_v2_update3_20h_gpu_resume/checkpoint/live/team_rockets_mewtwo_ex_spidops_005/update-000013.pt",
+      "materialized": true,
+      "role": "live"
+    }
+  },
+  "continuous_until_explicit_stop": true,
+  "focal_deck_id": "mega_lopunny_ex_001",
+  "foundation": {
+    "asset_id": "0019-0730-epoch13",
+    "deployment_source_id": 0,
+    "epoch": 13,
+    "global_step": 337194,
+    "ontology_sha256": "8144c63e512a2a00fabaaf2b19cd002c5b59c25fb0763a112256848460113a4d",
+    "parameter_count": 17756162,
+    "weights_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
+  },
+  "frozen_anchors": {
+    "alakazam_dudunsparce_001": {
+      "deck_sha256": "56024e4e17512f2c66e86f08da54552e49b9de9ad7c5df8ab0b8a4fe80f38ea4",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "alakazam_dudunsparce_002": {
+      "deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "alakazam_dudunsparce_003": {
+      "deck_sha256": "1f16d6d486572bf033ef455b38825f370658a95cebd80c40693dc027af97e78d",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "arboliva_ex_meganium_001": {
+      "deck_sha256": "b334db5c427bbf154d43900e06f05da176938b28cc8caa474d2ae36a7265b11b",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "archaludon_ex_cinderace_001": {
+      "deck_sha256": "d90a5bc8c699d7c335bc3a52c876add629cb4c446a3b8234515e2345e5a3d751",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "crustle_cornerstone_mask_ogerpon_ex_001": {
+      "deck_sha256": "c385b53bf42c2af2bc8daedde5b28d921dd913e9886c1e86f326ad229ee20e6a",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "cynthias_garchomp_ex_roserade_001": {
+      "deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "cynthias_garchomp_ex_roserade_002": {
+      "deck_sha256": "d340f23802cf7af508327c234e890041b446e26911db670c93dd2c86eb4dc766",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_001": {
+      "deck_sha256": "6f784c7049ab4a4cfbc012c5bee8cc040d1030d54b4e572e4a4a9f35d0f6ea81",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_blaziken_ex_001": {
+      "deck_sha256": "0a78adbfd08f99ec83b3d7c10043e06c3c349a5d9708e44df41275f169b0b9fc",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_crushing_hammer_001": {
+      "deck_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dunsparce_001": {
+      "deck_sha256": "3edb78cf7f3c83fbf282c4f74832c5b0668a0b7f2f76f6dcbbe01bf15b211d92",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dunsparce_002": {
+      "deck_sha256": "c49e78d7cb256803274aa87d2d783b17ca5e4a64bea41cbe616dfced953579b1",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dusknoir_001": {
+      "deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_dusknoir_002": {
+      "deck_sha256": "1b8e9548e4b69cad198801fc244290d96873517a390cb357dc3689a01c194cc3",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "dragapult_ex_mega_froslass_ex_001": {
+      "deck_sha256": "d3d18fe9f0fea53376b4ff54889dc6e58402f5b3b3bd5e542e9ddbb3c8fa08be",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "festival_lead_dipplin_001": {
+      "deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "festival_lead_dipplin_002": {
+      "deck_sha256": "79e43c0a0b83e17a0b5264163000f8b656749d1878141864a863fb34818a1422",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "festival_lead_dipplin_003": {
+      "deck_sha256": "5adce4b9b664bbee40748fd146283877db16189ee0baf8dce0ab8d5ab44e2302",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "hydrapple_ex_meganium_001": {
+      "deck_sha256": "9cf402085661342b7b73a5c502ce7d807d061f1d5117b8e59690b4637b98ea6c",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "ionos_bellibolt_ex_kilowattrel_01": {
+      "deck_sha256": "7dc29ba6002f31aefaaacab06721d54e39b31e866b54c34e9b973d5133795f8c",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_001": {
+      "deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_002": {
+      "deck_sha256": "978ab31c50aa7fdaf11e38ba108cf0eda7fab6ca3597bfa3b45a7f74cd6a9327",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_003": {
+      "deck_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_004": {
+      "deck_sha256": "882b584691fc15581b9c7d238ea131a933050f9da1694d8418c790d33c13fc54",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_005": {
+      "deck_sha256": "de5b9940c5be5708af75d38f0bbb3fd85600e90fea9349a8ab330fb1f4638ffe",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_006": {
+      "deck_sha256": "22a88f292df485391b7927bdcc4d801945e1fbc31236e0d6eb113e3235e9878f",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "marnies_grimmsnarl_ex_froslass_limitless": {
+      "deck_sha256": "c39e7d9e07202667c417d8728469b8449dc8b1cbaff95617f9bad6c5d07a9605",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_001": {
+      "deck_sha256": "4bf59ca589c2d685d74e3535424c2dbe3c11389dffba59eddba4567be7e437df",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_002": {
+      "deck_sha256": "ca60839cba73b0054f0854952ec3a5e98cb8178db1f71e264aafceb44ffd7adb",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_003": {
+      "deck_sha256": "747769779b60ad8db730b0b238414abb1e47936349cc72c83ff79c2ffacf31bc",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_004": {
+      "deck_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_005": {
+      "deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_006": {
+      "deck_sha256": "5626743fc93e949378ab0f050dfd647a32c7e69abca2421ba7755b58c5e1429c",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_007": {
+      "deck_sha256": "eef05267c0249d555efd0500c1012c4b2b0531cfa155dbee4a5092e56d03ea94",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_kangaskhan_ex_crustle_008": {
+      "deck_sha256": "c81ed99fdb4b3b6a36968586bed9208273e93123f4344f46decd3ad6783dc6fb",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lopunny_ex_001": {
+      "deck_sha256": "f03203e5bc6fc1cd4c29b4e3e728f360d37abe55aaaf34a73b053085dbe21553",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lopunny_ex_mega_froslass_ex_001": {
+      "deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lopunny_ex_mega_froslass_ex_002": {
+      "deck_sha256": "7fb1536b191c0e0ff5f8819c674ba784e9e0b77927b58b3faea423db66b90e8b",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lucario_ex_solrock_001": {
+      "deck_sha256": "5a1a6ac264ccfd017ae137a035205d769fe57512323d474c22be9107177e36a8",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "mega_lucario_ex_solrock_002": {
+      "deck_sha256": "ff157aaa919099f08416952659f4bc7b203589288ccb477da67c2b245107a514",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "ns_zoroark_ex_001": {
+      "deck_sha256": "88c48ab1fd0bf50e3d894c0b96543ea6d4fea2d0c36a2833758e10ab810be7de",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "raging_bolt_ex_james_cox_henry_chao_001": {
+      "deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_002": {
+      "deck_sha256": "02d02fb28d5f445d6e1295dcb2b0c4e4e2b5c05c75db108749f69af8deb9ce51",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "raging_bolt_ex_mega_kangaskhan_ex_003": {
+      "deck_sha256": "cb094a756dc32dfe8450372a44e3ff0e4c9cc71658217d0cecd0bc327680f351",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_001": {
+      "deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_002": {
+      "deck_sha256": "203002de844fcbf3c30d9da6cc79f8311eb5bb21685f3841d62b72656676c0fd",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_003": {
+      "deck_sha256": "b0c6efb1d703092bf7ba09cab3dc5fee1823e302291c9ba14f640f74a7f5a644",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_004": {
+      "deck_sha256": "c13542d5f48acc0c7894e047c1b724ef4c838f0910e54d34ff2d81915ca8789e",
+      "decoder_ref": "foundation",
+      "materialized": false
+    },
+    "team_rockets_mewtwo_ex_spidops_005": {
+      "deck_sha256": "7851bf5595529f83a95321e237751d6fb9088c02c126b67b83cb9bb2d5b1e190",
+      "decoder_ref": "foundation",
+      "materialized": false
+    }
+  },
+  "initialization_audit": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V7_from_v6_limitless_focal_24h/artifact/initialization_audit.json",
+  "initialization_summary": {
+    "foundation_initialized_count": 0,
+    "inherited_live_count": 50,
+    "previous_complete_update": 13,
+    "source_project": "0023_mega_lopunny_ex_mega_froslass_ex_002_league_training",
+    "source_status_state": "failed",
+    "source_version": "V6_from_v2_update3_20h_gpu_resume"
+  },
+  "live_deck_update_contract": "all_50_isolated_decoder_value_optimizers",
+  "live_opponent_updates_enabled": true,
+  "opponent_views": [
+    "frozen",
+    "live"
+  ],
+  "ppo": {
+    "actor_learning_rate": 1e-05,
+    "batch_size": 1024,
+    "clip_ratio": 0.1,
+    "entropy_coefficient": 0.01,
+    "epochs": 4,
+    "gae_lambda": 0.95,
+    "max_grad_norm": 0.5,
+    "reference_kl_coefficient": 0.02,
+    "target_behavior_kl": 0.02,
+    "value_coefficient": 0.5,
+    "value_learning_rate": 0.0001,
+    "weight_decay": 0.0
+  },
+  "probe_deck_ids": [
+    "alakazam_dudunsparce_001",
+    "marnies_grimmsnarl_ex_froslass_001"
+  ],
+  "project_id": "0023_mega_lopunny_ex_mega_froslass_ex_002_league_training",
+  "reference_kl_contract": "fixed_to_each_deck_0023_initialization",
+  "run": {
+    "checkpoint_keep_gate_snapshots": 4,
+    "checkpoint_keep_latest": 2,
+    "coalesce_ms": 5.0,
+    "device": "cuda:0",
+    "duration_hours": null,
+    "frozen_eval_interval": 5,
+    "games_per_update": 512,
+    "launch_minimum_free_gib": 100.0,
+    "runtime_stop_free_gib": 80.0,
+    "seed": 22022,
+    "version": "V7_from_v6_limitless_focal_24h",
+    "version_cap_gib": 10.0,
+    "workers": 128
+  },
+  "runtime_root": "/home/cyd/repos/pokemon-tcg-ai-battle/evaluation/arena/opponents/alakazam_dudunsparce_01",
+  "schema_version": "0023_multidecoder_league_ppo_v1",
+  "training": {
+    "deployment_source_id": 0,
+    "encoder_frozen": true,
+    "reward": {
+      "draw": 0.0,
+      "gamma": 1.0,
+      "loss": -1.0,
+      "win": 1.0
+    },
+    "wandb": {
+      "mode": "disabled_until_training_starts",
+      "reason": "version initialization performs no optimization"
+    }
+  },
+  "version": "V7_from_v6_limitless_focal_24h"
+}

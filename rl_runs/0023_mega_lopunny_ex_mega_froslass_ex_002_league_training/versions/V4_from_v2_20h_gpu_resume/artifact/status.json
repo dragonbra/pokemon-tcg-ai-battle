@@ -1,0 +1,9 @@
+{
+  "created_at": 1785562911.7828414,
+  "project": "0023_mega_lopunny_ex_mega_froslass_ex_002_league_training",
+  "requested_gpu_time_hours_minimum": 20.0,
+  "resume_source_last_trainer_update": 3,
+  "resume_source_version": "V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league",
+  "status": "initialized_from_v2",
+  "version": "V4_from_v2_20h_gpu_resume"
+}

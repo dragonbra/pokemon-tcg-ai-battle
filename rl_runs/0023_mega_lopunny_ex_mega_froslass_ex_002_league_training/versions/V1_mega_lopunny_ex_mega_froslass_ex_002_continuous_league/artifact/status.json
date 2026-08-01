@@ -1,0 +1,8 @@
+{
+  "error": "ValueError: relative checkpoint provenance path was compared with an absolute repository root",
+  "ppo_updates": 0,
+  "state": "initialization_failed",
+  "training_started": false,
+  "version": "V1_mega_lopunny_ex_mega_froslass_ex_002_continuous_league",
+  "wandb_sync": "not_started"
+}

@@ -1,4 +1,4 @@
-# 0023 Mega Lopunny ex / Mega Froslass ex League Training
+# 0023 Mega Lopunny ex Limitless Focal / Mega Froslass ex League Training
 
 This package binds the archived 0019 Universal Winner BC Epoch 13 model as a frozen shared
 Foundation and manages exact-deck Decoder/Value plugins. It is self-contained: model and feature
@@ -29,14 +29,20 @@ python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training audit
 python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training smoke-rollout --device cuda:0 --workers 4
 python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training canary-ppo --device cuda:0 --workers 4
 python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training benchmark-workers --device cuda:0 --workers 128 --games 256 --coalesce-ms 5 --output .tmp/evaluation/0023_worker_scaling/workers-128.json
-python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training train-league --version V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league --device cuda:0 --workers 128 --coalesce-ms 5 --games-per-update 512
+python3 -m train.0023_mega_lopunny_ex_mega_froslass_ex_002_league_training train-league --version V7_from_v6_limitless_focal_24h --initial-version V6_from_v2_update3_20h_gpu_resume --device cuda:0 --workers 128 --coalesce-ms 5 --games-per-update 512
 ```
 
 The catalog contains 50 exact decks. The formal run schedules 512 games per update across Frozen
-and Live views with balanced seats. The focal deck is
-`mega_lopunny_ex_mega_froslass_ex_002`; every Live decoder updates only from its own real actor
-trajectory. The command has no duration stop and runs until an explicit signal or a fail-closed
-safety guard. Every fifth update runs Frozen, Live, and fixed-probe greedy diagnostics.
+and Live views with balanced seats. The focal deck is the Limitless champion
+`mega_lopunny_ex_001` (including Abra, exact deck SHA
+`f03203e5bc6fc1cd4c29b4e3e728f360d37abe55aaaf34a73b053085dbe21553`). Every Live decoder
+updates only from its own real actor trajectory, and V7 inherits all 50 deck decoders from V6
+update 13. The foreground supervision wrapper stops the run only after at least 24 hours or an
+explicit fail-closed alert. Every fifth update runs Frozen, Live, and fixed-probe greedy diagnostics.
+
+For a formal long run, keep the training child and `monitor_training` in one foreground exec
+session. Retain that session ID and wait on it repeatedly; do not use a detached watchdog, and do
+not package or run competing GPU work while the session is active.
 
 Formal training enables W&B online and enforces 100 GiB launch free space, an 80 GiB clean-stop
 low-water mark, a 10 GiB version cap, and bounded model-only checkpoint retention. Initialization
