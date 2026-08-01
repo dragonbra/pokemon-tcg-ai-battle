@@ -1149,7 +1149,7 @@ def _manifest_package(
 
 def _deck_card_category(metadata: dict[str, str]) -> str:
     stage_or_type = str(metadata.get("stage_or_type", ""))
-    if "Pokémon" in stage_or_type:
+    if stage_or_type.endswith("Pokémon"):
         return "pokemon"
     if "Energy" in stage_or_type:
         return "energy"

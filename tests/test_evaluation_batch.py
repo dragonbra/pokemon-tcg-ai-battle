@@ -18,6 +18,7 @@ from evaluation.runner.batch import (
     BatchConfig,
     ReportData as BatchReportData,
     _case_candidate,
+    _deck_card_category,
     _finalize_formal_report,
     _metric_refs,
     _manifest_package,
@@ -405,6 +406,16 @@ class OverridePlugin:
         self.assertEqual(
             {card["name"] for card in presented["deck_cards"]},
             {"Dreepy", "Buddy-Buddy Poffin", "Basic {R} Energy"},
+        )
+
+    def test_deck_card_category_treats_pokemon_tools_as_trainers(self) -> None:
+        self.assertEqual(
+            _deck_card_category({"stage_or_type": "Pokémon Tool"}),
+            "trainer",
+        )
+        self.assertEqual(
+            _deck_card_category({"stage_or_type": "Basic Pokémon"}),
+            "pokemon",
         )
 
     def test_batch_alternates_side_and_embeds_compact_records_in_report(self) -> None:

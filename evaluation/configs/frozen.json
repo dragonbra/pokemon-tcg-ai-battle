@@ -677,6 +677,21 @@
       ]
     },
     {
+      "display_name": "[Frozen 0019] Rmy Teal Mask Ogerpon ex",
+      "enabled": true,
+      "name": "rmy_teal_mask_ogerpon_001",
+      "package": "arena/frozen/rmy_teal_mask_ogerpon_001",
+      "representative_card_ids": [
+        96
+      ],
+      "tags": [
+        "foundation_frozen",
+        "source_id_0",
+        "deck_exact_60",
+        "current_rmy_replay"
+      ]
+    },
+    {
       "display_name": "[Frozen 0019] Team Rocket's Mewtwo ex / Spidops",
       "enabled": true,
       "name": "team_rockets_mewtwo_ex_spidops_001",

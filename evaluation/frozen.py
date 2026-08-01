@@ -20,8 +20,8 @@ from evaluation.packages.loader import (
 EXPECTED_FOUNDATION_SHA256 = (
     "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
 )
-EXPECTED_POOL_ID = "0019_foundation_50_exact_decks_v3"
-EXPECTED_DECK_COUNT = 50
+EXPECTED_POOL_ID = "0019_foundation_51_exact_decks_v4"
+EXPECTED_DECK_COUNT = 51
 EXPECTED_ENTRY_FIELDS = frozenset(
     {"name", "package", "display_name", "representative_card_ids", "enabled", "tags"}
 )
@@ -99,7 +99,7 @@ def _entry_list(catalog_path: Path) -> list[dict[str, Any]]:
 
 
 def load_frozen_catalog(path: Path, evaluation_root: Path) -> FrozenCatalog:
-    """Load 50 deck identities bound to one immutable Foundation policy."""
+    """Load 51 deck identities bound to one immutable Foundation policy."""
     frozen_root = (evaluation_root / "arena" / "frozen").resolve()
     manifest_path = frozen_root / "manifest.json"
     manifest = _read_json(manifest_path, "Arena manifest")

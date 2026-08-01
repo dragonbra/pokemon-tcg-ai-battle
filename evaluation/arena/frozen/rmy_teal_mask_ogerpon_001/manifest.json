@@ -1,0 +1,20 @@
+{
+  "deck_id": "rmy_teal_mask_ogerpon_001",
+  "deck_sha256": "e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34",
+  "decoder_ref": "foundation",
+  "deployment_source_id": 0,
+  "display_name": "Rmy Teal Mask Ogerpon ex",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "provenance": {
+    "captured_at_utc": "2026-08-01T19:46:25.009052+00:00",
+    "episode_create_time": "2026-08-01T19:42:49.627000+00:00",
+    "episode_id": 89383261,
+    "episode_player_index": 1,
+    "leaderboard_rank": 7,
+    "leaderboard_score": "1143.3",
+    "source": "current_kaggle_leaderboard_latest_public_completed_episode_replay",
+    "submission_id": 55143076,
+    "team_name": "Rmy"
+  },
+  "schema_version": "evaluation_frozen_deck_v1"
+}

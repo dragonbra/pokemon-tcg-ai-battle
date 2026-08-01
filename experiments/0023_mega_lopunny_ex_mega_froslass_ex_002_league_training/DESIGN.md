@@ -1,19 +1,18 @@
 # 0023 Mega Lopunny ex Limitless Focal / Mega Froslass ex League Training
 
-Updated: 2026-08-01
+Updated: 2026-08-02
 
 ## 1. Objective
 
 0023 is a focal-primary continuation of 0022. The next focal deck is the user-provided
 Limitless champion list `mega_lopunny_ex_001`, exact deck SHA-256
 `f03203e5bc6fc1cd4c29b4e3e728f360d37abe55aaaf34a73b053085dbe21553`; it includes one Abra.
-The 50-deck League catalog remains unchanged, with the former focal
-`mega_lopunny_ex_mega_froslass_ex_002` retained as a Live opponent. V7 is requested to run for
-at least 24 GPU hours, or until a fail-closed CUDA, official-engine, nonfinite-training, SSD,
-or explicit user stop condition occurs.
+V8 expands the League catalog to 51 exact decks by adding Rmy's replay-audited
+`rmy_teal_mask_ogerpon_001`; the former focal `mega_lopunny_ex_mega_froslass_ex_002` remains a
+Live opponent. V8 is an initialization-only branch for future RL and does not claim new strength.
 
 The strength objective is improved fixed-seed, balanced-seat performance against
-the immutable 50-deck Frozen Arena. Sampled rollout and Live-pool results are
+the immutable 51-deck Frozen Arena. Sampled rollout and Live-pool results are
 training diagnostics, not checkpoint acceptance evidence.
 
 ## 2. Evidence Boundary
@@ -72,17 +71,17 @@ value_head
 ```
 
 All encoder, embedding, feature, ontology, persona residual, and action-contract
-parameters remain frozen. The 50 policies share one resident encoder and own 50
+parameters remain frozen. The 51 policies share one resident encoder and own 51
 isolated decoder/value branches.
 
 ## 4. Exact Initialization Contract
 
-V6 stopped after writing update 13 because its official-engine rollout gate failed. V7 deliberately
-inherits every current Live decoder by exact deck ID and exact deck SHA from
-`V6_from_v2_update3_20h_gpu_resume/checkpoint/live/<deck>/update-000013.pt`, including the new
-Limitless focal `mega_lopunny_ex_001`. No V7 deck is initialized from Foundation, and a missing,
-malformed, or hash-mismatched update-13 checkpoint is a launch error. The V6 failure remains a
-provenance fact and is not strength evidence; V7 begins a new version with fresh optimizers.
+V7 stopped by explicit user request after publishing update 71. V8 inherits all 50 existing
+decoder/value branches by exact deck ID and exact deck SHA from V7 update 71. The newly added
+`rmy_teal_mask_ogerpon_001` has no prior branch, so V8 materializes its own deterministic
+Foundation-default update-0 decoder and zero-initialized value head. Its checkpoint SHA is
+`033f0839e4cfb086f05a570aec823da61746ef5bc4f64a12986606dd9b74cb45`; its exact deck SHA is
+`e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34`.
 
 The accepted 0022 Dragapult strength checkpoint remains update 75. This is
 provenance for the 0022 result, while Live continuation uses each deck's final
@@ -100,8 +99,8 @@ Each deck receives its own new AdamW optimizer. Optimizer state is never inherit
 or serialized. Each deck's fixed reference policy is a frozen copy of its exact
 0023 update-0 decoder/value state:
 
-- inherited deck reference: that deck's V6 update-13 state;
-- every V7 deck, including the focal Limitless deck, receives its own copied update-0 reference.
+- prior deck reference: that deck's inherited V7 update-71 state;
+- Rmy Ogerpon reference: its isolated V8 Foundation-default update-0 state.
 
 The reference is not the behavior snapshot and is not reset every update. PPO also
 constructs a per-update frozen behavior snapshot for ratio/KL calculations. These
@@ -146,13 +145,13 @@ behavior log probability
 behavior value
 ```
 
-Each of the 50 trainers filters only decisions whose `policy_deck_id` equals its
+Each of the 51 trainers filters only decisions whose `policy_deck_id` equals its
 deck. Opponent actions never enter focal loss under the focal identity. A batch that
 does not contain real trajectory for every Live deck fails closed instead of
 pretending the missing deck updated.
 
-Every fifth update runs a balanced two-seat greedy diagnostic against all 50 Frozen
-and all 50 Live identities, plus Alakazam and Marnie probe matchups. Formal checkpoint
+Every fifth update runs a balanced two-seat greedy diagnostic against all 51 Frozen
+and all 51 Live identities, plus Alakazam and Marnie probe matchups. Formal checkpoint
 selection uses the larger fixed Frozen Arena contract, not this short diagnostic.
 
 ## 7. Metrics

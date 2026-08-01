@@ -20,7 +20,7 @@ def _sorted_deck_sha(deck: list[int]) -> str:
 
 
 class FrozenArenaAssetTest(unittest.TestCase):
-    def test_frozen_catalog_has_one_policy_and_50_exact_decks(self) -> None:
+    def test_frozen_catalog_has_one_policy_and_51_exact_decks(self) -> None:
         manifest = json.loads((FROZEN_ROOT / "manifest.json").read_text())
         catalog = json.loads(CATALOG_PATH.read_text())
         entries = catalog["opponents"]
@@ -28,9 +28,10 @@ class FrozenArenaAssetTest(unittest.TestCase):
         self.assertEqual(manifest["schema_version"], "evaluation_frozen_arena_v1")
         self.assertEqual(manifest["foundation"]["weights_sha256"], EXPECTED_FOUNDATION_SHA256)
         self.assertEqual(manifest["foundation"]["deployment_source_id"], 0)
-        self.assertEqual(manifest["deck_count"], 50)
-        self.assertEqual(len(entries), 50)
-        self.assertEqual(len({entry["name"] for entry in entries}), 50)
+        self.assertEqual(manifest["deck_count"], 51)
+        self.assertEqual(len(entries), 51)
+        self.assertEqual(len({entry["name"] for entry in entries}), 51)
+        self.assertIn("rmy_teal_mask_ogerpon_001", {entry["name"] for entry in entries})
         self.assertTrue((FROZEN_ROOT / "_policy" / "strategy" / "model.bin").is_file())
 
         deck_hashes: set[str] = set()

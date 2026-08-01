@@ -157,6 +157,40 @@ class LeagueTrainingTest(unittest.TestCase):
             self.assertEqual(audit[plugin.deck_id]["source_status_state"], "failed")
             self.assertEqual(metadata["source_version"], "V2_source")
 
+    def test_existing_0023_version_foundation_initializes_new_current_deck(self) -> None:
+        plugins = load_deck_plugins(DEFAULT_DECK_ROOT)
+        inherited = next(item for item in plugins if item.deck_id == "dragapult_ex_001")
+        new = next(item for item in plugins if item.deck_id == "rmy_teal_mask_ogerpon_001")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "artifact").mkdir()
+            (root / "artifact/status.json").write_text(
+                json.dumps({"checkpoint_update": 71, "state": "stopped_by_user"}),
+                encoding="utf-8",
+            )
+            (root / "artifact/league_catalog.json").write_text(
+                json.dumps({"decks": [{
+                    "deck_id": inherited.deck_id,
+                    "deck_sha256": inherited.deck_sha256,
+                }]}),
+                encoding="utf-8",
+            )
+            checkpoint = root / "checkpoint/live" / inherited.deck_id / "update-000071.pt"
+            checkpoint.parent.mkdir(parents=True)
+            checkpoint.touch()
+            decoder_audit = SimpleNamespace(
+                update=71, checkpoint_sha256="c" * 64,
+                deck_sha256=inherited.deck_sha256, foundation_sha256="d" * 64,
+            )
+            with patch.object(league_run, "load_decoder_checkpoint", return_value=decoder_audit):
+                paths, audit, metadata = resolve_project_version_checkpoint_map(
+                    (inherited, new), source_version="V7_source", source_root=root,
+                )
+            self.assertEqual(paths[inherited.deck_id], checkpoint)
+            self.assertIsNone(paths[new.deck_id])
+            self.assertEqual(audit[new.deck_id]["initialization"], "foundation_default")
+            self.assertEqual(metadata["source_update"], 71)
+
     def test_formal_config_preserves_initialized_decoder_assets(self) -> None:
         initial = {"checkpoints": {"deck": {"decoder_ref": "x"}}, "catalog": {"deck_count": 48}}
         result = compose_training_config(
@@ -224,7 +258,7 @@ class LeagueTrainingTest(unittest.TestCase):
     def test_frozen_evaluation_covers_every_deck_and_both_seats(self) -> None:
         plugins = load_deck_plugins(DEFAULT_DECK_ROOT)
         jobs = schedule_jobs(plugins, count=0, update=0, seed=3, runtime_root=Path("runtime"), evaluation=True)
-        self.assertEqual(len(jobs), 100)
+        self.assertEqual(len(jobs), 102)
         self.assertEqual({job.opponent_deck_id for job in jobs}, {item.deck_id for item in plugins})
         self.assertTrue(all(job.opponent_view is LeaguePolicyView.FROZEN for job in jobs))
     def test_terminal_gae_gamma_one(self) -> None:

@@ -10,23 +10,23 @@
 <body><main>
 <header><div class="eyebrow">0023 · Continuous focal-primary League PPO</div>
 <h1>Mega Lopunny ex Limitless Focal / Mega Froslass ex League</h1>
-<p>共享冻结 0019 Encoder，50 套隔离 Decoder/Value；V7 的全部 50 套 decoder 从 V6 update13 继承。主视角切换为包含 Abra 的 Limitless Mega Lopunny ex exact deck，训练至少持续 24 GPU 小时，并由前台终端监控会话守护。</p>
+<p>共享冻结 0019 Encoder，51 套隔离 Decoder/Value。V8 从 V7 update71 继承原有 50 套分支，并为 Rmy 的 Teal Mask Ogerpon ex exact deck 建立独立 Foundation-default decoder/value；V8 仅完成未来 RL 的初始化，不声明新增强度。</p>
 <div class="badges"><span class="badge">Focal exact deck: f03203e5bc6f</span><span class="badge">Official engine only</span><span class="badge">W&B online</span><span class="badge">24h minimum</span></div></header>
 
 <section><h2>运行合同</h2><div class="grid">
-<div class="metric"><b>50</b><small>Frozen + Live exact-deck identities</small></div>
-<div class="metric"><b>50</b><small>继承 V6 update13，0 Foundation 初始化</small></div>
+<div class="metric"><b>51</b><small>Frozen + Live exact-deck identities</small></div>
+<div class="metric"><b>50 + 1</b><small>继承 V7 update71 + Ogerpon Foundation default</small></div>
 <div class="metric"><b>512</b><small>每次 update 的 official-engine 对局</small></div>
 <div class="metric"><b>256 / 256</b><small>主视角先手 / 后手平衡</small></div>
 <div class="metric"><b>320</b><small>共享 Encoder d_model</small></div>
-<div class="metric"><b>24h+</b><small>前台监督的最短 GPU 运行时长</small></div>
+<div class="metric"><b>V8</b><small>初始化完成，尚未启动新 RL</small></div>
 </div></section>
 
 <section><h2>主视角 Exact 60</h2><div class="deck-columns">
 <div><strong>Pokémon · 16</strong><ul><li>3 Buneary / 3 Mega Lopunny ex</li><li>2 Dunsparce (65) / 2 Dunsparce (305)</li><li>3 Dudunsparce / 1 Fan Rotom</li><li>1 Abra / 1 Moltres</li></ul></div>
 <div><strong>Trainer · 36</strong><ul><li>4 Hilda / 4 Wally's Compassion / 4 Boss's Orders</li><li>3 Lillie's Determination / 4 Pokégear 3.0</li><li>4 Ultra Ball / 4 Poké Pad / 3 Buddy-Buddy Poffin</li><li>3 Air Balloon / 3 Battle Cage</li></ul></div>
 <div><strong>Energy · 8</strong><ul><li>4 Mist Energy</li><li>3 Basic Fire Energy</li><li>1 Enriching Energy</li></ul></div>
-</div><p class="note">完整卡图与逐卡 card ID：<a href="../../evaluation/arena/combat_mat/frozen/0019_foundation_50_exact_decks_v3/decks/mega_lopunny_ex_001.html">Frozen deck detail</a></p></section>
+</div><p class="note">主视角仍是 Limitless Mega Lopunny；Frozen pool 已升级为 <code>0019_foundation_51_exact_decks_v4</code>，并新增 Rmy Ogerpon exact deck。</p></section>
 
 <section><h2>模型数据流</h2><div class="flow">
 <div class="step"><strong>1 · Engine</strong>官方 runtime 返回 observation 与合法 options</div>
@@ -37,15 +37,15 @@
 </div><p class="callout">可训练 actor 仅包含 pointer_key、pointer_query、option_bias、decoder_init、decoder、stop；Encoder、embedding、ontology、persona residual 与 action contract 全部冻结。</p></section>
 
 <section><h2>初始化与 KL Reference</h2><div class="scroll"><table><thead><tr><th>身份</th><th>启动权重</th><th>固定 reference</th><th>失败策略</th></tr></thead><tbody>
-<tr><td>全部 50 套 Live</td><td>各自 V6 <code>update-000013.pt</code></td><td>各自 V7 update-0</td><td>缺失、SHA 或 deck hash 不一致即拒绝启动</td></tr>
-<tr><td><code>mega_lopunny_ex_001</code></td><td>V6 update13 继承</td><td>该 deck 的 V7 update-0</td><td>Limitless exact deck，包含 Abra，作为唯一 focal</td></tr>
-<tr><td><code>mega_lopunny_ex_mega_froslass_ex_002</code></td><td>V6 update13 继承</td><td>该 deck 的 V7 update-0</td><td>保留为 Live opponent</td></tr>
+<tr><td>原有 50 套 Live</td><td>各自 V7 <code>update-000071.pt</code></td><td>各自 V8 update-0</td><td>缺失、SHA 或 deck hash 不一致即拒绝启动</td></tr>
+<tr><td><code>rmy_teal_mask_ogerpon_001</code></td><td>Foundation default</td><td>独立 V8 update-0</td><td>replay exact deck；checkpoint <code>033f0839e4cf</code></td></tr>
+<tr><td><code>mega_lopunny_ex_001</code></td><td>V7 update71 继承</td><td>该 deck 的 V8 update-0</td><td>Limitless exact deck，包含 Abra，保持唯一 focal</td></tr>
 </tbody></table></div><p class="note">0022 Dragapult 的已验收强度节点是 update75；League 延续资产按用户合同读取每套 deck 最后完整发布的 update81。两者在 provenance 中分开记录。</p></section>
 
 <section><h2>更新、评测与证据边界</h2><div class="grid">
 <div class="metric"><b>+1 / -1 / 0</b><small>胜 / 负 / 平唯一正式 reward，gamma=1</small></div>
 <div class="metric"><b>每 5 updates</b><small>Frozen、Live 与固定 probe greedy diagnostic</small></div>
-<div class="metric"><b>50 optimizers</b><small>全新且隔离，不保存 optimizer state</small></div>
+<div class="metric"><b>51 optimizers</b><small>未来训练时全新且隔离，不保存 optimizer state</small></div>
 <div class="metric"><b>3 identities</b><small>fixed reference / behavior / updated checkpoint</small></div>
 </div><p class="callout danger">sampled rollout、Live 胜率、PPO loss 或短 probe 只能定位候选。任何“更强”结论必须来自同 seed、平衡先后手、固定 Frozen Arena 的 official-engine 正式评测。</p></section>
 
@@ -58,5 +58,5 @@
 </tbody></table></div></section>
 
 <section><h2>权威资产</h2><p><code>train/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/</code><br><code>experiments/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/</code><br><code>rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/&lt;version&gt;/</code></p><p class="note">完整字段、PPO 超参、指标 namespace 与验收边界见同目录 DESIGN.md。</p></section>
-<p class="footer">Updated 2026-08-01 · Foundation SHA da9b13d6f82d · focal deck SHA f03203e5bc6f</p>
+<p class="footer">Updated 2026-08-02 · Foundation SHA da9b13d6f82d · Rmy Ogerpon deck SHA e40278fd83d9</p>
 </main></body></html>

@@ -148,16 +148,24 @@ def resolve_project_version_checkpoint_map(
     }
     current = {plugin.deck_id: plugin for plugin in plugins}
     missing_current = sorted(set(prior) - set(current))
-    missing_source = sorted(set(current) - set(prior))
-    if missing_current or missing_source:
+    new_current = sorted(set(current) - set(prior))
+    if missing_current:
         raise ValueError(
             "source League catalog differs from current 0023 catalog: "
-            f"missing_current={missing_current}, missing_source={missing_source}"
+            f"missing_current={missing_current}"
         )
 
     checkpoints: dict[str, Path | None] = {}
     audit: dict[str, dict[str, object]] = {}
     for plugin in plugins:
+        if plugin.deck_id in new_current:
+            checkpoints[plugin.deck_id] = None
+            audit[plugin.deck_id] = {
+                "initialization": "foundation_default",
+                "foundation_sha256": EXPECTED_WEIGHTS_SHA256,
+                "reason": "deck_absent_from_source_0023_catalog",
+            }
+            continue
         prior_record = prior[plugin.deck_id]
         prior_deck_sha = str(prior_record.get("deck_sha256"))
         if prior_deck_sha != plugin.deck_sha256:
@@ -358,8 +366,8 @@ def run_league_training(
     ):
         raise ValueError("League counts and checkpoint retention must be positive")
     plugins = load_deck_plugins(deck_root)
-    if len(plugins) != 50:
-        raise ValueError(f"League requires exactly 50 deck plugins, got {len(plugins)}")
+    if len(plugins) != 51:
+        raise ValueError(f"League requires exactly 51 deck plugins, got {len(plugins)}")
     focal = next(plugin for plugin in plugins if plugin.focal)
     if focal.deck_id != FOCAL_DECK_ID:
         raise ValueError(f"0023 focal deck must be {FOCAL_DECK_ID}, got {focal.deck_id}")
@@ -379,7 +387,7 @@ def run_league_training(
             )
         )
     for record in initialization_audit.values():
-        if record["initialization"] == "foundation":
+        if record["initialization"] in {"foundation", "foundation_default"}:
             record["foundation_sha256"] = identity.weights_sha256
     prospective = project_version_paths(PROJECT_ID, config.version)
     preflight_storage(prospective.run_root.parent, minimum_free_gib=config.launch_minimum_free_gib)
@@ -416,7 +424,7 @@ def run_league_training(
         "focal_deck_id": FOCAL_DECK_ID,
         "opponent_views": ["frozen", "live"],
         "live_opponent_updates_enabled": True,
-        "live_deck_update_contract": "all_50_isolated_decoder_value_optimizers",
+        "live_deck_update_contract": "all_decks_isolated_decoder_value_optimizers",
         "reference_kl_contract": "fixed_to_each_deck_0023_initialization",
         "initialization_audit": str(initialization_audit_path),
         "initialization_summary": {
