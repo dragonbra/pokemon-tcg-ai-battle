@@ -61,26 +61,40 @@ class ShardWriter:
     def __init__(self, root: Path, records_per_shard: int):
         self.root = root
         self.records_per_shard = records_per_shard
-        self.rows: list[dict[str, Any]] = []
-        self.shards: list[dict[str, Any]] = []
+        self.rows: dict[str, list[dict[str, Any]]] = {"train": [], "validation": []}
+        self.shards: dict[str, list[dict[str, Any]]] = {"train": [], "validation": []}
 
-    def add(self, row: dict[str, Any]) -> None:
-        self.rows.append(row)
-        if len(self.rows) >= self.records_per_shard:
-            self.flush()
+    def add(self, split: str, row: dict[str, Any]) -> None:
+        if split not in self.rows:
+            raise ValueError(f"unknown dataset split: {split}")
+        self.rows[split].append(row)
+        if len(self.rows[split]) >= self.records_per_shard:
+            self.flush(split)
 
-    def flush(self) -> None:
-        if not self.rows:
+    def flush(self, split: str) -> None:
+        rows = self.rows[split]
+        if not rows:
             return
-        name = f"decisions-{len(self.shards):05d}.jsonl.gz"
+        name = f"{split}-{len(self.shards[split]):05d}.jsonl.gz"
         final = self.root / name
         temporary = self.root / f".{name}.{uuid.uuid4().hex}.tmp"
         with gzip.open(temporary, "wt", encoding="utf-8", compresslevel=6) as handle:
-            for row in self.rows:
+            for row in rows:
                 handle.write(_canonical(row))
         os.replace(temporary, final)
-        self.shards.append({"path": name, "count": len(self.rows), "bytes": final.stat().st_size, "sha256": _sha256(final)})
-        self.rows.clear()
+        self.shards[split].append(
+            {
+                "path": name,
+                "count": len(rows),
+                "bytes": final.stat().st_size,
+                "sha256": _sha256(final),
+            }
+        )
+        rows.clear()
+
+    def flush_all(self) -> None:
+        for split in self.rows:
+            self.flush(split)
 
 
 def materialize(
@@ -114,11 +128,12 @@ def materialize(
             assert knowledge is not None
             snapshot = knowledge.consume(raw["actor_observation"], raw["event_cursor"])
             compiled = compile_row(raw, snapshot, prototypes)
-            writer.add({
+            split = str(raw["split"])
+            writer.add(split, {
                 "actor": actor_payload(compiled),
                 "target": {"ordered_action": compiled["legacy"]["action"], "termination": compiled["action_termination"]},
                 "audit": {
-                    "identity": identity, "split": raw["split"],
+                    "identity": identity, "split": split,
                     "source_id": raw.get("source_id"),
                     "source_payload_sha256": raw.get("source_payload_sha256"),
                 },
@@ -126,7 +141,11 @@ def materialize(
             count += 1
             if max_decisions is not None and count >= max_decisions:
                 break
-        writer.flush()
+        writer.flush_all()
+        split_counts = {
+            split: sum(item["count"] for item in shards)
+            for split, shards in writer.shards.items()
+        }
         manifest = {
             "schema_version": SCHEMA_VERSION,
             "status": "complete",
@@ -134,6 +153,7 @@ def materialize(
             "date_end": end_date,
             "decisions": count,
             "records_per_shard": records_per_shard,
+            "split_counts": split_counts,
             "prototype_sha256": _sha256(output / "prototypes.json"),
             "full_engine_prototype_sha256": _sha256(output / "official_full_engine_prototypes_v1.json"),
             "shards": writer.shards,

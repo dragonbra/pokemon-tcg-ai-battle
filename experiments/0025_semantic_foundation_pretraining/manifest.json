@@ -1,6 +1,6 @@
 {
   "project_id": "0025_semantic_foundation_pretraining",
-  "status": "semantic_contract_smoke_complete",
+  "status": "v2_james_cox_raging_bolt_paired_bc_ready",
   "created_date": "2026-08-02",
   "lineage": {
     "project": "0019_universal_winner_bc",
@@ -27,6 +27,29 @@
     "official_full_engine_file_sha256": "5ab0b28e21d40a17a7b153744332424f08d4e32cde4e2ab20f11cb262e799845"
   },
   "version": "V1_semantic_contract_smoke",
+  "next_version": "V2_james_cox_raging_bolt_ablation",
+  "v2_expert_corpus": {
+    "team_names": [
+      "James Cox",
+      "James Cox & Henry Chao"
+    ],
+    "exact_deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+    "episodes": 1073,
+    "episode_split": {
+      "train": 981,
+      "validation": 92
+    },
+    "decision_split": {
+      "train": 70571,
+      "validation": 6603
+    },
+    "audit_file_sha256": "ad45117124088a7920f9276a3b0fc395396b791a393e967ac5718b42c64c7ab2",
+    "catalog_file_sha256": "b9f44810614df46aaf1b8ea8d5b13e4063d4589f0f563a891a3b708682fe34c7",
+    "raw_reference_file_sha256": "0acbecec67c197d3ffd41f0c1b997cf29ee05bf02d9b6b75d21644f6f807fae6",
+    "semantic_manifest_file_sha256": "c2e36af98e44d880d725f3b1ec60fdcee6f1f81ed430c40d408796bee093114f",
+    "source_identity_actor_visible": false
+  },
   "formal_training_started": false,
-  "full_materialization_started": false
+  "full_materialization_started": false,
+  "expert_materialization_complete": true
 }

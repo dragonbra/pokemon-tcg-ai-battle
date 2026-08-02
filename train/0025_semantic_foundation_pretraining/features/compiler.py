@@ -255,7 +255,11 @@ def actor_payload(record: Mapping[str, Any]) -> dict[str, Any]:
         "ledger_cat", "ledger_num", "event_cat", "event_num", "known_opponent_hand_card_ids",
         "unknown_opponent_hand_count", "turn_budget",
     }
-    return {key: record[key] for key in allowed}
+    payload = {key: record[key] for key in allowed}
+    legacy = dict(payload["legacy"])
+    legacy.pop("action", None)
+    payload["legacy"] = legacy
+    return payload
 
 
 __all__ = ["SCHEMA_VERSION", "actor_payload", "compile_row"]

@@ -92,11 +92,11 @@
         <h1>0025 Semantic Foundation Pretraining</h1>
         <p class="subtitle">从 0019 的可审计 full-action BC 出发，把卡牌原型、动作语义与资源记忆真正送进模型。</p>
       </div>
-      <div class="status">V1 contract smoke: PASS · 未全量构建 · 未训练</div>
+      <div class="status">V2 James Cox 数据/训练合同: READY · 正式训练未启动</div>
     </div>
     <nav><div class="inner">
       <a href="#contract">合同</a><a href="#architecture">模型</a><a href="#schema">输入</a>
-      <a href="#forward">Forward</a><a href="#evidence">证据</a><a href="#cost">成本</a><a href="#next">边界</a>
+      <a href="#forward">Forward</a><a href="#evidence">证据</a><a href="#cost">成本</a><a href="#v2">V2 实验</a><a href="#next">边界</a>
     </div></nav>
   </header>
   <main>
@@ -108,7 +108,7 @@
         <div class="metric"><b>433</b><span>official skills</span></div>
         <div class="metric"><b>1,556</b><span>official attacks</span></div>
         <div class="metric"><b>3,067</b><span>structured effects</span></div>
-        <div class="metric"><b>8 / 8</b><span>contract tests passed</span></div>
+        <div class="metric"><b>19 / 19</b><span>contract tests passed</span></div>
       </div>
       <div class="notice good"><strong>不丢旧能力：</strong>legacy board、legal options、exact deck multiset、causal ledger、recent events、known/unknown hand 全部保留。来源和 team 仍只用于 provenance，不进入 actor forward。</div>
     </section>
@@ -260,6 +260,29 @@
       <div class="notice">0019 数字是正式 padded model-ready cache；0025 数字是 gzip JSONL smoke。它们适合做容量规划，不代表训练读取吞吐等价。正式训练前仍要做 packed/Arrow benchmark。</div>
     </section>
 
+    <section id="v2">
+      <h2>第一个真实验证：只学 James Cox 猛雷鼓</h2>
+      <p class="lede">把 <code>James Cox</code> 与 <code>James Cox &amp; Henry Chao</code> 视为同一位 expert 的连续版本，但保留两个 provenance 分组。1,073 局全部是同一个 exact 60-card deck；team/source 不进入 actor forward。</p>
+      <div class="metrics">
+        <div class="metric"><b>1,073</b><span>winning Episodes</span></div>
+        <div class="metric"><b>981 / 92</b><span>train / validation Episodes</span></div>
+        <div class="metric"><b>70,571</b><span>train decisions</span></div>
+        <div class="metric"><b>6,603</b><span>validation decisions</span></div>
+        <div class="metric"><b>1</b><span>exact deck hash</span></div>
+      </div>
+      <div class="notice good"><strong>数据边界：</strong><code>f50fa3a...80c16a</code>；父 catalog 的 whole-Episode split 原样保留。actor 中不仅没有 source/team，也物理删除了 legacy codec 曾复制进去的 <code>action</code>；标签只存在于 target。</div>
+      <table>
+        <thead><tr><th>Arm</th><th>模型看见什么</th><th>D</th><th>参数</th><th>目的</th></tr></thead>
+        <tbody>
+          <tr><td><code>legacy_default</code></td><td>原 ID / location 表示</td><td class="num">320</td><td class="num">7,154,562</td><td>回答“相比之前提升多少”</td></tr>
+          <tr><td><code>legacy_budget_matched</code></td><td>同一 legacy 表示，只加宽容量</td><td class="num">576</td><td class="num">21,725,570</td><td>控制参数量因素</td></tr>
+          <tr><td><code>semantic</code></td><td>legacy + typed multi-memory</td><td class="num">320</td><td class="num">23,760,966</td><td>检验语义结构本身</td></tr>
+        </tbody>
+      </table>
+      <p>三臂共享 dataset、split、batch order、AdamW、ordered option pointer + STOP target，以及完整 validation 指标。每个 epoch 每个 active arm 只做一次 train pass；随后在 6,603 条 validation 上同时计算 teacher-forced 与 free-greedy exact action。</p>
+      <div class="notice"><strong>证据边界：</strong>离线 loss / exact-action 只能证明模仿能力。最终“打得更好”必须把选出的 checkpoint 导出成自包含 candidate，并在同一 official engine、opponent catalog、seed 和先后手合同下比较。</div>
+    </section>
+
     <section id="next">
       <h2>当前边界与下一版本</h2>
       <table>
@@ -267,9 +290,9 @@
         <tbody>
           <tr><td>Prototype</td><td>官方全表、官方 ID、完整结构化 effects 已导出</td><td>为 sidecar 增加 engine source hash / enum schema commitment</td></tr>
           <tr><td>Direct facts</td><td>typed Basic/Rainbow gap、base damage、target HP</td><td>完整 current-state effect resolver 与 differential engine tests</td></tr>
-          <tr><td>Dataset</td><td>自包含 archive&rarr;catalog&rarr;raw&rarr;semantic；8-step smoke</td><td>扩展 raw freeze date；group-safe workers；storage/RSS guard</td></tr>
-          <tr><td>Model</td><td>multi-memory skeleton、pointer+STOP 合同、padding invariance</td><td>参数预算 ablation、BC loss、validation greedy decode</td></tr>
-          <tr><td>Training</td><td>未开始；无 W&amp;B、checkpoint、candidate</td><td>新 V2、正式 config、W&amp;B online、model-only checkpoints</td></tr>
+          <tr><td>Dataset</td><td>1,073 Episodes / 77,174 decisions；split shards + hash + leakage audit</td><td>完成 V2 后再决定是否扩展 foundation corpus</td></tr>
+          <tr><td>Model</td><td>三臂 paired contract；teacher loss + batched greedy 已通过真实数据 smoke</td><td>按同一 validation 合同选择 checkpoint</td></tr>
+          <tr><td>Training</td><td>V2 runner/watchdog/W&amp;B/model-only checkpoint ready</td><td>启动并持续监控正式 V2</td></tr>
           <tr><td>Strength evidence</td><td>只有表示与 forward correctness</td><td>同 split/预算的 0019 vs 0025 BC + official-engine arena</td></tr>
         </tbody>
       </table>

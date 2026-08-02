@@ -1,6 +1,6 @@
 # 0025 Semantic Foundation Pretraining
 
-Status: **V1 semantic contract and smoke complete; full dataset build and formal training not started.**
+Status: **V1 semantic contract complete; V2 James Cox Raging Bolt paired BC dataset and trainer ready; formal training not started.**
 
 ## Objective
 
@@ -187,6 +187,53 @@ OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 \
 
 The current implementation is intentionally single-process. A full production build should add group-preserving workers and storage guards before execution. Tonight's run used `--max-decisions 8` only.
 
+## V2 First Controlled Experiment: James Cox Raging Bolt
+
+The first strength experiment is intentionally narrow. It combines two exact Kaggle
+`TeamNames` as one human expert corpus while retaining them as separate provenance groups:
+
+| Exact source | Winning Episodes | Train decisions | Validation decisions |
+|---|---:|---:|---:|
+| `James Cox` | 454 | 30,087 | 2,386 |
+| `James Cox & Henry Chao` | 619 | 40,484 | 4,217 |
+| **Total** | **1,073** | **70,571** | **6,603** |
+
+All 1,073 Episodes use the same exact registered 60-card deck:
+`f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a`.
+The parent catalog split is preserved whole-Episode: 981 train and 92 validation Episodes.
+There is no Episode overlap. The formal evidence is
+`data_audit/james_cox_raging_bolt_2026-07-20_2026-08-01.json`; its paired raw-builder
+catalog is stored alongside it.
+
+Source identity remains absent from `actor`. The materializer additionally removes the
+legacy codec's copied `action` field from `actor.legacy`; the label exists only under
+`target.ordered_action`. Split-specific gzip shards are content-hashed and loaded one
+shard at a time. A train epoch covers each train decision exactly once per active arm.
+
+### Paired model arms
+
+| Arm | Actor-visible representation | D | Parameters |
+|---|---|---:|---:|
+| `legacy_default` | frozen ID/location representation | 320 | 7,154,562 |
+| `legacy_budget_matched` | same legacy representation, capacity control | 576 | 21,725,570 |
+| `semantic` | legacy + typed multi-memory representation | 320 | 23,760,966 |
+
+The first comparison answers both capacity questions: semantic versus the actual old default,
+and semantic versus a legacy-only model within about 9% parameter count. Formal semantic and
+legacy arms use dropout 0.10. They share dataset, Episode split, batch order, optimizer family,
+learning rate, ordered option-pointer + STOP targets, and validation metrics.
+
+The BC objective is token cross-entropy over the full ordered action, including STOP. Every
+epoch records online optimization loss/token accuracy/teacher exact from the one update pass,
+then full validation loss, token accuracy, teacher-forced exact action, free-greedy exact action,
+legal action rate, and action-length accuracy. Offline metrics are imitation evidence only.
+Gameplay strength still requires matched official-engine evaluation.
+
+The formal version is `V2_james_cox_raging_bolt_ablation`. It uses W&B online, TensorBoard,
+canonical JSONL metrics, a foreground watchdog, and four finite model-only checkpoint slots per
+arm (`latest`, best validation loss, best teacher exact, best greedy exact). Optimizer, RNG,
+DataLoader position, replay, and other exact-resume state are not saved.
+
 ## V1 Smoke And Cost
 
 The 32-step benchmark is from one real 0019 trajectory, episode steps 3 through 62. It includes 5 legal Attack options.
@@ -213,7 +260,7 @@ Only 07-10..07-28 has observed 0019 decision counts. Local episode archives curr
 
 ## Verification
 
-Eight tests pass:
+Nineteen tests pass:
 
 - attacks 934 and 935 retain distinct identity, cost, and damage;
 - numeric zero, unknown, not-applicable, and padding remain distinct;
@@ -223,15 +270,21 @@ Eight tests pass:
 - selected options and STOP obey the autoregressive `minCount/maxCount` contract;
 - 0025 imports no executable code from another numbered project.
 - the self-contained archive catalog and raw-build entrypoints import successfully.
+- exact expert/deck slicing fails closed on duplicate Episodes and non-60-card decks;
+- actor payload physically excludes both provenance and the copied target action;
+- split shards, hashes, deterministic coverage, shared STOP target, paired metrics, batched
+  legal greedy decode, and model-only checkpoint reload are verified;
+- a real three-arm GPU smoke completed finite forward/backward, validation, TensorBoard, status,
+  and checkpoint publication; all four semantic memory gates moved away from zero.
 
 ## Training Boundary And Next Versions
 
 V1 is a research framework, not a trained candidate package. There is no W&B run because no formal BC/value/RL optimization occurred.
 
-Before formal pretraining:
+Before broader foundation pretraining:
 
 1. Extend/audit the raw corpus through the chosen freeze date.
 2. Implement and test the deterministic current-state effect resolver, especially damage modifiers, typed Special Energy behavior, protection, weakness/resistance, tool-modified HP, KO/prize delta, and zone transitions.
 3. Benchmark packed/Arrow collation and add group-preserving parallel materialization plus storage/RSS guards.
-4. Specify BC losses, validation greedy decode, checkpoint retention, and W&B contract in a new strictly increasing version.
-5. Run matched 0019-style and 0025 ablations under the same split, parameter budget, official-engine opponents, seeds, and first/second-player balance.
+4. Complete V2 paired BC training and select each arm only by its frozen validation contract.
+5. Export both selected policies and run matched official-engine opponents, seeds, and first/second-player balance before making strength claims.

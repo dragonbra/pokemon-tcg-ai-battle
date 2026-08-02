@@ -217,34 +217,84 @@ class SemanticFoundationPolicy(nn.Module):
         option_repr = self.event_query(option_repr, event_memory, event_mask)
         global_features = torch.cat((batch["global_num"], batch["turn_budget"]), dim=-1)
         state = self.global_num(global_features)
-        return option_repr * batch["option_mask"].unsqueeze(-1), state
+        return state, option_repr * batch["option_mask"].unsqueeze(-1)
+
+    def _logits(
+        self,
+        batch: dict[str, Tensor],
+        options: Tensor,
+        hidden: Tensor,
+        available: Tensor,
+        selected_count: Tensor,
+    ) -> Tensor:
+        query = self.pointer_query(hidden).unsqueeze(1)
+        logits = (query * self.pointer_key(options)).sum(dim=-1) / self.config.d_model ** 0.5
+        logits = logits + self.option_bias(options).squeeze(-1)
+        can_select = selected_count.lt(batch["max_count"])
+        logits = logits.masked_fill(
+            ~(available & can_select.unsqueeze(1)), torch.finfo(logits.dtype).min
+        )
+        stop = self.stop(hidden)
+        can_stop = selected_count.ge(batch["min_count"])
+        stop = stop.masked_fill(~can_stop.unsqueeze(1), torch.finfo(stop.dtype).min)
+        return torch.cat((logits, stop), dim=1)
+
+    def _consume(
+        self,
+        options: Tensor,
+        hidden: Tensor,
+        available: Tensor,
+        selected_count: Tensor,
+        raw_index: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor]:
+        option_count = options.size(1)
+        valid = raw_index.ge(0) & raw_index.lt(option_count)
+        index = raw_index.clamp(min=0, max=option_count - 1)
+        chosen = options.gather(
+            1, index[:, None, None].expand(-1, 1, options.size(-1))
+        ).squeeze(1)
+        updated = self.decoder(chosen, hidden)
+        hidden = torch.where(valid.unsqueeze(-1), updated, hidden)
+        batch_indices = torch.arange(options.size(0), device=options.device)
+        available = available.clone()
+        available[batch_indices[valid], index[valid]] = False
+        selected_count = selected_count + valid.long()
+        return hidden, available, selected_count
 
     def forward(self, batch: dict[str, Tensor], selected_prefix: Tensor | None = None) -> Tensor:
-        options, state = self.encode(batch)
+        state, options = self.encode(batch)
         hidden = torch.tanh(self.decoder_init(state))
         selected_count = torch.zeros(options.size(0), dtype=torch.long, device=options.device)
         available = batch["option_mask"].clone()
         if selected_prefix is not None:
             for step in range(selected_prefix.size(1)):
-                raw_index = selected_prefix[:, step]
-                valid = raw_index.ge(0)
-                index = raw_index.clamp_min(0)
-                chosen = options.gather(1, index[:, None, None].expand(-1, 1, options.size(-1))).squeeze(1)
-                updated = self.decoder(chosen, hidden)
-                hidden = torch.where(valid.unsqueeze(-1), updated, hidden)
-                batch_indices = torch.arange(options.size(0), device=options.device)
-                available[batch_indices[valid], index[valid]] = False
-                selected_count += valid.long()
-        query = self.pointer_query(hidden).unsqueeze(1)
-        logits = (query * self.pointer_key(options)).sum(dim=-1) / self.config.d_model ** 0.5
-        logits = logits + self.option_bias(options).squeeze(-1)
-        can_select = selected_count.lt(batch["max_count"])
-        available &= can_select.unsqueeze(1)
-        logits = logits.masked_fill(~available, torch.finfo(logits.dtype).min)
-        stop = self.stop(hidden)
-        can_stop = selected_count.ge(batch["min_count"])
-        stop = stop.masked_fill(~can_stop.unsqueeze(1), torch.finfo(stop.dtype).min)
-        return torch.cat((logits, stop), dim=1)
+                hidden, available, selected_count = self._consume(
+                    options,
+                    hidden,
+                    available,
+                    selected_count,
+                    selected_prefix[:, step],
+                )
+        return self._logits(batch, options, hidden, available, selected_count)
+
+    def teacher_logits(self, batch: dict[str, Tensor]) -> Tensor:
+        state, options = self.encode(batch)
+        hidden = torch.tanh(self.decoder_init(state))
+        selected_count = torch.zeros(options.size(0), dtype=torch.long, device=options.device)
+        available = batch["option_mask"].clone()
+        outputs: list[Tensor] = []
+        for step in range(batch["targets"].size(1)):
+            outputs.append(
+                self._logits(batch, options, hidden, available, selected_count)
+            )
+            hidden, available, selected_count = self._consume(
+                options,
+                hidden,
+                available,
+                selected_count,
+                batch["targets"][:, step],
+            )
+        return torch.stack(outputs, dim=1)
 
 
 __all__ = ["SemanticFoundationPolicy", "SemanticModelConfig"]

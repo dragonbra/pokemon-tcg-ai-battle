@@ -107,6 +107,7 @@ class SemanticContractTests(unittest.TestCase):
         payload = actor_payload(record)
         self.assertNotIn("source_id", payload)
         self.assertNotIn("team_name", payload)
+        self.assertNotIn("action", payload["legacy"])
         self.assertTrue(payload["ledger_cat"])
 
     def test_model_forward_is_finite_and_padding_invariant(self) -> None:
