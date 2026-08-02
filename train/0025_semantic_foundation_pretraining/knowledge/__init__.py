@@ -1,0 +1,2 @@
+"""Actor-causal resource knowledge."""
+

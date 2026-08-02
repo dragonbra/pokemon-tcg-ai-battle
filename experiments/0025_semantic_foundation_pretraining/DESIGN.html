@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>0025 Semantic Foundation Pretraining</title>
+  <style>
+    :root {
+      --ink:#172127; --muted:#64727a; --line:#cbd4d8; --paper:#f7f9f8;
+      --white:#fff; --green:#176b48; --green-soft:#e4f1ea; --blue:#285f8f;
+      --blue-soft:#e8f0f7; --amber:#8b5a12; --amber-soft:#f7edda;
+      --red:#9b3d34; --red-soft:#f8e8e6; --code:#182126; --code-ink:#eaf1ed;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.62 system-ui,-apple-system,"Segoe UI",sans-serif; letter-spacing:0; }
+    header { background:var(--ink); color:var(--white); border-bottom:5px solid var(--green); }
+    .top { max-width:1240px; margin:auto; padding:26px 24px 22px; display:grid; grid-template-columns:1fr auto; gap:24px; align-items:end; }
+    h1 { margin:0; font-size:clamp(27px,4vw,44px); line-height:1.08; font-weight:760; letter-spacing:0; }
+    .subtitle { margin:8px 0 0; color:#cbd8d3; max-width:760px; }
+    .status { border:1px solid #668073; padding:9px 12px; color:#d7eee1; background:#21322b; border-radius:4px; white-space:nowrap; }
+    nav { background:#222e34; overflow:auto; }
+    nav .inner { max-width:1240px; margin:auto; padding:0 24px; display:flex; }
+    nav a { color:#dbe4e7; text-decoration:none; padding:11px 14px; border-bottom:3px solid transparent; white-space:nowrap; }
+    nav a:hover { background:#2d3b42; border-color:#8cc3a6; }
+    main { max-width:1240px; margin:auto; padding:28px 24px 70px; }
+    section { padding:30px 0; border-bottom:1px solid var(--line); }
+    h2 { margin:0 0 16px; font-size:24px; line-height:1.2; letter-spacing:0; }
+    h3 { margin:20px 0 9px; font-size:17px; letter-spacing:0; }
+    p { margin:8px 0 13px; }
+    .lede { font-size:18px; max-width:900px; }
+    .metrics { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:22px 0; }
+    .metric { background:var(--white); border:1px solid var(--line); border-top:4px solid var(--green); border-radius:5px; padding:14px; min-height:106px; }
+    .metric b { display:block; font-size:25px; line-height:1.1; color:var(--green); }
+    .metric span { display:block; color:var(--muted); margin-top:7px; }
+    .notice { border-left:5px solid var(--amber); background:var(--amber-soft); padding:13px 16px; margin:16px 0; }
+    .danger { border-left-color:var(--red); background:var(--red-soft); }
+    .good { border-left-color:var(--green); background:var(--green-soft); }
+    .legend { display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; }
+    .tag { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--white); padding:5px 8px; border-radius:4px; font-size:13px; }
+    .dot { width:9px; height:9px; border-radius:50%; background:var(--blue); }
+    .dot.raw { background:var(--green); } .dot.derived { background:var(--amber); } .dot.learned { background:var(--blue); }
+    .flow { display:grid; grid-template-columns:210px 34px minmax(190px,1fr) 34px minmax(190px,1fr) 34px 210px; align-items:stretch; gap:7px; margin:22px 0; }
+    .stack { display:grid; gap:8px; }
+    .node { background:var(--white); border:1px solid var(--line); border-radius:5px; padding:12px; min-height:74px; transition:.18s border-color,.18s background,.18s transform; }
+    .node strong { display:block; line-height:1.25; }
+    .node small { display:block; color:var(--muted); margin-top:5px; }
+    .node.raw { border-left:5px solid var(--green); }
+    .node.derived { border-left:5px solid var(--amber); }
+    .node.learned { border-left:5px solid var(--blue); }
+    .node.output { border-left:5px solid var(--red); }
+    .arrow { display:grid; place-items:center; color:var(--muted); font-size:25px; }
+    .node.active { border-color:var(--blue); background:var(--blue-soft); transform:translateY(-2px); }
+    .controls { display:flex; gap:7px; flex-wrap:wrap; margin:15px 0; }
+    button { border:1px solid #9eacb2; background:var(--white); color:var(--ink); border-radius:4px; padding:8px 11px; cursor:pointer; font:inherit; }
+    button:hover,button.active { border-color:var(--blue); background:var(--blue-soft); color:#17476f; }
+    table { width:100%; border-collapse:collapse; background:var(--white); margin:15px 0; }
+    th,td { border:1px solid var(--line); padding:9px 10px; text-align:left; vertical-align:top; }
+    th { background:#e9eeef; font-weight:700; }
+    td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    code { background:#e9edef; padding:2px 5px; border-radius:3px; }
+    pre { margin:14px 0; padding:18px; overflow:auto; background:var(--code); color:var(--code-ink); border-left:5px solid var(--green); border-radius:5px; font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace; white-space:pre; }
+    pre code { background:none; padding:0; }
+    .kw { color:#7fc8ff; } .fn { color:#ffd479; } .str { color:#a8dfaa; } .cm { color:#8da19a; } .numlit { color:#f4a6a0; }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .band { border:1px solid var(--line); border-radius:5px; background:var(--white); padding:17px; }
+    .band h3 { margin-top:0; }
+    .state-row { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:14px 0; }
+    .state { border:1px solid var(--line); background:var(--white); padding:12px; border-top:4px solid var(--muted); }
+    .state.present { border-top-color:var(--green); } .state.unknown { border-top-color:var(--amber); }
+    .state.na { border-top-color:var(--red); } .state.pad { border-top-color:#7c8990; }
+    .comparison { display:grid; grid-template-columns:1fr 42px 1fr; align-items:center; gap:10px; }
+    .big-arrow { text-align:center; font-size:27px; color:var(--muted); }
+    .bar { height:13px; background:#dce3e6; margin:7px 0; position:relative; }
+    .bar > i { display:block; height:100%; background:var(--blue); }
+    footer { color:var(--muted); padding:24px 0 0; }
+    @media (max-width:900px) {
+      .top { grid-template-columns:1fr; } .status { white-space:normal; }
+      .metrics { grid-template-columns:repeat(2,1fr); }
+      .flow { grid-template-columns:1fr; }
+      .arrow { transform:rotate(90deg); min-height:24px; }
+      .two,.comparison { grid-template-columns:1fr; }
+      .big-arrow { transform:rotate(90deg); }
+    }
+    @media (max-width:560px) { main,.top { padding-left:15px; padding-right:15px; } .metrics,.state-row { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top">
+      <div>
+        <h1>0025 Semantic Foundation Pretraining</h1>
+        <p class="subtitle">从 0019 的可审计 full-action BC 出发，把卡牌原型、动作语义与资源记忆真正送进模型。</p>
+      </div>
+      <div class="status">V1 contract smoke: PASS · 未全量构建 · 未训练</div>
+    </div>
+    <nav><div class="inner">
+      <a href="#contract">合同</a><a href="#architecture">模型</a><a href="#schema">输入</a>
+      <a href="#forward">Forward</a><a href="#evidence">证据</a><a href="#cost">成本</a><a href="#next">边界</a>
+    </div></nav>
+  </header>
+  <main>
+    <section id="contract">
+      <h2>今晚建立了什么</h2>
+      <p class="lede">0025 不是给 0019 多塞一个 <code>attackId</code>。它保留原来的场面、精确 deck、账本、事件和动作序列，再把官方 engine 的 Card / Skill / Attack / Effect 原型变成可引用的 typed memory，让每个 option 分别查询它真正需要的证据。</p>
+      <div class="metrics">
+        <div class="metric"><b>1,267</b><span>official cards</span></div>
+        <div class="metric"><b>433</b><span>official skills</span></div>
+        <div class="metric"><b>1,556</b><span>official attacks</span></div>
+        <div class="metric"><b>3,067</b><span>structured effects</span></div>
+        <div class="metric"><b>8 / 8</b><span>contract tests passed</span></div>
+      </div>
+      <div class="notice good"><strong>不丢旧能力：</strong>legacy board、legal options、exact deck multiset、causal ledger、recent events、known/unknown hand 全部保留。来源和 team 仍只用于 provenance，不进入 actor forward。</div>
+    </section>
+
+    <section id="architecture">
+      <h2>从 raw input 到 action</h2>
+      <div class="legend">
+        <span class="tag"><i class="dot raw"></i>raw / official input</span>
+        <span class="tag"><i class="dot derived"></i>确定性派生</span>
+        <span class="tag"><i class="dot learned"></i>可学习模块</span>
+      </div>
+      <div class="controls" aria-label="memory highlighter">
+        <button class="active" data-focus="all">全部路径</button>
+        <button data-focus="board">Board</button><button data-focus="prototype">Prototype</button>
+        <button data-focus="resource">Deck / Ledger</button><button data-focus="event">Event</button>
+      </div>
+      <div class="flow" id="model-flow">
+        <div class="stack">
+          <div class="node raw" data-path="board"><strong>Raw observation</strong><small>Active, Bench, Hand, Discard, HP, attached cards</small></div>
+          <div class="node raw" data-path="prototype"><strong>Official engine tables</strong><small>Card, Skill, Attack, Effect, Target, Condition</small></div>
+          <div class="node raw" data-path="resource"><strong>Exact registered deck</strong><small>60-card multiset + visible causal history</small></div>
+          <div class="node raw" data-path="event"><strong>Visible logs</strong><small>Events, revealed opponent hand, unknown count</small></div>
+          <div class="node raw" data-path="all"><strong>Legal options</strong><small>raw type, attackId, source/target, select context</small></div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="stack">
+          <div class="node derived" data-path="board"><strong>Board tokens</strong><small>Legacy entity structure remains intact</small></div>
+          <div class="node derived" data-path="prototype"><strong>Prototype references</strong><small>Variable card / attack / skill / effect token set</small></div>
+          <div class="node derived" data-path="resource"><strong>Resource tokens</strong><small>Multiplicity + bounded/exact deck and Prize ledger</small></div>
+          <div class="node derived" data-path="event"><strong>Event tokens</strong><small>Actor-relative chronology and evidence age</small></div>
+          <div class="node derived" data-path="all"><strong>Direct option facts</strong><small>typed energy gap, base damage, target HP, field states</small></div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="stack">
+          <div class="node learned" data-path="board"><strong>Board Transformer</strong><small>Full board memory</small></div>
+          <div class="node learned" data-path="prototype"><strong>Prototype Transformer</strong><small>Card-rule memory</small></div>
+          <div class="node learned" data-path="resource"><strong>Resource Transformer</strong><small>Deck and ledger memory</small></div>
+          <div class="node learned" data-path="event"><strong>Event Transformer</strong><small>Recent evidence memory</small></div>
+          <div class="node learned" data-path="all"><strong>Typed option encoder</strong><small>One query for every legal option</small></div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="stack">
+          <div class="node learned" data-path="all"><strong>Four independent cross-attentions</strong><small>Zero-gated residual composition</small></div>
+          <div class="node learned" data-path="all"><strong>Autoregressive GRU pointer</strong><small>Consumes selected prefix</small></div>
+          <div class="node output" data-path="all"><strong>O legal logits + STOP</strong><small>Selected mask + minCount / maxCount</small></div>
+        </div>
+      </div>
+      <div class="notice"><strong>关键变化：</strong>decoder 不再只能依赖一个早期压缩的 scenario vector。每个 option 可以独立向 board、prototype、resource 和 event memory 发问，再组合证据。</div>
+    </section>
+
+    <section id="schema">
+      <h2>输入到底包含什么</h2>
+      <table>
+        <thead><tr><th>输入族</th><th>Shape</th><th>原料</th><th>语义</th></tr></thead>
+        <tbody>
+          <tr><td>Legacy global</td><td><code>[4] + [12]</code></td><td>raw observation</td><td>select phase、turn、双方 zone counts、旧 budget</td></tr>
+          <tr><td>Board</td><td><code>[E,7] + [E,5]</code></td><td>raw observation</td><td>card / owner / zone / slot / parent 与伤害、附着数量</td></tr>
+          <tr><td>Prototype refs</td><td><code>[Pc],[Pa],[Ps],[Pe]</code></td><td>official engine</td><td>当前局面真正引用的 card / attack / skill / effect</td></tr>
+          <tr><td>Exact deck</td><td><code>[D] + [D]</code></td><td>registered deck</td><td>唯一 card ID 和 multiplicity，不丢初始构筑</td></tr>
+          <tr><td>Causal ledger</td><td><code>[L,4] + [L,15]</code></td><td>history-derived</td><td>各 zone 可见数量、deck/Prize exact 或 bounds、证据 age</td></tr>
+          <tr><td>Events / hand</td><td><code>[T,8]+[T,4]+[H]+[1]</code></td><td>visible logs</td><td>最近事件、已知对手手牌、未知数量</td></tr>
+          <tr><td>Turn budget</td><td><code>[5]</code></td><td>raw observation</td><td>Supporter / Stadium / attach / Retreat / end</td></tr>
+          <tr><td>Semantic option</td><td><code>[O,16]+[O,14]+[O,14]</code></td><td>option + rules</td><td>attackId、上下文、typed gap、伤害/HP 与字段状态</td></tr>
+        </tbody>
+      </table>
+      <h3>数值 0 不再等于“没有信息”</h3>
+      <div class="state-row">
+        <div class="state pad"><strong>PAD = 0</strong><br>只为 batch 对齐，不参与 attention</div>
+        <div class="state present"><strong>PRESENT = 1</strong><br>值真实存在；0 damage 仍是已知 0</div>
+        <div class="state unknown"><strong>UNKNOWN = 2</strong><br>应存在，但当前不能可靠求出</div>
+        <div class="state na"><strong>N/A = 3</strong><br>该类型根本不适用这个字段</div>
+      </div>
+      <div class="two">
+        <div class="band"><h3>简单 Item</h3><p>1 card token + play skill + 对应 effects。没有 HP/attack 的位置不是数值 0，而是 N/A。</p></div>
+        <div class="band"><h3>复杂 Pokémon</h3><p>card token + ability skill/effects + 多个 attack/effects。序列按实际原型增长，batch padding 只发生在 collation。</p></div>
+      </div>
+    </section>
+
+    <section id="forward">
+      <h2>Forward 伪代码</h2>
+      <pre><code><span class="kw">def</span> <span class="fn">forward</span>(raw_decision, selected_prefix):
+    legacy = <span class="fn">frozen_0019_codec</span>(raw_decision.observation)
+    causal = ledger.<span class="fn">consume</span>(raw_decision.visible_logs)
+
+    option_facts = <span class="fn">bind_options</span>(
+        legal_options=raw_decision.legal_options,
+        attack_id=<span class="kw">True</span>, prototype_refs=<span class="kw">True</span>,
+        typed_energy_gap=<span class="kw">True</span>,
+        base_damage_and_target_hp=<span class="kw">True</span>,
+        explicit_field_states=<span class="kw">True</span>,
+    )
+
+    board_memory     = board_transformer(legacy.entities)
+    prototype_memory = prototype_transformer(
+        <span class="fn">lookup</span>(card_refs, attack_refs, skill_refs, effect_refs)
+    )
+    resource_memory  = resource_transformer(exact_deck, causal.ledger)
+    event_memory     = event_transformer(causal.events, causal.known_hand)
+
+    q = <span class="fn">encode_option</span>(legacy.options, option_facts)
+    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, board_memory))
+    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, prototype_memory))
+    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, resource_memory))
+    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, event_memory))
+
+    hidden = <span class="fn">initialize_decoder</span>(global_state, turn_budget)
+    hidden = <span class="fn">consume_prefix</span>(hidden, q, selected_prefix)
+    <span class="fn">mask_selected</span>()
+    <span class="fn">enforce_min_max_count</span>()
+    <span class="kw">return</span> option_pointer_logits + stop_logit</code></pre>
+      <p>每个 Transformer block 使用 pre-norm residual：<code>x = x + Attention(LN(x))</code>，再做 <code>x = x + FFN(LN(x))</code>。新 memory 到 option 的通路额外乘以零初始化 gate，保证刚开始不会强行覆盖 option identity。</p>
+    </section>
+
+    <section id="evidence">
+      <h2>已经抓住的具体证据</h2>
+      <div class="comparison">
+        <div class="band">
+          <h3>Teal Mask Ogerpon ex · Myriad Leaf Shower</h3>
+          <p><code>attackId = 120</code></p>
+          <p>官方 cost: <code>[Grass, Grass, Grass]</code><br>base damage: <code>30</code><br>pre-effect type: <code>76</code>，value: <code>30</code></p>
+        </div>
+        <div class="big-arrow">&rarr;</div>
+        <div class="band">
+          <h3>同一场面，不同能量</h3>
+          <p>附 Lightning: typed deficit = <strong>3</strong></p>
+          <div class="bar"><i style="width:100%"></i></div>
+          <p>附 Grass: typed deficit = <strong>2</strong></p>
+          <div class="bar"><i style="width:66.7%"></i></div>
+        </div>
+      </div>
+      <p>这条测试直接覆盖我们从 Crispin 错误中发现的问题：能量不能只作为“附了一个 energy”的计数。对应 attack 的类型需求现在是 option 可直接读取的确定性事实。</p>
+      <div class="notice danger"><strong>尚不能误称为 resolved damage：</strong>V1 已经保留完整 Effect/Target/Condition tokens，但直接数值目前只计算 base damage 和保守 typed gap。Special Energy 卡文、弱点/抵抗、工具加血、保护效果、完整 KO/prize delta 仍需下一版 deterministic resolver；未知字段不会伪装成 0。</div>
+    </section>
+
+    <section id="cost">
+      <h2>小样本成本与全量外推</h2>
+      <p>同一真实 0019 trajectory 的 32 个连续 decisions（episode step 3–62，含 5 个 Attack options），单进程、单线程；0024 继续运行，未启动全量扫描。</p>
+      <div class="two">
+        <div class="band"><h3>编码时间</h3><table><tr><th>路径（10-run median）</th><th>ms / step</th></tr><tr><td>Legacy codec</td><td class="num">0.0754</td></tr><tr><td>0025 semantic pipeline</td><td class="num">0.3857</td></tr></table></div>
+        <div class="band"><h3>存储口径</h3><table><tr><th>路径</th><th>bytes / step</th></tr><tr><td>0019 observed padded cache</td><td class="num">7,370.96</td></tr><tr><td>0025 gzip dynamic sample</td><td class="num">378.25</td></tr></table></div>
+      </div>
+      <table>
+        <thead><tr><th>范围</th><th>证据状态</th><th>decisions</th><th>存储 + sidecars</th><th>1 thread</th><th>8-worker 理想线性</th></tr></thead>
+        <tbody>
+          <tr><td>07-10 .. 07-29</td><td>按 19 日 observed rate 外推；archive 到 07-29</td><td class="num">7,733,823</td><td class="num">2.73 GiB</td><td class="num">49.7 min</td><td class="num">6.2 min</td></tr>
+          <tr><td>07-10 .. 08-02</td><td>线性外推；07-30..08-02 本地缺失</td><td class="num">9,280,588</td><td class="num">3.27 GiB</td><td class="num">59.7 min</td><td class="num">7.5 min</td></tr>
+        </tbody>
+      </table>
+      <div class="notice">0019 数字是正式 padded model-ready cache；0025 数字是 gzip JSONL smoke。它们适合做容量规划，不代表训练读取吞吐等价。正式训练前仍要做 packed/Arrow benchmark。</div>
+    </section>
+
+    <section id="next">
+      <h2>当前边界与下一版本</h2>
+      <table>
+        <thead><tr><th>项目</th><th>现在</th><th>下一步 gate</th></tr></thead>
+        <tbody>
+          <tr><td>Prototype</td><td>官方全表、官方 ID、完整结构化 effects 已导出</td><td>为 sidecar 增加 engine source hash / enum schema commitment</td></tr>
+          <tr><td>Direct facts</td><td>typed Basic/Rainbow gap、base damage、target HP</td><td>完整 current-state effect resolver 与 differential engine tests</td></tr>
+          <tr><td>Dataset</td><td>自包含 archive&rarr;catalog&rarr;raw&rarr;semantic；8-step smoke</td><td>扩展 raw freeze date；group-safe workers；storage/RSS guard</td></tr>
+          <tr><td>Model</td><td>multi-memory skeleton、pointer+STOP 合同、padding invariance</td><td>参数预算 ablation、BC loss、validation greedy decode</td></tr>
+          <tr><td>Training</td><td>未开始；无 W&amp;B、checkpoint、candidate</td><td>新 V2、正式 config、W&amp;B online、model-only checkpoints</td></tr>
+          <tr><td>Strength evidence</td><td>只有表示与 forward correctness</td><td>同 split/预算的 0019 vs 0025 BC + official-engine arena</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <footer>Authoritative project design · 0025_semantic_foundation_pretraining · 2026-08-02</footer>
+  </main>
+  <script>
+    const buttons = [...document.querySelectorAll('[data-focus]')];
+    const nodes = [...document.querySelectorAll('[data-path]')];
+    buttons.forEach(button => button.addEventListener('click', () => {
+      buttons.forEach(item => item.classList.toggle('active', item === button));
+      const focus = button.dataset.focus;
+      nodes.forEach(node => node.classList.toggle('active', focus === 'all' || node.dataset.path === focus || node.dataset.path === 'all'));
+    }));
+    buttons[0].click();
+  </script>
+</body>
+</html>

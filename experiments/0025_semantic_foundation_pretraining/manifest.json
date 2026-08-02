@@ -1,0 +1,32 @@
+{
+  "project_id": "0025_semantic_foundation_pretraining",
+  "status": "semantic_contract_smoke_complete",
+  "created_date": "2026-08-02",
+  "lineage": {
+    "project": "0019_universal_winner_bc",
+    "raw_content_sha256": "5de938a691f64282fc10e5cf35eda6e608d283aea429ff7ab2cf927373151c40",
+    "raw_date_start": "2026-07-10",
+    "raw_date_end": "2026-07-28",
+    "raw_decisions": 7347132,
+    "frozen_files": {
+      "legacy/base_model.py": "8ee6f5ba84aa5a5a18919887f499598e03fbfedb6acd4b2d8050427dead2f551",
+      "knowledge/ledger.py": "ab69d0601441b9c604b1ed0b7e3e4c4aee754b27760f781425a82060ddf768af",
+      "knowledge/state.py": "89fe7bffdb11fa3acc3ee8ccd91959191e1545922d43daff1bc4d3b1a09cf09c",
+      "data/replay_catalog.py": "5ae9afc6c7a577b292ed3e08a0639635fccd25d1e8311cfffdf2c13ee9d6723c",
+      "data/replay_contract.py": "fadb14b9c5459691c165eb6450cd4ac82810d972f7c75d74471a01913029f63a",
+      "data/raw_dataset.py": "869f47efe45dfa4631dc373531bb5ba180a4ebfa2756dc73186fb156d3459d1a",
+      "storage.py": "17e1f1a836234cbd83469cdbc783b94907301e8b25caa03d6ade32e861218425",
+      "config.py": "0cc94bcfa5f297040131b061827111cb851d87251a7ccc004afd41762d939f3c"
+    }
+  },
+  "prototype_assets": {
+    "engine_source_tree_sha256": "a81742957f29a23259b0253b71c7e63831c67b6641440b941e5c4c0d921e753e",
+    "full_engine_extractor_source_sha256": "6587eae6c01f2a3dd69067e9f12169000fb305815e425f33b8c57d6f9d769e8e",
+    "official_public_content_sha256": "64d89efecf28275670622f5e7c0c05560f1e0e04fa614a4c9add3a993a644a54",
+    "official_public_file_sha256": "5b45041cd14beed8a847f2e99ce955a105fbfedb6acd4b2d8050427dead2f551",
+    "official_full_engine_file_sha256": "5ab0b28e21d40a17a7b153744332424f08d4e32cde4e2ab20f11cb262e799845"
+  },
+  "version": "V1_semantic_contract_smoke",
+  "formal_training_started": false,
+  "full_materialization_started": false
+}
