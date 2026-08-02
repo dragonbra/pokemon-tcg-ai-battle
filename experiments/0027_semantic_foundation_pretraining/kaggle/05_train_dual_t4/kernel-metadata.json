@@ -1,0 +1,23 @@
+{
+  "id": "horizen12/ptcg-0027-05-train-dual-t4",
+  "title": "PTCG 0027 05 Train Dual T4",
+  "code_file": "05_train_dual_t4.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "pokemon-tcg",
+    "0027",
+    "semantic-foundation"
+  ],
+  "dataset_sources": [],
+  "competition_sources": [
+    "pokemon-tcg-ai-battle"
+  ],
+  "kernel_sources": [],
+ "model_sources": []
+}

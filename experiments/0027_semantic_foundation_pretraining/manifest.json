@@ -1,0 +1,31 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0027_semantic_foundation_pretraining",
+  "title": "Semantic Foundation Fine-tuning",
+  "status": "prepared",
+  "created_at": "2026-08-02",
+  "parent_experiment": "0025_semantic_foundation_pretraining",
+  "parent_branch": "dev/cyd_main",
+  "data_window": {
+    "start": "2026-07-15",
+    "end": "2026-08-01",
+    "inclusive": true
+  },
+  "winner_only": true,
+  "exact_deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+  "checkpoint": {
+    "name": "best_greedy_exact.pt",
+    "sha256": "adc4eaeca1e62a28bbd762e8e513212c94941044bbc85673f02bbeadc1865aa3",
+    "bytes": 129028675
+  },
+  "notebooks": [
+    "kaggle/01_source_inventory/01_source_inventory.ipynb",
+    "kaggle/02_winner_slice/02_winner_slice.ipynb",
+    "kaggle/03_canonical_features/03_canonical_features.ipynb",
+    "kaggle/04_package_dataset/04_package_dataset.ipynb",
+    "kaggle/05_train_dual_t4/05_train_dual_t4.ipynb"
+  ],
+  "actor_contract": "0025_canonical_semantic_decision_v2",
+  "gpu_contract": "two NvidiaTeslaT4 devices; fail closed otherwise",
+  "source_identity_actor_visible": false
+}

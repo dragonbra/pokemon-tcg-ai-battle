@@ -1,0 +1,23 @@
+{
+  "id": "horizen12/ptcg-0027-02-winner-slice",
+  "title": "PTCG 0027 02 Winner Slice",
+  "code_file": "02_winner_slice.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "machine_shape": "None",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "pokemon-tcg",
+    "0027",
+    "semantic-foundation"
+  ],
+  "dataset_sources": [],
+  "competition_sources": [
+    "pokemon-tcg-ai-battle"
+  ],
+  "kernel_sources": [],
+ "model_sources": []
+}

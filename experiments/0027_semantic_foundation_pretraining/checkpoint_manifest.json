@@ -1,0 +1,11 @@
+{
+  "source_experiment": "0025_semantic_foundation_pretraining",
+  "source_branch": "dev/cyd_main",
+  "selection": "V4_canonical_semantic_foundation / best_greedy_exact",
+  "path": "best_greedy_exact.pt",
+  "bytes": 129028675,
+  "sha256": "adc4eaeca1e62a28bbd762e8e513212c94941044bbc85673f02bbeadc1865aa3",
+  "schema_version": "0025_model_only_checkpoint_v1",
+  "optimizer_state_saved": false,
+  "note": "Checkpoint binary is not committed to the remote Git tree; attach the artifact to Kaggle."
+}
