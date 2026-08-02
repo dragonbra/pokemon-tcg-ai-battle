@@ -228,6 +228,42 @@ def _select_leaderboard_submission(
     )
 
 
+def _capture_score_bound_leaderboard(
+    api: KaggleApi,
+) -> tuple[list[object], dict[int, list[object]], str]:
+    """Warm submission views before freezing the final score-bound leaderboard."""
+    preliminary = api.competition_leaderboard_view(COMPETITION, page_size=100)[:100]
+    if len(preliminary) != 100:
+        raise RuntimeError(f"leaderboard returned {len(preliminary)} rows, expected 100")
+    submissions_by_team = {
+        int(_model_value(row, "team_id", "teamId")): list(
+            _rate_call(
+                lambda team_id=int(_model_value(row, "team_id", "teamId")): (
+                    api.competition_team_submissions(team_id)
+                )
+            )
+        )
+        for row in preliminary
+    }
+
+    leaderboard = api.competition_leaderboard_view(COMPETITION, page_size=100)[:100]
+    captured_at_utc = datetime.now(timezone.utc).isoformat()
+    if len(leaderboard) != 100:
+        raise RuntimeError(f"leaderboard returned {len(leaderboard)} rows, expected 100")
+    for row in leaderboard:
+        team_id = int(_model_value(row, "team_id", "teamId"))
+        submissions = submissions_by_team.get(team_id, [])
+        try:
+            _select_leaderboard_submission(row, submissions)
+        except ValueError:
+            submissions = list(
+                _rate_call(lambda: api.competition_team_submissions(team_id))
+            )
+            _select_leaderboard_submission(row, submissions)
+        submissions_by_team[team_id] = submissions
+    return leaderboard, submissions_by_team, captured_at_utc
+
+
 def _episode_agents(episode: object) -> list[dict[str, object]]:
     result = []
     for fallback_index, agent in enumerate(_model_value(episode, "agents", default=[]) or []):
@@ -1191,15 +1227,16 @@ def collect(work: Path, report: Path, report_date: str) -> None:
     api = KaggleApi()
     api.authenticate()
     catalog = _card_catalog()
+    prefetched_submissions: dict[int, list[object]] = {}
     if not state:
-        leaderboard = api.competition_leaderboard_view(COMPETITION, page_size=100)[:100]
-        if len(leaderboard) != 100:
-            raise RuntimeError(f"leaderboard returned {len(leaderboard)} rows, expected 100")
+        leaderboard, prefetched_submissions, captured_at_utc = (
+            _capture_score_bound_leaderboard(api)
+        )
         state = {
             "schema": SNAPSHOT_SCHEMA,
             "status": "collecting",
             "report_date": report_date,
-            "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+            "captured_at_utc": captured_at_utc,
             "evidence_root": str(work),
             "rows": [
                 {"rank": rank, "team_id": row.team_id, "team_name": row.team_name,
@@ -1221,7 +1258,11 @@ def collect(work: Path, report: Path, report_date: str) -> None:
         if isinstance(existing, dict) and existing.get("submission_id"):
             continue
         print(f"[{row['rank']:03d}/100] binding {row['team_name']}", flush=True)
-        submissions = _rate_call(lambda: api.competition_team_submissions(row["team_id"]))
+        submissions = prefetched_submissions.get(int(row["team_id"]))
+        if submissions is None:
+            submissions = _rate_call(
+                lambda: api.competition_team_submissions(row["team_id"])
+            )
 
         class Model:
             pass

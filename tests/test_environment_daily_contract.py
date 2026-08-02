@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from html.parser import HTMLParser
 import json
 from pathlib import Path
@@ -169,6 +170,59 @@ class EnvironmentDailyContractTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "leaderboard score"):
             _select_leaderboard_submission(leaderboard, tied)
+
+    def test_final_leaderboard_freeze_refreshes_only_changed_team_views(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _capture_score_bound_leaderboard,
+        )
+
+        first = [
+            SimpleNamespace(
+                team_id=team_id,
+                team_name=f"team-{team_id}",
+                score="1000.0",
+                submission_date="2026-08-01T00:00:00+00:00",
+            )
+            for team_id in range(100)
+        ]
+        final = [SimpleNamespace(**vars(row)) for row in first]
+        final[7].score = "1001.0"
+
+        class FakeApi:
+            def __init__(self) -> None:
+                self.leaderboard_calls = 0
+                self.submission_calls = Counter()
+
+            def competition_leaderboard_view(
+                self, competition: str, page_size: int
+            ) -> list[SimpleNamespace]:
+                self.leaderboard_calls += 1
+                return first if self.leaderboard_calls == 1 else final
+
+            def competition_team_submissions(self, team_id: int) -> list[SimpleNamespace]:
+                self.submission_calls[team_id] += 1
+                score = (
+                    "1001.0"
+                    if team_id == 7 and self.submission_calls[team_id] > 1
+                    else "1000.0"
+                )
+                return [
+                    SimpleNamespace(
+                        id=10_000 + team_id,
+                        public_score=score,
+                        date_submitted="2026-08-01T00:00:00+00:00",
+                    )
+                ]
+
+        api = FakeApi()
+        leaderboard, submissions, captured_at_utc = _capture_score_bound_leaderboard(api)
+
+        self.assertEqual(leaderboard[7].score, "1001.0")
+        self.assertTrue(captured_at_utc.endswith("+00:00"))
+        self.assertEqual(api.leaderboard_calls, 2)
+        self.assertEqual(api.submission_calls[7], 2)
+        self.assertTrue(all(api.submission_calls[index] == 1 for index in range(100) if index != 7))
+        self.assertEqual(submissions[7][0].public_score, "1001.0")
 
     def test_episode_identity_uses_agent_index_not_list_position(self) -> None:
         from data.processed.environment_daily.generate_live_snapshot import (
