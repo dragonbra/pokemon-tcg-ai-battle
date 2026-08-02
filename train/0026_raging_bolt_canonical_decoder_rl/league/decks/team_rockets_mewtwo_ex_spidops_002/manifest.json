@@ -1,0 +1,131 @@
+{
+  "schema_version": "daily_deck_catalog_v1",
+  "directory": "team_rockets_mewtwo_ex_spidops_002",
+  "deck_sha256": "203002de844fcbf3c30d9da6cc79f8311eb5bb21685f3841d62b72656676c0fd",
+  "short_hash": "203002de844f",
+  "archetype": "Team Rocket's Mewtwo ex / Spidops",
+  "source_archetype": "Team Rocket's Mewtwo ex / Spidops",
+  "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
+  "source_date": "2026-07-30",
+  "member_count": 1,
+  "best_rank": 13,
+  "best_score": 1121.1,
+  "aggregate_record": {
+    "wins": 267,
+    "losses": 176,
+    "draws": 0
+  },
+  "aggregate_effective_win_rate": 0.6027088036117382,
+  "members": [
+    {
+      "rank": 13,
+      "team_name": "LiamK",
+      "submission_id": 54994439,
+      "episode_id": 88835837,
+      "episode_create_time": "2026-07-29T17:08:00.368000+00:00",
+      "player_index": 0,
+      "leaderboard_score": 1121.1,
+      "archetype": "Team Rocket's Mewtwo ex / Spidops",
+      "wins": 267,
+      "losses": 176,
+      "draws": 0
+    }
+  ],
+  "cards": [
+    {
+      "card_id": 414,
+      "name": "Team Rocket's Articuno",
+      "count": 2
+    },
+    {
+      "card_id": 431,
+      "name": "Team Rocket's Mewtwo ex",
+      "count": 2
+    },
+    {
+      "card_id": 434,
+      "name": "Team Rocket's Mimikyu",
+      "count": 3
+    },
+    {
+      "card_id": 401,
+      "name": "Team Rocket's Spidops",
+      "count": 4
+    },
+    {
+      "card_id": 400,
+      "name": "Team Rocket's Tarountula",
+      "count": 4
+    },
+    {
+      "card_id": 1175,
+      "name": "Brave Bangle",
+      "count": 1
+    },
+    {
+      "card_id": 1094,
+      "name": "Bug Catching Set",
+      "count": 3
+    },
+    {
+      "card_id": 1159,
+      "name": "Hero’s Cape",
+      "count": 1
+    },
+    {
+      "card_id": 1227,
+      "name": "Lillie's Determination",
+      "count": 3
+    },
+    {
+      "card_id": 1152,
+      "name": "Poké Pad",
+      "count": 4
+    },
+    {
+      "card_id": 1217,
+      "name": "Team Rocket's Archer",
+      "count": 1
+    },
+    {
+      "card_id": 1216,
+      "name": "Team Rocket's Ariana",
+      "count": 4
+    },
+    {
+      "card_id": 1257,
+      "name": "Team Rocket's Factory",
+      "count": 3
+    },
+    {
+      "card_id": 1218,
+      "name": "Team Rocket's Giovanni",
+      "count": 3
+    },
+    {
+      "card_id": 1220,
+      "name": "Team Rocket's Proton",
+      "count": 4
+    },
+    {
+      "card_id": 1134,
+      "name": "Team Rocket's Transceiver",
+      "count": 4
+    },
+    {
+      "card_id": 1121,
+      "name": "Ultra Ball",
+      "count": 1
+    },
+    {
+      "card_id": 1,
+      "name": "Basic {G} Energy",
+      "count": 9
+    },
+    {
+      "card_id": 15,
+      "name": "Team Rocket's Energy",
+      "count": 4
+    }
+  ]
+}

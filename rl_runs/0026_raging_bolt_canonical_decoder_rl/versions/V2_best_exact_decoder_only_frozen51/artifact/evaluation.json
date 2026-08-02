@@ -1,0 +1,6 @@
+{
+  "report": "experiments/0026_raging_bolt_canonical_decoder_rl/evaluation/V2_best_exact_decoder_only_frozen51.html",
+  "report_sha256": "026cce92f92437b5b2d67131b639cb4d6b8a7ba137a87fff6167839b8ccbd3bc",
+  "run_id": "run-9da854485e114ad88f8ef10a7a89156d",
+  "version": "V2_best_exact_decoder_only_frozen51"
+}

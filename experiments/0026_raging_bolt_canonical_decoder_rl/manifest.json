@@ -1,0 +1,60 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0026_raging_bolt_canonical_decoder_rl",
+  "objective": "Fine-tune only the 0025 best-greedy canonical action decoder and a new value head with PPO against the frozen 51-deck 0019 Foundation pool in the unmodified official engine.",
+  "deck": "raging_bolt_ex_james_cox_henry_chao_001 exact 60-card identity; SHA-256 f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+  "expert_source": "Initialized from 0025 V4 canonical best_greedy_exact epoch 14; James Cox and James Cox & Henry Chao source identity remains provenance-only and actor-invisible.",
+  "dataset_contract": "On-policy focal-player trajectories from official-engine games against a fixed 51-deck frozen opponent snapshot; representation frozen; only action decoder and value head trainable.",
+  "engine_revision": "Unmodified official engine runtime is authoritative for rollout and evaluation.",
+  "opponent_pool_snapshot": "0019_foundation_51_exact_decks_v4; 51 exact-deck frozen Foundation opponents; catalog SHA-256 296ba0891df600de0025247c064dbc8a5d086029b2387db4ef0c4d000bd5849a.",
+  "status": "interrupted_evaluated",
+  "created_at": "2026-08-02T00:00:00+08:00",
+  "paths": {
+    "training": "train/0026_raging_bolt_canonical_decoder_rl",
+    "archive": "experiments/0026_raging_bolt_canonical_decoder_rl",
+    "runs": "rl_runs/0026_raging_bolt_canonical_decoder_rl"
+  },
+  "stage": "v2_stopped_formal_frozen_evaluation_complete",
+  "focal_deck_id": "raging_bolt_ex_james_cox_henry_chao_001",
+  "focal_deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+  "initial_checkpoint": {
+    "project": "0025_semantic_foundation_pretraining",
+    "version": "V4_canonical_semantic_foundation",
+    "selection": "best_greedy_exact",
+    "epoch": 14,
+    "sha256": "adc4eaeca1e62a28bbd762e8e513212c94941044bbc85673f02bbeadc1865aa3"
+  },
+  "frozen_opponents": {
+    "count": 51,
+    "foundation_checkpoint_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+    "catalog_sha256": "296ba0891df600de0025247c064dbc8a5d086029b2387db4ef0c4d000bd5849a"
+  },
+  "model": {
+    "total_parameters": 21940763,
+    "trainable_parameters": 1130883,
+    "action_decoder_parameters": 1027202,
+    "value_head_parameters": 103681,
+    "frozen_representation_sha256": "22004a14c08a9640a0f48e30fe715a310e849b892d85400f57ac44b7dd4b9587",
+    "initial_decoder_sha256": "e6d5515cd60730ca0ab894f2f5bae5dff24178951f6b3f28c33ee5f596a2b987"
+  },
+  "runtime": "unmodified_official_engine",
+  "reward": "terminal_actor_relative_-1_0_+1",
+  "actor_visible_source_identity": false,
+  "v2_outcome": {
+    "version": "V2_best_exact_decoder_only_frozen51",
+    "interrupted_during_update": 10,
+    "last_completed_update": 9,
+    "selected_checkpoint_update": 5,
+    "selected_checkpoint_sha256": "228db480c405f199dad0ca3447633d8ee10608d0e31487fd6455336b8ba5551e",
+    "formal_evaluation": {
+      "run_id": "run-9da854485e114ad88f8ef10a7a89156d",
+      "games": 510,
+      "wins": 156,
+      "losses": 354,
+      "draws": 0,
+      "errors": 0,
+      "win_rate": 0.3058823529411765,
+      "report": "experiments/0026_raging_bolt_canonical_decoder_rl/evaluation/V2_best_exact_decoder_only_frozen51.html"
+    }
+  }
+}

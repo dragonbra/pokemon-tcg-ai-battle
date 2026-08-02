@@ -1,0 +1,26 @@
+{
+  "decoder_changed": true,
+  "decoder_sha256_after": "acfede0433252beb5b1ea75c325e7a098c5f728595eb4380905ef2ceec762c02",
+  "decoder_sha256_before": "e6d5515cd60730ca0ab894f2f5bae5dff24178951f6b3f28c33ee5f596a2b987",
+  "elapsed_seconds": 23.921416221997788,
+  "engine_errors": 0,
+  "final_checkpoint_sha256": "6b7596de6368437dd4c12cb2b7c6078a9ee35a206492896650430bbd87871fcd",
+  "games": 4,
+  "initial_checkpoint_sha256": "adc4eaeca1e62a28bbd762e8e513212c94941044bbc85673f02bbeadc1865aa3",
+  "representation_sha256": "22004a14c08a9640a0f48e30fe715a310e849b892d85400f57ac44b7dd4b9587",
+  "representation_unchanged": true,
+  "scope": "smoke_only_not_formal_strength_evidence",
+  "smoke_evaluation": {
+    "completed": 10,
+    "errors": 0,
+    "report": ".tmp/evaluation/0026_decoder_rl_smoke/run-439f93f10f0145de840b0e92f28617c2/report.html",
+    "run_id": "run-439f93f10f0145de840b0e92f28617c2",
+    "win_rate": 0.4
+  },
+  "state": "complete",
+  "version": "V1_best_exact_decoder_only_smoke",
+  "wandb": {
+    "reason": "local smoke diagnostic",
+    "state": "disabled"
+  }
+}
