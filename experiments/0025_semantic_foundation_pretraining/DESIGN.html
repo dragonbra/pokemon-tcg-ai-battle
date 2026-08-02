@@ -92,25 +92,25 @@
         <h1>0025 Semantic Foundation Pretraining</h1>
         <p class="subtitle">从 0019 的可审计 full-action BC 出发，把卡牌原型、动作语义与资源记忆真正送进模型。</p>
       </div>
-      <div class="status">V2 James Cox 数据/训练合同: READY · 正式训练未启动</div>
+      <div class="status">V4 canonical 已训练并完成本地 Frozen 双 checkpoint 对照</div>
     </div>
     <nav><div class="inner">
       <a href="#contract">合同</a><a href="#architecture">模型</a><a href="#schema">输入</a>
-      <a href="#forward">Forward</a><a href="#evidence">证据</a><a href="#cost">成本</a><a href="#v2">V2 实验</a><a href="#next">边界</a>
+      <a href="#forward">Forward</a><a href="#evidence">证据</a><a href="#cost">成本</a><a href="#v2">首个实验</a><a href="#evaluation">实战评测</a><a href="#next">边界</a>
     </div></nav>
   </header>
   <main>
     <section id="contract">
-      <h2>今晚建立了什么</h2>
-      <p class="lede">0025 不是给 0019 多塞一个 <code>attackId</code>。它保留原来的场面、精确 deck、账本、事件和动作序列，再把官方 engine 的 Card / Skill / Attack / Effect 原型变成可引用的 typed memory，让每个 option 分别查询它真正需要的证据。</p>
+      <h2>V4 建立了什么</h2>
+      <p class="lede">0025 V4 不是给 0019 多塞一个 <code>attackId</code>，也不是适配旧 tensor 接口。raw observation、精确 deck、因果账本、事件和 legal options 直接编译为 canonical typed records；每个 option 显式绑定 source / target card instance、Attack、Skill 与 Effect。</p>
       <div class="metrics">
-        <div class="metric"><b>1,267</b><span>official cards</span></div>
-        <div class="metric"><b>433</b><span>official skills</span></div>
-        <div class="metric"><b>1,556</b><span>official attacks</span></div>
+        <div class="metric"><b>77,174</b><span>canonical decisions</span></div>
+        <div class="metric"><b>21.84M</b><span>trainable parameters</span></div>
+        <div class="metric"><b>981 / 92</b><span>whole-Episode split</span></div>
         <div class="metric"><b>3,067</b><span>structured effects</span></div>
-        <div class="metric"><b>19 / 19</b><span>contract tests passed</span></div>
+        <div class="metric"><b>29 / 29</b><span>0025 tests passed</span></div>
       </div>
-      <div class="notice good"><strong>不丢旧能力：</strong>legacy board、legal options、exact deck multiset、causal ledger、recent events、known/unknown hand 全部保留。来源和 team 仍只用于 provenance，不进入 actor forward。</div>
+      <div class="notice good"><strong>能力保留、接口重建：</strong>visible board、legal options、exact deck multiset、causal ledger、recent events、known/unknown hand 都进入新 schema；<code>legacy</code> tensor、来源/team 和 target label 明确不能进入 actor forward。</div>
     </section>
 
     <section id="architecture">
@@ -135,28 +135,28 @@
         </div>
         <div class="arrow">&rarr;</div>
         <div class="stack">
-          <div class="node derived" data-path="board"><strong>Board tokens</strong><small>Legacy entity structure remains intact</small></div>
-          <div class="node derived" data-path="prototype"><strong>Prototype references</strong><small>Variable card / attack / skill / effect token set</small></div>
-          <div class="node derived" data-path="resource"><strong>Resource tokens</strong><small>Multiplicity + bounded/exact deck and Prize ledger</small></div>
+          <div class="node derived" data-path="board"><strong>Card-instance tokens</strong><small>Owner, zone, HP, damage, attachments, evolution parent</small></div>
+          <div class="node derived" data-path="prototype"><strong>Typed prototype relations</strong><small>Card / Attack lookup + option-parented Skill / Effect</small></div>
+          <div class="node derived" data-path="resource"><strong>Ledger tokens</strong><small>Exact 60-card multiset + bounded/exact deck and Prize state</small></div>
           <div class="node derived" data-path="event"><strong>Event tokens</strong><small>Actor-relative chronology and evidence age</small></div>
           <div class="node derived" data-path="all"><strong>Direct option facts</strong><small>typed energy gap, base damage, target HP, field states</small></div>
         </div>
         <div class="arrow">&rarr;</div>
         <div class="stack">
-          <div class="node learned" data-path="board"><strong>Board Transformer</strong><small>Full board memory</small></div>
-          <div class="node learned" data-path="prototype"><strong>Prototype Transformer</strong><small>Card-rule memory</small></div>
-          <div class="node learned" data-path="resource"><strong>Resource Transformer</strong><small>Deck and ledger memory</small></div>
-          <div class="node learned" data-path="event"><strong>Event Transformer</strong><small>Recent evidence memory</small></div>
-          <div class="node learned" data-path="all"><strong>Typed option encoder</strong><small>One query for every legal option</small></div>
+          <div class="node learned" data-path="board"><strong>State Transformer × 4</strong><small>Global + card instances in one masked memory</small></div>
+          <div class="node learned" data-path="prototype"><strong>Prototype banks</strong><small>Separate categorical embeddings + numeric MLPs</small></div>
+          <div class="node learned" data-path="resource"><strong>Full state memory</strong><small>Ledger tokens are not pooled away early</small></div>
+          <div class="node learned" data-path="event"><strong>Full state memory</strong><small>Recent events remain individually queryable</small></div>
+          <div class="node learned" data-path="all"><strong>Typed option projection</strong><small>Every legal option keeps explicit relations</small></div>
         </div>
         <div class="arrow">&rarr;</div>
         <div class="stack">
-          <div class="node learned" data-path="all"><strong>Four independent cross-attentions</strong><small>Zero-gated residual composition</small></div>
+          <div class="node learned" data-path="all"><strong>Option cross-attention × 3</strong><small>Every option queries the complete state memory</small></div>
           <div class="node learned" data-path="all"><strong>Autoregressive GRU pointer</strong><small>Consumes selected prefix</small></div>
           <div class="node output" data-path="all"><strong>O legal logits + STOP</strong><small>Selected mask + minCount / maxCount</small></div>
         </div>
       </div>
-      <div class="notice"><strong>关键变化：</strong>decoder 不再只能依赖一个早期压缩的 scenario vector。每个 option 可以独立向 board、prototype、resource 和 event memory 发问，再组合证据。</div>
+      <div class="notice"><strong>关键变化：</strong>decoder 的初始 hidden 来自完整 state 的 attention summary，但 option 并不只依赖这个 summary；三层 cross-attention 仍可逐 token 查询 card、ledger 和 event memory。</div>
     </section>
 
     <section id="schema">
@@ -164,14 +164,13 @@
       <table>
         <thead><tr><th>输入族</th><th>Shape</th><th>原料</th><th>语义</th></tr></thead>
         <tbody>
-          <tr><td>Legacy global</td><td><code>[4] + [12]</code></td><td>raw observation</td><td>select phase、turn、双方 zone counts、旧 budget</td></tr>
-          <tr><td>Board</td><td><code>[E,7] + [E,5]</code></td><td>raw observation</td><td>card / owner / zone / slot / parent 与伤害、附着数量</td></tr>
-          <tr><td>Prototype refs</td><td><code>[Pc],[Pa],[Ps],[Pe]</code></td><td>official engine</td><td>当前局面真正引用的 card / attack / skill / effect</td></tr>
-          <tr><td>Exact deck</td><td><code>[D] + [D]</code></td><td>registered deck</td><td>唯一 card ID 和 multiplicity，不丢初始构筑</td></tr>
-          <tr><td>Causal ledger</td><td><code>[L,4] + [L,15]</code></td><td>history-derived</td><td>各 zone 可见数量、deck/Prize exact 或 bounds、证据 age</td></tr>
-          <tr><td>Events / hand</td><td><code>[T,8]+[T,4]+[H]+[1]</code></td><td>visible logs</td><td>最近事件、已知对手手牌、未知数量</td></tr>
-          <tr><td>Turn budget</td><td><code>[5]</code></td><td>raw observation</td><td>Supporter / Stadium / attach / Retreat / end</td></tr>
-          <tr><td>Semantic option</td><td><code>[O,16]+[O,14]+[O,14]</code></td><td>option + rules</td><td>attackId、上下文、typed gap、伤害/HP 与字段状态</td></tr>
+          <tr><td>Global</td><td><code>[11] + [17]</code></td><td>raw + ledger boundary</td><td>select context、turn budgets/status、zone counts、deck/hand/Prize pressure</td></tr>
+          <tr><td>Card instances</td><td><code>[C,5] + [C,7] + parent</code></td><td>raw observation</td><td>card / owner / zone / kind / status 与 HP、damage、attachments、evolution parent</td></tr>
+          <tr><td>Resource ledger</td><td><code>[R,4] + [R,15]</code></td><td>exact deck + history</td><td>每个 registered card 的 multiplicity、可见 zone、deck/Prize exact 或 bounds</td></tr>
+          <tr><td>Recent events</td><td><code>[E,8] + [E,4]</code></td><td>visible logs</td><td>actor-relative chronology、card/area、visibility 与有限 numeric payload</td></tr>
+          <tr><td>Legal option</td><td><code>[O,14] + [O,16] + states</code></td><td>option + deterministic facts</td><td>source/target/attack/energy、typed gap、base damage、双方 HP</td></tr>
+          <tr><td>Skill relations</td><td><code>[S] ID + role + parent</code></td><td>official engine</td><td>actual skill ID 明确归属于哪一个 option</td></tr>
+          <tr><td>Effect relations</td><td><code>[F] ID + role + parent</code></td><td>official engine</td><td>结构化 effect chain 明确归属于哪一个 option</td></tr>
         </tbody>
       </table>
       <h3>数值 0 不再等于“没有信息”</h3>
@@ -189,37 +188,29 @@
 
     <section id="forward">
       <h2>Forward 伪代码</h2>
-      <pre><code><span class="kw">def</span> <span class="fn">forward</span>(raw_decision, selected_prefix):
-    legacy = <span class="fn">frozen_0019_codec</span>(raw_decision.observation)
-    causal = ledger.<span class="fn">consume</span>(raw_decision.visible_logs)
-
-    option_facts = <span class="fn">bind_options</span>(
-        legal_options=raw_decision.legal_options,
-        attack_id=<span class="kw">True</span>, prototype_refs=<span class="kw">True</span>,
-        typed_energy_gap=<span class="kw">True</span>,
-        base_damage_and_target_hp=<span class="kw">True</span>,
-        explicit_field_states=<span class="kw">True</span>,
+      <pre><code><span class="kw">def</span> <span class="fn">forward</span>(observation, legal_options, selected_prefix):
+    causal = ledger.<span class="fn">consume</span>(observation.visible_logs)
+    actor = <span class="fn">compile_canonical</span>(
+        observation, legal_options, exact_deck, causal, official_prototypes
     )
 
-    board_memory     = board_transformer(legacy.entities)
-    prototype_memory = prototype_transformer(
-        <span class="fn">lookup</span>(card_refs, attack_refs, skill_refs, effect_refs)
-    )
-    resource_memory  = resource_transformer(exact_deck, causal.ledger)
-    event_memory     = event_transformer(causal.events, causal.known_hand)
+    cards    = <span class="fn">typed_card_instances</span>(actor.cards, card_prototypes)
+    ledger   = <span class="fn">typed_resources</span>(actor.resources, card_prototypes)
+    events   = <span class="fn">typed_events</span>(actor.events, card_prototypes)
+    state    = state_transformer(global_token + cards + ledger + events)
+    summary  = attention_pool(state)
 
-    q = <span class="fn">encode_option</span>(legacy.options, option_facts)
-    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, board_memory))
-    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, prototype_memory))
-    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, resource_memory))
-    q = <span class="fn">gated_residual</span>(q, <span class="fn">attend</span>(q, event_memory))
+    q = <span class="fn">typed_options</span>(actor.options)
+    q += <span class="fn">gather</span>(state.cards, actor.option_source, actor.option_target)
+    q += <span class="fn">lookup</span>(card, attack, parented_skill, parented_effect)
+    q = option_cross_attention(q, state, layers=<span class="numlit">3</span>)
 
-    hidden = <span class="fn">initialize_decoder</span>(global_state, turn_budget)
+    hidden = <span class="fn">initialize_decoder</span>(summary)
     hidden = <span class="fn">consume_prefix</span>(hidden, q, selected_prefix)
     <span class="fn">mask_selected</span>()
     <span class="fn">enforce_min_max_count</span>()
     <span class="kw">return</span> option_pointer_logits + stop_logit</code></pre>
-      <p>每个 Transformer block 使用 pre-norm residual：<code>x = x + Attention(LN(x))</code>，再做 <code>x = x + FFN(LN(x))</code>。新 memory 到 option 的通路额外乘以零初始化 gate，保证刚开始不会强行覆盖 option identity。</p>
+      <p>每个 Transformer block 使用 pre-norm residual：<code>x = x + Attention(LN(x))</code>，再做 <code>x = x + FFN(LN(x))</code>。padding 只在 collation 出现，state 与 option attention 都用 mask 排除。</p>
     </section>
 
     <section id="evidence">
@@ -280,7 +271,78 @@
         </tbody>
       </table>
       <p>三臂共享 dataset、split、batch order、AdamW、ordered option pointer + STOP target，以及完整 validation 指标。每个 epoch 每个 active arm 只做一次 train pass；随后在 6,603 条 validation 上同时计算 teacher-forced 与 free-greedy exact action。</p>
-      <div class="notice"><strong>证据边界：</strong>离线 loss / exact-action 只能证明模仿能力。最终“打得更好”必须把选出的 checkpoint 导出成自包含 candidate，并在同一 official engine、opponent catalog、seed 和先后手合同下比较。</div>
+      <div class="notice"><strong>版本状态：</strong><code>V2_james_cox_raging_bolt_ablation</code> 在完成 2 个 epoch 后因用户要求重启主机而中断；原始 metrics、12 个 model-only checkpoint、TensorBoard 与 W&amp;B 身份均保留，不视为完成。重启造成 metrics 文件在两个有效 epoch record 后留下 2,159 个 NUL bytes，原文件不改写。</div>
+      <div class="notice good"><strong>当前正式 run：</strong><code>V3_james_cox_raging_bolt_restart</code> 使用 seed <code>20260802</code> 重新构造三臂模型与 AdamW；不读取 V2 checkpoint、optimizer、RNG、DataLoader 或 W&amp;B 状态。W&amp;B run ID：<code>0025_semantic_foundation_pretraining--v3_james_cox_ra-126d724e53</code>。</div>
+      <h3>V3 最终结果</h3>
+      <p>V3 连续运行 57.78 分钟，写入 21 个 canonical epoch records 与 12,972 次 optimizer updates；三臂均按 patience-6 的 validation-loss 合同停止。foreground watchdog 正常发出 <code>TRAINING_MONITOR_COMPLETE</code>，W&amp;B 最终为 <code>synced</code>，没有 alert。</p>
+      <table>
+        <thead><tr><th>Arm</th><th>停止 epoch</th><th>最佳 loss（epoch）</th><th>该点 exact</th><th>最佳 greedy exact（epoch）</th></tr></thead>
+        <tbody>
+          <tr><td><code>legacy_default</code></td><td class="num">12</td><td class="num">0.307583（6）</td><td class="num">78.45%</td><td class="num"><strong>79.62%（12）</strong></td></tr>
+          <tr><td><code>legacy_budget_matched</code></td><td class="num">14</td><td class="num">0.317917（8）</td><td class="num">78.34%</td><td class="num"><strong>78.77%（14）</strong></td></tr>
+          <tr><td><code>semantic</code></td><td class="num">21</td><td class="num">0.422923（15）</td><td class="num">72.07%</td><td class="num"><strong>73.42%（21）</strong></td></tr>
+        </tbody>
+      </table>
+      <div class="notice"><strong>当前结论：</strong>semantic 从第 1 轮 49.28% 持续学到 73.42%，但没有超过任何 legacy control；parameter-matched legacy 仍领先 5.35 个百分点。因此“当前 semantic 表示本身就能提高离线 BC”的强猜想没有得到支持。它不等价于 official-engine 实战更弱，但说明当前 encoder / routing / optimization 尚未把新增语义转化成更好的 exact-action imitation。</div>
+      <div class="notice"><strong>证据边界：</strong>离线 loss / exact-action 只能证明模仿能力。最低 loss checkpoint 已进入下一节的 official-engine 实战评测；其他 arm 仍需同合同对比。</div>
+    </section>
+
+    <section id="evaluation">
+      <h2>最低 loss checkpoint 的 Frozen 实战</h2>
+      <p>用户指定 <code>legacy_default/best_validation_loss.pt</code>：epoch 6，validation loss <code>0.307583</code>，greedy exact <code>78.45%</code>，checkpoint SHA-256 <code>759518ff...1c39223</code>。它被导出为自包含 candidate <code>0025_v3_legacy_default_best_loss</code>，使用 James Cox exact deck <code>f50fa3a...80c16a</code>。</p>
+      <div class="metrics">
+        <div class="metric"><b>510 / 510</b><span>official-engine games complete</span></div>
+        <div class="metric"><b>105–405</b><span>wins – losses</span></div>
+        <div class="metric"><b>20.59%</b><span>Frozen win rate</span></div>
+        <div class="metric"><b>0 / 0</b><span>errors / unfinished</span></div>
+        <div class="metric"><b>227.46 s</b><span>8 workers · 2.24 games/s</span></div>
+      </div>
+      <table>
+        <thead><tr><th>合同</th><th>实际值</th></tr></thead>
+        <tbody>
+          <tr><td>Opponent pool</td><td><code>0019_foundation_51_exact_decks_v4</code>；catalog <code>f6e4ccb1...f4cfa66</code></td></tr>
+          <tr><td>对局</td><td>51 个 enabled exact decks × 10；每套先手 5 / 后手 5；seed contract <code>22022</code></td></tr>
+          <tr><td>Runtime</td><td>未修改 official engine；双方共享 <code>cuda:0</code> inference server；每局独立 worker</td></tr>
+          <tr><td>James Cox mirror</td><td>2 / 10</td></tr>
+          <tr><td>最高 sampled matchup</td><td><code>ionos_bellibolt_ex_kilowattrel_01</code> 9 / 10；<code>ns_zoroark_ex_001</code> 9 / 10</td></tr>
+          <tr><td>审计身份</td><td><code>run-f5303161ddfa4838a7815635b78b7446</code>；report SHA-256 <code>d5a0034f...0a8ee8</code></td></tr>
+        </tbody>
+      </table>
+      <div class="notice danger"><strong>关键结果：</strong>78.45% offline exact-action 并没有自动转化为 Frozen 强度，当前结果显示明显的 offline-to-gameplay gap。它可能来自未覆盖状态、序列误差累积、动作语义缺失或多个因素共同作用。</div>
+      <div class="notice"><strong>不能越界解释：</strong>这次只评了“全局最低 validation loss”的 legacy checkpoint。semantic arm 与 best-greedy legacy checkpoint 尚未在同一 Frozen 合同下评测，所以本结果不能证明 semantic 实战更弱，也不能单独归因到某一种 feature。</div>
+      <p><a href="evaluation/V3_james_cox_raging_bolt_restart.html">打开完整 510 局正式报告</a></p>
+    </section>
+
+    <section id="v4-result">
+      <h2>V4 canonical：训练与双 checkpoint 本地实战</h2>
+      <p class="lede"><code>V4_canonical_semantic_foundation</code> 从随机初始化训练 18 epochs / 3,312 updates 后正常早停；foreground watchdog 无 alert，W&amp;B 为 synced。四个保留权重全部是 model-only。</p>
+      <table>
+        <thead><tr><th>选择点</th><th>Epoch</th><th>Validation loss</th><th>Greedy exact</th><th>SHA-256</th></tr></thead>
+        <tbody>
+          <tr><td>best validation loss</td><td class="num">12</td><td class="num"><strong>0.321322</strong></td><td class="num">81.01%</td><td><code>a4e5b07b...fde1cf21</code></td></tr>
+          <tr><td>best greedy exact</td><td class="num">14</td><td class="num">0.324919</td><td class="num"><strong>82.02%</strong></td><td><code>adc4eaec...1865aa3</code></td></tr>
+        </tbody>
+      </table>
+      <p>两个 package 都用 canonical online compiler：同一个 causal ledger、prototype lookup、typed state/option compiler 与 ragged collation；没有 legacy tensor，也没有 source/team identity。两次严格本地 run 都使用未修改 official engine、同一 51-deck Frozen pool、每套 10 局、先后手各 5、base seed 22022、8 workers、shared <code>cuda:0</code>。canonical 推理现在 fail closed：encoder 异常或非法 decode 会成为 evaluation error，不再静默选择最小合法动作。</p>
+      <div class="notice"><strong>随机性边界：</strong>runtime 只能 seed Python、NumPy 与 Torch；official engine 内部 RNG 未向评测层暴露。因此两份结果是同合同的独立随机样本，不能按名义相同的 game ID 做配对检验。</div>
+      <div class="metrics">
+        <div class="metric"><b>29.22%</b><span>best-loss · 149 / 510</span></div>
+        <div class="metric"><b>30.00%</b><span>best-exact · 153 / 510</span></div>
+        <div class="metric"><b>+0.78 pp</b><span>best-exact delta</span></div>
+        <div class="metric"><b>510 / 510</b><span>both runs complete</span></div>
+        <div class="metric"><b>0</b><span>errors in either run</span></div>
+      </div>
+      <table>
+        <thead><tr><th>Strict fail-closed evidence</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>best-loss first / second</td><td class="num">80/255 = 31.37% / 69/255 = 27.06%</td></tr>
+          <tr><td>best-exact first / second</td><td class="num">81/255 = 31.76% / 72/255 = 28.24%</td></tr>
+          <tr><td>best-loss non-Prize attacks</td><td class="num">1,192/2,022 = 58.95%</td></tr>
+          <tr><td>best-exact non-Prize attacks</td><td class="num"><strong>861/1,766 = 48.75%</strong></td></tr>
+        </tbody>
+      </table>
+      <div class="notice good"><strong>当前研究选择：</strong>best-greedy checkpoint。它在本次独立样本中多 4 胜，且无奖赏攻击率明显更低；胜率差距很小，不构成稳定优势的统计证明。</div>
+      <div class="notice"><strong>证据位置：</strong>strict best-loss 为 <code>run-068755f72ad84b84bc0a5716848f1bb9</code>；strict best-exact 为 <code>run-d8ab4e9f95824195b2b2031fc0287a79</code>。早先的非严格 run 只保留为诊断证据，因为当时的零 error 无法排除静默 fallback。</div>
     </section>
 
     <section id="next">
@@ -290,10 +352,10 @@
         <tbody>
           <tr><td>Prototype</td><td>官方全表、官方 ID、完整结构化 effects 已导出</td><td>为 sidecar 增加 engine source hash / enum schema commitment</td></tr>
           <tr><td>Direct facts</td><td>typed Basic/Rainbow gap、base damage、target HP</td><td>完整 current-state effect resolver 与 differential engine tests</td></tr>
-          <tr><td>Dataset</td><td>1,073 Episodes / 77,174 decisions；split shards + hash + leakage audit</td><td>完成 V2 后再决定是否扩展 foundation corpus</td></tr>
-          <tr><td>Model</td><td>三臂 paired contract；teacher loss + batched greedy 已通过真实数据 smoke</td><td>按同一 validation 合同选择 checkpoint</td></tr>
-          <tr><td>Training</td><td>V2 runner/watchdog/W&amp;B/model-only checkpoint ready</td><td>启动并持续监控正式 V2</td></tr>
-          <tr><td>Strength evidence</td><td>只有表示与 forward correctness</td><td>同 split/预算的 0019 vs 0025 BC + official-engine arena</td></tr>
+          <tr><td>Dataset</td><td>1,073 Episodes / 77,174 canonical decisions；28.1 MB；全量 range/relation/leakage audit</td><td>保持当前 exact-deck split，不扩数据变量</td></tr>
+          <tr><td>Model</td><td>V4 canonical-only；D=320；4 state + 3 option layers；21,837,082 参数；128 options / 64 action steps fail-closed</td><td>先做 replay 语义归因，再决定 effect resolver / capacity</td></tr>
+          <tr><td>Training</td><td>18 epochs / 3,312 updates；best loss 0.321322；best greedy exact 82.02%；W&amp;B synced</td><td>保留 model-only 权重，不向 V4 追加训练</td></tr>
+          <tr><td>Strength evidence</td><td>严格本地 Frozen：best-loss 149/510（29.22%）；best-exact 153/510（30.00%）；均 510/510 complete、0 error</td><td>以 best-exact 做正式 V4 复验并按 replay 错误类型归因</td></tr>
         </tbody>
       </table>
     </section>

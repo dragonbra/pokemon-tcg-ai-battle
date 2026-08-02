@@ -134,10 +134,12 @@ class PolicyServer:
                 row = encoder.encode(observation)
             except (IndexError, RuntimeError, ValueError):
                 self._encoders.pop(request.session_id, None)
+                if getattr(self._policy, "fail_closed_inference_errors", False):
+                    raise
                 request.action = self._legal_fallback(observation)
                 request.ready.set()
                 continue
-            row["source_id"] = self._torch.zeros(1, dtype=self._torch.long)
+            _inject_source_id_if_required(self._torch, row, self._policy)
             encoded.append(row)
             active_requests.append(request)
         if not encoded:
@@ -150,11 +152,13 @@ class PolicyServer:
         lengths = result.lengths.cpu().tolist()
         legal = result.legal.cpu().tolist()
         for index, request in enumerate(active_requests):
-            request.action = (
-                [int(value) for value in sequences[index][: lengths[index]]]
-                if legal[index]
-                else self._legal_fallback(request.observation)
-            )
+            if not legal[index] and getattr(
+                self._policy, "fail_closed_inference_errors", False
+            ):
+                raise RuntimeError("canonical policy produced an illegal action sequence")
+            request.action = [
+                int(value) for value in sequences[index][: lengths[index]]
+            ] if legal[index] else self._legal_fallback(request.observation)
             request.ready.set()
 
 
@@ -185,6 +189,12 @@ def _stack_batches(torch: Any, rows: list[dict[str, Any]], device: Any) -> dict[
             combined[slices] = tensor[0]
         batch[key] = combined.to(device, non_blocking=device.type == "cuda")
     return batch
+
+
+def _inject_source_id_if_required(torch: Any, row: dict[str, Any], policy: Any) -> None:
+    """Preserve legacy persona routing without exposing it to canonical actors."""
+    if getattr(policy, "requires_source_id", True):
+        row["source_id"] = torch.zeros(1, dtype=torch.long)
 
 
 def _normalize_request_deck(value: Any, fallback: tuple[int, ...]) -> tuple[int, ...]:

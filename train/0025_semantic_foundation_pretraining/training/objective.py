@@ -38,6 +38,10 @@ def teacher_batch(model: nn.Module, batch: dict[str, Tensor]) -> TeacherBatch:
 
 def deterministic_decode(model: nn.Module, batch: dict[str, Tensor]) -> DecodedActions:
     """Greedily decode a batch while enforcing unique options and count bounds."""
+    public_decode = getattr(model, "deterministic_action_tensors", None)
+    if callable(public_decode):
+        result = public_decode(batch)
+        return DecodedActions(result.sequences, result.lengths, result.legal)
     state, options = model.encode(batch)
     batch_size, option_count, width = options.shape
     hidden = torch.tanh(model.decoder_init(state))

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import os
 import time
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 import torch
 from torch import Tensor, nn
@@ -18,8 +19,19 @@ from rl_environment.logging import TrainingLogger
 from rl_environment.runs import VersionPaths, write_version_status
 
 from .checkpoints import save_checkpoint
-from .dataset import SemanticDecisionDataset
 from .objective import evaluate_batches, teacher_batch
+
+
+class DecisionBatchDataset(Protocol):
+    manifest: dict[str, Any]
+    manifest_sha256: str
+    split_counts: dict[str, int]
+
+    def batch_count(self, split: str, batch_size: int) -> int: ...
+
+    def iter_batches(
+        self, split: str, batch_size: int, *, seed: int
+    ) -> Any: ...
 
 
 def _atomic_json(path: Path, value: object) -> None:
@@ -37,6 +49,14 @@ def _atomic_json(path: Path, value: object) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def _sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(4 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def _device_batch(batch: Mapping[str, Tensor], device: torch.device) -> dict[str, Tensor]:
     return {name: value.to(device, non_blocking=True) for name, value in batch.items()}
 
@@ -45,7 +65,7 @@ def _train_epoch(
     arm: str,
     model: nn.Module,
     optimizer: torch.optim.Optimizer,
-    dataset: SemanticDecisionDataset,
+    dataset: DecisionBatchDataset,
     *,
     epoch: int,
     batch_size: int,
@@ -63,6 +83,8 @@ def _train_epoch(
     decisions = 0
     updates = 0
     started = time.perf_counter()
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
     total = dataset.batch_count("train", batch_size)
     if maximum_batches is not None:
         total = min(total, maximum_batches)
@@ -102,8 +124,7 @@ def _train_epoch(
     elapsed = time.perf_counter() - started
     if updates == 0 or tokens.item() == 0:
         raise ValueError(f"training arm produced no updates: {arm}")
-    return (
-        {
+    metrics = {
             "loss": float((loss_sum / tokens).item()),
             "token_accuracy": float((correct / tokens).item()),
             "teacher_exact_action": float((exact / decisions).item()),
@@ -111,9 +132,15 @@ def _train_epoch(
             "tokens": int(tokens.item()),
             "seconds": elapsed,
             "decisions_per_second": decisions / elapsed,
-        },
-        updates,
-    )
+        }
+    if device.type == "cuda":
+        metrics["cuda_peak_allocated_bytes"] = int(
+            torch.cuda.max_memory_allocated(device)
+        )
+        metrics["cuda_peak_reserved_bytes"] = int(
+            torch.cuda.max_memory_reserved(device)
+        )
+    return metrics, updates
 
 
 def train_ablation(
@@ -121,7 +148,7 @@ def train_ablation(
     paths: VersionPaths,
     models: Mapping[str, nn.Module],
     optimizers: Mapping[str, torch.optim.Optimizer],
-    dataset: SemanticDecisionDataset,
+    dataset: DecisionBatchDataset,
     config: dict[str, Any],
     device: torch.device,
     epochs: int,
@@ -138,6 +165,10 @@ def train_ablation(
     if set(models) != set(optimizers) or not models:
         raise ValueError("models and optimizers must have identical non-empty arms")
     _atomic_json(paths.config, config)
+    training_config_sha256 = _sha256(paths.config)
+    model_contract_sha256 = (
+        _sha256(paths.model_contract) if paths.model_contract.is_file() else None
+    )
     write_version_status(
         paths,
         {
@@ -231,6 +262,12 @@ def train_ablation(
                         "epoch": epoch,
                         "global_step": global_step,
                         "dataset_manifest_sha256": dataset.manifest_sha256,
+                        "training_config_sha256": training_config_sha256,
+                        "model_contract_sha256": model_contract_sha256,
+                        "implementation_sha256": config.get("implementation_sha256"),
+                        "initialized_from_checkpoint": config.get(
+                            "initialized_from_checkpoint"
+                        ),
                         "model_config": config["arms"][arm],
                         "validation": validation,
                     }

@@ -1,4 +1,4 @@
-"""Foreground watchdog for a formal 0025 paired BC training process."""
+"""Foreground watchdog for a formal 0025 BC training process."""
 
 from __future__ import annotations
 
@@ -102,6 +102,11 @@ def _emit(event: str, payload: dict[str, Any], monitor_path: Path | None) -> Non
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--entrypoint",
+        choices=("ablation", "canonical"),
+        default="ablation",
+    )
     parser.add_argument("--version", default="V2_james_cox_raging_bolt_ablation")
     parser.add_argument("--heartbeat-seconds", type=float, default=30.0)
     parser.add_argument("--epochs", type=int, default=40)
@@ -115,10 +120,15 @@ def main() -> None:
         Path("rl_runs/0025_semantic_foundation_pretraining/versions") / args.version
     )
     monitor_path = run_root / "artifact/training_monitor.jsonl"
+    module = (
+        "train.0025_semantic_foundation_pretraining.run_canonical_bc"
+        if args.entrypoint == "canonical"
+        else "train.0025_semantic_foundation_pretraining.run_bc_ablation"
+    )
     command = [
         sys.executable,
         "-m",
-        "train.0025_semantic_foundation_pretraining.run_bc_ablation",
+        module,
         "--version",
         args.version,
         "--epochs",

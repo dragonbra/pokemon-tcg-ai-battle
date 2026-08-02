@@ -1,0 +1,85 @@
+{
+  "amp_dtype": "bfloat16",
+  "arms": {
+    "legacy_budget_matched": {
+      "actor_view": "legacy_only",
+      "config": {
+        "d_model": 576,
+        "dropout": 0.1,
+        "encoder_layers": 4,
+        "ffn_multiplier": 3,
+        "heads": 8,
+        "max_action_steps": 64,
+        "max_card_id": 2048,
+        "max_entities": 192,
+        "max_options": 128
+      },
+      "model": "IDOnlyPointerPolicy",
+      "parameter_count": 21725570
+    },
+    "legacy_default": {
+      "actor_view": "legacy_only",
+      "config": {
+        "d_model": 320,
+        "dropout": 0.1,
+        "encoder_layers": 4,
+        "ffn_multiplier": 3,
+        "heads": 8,
+        "max_action_steps": 64,
+        "max_card_id": 2048,
+        "max_entities": 192,
+        "max_options": 128
+      },
+      "model": "IDOnlyPointerPolicy",
+      "parameter_count": 7154562
+    },
+    "semantic": {
+      "actor_view": "legacy_plus_typed_multi_memory",
+      "config": {
+        "d_model": 320,
+        "dropout": 0.1,
+        "heads": 8,
+        "max_attack_id": 4096,
+        "max_card_id": 2048,
+        "max_effect_ref": 8192,
+        "max_skill_ref": 20000
+      },
+      "model": "SemanticFoundationPolicy",
+      "parameter_count": 23760966
+    }
+  },
+  "batch_size": 256,
+  "checkpoint_payload": "model_weights_only_no_optimizer_no_resume_state",
+  "checkpoint_retention_slots_per_arm": 4,
+  "dataset_manifest_sha256": "c2e36af98e44d880d725f3b1ec60fdcee6f1f81ed430c40d408796bee093114f",
+  "dataset_path": "rl_runs/0025_semantic_foundation_pretraining/dataset/V1_james_cox_raging_bolt_semantic",
+  "dataset_split_counts": {
+    "train": 70571,
+    "validation": 6603
+  },
+  "early_stopping_min_delta": 0.0005,
+  "early_stopping_patience": 6,
+  "epochs": 40,
+  "exact_deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+  "expert_team_names": [
+    "James Cox",
+    "James Cox & Henry Chao"
+  ],
+  "grad_clip": 1.0,
+  "learning_rate": 0.0003,
+  "project_id": "0025_semantic_foundation_pretraining",
+  "schema_version": "0025_james_cox_raging_bolt_ablation_v1",
+  "seed": 20260802,
+  "source_identity_actor_visible": false,
+  "train_passes_per_epoch_per_active_arm": 1,
+  "validation_batch_size": 256,
+  "validation_full_pass_per_epoch": true,
+  "version": "V3_james_cox_raging_bolt_restart",
+  "wandb": {
+    "entity": "dragon_bra",
+    "mode": "online",
+    "project": "pokemon-tcg-policy-learning",
+    "run_id": "0025_semantic_foundation_pretraining--v3_james_cox_ra-126d724e53"
+  },
+  "weight_decay": 0.02
+}

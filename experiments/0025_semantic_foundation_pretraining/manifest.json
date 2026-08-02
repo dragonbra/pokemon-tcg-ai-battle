@@ -1,6 +1,21 @@
 {
+  "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0025_semantic_foundation_pretraining",
-  "status": "v2_james_cox_raging_bolt_paired_bc_ready",
+  "title": "Semantic Foundation Pretraining",
+  "status": "active",
+  "created_at": "2026-08-02T00:00:00+08:00",
+  "objective": "Train a canonical typed semantic policy compiled directly from raw observations and official Card/Attack/Skill/Effect prototypes on the exact-deck James Cox Raging Bolt corpus, then validate it in the unmodified official engine.",
+  "deck": "raging_bolt_ex_james_cox_henry_chao_001 exact 60-card identity; SHA-256 f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+  "expert_source": "Audited winner decisions from James Cox and James Cox & Henry Chao Episodes dated 2026-07-20 through 2026-08-01; source identity is provenance-only and actor-invisible.",
+  "dataset_contract": "1073 complete expert Episodes split by Episode into 981 train and 92 validation Episodes; exact-deck isolated; winner actions only; no cross-deck action-label mixing.",
+  "engine_revision": "Unmodified official engine runtime remains authoritative for gameplay evaluation.",
+  "opponent_pool_snapshot": "0019_foundation_51_exact_decks_v4; evaluation/configs/frozen.json; catalog SHA-256 f6e4ccb18a55c0e28410349b1299f3e9d5a61a2ca5cc7828c1b805fadf4cfa66.",
+  "paths": {
+    "training": "train/0025_semantic_foundation_pretraining",
+    "archive": "experiments/0025_semantic_foundation_pretraining",
+    "runs": "rl_runs/0025_semantic_foundation_pretraining"
+  },
+  "lifecycle_status": "v4_canonical_training_complete_local_frozen_comparison_selects_best_greedy",
   "created_date": "2026-08-02",
   "lineage": {
     "project": "0019_universal_winner_bc",
@@ -26,8 +41,8 @@
     "official_public_file_sha256": "5b45041cd14beed8a847f2e99ce955a105fbfedb6acd4b2d8050427dead2f551",
     "official_full_engine_file_sha256": "5ab0b28e21d40a17a7b153744332424f08d4e32cde4e2ab20f11cb262e799845"
   },
-  "version": "V1_semantic_contract_smoke",
-  "next_version": "V2_james_cox_raging_bolt_ablation",
+  "version": "V4_canonical_semantic_foundation",
+  "next_version": "V4_canonical_semantic_foundation_formal_best_greedy_evaluation",
   "v2_expert_corpus": {
     "team_names": [
       "James Cox",
@@ -49,7 +64,75 @@
     "semantic_manifest_file_sha256": "c2e36af98e44d880d725f3b1ec60fdcee6f1f81ed430c40d408796bee093114f",
     "source_identity_actor_visible": false
   },
-  "formal_training_started": false,
-  "full_materialization_started": false,
-  "expert_materialization_complete": true
+  "v4_canonical_contract": {
+    "schema_version": "0025_canonical_semantic_decision_v2",
+    "dataset_path": "rl_runs/0025_semantic_foundation_pretraining/dataset/V2_james_cox_raging_bolt_canonical",
+    "dataset_manifest_sha256": "619311eb3df8c6f1ebef874670363988c26dd7665325b9d6fef8adc4bef4f8cf",
+    "decision_split": {
+      "train": 70571,
+      "validation": 6603
+    },
+    "episode_split": {
+      "train": 981,
+      "validation": 92
+    },
+    "dataset_payload_bytes": 28139349,
+    "materialization_seconds": 92.56953529699967,
+    "model": "CanonicalSemanticPolicy",
+    "trainable_parameters": 21837082,
+    "max_options": 128,
+    "max_action_steps": 64,
+    "legacy_tensor_dependency": false,
+    "source_identity_actor_visible": false
+  },
+  "v4_training": {
+    "state": "completed",
+    "epochs_completed": 18,
+    "global_step": 3312,
+    "wandb_run_id": "0025_semantic_foundation_pretraining--v4_canonical_se-455df0e583",
+    "wandb_sync_state": "synced",
+    "best_validation_loss": {
+      "epoch": 12,
+      "loss": 0.321321952877589,
+      "greedy_exact": 0.8100863243980009,
+      "checkpoint_sha256": "a4e5b07b4d59fc90abfb4f002825dce2d76397bfec9768db6d3e5750fde1cf21"
+    },
+    "best_greedy_exact": {
+      "epoch": 14,
+      "loss": 0.3249191701863488,
+      "greedy_exact": 0.8202332273209147,
+      "checkpoint_sha256": "adc4eaeca1e62a28bbd762e8e513212c94941044bbc85673f02bbeadc1865aa3"
+    }
+  },
+  "v4_local_frozen_comparison": {
+    "formal_publication": false,
+    "inference_error_contract": "canonical_fail_closed",
+    "engine_rng_contract": "python_numpy_torch_only; official engine internal RNG is not exposed by runtime",
+    "comparison_contract": "same-contract independent stochastic samples; not paired trials",
+    "pool_id": "0019_foundation_51_exact_decks_v4",
+    "games_per_checkpoint": 510,
+    "seed": 22022,
+    "best_validation_loss": {
+      "run_id": "run-068755f72ad84b84bc0a5716848f1bb9",
+      "wins": 149,
+      "losses": 361,
+      "errors": 0,
+      "win_rate": 0.29215686274509806,
+      "report_sha256": "f05e22d7c6bef73f94e8128e8ba582d38f193d9de98acc682454d85ac16738ab"
+    },
+    "best_greedy_exact": {
+      "run_id": "run-d8ab4e9f95824195b2b2031fc0287a79",
+      "wins": 153,
+      "losses": 357,
+      "errors": 0,
+      "win_rate": 0.3,
+      "report_sha256": "82d07665a9094297df045e1b5c74828a89d6aeffed32fb1ada3ae6a3f8966c39"
+    },
+    "research_selection": "best_greedy_exact"
+  },
+  "formal_training_started": true,
+  "formal_training_complete": true,
+  "full_materialization_started": true,
+  "expert_materialization_complete": true,
+  "canonical_materialization_complete": true
 }

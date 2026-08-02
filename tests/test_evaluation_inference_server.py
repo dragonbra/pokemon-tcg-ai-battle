@@ -8,11 +8,32 @@ from unittest.mock import patch
 import torch
 
 from evaluation.runner.batch import _candidate_socket_path
-from evaluation.runner.inference_server import _normalize_request_deck, _stack_batches
+from evaluation.runner.inference_server import (
+    _inject_source_id_if_required,
+    _normalize_request_deck,
+    _stack_batches,
+)
 from evaluation.runner.worker import _remote_policy_agent
 
 
 class CandidateInferenceServerTest(unittest.TestCase):
+    def test_source_identity_is_only_injected_for_declared_policies(self) -> None:
+        canonical = type("Canonical", (), {"requires_source_id": False})()
+        legacy = type("Legacy", (), {})()
+        canonical_row = {"option_mask": torch.tensor([[True]])}
+        legacy_row = {"option_mask": torch.tensor([[True]])}
+        _inject_source_id_if_required(torch, canonical_row, canonical)
+        _inject_source_id_if_required(torch, legacy_row, legacy)
+        self.assertNotIn("source_id", canonical_row)
+        self.assertEqual(legacy_row["source_id"].tolist(), [0])
+
+    def test_canonical_policy_declares_fail_closed_inference(self) -> None:
+        module = __import__(
+            "train.0025_semantic_foundation_pretraining.deployment.canonical_inference",
+            fromlist=["PortableCanonicalPolicy"],
+        )
+        self.assertTrue(module.PortableCanonicalPolicy.fail_closed_inference_errors)
+
     def test_remote_policy_agent_routes_exact_deck_and_role(self) -> None:
         class Connection:
             def __init__(self) -> None:

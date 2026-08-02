@@ -1,0 +1,36 @@
+{
+  "best": {
+    "legacy_budget_matched": {
+      "greedy_exact": 0.7876722701802211,
+      "loss": 0.31791710895233954,
+      "teacher_exact": 0.7872179312433742
+    },
+    "legacy_default": {
+      "greedy_exact": 0.7961532636680296,
+      "loss": 0.3075830024137147,
+      "teacher_exact": 0.7958503710434651
+    },
+    "semantic": {
+      "greedy_exact": 0.7342117219445706,
+      "loss": 0.4229230930726057,
+      "teacher_exact": 0.7342117219445706
+    }
+  },
+  "completed_at": 1785651291.8773308,
+  "device": "cuda",
+  "global_step": 12972,
+  "started_at": 1785647825.1004434,
+  "state": "completed",
+  "version": "V3_james_cox_raging_bolt_restart",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0025_semantic_foundation_pretraining--v3_james_cox_ra-126d724e53",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0025_semantic_foundation_pretraining--v3_james_cox_ra-126d724e53"
+  },
+  "wandb_expected_mode": "online"
+}

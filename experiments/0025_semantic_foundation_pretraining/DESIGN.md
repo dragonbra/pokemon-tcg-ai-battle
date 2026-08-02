@@ -1,15 +1,138 @@
 # 0025 Semantic Foundation Pretraining
 
-Status: **V1 semantic contract complete; V2 James Cox Raging Bolt paired BC dataset and trainer ready; formal training not started.**
+Status: **V4 canonical semantic foundation is implemented, trained, exported, and locally evaluated in the unmodified official engine. Best-greedy is the current research selection; formal V4 publication remains the next gate. V3 remains immutable historical evidence.**
 
 ## Objective
 
-0025 is the self-contained successor to the 0019 universal-winner BC lineage. It keeps the audited full-action imitation contract, exact-deck conditioning, causal ledger, visible board, events, and legal-option ordering, while repairing two representational failures:
+0025 is the self-contained successor to the 0019 universal-winner BC lineage. V4 keeps the audited full-action imitation contract, exact-deck conditioning, causal ledger, visible board, events, and legal-option ordering, but **does not keep the legacy actor tensor interface**. It repairs two representational failures:
 
 1. A card ID was expected to carry most card semantics. Individual attacks, skills, effect chains, typed costs, targets, and numeric rules were collapsed or absent.
 2. Several heterogeneous inputs were summarized before an option could ask a specific question of them. The decoder could not independently retrieve board, prototype, resource, and event evidence.
 
 This project does not add source/team identity to the actor. Source remains provenance for split, audit, sampling, and evaluation only.
+
+## Current V4 Canonical Contract
+
+V4 is a clean actor/model boundary, not a compatibility adapter around V3. Raw observations and
+official prototypes compile directly to named typed records. The exact accepted actor keys are
+declared once in `features/canonical/schema.py`; model forward rejects every missing or extra key.
+
+| Family | Cat width | Numeric width | Variable axis | Meaning |
+|---|---:|---:|---:|---|
+| Global | 11 | 17 | one token | Select context, turn budgets/status, zone counts, deck/hand/Prize pressure, known-hand boundary |
+| Card instance | 5 | 7 | `C` | Visible card identity/owner/zone/kind/status, HP/damage, attachments, evolution parent |
+| Resource ledger | 4 | 15 | `R` | Exact registered-deck multiset, visible zones, bounded/exact deck and Prize counts, evidence age |
+| Recent event | 8 | 4 | `E` | Actor-relative log type, card/areas/visibility and finite numeric payload |
+| Legal option | 14 | 16 + 16 states | `O` | Action/source/target/attack/energy identity, direct attack and HP facts, explicit value state |
+| Option-skill relation | ID + role + parent | - | `S` | Actual official skill ID and the exact option it belongs to |
+| Option-effect relation | ID + role + parent | - | `F` | Official effect-chain node and the exact option it belongs to |
+
+Every categorical column owns a separate embedding. Numeric columns use numeric MLP projections.
+`PAD=0`, `PRESENT=1`, `UNKNOWN=2`, and `NOT_APPLICABLE=3` are distinct. Padding is introduced only
+by collation and is excluded with masks. No source/team identity, copied target action, or `legacy`
+payload can enter actor forward.
+
+```text
+global + card instances + exact-deck ledger + recent events
+    -> typed token projections + Card prototypes
+    -> 4-layer state Transformer
+    -> full state memory + attention-pooled state summary
+
+legal options
+    + source/target card-instance gathers
+    + Card/Attack prototype lookup
+    + explicitly parented Skill/Effect relations
+    -> typed option projection
+    -> 3-layer Transformer decoder cross-attending full state memory
+    -> semantic option tokens
+
+state summary + semantic option tokens
+    -> autoregressive GRU pointer
+    -> unique ordered legal-option indices + STOP
+```
+
+The production configuration is `D=320`, 8 heads, FFN multiplier 3, dropout 0.10, four state
+layers and three option cross-attention layers. It has 21,837,082 trainable parameters. Current
+official ID capacities are finite and fail closed: Card 2,048, Attack 2,048, Skill 512, Effect
+4,096; the read-only prototype snapshot maxima are 1,267 / 1,556 / 434 / 3,067 respectively.
+Live inference additionally fails closed above 128 legal options or 64 selected action steps; the
+current canonical corpus maxima are 67 and below 64 respectively.
+
+Deterministic current-state features presently include base damage, typed and total Energy deficit,
+attached/required Energy counts, target/source current and maximum HP, HP after base damage, and a
+base-damage KO flag. Dynamic effect resolution, Special Energy text, weakness/resistance, tool HP
+modifiers and final prize delta remain explicit unresolved work; V4 supplies structured Effect
+tokens instead of guessing these values.
+
+## Current V4 Dataset
+
+`V2_james_cox_raging_bolt_canonical` was compiled directly from the committed raw corpus in 92.57
+seconds using one CPU core and 267 MiB peak RSS. It contains 77,174 decisions in 28,139,349 bytes
+of compressed shards plus prototype sidecars:
+
+- train: 70,571 decisions / 981 complete Episodes;
+- validation: 6,603 decisions / 92 complete Episodes;
+- exact deck SHA-256: `f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a`;
+- canonical manifest SHA-256: `619311eb3df8c6f1ebef874670363988c26dd7665325b9d6fef8adc4bef4f8cf`;
+- observed maxima: 110 card tokens, 24 ledger tokens, 64 events, 67 options, 36 skill relations, 166 effect relations.
+
+All 77,174 rows passed categorical-vocabulary, finite-numeric, relation-index and actor-leakage
+audits. Dataset shards and the two prototype sidecars are content-hashed. Source IDs 73/74 are
+stored only under audit and manifest provenance.
+
+## V4 Formal BC Outcome
+
+`V4_canonical_semantic_foundation` trained from random initialization on CUDA with batch 384,
+validation batch 512, seed `20260802`, AdamW and patience 6. The foreground watchdog completed
+normally after 18 epochs / 3,312 optimizer updates; W&B run
+`0025_semantic_foundation_pretraining--v4_canonical_se-455df0e583` is synced. All four retained
+files are model-only checkpoints with no optimizer, scheduler, scaler, RNG, DataLoader or replay
+state.
+
+| Selection | Epoch | Validation loss | Greedy exact | Checkpoint SHA-256 |
+|---|---:|---:|---:|---|
+| best validation loss | 12 | **0.321322** | 81.01% | `a4e5b07b...fde1cf21` |
+| best greedy exact | 14 | 0.324919 | **82.02%** | `adc4eaec...1865aa3` |
+
+V4 exceeded the V3 semantic arm's 73.42% and the V3 legacy-default arm's 79.62% best greedy exact.
+This is stronger full-action imitation evidence, not official-engine strength by itself.
+
+## V4 Local Official-Engine Checkpoint Comparison
+
+The canonical online runtime uses the same `CausalKnowledge`, `compile_canonical_row`, prototype
+tables and `collate_canonical_records` as materialization. It does not reconstruct legacy tensors
+or inject source identity. Both checkpoint packages strict-load their model-only payload and pass
+the standard exact-60-card package validator.
+
+Both strict local research runs used the unmodified official engine, Frozen pool
+`0019_foundation_51_exact_decks_v4`, 51 opponents x 10 games, alternating five first/five second,
+base seed 22022, eight isolated workers, one CPU thread per worker, shared `cuda:0` inference, and
+metric profile `auto_iteration_v8_setup_relay`. Canonical inference is fail closed: online encoder
+exceptions or illegal decoded actions become evaluation errors instead of silently selecting the
+minimum legal action. The runtime seeds Python, NumPy, and Torch, but the official engine's internal
+RNG is not exposed. The two checkpoint results are therefore same-contract independent stochastic
+samples, not paired trials, even when their nominal per-game seeds match.
+
+| Local checkpoint | W-L-D | Win rate | First / second | Complete / errors | Wall time |
+|---|---:|---:|---:|---:|---:|
+| best validation loss | 149-361-0 | 29.22% | 31.37% / 27.06% | 510/510 / 0 | 674.91 s |
+| best greedy exact | **153-357-0** | **30.00%** | 31.76% / 28.24% | 510/510 / 0 | 655.19 s |
+
+Best-greedy gains four wins / 0.78 percentage points in these independent samples. That difference
+is too small to claim a stable strength advantage, but it is directionally consistent with the
+offline selection metric. The attack-quality proxy is more favorable for best-greedy: attacks that
+did not take a Prize fall from 58.95% (1,192/2,022) to 48.75% (861/1,766). Best-greedy is therefore
+the research selection for the next formal V4 gate, with replay-level semantic error analysis still
+required.
+
+Strict local reports are retained under
+`.tmp/evaluation/0025_v4_best_loss_frozen_all_fail_closed/` (run
+`run-068755f72ad84b84bc0a5716848f1bb9`, SHA-256 `f05e22d7...16738ab`) and
+`.tmp/evaluation/0025_v4_best_exact_frozen_all_fail_closed/` (run
+`run-d8ab4e9f95824195b2b2031fc0287a79`, SHA-256 `82d07665...8966c39`). Earlier non-strict runs
+remain preliminary diagnostic evidence only because their zero-error summaries could not expose
+fallback. Local reports are not substitutes for `experiments/0025.../evaluation/V4_*.html` formal
+publication.
 
 ## Evidence Layers
 
@@ -24,7 +147,7 @@ The official engine source is never modified. `full_engine_prototype_export.cpp`
 
 The extraction evidence records the complete `engine/source` path+content tree digest `a81742957f29a23259b0253b71c7e63831c67b6641440b941e5c4c0d921e753e` and extractor source digest `6587eae6c01f2a3dd69067e9f12169000fb305815e425f33b8c57d6f9d769e8e`.
 
-## Frozen 0019 Lineage
+## Historical Frozen 0019/V3 Lineage
 
 The following implementations were copied into 0025 and are runtime-independent of 0019:
 
@@ -39,7 +162,7 @@ The following implementations were copied into 0025 and are runtime-independent 
 | `storage.py` | `17e1f1a836234cbd83469cdbc783b94907301e8b25caa03d6ade32e861218425` |
 | `config.py` | `0cc94bcfa5f297040131b061827111cb851d87251a7ccc004afd41762d939f3c` |
 
-The preserved actor-visible legacy tensors are:
+The following actor-visible legacy tensors describe V2/V3 only and are not accepted by V4:
 
 - `global_cat [4]`, `global_num [12]`
 - `entity_cat [E, 7]`, `entity_num [E, 5]`
@@ -66,9 +189,9 @@ The full sidecar preserves:
 
 Static prototypes are referenced by ID. They are not repeated in every decision.
 
-## Dynamic Decision Schema
+## Historical V3 Dynamic Decision Schema
 
-All sequence dimensions are ragged and accompanied by masks after collation.
+This section records the superseded V3 experiment contract. All sequence dimensions were ragged and accompanied by masks after collation.
 
 | Memory/input | Per-token shape | Contents |
 |---|---:|---|
@@ -88,7 +211,7 @@ The v1 direct option numbers include base damage, ordered-cost count, attached c
 
 Important boundary: base damage and conservative Basic/Rainbow matching are implemented. A complete current-state effect interpreter, Special Energy text evaluation, weakness/resistance/tool modifiers, and final prize delta are not yet implemented. Such values remain unknown rather than being guessed. The structured effect tokens make that next implementation finite and auditable.
 
-## Model Data Flow
+## Historical V3 Model Data Flow
 
 ```text
 raw observation + legal options + exact deck + causal history
@@ -174,18 +297,19 @@ python3 -m train.0025_semantic_foundation_pretraining.data.raw_dataset \
   --workers <calibrated-workers>
 ```
 
-Then the semantic materialization command is:
+The current canonical materialization command is:
 
 ```bash
 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python3 \
-  -m train.0025_semantic_foundation_pretraining.data.materialize \
+  -m train.0025_semantic_foundation_pretraining.data.materialize_canonical \
   --raw-root <audited-raw-root> \
   --output <new-unused-versioned-dataset-root> \
-  --prototypes train/0025_semantic_foundation_pretraining/assets/official_public_prototypes_v1.json \
-  --start-date 2026-07-10 --end-date 2026-08-02
+  --prototypes train/0025_semantic_foundation_pretraining/assets/official_public_prototypes_v1.json
 ```
 
-The current implementation is intentionally single-process. A full production build should add group-preserving workers and storage guards before execution. Tonight's run used `--max-decisions 8` only.
+The current implementation is intentionally single-process, bounded by 2,048-record shards, and
+checks storage after every closed shard. The complete James Cox build is finished; no projected
+or partial count is used for V4 training.
 
 ## V2 First Controlled Experiment: James Cox Raging Bolt
 
@@ -229,10 +353,79 @@ then full validation loss, token accuracy, teacher-forced exact action, free-gre
 legal action rate, and action-length accuracy. Offline metrics are imitation evidence only.
 Gameplay strength still requires matched official-engine evaluation.
 
-The formal version is `V2_james_cox_raging_bolt_ablation`. It uses W&B online, TensorBoard,
-canonical JSONL metrics, a foreground watchdog, and four finite model-only checkpoint slots per
-arm (`latest`, best validation loss, best teacher exact, best greedy exact). Optimizer, RNG,
-DataLoader position, replay, and other exact-resume state are not saved.
+The first formal attempt, `V2_james_cox_raging_bolt_ablation`, was interrupted by a
+user-requested host reboot after two complete epochs. Its original metrics, twelve model-only
+checkpoint slots, TensorBoard event, and W&B identity are retained as incomplete evidence. The
+reboot left 2,159 NUL bytes after the two valid epoch records in the canonical JSONL; the file is
+preserved rather than rewritten. V2 is not resumed and is not a completed comparison.
+
+The replacement formal version is `V3_james_cox_raging_bolt_restart`. It constructs all three
+models and AdamW optimizers from scratch with seed `20260802`; no V2 checkpoint, optimizer, RNG,
+DataLoader, or W&B state is loaded. It uses W&B online run
+`0025_semantic_foundation_pretraining--v3_james_cox_ra-126d724e53`, TensorBoard, canonical JSONL
+metrics, a foreground watchdog, and four finite model-only checkpoint slots per arm (`latest`,
+best validation loss, best teacher exact, best greedy exact). The frozen dataset, split, schema,
+batch order, training budget, and validation contract remain unchanged so V3 is a clean rerun.
+
+### V3 outcome
+
+V3 ran from 13:17:05 to 14:14:51 Asia/Shanghai (57.78 minutes), produced 21 canonical
+epoch records and 12,972 optimizer updates, and ended through `TRAINING_MONITOR_COMPLETE` with
+no watchdog alert. Each arm retained four model-only checkpoint slots and no optimizer,
+scheduler, scaler, RNG, DataLoader, or replay state.
+
+| Arm | Early-stop epoch | Best loss (epoch) | Exact at best loss | Best greedy exact (epoch) |
+|---|---:|---:|---:|---:|
+| `legacy_default` | 12 | 0.307583 (6) | 78.45% | **79.62% (12)** |
+| `legacy_budget_matched` | 14 | 0.317917 (8) | 78.34% | **78.77% (14)** |
+| `semantic` | 21 | 0.422923 (15) | 72.07% | **73.42% (21)** |
+
+The semantic arm learned much more slowly, improving from 49.28% exact after epoch 1 to 73.42%,
+but it did not beat either legacy control. On this frozen offline imitation contract, the strong
+claim that the current semantic representation alone improves BC is not supported. Parameter
+count also does not explain the outcome: the parameter-matched legacy arm remains 5.35 percentage
+points ahead of semantic on best greedy exact. This result does not show that semantic features
+are useless in official-engine play; it shows that the current encoder/routing/optimization
+contract does not turn them into better exact-action imitation on this corpus.
+
+### V3 lowest-loss official-engine evaluation
+
+The user-selected deployment point is `legacy_default/best_validation_loss.pt`, epoch 6:
+
+- validation loss `0.3075830024137147`, greedy exact action `78.4492%`;
+- checkpoint SHA-256 `759518ffa90f10121aa3441052db50931341c26309ea6dab128370e2f1c39223`;
+- self-contained package `evaluation/arena/candidates/0025_v3_legacy_default_best_loss`;
+- exact James Cox deck SHA-256 `f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a`.
+
+The formal run used the unmodified official engine and Frozen pool
+`0019_foundation_51_exact_decks_v4` (catalog SHA-256
+`f6e4ccb18a55c0e28410349b1299f3e9d5a61a2ca5cc7828c1b805fadf4cfa66`). It ran 10 games
+against each of 51 enabled exact-deck opponents, alternating five games as first player and five
+as second player. Both policy sides used the shared `cuda:0` inference service; the runner used
+eight isolated workers with one CPU thread each and deterministic seed contract `22022`.
+
+| Official-engine result | Value |
+|---|---:|
+| Completed | 510 / 510 |
+| Wins / losses / draws | 105 / 405 / 0 |
+| Win rate | **20.59%** |
+| Errors / unfinished | 0 / 0 |
+| Wall time | 227.46 s |
+| Throughput | 2.24 games/s |
+
+Against the exact Frozen James Cox identity, this checkpoint scored 2/10. Its strongest sampled
+matchups were `ionos_bellibolt_ex_kilowattrel_01` and `ns_zoroark_ex_001` at 9/10 each; ten
+opponent identities were 0/10. The immutable report is
+[`evaluation/V3_james_cox_raging_bolt_restart.html`](evaluation/V3_james_cox_raging_bolt_restart.html),
+run `run-f5303161ddfa4838a7815635b78b7446`, report SHA-256
+`d5a0034f9299aa2d5a376916020b7119dfeba6ec3a51702c85d4bb0dd20a8ee8`.
+
+This closes the deployability question but exposes a large offline-to-gameplay gap: 78.45%
+validation exact action does not by itself produce a strong Frozen policy. It does **not** show
+that the semantic arm is weaker in official-engine play, because semantic and the best-greedy
+legacy checkpoints have not yet been evaluated under this same contract. The next controlled
+experiment is a matched checkpoint comparison; action-level replay analysis should then separate
+feature omissions from compounding imitation and state-distribution errors.
 
 ## V1 Smoke And Cost
 
@@ -260,7 +453,7 @@ Only 07-10..07-28 has observed 0019 decision counts. Local episode archives curr
 
 ## Verification
 
-Nineteen tests pass:
+Twenty-one tests pass:
 
 - attacks 934 and 935 retain distinct identity, cost, and damage;
 - numeric zero, unknown, not-applicable, and padding remain distinct;
@@ -277,14 +470,31 @@ Nineteen tests pass:
 - a real three-arm GPU smoke completed finite forward/backward, validation, TensorBoard, status,
   and checkpoint publication; all four semantic memory gates moved away from zero.
 
-## Training Boundary And Next Versions
+## V4 Training Contract And Next Gate
 
-V1 is a research framework, not a trained candidate package. There is no W&B run because no formal BC/value/RL optimization occurred.
+`V4_canonical_semantic_foundation` trains one `canonical_semantic` arm from random initialization;
+it does not load V2/V3 weights. AdamW uses learning rate `3e-4`, weight decay `0.02`, bfloat16
+autocast, gradient clipping at 1.0, seed `20260802`, batch size 384 and validation batch size 512.
+Each epoch performs exactly one shuffled train pass and one complete fixed validation pass.
+Patience is 6 epochs at minimum loss improvement 0.0005. Formal metrics are written in canonical
+JSONL order, then TensorBoard, then W&B online under private project
+`dragon_bra/pokemon-tcg-policy-learning`.
 
-Before broader foundation pretraining:
+Only four replaceable model-only checkpoint slots are retained: latest, best validation loss,
+best teacher exact and best greedy exact. Checkpoints contain no optimizer, scheduler, scaler,
+RNG, DataLoader position or replay state. Their metadata commits the dataset manifest, training
+config, model contract, implementation source digest and the absence of an initialization
+checkpoint.
 
-1. Extend/audit the raw corpus through the chosen freeze date.
-2. Implement and test the deterministic current-state effect resolver, especially damage modifiers, typed Special Energy behavior, protection, weakness/resistance, tool-modified HP, KO/prize delta, and zone transitions.
-3. Benchmark packed/Arrow collation and add group-preserving parallel materialization plus storage/RSS guards.
-4. Complete V2 paired BC training and select each arm only by its frozen validation contract.
-5. Export both selected policies and run matched official-engine opponents, seeds, and first/second-player balance before making strength claims.
+GPU calibration on the production model measured batch 256 at 4.58 GiB peak allocated and about
+150 decisions/s; batch 512 reached 8.79 GiB allocated / 9.76 GiB reserved and about 279
+decisions/s. Batch 384 is selected to retain headroom above the desktop GPU baseline and for
+longer-sequence batches.
+
+V1 established the research framework; V2 was interrupted; V3 is completed historical evidence
+with a 510-game official-engine report. The V4 offline result is not a strength claim. After
+training, the next gate is a self-contained canonical online exporter followed by matched
+official-engine Frozen evaluation. The unresolved deterministic effect resolver remains the next
+feature-semantic extension; MoE or broader capacity is not justified before this canonical input
+contract is measured.
+5. Evaluate the semantic and best-greedy controls under this exact Frozen contract, then audit matched replay failures before making representation-level strength claims.

@@ -1,0 +1,26 @@
+{
+  "best": {
+    "canonical_semantic": {
+      "greedy_exact": 0.8202332273209147,
+      "loss": 0.321321952877589,
+      "teacher_exact": 0.8202332273209147
+    }
+  },
+  "completed_at": 1785660852.9481125,
+  "device": "cuda",
+  "global_step": 3312,
+  "started_at": 1785658765.9634545,
+  "state": "completed",
+  "version": "V4_canonical_semantic_foundation",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0025_semantic_foundation_pretraining--v4_canonical_se-455df0e583",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0025_semantic_foundation_pretraining--v4_canonical_se-455df0e583"
+  },
+  "wandb_expected_mode": "online"
+}

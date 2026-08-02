@@ -1,0 +1,12 @@
+{
+  "candidate": "0024_marnie_rl_u0055",
+  "deck_id": "marnies_grimmsnarl_ex_froslass_001",
+  "deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+  "decoder_checkpoint": "rl_runs/0024_marnies_grimmsnarl_ex_froslass_001_league_training/versions/V1_from_0023_v8_marnie_focal_24h/checkpoint/live/marnies_grimmsnarl_ex_froslass_001/update-000055.pt",
+  "decoder_sha256": "c2db261013bb248bccc8aa83538a9d81c9bcf5583ca0de91d5156d7c6efc33b1",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "model_only": true,
+  "policy_role": "live_snapshot",
+  "schema_version": "0024_arena_candidate_v1",
+  "update": 55
+}
