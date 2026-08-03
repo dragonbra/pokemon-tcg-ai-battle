@@ -13,6 +13,10 @@ from evaluation.metrics.league_profiles import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXTRA_PROFILED_CANDIDATES = {
+    "0024_lucario_hariyama_zero_shot",
+    "raging_bolt_ogerpon_user_zero_shot",
+}
 
 
 class LeagueQualityProfileTest(unittest.TestCase):
@@ -23,8 +27,10 @@ class LeagueQualityProfileTest(unittest.TestCase):
         )
         frozen_names = tuple(sorted(package.name for package in catalog.opponents))
 
-        self.assertEqual(all_profiled_decks(), frozen_names)
-        self.assertEqual(len(PROFILES), 22)
+        expected_names = tuple(sorted(set(frozen_names) | EXTRA_PROFILED_CANDIDATES))
+
+        self.assertEqual(all_profiled_decks(), expected_names)
+        self.assertEqual(len(PROFILES), 25)
         for name in frozen_names:
             profile = profile_for_deck(name)
             self.assertIn(name, profile.deck_ids)
@@ -32,6 +38,22 @@ class LeagueQualityProfileTest(unittest.TestCase):
             self.assertTrue(profile.focus_metrics)
             self.assertTrue(profile.interpretation)
             self.assertTrue(profile.reward_warning)
+
+    def test_lucario_hariyama_candidate_has_auditable_profile(self) -> None:
+        profile = profile_for_deck("0024_lucario_hariyama_zero_shot")
+
+        self.assertEqual(profile.profile_id, "lucario_hariyama_energy")
+        self.assertEqual(profile.key_card_ids[:2], (678, 674))
+        self.assertIn("max_evolved_pokemon", profile.focus_metrics)
+        self.assertIn("Hariyama", profile.interpretation)
+
+    def test_raging_bolt_ogerpon_candidate_has_auditable_profile(self) -> None:
+        profile = profile_for_deck("raging_bolt_ogerpon_user_zero_shot")
+
+        self.assertEqual(profile.profile_id, "raging_bolt_ogerpon_energy")
+        self.assertEqual(profile.key_card_ids, (63, 96, 226))
+        self.assertIn("attack_continuity", profile.focus_metrics)
+        self.assertIn("Prize", profile.interpretation)
 
     def test_profiles_select_auditable_generic_metric_vocabulary(self) -> None:
         allowed = set(COMMON_METRICS) | {

@@ -1,0 +1,13 @@
+{
+  "schema_version": "0020_cuda_ppo_kaggle_v1",
+  "deck": "lucario",
+  "deck_source": "evaluation\\arena\\opponents\\mega_lucario_ex_solrock_07_bc\\deck.csv",
+  "source_checkpoint": "checkpoint_best_iter_000224_main_win_rate_roll5_0.598833.pt",
+  "source_checkpoint_sha256": "7dc63dca0fa07918ac55ac13579576bfcb1d45c9a5af2fde11057083a7b479a2",
+  "model_sha256": "5ef30a31c880e3658ad3ffa38dc92e3925fddfc3b0a26051f610f82a1c38ceac",
+  "source_iteration": 224,
+  "best_metric": "main_win_rate_roll5",
+  "best_metric_used": "main_win_rate_roll5",
+  "best_metric_value": 0.5988333333333333,
+  "train_scope": "decoder_only"
+}

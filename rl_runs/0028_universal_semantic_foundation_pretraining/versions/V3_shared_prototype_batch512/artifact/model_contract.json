@@ -1,0 +1,25 @@
+{
+  "action_contract": "ordered_legal_option_pointer_plus_stop",
+  "arm": {
+    "actor_view": "canonical_typed_state_and_option_relations_only",
+    "config": {
+      "d_model": 320,
+      "dropout": 0.1,
+      "ffn_multiplier": 3,
+      "heads": 8,
+      "max_action_steps": 64,
+      "max_attack_id": 2048,
+      "max_card_id": 2048,
+      "max_effect_id": 4096,
+      "max_options": 128,
+      "max_skill_id": 512,
+      "option_layers": 3,
+      "state_layers": 4
+    },
+    "legacy_tensor_dependency": false,
+    "model": "SemanticPolicy",
+    "parameter_count": 21837082
+  },
+  "dataset_manifest_sha256": "7b8bd85a33e756e41212f57ff43a57abd59a0626a47f10fa2101c715c42adc15",
+  "schema_version": "0028_universal_model_contract_v1"
+}

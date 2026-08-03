@@ -1,0 +1,47 @@
+{
+  "schema_version": "0020_version_status_v1",
+  "project_id": "0020_pluggable_deck_rl",
+  "version": "V17_lucario_hariyama_zero_shot_frozen51",
+  "phase": "zero_shot_official_engine_frozen_evaluation",
+  "state": "completed_with_metric_defect",
+  "candidate": "evaluation/arena/candidates/0024_lucario_hariyama_zero_shot",
+  "foundation_version": "V1_frozen_0019_epoch13",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "source_id": 0,
+  "training_updates": 0,
+  "deck_sha256": "efd43d8ee7928865fb5bbe6f8ad6a755d5c7607cc1bb728920329144c21ce979",
+  "cg_tree_sha256": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+  "games_per_opponent": 10,
+  "enabled_opponents": 51,
+  "planned_total_games": 510,
+  "metric_profile": "league_deck_quality",
+  "run_id": "run-b4eeeae3451a45f189655658b47a3663",
+  "report": "experiments/0020_pluggable_deck_rl/evaluation/V17_lucario_hariyama_zero_shot_frozen51.html",
+  "report_sha256": "7bc552cfa7406ed1ee17232cf68c063109bdaa8f3b13f0f01b5eac451ffcf1a8",
+  "result": {
+    "total_games": 510,
+    "completed_games": 510,
+    "wins": 210,
+    "losses": 300,
+    "draws": 0,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.4117647058823529,
+    "first": {"wins": 120, "games": 255, "win_rate": 0.47058823529411764},
+    "second": {"wins": 90, "games": 255, "win_rate": 0.35294117647058826},
+    "wall_time_seconds": 372.23155936799594
+  },
+  "metric_defect": {
+    "metric_id": "league_quality",
+    "error_games": 510,
+    "cause": "Candidate identity was absent from the static league profile registry.",
+    "outcome_valid": true,
+    "process_metrics_valid": false,
+    "corrective_version": "V18_lucario_hariyama_zero_shot_profile_fix_frozen51"
+  },
+  "promotion_state": "candidate_only",
+  "wandb": {
+    "enabled": false,
+    "reason": "Official-engine evaluation-only zero-shot version; no training occurs in this version."
+  }
+}

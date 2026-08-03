@@ -1,0 +1,8 @@
+{
+  "checkpoint_count": 0,
+  "epochs_completed": 0,
+  "epochs_requested": 20,
+  "reason": "stopped_by_user_before_epoch_1_completion_to_optimize_cpu_data_pipeline_and_gpu_utilization",
+  "state": "stopped_by_user",
+  "training_result_usable": false
+}

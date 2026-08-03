@@ -1,0 +1,20 @@
+{
+  "device": "cuda",
+  "ended_at": 1785698033,
+  "epochs_completed": 0,
+  "reason": "stopped_by_user_before_epoch_1_completion_to_optimize_cpu_data_pipeline_and_gpu_utilization",
+  "started_at": 1785697226.725676,
+  "state": "stopped_by_user",
+  "version": "V1_mid_universal_semantic_foundation",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0028_universal_semantic_foundation_pretraining--v1_mi-8e6b770681",
+    "state": "interrupted",
+    "sync_state": "graceful_close_not_observed",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0028_universal_semantic_foundation_pretraining--v1_mi-8e6b770681"
+  },
+  "wandb_expected_mode": "online"
+}

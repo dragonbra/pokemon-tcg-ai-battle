@@ -196,7 +196,10 @@ PROFILES = (
     DeckQualityProfile(
         "lopunny_froslass_tempo",
         "Mega Lopunny ex / Mega Froslass ex",
-        ("mega_lopunny_ex_mega_froslass_ex_001",),
+        (
+            "mega_lopunny_ex_mega_froslass_ex_001",
+            "mega_lopunny_ex_mega_froslass_ex_002",
+        ),
         (849, 861),
         ("key_setup_round", "damage_events", "attack_continuity", "post_ko_attack_gap"),
         "关注 Mega Lopunny 启动、Froslass 辅助伤害、换位与攻击链。",
@@ -210,6 +213,20 @@ PROFILES = (
         ("key_setup_round", "max_attached_energy", "first_attack_round", "prizes_per_attack"),
         "关注 Riolu 进化、Solrock/Lunatone 资源引擎、早期攻击和单次攻击 Prize 效率。",
         "能量加速和快速进化必须通过有效攻击验证，不能成为自循环奖励。",
+    ),
+    DeckQualityProfile(
+        "lucario_hariyama_energy",
+        "Mega Lucario ex / Hariyama",
+        ("0024_lucario_hariyama_zero_shot",),
+        (678, 674, 673, 676),
+        (
+            "key_setup_round",
+            "max_evolved_pokemon",
+            "first_attack_round",
+            "prizes_per_attack",
+        ),
+        "关注 Mega Lucario ex 成形、Hariyama 进化换位、Solrock/Lunatone 资源引擎和攻击 Prize 转化。",
+        "进化、换位和能量加速本身都不是成果，必须通过及时攻击、有效 KO 和最终胜率验证。",
     ),
     DeckQualityProfile(
         "ns_zoroark_toolbox",
@@ -228,6 +245,34 @@ PROFILES = (
         ("first_attack_round", "max_attached_energy", "prizes_per_attack", "post_ko_attack_gap"),
         "关注能量吞吐、早期爆发、一击拿奖效率和弃能后的重新攻击能力。",
         "弃能不是负行为，堆能也不是正行为；二者都必须按 KO 与后续恢复解释。",
+    ),
+    DeckQualityProfile(
+        "raging_bolt_ogerpon_energy",
+        "Raging Bolt ex / Teal Mask Ogerpon ex",
+        ("raging_bolt_ogerpon_user_zero_shot",),
+        (63, 96, 226),
+        (
+            "first_attack_round",
+            "max_attached_energy",
+            "attack_continuity",
+            "prizes_per_attack",
+        ),
+        "关注 Teal Mask Ogerpon ex 能量引擎、Raging Bolt ex 早期爆发、弃能后攻击连续性和 Prize 转化。",
+        "附能、抽牌与弃能都不是独立成果，必须通过及时攻击、有效 KO 和最终胜率验证。",
+    ),
+    DeckQualityProfile(
+        "rmy_ogerpon_energy_engine",
+        "Rmy Teal Mask Ogerpon ex",
+        ("rmy_teal_mask_ogerpon_001",),
+        (96, 18),
+        (
+            "first_attack_round",
+            "max_attached_energy",
+            "attack_continuity",
+            "prizes_per_attack",
+        ),
+        "关注 Teal Mask Ogerpon ex 的能量引擎、早期攻击、连续输出和 Prize 转化。",
+        "抽牌与堆积草能量不能独立获得正向解释，必须服务于攻击链和真实胜负。",
     ),
     DeckQualityProfile(
         "rocket_mewtwo_spidops_engine",

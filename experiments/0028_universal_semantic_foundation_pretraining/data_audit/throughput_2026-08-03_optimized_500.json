@@ -1,0 +1,36 @@
+{
+  "acceptance": {
+    "cpu_pipeline_gate_passed": true,
+    "maximum_data_wait_fraction": 0.15,
+    "minimum_consumer_active_fraction": 0.85
+  },
+  "amp_dtype": "bfloat16",
+  "batch_size": 256,
+  "completed_at": 1785699266.3121285,
+  "completed_batches": 500,
+  "consumer_active_fraction": 0.9926912175688191,
+  "dataset_manifest_sha256": "7b8bd85a33e756e41212f57ff43a57abd59a0626a47f10fa2101c715c42adc15",
+  "dataset_root": "rl_runs/0028_universal_semantic_foundation_pretraining/dataset/V1_mid_winners_20260710_20260801",
+  "length_bucketed": true,
+  "metrics": {
+    "cuda_peak_allocated_bytes": 5459129344,
+    "cuda_peak_reserved_bytes": 7881097216,
+    "data_wait_fraction": 0.007308782431180903,
+    "data_wait_seconds": 2.008267961908132,
+    "decisions": 128000,
+    "decisions_per_second": 465.8363171328385,
+    "loss": 0.7036646996910614,
+    "prefetch_depth": 2,
+    "producer_batches": 503,
+    "seconds": 274.774626391998,
+    "teacher_exact_action": 0.46332812500000004,
+    "token_accuracy": 0.7161602520819266,
+    "tokens": 266580
+  },
+  "parameter_count": 21837082,
+  "prefetch_depth": 2,
+  "requested_batches": 500,
+  "schema_version": "0028_training_throughput_benchmark_v1",
+  "seed": 20260802,
+  "started_at": 1785699010.3786266
+}

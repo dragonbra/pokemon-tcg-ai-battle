@@ -1,0 +1,51 @@
+{
+  "schema_version": "0020_version_status_v1",
+  "project_id": "0020_pluggable_deck_rl",
+  "version": "V18_lucario_hariyama_zero_shot_profile_fix_frozen51",
+  "phase": "zero_shot_official_engine_frozen_evaluation",
+  "state": "completed",
+  "candidate": "evaluation/arena/candidates/0024_lucario_hariyama_zero_shot",
+  "foundation_version": "V1_frozen_0019_epoch13",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "source_id": 0,
+  "training_updates": 0,
+  "deck_sha256": "efd43d8ee7928865fb5bbe6f8ad6a755d5c7607cc1bb728920329144c21ce979",
+  "cg_tree_sha256": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+  "games_per_opponent": 10,
+  "enabled_opponents": 51,
+  "planned_total_games": 510,
+  "metric_profile": "league_deck_quality",
+  "profile_id": "lucario_hariyama_energy",
+  "run_id": "run-262d72d1ffa145b0ba88b0049f33d98d",
+  "report": "experiments/0020_pluggable_deck_rl/evaluation/V18_lucario_hariyama_zero_shot_profile_fix_frozen51.html",
+  "report_sha256": "18cbef21efd9a55020c032e284115b237b9430a906c8a8154519e2c96b0c6532",
+  "result": {
+    "total_games": 510,
+    "completed_games": 510,
+    "wins": 194,
+    "losses": 316,
+    "draws": 0,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.3803921568627451,
+    "first": {"wins": 100, "games": 255, "win_rate": 0.39215686274509803},
+    "second": {"wins": 94, "games": 255, "win_rate": 0.3686274509803922},
+    "wall_time_seconds": 377.9914535019998
+  },
+  "process_metrics": {
+    "league_quality_error_games": 0,
+    "first_attack_round": 1.9823529411764707,
+    "key_setup_round": 2.511111111111111,
+    "attack_continuity": 0.7017388216998948,
+    "energy_attach_turn_rate": 0.6519427402862986,
+    "prizes_per_attack": 1.2133227597145122,
+    "non_prize_attack_rate": 0.6521221737405791
+  },
+  "controlled_change_from": "V17_lucario_hariyama_zero_shot_frozen51",
+  "controlled_change": "Register candidate identity for league-quality process metrics; policy, deck, runtime, opponents, and game contract unchanged.",
+  "promotion_state": "candidate_only",
+  "wandb": {
+    "enabled": false,
+    "reason": "Official-engine evaluation-only zero-shot version; no training occurs in this version."
+  }
+}

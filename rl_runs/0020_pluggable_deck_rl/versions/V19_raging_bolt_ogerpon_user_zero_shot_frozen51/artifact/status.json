@@ -1,0 +1,50 @@
+{
+  "schema_version": "0020_version_status_v1",
+  "project_id": "0020_pluggable_deck_rl",
+  "version": "V19_raging_bolt_ogerpon_user_zero_shot_frozen51",
+  "phase": "zero_shot_official_engine_frozen_evaluation",
+  "state": "completed",
+  "candidate": "evaluation/arena/candidates/raging_bolt_ogerpon_user_zero_shot",
+  "foundation_version": "V1_frozen_0019_epoch13",
+  "foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+  "source_id": 0,
+  "training_updates": 0,
+  "deck_sha256": "8d4a0e488514bedaf24d937290d5ee1d153f7686f652b0fc77f7675d2a2a5036",
+  "cg_tree_sha256": "8a25d7b3497cf4e7c950f3b5038be5debf0f8157fd24abdfd3a730fe863b60ac",
+  "games_per_opponent": 10,
+  "enabled_opponents": 51,
+  "planned_total_games": 510,
+  "metric_profile": "league_deck_quality",
+  "profile_id": "raging_bolt_ogerpon_energy",
+  "run_id": "run-0e4b5e6a646e476ebb2042159a16c013",
+  "report": "experiments/0020_pluggable_deck_rl/evaluation/V19_raging_bolt_ogerpon_user_zero_shot_frozen51.html",
+  "report_sha256": "21684876bf99277ba396b7c1a0e892c6c2ef3fe9fcbeca4adbb6ad0f8e02b9a5",
+  "result": {
+    "total_games": 510,
+    "completed_games": 510,
+    "wins": 69,
+    "losses": 441,
+    "draws": 0,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.13529411764705881,
+    "first": {"wins": 40, "games": 255, "win_rate": 0.1568627450980392},
+    "second": {"wins": 29, "games": 255, "win_rate": 0.11372549019607843},
+    "wall_time_seconds": 380.1918306180014
+  },
+  "process_metrics": {
+    "league_quality_error_games": 0,
+    "first_attack_round": 2.257425742574257,
+    "key_setup_round": 1.6900212314225054,
+    "max_attached_energy": 10.194117647058823,
+    "attack_continuity": 0.6718460060291744,
+    "energy_attach_turn_rate": 0.6158451406904809,
+    "prizes_per_attack": 1.2665562913907285,
+    "non_prize_attack_rate": 0.7108533554266777
+  },
+  "promotion_state": "candidate_only",
+  "wandb": {
+    "enabled": false,
+    "reason": "Official-engine evaluation-only zero-shot version; no training occurs in this version."
+  }
+}

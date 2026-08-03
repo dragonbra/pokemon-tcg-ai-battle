@@ -1,0 +1,80 @@
+{
+  "schema_version": "pretrained_policy_archive_v1",
+  "asset_id": "0028-universal-semantic-foundation",
+  "display_name": "0028 Universal Semantic Foundation",
+  "project_id": "0028_universal_semantic_foundation_pretraining",
+  "repository_version": "V3_shared_prototype_batch512",
+  "release_date": "2026-08-03",
+  "release_stage": "epoch1_sample",
+  "epoch": 1,
+  "global_step": 15799,
+  "checkpoint_schema": "0028_model_only_checkpoint_v1",
+  "checkpoint_payload": "model_weights_only_no_optimizer_no_resume_state",
+  "weights": {
+    "path": "model.pt",
+    "git_lfs": true,
+    "bytes": 129032039,
+    "sha256": "6ff2825f1e184e74df276877a548ceb2e6e8ae4ce844ffcbd6836cbce4eb61d2"
+  },
+  "model": {
+    "class": "SemanticPolicy",
+    "parameter_count": 21837082,
+    "source_identity_actor_visible": false,
+    "actor_view": "canonical_typed_state_and_option_relations_only",
+    "action_contract": "ordered_legal_option_pointer_plus_stop",
+    "prototype_facts": [
+      "card",
+      "attack",
+      "skill",
+      "effect"
+    ],
+    "model_source_bundle_sha256": "c1ad26c42c49d2bbd80fc25d9fd1555c99159fab702a05c9070a8218be1fd56a"
+  },
+  "data_identity": {
+    "snapshot_range": "2026-07-10..2026-08-01",
+    "dataset_manifest_sha256": "7b8bd85a33e756e41212f57ff43a57abd59a0626a47f10fa2101c715c42adc15",
+    "winner_perspective_only": true,
+    "train_decisions": 8088836,
+    "validation_decisions": 895146,
+    "exact_decks": 403,
+    "provenance_sources": 568
+  },
+  "selection": {
+    "criterion": "best_validation_loss",
+    "loss": 0.4295406838804817,
+    "token_accuracy": 0.865043383518437,
+    "teacher_exact_action": 0.7470111020995458,
+    "exact_action": 0.7470200391891378,
+    "legal_action": 1.0,
+    "action_length_accuracy": 0.9922727689114401,
+    "decisions": 895146,
+    "tokens": 1868682
+  },
+  "zero_shot": {
+    "online_adapter": "zero_shot.ZeroShotPolicy",
+    "requires_exact_60_card_deck": true,
+    "requires_chronological_observations": true,
+    "requires_reset_between_games": true,
+    "official_engine_evaluation_required_for_strength_claims": true
+  },
+  "file_sha256": {
+    "model.pt": "6ff2825f1e184e74df276877a548ceb2e6e8ae4ce844ffcbd6836cbce4eb61d2",
+    "checkpoint_metadata.json": "8afa5f5c033d3547dc8448c268c6ca8a1d2432b73c5b9ead529f0511ab1a664e",
+    "README.md": "6b07dee44774fc42101ec6076d16a47b63547ba9bbae5c74b5ba32ec27cdbb83",
+    "loader.py": "a296f9a133872ca11c2012ad3498321b6be0c61ba85b2ca2e3de3b7306a80715",
+    "zero_shot.py": "48cfda2e15ad604426ad6c398a36dd46bd24252c283207d78c56acf1714640c6",
+    "verify_archive.py": "7d09a72a3b511a310812c440583486402d82c1275ec3e0adadb479c5881ec1b5",
+    "promote_checkpoint.py": "56f6f435f4824f7cb4712b268ee5e2014f5a5b63dfa1abf09a1e417e7229d9d4",
+    "assets/official_public_prototypes_v1.json": "5b45041cd14beed8a847f2e99ce955a105fbeb63d09256769d41f8cc88bdbc9d",
+    "assets/official_full_engine_prototypes_v1.json": "5ab0b28e21d40a17a7b153744332424f08d4e32cde4e2ab20f11cb262e799845",
+    "contracts/model_contract.json": "45f5db73937a119cc0a38c466054014f8374e5f28789598face10cf4c6b67a87",
+    "contracts/training_config.json": "019d3b929b2ff07693f2cc7ad2308d056053f6b8fd61b75be61464684b99a5fc",
+    "contracts/dataset_reference.json": "f74d8c6554892c2e283cc36c6a42a258d935b72e716453d58a4652a6e33e958e"
+  },
+  "provenance": {
+    "source_checkpoint": "rl_runs/0028_universal_semantic_foundation_pretraining/versions/V3_shared_prototype_batch512/checkpoint/universal_semantic/best_validation_loss.pt",
+    "authoritative_design": "experiments/0028_universal_semantic_foundation_pretraining/DESIGN.md",
+    "implementation_sha256": "c2fac00ae9c9b39bcd28897aea5580168e283e9abeb66845955d84518d09a80b",
+    "final_release_policy": "model.pt may be replaced only through promote_checkpoint.py with refreshed metadata and hashes"
+  }
+}

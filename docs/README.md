@@ -1,5 +1,6 @@
 # Project Documentation
 
+- [Interactive lessons](lessons/index.html)
 - [对战环境日报](environment-daily_kaggle_top100/index.html)
 - [Evaluation](evaluation/README.md)
 - [Training research](training/README.md)

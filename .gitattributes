@@ -2,6 +2,7 @@
 *.pt filter=lfs diff=lfs merge=lfs -text
 *.ckpt filter=lfs diff=lfs merge=lfs -text
 archive/submission/dist/*.tar.gz filter=lfs diff=lfs merge=lfs -text
+experiments/0028_universal_semantic_foundation_pretraining/data_audit/winners_2026-07-10_2026-08-01.json filter=lfs diff=lfs merge=lfs -text
 evaluation/arena/opponents/*/cg/*.dll filter=lfs diff=lfs merge=lfs -text
 evaluation/arena/opponents/*/cg/*.so filter=lfs diff=lfs merge=lfs -text
 evaluation/arena/opponents/*/cg/*.dylib filter=lfs diff=lfs merge=lfs -text

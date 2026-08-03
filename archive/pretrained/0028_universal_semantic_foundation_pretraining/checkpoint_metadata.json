@@ -1,0 +1,28 @@
+{
+  "schema_version": "0028_model_only_checkpoint_v1",
+  "release_stage": "epoch1_sample",
+  "criterion": "best_validation_loss",
+  "source_checkpoint": "rl_runs/0028_universal_semantic_foundation_pretraining/versions/V3_shared_prototype_batch512/checkpoint/universal_semantic/best_validation_loss.pt",
+  "project_id": "0028_universal_semantic_foundation_pretraining",
+  "version": "V3_shared_prototype_batch512",
+  "arm": "universal_semantic",
+  "epoch": 1,
+  "global_step": 15799,
+  "optimizer_state_saved": false,
+  "resumable_training_state_saved": false,
+  "dataset_manifest_sha256": "7b8bd85a33e756e41212f57ff43a57abd59a0626a47f10fa2101c715c42adc15",
+  "training_config_sha256": "019d3b929b2ff07693f2cc7ad2308d056053f6b8fd61b75be61464684b99a5fc",
+  "model_contract_sha256": "45f5db73937a119cc0a38c466054014f8374e5f28789598face10cf4c6b67a87",
+  "implementation_sha256": "c2fac00ae9c9b39bcd28897aea5580168e283e9abeb66845955d84518d09a80b",
+  "validation": {
+    "loss": 0.4295406838804817,
+    "token_accuracy": 0.865043383518437,
+    "teacher_exact_action": 0.7470111020995458,
+    "exact_action": 0.7470200391891378,
+    "legal_action": 1.0,
+    "action_length_accuracy": 0.9922727689114401,
+    "decisions": 895146,
+    "tokens": 1868682
+  }
+}
+

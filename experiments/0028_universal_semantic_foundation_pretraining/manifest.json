@@ -1,0 +1,121 @@
+{
+  "schema_version": "0028_project_manifest_v1",
+  "project_id": "0028_universal_semantic_foundation_pretraining",
+  "status": "v3_shared_prototype_batch512_training",
+  "objective": "universal_persona_free_winner_perspective_behavior_cloning",
+  "actor_source_identity_visible": false,
+  "dataset_scope": {
+    "perspective": "unique_positive_terminal_winner",
+    "start_date": "2026-07-10",
+    "end_date": "2026-08-01",
+    "end_date_basis": "latest_locally_available_official_archive_at_project_creation"
+  },
+  "canonical_dataset": {
+    "version": "V1_mid_winners_20260710_20260801",
+    "path": "rl_runs/0028_universal_semantic_foundation_pretraining/dataset/V1_mid_winners_20260710_20260801",
+    "manifest_sha256": "7b8bd85a33e756e41212f57ff43a57abd59a0626a47f10fa2101c715c42adc15",
+    "winner_catalog_sha256": "f87d06ac36a5fc19336775cb13eb0c483b5fcfa0dd91e2b250854f6ace23e98c",
+    "catalog_file_sha256": "237477fc3f2deb34c893dd7da164651f156887151e06a5d2aa91d671e628881b",
+    "archive_count": 23,
+    "episodes": 107117,
+    "train_episodes": 96349,
+    "validation_episodes": 10768,
+    "decisions": 8983982,
+    "train_decisions": 8088836,
+    "validation_decisions": 895146,
+    "exact_decks": 403,
+    "sources": 568,
+    "payload_bytes": 2875581660,
+    "train_shards": 1975,
+    "validation_shards": 219,
+    "materialization_seconds": 12309.921821964002,
+    "materialization_workers": 8,
+    "maximum_lengths": {
+      "card_cat": 117,
+      "resource_cat": 29,
+      "event_cat": 64,
+      "option_cat": 78,
+      "option_skill_id": 82,
+      "option_effect_id": 317
+    }
+  },
+  "implementation_lineage": {
+    "source_project": "0025_semantic_foundation_pretraining",
+    "source_version": "V4_canonical_semantic_foundation",
+    "semantic_relationship": "same_actor_semantics_readable_rewrite",
+    "executable_dependency": false
+  },
+  "model_contract": {
+    "model_class": "SemanticPolicy",
+    "parameter_count": 21837082,
+    "state_memories": [
+      "global_turn_and_budget",
+      "card_instances",
+      "exact_deck_and_causal_ledger",
+      "recent_visible_events"
+    ],
+    "prototype_facts": ["card", "attack", "skill", "effect"],
+    "option_contract": "typed_legal_option_with_explicit_state_and_prototype_relations",
+    "action_contract": "ordered_legal_option_pointer_plus_stop"
+  },
+  "resource_gate": {
+    "previous_training": "0026_raging_bolt_canonical_decoder_rl_stopped",
+    "full_materialization_allowed": true,
+    "formal_training_allowed": true,
+    "authorized_version": "V3_shared_prototype_batch512"
+  },
+  "formal_training": {
+    "epochs": 20,
+    "batch_size": 512,
+    "validation_batch_size": 512,
+    "early_stopping_patience": 5,
+    "length_bucketed_train_batches": true,
+    "prefetch_depth": 2,
+    "performance_gate": {
+      "path": "experiments/0028_universal_semantic_foundation_pretraining/data_audit/throughput_2026-08-03_gpu_forward_ab.json",
+      "batches": 100,
+      "decisions": 51200,
+      "decisions_per_second": 609.6841858964754,
+      "data_wait_fraction": 0.02446183656004895,
+      "cpu_pipeline_gate_passed": true
+    },
+    "checkpoint_contract": "model_only_latest_best_loss_best_teacher_best_greedy",
+    "wandb_mode": "online",
+    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning",
+    "foreground_watchdog": true
+  },
+  "pretrained_release": {
+    "path": "archive/pretrained/0028_universal_semantic_foundation_pretraining",
+    "release_stage": "epoch1_sample",
+    "epoch": 1,
+    "criterion": "best_validation_loss",
+    "validation_loss": 0.4295406838804817,
+    "validation_exact_action": 0.7470200391891378,
+    "validation_legal_action": 1.0,
+    "self_contained_zero_shot": true,
+    "final_weight_pending": true,
+    "promotion_entrypoint": "promote_checkpoint.py",
+    "verification_entrypoint": "verify_archive.py"
+  },
+  "version_history": {
+    "V1_mid_universal_semantic_foundation": {
+      "state": "stopped_by_user",
+      "epochs_completed": 0,
+      "checkpoint_count": 0,
+      "reason": "synchronous_cpu_data_pipeline_bottleneck"
+    },
+    "V2_optimized_mid_universal_semantic_foundation": {
+      "state": "stopped_by_user",
+      "epochs_completed": 0,
+      "checkpoint_count": 0,
+      "semantic_change_from_v1": false,
+      "training_pipeline_change": "deterministic_length_bucketing_and_bounded_prefetch",
+      "reason": "model_forward_throughput_optimization"
+    },
+    "V3_shared_prototype_batch512": {
+      "state": "training",
+      "semantic_change_from_v2": false,
+      "training_pipeline_change": "shared_prototype_common_subexpressions_and_batch512"
+    }
+  }
+}
