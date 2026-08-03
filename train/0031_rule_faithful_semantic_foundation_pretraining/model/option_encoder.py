@@ -30,6 +30,8 @@ class OptionEncoder(nn.Module):
         self.effect_role = nn.Embedding(EFFECT_ROLE_VOCAB, d, padding_idx=0)
         self.source_relation = nn.Linear(d, d, bias=False)
         self.target_relation = nn.Linear(d, d, bias=False)
+        self.context_relation = nn.Linear(d, d, bias=False)
+        self.effect_card_relation = nn.Linear(d, d, bias=False)
         self.skill_relation = nn.Linear(d, d, bias=False)
         self.effect_relation = nn.Linear(d, d, bias=False)
         self.input_norm = nn.LayerNorm(d)
@@ -64,6 +66,10 @@ class OptionEncoder(nn.Module):
         options = options + prototype_memory.attack(option_cat[..., 7])
         options = options + self.source_relation(state.gather_cards(batch.option_source))
         options = options + self.target_relation(state.gather_cards(batch.option_target))
+        options = options + self.context_relation(state.gather_cards(batch.option_context))
+        options = options + self.effect_card_relation(
+            state.gather_cards(batch.option_effect_card)
+        )
 
         skill_tokens = (
             prototype_memory.skill(batch.option_skill_id)

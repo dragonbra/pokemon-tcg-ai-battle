@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
-SCHEMA_VERSION = "0031_rule_faithful_semantic_decision_v1"
+SCHEMA_VERSION = "0031_rule_faithful_semantic_decision_v2"
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,8 +42,9 @@ GLOBAL_CATEGORICAL = CategoricalGroup(
         "opponent_status_bits",
         "deck_membership_known",
         "deck_order_known",
+        "looking_visibility",
     ),
-    vocabularies=(66, 130, 4, 3, 3, 3, 3, 33, 33, 3, 3),
+    vocabularies=(66, 130, 4, 3, 3, 3, 3, 33, 33, 3, 3, 4),
 )
 GLOBAL_NUM_FIELDS = (
     "turn",
@@ -65,28 +66,32 @@ GLOBAL_NUM_FIELDS = (
     "unknown_opponent_hand_count",
     "own_bench_max",
     "opponent_bench_max",
+    "looking_count",
+    "looking_visible_count",
+    "possible_opponent_hand_identity_count",
+    "possible_opponent_hand_known_lower",
+    "possible_opponent_hand_known_upper",
 )
 
 CARD_CATEGORICAL = CategoricalGroup(
     names=(
         "card_id",
+        "serial",
         "relative_owner",
         "zone",
         "zone_slot",
         "kind",
         "status_bits",
-        *tuple(f"resolved_energy_unit_bit_{index}" for index in range(16)),
+        "resolved_energy_type_index",
+        "identity_knowledge",
     ),
-    vocabularies=(2049, 4, 19, 130, 9, 33, *([3] * 16)),
+    vocabularies=(2049, 257, 4, 24, 257, 11, 33, 17, 6),
 )
 CARD_NUM_FIELDS = (
-    "serial",
     "current_hp",
     "maximum_hp",
-    "damage",
     "attached_energy_card_count",
     "resolved_energy_unit_count",
-    "resolved_energy_units_mask",
     "tool_count",
     "pre_evolution_count",
     "appeared_this_turn",
@@ -130,20 +135,35 @@ EVENT_CATEGORICAL = CategoricalGroup(
         "bench_card_id",
         "before_card_id",
         "after_card_id",
+        "serial",
+        "target_serial",
+        "active_serial",
+        "bench_serial",
+        "before_serial",
+        "after_serial",
         "is_recover",
-        "special_condition_type",
+        "has_basic_pokemon",
+        "coin_head",
+        "put_damage_counter",
+        "result",
+        "reason",
+        "index",
+        "energy_index",
+        "tool_index",
+        "in_play_area",
+        "in_play_index",
     ),
-    vocabularies=(32, 4, 2049, 2049, 4097, 34, 34, 3, 3, 3, 2049, 2049, 2049, 2049, 3, 34),
+    vocabularies=(
+        32, 4, 2049, 2049, 4097, 34, 34, 3, 3, 3,
+        2049, 2049, 2049, 2049, 257, 257, 257, 257, 257, 257,
+        3, 3, 3, 3, 16, 32, 257, 257, 257, 34, 257,
+    ),
 )
 EVENT_NUM_FIELDS = (
     "age",
     "value",
-    "damage_counters",
-    "coin_heads",
     "count",
     "number",
-    "result",
-    "reason",
 )
 
 OPTION_CATEGORICAL = CategoricalGroup(
@@ -161,20 +181,21 @@ OPTION_CATEGORICAL = CategoricalGroup(
         "select_context",
         "context_card_id",
         "effect_card_id",
+        "option_ordinal",
+        "source_slot",
+        "target_slot",
+        "energy_index",
+        "tool_index",
+        "source_serial",
     ),
-    vocabularies=(66, 4, 34, 4, 34, 2049, 2049, 4097, 34, 66, 130, 2049, 2049),
+    vocabularies=(
+        66, 4, 34, 4, 34, 2049, 2049, 4097, 34, 66, 130, 2049, 2049,
+        130, 257, 257, 257, 257, 257,
+    ),
 )
 OPTION_NUM_FIELDS = (
     "number",
     "count",
-    "remaining_damage_counter",
-    "remaining_energy_cost",
-    "base_damage",
-    "required_energy_count",
-    "target_current_hp",
-    "target_maximum_hp",
-    "source_current_hp",
-    "source_maximum_hp",
 )
 
 GLOBAL_CAT_FIELDS = GLOBAL_CATEGORICAL.names
@@ -208,11 +229,15 @@ ACTOR_KEYS = frozenset(
         "event_state",
         "event_source",
         "event_target",
+        "event_before",
+        "event_after",
         "option_cat",
         "option_num",
         "option_state",
         "option_source",
         "option_target",
+        "option_context",
+        "option_effect_card",
         "option_skill_id",
         "option_skill_role",
         "option_skill_parent",

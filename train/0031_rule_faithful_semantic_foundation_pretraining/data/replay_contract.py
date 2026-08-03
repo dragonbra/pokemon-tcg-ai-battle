@@ -238,9 +238,12 @@ def project_observation(value: object) -> dict[str, Any]:
             projected[field] = _project_entities(projected[field], f"player.{field}")
         projected_players.append(projected)
     current["players"] = projected_players
-    for field in ("looking", "stadium"):
-        if field in current:
-            current[field] = _project_entities(current[field] or [], f"current.{field}")
+    if "stadium" in current:
+        current["stadium"] = _project_entities(
+            current["stadium"] or [], "current.stadium"
+        )
+    if "looking" in current and current["looking"] is not None:
+        current["looking"] = _project_entities(current["looking"], "current.looking")
     observation["current"] = current
 
     select = _project_mapping(observation["select"], _SELECT_FIELDS, "actor select")
@@ -257,8 +260,8 @@ def project_observation(value: object) -> dict[str, Any]:
     select["option"] = projected_options
     if "contextCard" in select and isinstance(select["contextCard"], Mapping):
         select["contextCard"] = _project_entity(select["contextCard"])
-    if "deck" in select:
-        select["deck"] = _project_entities(select["deck"] or [], "select.deck")
+    if "deck" in select and select["deck"] is not None:
+        select["deck"] = _project_entities(select["deck"], "select.deck")
     observation["select"] = select
     logs = observation.get("logs", [])
     if not isinstance(logs, list):

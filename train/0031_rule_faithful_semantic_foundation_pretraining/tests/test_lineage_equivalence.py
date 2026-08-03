@@ -36,7 +36,7 @@ class LineageEquivalenceTests(unittest.TestCase):
         )
         policy = MODEL.SemanticPolicy(MODEL.ModelConfig(), prototypes)
         parameter_count = sum(parameter.numel() for parameter in policy.parameters())
-        self.assertEqual(parameter_count, 55_868_802)
+        self.assertEqual(parameter_count, 56_868_802)
 
 
 if __name__ == "__main__":

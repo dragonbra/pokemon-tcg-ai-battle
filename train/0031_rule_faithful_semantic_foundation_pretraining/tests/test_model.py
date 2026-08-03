@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 import unittest
 
 import torch
@@ -18,6 +19,15 @@ MODEL = importlib.import_module(
 _valid_mapping = importlib.import_module(
     "train.0031_rule_faithful_semantic_foundation_pretraining.tests.test_contracts"
 )._valid_mapping
+FEATURES = importlib.import_module(
+    "train.0031_rule_faithful_semantic_foundation_pretraining.features.compiler"
+)
+COLLATE = importlib.import_module(
+    "train.0031_rule_faithful_semantic_foundation_pretraining.features.collate"
+)
+_row = importlib.import_module(
+    "train.0031_rule_faithful_semantic_foundation_pretraining.tests.test_features"
+)._row
 
 
 class ModelTests(unittest.TestCase):
@@ -65,6 +75,41 @@ class ModelTests(unittest.TestCase):
         self.assertGreaterEqual(len(action), 1)
         self.assertLessEqual(len(action), int(one["max_count"][0]))
         self.assertEqual(len(action), len(set(action)))
+
+    def test_real_feature_compiled_row_has_finite_bucketed_forward(self) -> None:
+        if not torch.cuda.is_available():
+            self.skipTest("CUDA is required for the formal compile boundary")
+        prototypes = DOMAIN.PrototypeIndex.load(
+            Path(
+                "train/0031_rule_faithful_semantic_foundation_pretraining/assets/"
+                "official_public_prototypes_v1.json"
+            )
+        )
+        row, snapshot = _row(15, energy_units=[1, 1, 1, 6])
+        record = FEATURES.compile_canonical_row(row, snapshot, prototypes)
+        batch = COLLATE.collate_canonical_records(
+            [record], bucket_padding=COLLATE.BucketPadding()
+        )
+        validated = CONTRACTS.DecisionBatch.from_mapping(batch).to("cuda")
+        model = MODEL.SemanticPolicy(
+            MODEL.ModelConfig(
+                d_model=32,
+                heads=4,
+                state_layers=1,
+                option_layers=1,
+                ffn_multiplier=2,
+                dropout=0.0,
+            ),
+            prototypes,
+        ).eval().cuda()
+        with torch.inference_mode():
+            eager = model(validated, teacher_forcing=True)
+            compiled = torch.compile(
+                model, backend="eager", dynamic=False, fullgraph=True
+            )(validated, teacher_forcing=True)
+        self.assertEqual(eager.shape[:2], batch["targets"].shape)
+        self.assertTrue(torch.isfinite(compiled).all())
+        torch.testing.assert_close(compiled, eager)
 
     def test_physical_energy_card_identity_reaches_policy_logits(self) -> None:
         lightning = self.batch.as_dict()

@@ -18,6 +18,9 @@ ZONE = {
     "self_energy": 11, "opponent_energy": 12, "self_tool": 13,
     "opponent_tool": 14, "self_evolution": 15, "opponent_evolution": 16,
     "known_opponent_hand": 17,
+    "self_playing": 18, "opponent_playing": 19,
+    "self_resolved_energy": 20, "opponent_resolved_energy": 21,
+    "known_self_deck_order": 22, "remembered_opponent_hidden": 23,
 }
 
 
@@ -69,14 +72,14 @@ def _raw_int(item: Mapping[str, Any], name: str) -> tuple[float, int]:
     return (float(value) if present else 0.0, _state(present))
 
 
-def _energy_mask(values: Sequence[Any]) -> int:
-    """Losslessly preserve the observed EnergyTypeIndex set; multiplicity is separate."""
-    mask = 0
-    for value in values:
-        code = integer(value, -1)
-        if 0 <= code < 16:
-            mask |= 1 << code
-    return mask
+def _categorical_int(item: Mapping[str, Any], name: str) -> int:
+    value = item.get(name)
+    return int(value) + 1 if isinstance(value, int) and not isinstance(value, bool) else 0
+
+
+def _categorical_bool(item: Mapping[str, Any], name: str) -> int:
+    value = item.get(name)
+    return int(value) + 1 if isinstance(value, bool) else 0
 
 
 def compile_canonical_row(
@@ -116,15 +119,16 @@ def compile_canonical_row(
     def add_card(raw: Any, *, owner: int, zone: int, slot: int, kind: int,
                  status: int = 0, parent: int = -1,
                  key: tuple[int, int, int] | None = None,
-                 resolved_units: Sequence[Any] = ()) -> int:
+                 identity_knowledge: int = 1) -> int:
         identity = card_id(raw)
         if identity <= 0:
             return -1
+        if not 0 <= slot < 256:
+            raise ValueError(f"card zone slot outside exact categorical range: {slot}")
         item = raw if isinstance(raw, Mapping) else {}
         serial, serial_state = _raw_int(item, "serial")
         hp, hp_state = _raw_int(item, "hp")
         maximum_hp, max_hp_state = _raw_int(item, "maxHp")
-        damage, damage_state = _raw_int(item, "damage")
         energy_cards = _items(item.get("energyCards"))
         energies = _items(item.get("energies"))
         tools = _items(item.get("tools"))
@@ -132,30 +136,22 @@ def compile_canonical_row(
         appeared = item.get("appearThisTurn", item.get("appear"))
         appeared_present = isinstance(appeared, bool)
         is_pokemon = kind == 2
-        is_energy = kind == 3
-        resolved_values = energies if is_pokemon else list(resolved_units)
-        resolved_known = is_pokemon or bool(resolved_units)
         index = len(card_cat)
-        resolved_mask = _energy_mask(resolved_values)
         card_cat.append([
-            identity, owner, zone, min(slot + 1, 129), kind, status,
-            *[(int(bool(resolved_mask & (1 << bit))) + 1) if resolved_known else 0
-              for bit in range(16)],
+            identity, int(serial) + 1 if serial_state == int(FieldState.PRESENT) else 0,
+            owner, zone, slot + 1, kind, status, 0,
+            identity_knowledge,
         ])
         card_num.append([
-            serial, hp, maximum_hp, damage, float(len(energy_cards)),
-            float(len(resolved_values)),
-            float(resolved_mask), float(len(tools)), float(len(evolution)),
+            hp, maximum_hp, float(len(energy_cards)), float(len(energies)),
+            float(len(tools)), float(len(evolution)),
             float(bool(appeared)) if appeared_present else 0.0,
         ])
         card_state.append([
-            serial_state,
             hp_state if is_pokemon else _state(False, False),
             max_hp_state if is_pokemon else _state(False, False),
-            damage_state if is_pokemon else _state(False, False),
             _state(True) if is_pokemon else _state(False, False),
-            _state(resolved_known) if (is_pokemon or is_energy) else _state(False, False),
-            _state(resolved_known) if (is_pokemon or is_energy) else _state(False, False),
+            _state(True) if is_pokemon else _state(False, False),
             _state(True) if is_pokemon else _state(False, False),
             _state(True) if is_pokemon else _state(False, False),
             _state(appeared_present) if is_pokemon else _state(False, False),
@@ -166,6 +162,24 @@ def compile_canonical_row(
             locations[key] = index
         if serial_state == int(FieldState.PRESENT):
             serial_locations[int(serial)] = index
+        return index
+
+    def add_resolved_energy_unit(*, owner: int, parent: int, slot: int, value: Any) -> int:
+        energy_type = integer(value, -1)
+        if not 0 <= energy_type < 16:
+            raise ValueError(f"resolved EnergyTypeIndex outside audited range: {value!r}")
+        if not 0 <= slot < 256:
+            raise ValueError(f"resolved Energy slot outside exact categorical range: {slot}")
+        prefix = "self" if owner == 1 else "opponent"
+        index = len(card_cat)
+        card_cat.append([
+            0, 0, owner, ZONE[f"{prefix}_resolved_energy"], slot + 1,
+            9, 0, energy_type + 1, 4,
+        ])
+        card_num.append([0.0] * 7)
+        card_state.append([int(FieldState.NOT_APPLICABLE)] * 7)
+        card_parent.append(parent + 1)
+        raw_cards.append({})
         return index
 
     def add_player_zone(player_index: int, name: str, area: int) -> None:
@@ -182,18 +196,36 @@ def compile_canonical_row(
             if parent < 0 or name not in {"active", "bench"} or not isinstance(raw, Mapping):
                 continue
             for child_slot, child in enumerate(_items(raw.get("energyCards"))):
+                child_owner_index = integer(
+                    child.get("playerIndex") if isinstance(child, Mapping) else None,
+                    player_index,
+                )
+                child_relative = _relative_owner(child_owner_index, actor)
+                child_prefix = "self" if child_relative == 1 else "opponent"
                 child_index = add_card(
-                    child, owner=relative, zone=ZONE[f"{prefix}_energy"], slot=child_slot,
+                    child, owner=child_relative,
+                    zone=ZONE[f"{child_prefix}_energy"], slot=child_slot,
                     kind=3, parent=parent,
                 )
                 child_locations[(parent, "energy", child_slot)] = child_index
             for field, suffix, kind in (("tools", "tool", 4), ("preEvolution", "evolution", 5)):
                 for child_slot, child in enumerate(_items(raw.get(field))):
+                    child_owner_index = integer(
+                        child.get("playerIndex") if isinstance(child, Mapping) else None,
+                        player_index,
+                    )
+                    child_relative = _relative_owner(child_owner_index, actor)
+                    child_prefix = "self" if child_relative == 1 else "opponent"
                     child_index = add_card(
-                        child, owner=relative, zone=ZONE[f"{prefix}_{suffix}"], slot=child_slot,
+                        child, owner=child_relative,
+                        zone=ZONE[f"{child_prefix}_{suffix}"], slot=child_slot,
                         kind=kind, parent=parent,
                     )
                     child_locations[(parent, field, child_slot)] = child_index
+            for unit_slot, energy_type in enumerate(_items(raw.get("energies"))):
+                add_resolved_energy_unit(
+                    owner=relative, parent=parent, slot=unit_slot, value=energy_type
+                )
 
     for player_index in (actor, opponent):
         add_player_zone(player_index, "active", 4)
@@ -210,11 +242,59 @@ def compile_canonical_row(
         add_card(raw, owner=1, zone=ZONE["looking"], slot=slot, kind=7, key=(actor, 12, slot))
     for slot, raw in enumerate(_items(select.get("deck"))):
         add_card(raw, owner=1, zone=ZONE["select_deck"], slot=slot, kind=1, key=(actor, 1, slot))
+    if not _items(select.get("deck")) and snapshot.deck_order_known:
+        for slot, known in enumerate(snapshot.known_self_deck_order):
+            if known.serial in serial_locations:
+                continue
+            add_card(
+                {"id": known.card_id, "serial": known.serial}, owner=1,
+                zone=ZONE["known_self_deck_order"], slot=slot, kind=1,
+                identity_knowledge=2,
+            )
+    select_serials = {
+        integer(value.get("serial"), -1)
+        for value in (select.get("contextCard"), select.get("effect"))
+        if isinstance(value, Mapping)
+    }
     for slot, known in enumerate(snapshot.known_opponent_hand):
         if known.serial in serial_locations:
             continue
         add_card({"id": known.card_id, "serial": known.serial}, owner=2,
-                 zone=ZONE["known_opponent_hand"], slot=slot, kind=8)
+                 zone=ZONE["known_opponent_hand"], slot=slot, kind=8,
+                 identity_knowledge=2)
+    for slot, known in enumerate(snapshot.possible_opponent_hand):
+        if known.serial in serial_locations:
+            continue
+        add_card(
+            {"id": known.card_id, "serial": known.serial}, owner=2,
+            zone=ZONE["known_opponent_hand"], slot=slot, kind=8,
+            identity_knowledge=3,
+        )
+    for slot, known in enumerate(snapshot.remembered_opponent_cards):
+        if known.serial in serial_locations or known.serial in select_serials:
+            continue
+        add_card(
+            {"id": known.card_id, "serial": known.serial}, owner=2,
+            zone=ZONE["remembered_opponent_hidden"], slot=slot, kind=10,
+            identity_knowledge=2,
+        )
+
+    def ensure_select_card(raw: Any) -> int:
+        if not isinstance(raw, Mapping) or card_id(raw) <= 0:
+            return -1
+        serial = integer(raw.get("serial"), -1)
+        existing = serial_locations.get(serial, -1)
+        if existing >= 0:
+            return existing
+        player_index = integer(raw.get("playerIndex"), actor)
+        relative = _relative_owner(player_index, actor)
+        prefix = "self" if relative == 1 else "opponent"
+        return add_card(
+            raw, owner=relative, zone=ZONE[f"{prefix}_playing"], slot=0, kind=7
+        )
+
+    context_index = ensure_select_card(select.get("contextCard"))
+    effect_card_index = ensure_select_card(select.get("effect"))
 
     resource_cat: list[list[int]] = []
     resource_num: list[list[float]] = []
@@ -242,26 +322,46 @@ def compile_canonical_row(
     event_state: list[list[int]] = []
     event_source: list[int] = []
     event_target: list[int] = []
+    event_before: list[int] = []
+    event_after: list[int] = []
     newest = snapshot.recent_events[-1].source_event if snapshot.recent_events else -1
     for event in snapshot.recent_events:
         p = event.payload
         relative = 3 if event.actor is None else _relative_owner(event.actor, actor)
         target_id = max(0, integer(p.get("cardIdTarget")))
+        source_serial = integer(p.get("serial"), -1)
+        target_serial = integer(p.get("serialTarget"), -1)
+        active_serial = integer(p.get("serialActive"), -1)
+        bench_serial = integer(p.get("serialBench"), -1)
+        before_serial = integer(p.get("serialBefore"), -1)
+        after_serial = integer(p.get("serialAfter"), -1)
         event_cat.append([
             event.log_type + 1, relative, int(event.card_id or 0), target_id,
             max(0, integer(p.get("attackId"))), int(event.from_area if event.from_area is not None else -1) + 1,
             int(event.to_area if event.to_area is not None else -1) + 1, int(event.identity_visible) + 1,
             int(isinstance(p.get("serial"), int)) + 1, int(isinstance(p.get("serialTarget"), int) or target_id > 0) + 1,
-            max(0, integer(p.get("activeCardId"))), max(0, integer(p.get("benchCardId"))),
-            max(0, integer(p.get("beforeCardId"))), max(0, integer(p.get("afterCardId"))),
-            int(bool(p.get("isRecover"))) + 1, integer(p.get("specialConditionType"), -1) + 1,
+            max(0, integer(p.get("cardIdActive"))), max(0, integer(p.get("cardIdBench"))),
+            max(0, integer(p.get("cardIdBefore"))), max(0, integer(p.get("cardIdAfter"))),
+            _categorical_int(p, "serial"), _categorical_int(p, "serialTarget"),
+            _categorical_int(p, "serialActive"), _categorical_int(p, "serialBench"),
+            _categorical_int(p, "serialBefore"), _categorical_int(p, "serialAfter"),
+            _categorical_bool(p, "isRecover"), _categorical_bool(p, "hasBasicPokemon"),
+            _categorical_bool(p, "head"), _categorical_bool(p, "putDamageCounter"),
+            _categorical_int(p, "result"), _categorical_int(p, "reason"),
+            _categorical_int(p, "index"), _categorical_int(p, "energyIndex"),
+            _categorical_int(p, "toolIndex"), _categorical_int(p, "inPlayArea"),
+            _categorical_int(p, "inPlayIndex"),
         ])
-        numeric_names = ("value", "putDamageCounter", "head", "count", "number", "result", "reason")
+        numeric_names = ("value", "count", "number")
         numeric = [_raw_int(p, name) for name in numeric_names]
         event_num.append([float(newest - event.source_event), *[value for value, _ in numeric]])
         event_state.append([int(FieldState.PRESENT), *[state for _, state in numeric]])
-        event_source.append(serial_locations.get(integer(p.get("serial"), -1), -1) + 1)
-        event_target.append(serial_locations.get(integer(p.get("serialTarget"), -1), -1) + 1)
+        if event.name == "switch":
+            source_serial, target_serial = active_serial, bench_serial
+        event_source.append(serial_locations.get(source_serial, -1) + 1)
+        event_target.append(serial_locations.get(target_serial, -1) + 1)
+        event_before.append(serial_locations.get(before_serial, -1) + 1)
+        event_after.append(serial_locations.get(after_serial, -1) + 1)
 
     context_card, effect_card = card_id(select.get("contextCard")), card_id(select.get("effect"))
     option_cat: list[list[int]] = []
@@ -269,6 +369,8 @@ def compile_canonical_row(
     option_state: list[list[int]] = []
     option_source: list[int] = []
     option_target: list[int] = []
+    option_context: list[int] = []
+    option_effect_card: list[int] = []
     skill_ids: list[int] = []
     skill_roles: list[int] = []
     skill_parents: list[int] = []
@@ -293,8 +395,8 @@ def compile_canonical_row(
         source_index = locations.get((source_player, source_area, source_slot), -1)
         if source_area == 7:
             source_index = locations.get((-1, 7, source_slot), source_index)
-        if action_type == 13 and source_index < 0:
-            source_index = locations.get((actor, 4, 0), -1)
+        if action_type == 15:
+            source_index = serial_locations.get(integer(option.get("serial"), -1), source_index)
         parent_source = source_index
         energy_index = integer(option.get("energyIndex"), -1)
         tool_index = integer(option.get("toolIndex"), -1)
@@ -305,49 +407,46 @@ def compile_canonical_row(
         source_identity = card_id(option.get("cardId"))
         if source_index >= 0:
             source_identity = card_cat[source_index][0]
+        source_owner = (
+            card_cat[source_index][2]
+            if source_index >= 0 else _relative_owner(source_player, actor)
+        )
 
-        target_player = integer(option.get("inPlayPlayerIndex", option.get("targetPlayerIndex", source_player)), actor)
+        target_player = integer(
+            option.get("inPlayPlayerIndex", option.get("targetPlayerIndex")), -1
+        )
+        if target_player < 0 and option.get("inPlayArea") is not None:
+            target_player = actor
         target_area, target_slot = integer(option.get("inPlayArea"), -1), integer(option.get("inPlayIndex"), -1)
         target_index = locations.get((target_player, target_area, target_slot), -1)
-        if action_type == 13 and target_index < 0:
-            target_player, target_area, target_index = opponent, 4, locations.get((opponent, 4, 0), -1)
         target_identity = card_cat[target_index][0] if target_index >= 0 else 0
+        target_owner = card_cat[target_index][2] if target_index >= 0 else 3
         attack_id = max(0, integer(option.get("attackId")))
         attack = prototypes.engine_attacks.get(attack_id)
-        source_raw = raw_cards[parent_source] if parent_source >= 0 else None
-        target_raw = raw_cards[target_index] if target_index >= 0 else None
-        source_hp = _raw_int(source_raw, "hp") if source_raw is not None else (0.0, _state(False, False))
-        source_max = _raw_int(source_raw, "maxHp") if source_raw is not None else (0.0, _state(False, False))
-        target_hp = _raw_int(target_raw, "hp") if target_raw is not None else (0.0, _state(False, False))
-        target_max = _raw_int(target_raw, "maxHp") if target_raw is not None else (0.0, _state(False, False))
         number = _raw_int(option, "number")
         count = _raw_int(option, "count")
-        remain_damage = _raw_int(select, "remainDamageCounter")
-        remain_energy = _raw_int(select, "remainEnergyCost")
-        base_damage = (float(attack["damage"]), int(FieldState.PRESENT)) if attack else (0.0, _state(False, False))
-        required_count = (float(len(attack["energies"])), int(FieldState.PRESENT)) if attack else (0.0, _state(False, False))
         option_cat.append([
-            action_type + 1, _relative_owner(source_player, actor), source_area + 1,
-            _relative_owner(target_player, actor), target_area + 1, source_identity,
+            action_type + 1, source_owner, source_area + 1,
+            target_owner, target_area + 1, source_identity,
             target_identity, attack_id, integer(option.get("specialConditionType"), -1) + 1,
             integer(select.get("type"), -1) + 1, integer(select.get("context"), -1) + 1,
             context_card, effect_card,
+            option_index + 1, source_slot + 1, target_slot + 1,
+            energy_index + 1, tool_index + 1,
+            integer(option.get("serial"), -1) + 1,
         ])
-        facts = (number, count, remain_damage, remain_energy, base_damage, required_count,
-                 target_hp, target_max, source_hp, source_max)
+        facts = (number, count)
         option_num.append([fact[0] for fact in facts])
         option_state.append([fact[1] for fact in facts])
         option_source.append(source_index + 1)
         option_target.append(target_index + 1)
+        option_context.append(context_index + 1)
+        option_effect_card.append(effect_card_index + 1)
 
-        explicit_skill = integer(option.get("skillId"))
         candidates: list[tuple[int, int]] = []
-        if explicit_skill > 0:
-            candidates.append((explicit_skill, 10))
-        else:
-            for relation_role, identity in ((1, source_identity), (2, context_card), (3, effect_card)):
-                candidates.extend((skill_id, (relation_role - 1) * 3 + role)
-                                  for skill_id, role in related_skills(identity))
+        for relation_role, identity in ((1, source_identity), (2, context_card), (3, effect_card)):
+            candidates.extend((skill_id, (relation_role - 1) * 3 + role)
+                              for skill_id, role in related_skills(identity))
         seen: set[tuple[int, int]] = set()
         for skill_id, role in candidates:
             if (skill_id, role) in seen:
@@ -376,6 +475,23 @@ def compile_canonical_row(
         (float(snapshot.unknown_opponent_hand), int(FieldState.PRESENT)),
         _raw_int(own, "benchMax"), _raw_int(other, "benchMax"),
     ])
+    looking = current.get("looking")
+    looking_known = isinstance(looking, (list, tuple))
+    looking_values = list(looking) if looking_known else []
+    looking_visible = sum(isinstance(item, Mapping) for item in looking_values)
+    global_facts.extend([
+        (float(len(looking_values)), _state(looking_known)),
+        (float(looking_visible), _state(looking_known)),
+        (float(len(snapshot.possible_opponent_hand)), int(FieldState.PRESENT)),
+        (float(snapshot.possible_opponent_hand_known_lower), int(FieldState.PRESENT)),
+        (float(snapshot.possible_opponent_hand_known_upper), int(FieldState.PRESENT)),
+    ])
+    if not looking_known:
+        looking_visibility = 1
+    elif any(item is None for item in looking_values):
+        looking_visibility = 2
+    else:
+        looking_visibility = 3
     actor_record = {
         "global_cat": [
             integer(select.get("type"), -1) + 1, integer(select.get("context"), -1) + 1,
@@ -384,6 +500,7 @@ def compile_canonical_row(
             int(bool(current.get("energyAttached"))) + 1, int(bool(current.get("retreated"))) + 1,
             _status_bits(own) + 1, _status_bits(other) + 1,
             int(snapshot.deck_membership_known) + 1, int(snapshot.deck_order_known) + 1,
+            looking_visibility,
         ],
         "global_num": [value for value, _ in global_facts],
         "global_state": [state for _, state in global_facts],
@@ -391,8 +508,10 @@ def compile_canonical_row(
         "resource_cat": resource_cat, "resource_num": resource_num, "resource_state": resource_state,
         "event_cat": event_cat, "event_num": event_num, "event_state": event_state,
         "event_source": event_source, "event_target": event_target,
+        "event_before": event_before, "event_after": event_after,
         "option_cat": option_cat, "option_num": option_num, "option_state": option_state,
         "option_source": option_source, "option_target": option_target,
+        "option_context": option_context, "option_effect_card": option_effect_card,
         "option_skill_id": skill_ids, "option_skill_role": skill_roles, "option_skill_parent": skill_parents,
         "option_effect_id": effect_ids, "option_effect_role": effect_roles, "option_effect_parent": effect_parents,
         "min_count": minimum, "max_count": maximum,

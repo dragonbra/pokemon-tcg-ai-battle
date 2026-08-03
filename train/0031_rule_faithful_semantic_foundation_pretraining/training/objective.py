@@ -29,7 +29,7 @@ class DecodedActions:
 
 
 def teacher_batch(model: nn.Module, batch: dict[str, Tensor]) -> TeacherBatch:
-    logits = model.teacher_logits(batch)
+    logits = model(batch, teacher_forcing=True)
     mask = batch["targets"].ne(-100)
     loss = F.cross_entropy(logits[mask], batch["targets"][mask])
     correct = logits.argmax(-1).eq(batch["targets"]) & mask

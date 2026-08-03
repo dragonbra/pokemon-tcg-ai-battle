@@ -17,6 +17,7 @@ SCHEMA = importlib.import_module(f"{BASE}.contracts.fields")
 COMPILER = importlib.import_module(f"{BASE}.features.compiler")
 PROTOTYPES = importlib.import_module(f"{BASE}.domain.prototypes")
 DATASET = importlib.import_module(f"{BASE}.training.dataset")
+COLLATE = importlib.import_module(f"{BASE}.features.collate")
 _row = importlib.import_module(f"{BASE}.tests.test_features")._row
 
 
@@ -57,14 +58,20 @@ class TrainingPipelineTests(unittest.TestCase):
             for suffix in ("cat", "num"):
                 name = f"{prefix}_{suffix}"
                 actor[name] = _repeat(actor[name], lengths[prefix])
+            state_name = f"{prefix}_state"
+            actor[state_name] = _repeat(actor[state_name], lengths[prefix])
         actor["card_parent"] = [0] * lengths["card"]
-        actor["option_state"] = _repeat(actor["option_state"], lengths["option"])
         actor["option_source"] = [0] * lengths["option"]
         actor["option_target"] = [0] * lengths["option"]
+        actor["option_context"] = [0] * lengths["option"]
+        actor["option_effect_card"] = [0] * lengths["option"]
         for prefix in ("option_skill", "option_effect"):
             count = lengths[prefix]
-            actor[f"{prefix}_id"] = _repeat(actor[f"{prefix}_id"], count)
-            actor[f"{prefix}_role"] = _repeat(actor[f"{prefix}_role"], count)
+            for suffix in ("id", "role"):
+                source_values = actor[f"{prefix}_{suffix}"]
+                actor[f"{prefix}_{suffix}"] = (
+                    _repeat(source_values, count) if source_values else [0] * count
+                )
             actor[f"{prefix}_parent"] = [1] * count
         actor["min_count"] = 1
         actor["max_count"] = 1
@@ -163,6 +170,41 @@ class TrainingPipelineTests(unittest.TestCase):
             self.assertLess(
                 self._padded_cells(bucketed, "option_effect_id"),
                 self._padded_cells(plain, "option_effect_id"),
+            )
+
+    def test_fixed_bucket_padding_produces_bounded_shapes_without_truncation(self) -> None:
+        records = [self._record(1, 1), self._record(2, 3)]
+        batch = COLLATE.collate_canonical_records(
+            records, bucket_padding=COLLATE.BucketPadding()
+        )
+        bounds = COLLATE.BucketPadding()
+        for family, key in (
+            ("card", "card_cat"),
+            ("event", "event_cat"),
+            ("option", "option_cat"),
+            ("effect", "option_effect_id"),
+            ("skill", "option_skill_id"),
+        ):
+            expected = bounds.upper_bound(
+                family,
+                max(1, max(len(record["actor"][key]) for record in records)),
+            )
+            self.assertEqual(batch[key].shape[1], expected)
+        self.assertEqual(batch["targets"].shape[1], 2)
+        self.assertEqual(
+            batch["card_mask"].sum(dim=1).tolist(),
+            [len(record["actor"]["card_cat"]) for record in records],
+        )
+
+    def test_fixed_bucket_padding_fails_closed_above_maximum(self) -> None:
+        record = self._record(1, 1)
+        actor = record["actor"]
+        actor["option_effect_id"] = [1] * 129
+        actor["option_effect_role"] = [1] * 129
+        actor["option_effect_parent"] = [1] * 129
+        with self.assertRaisesRegex(ValueError, "effect length 129 exceeds"):
+            COLLATE.collate_canonical_records(
+                [record], bucket_padding=COLLATE.BucketPadding()
             )
 
     def test_prefetch_preserves_order_and_reports_counts(self) -> None:

@@ -1,17 +1,51 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>0031 Rule-Faithful Semantic Foundation</title>
-<style>body{font:15px/1.55 system-ui,sans-serif;color:#20252b;max-width:980px;margin:0 auto;padding:32px}h1,h2{letter-spacing:0}h1{font-size:30px}h2{font-size:20px;margin-top:30px;border-bottom:1px solid #ccd2d8;padding-bottom:6px}code{background:#eef1f3;padding:2px 4px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd1d6;padding:7px;text-align:left}th{background:#f3f5f6}.status{border-left:4px solid #247a4b;padding:10px 14px;background:#eef7f1}</style></head>
+<style>body{font:15px/1.55 system-ui,sans-serif;color:#20252b;max-width:1080px;margin:0 auto;padding:32px}h1,h2{letter-spacing:0}h1{font-size:30px}h2{font-size:20px;margin-top:30px;border-bottom:1px solid #ccd2d8;padding-bottom:6px}code{background:#eef1f3;padding:2px 4px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd1d6;padding:7px;text-align:left}th{background:#f3f5f6}.status{border-left:4px solid #247a4b;padding:10px 14px;background:#eef7f1}.warn{border-left:4px solid #b06b18;padding:10px 14px;background:#fff7e8}pre{padding:12px;background:#f3f5f6;overflow:auto}</style></head>
 <body><h1>0031 Rule-Faithful Semantic Foundation Pretraining</h1>
-<p class="status"><strong>Status:</strong> training ready; formal dataset materialization and formal training have not started.</p>
-<h2>Evidence Boundary</h2><p>Official general rules follow the repository rule research. Concrete card semantics come from the current unmodified official engine and <code>official_full_engine_prototypes_v2.json</code>. Actor-learning choices are project policy.</p>
-<p>Team Rocket's Energy (card 15) is the canonical regression: mask <code>Psychic | Darkness = 80</code>, count <code>2</code>, <code>only_team_rocket=true</code>, skill 8. Physical identity, attachment, and Pokemon-level resolved units are preserved. Since the API does not guarantee a per-card partition of flattened units, child dynamic values remain UNKNOWN; no false Colorless or fabricated mapping is used.</p>
-<h2>Actor Schema</h2><p>Schema <code>0031_rule_faithful_semantic_decision_v1</code>.</p>
-<table><thead><tr><th>Family</th><th>Categorical</th><th>Numeric</th><th>State</th><th>Relations</th></tr></thead><tbody><tr><td>global</td><td>11</td><td>19</td><td>19</td><td>-</td></tr><tr><td>card instance</td><td>22</td><td>10</td><td>10</td><td>parent</td></tr><tr><td>resource ledger</td><td>4</td><td>15</td><td>15</td><td>-</td></tr><tr><td>event</td><td>16</td><td>8</td><td>8</td><td>source, target</td></tr><tr><td>legal option</td><td>13</td><td>10</td><td>10</td><td>source, target, skill, effect</td></tr></tbody></table>
-<p>Every physical Pokemon and attached Energy, Tool, pre-evolution, stadium, visible card, and persistently known opponent-hand card is an independent token. Parent-child context flows both ways. Numeric fields have explicit PAD/PRESENT/UNKNOWN/NOT_APPLICABLE state and field-specific scalar projections. Target Areas and Conditions retain original ordered values.</p>
-<h2>Static Prototypes</h2><p>V2 contains 1,267 cards, 433 skills, 1,556 attacks, and 3,067 ordered effects. Exact engine fields and their encoding dispositions are audited in <code>contracts/prototype_field_inventory.json</code>. Bitmasks retain raw values plus named bits.</p>
-<h2>Explicit Exclusions</h2><p>No typed/total Energy gap, surplus/removal preference, attach/remove counterfactual, newly-enabled flag, post-damage HP, KO answer, source identity, team identity, or persona reaches actor forward. The model learns arithmetic and interaction rules from complete facts.</p>
-<h2>Model And Training</h2><p>Default: 320 dimensions, 8 heads, four state layers, three option cross-attention layers, ordered option pointer plus STOP, 55,868,802 parameters. BC uses one train pass and complete teacher-forced plus greedy validation each epoch; checkpoints are model-only and formal runs use private W&amp;B.</p>
-<p>No formal version exists. The later start must materialize a fresh immutable 0031 dataset under the v2 commitment and allocate <code>V1_rule_faithful_foundation</code>.</p>
-<h2>Verification</h2><p>All 38 project tests pass. Eight chronological real 0025 raw decisions compile, and a four-row batch produces finite logits. The noncanonical CUDA smoke at <code>.tmp/0031_rule_faithful_bc_smoke/run-088a7d1cc1</code> completed two optimizer updates, validation, TensorBoard logging, and model-only checkpoints with W&amp;B disabled.</p>
+<p class="status"><strong>Status:</strong> V2 semantic implementation is training-ready. No formal dataset or run exists. <code>torch.compile</code> is not admitted for formal training.</p>
+
+<h2>Evidence Boundary</h2>
+<p>General rules follow the repository rule research. Concrete card/event semantics come from the unmodified official engine and <code>official_full_engine_prototypes_v2.json</code>. Model and training choices are project hypotheses.</p>
+<p>Team Rocket's Energy (card 15) remains the canonical regression: <code>Psychic | Darkness = 80</code>, count 2, Team Rocket restriction, and skill 8. The actor receives physical identity/serial/attachment, static engine facts, and one Pokemon-parented token per official resolved Energy unit. The API does not partition flattened units by physical card, so no mapping is fabricated and the card is never replaced by Colorless or zero Energy.</p>
+
+<h2>V2 Actor Schema</h2>
+<p>Schema <code>0031_rule_faithful_semantic_decision_v2</code>. Inputs are separate named tensors, not one flat first-layer tensor.</p>
+<table><thead><tr><th>Family</th><th>Categorical</th><th>Numeric</th><th>State</th><th>Relations</th></tr></thead><tbody>
+<tr><td>global</td><td>12</td><td>24</td><td>24</td><td>-</td></tr>
+<tr><td>card / resolved Energy unit</td><td>9</td><td>7</td><td>7</td><td>parent</td></tr>
+<tr><td>resource ledger</td><td>4</td><td>15</td><td>15</td><td>-</td></tr>
+<tr><td>event</td><td>31</td><td>4</td><td>4</td><td>source, target, before, after</td></tr>
+<tr><td>legal option</td><td>19</td><td>2</td><td>2</td><td>source, target, context, effect card, skill, effect</td></tr>
+</tbody></table>
+<p>V2 preserves physical instances, resolved Energy multiplicity, exact option serial/ordinal, official Switch/Change/MoveAttached participants, exact enum applicability and <code>failSkip</code>, ordered Target Areas/Conditions, exact deck order until invalidation, opponent-hand candidate sets, and persistent revealed identities. Overflow raises; nothing is silently truncated.</p>
+
+<h2>Learning Boundary</h2>
+<p>Attack Energy symbols, base damage, effect constants/coefficients/comparators, targets, areas, and conditions are facts. The actor does not receive Energy deficit/surplus, removal advice, attach counterfactuals, newly-enabled flags, post-damage HP, KO labels, source/team/persona, future information, or target leakage. Matching and arithmetic remain model work.</p>
+
+<h2>Model And Cost</h2>
+<p>Default: 320 dimensions, 8 heads, four state layers, three option cross-attention layers, ordered option pointer plus STOP, <strong>56,868,802 parameters</strong>. 0028 had 21,837,082; 0031 is 2.60x, mainly from the lossless prototype ontology and typed fields.</p>
+<p>Across 512 chronological real decisions, card-family tokens average 55.85 versus 45.11 (+23.8%); 5.87 are resolved Energy units. Median warm feature compile is 0.573 ms/decision versus 0.301 ms for 0025 (1.90x), still below 1 ms. A production-size 0031 epoch has not run, so no exact training slowdown is claimed.</p>
+
+<h2>Variable Lengths And Buckets</h2>
+<p>Cards, events, options, skills, and effects are genuinely variable in count. Semantic records remain ragged; collation pads dense batch tensors and supplies masks. Fixed shape does not mean lost information.</p>
+<pre>card:   16, 32, 64, 96, 128
+event:  8, 16, 32, 64
+option: 4, 8, 16, 32, 64
+effect: 8, 16, 32, 64, 96, 128
+skill:  8, 16, 32, 64
+action including STOP: 2, 4, 8, 16, 32, 64</pre>
+<p class="warn">Effect max 64 is invalid: real decisions reach 91. The 96/128 buckets are required; values above 128 fail closed.</p>
+<p>At batch 32, fixed buckets add padding but a d64 RTX 5080 eager diagnostic was effectively tied: 243.8 decisions/s dynamic versus 245.1 fixed. This is noise, not a fixed-padding speedup.</p>
+
+<h2>Compile Status</h2>
+<p>Teacher forcing now enters module forward, data-dependent decoder indexing was removed, and a real <code>backend="eager", fullgraph=True</code> regression passes. Model-only saving unwraps compiled modules, so ordinary eager models load clean keys.</p>
+<p>Inductor is not ready. Even d32/batch-1 full-prototype compilation created a very large graph and 16 multi-GB compile workers without finishing in the diagnostic window. The sample also had 124 joint bucket signatures across 2,048 decisions. Formal <code>run_bc</code> therefore exposes no compile switch.</p>
+
+<h2>Training And Resume</h2>
+<p>BC performs one train pass and full teacher-forced plus greedy validation per epoch, with private W&amp;B for formal runs. Four model-only slots remain inference/export artifacts. One atomic <code>checkpoint/resume/latest_resume.pt</code> additionally stores model, AdamW, optional scheduler/GradScaler, completed-epoch trainer state, and Python/NumPy/Torch RNG.</p>
+<p>Resume requires identical dataset, training config, model contract, and implementation hashes plus agreement with the canonical metrics epoch. The exact boundary is a completed epoch; an interrupted partial epoch is rerun. Estimated peak checkpoint retention is roughly 1.5-1.8 GiB. Resume state never enters a candidate.</p>
+
+<h2>Verification</h2>
+<p>No formal 0031 assets were created. A new V2 dataset must precede <code>V1_rule_faithful_foundation</code>. Chronological benchmark evidence is stored under <code>.tmp/0031_feature_benchmark/run-20260804-v2/</code>; final test totals are recorded in the accompanying decisions after final verification.</p>
 </body></html>

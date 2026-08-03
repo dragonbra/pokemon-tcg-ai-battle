@@ -47,6 +47,7 @@ class StateEncoder(nn.Module):
         self.resource_num = NumericFields(WIDTHS.resource_num, d)
         self.event_cat = CategoricalFields(EVENT_CAT_VOCABS, d)
         self.event_num = NumericFields(WIDTHS.event_num, d)
+        self.event_participant = nn.Linear(d, d, bias=False)
         self.segment = nn.Embedding(5, d, padding_idx=0)
 
         layer = nn.TransformerEncoderLayer(
@@ -108,7 +109,13 @@ class StateEncoder(nn.Module):
             + prototype_memory.card(batch.event_cat[..., 2])
             + self.segment.weight[4]
         )
-        events = events + gather_one_based(cards, batch.event_source) + gather_one_based(cards, batch.event_target)
+        participants = (
+            gather_one_based(cards, batch.event_source)
+            + gather_one_based(cards, batch.event_target)
+            + gather_one_based(cards, batch.event_before)
+            + gather_one_based(cards, batch.event_after)
+        )
+        events = events + self.event_participant(participants)
 
         tokens = torch.cat((global_token, cards, resources, events), dim=1)
         mask = torch.cat(

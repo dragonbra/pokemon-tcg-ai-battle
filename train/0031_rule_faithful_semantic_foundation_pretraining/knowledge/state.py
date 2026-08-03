@@ -26,6 +26,14 @@ class KnownOpponentCard:
     card_id: int
     serial: int
     source_event: int
+    area: int = HAND_AREA
+    knowledge: str = "certain"
+
+
+@dataclass(frozen=True, slots=True)
+class KnownDeckCard:
+    card_id: int
+    serial: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,6 +61,11 @@ class CausalSnapshot:
     recent_events: tuple[TypedEvent, ...]
     deck_membership_known: bool
     deck_order_known: bool
+    possible_opponent_hand: tuple[KnownOpponentCard, ...] = ()
+    possible_opponent_hand_known_lower: int = 0
+    possible_opponent_hand_known_upper: int = 0
+    remembered_opponent_cards: tuple[KnownOpponentCard, ...] = ()
+    known_self_deck_order: tuple[KnownDeckCard, ...] = ()
 
 
 class CausalKnowledge:
@@ -67,8 +80,12 @@ class CausalKnowledge:
         self._exact_prize: Counter[int] | None = None
         self._deck_source_event: int | None = None
         self._prize_source_event: int | None = None
-        self._deck_order_known = False
+        self._exact_deck_order: list[KnownDeckCard] | None = None
         self._known_opponent_hand: dict[int, KnownOpponentCard] = {}
+        self._possible_opponent_hand: dict[int, KnownOpponentCard] = {}
+        self._possible_hand_lower = 0
+        self._possible_hand_upper = 0
+        self._remembered_opponent_cards: dict[int, KnownOpponentCard] = {}
         self._unknown_opponent_hand = 0
         self._events: list[TypedEvent] = []
         self._event_index = 0
@@ -87,14 +104,27 @@ class CausalKnowledge:
         card_id = log.get("cardId")
         if from_area == HAND_AREA:
             if log_type == MOVE_CARD and isinstance(serial, int) and not isinstance(serial, bool):
-                if self._known_opponent_hand.pop(serial, None) is None and self._unknown_opponent_hand:
+                if self._known_opponent_hand.pop(serial, None) is not None:
+                    pass
+                elif self._possible_opponent_hand.pop(serial, None) is not None:
+                    self._possible_hand_lower = max(0, self._possible_hand_lower - 1)
+                    self._possible_hand_upper = max(0, self._possible_hand_upper - 1)
+                elif self._unknown_opponent_hand:
                     self._unknown_opponent_hand -= 1
             else:
-                # A redacted departure could be any previously revealed card. With no
-                # candidate-set channel, retaining an arbitrary identity would leak certainty.
+                certain = tuple(self._known_opponent_hand.values())
+                for item in certain:
+                    self._possible_opponent_hand[item.serial] = KnownOpponentCard(
+                        item.card_id, item.serial, item.source_event, HAND_AREA, "candidate"
+                    )
+                self._possible_hand_lower += len(certain)
+                self._possible_hand_upper += len(certain)
                 self._known_opponent_hand.clear()
+                self._possible_hand_lower = max(0, self._possible_hand_lower - 1)
                 if self._unknown_opponent_hand:
                     self._unknown_opponent_hand -= 1
+                else:
+                    self._possible_hand_upper = max(0, self._possible_hand_upper - 1)
         if to_area == HAND_AREA:
             if (
                 log_type == MOVE_CARD
@@ -104,8 +134,30 @@ class CausalKnowledge:
                 self._known_opponent_hand[serial] = KnownOpponentCard(
                     card_id, serial, self._event_index
                 )
+                self._possible_opponent_hand.pop(serial, None)
             else:
                 self._unknown_opponent_hand += 1
+
+    def _consume_opponent_memory(self, log: Mapping[str, Any], opponent: int) -> None:
+        if log.get("playerIndex") != opponent:
+            return
+        card_id, serial = log.get("cardId"), log.get("serial")
+        if not (
+            isinstance(card_id, int) and not isinstance(card_id, bool)
+            and isinstance(serial, int) and not isinstance(serial, bool)
+        ):
+            return
+        raw_type = log.get("type")
+        if raw_type == 4:
+            area = HAND_AREA
+        elif raw_type == MOVE_CARD:
+            area = log.get("toArea")
+            area = area if isinstance(area, int) and not isinstance(area, bool) else -1
+        else:
+            area = -1
+        self._remembered_opponent_cards[serial] = KnownOpponentCard(
+            card_id, serial, self._event_index, area, "remembered"
+        )
 
     def _typed_event(self, log: Mapping[str, Any], local_log_ordinal: int) -> TypedEvent:
         raw_type = log.get("type")
@@ -189,7 +241,7 @@ class CausalKnowledge:
             if zone == "deck":
                 self._exact_deck = None
                 self._deck_source_event = None
-                self._deck_order_known = False
+                self._exact_deck_order = None
             else:
                 self._exact_prize = None
                 self._prize_source_event = None
@@ -210,26 +262,54 @@ class CausalKnowledge:
         card_id = log.get("cardId")
         card_id = card_id if isinstance(card_id, int) and not isinstance(card_id, bool) else None
         if raw_type == 0:
-            self._deck_order_known = False
+            self._exact_deck_order = None
         elif raw_type == 4 and card_id is not None:
             self._remove_exact("deck", card_id)
             if self._exact_deck is not None:
                 self._deck_source_event = self._event_index
-            self._deck_order_known = False
+            serial = log.get("serial")
+            if self._exact_deck_order is not None:
+                found_serial = (
+                    isinstance(serial, int) and not isinstance(serial, bool)
+                    and any(item.serial == serial for item in self._exact_deck_order)
+                )
+                self._exact_deck_order = [
+                    item for item in self._exact_deck_order
+                    if not (
+                        isinstance(serial, int) and not isinstance(serial, bool)
+                        and item.serial == serial
+                    )
+                ]
+                if not found_serial:
+                    # The card may have been represented without serial; order is then unknown.
+                    self._exact_deck_order = None
         elif raw_type in {MOVE_CARD, MOVE_CARD_REVERSE}:
             from_area, to_area = log.get("fromArea"), log.get("toArea")
             touched = {from_area, to_area} & {1, 6}
             if not touched:
                 return
-            self._deck_order_known = False
             if raw_type == MOVE_CARD_REVERSE or card_id is None:
                 if 1 in touched:
                     self._exact_deck = None
                     self._deck_source_event = None
+                    self._exact_deck_order = None
                 if 6 in touched:
                     self._exact_prize = None
                     self._prize_source_event = None
                 return
+            serial = log.get("serial")
+            if from_area == 1 and self._exact_deck_order is not None:
+                if isinstance(serial, int) and not isinstance(serial, bool):
+                    before = len(self._exact_deck_order)
+                    self._exact_deck_order = [
+                        item for item in self._exact_deck_order if item.serial != serial
+                    ]
+                    if len(self._exact_deck_order) == before:
+                        self._exact_deck_order = None
+                else:
+                    self._exact_deck_order = None
+            if to_area == 1:
+                self._exact_deck_order = None
             if from_area == 1:
                 self._remove_exact("deck", card_id)
             elif from_area == 6:
@@ -269,7 +349,13 @@ class CausalKnowledge:
             raise ValueError("full deck membership violates registered deck")
         self._exact_deck = exact
         self._deck_source_event = self._event_index
-        self._deck_order_known = False
+        self._exact_deck_order = []
+        for item in deck_view:
+            serial = item.get("serial") if isinstance(item, Mapping) else None
+            card_id = self._card_id(item)
+            if card_id is None or not isinstance(serial, int) or isinstance(serial, bool):
+                raise ValueError("full deck order contains a card without exact identity")
+            self._exact_deck_order.append(KnownDeckCard(card_id, serial))
         inferred = Counter()
         for card_id, initial in self.initial.items():
             outside_hidden = sum(visible.get(card_id, {}).values())
@@ -295,7 +381,7 @@ class CausalKnowledge:
         if self._exact_deck is not None and sum(self._exact_deck.values()) != deck_total:
             self._exact_deck = None
             self._deck_source_event = None
-            self._deck_order_known = False
+            self._exact_deck_order = None
         if self._exact_prize is not None and (
             not isinstance(prize, Sequence) or sum(self._exact_prize.values()) != len(prize)
         ):
@@ -388,6 +474,7 @@ class CausalKnowledge:
                 raise ValueError("log must be a mapping")
             event = self._typed_event(log, local_log_ordinal)
             self._consume_opponent_hand(log, opponent)
+            self._consume_opponent_memory(log, opponent)
             self._consume_self_hidden_zones(log)
             self._events.append(event)
             self._event_index += 1
@@ -402,6 +489,15 @@ class CausalKnowledge:
         if len(self._known_opponent_hand) > hand_count:
             kept = sorted(self._known_opponent_hand.items())[:hand_count]
             self._known_opponent_hand = dict(kept)
+        available = max(0, hand_count - len(self._known_opponent_hand))
+        self._possible_hand_upper = min(
+            self._possible_hand_upper,
+            len(self._possible_opponent_hand),
+            available,
+        )
+        self._possible_hand_lower = min(self._possible_hand_lower, self._possible_hand_upper)
+        if self._possible_hand_upper == 0:
+            self._possible_opponent_hand.clear()
         self._unknown_opponent_hand = hand_count - len(self._known_opponent_hand)
         visible = self._visible_counts(observation)
         self._reanchor_from_full_deck_view(observation, visible)
@@ -416,10 +512,21 @@ class CausalKnowledge:
             unknown_opponent_hand=self._unknown_opponent_hand,
             recent_events=tuple(self._events),
             deck_membership_known=self._exact_deck is not None,
-            deck_order_known=self._deck_order_known,
+            deck_order_known=self._exact_deck_order is not None,
+            possible_opponent_hand=tuple(
+                sorted(self._possible_opponent_hand.values(), key=lambda item: item.serial)
+            ),
+            possible_opponent_hand_known_lower=self._possible_hand_lower,
+            possible_opponent_hand_known_upper=self._possible_hand_upper,
+            remembered_opponent_cards=tuple(
+                sorted(self._remembered_opponent_cards.values(), key=lambda item: item.serial)
+            ),
+            known_self_deck_order=tuple(self._exact_deck_order or ()),
         )
         self._decision_index += 1
         return snapshot
 
 
-__all__ = ["CausalKnowledge", "CausalSnapshot", "KnownOpponentCard", "TypedEvent"]
+__all__ = [
+    "CausalKnowledge", "CausalSnapshot", "KnownDeckCard", "KnownOpponentCard", "TypedEvent"
+]

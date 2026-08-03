@@ -18,7 +18,7 @@ from tqdm.auto import tqdm
 from rl_environment.logging import TrainingLogger
 from rl_environment.runs import VersionPaths, write_version_status
 
-from .checkpoints import save_checkpoint
+from .checkpoints import load_training_state, save_checkpoint, save_training_state
 from .objective import evaluate_audited_batches, evaluate_batches, teacher_batch
 from .prefetch import PrefetchIterator
 
@@ -68,6 +68,17 @@ def _append_jsonl(path: Path, value: object) -> None:
         handle.write(payload)
         handle.flush()
         os.fsync(handle.fileno())
+
+
+def _last_logged_epoch(path: Path) -> int | None:
+    last: int | None = None
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                value = json.loads(line)
+                if "trainer/epoch" in value:
+                    last = int(value["trainer/epoch"])
+    return last
 
 
 def _device_batch(batch: Mapping[str, Tensor], device: torch.device) -> dict[str, Tensor]:
@@ -194,23 +205,35 @@ def train_ablation(
     maximum_train_batches: int | None = None,
     maximum_validation_batches: int | None = None,
     prefetch_depth: int = 2,
+    resume_checkpoint: Path | None = None,
 ) -> dict[str, Any]:
     if set(models) != set(optimizers) or not models:
         raise ValueError("models and optimizers must have identical non-empty arms")
-    _atomic_json(paths.config, config)
+    if resume_checkpoint is None:
+        _atomic_json(paths.config, config)
+    else:
+        existing_config = json.loads(paths.config.read_text(encoding="utf-8"))
+        if existing_config != config:
+            raise ValueError("resume training config does not match the allocated run")
     training_config_sha256 = _sha256(paths.config)
     model_contract_sha256 = (
         _sha256(paths.model_contract) if paths.model_contract.is_file() else None
     )
-    write_version_status(
-        paths,
-        {
-            "state": "training",
-            "started_at": time.time(),
-            "device": str(device),
-            "wandb_expected_mode": config["wandb"]["mode"],
-        },
-    )
+    status = {
+        "state": "training",
+        "device": str(device),
+        "wandb_expected_mode": config["wandb"]["mode"],
+    }
+    if resume_checkpoint is None:
+        status["started_at"] = time.time()
+    else:
+        status.update(
+            {
+                "resumed_at": time.time(),
+                "resume_checkpoint": str(resume_checkpoint),
+            }
+        )
+    write_version_status(paths, status)
     for model in models.values():
         model.to(device)
     best = {
@@ -222,23 +245,54 @@ def train_ablation(
     global_step = 0
     history: list[dict[str, Any]] = []
     checkpoint_records: dict[str, dict[str, Any]] = {arm: {} for arm in models}
+    start_epoch = 1
+    compatibility = {
+        "dataset_manifest_sha256": dataset.manifest_sha256,
+        "training_config_sha256": training_config_sha256,
+        "model_contract_sha256": model_contract_sha256,
+        "implementation_sha256": config.get("implementation_sha256"),
+    }
+    if resume_checkpoint is not None:
+        restored = load_training_state(
+            resume_checkpoint,
+            models=dict(models),
+            optimizers=dict(optimizers),
+            expected_compatibility=compatibility,
+            map_location="cpu",
+        )
+        start_epoch = int(restored["epoch"]) + 1
+        global_step = int(restored["global_step"])
+        best = restored["best"]
+        no_improvement = restored["no_improvement"]
+        active = restored["active"]
+        history = restored["history"]
+        checkpoint_records = restored["checkpoint_records"]
+        logged_epoch = _last_logged_epoch(paths.metrics)
+        if logged_epoch != int(restored["epoch"]):
+            raise ValueError(
+                "resume checkpoint and canonical training metrics disagree; "
+                f"checkpoint_epoch={restored['epoch']}, metrics_epoch={logged_epoch}"
+            )
+        if start_epoch > epochs:
+            raise ValueError("resume checkpoint already reached the requested epoch count")
     try:
         with TrainingLogger(paths.metrics, paths.tensorboard) as logger:
-            logger.log(
-                0,
-                {
-                    "trainer/epoch": 0,
-                    "trainer/update": 0,
-                    "system/run_started": 1,
-                    **{
-                        f"system/parameter_count/{arm}": sum(
-                            parameter.numel() for parameter in model.parameters()
-                        )
-                        for arm, model in models.items()
+            if resume_checkpoint is None:
+                logger.log(
+                    0,
+                    {
+                        "trainer/epoch": 0,
+                        "trainer/update": 0,
+                        "system/run_started": 1,
+                        **{
+                            f"system/parameter_count/{arm}": sum(
+                                parameter.numel() for parameter in model.parameters()
+                            )
+                            for arm, model in models.items()
+                        },
                     },
-                },
-            )
-            for epoch in range(1, epochs + 1):
+                )
+            for epoch in range(start_epoch, epochs + 1):
                 record: dict[str, Any] = {
                     "trainer/epoch": epoch,
                     "trainer/update": global_step,
@@ -382,6 +436,22 @@ def train_ablation(
                         "arms": checkpoint_records,
                     },
                 )
+                resume_record = save_training_state(
+                    paths.checkpoints / "resume",
+                    models=dict(models),
+                    optimizers=dict(optimizers),
+                    trainer_state={
+                        "epoch": epoch,
+                        "global_step": global_step,
+                        "best": best,
+                        "no_improvement": no_improvement,
+                        "active": active,
+                        "history": history,
+                        "checkpoint_records": checkpoint_records,
+                    },
+                    compatibility=compatibility,
+                )
+                _atomic_json(paths.artifact / "resume_checkpoint.json", resume_record)
                 print(
                     json.dumps({"event": "0031_bc_epoch", **record}, sort_keys=True),
                     flush=True,

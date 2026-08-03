@@ -79,7 +79,13 @@ class SemanticPolicy(nn.Module):
         self,
         batch: DecisionBatch | Mapping[str, Tensor],
         selected_prefix: Tensor | None = None,
+        *,
+        teacher_forcing: bool = False,
     ) -> Tensor:
+        if teacher_forcing:
+            if selected_prefix is not None:
+                raise ValueError("teacher forcing does not accept a selected prefix")
+            return self.teacher_logits(batch)
         batch, state, options = self.encode(batch)
         decoder_state = self.action_decoder.initialize(batch, state.summary)
         decoder_state = self.action_decoder.consume_prefix(

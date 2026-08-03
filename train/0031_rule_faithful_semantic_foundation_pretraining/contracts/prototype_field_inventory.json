@@ -4,7 +4,7 @@
   "principles": {
     "enum_boolean_symbol": "independent_embedding",
     "exact_numeric": "raw_scalar_with_field_specific_projection",
-    "bitmask": "raw_scalar_or_exact_finite_identity_plus_named_bits",
+    "bitmask": "exact_finite_identity_plus_named_bits",
     "ordered_collection": "fixed_ordered_slots_with_padding",
     "missing": "explicit_field_state_or_padding"
   },
@@ -17,7 +17,7 @@
   "attack": {
     "independent_embedding": ["attack_id", "card_id", "last_cancel_fail_attack"],
     "exact_numeric": ["damage"],
-    "bitmask_raw_and_named_bits": ["attack_flags"],
+    "bitmask_named_bits": ["attack_flags"],
     "ordered_slots": ["energies", "pre_effects", "post_effects"],
     "prototype_identity_lookup": ["name", "name_en", "damage_text", "text", "text_en"]
   },
@@ -32,8 +32,8 @@
     "structured_relation": ["subject"]
   },
   "effect": {
-    "independent_embedding": ["is_condition", "effect_type", "select_type", "select_context", "enemy_select", "random_select", "each_selected", "each_list", "add_check_list", "keep_selected_list", "exclude_previous_target", "keep_target_list", "multiply_previous_target_count", "multiply_coin_heads", "can_select_zero", "can_select_zero_if_previous", "cannot_select_zero", "energy_max_select", "select_target_count", "select_coin_head_count", "select_coin_head_count_x2", "select_enemy_energy_count", "skip_no_target", "open", "switch_bench_as_target", "active_effect_target", "bench_effect_target", "remove_if_no_effect", "seeing_deck", "separator", "condition_type", "comparator_type", "fail_skip", "linked_skill_id", "parent_kind", "phase"],
-    "exact_numeric": ["ordinal", "parent_id", "select_count", "values[0]", "values[1]", "loop_count", "priority"],
+    "independent_embedding": ["is_condition", "effect_type", "select_type", "select_context", "enemy_select", "random_select", "each_selected", "each_list", "add_check_list", "keep_selected_list", "exclude_previous_target", "keep_target_list", "multiply_previous_target_count", "multiply_coin_heads", "can_select_zero", "can_select_zero_if_previous", "cannot_select_zero", "energy_max_select", "select_target_count", "select_coin_head_count", "select_coin_head_count_x2", "select_enemy_energy_count", "skip_no_target", "open", "switch_bench_as_target", "active_effect_target", "bench_effect_target", "remove_if_no_effect", "seeing_deck", "separator", "condition_type", "comparator_type", "linked_skill_id", "parent_kind", "phase"],
+    "exact_numeric": ["ordinal", "parent_id", "select_count", "values[0]", "values[1]", "loop_count", "priority", "fail_skip"],
     "structured_relation": ["target"]
   },
   "target": {
@@ -44,5 +44,6 @@
     "independent_embedding": ["target_type", "comparator_type", "name"],
     "exact_numeric": ["value", "value2"]
   },
-  "actor_forbidden_derived_fields": ["typed_energy_deficit", "total_energy_deficit", "surplus_energy", "preferred_energy_removal", "attach_counterfactual", "remove_counterfactual", "newly_enabled", "target_hp_after_damage", "is_ko"]
+  "actor_forbidden_derived_fields": ["typed_energy_deficit", "total_energy_deficit", "surplus_energy", "preferred_energy_removal", "attach_counterfactual", "remove_counterfactual", "newly_enabled", "target_hp_after_damage", "is_ko"],
+  "dynamic_instance_fields": ["resolved_energy_unit_index", "resolved_energy_unit_type", "option_ordinal", "option_serial", "event_participants", "looking_visibility", "deck_order_known", "candidate_identity_bounds"]
 }

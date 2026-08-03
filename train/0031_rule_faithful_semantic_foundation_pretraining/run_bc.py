@@ -22,6 +22,7 @@ from rl_environment.runs import (
 
 from . import PROJECT_ID
 from .domain.prototypes import PrototypeIndex
+from .features.collate import BucketPadding
 from .model import ModelConfig, SemanticPolicy
 from .training.dataset import CanonicalDecisionDataset
 from .training.trainer import train_ablation
@@ -113,6 +114,16 @@ def main() -> None:
     parser.add_argument("--early-stopping-patience", type=int, default=6)
     parser.add_argument("--early-stopping-min-delta", type=float, default=0.0005)
     parser.add_argument("--prefetch-depth", type=int, default=2)
+    parser.add_argument(
+        "--fixed-bucket-padding",
+        action="store_true",
+        help="Pad every ragged family to its finite compile bucket upper bound.",
+    )
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume this exact version from checkpoint/resume/latest_resume.pt.",
+    )
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument(
         "--smoke-formal-model",
@@ -126,6 +137,8 @@ def main() -> None:
         raise ValueError("epochs and batch sizes must be positive")
     if args.prefetch_depth < 0:
         raise ValueError("prefetch depth must be nonnegative")
+    if args.resume and args.smoke:
+        raise ValueError("noncanonical smoke runs do not support in-place resume")
     if not args.smoke and not torch.cuda.is_available():
         raise RuntimeError("formal 0031 rule-faithful BC training requires CUDA")
 
@@ -135,7 +148,11 @@ def main() -> None:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
-    dataset = CanonicalDecisionDataset(args.dataset_root)
+    fixed_bucket_padding = args.fixed_bucket_padding
+    dataset = CanonicalDecisionDataset(
+        args.dataset_root,
+        bucket_padding=BucketPadding() if fixed_bucket_padding else None,
+    )
     prototypes = PrototypeIndex.load(PROTOTYPES)
     if args.smoke:
         paths = _smoke_paths()
@@ -156,7 +173,15 @@ def main() -> None:
         maximum_validation = args.maximum_validation_batches or 2
         os.environ["WANDB_MODE"] = "disabled"
     else:
-        paths = initialize_version(PROJECT_ID, args.version)
+        paths = (
+            project_version_paths(PROJECT_ID, args.version)
+            if args.resume
+            else initialize_version(PROJECT_ID, args.version)
+        )
+        if args.resume and not (
+            paths.checkpoints / "resume/latest_resume.pt"
+        ).is_file():
+            raise FileNotFoundError("0031 exact-resume checkpoint does not exist")
         model_config = ModelConfig()
         epochs = args.epochs
         maximum_train = args.maximum_train_batches
@@ -172,6 +197,7 @@ def main() -> None:
                 "WANDB_RUN_ID": wandb_run_id(PROJECT_ID, paths.version_name),
                 "WANDB_JOB_TYPE": "bc",
                 "WANDB_TAGS": "0031,rule_faithful,semantic,winner_bc",
+                "WANDB_RESUME": "must" if args.resume else "never",
             }
         )
 
@@ -213,9 +239,19 @@ def main() -> None:
         "train_passes_per_epoch": 1,
         "validation_full_pass_per_epoch": maximum_validation is None,
         "length_bucketed_train_batches": True,
+        "fixed_bucket_padding": fixed_bucket_padding,
+        "fixed_bucket_bounds": {
+            name: list(values) for name, values in BucketPadding().__dict__.items()
+        }
+        if fixed_bucket_padding
+        else None,
+        "torch_compile": False,
+        "torch_compile_status": "not_admitted_pending_bounded_compile_benchmark",
         "prefetch_depth": args.prefetch_depth,
-        "checkpoint_payload": "model_weights_only_no_optimizer_no_resume_state",
-        "checkpoint_retention_slots": 4,
+        "checkpoint_payload": "four_model_only_slots_plus_one_exact_epoch_resume_slot",
+        "model_only_checkpoint_retention_slots": 4,
+        "training_state_checkpoint_retention_slots": 1,
+        "training_state_checkpoint_boundary": "completed_epoch",
         "wandb": {
             "mode": "disabled" if args.smoke else "online",
             "entity": "dragon_bra",
@@ -225,7 +261,7 @@ def main() -> None:
             else wandb_run_id(PROJECT_ID, paths.version_name),
         },
     }
-    paths.dataset_reference.write_text(
+    dataset_reference = (
         json.dumps(
             {
                 "dataset_path": str(args.dataset_root),
@@ -235,10 +271,9 @@ def main() -> None:
             indent=2,
             sort_keys=True,
         )
-        + "\n",
-        encoding="utf-8",
+        + "\n"
     )
-    paths.model_contract.write_text(
+    model_contract = (
         json.dumps(
             {
                 "schema_version": "0031_rule_faithful_model_contract_v1",
@@ -249,9 +284,16 @@ def main() -> None:
             indent=2,
             sort_keys=True,
         )
-        + "\n",
-        encoding="utf-8",
+        + "\n"
     )
+    if args.resume:
+        if paths.dataset_reference.read_text(encoding="utf-8") != dataset_reference:
+            raise ValueError("resume dataset reference does not match the allocated run")
+        if paths.model_contract.read_text(encoding="utf-8") != model_contract:
+            raise ValueError("resume model contract does not match the allocated run")
+    else:
+        paths.dataset_reference.write_text(dataset_reference, encoding="utf-8")
+        paths.model_contract.write_text(model_contract, encoding="utf-8")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
@@ -287,6 +329,9 @@ def main() -> None:
         maximum_train_batches=maximum_train,
         maximum_validation_batches=maximum_validation,
         prefetch_depth=args.prefetch_depth,
+        resume_checkpoint=(paths.checkpoints / "resume/latest_resume.pt")
+        if args.resume
+        else None,
     )
     print(
         json.dumps(

@@ -7,6 +7,7 @@ import math
 
 import torch
 from torch import Tensor, nn
+from torch.nn import functional as F
 
 from ..contracts.batch import DecisionBatch
 from .config import ModelConfig
@@ -95,9 +96,9 @@ class ActionDecoder(nn.Module):
         ).squeeze(1)
         updated_hidden = self.recurrent(selected, state.hidden)
         hidden = torch.where(valid.unsqueeze(-1), updated_hidden, state.hidden)
-        available = state.available.clone()
-        rows = torch.arange(options.shape[0], device=options.device)
-        available[rows[valid], index[valid]] = False
+        selected_mask = F.one_hot(index, num_classes=option_count).bool()
+        selected_mask = selected_mask & valid.unsqueeze(1)
+        available = state.available & ~selected_mask
         return DecoderState(
             hidden=hidden,
             available=available,

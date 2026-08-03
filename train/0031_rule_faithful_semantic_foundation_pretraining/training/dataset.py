@@ -13,7 +13,7 @@ from typing import Any
 
 from torch import Tensor
 
-from ..features.collate import collate_canonical_records
+from ..features.collate import BucketPadding, collate_canonical_records
 from ..contracts.fields import SCHEMA_VERSION
 
 
@@ -26,8 +26,14 @@ def _sha256(path: Path) -> str:
 
 
 class CanonicalDecisionDataset:
-    def __init__(self, root: Path | str):
+    def __init__(
+        self,
+        root: Path | str,
+        *,
+        bucket_padding: BucketPadding | None = None,
+    ):
         self.root = Path(root)
+        self.bucket_padding = bucket_padding
         manifest_path = self.root / "manifest.json"
         self.manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if self.manifest.get("schema_version") != SCHEMA_VERSION or self.manifest.get("status") != "complete":
@@ -75,10 +81,16 @@ class CanonicalDecisionDataset:
             + len(actor["resource_cat"])
             + len(actor["event_cat"])
         )
+        cards = len(actor["card_cat"])
+        resources = len(actor["resource_cat"])
+        events = len(actor["event_cat"])
         options = len(actor["option_cat"])
         effects = len(actor["option_effect_id"])
         skills = len(actor["option_skill_id"])
         return (
+            cards // 16,
+            resources // 16,
+            events // 16,
             state // 32,
             options // 4,
             effects // 16,
@@ -87,6 +99,24 @@ class CanonicalDecisionDataset:
             options,
             effects,
             skills,
+        )
+
+    def _batch_bucket_key(self, record: Mapping[str, Any]) -> tuple[int, ...]:
+        if self.bucket_padding is None:
+            return self._length_bucket_key(record)
+        actor = record["actor"]
+        action_steps = len(record["target"]["ordered_action"]) + 1
+        return (
+            self.bucket_padding.upper_bound("card", max(1, len(actor["card_cat"]))),
+            self.bucket_padding.upper_bound("event", max(1, len(actor["event_cat"]))),
+            self.bucket_padding.upper_bound("option", max(1, len(actor["option_cat"]))),
+            self.bucket_padding.upper_bound(
+                "effect", max(1, len(actor["option_effect_id"]))
+            ),
+            self.bucket_padding.upper_bound(
+                "skill", max(1, len(actor["option_skill_id"]))
+            ),
+            self.bucket_padding.upper_bound("action", action_steps),
         )
 
     def iter_record_batches(
@@ -114,7 +144,7 @@ class CanonicalDecisionDataset:
             pending.extend(rows)
             if split == "train" and length_bucketed:
                 rng.shuffle(pending)
-                pending.sort(key=self._length_bucket_key)
+                pending.sort(key=self._batch_bucket_key)
                 complete = len(pending) // batch_size
                 groups = [
                     pending[index * batch_size : (index + 1) * batch_size]
@@ -143,6 +173,7 @@ class CanonicalDecisionDataset:
         *,
         seed: int,
         length_bucketed: bool | None = None,
+        bucket_padding: BucketPadding | None = None,
     ) -> Iterator[dict[str, Tensor]]:
         for rows in self.iter_record_batches(
             split,
@@ -150,7 +181,9 @@ class CanonicalDecisionDataset:
             seed=seed,
             length_bucketed=length_bucketed,
         ):
-            yield collate_canonical_records(rows)
+            yield collate_canonical_records(
+                rows, bucket_padding=bucket_padding or self.bucket_padding
+            )
 
     def iter_audited_batches(
         self,
@@ -159,6 +192,7 @@ class CanonicalDecisionDataset:
         *,
         seed: int,
         length_bucketed: bool | None = None,
+        bucket_padding: BucketPadding | None = None,
     ) -> Iterator[tuple[dict[str, Tensor], list[dict[str, Any]]]]:
         """Keep provenance beside the actor batch without exposing it to forward."""
         for rows in self.iter_record_batches(
@@ -168,7 +202,9 @@ class CanonicalDecisionDataset:
             length_bucketed=length_bucketed,
         ):
             audits = [dict(row.get("audit", {})) for row in rows]
-            yield collate_canonical_records(rows), audits
+            yield collate_canonical_records(
+                rows, bucket_padding=bucket_padding or self.bucket_padding
+            ), audits
 
     def batch_count(self, split: str, batch_size: int) -> int:
         if split not in self.split_counts or batch_size < 1:
