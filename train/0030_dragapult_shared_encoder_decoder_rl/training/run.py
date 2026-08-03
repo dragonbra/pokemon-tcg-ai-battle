@@ -17,7 +17,7 @@ import torch
 from rl_environment.logging import TrainingLogger
 
 from .. import FOCAL_DECK_ID, PROJECT_ID
-from ..checkpoint import save_model_checkpoint
+from ..checkpoint import load_model_checkpoint, save_model_checkpoint
 from ..league import load_frozen_catalog
 from ..policy import load_actor_critic
 from ..rollout import HeterogeneousRolloutCollector, RolloutJob
@@ -41,6 +41,7 @@ class RunConfig:
     eval_games: int = 102
     checkpoint_retention: int = 6
     wandb_mode: str = "online"
+    initialization_checkpoint: str | None = None
     ppo: PPOConfig = PPOConfig()
 
     def validate(self) -> None:
@@ -54,6 +55,12 @@ class RunConfig:
             raise ValueError("checkpoint_retention must preserve at least last and best")
         if self.wandb_mode not in {"disabled", "offline", "online"}:
             raise ValueError("invalid W&B mode")
+        if self.initialization_checkpoint is not None:
+            checkpoint = Path(self.initialization_checkpoint)
+            if not checkpoint.is_file():
+                raise FileNotFoundError(
+                    f"initialization checkpoint does not exist: {checkpoint}"
+                )
 
 
 def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
@@ -239,6 +246,11 @@ def run(config: RunConfig) -> dict[str, Any]:
     _atomic_json(paths["config"], config_payload)
     _status(paths["status"], {"state": "initializing", "version": config.version})
     model, _, identity = load_actor_critic(device)
+    initialization_identity = None
+    if config.initialization_checkpoint is not None:
+        initialization_identity = load_model_checkpoint(
+            Path(config.initialization_checkpoint), model
+        )
     trainer = PPOTrainer(model, device=device, config=config.ppo)
     representation_sha = model.representation_sha256()
     initial_decoder_sha = model.decoder_sha256()
@@ -258,6 +270,7 @@ def run(config: RunConfig) -> dict[str, Any]:
         "representation_sha256": representation_sha,
         "initial_decoder_sha256": initial_decoder_sha,
         "initial_checkpoint_sha256": identity.checkpoint_sha256,
+        "initialization_model_checkpoint": initialization_identity,
         "model_checkpoint_update_0_sha256": initial_checkpoint_sha,
         "wandb": {"state": config.wandb_mode},
     })

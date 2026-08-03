@@ -2,23 +2,33 @@
 
 from __future__ import annotations
 
-import argparse
 import json
+import os
 import time
 import resource
+import sys
 from pathlib import Path
 from unittest import mock
 
 import torch
 
+from .checkpoint import load_model_checkpoint
 from .policy import load_actor_critic
 from .rollout import HeterogeneousRolloutCollector
 from .smoke import smoke_jobs
 from .training.batch import prepare_episodes
 from .training.ppo import PPOConfig, PPOTrainer
+from .worker_diagnostics import WorkerProcessSampler
 
 
-def run(*, games: int, workers: int, device_name: str, output: Path) -> dict[str, object]:
+def run(
+    *,
+    games: int,
+    workers: int,
+    device_name: str,
+    output: Path,
+    initialization_checkpoint: Path | None = None,
+) -> dict[str, object]:
     device = torch.device(device_name)
     torch.manual_seed(30030)
     if device.type == "cuda":
@@ -26,9 +36,19 @@ def run(*, games: int, workers: int, device_name: str, output: Path) -> dict[str
         torch.cuda.init()
         torch.cuda.reset_peak_memory_stats(device)
     model, _, identity = load_actor_critic(device)
+    initialization_identity = (
+        load_model_checkpoint(initialization_checkpoint, model)
+        if initialization_checkpoint is not None
+        else None
+    )
     collector = HeterogeneousRolloutCollector(model, device=device, workers=workers, mode="sample", coalesce_ms=0.5)
+    sampler = WorkerProcessSampler()
     started = time.perf_counter()
-    episodes = collector.collect(smoke_jobs(games, seed=30030))
+    sampler.start()
+    try:
+        episodes = collector.collect(smoke_jobs(games, seed=30030))
+    finally:
+        sampler.stop()
     rollout_seconds = time.perf_counter() - started
     errors = [episode.error for episode in episodes if not episode.valid]
     if errors or len(episodes) != games:
@@ -43,8 +63,9 @@ def run(*, games: int, workers: int, device_name: str, output: Path) -> dict[str
     ppo_seconds = time.perf_counter() - ppo_started
     decisions = batch.decisions
     result: dict[str, object] = {
-        "schema_version": "0030_shared_encoder_performance_gate_v1",
+        "schema_version": "0030_shared_encoder_performance_gate_v2",
         "foundation_sha256": identity.checkpoint_sha256,
+        "initialization_model_checkpoint": initialization_identity,
         "games": games,
         "workers": workers,
         "valid": len(episodes),
@@ -59,6 +80,7 @@ def run(*, games: int, workers: int, device_name: str, output: Path) -> dict[str
         "process_max_rss_kib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         "representation_unchanged": model.representation_sha256() == representation,
         "opponent_decoder_unchanged": model.opponent_decoder_sha256() == opponent,
+        **sampler.metrics(),
         **collector.metrics(),
         "ppo/minibatches_completed": metrics["ppo/minibatches_completed"],
     }
@@ -74,14 +96,15 @@ def run(*, games: int, workers: int, device_name: str, output: Path) -> dict[str
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--games", type=int, default=16)
-    parser.add_argument("--workers", type=int, default=8)
-    parser.add_argument("--device", default="cuda:0")
-    parser.add_argument("--output", type=Path, default=Path(".tmp/evaluation/0030_performance/performance_gate.json"))
-    args = parser.parse_args()
-    print(json.dumps(run(games=args.games, workers=args.workers, device_name=args.device, output=args.output), indent=2, sort_keys=True))
-    return 0
+    command = [
+        sys.executable,
+        "-m",
+        "train.0030_dragapult_shared_encoder_decoder_rl",
+        "benchmark",
+        *sys.argv[1:],
+    ]
+    os.execv(sys.executable, command)
+    raise AssertionError("os.execv returned unexpectedly")
 
 
 if __name__ == "__main__":

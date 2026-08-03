@@ -1,7 +1,14 @@
-"""Official-engine focal-vs-Frozen rollout collection."""
+"""Official-engine rollout protocol with a Torch-light worker import path."""
 
-from .collector import HeterogeneousRolloutCollector
 from .protocol import EpisodeTrajectory, RolloutJob, TrajectoryDecision
+
+
+def __getattr__(name: str):
+    if name == "HeterogeneousRolloutCollector":
+        from .collector import HeterogeneousRolloutCollector
+
+        return HeterogeneousRolloutCollector
+    raise AttributeError(name)
 
 __all__ = [
     "EpisodeTrajectory",

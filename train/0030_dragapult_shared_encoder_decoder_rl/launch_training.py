@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--seed", type=int, default=20260802)
     parser.add_argument("--eval-every", type=int, default=5)
+    parser.add_argument("--initialization-checkpoint")
     parser.add_argument("--interval-seconds", type=float, default=60)
     args = parser.parse_args()
     assert_fresh_version(args.version)
@@ -39,6 +40,8 @@ def main() -> int:
         "--eval-every", str(args.eval_every),
         "--wandb-mode", "online",
     ]
+    if args.initialization_checkpoint is not None:
+        command.extend(["--initialization-checkpoint", args.initialization_checkpoint])
     with log_path.open("w", encoding="utf-8") as log:
         child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, text=True)
         watchdog = Namespace(

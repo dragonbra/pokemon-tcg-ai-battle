@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 import unittest
+from tempfile import TemporaryDirectory
 from pathlib import Path
 
 import torch
 from torch.distributions import Categorical
 
 from .. import FOCAL_DECK_ID
-from ..checkpoint import FORBIDDEN_FIELDS, _validate
+from ..checkpoint import FORBIDDEN_FIELDS, _validate, load_model_checkpoint, save_model_checkpoint
 from ..foundation import verify_foundation
 from ..league import load_frozen_catalog
 from ..policy import load_actor_critic
 from ..policy.action_distribution import cached_features, evaluate_actions_encoded
 from ..foundation.contracts.fields import WIDTHS
-from ..training.run import build_jobs
+from ..training.run import RunConfig, build_jobs
 
 
 class ProjectContractTest(unittest.TestCase):
@@ -39,6 +40,37 @@ class ProjectContractTest(unittest.TestCase):
         for forbidden in FORBIDDEN_FIELDS:
             with self.assertRaises(ValueError):
                 _validate({forbidden: torch.tensor(0)})
+
+    def test_run_config_rejects_missing_initialization_checkpoint(self):
+        config = RunConfig(
+            version="V999_missing_checkpoint",
+            initialization_checkpoint="/definitely/missing/update-0005.pt",
+        )
+        with self.assertRaises(FileNotFoundError):
+            config.validate()
+
+    def test_model_only_checkpoint_initializes_fresh_model(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "update-0005.pt"
+            first_parameter = next(self.model.actor.action_decoder.parameters())
+            original = first_parameter.detach().clone()
+            with torch.no_grad():
+                first_parameter.add_(0.001)
+            try:
+                expected_decoder = self.model.decoder_sha256()
+                expected_representation = self.model.representation_sha256()
+                expected_file = save_model_checkpoint(
+                    path, self.model, policy_version="V2_test", update=5
+                )
+            finally:
+                with torch.no_grad():
+                    first_parameter.copy_(original)
+            fresh, _, _ = load_actor_critic("cpu")
+            identity = load_model_checkpoint(path, fresh)
+            self.assertEqual(identity["checkpoint_sha256"], expected_file)
+            self.assertEqual(identity["update"], 5)
+            self.assertEqual(fresh.decoder_sha256(), expected_decoder)
+            self.assertEqual(fresh.representation_sha256(), expected_representation)
 
     def test_cached_decoder_matches_full_representation_path(self):
         b, c, r, e, o, s, f = 2, 3, 4, 2, 5, 3, 4

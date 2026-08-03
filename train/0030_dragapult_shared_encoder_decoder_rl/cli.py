@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 
+from .benchmark import run as run_benchmark
 from .smoke import run_smoke
 from .training.run import RunConfig, run, run_smoke_gate
 
@@ -16,6 +18,16 @@ def main() -> int:
     smoke.add_argument("--games", type=int, default=4)
     smoke.add_argument("--workers", type=int, default=2)
     smoke.add_argument("--device", default="cuda:0")
+    benchmark = commands.add_parser("benchmark")
+    benchmark.add_argument("--games", type=int, default=16)
+    benchmark.add_argument("--workers", type=int, default=8)
+    benchmark.add_argument("--device", default="cuda:0")
+    benchmark.add_argument("--initialization-checkpoint", type=Path)
+    benchmark.add_argument(
+        "--output",
+        type=Path,
+        default=Path(".tmp/evaluation/0030_performance/performance_gate.json"),
+    )
     smoke_update = commands.add_parser("smoke-update")
     smoke_update.add_argument("--version", required=True)
     smoke_update.add_argument("--games", type=int, default=4)
@@ -30,9 +42,18 @@ def main() -> int:
     train.add_argument("--seed", type=int, default=20260802)
     train.add_argument("--eval-every", type=int, default=5)
     train.add_argument("--wandb-mode", choices=("disabled", "offline", "online"), default="online")
+    train.add_argument("--initialization-checkpoint")
     args = parser.parse_args()
     if args.command == "smoke":
         result = run_smoke(games=args.games, workers=args.workers, device=args.device)
+    elif args.command == "benchmark":
+        result = run_benchmark(
+            games=args.games,
+            workers=args.workers,
+            device_name=args.device,
+            output=args.output,
+            initialization_checkpoint=args.initialization_checkpoint,
+        )
     elif args.command == "smoke-update":
         result = run_smoke_gate(
             version=args.version, games=args.games,
@@ -44,6 +65,7 @@ def main() -> int:
             games_per_update=args.games_per_update, workers=args.workers,
             device=args.device, seed=args.seed, eval_every=args.eval_every,
             wandb_mode=args.wandb_mode,
+            initialization_checkpoint=args.initialization_checkpoint,
         ))
     print(json.dumps(result, indent=2, sort_keys=True))
     return 0
