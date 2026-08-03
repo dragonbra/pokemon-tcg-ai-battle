@@ -1,0 +1,13 @@
+{
+  "opponent": "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\archive\\agent_pure_lucario_v1_bc512_e4_probe",
+  "games": 20,
+  "wins": 7,
+  "losses": 13,
+  "draws": 0,
+  "errors": 0,
+  "maxed": 0,
+  "raw_decisions": 1996,
+  "corrected_decisions": 0,
+  "categories": {},
+  "runtime_fallbacks": 0
+}

@@ -1,0 +1,19 @@
+{
+  "candidate": "D:\\Users\\admin\\Desktop\\pokemon\\.tmp\\0027_v3_eval_agents\\0027_v3_dragapult",
+  "opponents": [
+    "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\archive\\agent_pure_lucario_v1_bc512_e4_probe",
+    "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_cynthia_core_meanpool_epochmix_v1_c7b3253f_20260727",
+    "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_kangaskhan_crustle_core_meanpool_epochmix_v2_e510e4d4_20260728",
+    "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_marnie_prize_control_v4_3121746f_20260728",
+    "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_yushin_idonly_bc_v1_20260723",
+    "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\dragapult_large_data_decoder_2layer"
+  ],
+  "games": 120,
+  "raw_decisions": 13877,
+  "corrected_decisions": 0,
+  "correction_rate": 0.0,
+  "categories": {},
+  "runtime_fallbacks": 0,
+  "examples": [],
+  "elapsed_sec": 1609.241
+}

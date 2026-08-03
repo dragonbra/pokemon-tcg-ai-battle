@@ -1,0 +1,13 @@
+{
+  "opponent": "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_yushin_idonly_bc_v1_20260723",
+  "games": 20,
+  "wins": 6,
+  "losses": 14,
+  "draws": 0,
+  "errors": 0,
+  "maxed": 0,
+  "raw_decisions": 1217,
+  "corrected_decisions": 0,
+  "categories": {},
+  "runtime_fallbacks": 0
+}

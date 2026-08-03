@@ -1,0 +1,56 @@
+{
+  "schema_version": "0027_local_bc_pool_evaluation_v1",
+  "status": "complete",
+  "formal_promotion_gate": false,
+  "games_per_matchup": 20,
+  "candidate_player_index_balanced_per_matchup": true,
+  "opponents": [
+    "pure_lucario_bc512_e4",
+    "cynthia_core_meanpool_epochmix_v1",
+    "kangaskhan_crustle_meanpool_epochmix_v2",
+    "marnie_prize_control_v4",
+    "yushin_alakazam_idonly_bc_v1",
+    "dragapult_large_data_decoder_2layer"
+  ],
+  "candidates": {
+    "dragapult": {
+      "games": 120,
+      "wins": 59,
+      "losses": 61,
+      "win_rate": 0.491667,
+      "errors": 0,
+      "draws": 0,
+      "max_steps": 0,
+      "corrected_actions": 0,
+      "runtime_fallbacks": 0,
+      "matchups": {
+        "pure_lucario_bc512_e4": {"wins": 7, "losses": 13},
+        "cynthia_core_meanpool_epochmix_v1": {"wins": 11, "losses": 9},
+        "kangaskhan_crustle_meanpool_epochmix_v2": {"wins": 9, "losses": 11},
+        "marnie_prize_control_v4": {"wins": 6, "losses": 14},
+        "yushin_alakazam_idonly_bc_v1": {"wins": 10, "losses": 10},
+        "dragapult_large_data_decoder_2layer": {"wins": 16, "losses": 4}
+      }
+    },
+    "raging_bolt": {
+      "games": 120,
+      "wins": 27,
+      "losses": 93,
+      "win_rate": 0.225,
+      "errors": 0,
+      "draws": 0,
+      "max_steps": 0,
+      "corrected_actions": 0,
+      "runtime_fallbacks": 0,
+      "matchups": {
+        "pure_lucario_bc512_e4": {"wins": 3, "losses": 17},
+        "cynthia_core_meanpool_epochmix_v1": {"wins": 5, "losses": 15},
+        "kangaskhan_crustle_meanpool_epochmix_v2": {"wins": 0, "losses": 20},
+        "marnie_prize_control_v4": {"wins": 2, "losses": 18},
+        "yushin_alakazam_idonly_bc_v1": {"wins": 6, "losses": 14},
+        "dragapult_large_data_decoder_2layer": {"wins": 11, "losses": 9}
+      }
+    }
+  },
+  "evidence_boundary": "Unseeded local official-runtime research matches; not a formal promotion gate"
+}

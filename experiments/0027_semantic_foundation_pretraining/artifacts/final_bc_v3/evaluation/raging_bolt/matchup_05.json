@@ -1,0 +1,13 @@
+{
+  "opponent": "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\dragapult_large_data_decoder_2layer",
+  "games": 20,
+  "wins": 11,
+  "losses": 9,
+  "draws": 0,
+  "errors": 0,
+  "maxed": 0,
+  "raw_decisions": 1427,
+  "corrected_decisions": 0,
+  "categories": {},
+  "runtime_fallbacks": 0
+}

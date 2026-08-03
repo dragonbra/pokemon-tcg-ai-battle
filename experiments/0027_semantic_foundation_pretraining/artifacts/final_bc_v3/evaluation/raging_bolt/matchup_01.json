@@ -1,0 +1,13 @@
+{
+  "opponent": "D:\\Users\\admin\\Desktop\\pokemon\\bc_models\\agent_cynthia_core_meanpool_epochmix_v1_c7b3253f_20260727",
+  "games": 20,
+  "wins": 5,
+  "losses": 15,
+  "draws": 0,
+  "errors": 0,
+  "maxed": 0,
+  "raw_decisions": 1487,
+  "corrected_decisions": 0,
+  "categories": {},
+  "runtime_fallbacks": 0
+}
