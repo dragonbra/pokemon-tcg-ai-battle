@@ -1,5 +1,14 @@
 # 0030 experiment decisions
 
+## 2026-08-04: V3 update 5 independent Frozen 0019 package evaluation
+
+- Exported `evaluation/arena/candidates/0030_dragapult_ex_001_v3_update5` from model-only checkpoint `15fd16529e55ba673a4f4e282181940d63b9ae0a9011af9a8053cb43b8a8baf0`. The self-contained actor package embeds decoder hash `bb28e23748c7493db21f1b5e6f12392834bed5536ff16892280e7e8fd4daa466` and exported model hash `81ef9630a52a211fd6985b3cef19b578c924ef52bcf38151ed09444fb910e2b1`.
+- Standard package validation passed: exact 60-card `dragapult_ex_001`, compatible official `cg` tree, no symlinks, bytecode or optimizer state.
+- An independent local evaluation used the standard 51-deck Frozen 0019 catalog, 10 games per deck, balanced seats, two persistent GPU inference services and isolated official-engine workers. It completed 510/510 games with zero errors or unfinished games.
+- Result: 294-216 (57.65%); focal-first 155-100 (60.78%); focal-second 139-116 (54.51%). The approximate 95% binomial interval is 53.3%-61.9%.
+- The independent estimate supports a real above-50% checkpoint but is 3.13 points below the training-time 102-game frozen snapshot (60.78%). Treat the 102-game value as a noisy checkpoint-selection signal; the current larger-sample strength estimate is approximately 57%-58%.
+- Local report: `.tmp/evaluation/0030_update5_independent_frozen0019/run-b53bdf32b8734ab5b80333d413b1cce4/report.html`. This diagnostic ran concurrently with V3 training and did not replace either frozen evaluation namespace.
+
 ## 2026-08-04: 0019 and 0028 both enter the training opponent pool
 
 - Every PPO update uses the same 51 exact frozen decks under two immutable shared-policy foundations: legacy 0019 Epoch-13 and semantic 0028.
