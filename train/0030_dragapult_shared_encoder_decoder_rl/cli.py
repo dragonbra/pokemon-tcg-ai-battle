@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .benchmark import run as run_benchmark
+from .benchmark import run as run_benchmark, run_dual_evaluation
 from .smoke import run_smoke
 from .training.run import RunConfig, run, run_smoke_gate
 
@@ -18,15 +18,33 @@ def main() -> int:
     smoke.add_argument("--games", type=int, default=4)
     smoke.add_argument("--workers", type=int, default=2)
     smoke.add_argument("--device", default="cuda:0")
+    smoke.add_argument(
+        "--opponent-foundation", choices=("0019", "0028", "mixed"), default="0028"
+    )
     benchmark = commands.add_parser("benchmark")
     benchmark.add_argument("--games", type=int, default=16)
     benchmark.add_argument("--workers", type=int, default=8)
     benchmark.add_argument("--device", default="cuda:0")
     benchmark.add_argument("--initialization-checkpoint", type=Path)
     benchmark.add_argument(
+        "--opponent-foundation",
+        choices=("0019", "0028", "mixed"),
+        default="mixed",
+    )
+    benchmark.add_argument(
         "--output",
         type=Path,
         default=Path(".tmp/evaluation/0030_performance/performance_gate.json"),
+    )
+    dual_eval = commands.add_parser("dual-eval")
+    dual_eval.add_argument("--initialization-checkpoint", type=Path, required=True)
+    dual_eval.add_argument("--workers", type=int, default=128)
+    dual_eval.add_argument("--device", default="cuda:0")
+    dual_eval.add_argument("--seed", type=int, default=20260804)
+    dual_eval.add_argument(
+        "--output",
+        type=Path,
+        default=Path(".tmp/evaluation/0030_dual_foundation_smoke/result.json"),
     )
     smoke_update = commands.add_parser("smoke-update")
     smoke_update.add_argument("--version", required=True)
@@ -45,7 +63,12 @@ def main() -> int:
     train.add_argument("--initialization-checkpoint")
     args = parser.parse_args()
     if args.command == "smoke":
-        result = run_smoke(games=args.games, workers=args.workers, device=args.device)
+        result = run_smoke(
+            games=args.games,
+            workers=args.workers,
+            device=args.device,
+            opponent_foundation=args.opponent_foundation,
+        )
     elif args.command == "benchmark":
         result = run_benchmark(
             games=args.games,
@@ -53,6 +76,15 @@ def main() -> int:
             device_name=args.device,
             output=args.output,
             initialization_checkpoint=args.initialization_checkpoint,
+            opponent_foundation=args.opponent_foundation,
+        )
+    elif args.command == "dual-eval":
+        result = run_dual_evaluation(
+            initialization_checkpoint=args.initialization_checkpoint,
+            workers=args.workers,
+            device_name=args.device,
+            seed=args.seed,
+            output=args.output,
         )
     elif args.command == "smoke-update":
         result = run_smoke_gate(

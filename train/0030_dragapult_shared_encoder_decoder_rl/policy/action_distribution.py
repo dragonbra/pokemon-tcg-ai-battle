@@ -83,7 +83,27 @@ def _sample(head: DecoderPolicyHead, batch: DecoderBatch, summary: Tensor, optio
         raise RuntimeError("sampled action violated min_count")
     if values is None:
         values = torch.zeros(batch.batch_size, device=options.device)
-    return [SampledAction(tuple(int(v) for v in sequences[i, :lengths[i]].tolist()), bool(stopped[i]), float(log_prob[i]), float(entropy[i]), float(values[i])) for i in range(batch.batch_size)]
+    # One device-to-host transfer per tensor avoids synchronizing CUDA once per
+    # field and per row when a large rollout batch is decoded.
+    host_sequences = sequences.detach().cpu()
+    host_lengths = lengths.detach().cpu()
+    host_stopped = stopped.detach().cpu()
+    host_log_prob = log_prob.detach().cpu()
+    host_entropy = entropy.detach().cpu()
+    host_values = values.detach().cpu()
+    return [
+        SampledAction(
+            tuple(
+                int(value)
+                for value in host_sequences[index, : host_lengths[index]].tolist()
+            ),
+            bool(host_stopped[index]),
+            float(host_log_prob[index]),
+            float(host_entropy[index]),
+            float(host_values[index]),
+        )
+        for index in range(batch.batch_size)
+    ]
 
 
 def infer_actions(model: SemanticActorCritic, batch, summary: Tensor, options: Tensor, *, focal: Tensor, greedy: bool) -> list[SampledAction]:

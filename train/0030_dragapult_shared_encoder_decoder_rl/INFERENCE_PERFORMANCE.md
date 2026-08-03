@@ -12,13 +12,13 @@ The relevant 0023 V6 baseline completed 512-game update intervals in roughly 408
 
 1. Every engine game still has an isolated spawned process. Causal state remains per actor and per game.
 2. Ready focal and opponent observations are CPU-compiled together and collated once.
-3. One 0028 model instance precomputes immutable official prototype embeddings once, then runs state and option encoding once for each combined GPU batch.
-4. A boolean route selects either the live focal decoder or one shared immutable opponent decoder. Opponents always decode greedily; the focal decoder samples during rollout and is greedy during frozen evaluation.
+3. The parent keeps both immutable foundations on one GPU: the legacy 0019 Epoch-13 actor and the 0028 semantic actor. Each foundation owns one shared encoder/decoder service for every exact deck routed to it; no per-deck model copies exist.
+4. Focal observations always use the current 0028 representation and live decoder/value. Opponent observations route by job to either the frozen 0019 actor or the frozen 0028 representation and opponent decoder. Opponents always decode greedily; the focal decoder samples during rollout and is greedy during frozen evaluation.
 5. Focal trajectories store only `summary`, contextual `options`, `option_mask`, `min_count`, and `max_count`, plus action/value scalars. Option tensors are cropped to each decision's real option count and the two floating caches use CPU fp16; PPO casts them back to fp32 before the decoder. No raw semantic batch or cross-row padding is retained.
 6. PPO epochs reuse those cached decoder inputs. A fail-closed benchmark monkey-patches `actor.encode` to raise if PPO attempts representation work.
 7. The rollout package exports the collector lazily. Spawned official-engine workers load protocol and `libcg` only; importing a worker is tested to leave Torch absent from `sys.modules`.
 
-There are therefore two decoder copies on GPU: the focal live decoder and one frozen decoder shared by all 51 opponent identities. There are not 51 opponent models or decoder copies. The much larger representation stack exists once.
+There are two frozen opponent services on GPU, not 102 model copies: one 0019 actor shared by its 51 exact-deck identities and one 0028 representation/opponent decoder shared by the same 51 decks. The current 0028 focal decoder/value is the only trainable route.
 
 ## Measured gates on RTX 5080
 
@@ -56,13 +56,23 @@ All V3 calibrations used the V2 update-5 model-only checkpoint (`7065bdd8fa49472
 
 None of the runs increased swap. The formal V3 setting is therefore 128 workers. Its 2.384 games/s gate is about 76% faster than V2 update 1's 1.355 games/s, though the first complete 512-game V3 update remains the production throughput confirmation.
 
+## Dual-foundation training contract
+
+Every 512-game PPO update contains 256 games against 0019 and 256 against 0028. Within each foundation the focal policy is first in 128 games and second in 128 games, and both foundations serve the same 51 exact decks. The schedule therefore exposes 102 `(foundation, exact deck)` opponent identities while retaining a single fixed catalog.
+
+Every fifth update runs two separate fixed-seed greedy evaluations: 102 games under `eval/foundation_0019/*` and 102 under `eval/foundation_0028/*`. The rates are never combined. The 0019 rate is the checkpoint-selection anchor for controlled comparison with 0022; 0028 is recorded independently as the current-foundation diagnostic.
+
+The accepted V2 update-5 branch point scored 55-47 (53.92%) against 0019 and 61-41 (59.80%) against 0028 in the 204-game dual-foundation baseline. Both suites completed on one GPU with zero errors in 83.20 seconds and about 0.53 GiB CUDA peak allocation.
+
+The final pre-launch 512-game dual-foundation gate, using the V2 update-5 checkpoint and 128 workers, completed 512/512 valid games in 195.14 seconds (`2.624 games/s`). It routed 256 games to each foundation, with 0 worker Torch/CUDA mappings, no swap growth, 1.06 GiB CUDA peak allocation, and 0 encoder calls during cached PPO. This is 2.3% faster than the recorded 0022 `2.565 games/s` update throughput and 17.8% faster than the unoptimized dual-foundation path (`2.228 games/s`). The result is the production V3 worker/concurrency gate.
+
 ## Do not regress these properties
 
 - Do not move feature compilation into engine workers unless causal state equivalence and serialization overhead are re-benchmarked.
 - Do not cache across decisions or games. Only reuse a decision's immutable summary/options within its PPO update.
 - Never retain the unified batch's padded option width in individual trajectories. Crop with the row's true `option_mask` count before moving to CPU.
 - Do not call the representation encoder from PPO minibatches.
-- Do not instantiate one opponent model or decoder per deck.
+- Do not instantiate one opponent model or decoder per deck. Keep exactly one shared frozen service per foundation.
 - Do not call `prototype_encoder.encode_all()` per inference batch. The decoder-only contract makes this memory immutable; prepare it once on GPU.
 - Do not train the opponent decoder, prototype encoder, state encoder, or option encoder.
 - Do not mix sampled rollout win rate with frozen greedy checkpoint evaluation.

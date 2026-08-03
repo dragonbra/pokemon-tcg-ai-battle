@@ -11,6 +11,7 @@ import torch
 
 from . import FOCAL_DECK_ID
 from .league import load_frozen_catalog
+from .legacy_foundation import LegacyFoundationService
 from .policy import load_actor_critic
 from .rollout import HeterogeneousRolloutCollector, RolloutJob
 
@@ -22,7 +23,9 @@ def runtime_root() -> Path:
     return roots[0].parents[1].resolve()
 
 
-def smoke_jobs(count: int, *, seed: int = 22022) -> list[RolloutJob]:
+def smoke_jobs(
+    count: int, *, seed: int = 22022, opponent_foundation: str = "0028"
+) -> list[RolloutJob]:
     if count < 2:
         raise ValueError("smoke count must be at least two")
     catalog = load_frozen_catalog()
@@ -33,6 +36,11 @@ def smoke_jobs(count: int, *, seed: int = 22022) -> list[RolloutJob]:
         RolloutJob(
             game_id=f"smoke-{index:04d}",
             opponent_id=opponents[(index // 2) % len(opponents)].deck_id,
+            opponent_foundation=(
+                ("0019", "0028")[(index // 2) % 2]
+                if opponent_foundation == "mixed"
+                else opponent_foundation
+            ),
             focal_first=index % 2 == 0,
             seed=seed + index,
             source_policy_update=0,
@@ -44,13 +52,31 @@ def smoke_jobs(count: int, *, seed: int = 22022) -> list[RolloutJob]:
     ]
 
 
-def run_smoke(*, games: int = 4, workers: int = 2, device: str = "cuda:0") -> dict[str, object]:
+def run_smoke(
+    *,
+    games: int = 4,
+    workers: int = 2,
+    device: str = "cuda:0",
+    opponent_foundation: str = "0028",
+) -> dict[str, object]:
     model, _, identity = load_actor_critic(device)
+    legacy_service = (
+        LegacyFoundationService(torch.device(device))
+        if opponent_foundation in {"0019", "mixed"}
+        else None
+    )
     collector = HeterogeneousRolloutCollector(
-        model, device=torch.device(device), workers=workers, mode="sample"
+        model,
+        device=torch.device(device),
+        workers=workers,
+        mode="sample",
+        opponent_foundation=opponent_foundation,
+        legacy_service=legacy_service,
     )
     started = time.perf_counter()
-    episodes = collector.collect(smoke_jobs(games))
+    episodes = collector.collect(
+        smoke_jobs(games, opponent_foundation=opponent_foundation)
+    )
     wall = time.perf_counter() - started
     errors = [episode.error for episode in episodes if not episode.valid]
     result = {
@@ -64,6 +90,7 @@ def run_smoke(*, games: int = 4, workers: int = 2, device: str = "cuda:0") -> di
         "wall_seconds": wall,
         "initial_checkpoint_sha256": identity.checkpoint_sha256,
         "representation_sha256": model.representation_sha256(),
+        "opponent_foundation": opponent_foundation,
         **collector.metrics(),
     }
     if errors or result["valid"] != games:
@@ -76,8 +103,16 @@ def main() -> int:
     parser.add_argument("--games", type=int, default=4)
     parser.add_argument("--workers", type=int, default=2)
     parser.add_argument("--device", default="cuda:0")
+    parser.add_argument(
+        "--opponent-foundation", choices=("0019", "0028", "mixed"), default="0028"
+    )
     args = parser.parse_args()
-    print(json.dumps(run_smoke(games=args.games, workers=args.workers, device=args.device), indent=2, sort_keys=True))
+    print(json.dumps(run_smoke(
+        games=args.games,
+        workers=args.workers,
+        device=args.device,
+        opponent_foundation=args.opponent_foundation,
+    ), indent=2, sort_keys=True))
     return 0
 
 

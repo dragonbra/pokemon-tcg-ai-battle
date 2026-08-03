@@ -1,4 +1,4 @@
-"""Versioned decoder-only PPO training against the Frozen 0019 league."""
+"""Versioned decoder-only PPO training against frozen 0019 and 0028 suites."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from rl_environment.logging import TrainingLogger
 from .. import FOCAL_DECK_ID, PROJECT_ID
 from ..checkpoint import load_model_checkpoint, save_model_checkpoint
 from ..league import load_frozen_catalog
+from ..legacy_foundation import LegacyFoundationService, verify_legacy_foundation
 from ..policy import load_actor_critic
 from ..rollout import HeterogeneousRolloutCollector, RolloutJob
 from ..smoke import runtime_root, smoke_jobs
@@ -49,6 +50,10 @@ class RunConfig:
             raise ValueError("version must be a V<n>_<tag> directory name")
         if min(self.updates, self.games_per_update, self.workers) < 1:
             raise ValueError("updates, games_per_update, and workers must be positive")
+        if self.games_per_update < 204 or self.games_per_update % 4:
+            raise ValueError(
+                "mixed 102-identity training requires at least 204 games and a multiple of 4"
+            )
         if self.eval_every < 1 or self.eval_games != 102:
             raise ValueError("frozen evaluation contract is exactly 102 games")
         if self.checkpoint_retention < 2:
@@ -109,35 +114,60 @@ def assert_fresh_version(version: str) -> dict[str, Path]:
 
 
 def build_jobs(
-    *, count: int, source_policy_update: int, seed: int, greedy_eval: bool = False
+    *,
+    count: int,
+    source_policy_update: int,
+    seed: int,
+    greedy_eval: bool = False,
+    opponent_foundations: tuple[str, ...] = ("0019", "0028"),
 ) -> list[RolloutJob]:
     catalog = load_frozen_catalog()
     focal = next(item for item in catalog if item.deck_id == FOCAL_DECK_ID)
-    if count < 2 * len(catalog):
+    if (
+        not opponent_foundations
+        or len(set(opponent_foundations)) != len(opponent_foundations)
+        or set(opponent_foundations) - {"0019", "0028"}
+    ):
+        raise ValueError("opponent foundations must be unique 0019/0028 identities")
+    minimum = 2 * len(catalog) * len(opponent_foundations)
+    if count < minimum:
         raise ValueError("a league schedule must cover every opponent in both seats")
-    if greedy_eval and count != 2 * len(catalog):
-        raise ValueError("greedy evaluation must be one game per opponent and seat")
+    if greedy_eval and (
+        len(opponent_foundations) != 1 or count != 2 * len(catalog)
+    ):
+        raise ValueError(
+            "greedy evaluation must select one foundation and one game per deck/seat"
+        )
     root = runtime_root()
     jobs: list[RolloutJob] = []
     cycle = 0
     while len(jobs) < count:
         rotated = list(catalog[cycle % len(catalog) :]) + list(catalog[: cycle % len(catalog)])
         for opponent in rotated:
-            for focal_first in (True, False):
+            for foundation in opponent_foundations:
+                for focal_first in (True, False):
+                    if len(jobs) >= count:
+                        break
+                    index = len(jobs)
+                    job_seed = (
+                        seed + index
+                        if greedy_eval
+                        else seed + source_policy_update * 1_000_003 + index
+                    )
+                    jobs.append(RolloutJob(
+                        game_id=("eval" if greedy_eval else "rollout")
+                        + f"-{foundation}-u{source_policy_update:04d}-{index:04d}",
+                        opponent_id=opponent.deck_id,
+                        opponent_foundation=foundation,
+                        focal_first=focal_first,
+                        seed=job_seed,
+                        source_policy_update=source_policy_update,
+                        focal_deck=focal.deck,
+                        opponent_deck=opponent.deck,
+                        runtime_root=root,
+                    ))
                 if len(jobs) >= count:
                     break
-                index = len(jobs)
-                jobs.append(RolloutJob(
-                    game_id=("eval" if greedy_eval else "rollout")
-                    + f"-u{source_policy_update:04d}-{index:04d}",
-                    opponent_id=opponent.deck_id,
-                    focal_first=focal_first,
-                    seed=seed + source_policy_update * 1_000_003 + index,
-                    source_policy_update=source_policy_update,
-                    focal_deck=focal.deck,
-                    opponent_deck=opponent.deck,
-                    runtime_root=root,
-                ))
             if len(jobs) >= count:
                 break
         cycle += 1
@@ -196,22 +226,56 @@ def _retain_checkpoints(directory: Path, limit: int, protected: set[Path]) -> No
         checkpoints.remove(victim)
 
 
-def _evaluate(model: Any, config: RunConfig, update: int) -> tuple[dict[str, float], float]:
-    collector = HeterogeneousRolloutCollector(
-        model, device=torch.device(config.device), workers=config.workers, mode="greedy"
+def _eval_collector_metrics(
+    collector: HeterogeneousRolloutCollector, prefix: str
+) -> dict[str, float]:
+    output: dict[str, float] = {}
+    for key, value in collector.metrics().items():
+        _, separator, suffix = key.partition("/")
+        if not separator:
+            raise ValueError(f"collector metric has no namespace: {key}")
+        output[f"{prefix}/{suffix}"] = value
+    return output
+
+
+def _evaluate_dual(
+    model: Any,
+    config: RunConfig,
+    update: int,
+    legacy_service: LegacyFoundationService,
+) -> tuple[dict[str, float], float]:
+    metrics: dict[str, float] = {"eval/checkpoint_update": float(update)}
+    for foundation in ("0019", "0028"):
+        jobs = build_jobs(
+            count=config.eval_games,
+            source_policy_update=update,
+            seed=config.seed + 70_000_000,
+            greedy_eval=True,
+            opponent_foundations=(foundation,),
+        )
+        prefix = f"eval/foundation_{foundation}"
+        collector = HeterogeneousRolloutCollector(
+            model,
+            device=torch.device(config.device),
+            workers=config.workers,
+            mode="greedy",
+            opponent_foundation=foundation,
+            legacy_service=legacy_service if foundation == "0019" else None,
+        )
+        started = time.perf_counter()
+        episodes = collector.collect(jobs)
+        metrics.update(_episode_metrics(episodes, prefix))
+        metrics.update(_eval_collector_metrics(collector, prefix))
+        metrics[f"{prefix}/checkpoint_update"] = float(update)
+        metrics[f"{prefix}/wall_seconds"] = time.perf_counter() - started
+    return metrics, metrics["eval/foundation_0019/win_rate"]
+
+
+def _eval_decisions(metrics: dict[str, float]) -> int:
+    return sum(
+        int(metrics[f"eval/foundation_{foundation}/decisions"])
+        for foundation in ("0019", "0028")
     )
-    started = time.perf_counter()
-    episodes = collector.collect(build_jobs(
-        count=config.eval_games,
-        source_policy_update=update,
-        seed=config.seed + 70_000_000,
-        greedy_eval=True,
-    ))
-    metrics = _episode_metrics(episodes, "eval")
-    metrics.update(collector.metrics())
-    metrics["eval/checkpoint_update"] = float(update)
-    metrics["eval/wall_seconds"] = time.perf_counter() - started
-    return metrics, metrics["eval/win_rate"]
 
 
 def run(config: RunConfig) -> dict[str, Any]:
@@ -229,21 +293,30 @@ def run(config: RunConfig) -> dict[str, Any]:
         "WANDB_ENTITY": "dragon_bra",
         "WANDB_PROJECT": "pokemon-tcg-policy-learning",
         "WANDB_JOB_TYPE": "ppo_decoder_only",
-        "WANDB_TAGS": "0030,dragapult,shared_encoder,cached_decoder,official_engine,frozen_0019",
+        "WANDB_TAGS": "0030,dragapult,shared_encoder,cached_decoder,official_engine,frozen_0019,frozen_0028",
         "WANDB_DIR": str(paths["wandb"].resolve()),
     })
+    legacy_identity = verify_legacy_foundation()
     config_payload = {
-        "schema_version": "0030_shared_encoder_decoder_ppo_run_v1",
+        "schema_version": "0030_shared_encoder_decoder_ppo_run_v3_dual_foundation_training",
         "project_id": PROJECT_ID,
         **asdict(config),
-        "opponent_count": 51,
+        "exact_deck_count": 51,
         "trainable_contract": ["actor.action_decoder.*", "value_head.*"],
         "reward": "official_engine_terminal_minus_one_zero_plus_one",
         "checkpoint_payload": "model_only_action_decoder_and_value_head",
-        "opponent_policy": "one_shared_immutable_0028_decoder",
+        "opponent_policy": (
+            "equal_weight_0019_and_0028_shared_immutable_foundations"
+        ),
+        "training_opponent_identities": 102,
+        "training_games_per_foundation": config.games_per_update // 2,
         "representation_cache": "per_decision_summary_options_no_ppo_reencode",
+        "evaluation_foundations": {
+            "checkpoint_selection": "0019",
+            "legacy_0019": legacy_identity.as_dict(),
+            "semantic_0028_checkpoint_sha256": None,
+        },
     }
-    _atomic_json(paths["config"], config_payload)
     _status(paths["status"], {"state": "initializing", "version": config.version})
     model, _, identity = load_actor_critic(device)
     initialization_identity = None
@@ -251,6 +324,11 @@ def run(config: RunConfig) -> dict[str, Any]:
         initialization_identity = load_model_checkpoint(
             Path(config.initialization_checkpoint), model
         )
+    config_payload["evaluation_foundations"]["semantic_0028_checkpoint_sha256"] = (
+        identity.checkpoint_sha256
+    )
+    _atomic_json(paths["config"], config_payload)
+    legacy_service = LegacyFoundationService(device)
     trainer = PPOTrainer(model, device=device, config=config.ppo)
     representation_sha = model.representation_sha256()
     initial_decoder_sha = model.decoder_sha256()
@@ -271,13 +349,16 @@ def run(config: RunConfig) -> dict[str, Any]:
         "initial_decoder_sha256": initial_decoder_sha,
         "initial_checkpoint_sha256": identity.checkpoint_sha256,
         "initialization_model_checkpoint": initialization_identity,
+        "legacy_evaluation_foundation": legacy_identity.as_dict(),
         "model_checkpoint_update_0_sha256": initial_checkpoint_sha,
         "wandb": {"state": config.wandb_mode},
     })
     try:
         with TrainingLogger(paths["metrics"], paths["tensorboard"]) as logger:
-            eval_metrics, best_eval = _evaluate(model, config, 0)
-            eval_decisions = int(eval_metrics["eval/decisions"])
+            eval_metrics, best_eval = _evaluate_dual(
+                model, config, 0, legacy_service
+            )
+            eval_decisions = _eval_decisions(eval_metrics)
             logger.log(0, {
                 "trainer/update": 0,
                 "env/episodes": 0,
@@ -290,7 +371,12 @@ def run(config: RunConfig) -> dict[str, Any]:
             for update in range(1, config.updates + 1):
                 source_update = update - 1
                 collector = HeterogeneousRolloutCollector(
-                    model, device=device, workers=config.workers, mode="sample"
+                    model,
+                    device=device,
+                    workers=config.workers,
+                    mode="sample",
+                    opponent_foundation="mixed",
+                    legacy_service=legacy_service,
                 )
                 rollout_started = time.perf_counter()
                 episodes = collector.collect(build_jobs(
@@ -299,6 +385,16 @@ def run(config: RunConfig) -> dict[str, Any]:
                     seed=config.seed,
                 ))
                 rollout_metrics = _episode_metrics(episodes, "rollout")
+                for foundation in ("0019", "0028"):
+                    foundation_episodes = [
+                        episode
+                        for episode in episodes
+                        if episode.job.opponent_foundation == foundation
+                    ]
+                    rollout_metrics.update(_episode_metrics(
+                        foundation_episodes,
+                        f"rollout/foundation_{foundation}",
+                    ))
                 rollout_metrics.update(collector.metrics())
                 rollout_metrics["rollout/wall_seconds"] = time.perf_counter() - rollout_started
                 cumulative_episodes += len(episodes)
@@ -326,8 +422,10 @@ def run(config: RunConfig) -> dict[str, Any]:
                     **_system_metrics(device),
                 }
                 if update % config.eval_every == 0 or update == config.updates:
-                    eval_metrics, eval_score = _evaluate(model, config, update)
-                    eval_decisions += int(eval_metrics["eval/decisions"])
+                    eval_metrics, eval_score = _evaluate_dual(
+                        model, config, update, legacy_service
+                    )
+                    eval_decisions += _eval_decisions(eval_metrics)
                     metrics.update(eval_metrics)
                     if eval_score > best_eval:
                         best_eval = eval_score
@@ -341,6 +439,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "completed_update": update, "source_policy_update": source_update,
                     "checkpoint_update": update, "best_eval_update": best_update,
                     "best_eval_win_rate": best_eval,
+                    "best_eval_foundation": "0019",
                     "representation_sha256": representation_sha,
                     "decoder_sha256": model.decoder_sha256(),
                     "elapsed_seconds": time.time() - started,
@@ -351,6 +450,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "rollout_decisions": cumulative_decisions,
             "eval_decisions": eval_decisions,
             "best_eval_update": best_update, "best_eval_win_rate": best_eval,
+            "best_eval_foundation": "0019",
             "best_checkpoint": str(best_path),
             "representation_sha256": representation_sha,
             "representation_unchanged": model.representation_sha256() == representation_sha,

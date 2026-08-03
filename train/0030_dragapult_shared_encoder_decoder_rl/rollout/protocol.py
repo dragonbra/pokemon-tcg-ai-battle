@@ -16,6 +16,7 @@ else:
 class RolloutJob:
     game_id: str
     opponent_id: str
+    opponent_foundation: str
     focal_first: bool
     seed: int
     source_policy_update: int
