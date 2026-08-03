@@ -1,0 +1,131 @@
+{
+  "schema_version": "daily_deck_catalog_v1",
+  "directory": "mega_kangaskhan_ex_crustle_006",
+  "deck_sha256": "5626743fc93e949378ab0f050dfd647a32c7e69abca2421ba7755b58c5e1429c",
+  "short_hash": "5626743fc93e",
+  "archetype": "Mega Kangaskhan ex / Crustle",
+  "source_archetype": "Mega Kangaskhan ex / Crustle",
+  "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
+  "source_date": "2026-07-30",
+  "member_count": 1,
+  "best_rank": 61,
+  "best_score": 1056.4,
+  "aggregate_record": {
+    "wins": 34,
+    "losses": 20,
+    "draws": 0
+  },
+  "aggregate_effective_win_rate": 0.6296296296296297,
+  "members": [
+    {
+      "rank": 61,
+      "team_name": "gecogeco",
+      "submission_id": 55083418,
+      "episode_id": 88837191,
+      "episode_create_time": "2026-07-29T17:15:59.667000+00:00",
+      "player_index": 1,
+      "leaderboard_score": 1056.4,
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "wins": 34,
+      "losses": 20,
+      "draws": 0
+    }
+  ],
+  "cards": [
+    {
+      "card_id": 117,
+      "name": "Cornerstone Mask Ogerpon ex",
+      "count": 2
+    },
+    {
+      "card_id": 345,
+      "name": "Crustle",
+      "count": 4
+    },
+    {
+      "card_id": 344,
+      "name": "Dwebble",
+      "count": 4
+    },
+    {
+      "card_id": 756,
+      "name": "Mega Kangaskhan ex",
+      "count": 3
+    },
+    {
+      "card_id": 1264,
+      "name": "Battle Cage",
+      "count": 4
+    },
+    {
+      "card_id": 1182,
+      "name": "Boss’s Orders",
+      "count": 1
+    },
+    {
+      "card_id": 1086,
+      "name": "Buddy-Buddy Poffin",
+      "count": 4
+    },
+    {
+      "card_id": 1159,
+      "name": "Hero’s Cape",
+      "count": 1
+    },
+    {
+      "card_id": 1225,
+      "name": "Hilda",
+      "count": 4
+    },
+    {
+      "card_id": 1147,
+      "name": "Jumbo Ice Cream",
+      "count": 4
+    },
+    {
+      "card_id": 1227,
+      "name": "Lillie's Determination",
+      "count": 4
+    },
+    {
+      "card_id": 1187,
+      "name": "Morty’s Conviction",
+      "count": 3
+    },
+    {
+      "card_id": 1122,
+      "name": "Pokégear 3.0",
+      "count": 3
+    },
+    {
+      "card_id": 1197,
+      "name": "Xerosic’s Machinations",
+      "count": 3
+    },
+    {
+      "card_id": 1,
+      "name": "Basic {G} Energy",
+      "count": 1
+    },
+    {
+      "card_id": 18,
+      "name": "Grow Grass Energy",
+      "count": 4
+    },
+    {
+      "card_id": 11,
+      "name": "Mist Energy",
+      "count": 4
+    },
+    {
+      "card_id": 20,
+      "name": "Rock Fighting Energy",
+      "count": 4
+    },
+    {
+      "card_id": 14,
+      "name": "Spiky Energy",
+      "count": 3
+    }
+  ]
+}

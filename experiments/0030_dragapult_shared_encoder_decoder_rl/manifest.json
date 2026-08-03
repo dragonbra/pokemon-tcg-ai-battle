@@ -1,0 +1,28 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0030_dragapult_shared_encoder_decoder_rl",
+  "objective": "Decoder-only PPO for pure Dragapult from the 0028 epoch-4 semantic foundation against all 51 Frozen exact decks.",
+  "status": "v2_running_update_1_complete_wandb_active",
+  "stage": "decoder_rl",
+  "created_at": "2026-08-04T00:00:00+08:00",
+  "focal_deck_id": "dragapult_ex_001",
+  "focal_deck_sha256": "9c4565e1d4256d612c04c78f85ceaf24acfc36144ec8812459c5cc870c08fe72",
+  "initial_checkpoint": {
+    "project": "0028_universal_semantic_foundation_pretraining",
+    "version": "V3_shared_prototype_batch512",
+    "epoch": 4,
+    "global_step": 63196,
+    "sha256": "5e0a6eea42bf228a9bd977cf56fdd14ad360fbceffcf5c19e2d9fe1b39713d98"
+  },
+  "opponent_pool_snapshot": "0019_foundation_51_exact_decks_v4",
+  "opponent_policy": "one shared immutable 0028 encoder and decoder",
+  "trainable_contract": ["actor.action_decoder.*", "value_head.*"],
+  "runtime": "unmodified_official_engine",
+  "reward": "terminal_actor_relative_-1_0_+1",
+  "actor_visible_source_identity": false,
+  "paths": {
+    "training": "train/0030_dragapult_shared_encoder_decoder_rl",
+    "archive": "experiments/0030_dragapult_shared_encoder_decoder_rl",
+    "runs": "rl_runs/0030_dragapult_shared_encoder_decoder_rl"
+  }
+}
