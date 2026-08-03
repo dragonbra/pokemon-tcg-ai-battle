@@ -1,6 +1,7 @@
 # 0028 Universal Semantic Foundation Pretraining
 
-Status: **V1 and V2 stopped before epoch 1; V3 shared-prototype batch-512 formal BC is training.**
+Status: **V1 and V2 stopped before epoch 1; V3 completed four epochs, then failed with a CUDA
+unknown error. Its latest epoch-4 checkpoint has completed eight formal zero-shot deck evaluations.**
 
 ## Objective
 
@@ -291,9 +292,10 @@ canonical materialization are complete, all dataset shard hashes reload successf
 expanded 0028 test suite passes. `V1_mid_universal_semantic_foundation` is an immutable stopped
 throughput diagnostic with zero completed epochs and zero checkpoints. V2 is also immutable and
 stopped with zero completed epochs and zero checkpoints. Unit, semantic-equivalence, memory, and
-uncontaminated throughput gates authorized `V3_shared_prototype_batch512`, which is now running
-with a foreground watchdog and W&B online recording. Official-engine policy evaluation remains a
-later phase after a checkpoint candidate exists.
+uncontaminated throughput gates authorized `V3_shared_prototype_batch512`. V3 completed four
+epochs and persisted model-only checkpoints before the training child exited on a CUDA unknown
+error; W&B synchronization completed. The latest checkpoint is epoch 4 / global step 63,196, with
+validation loss 0.3920408, exact action 77.2054%, and legal action 100%.
 
 ## Pretrained Release
 
@@ -311,10 +313,37 @@ hash, model-only payload boundary, strict 21,837,082-parameter loading, and a mi
 A real official-replay smoke also confirms that the adapter consumes an exact 60-card deck and
 returns an ordered action satisfying the live observation's legal bounds.
 
-After V3 finishes, `promote_checkpoint.py` is the only supported in-place final-weight promotion
-path. It rejects checkpoints with mismatched project/version/arm/dataset/implementation identity,
-atomically replaces `model.pt`, and refreshes release stage, epoch, selection metrics, byte count,
-and SHA-256 commitments before `verify_archive.py` is rerun.
+V3 did not finish its planned 20 epochs, so the archived `epoch1_sample` remains unchanged.
+`promote_checkpoint.py` remains the only supported in-place final-weight promotion path; this
+evaluation package does not silently promote or overwrite the pretrained archive.
+
+## Formal Zero-Shot Evaluation
+
+Eight self-contained candidates bind the same V3 `latest.pt` (SHA-256
+`5e0a6eea42bf228a9bd977cf56fdd14ad360fbceffcf5c19e2d9fe1b39713d98`) to different exact
+60-card decks. They import no executable code from another numbered training project. Every run
+uses `0019_foundation_51_exact_decks_v4`, 51 opponents x 10 games, balanced first/second order,
+two separate persistent batched `cuda:0` inference services, eight isolated official-engine CPU
+workers, and the `league_deck_quality` metric profile.
+
+| Version | Exact deck | W-L | Overall | First | Second |
+|---|---|---:|---:|---:|---:|
+| V9 | Alakazam / Dudunsparce 002 | 312-198 | 61.18% | 64.71% | 57.65% |
+| V6 | Dragapult ex 001 | 306-204 | 60.00% | 65.49% | 54.51% |
+| V10 | Dragapult ex / Crushing Hammer 001 | 281-229 | 55.10% | 56.86% | 53.33% |
+| V4 | Mega Lopunny ex 001 | 279-231 | 54.71% | 54.51% | 54.90% |
+| V7 | Dragapult ex / Dusknoir 001 | 208-302 | 40.78% | 42.35% | 39.22% |
+| V5 | Lucario / Hariyama | 178-332 | 34.90% | 39.61% | 30.20% |
+| V8 | Raging Bolt ex, James Cox / Henry Chao 001 | 106-404 | 20.78% | 21.96% | 19.61% |
+| V3 | Raging Bolt ex / Teal Mask Ogerpon ex user deck | 96-414 | 18.82% | 19.61% | 18.04% |
+
+All 4,080 games completed with zero draws, errors, or unfinished games. The authoritative entry is
+`evaluation/index.html`, with immutable V3-V8 reports and artifact backlinks. These results show
+substantial exact-deck sensitivity: Alakazam / Dudunsparce 002 led at 61.18%; pure Dragapult
+outperformed its Crushing Hammer variant by 4.90 points and the Dusknoir variant by 19.22 points
+under the same model and pool. Mega Lopunny also exceeded 50%. This is
+official-engine zero-shot strength evidence for these exact checkpoint/deck/pool contracts, not a
+promotion decision or proof that one result generalizes to related decklists.
 
 ## Completion Evidence Required
 

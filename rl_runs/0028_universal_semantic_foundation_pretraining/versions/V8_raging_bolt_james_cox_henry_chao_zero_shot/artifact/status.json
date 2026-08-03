@@ -1,0 +1,12 @@
+{
+  "checkpoint_source_version": "V3_shared_prototype_batch512",
+  "evaluation_only": true,
+  "games": 510,
+  "wins": 106,
+  "losses": 404,
+  "errors": 0,
+  "run_id": "run-20354ee4fcb946048c7d179bfdb1b8e3",
+  "state": "completed",
+  "win_rate": 0.20784313725490197,
+  "version": "V8_raging_bolt_james_cox_henry_chao_zero_shot"
+}

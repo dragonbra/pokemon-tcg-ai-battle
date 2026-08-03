@@ -40,7 +40,7 @@
 <main>
   <header>
     <h1>0028 Universal Semantic Foundation</h1>
-    <div class="status">当前阶段：V1、V2 均在 epoch 1 前中止；V3 shared-prototype batch-512 正在正式训练。</div>
+    <div class="status">当前阶段：V1、V2 均在 epoch 1 前中止；V3 完成 4 个 epoch 后因 CUDA unknown error 停止，epoch-4 latest 权重已完成 8 套 exact deck 正式 zero-shot 评测。</div>
   </header>
 
   <section>
@@ -193,7 +193,32 @@ q3 = q2 + FFN(LayerNorm(q2))</code></pre>
       <div class="arrow">→</div>
       <div class="node action"><h3>SemanticPolicy</h3>输出 ordered legal option indices + STOP</div>
     </div>
-    <p>发布包已脱离仓库工作目录严格加载，并用一局真实官方 replay 的 deck 与 observation 完成 zero-shot smoke。它用于早期集成验证，不代表最终 V3，也不能替代 official-engine 强度评测。训练完成后仅通过 <code>promote_checkpoint.py</code> 原子替换权重并刷新全部 metadata/hash，再运行 <code>verify_archive.py</code>。</p>
+    <p>发布包已脱离仓库工作目录严格加载，并用一局真实官方 replay 的 deck 与 observation 完成 zero-shot smoke。V3 未完成计划中的 20 个 epoch，因此 archive 中的 <code>epoch1_sample</code> 保持不变；评测 candidate 不会静默覆盖或晋级 pretrained archive。</p>
+  </section>
+
+  <section>
+    <h2>V3 latest：多卡组 Zero-shot 正式评测</h2>
+    <div class="grid">
+      <div class="box"><strong>4,080 / 4,080 完成</strong>0 error，0 unfinished</div>
+      <div class="box"><strong>Alakazam 61.18%</strong>312 / 510</div>
+      <div class="box"><strong>Lopunny 54.71%</strong>279 / 510</div>
+      <div class="box"><strong>双 GPU service</strong>candidate / opponent 均为 cuda:0</div>
+    </div>
+    <table>
+      <thead><tr><th>版本 / exact deck</th><th>W-L</th><th>总胜率</th><th>先攻</th><th>后攻</th></tr></thead>
+      <tbody>
+        <tr><td>V9 Alakazam / Dudunsparce 002</td><td>312-198</td><td>61.18%</td><td>64.71%</td><td>57.65%</td></tr>
+        <tr><td>V6 Dragapult ex 001</td><td>306-204</td><td>60.00%</td><td>65.49%</td><td>54.51%</td></tr>
+        <tr><td>V10 Dragapult ex / Crushing Hammer 001</td><td>281-229</td><td>55.10%</td><td>56.86%</td><td>53.33%</td></tr>
+        <tr><td>V4 Mega Lopunny ex 001</td><td>279-231</td><td>54.71%</td><td>54.51%</td><td>54.90%</td></tr>
+        <tr><td>V7 Dragapult ex / Dusknoir 001</td><td>208-302</td><td>40.78%</td><td>42.35%</td><td>39.22%</td></tr>
+        <tr><td>V5 Lucario / Hariyama</td><td>178-332</td><td>34.90%</td><td>39.61%</td><td>30.20%</td></tr>
+        <tr><td>V8 Raging Bolt ex James Cox / Henry Chao 001</td><td>106-404</td><td>20.78%</td><td>21.96%</td><td>19.61%</td></tr>
+        <tr><td>V3 Raging Bolt ex / Teal Mask Ogerpon 用户版</td><td>96-414</td><td>18.82%</td><td>19.61%</td><td>18.04%</td></tr>
+      </tbody>
+    </table>
+    <p><code>latest.pt</code> 来自 epoch 4 / global step 63,196，validation exact action 77.2054%，legal action 100%。每个版本均对 <code>0019_foundation_51_exact_decks_v4</code> 跑 51×10 局，candidate 与 opponent 分别常驻独立 batched <code>cuda:0</code> service，8 个隔离 CPU worker 执行未修改的 official engine。</p>
+    <p>权威入口：<a href="evaluation/index.html">evaluation/index.html</a>。纯 Dragapult 比 Crushing Hammer 版本高 4.90 个百分点、比 Dusknoir 组合高 19.22 个百分点，说明同一权重对 exact deck 很敏感；这些结果不触发 arena 晋级。</p>
   </section>
 </main>
 </body>

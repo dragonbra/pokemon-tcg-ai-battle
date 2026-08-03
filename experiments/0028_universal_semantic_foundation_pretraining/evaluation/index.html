@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>evaluation · Evaluation 总览</title>
+<style>
+:root { color-scheme: light; --ink:#172033; --muted:#667085; --line:#d9e0ea;
+  --panel:#fff; --accent:#3157d5; --bg:#f4f7fb; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui,sans-serif; }
+main { max-width:1320px; margin:0 auto; padding:32px 24px 56px; }
+h1 { margin:0 0 6px; font-size:28px; }
+.lead { margin:0 0 22px; color:var(--muted); }
+.cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:20px 0; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; }
+.card strong { display:block; font-size:24px; }
+.card span { color:var(--muted); }
+.table-wrap { overflow:auto; background:var(--panel); border:1px solid var(--line);
+  border-radius:12px; }
+table { width:100%; border-collapse:collapse; white-space:nowrap; }
+th,td { padding:11px 12px; border-bottom:1px solid var(--line); text-align:right; }
+th { background:#eef3fb; color:#475467; font-size:12px; text-transform:uppercase; }
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2) { text-align:left; }
+tr:last-child td { border-bottom:0; }
+a { color:var(--accent); font-weight:650; text-decoration:none; }
+a:hover { text-decoration:underline; }
+.bad { color:#b42318; } .muted,.empty { color:var(--muted); }
+@media (max-width:720px) { .cards { grid-template-columns:1fr; } main { padding:20px 12px; } }
+</style>
+</head>
+<body><main>
+<h1>evaluation</h1>
+<p class="lead">项目级 Evaluation 总览。每个版本仍以独立 HTML 保存；点击版本名查看完整报告。</p>
+<section class="cards">
+<div class="card"><strong>8</strong><span>版本报告</span></div>
+<div class="card"><strong>4080</strong><span>累计对局</span></div>
+<div class="card"><strong>8</strong><span>零 error 报告</span></div>
+</section>
+<div class="table-wrap"><table>
+<thead><tr><th>版本报告</th><th>candidate / run</th><th>对局</th><th>胜</th><th>负</th>
+<th>平</th><th>error</th><th>unfinished</th><th>胜率</th><th>完成率</th></tr></thead>
+<tbody><tr><td><a href="V3_shared_prototype_batch512.html">V3_shared_prototype_batch512</a></td><td>0028_v3_latest_raging_bolt_zero_shot<br><span class="muted">run-3c4733be714a4de3a7120aad6ace7bdc</span></td><td>510</td><td>96</td><td>414</td><td>0</td><td>0</td><td>0</td><td>18.82%</td><td>100.00%</td></tr><tr><td><a href="V4_mega_lopunny_ex_001_zero_shot.html">V4_mega_lopunny_ex_001_zero_shot</a></td><td>Mega Lopunny ex - Limitless Champion<br><span class="muted">run-ff19fdb041264bef9025cc68afdcbe5c</span></td><td>510</td><td>279</td><td>231</td><td>0</td><td>0</td><td>0</td><td>54.71%</td><td>100.00%</td></tr><tr><td><a href="V5_lucario_hariyama_zero_shot.html">V5_lucario_hariyama_zero_shot</a></td><td>0028_v3_latest_lucario_hariyama_zero_shot<br><span class="muted">run-4168814b59e24ca8b30b519c87c0b547</span></td><td>510</td><td>178</td><td>332</td><td>0</td><td>0</td><td>0</td><td>34.90%</td><td>100.00%</td></tr><tr><td><a href="V6_dragapult_ex_001_zero_shot.html">V6_dragapult_ex_001_zero_shot</a></td><td>Dragapult ex - Limitless<br><span class="muted">run-f49cff744abc4d0bb19436fffc5da8cf</span></td><td>510</td><td>306</td><td>204</td><td>0</td><td>0</td><td>0</td><td>60.00%</td><td>100.00%</td></tr><tr><td><a href="V7_dragapult_ex_dusknoir_001_zero_shot.html">V7_dragapult_ex_dusknoir_001_zero_shot</a></td><td>Dragapult ex / Dusknoir<br><span class="muted">run-c208d13cc0c44e3ebc89813e2e38d2a7</span></td><td>510</td><td>208</td><td>302</td><td>0</td><td>0</td><td>0</td><td>40.78%</td><td>100.00%</td></tr><tr><td><a href="V8_raging_bolt_james_cox_henry_chao_zero_shot.html">V8_raging_bolt_james_cox_henry_chao_zero_shot</a></td><td>Raging Bolt ex / Mega Kangaskhan ex<br><span class="muted">run-20354ee4fcb946048c7d179bfdb1b8e3</span></td><td>510</td><td>106</td><td>404</td><td>0</td><td>0</td><td>0</td><td>20.78%</td><td>100.00%</td></tr><tr><td><a href="V9_alakazam_dudunsparce_002_zero_shot.html">V9_alakazam_dudunsparce_002_zero_shot</a></td><td>Alakazam / Dudunsparce<br><span class="muted">run-18848501e49d4264bde25e83f9073530</span></td><td>510</td><td>312</td><td>198</td><td>0</td><td>0</td><td>0</td><td>61.18%</td><td>100.00%</td></tr><tr><td><a href="V10_dragapult_ex_crushing_hammer_001_zero_shot.html">V10_dragapult_ex_crushing_hammer_001_zero_shot</a></td><td>Dragapult ex / Crushing Hammer - External 01<br><span class="muted">run-7902a2d7374e4caf9fb3a4f83580507c</span></td><td>510</td><td>281</td><td>229</td><td>0</td><td>0</td><td>0</td><td>55.10%</td><td>100.00%</td></tr></tbody>
+</table></div>
+</main></body></html>

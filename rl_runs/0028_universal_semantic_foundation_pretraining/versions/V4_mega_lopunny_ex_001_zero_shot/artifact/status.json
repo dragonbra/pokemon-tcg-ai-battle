@@ -1,0 +1,12 @@
+{
+  "checkpoint_source_version": "V3_shared_prototype_batch512",
+  "evaluation_only": true,
+  "games": 510,
+  "wins": 279,
+  "losses": 231,
+  "errors": 0,
+  "run_id": "run-ff19fdb041264bef9025cc68afdcbe5c",
+  "state": "completed",
+  "win_rate": 0.5470588235294118,
+  "version": "V4_mega_lopunny_ex_001_zero_shot"
+}

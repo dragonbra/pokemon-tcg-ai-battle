@@ -1,0 +1,12 @@
+{
+  "checkpoint_source_version": "V3_shared_prototype_batch512",
+  "evaluation_only": true,
+  "games": 510,
+  "wins": 306,
+  "losses": 204,
+  "errors": 0,
+  "run_id": "run-f49cff744abc4d0bb19436fffc5da8cf",
+  "state": "completed",
+  "win_rate": 0.6,
+  "version": "V6_dragapult_ex_001_zero_shot"
+}

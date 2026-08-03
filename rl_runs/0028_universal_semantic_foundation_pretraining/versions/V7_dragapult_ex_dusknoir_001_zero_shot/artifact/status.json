@@ -1,0 +1,12 @@
+{
+  "checkpoint_source_version": "V3_shared_prototype_batch512",
+  "evaluation_only": true,
+  "games": 510,
+  "wins": 208,
+  "losses": 302,
+  "errors": 0,
+  "run_id": "run-c208d13cc0c44e3ebc89813e2e38d2a7",
+  "state": "completed",
+  "win_rate": 0.40784313725490196,
+  "version": "V7_dragapult_ex_dusknoir_001_zero_shot"
+}

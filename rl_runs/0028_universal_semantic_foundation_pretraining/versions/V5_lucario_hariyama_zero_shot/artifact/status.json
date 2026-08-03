@@ -1,0 +1,12 @@
+{
+  "checkpoint_source_version": "V3_shared_prototype_batch512",
+  "evaluation_only": true,
+  "games": 510,
+  "wins": 178,
+  "losses": 332,
+  "errors": 0,
+  "run_id": "run-4168814b59e24ca8b30b519c87c0b547",
+  "state": "completed",
+  "win_rate": 0.34901960784313724,
+  "version": "V5_lucario_hariyama_zero_shot"
+}
