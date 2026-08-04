@@ -10,8 +10,9 @@ The transfer copies 11,052,162 of 14,579,843 parameters (75.8044%) through
 explicit mappings. It is initialization, not input or behavior parity.
 
 V1 remains the historical POD/CUDA adapter validation. V2 freezes the focal
-selection and preflight evidence. Formal PPO is
-`V3_mega_lopunny_froslass_001_cuda_ppo`.
+selection and preflight evidence. V3 was stopped after update 4 when the run
+budget and opponent contract changed. Formal 200-update PPO is
+`V4_mega_lopunny_froslass_001_cuda_ppo_200u`.
 
 Official game legality and card behavior remain the responsibility of the
 unmodified official engine and the audited CUDA port. Attack commitment,
@@ -48,7 +49,7 @@ attention heads, four state Transformer layers, two option cross-attention
 layers, and a copied GRU pointer decoder. A two-layer value head reads the
 global state summary.
 
-V3 freezes the encoder and trains only the focal action decoder and value head.
+V4 freezes the encoder and trains only the focal action decoder and value head.
 The optimizer is fresh AdamW with actor LR `1e-5`, value LR `1e-4`, two PPO
 epochs, minibatch 512, clip ratio 0.10, entropy coefficient 0.01, reference-KL
 coefficient 0.02, target behavior KL 0.02, and gradient clip 0.5. Encoder
@@ -59,7 +60,7 @@ outputs are detached and reused within each minibatch.
 The official result code maps from the focal player perspective as
 `1 -> +1`, `2 -> -1`, and `3 -> 0`. Only complete Episodes are admitted.
 Incomplete trajectories at the fixed collection boundary are discarded, so
-formal V3 does not silently bootstrap them. Terminal-return GAE uses
+formal V4 does not silently bootstrap them. Terminal-return GAE uses
 `gamma=1.0` and `lambda=0.95`, with equal total weight per completed Episode.
 
 The stochastic behavior log probability is stored at collection and replayed
@@ -70,38 +71,46 @@ frozen greedy checkpoint-strength claims.
 
 ## Frozen opponents and resident execution
 
-CUDA supports 38 frozen decks. Thirty-five have real frozen decoder assets in
-0022 V11; the three absent heads are
-`mega_lopunny_ex_001`, `mega_lopunny_ex_mega_froslass_ex_002`, and
-`rmy_teal_mask_ogerpon_001`. V3 therefore freezes a 35-opponent snapshot.
+CUDA supports 38 frozen decks. Every opponent uses the same immutable 0019
+Epoch 13 Foundation decoder, SHA-256
+`da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb`.
+All 48 materialized 0022 V11 update-0 heads were verified tensor-identical to
+that decoder. Deck identity changes the exact engine deck and observation; it
+does not select different policy weights.
 
-Each update runs one real frozen opponent on 152 independent lanes, and the
-opponent index rotates round-robin across all 35 updates. This avoids the
-small-group GEMM and expanded per-lane GRU bottlenecks while preserving
-auditable temporal coverage of the full pool. Observations, actor inference,
-engine stepping and fixed rollout buffers remain on CUDA. One bulk host copy
-occurs after collection for the immutable learner batch.
+Every update includes all 38 decks with four independent lanes each, for 152
+lanes total. The shared head restores a single large batched decoder and
+removes grouped per-deck GRU routing. Observations, actor inference, engine
+stepping, CUDA Graph and fixed rollout buffers remain resident and are reused
+across updates. One bulk host copy occurs after collection for the immutable
+learner batch.
 
 ## Measured acceptance and storage
 
-The preallocated 152-lane rollout canary reached 2,432.334 decisions/s. The
-formal one-update PPO canary reached 2,346.092 rollout decisions/s and
-1,390.477 end-to-end decisions/s including the PPO update, with 25 complete
-Episodes, 272 focal training decisions, zero illegal/error rows, and behavior
-log-prob MAE `1.84e-7`. GPU peak allocation was about 0.94 GB.
+The selected 256-step shared-0019 canary reached 2,282.910 rollout decisions/s
+and 988.121 end-to-end engine decisions/s including PPO. It completed 176
+Episodes and admitted 10,704 focal PPO decisions in one update, with all 38
+decks represented, zero illegal/error rows, and behavior log-prob MAE
+`2.33e-7`. GPU peak allocation was 2.60 GiB and reserved memory was 3.84 GiB.
+This has substantially higher effective PPO-sample throughput than the 64- and
+128-step windows even though its raw end-to-end engine-decision rate is lower.
 
-Every update retains an atomic model-only checkpoint containing schema,
-update, model state and metadata. Optimizer, scheduler, scaler, RNG,
+Every update retains an atomic trainable-head checkpoint containing schema,
+update, `action_decoder.*`, `value_head.*` and reconstruction metadata. The
+1,130,243 saved FP32 parameters occupy about 4.31 MiB before serialization, so
+200 updates are about 862 MiB of raw weights. The frozen
+encoder is referenced by its immutable 0031 hash rather than copied. Optimizer,
+scheduler, scaler, RNG,
 DataLoader position and rollout buffers are excluded. Canonical metrics are
-flushed to JSONL, then TensorBoard, then W&B. Because the launch host has no
-W&B API key, V3 uses audited offline W&B staging and does not claim online
-sync. A foreground process watchdog owns the training child and records
+flushed to JSONL, then TensorBoard, then W&B online. An SDK preflight verifies
+the existing host credential without recording it. A foreground process
+watchdog owns the training child and records
 heartbeat, GPU, host memory, swap, disk, stale metrics and fatal errors.
 
 ## Current and next stage
 
-V3 is the formal CUDA PPO training stage. Its first bounded run covers one
-complete 35-opponent rotation and is throughput/learning-path evidence. Policy
+V4 is the formal 200-update, 256-step CUDA PPO training stage. Every update covers all 38
+supported frozen decks and is throughput/learning-path evidence. Policy
 strength must later be established by balanced, fixed-seed, official-engine
 greedy evaluation under a new immutable evaluation version; sampled training
 rollouts alone cannot promote a candidate package.

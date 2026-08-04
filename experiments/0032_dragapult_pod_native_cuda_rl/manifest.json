@@ -14,8 +14,9 @@
     "mode": "cuda_graph",
     "model_seed": 32032,
     "recommended_rollout_lanes": 152,
-    "opponents_per_update": 1,
-    "opponent_rotation_count": 35
+    "opponents_per_update": 38,
+    "copies_per_opponent": 4,
+    "shared_frozen_head": "0019_epoch13_foundation"
   },
   "source_checkpoint": {
     "path": "rl_runs/0031_rule_faithful_semantic_foundation_pretraining/versions/V4_lr5e4_no_early_stop_b512/checkpoint/rule_faithful_semantic/latest.pt",
@@ -24,9 +25,9 @@
   },
   "opponent_snapshot": {
     "cuda_supported_count": 38,
-    "real_0022_head_count": 35,
-    "source": "rl_runs/0022_league_training/versions/V11_multidecoder_league_20h/checkpoint/decks",
-    "audit": "rl_runs/0032_dragapult_pod_native_cuda_rl/versions/V3_mega_lopunny_froslass_001_cuda_ppo/artifact/opponent_snapshot.json"
+    "shared_foundation_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+    "source": "archive/pretrained/0019_universal_winner_bc_0730_epoch13/model.pt",
+    "audit": "rl_runs/0032_dragapult_pod_native_cuda_rl/versions/V4_mega_lopunny_froslass_001_cuda_ppo_200u/artifact/opponent_snapshot.json"
   },
   "runtime_boundary": {
     "official_engine_source_modified": false,
@@ -35,9 +36,14 @@
     "policy_strength_claimed_by_sampled_rollout": false
   },
   "formal_version": {
-    "name": "V3_mega_lopunny_froslass_001_cuda_ppo",
+    "name": "V4_mega_lopunny_froslass_001_cuda_ppo_200u",
+    "updates": 200,
+    "rollout_steps": 256,
+    "rollout_lanes": 152,
     "checkpoint_retention": "all",
-    "wandb_mode": "offline_missing_api_key",
+    "checkpoint_payload": "action_decoder_and_value_head_only",
+    "checkpoint_trainable_parameters": 1130243,
+    "wandb_mode": "online",
     "watchdog": "foreground_process_owner"
   }
 }

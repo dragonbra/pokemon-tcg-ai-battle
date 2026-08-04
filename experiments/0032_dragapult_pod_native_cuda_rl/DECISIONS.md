@@ -24,6 +24,29 @@ The formal one-update canary passed at 2,346.092 rollout decisions/s and
 1,390.477 end-to-end decisions/s including PPO, with log-prob replay MAE
 1.84e-7 and zero engine/legality errors. This topology is accepted for V3.
 
+## 2026-08-05: Replace deck-head routing with the shared 0019 Foundation
+
+V3 was stopped after update 4 when the requested budget changed from 35 to 200
+and the opponent contract was clarified. Its artifacts remain immutable. V4 is
+`V4_mega_lopunny_froslass_001_cuda_ppo_200u` and restarts from the same 0031
+epoch-2 initialization with a fresh optimizer.
+
+All 48 materialized 0022 V11 update-0 decoders have the same tensor SHA-256
+`c5983e644bd1cde3e73e0dbe3eef3c48240ce0ad8081461cafd0889f64b8eea8`.
+They exactly equal the decoder in the immutable 0019 Epoch 13 Foundation,
+SHA-256 `da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb`.
+V4 therefore uses one shared frozen decoder for all 38 CUDA-supported exact
+decks. Every update contains four lanes per deck, 152 lanes total. No deck-head
+weight routing or opponent rotation remains.
+
+Window benchmarks selected 256 steps. It measured 2,282.910 rollout and
+988.121 end-to-end engine decisions/s, but completed 176 Episodes and admitted
+10,704 focal PPO decisions, far more effective samples per second than the 64-
+or 128-step windows. All 38 decks were represented; reserved GPU memory was
+3.84 GiB, with zero engine/legality errors and behavior log-prob MAE 2.33e-7.
+V4 uses W&B online after an SDK credential preflight, while local JSONL remains
+canonical.
+
 ## 2026-08-05: Use a POD-native actor contract
 
 0032 consumes the CUDA engine's resident `PolicyCodecV1` tensors directly. It does not reconstruct the 0031 chronological event history, opponent-hand memory, known deck order, causal prize ledger, or semantic effect trees. Consequently, 0031 is an initialization source rather than a behavior-compatible parent policy.

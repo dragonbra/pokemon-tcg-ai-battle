@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>0032 Dragapult POD-native CUDA RL Design</title>
+  <title>0032 Mega Lopunny / Froslass CUDA PPO Design</title>
   <style>
     :root { color-scheme: light; --ink:#17202a; --muted:#5d6773; --line:#d6dbe1; --accent:#116466; --bg:#f7f8fa; --panel:#fff; }
     * { box-sizing:border-box; }
@@ -25,12 +25,12 @@
   </style>
 </head>
 <body><main>
-  <header><h1>0032 Dragapult POD-native CUDA RL</h1><p>Authoritative model, tensor, validation, and next-stage contract. V1 is adapter validation, not PPO or policy-strength evidence.</p></header>
+  <header><h1>0032 Mega Lopunny / Froslass CUDA PPO</h1><p>Authoritative V4 200-update model, rollout, PPO, checkpoint, and evidence contract.</p></header>
   <section class="status">
     <div><strong>128</strong>entity slots</div><div><strong>128</strong>option slots</div><div><strong>14.58M</strong>parameters</div><div><strong>64</strong>action steps</div>
   </section>
   <h2>Evidence boundary</h2>
-  <p>0032 uses the official CUDA engine and a new resident <code>PolicyCodecV1</code> actor. Official rules and card/runtime text determine legality; the policy learns value among legal actions. Attack commitment, evolution timing, and per-turn Supporter, Energy, and Retreat limits remain engine facts. V1 makes no PPO, policy-strength, or strict 0031 behavior-parity claim.</p>
+  <p>The formal focal deck is the exact frozen <code>mega_lopunny_ex_mega_froslass_ex_001</code> package. V4 starts from the 0031 V4 epoch-2 checkpoint and uses the official CUDA engine. V3 was stopped after update 4 when the requested budget and opponent contract changed. Official rules and runtime card behavior determine legality; reward, value, setup quality and long-horizon resource use are learned policy concerns.</p>
   <h2>Actor-visible tensors</h2>
   <table><thead><tr><th>Field</th><th>Shape</th><th>Type</th><th>Purpose</th></tr></thead><tbody>
     <tr><td><code>global_cat</code> / <code>global_num</code></td><td>[B,8] / [B,16]</td><td>int64 / float</td><td>Global game, select, turn and resource state</td></tr>
@@ -43,16 +43,22 @@
   <p class="note">A real official state exposed 81 options. The official resident arena and 0032 contract therefore use 128 slots; the generic prototype engine retains its 80-option ABI. Source/team identity is provenance only and never actor-visible.</p>
   <h2>Model flow</h2>
   <p>Field embeddings and numeric GELU projections form global, entity and option tokens. Parent/child relations enrich entities; a four-layer, 8-head Transformer encodes global plus 128 entities. Two option cross-attention layers attend to state. The copied 0031 GRU pointer decoder emits unique option indices plus STOP for up to 64 steps. A two-layer head emits one scalar value.</p>
-  <h2>0031 transfer and data</h2>
-  <p>The audited V4 checkpoint contributes 11,052,162 of 14,579,843 parameters (75.8044%) through explicit semantic mappings; 43 tensors are newly initialized. Missing 0031 causal histories and knowledge ledgers mean this is initialization only. The option-128 corpus contains 4,096 train and 512 validation decisions, but zero exact Dragapult decisions. Its ordered cross-entropy smoke test validates gradients and labels, not deck readiness.</p>
+  <h2>Initialization and focal evidence</h2>
+  <p>The audited 0031 checkpoint, SHA-256 <code>05f98e2a...34a51</code>, contributes 11,052,162 of 14,579,843 parameters (75.8044%) through explicit mappings. The chosen deck has epoch-2 validation exact action 0.657664974619 over 4,925 decisions. The user selected it for business-value potential; a higher offline score for another deck does not override that choice.</p>
+  <h2>Rollout and PPO</h2>
+  <p>Official results map to focal reward as win +1, loss -1 and draw 0. Only complete Episodes enter terminal-return GAE with gamma 1.0 and lambda 0.95; incomplete boundary trajectories are discarded. Episodes receive equal total weight. V4 freezes the encoder and trains only the action decoder and value head with fresh AdamW, two PPO epochs, minibatch 512, clip 0.10, entropy 0.01, reference KL 0.02 and gradient clip 0.5. Behavior log probability must replay within 1e-4 before optimization.</p>
+  <h2>Frozen pool and execution</h2>
+  <p>All 38 CUDA-supported exact decks participate in every update with four lanes each. They share the immutable 0019 Epoch 13 Foundation decoder, SHA-256 <code>da9b13d6...e5bb</code>; all 48 materialized 0022 update-0 heads were verified tensor-identical to it. One shared head removes per-deck GRU routing. Rollout observations, engine steps, inference, CUDA Graph and fixed buffers stay resident and are reused across updates.</p>
   <h2>Runtime acceptance</h2>
   <table><thead><tr><th>Gate</th><th>Result</th></tr></thead><tbody>
     <tr><td>CPU/CUDA codec parity</td><td>400 decisions, zero field or status mismatch</td></tr>
     <tr><td>Resident legality</td><td>Fixed-seed eager/graph and 152-lane runs: zero engine, actor-legality or action-step errors</td></tr>
     <tr><td>Strict execution A/B</td><td>501.212 eager to 1,923.473 graph decisions/s at 38 lanes: 3.84x</td></tr>
-    <tr><td>Recommended rollout</td><td>152 lanes: 3,579.865 decisions/s and 35.328 episodes/s on RTX 5080</td></tr>
-    <tr><td>Contextual CPU ratio</td><td>21.25x decisions/s and 29.22x episodes/s; historical CPU comparison is not strict same-model A/B</td></tr>
+    <tr><td>Single-head preallocated rollout</td><td>152 lanes: 2,432.334 decisions/s</td></tr>
+    <tr><td>Selected 256-step PPO canary</td><td>2,282.910 rollout and 988.121 end-to-end engine decisions/s; 176 Episodes and 10,704 focal PPO decisions</td></tr>
+    <tr><td>Behavior replay</td><td>Log-prob MAE 2.33e-7 before PPO; threshold 1e-4</td></tr>
+    <tr><td>Persistent memory</td><td>Graph and fixed buffers reused; 2.60 GiB peak allocation and 3.84 GiB reserved</td></tr>
   </tbody></table>
-  <h2>Next formal version</h2>
-  <p>Formal PPO requires a new version and fresh optimizer, Dragapult-specific official-engine rollouts, reward/terminal/truncation/value-bootstrap/GAE/PPO contracts, frozen opponent hashes and sampling, W&amp;B online logging, all model-only checkpoints, a foreground watchdog, and separate frozen greedy evaluation. CUDA runtime readiness is passed; learning-system readiness is not.</p>
+  <h2>Checkpoint and current stage</h2>
+  <p>V4 retains all 200 updates in atomic trainable-head checkpoints. Only <code>action_decoder.*</code> and <code>value_head.*</code> are stored: 1,130,243 FP32 parameters, about 4.31 MiB raw per update. The frozen encoder is reconstructed from its immutable 0031 hash; optimizer, RNG and rollout state are excluded. Canonical JSONL precedes TensorBoard and W&amp;B online mirroring after SDK credential preflight. A foreground watchdog owns the training child. Sampled rollout rates remain training diagnostics; policy strength requires later balanced official-engine greedy evaluation.</p>
 </main></body></html>

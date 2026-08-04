@@ -23,6 +23,22 @@ These results cover the audited 0022 deck catalog and deterministic parity
 policies. They do not prove every possible card interaction or stochastic
 policy trajectory. The unmodified official CPU engine remains the oracle.
 
+## Frozen51 Acceptance
+
+The 2026-08-04 fail-closed audit of
+`evaluation/arena/frozen/` admits 38 of 51 exact decks. The complete 38 x 38
+ordered matrix compared 297,285 decisions over 1,444 battles with zero
+CPU/POD/CUDA state, status, or outcome mismatch. Thirteen decks are rejected
+for missing selection continuations, unsupported copy-attack paths, or a
+reproduced continual-state interaction mismatch.
+
+The durable report is
+`evaluation/arena/combat_mat/0031_latest_frozen_test/cuda_support.html`, with
+machine-readable evidence in the adjacent `cuda_support.json`. This admission
+does not make the 0031 checkpoint resident-compatible: its chronological
+observation and causal-event feature contract is not exposed by the current
+`OfficialStatePod` binding.
+
 ## Repository Boundary
 
 The following are source-controlled:

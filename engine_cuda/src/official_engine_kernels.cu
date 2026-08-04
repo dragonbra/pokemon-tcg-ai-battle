@@ -11,6 +11,7 @@ namespace ptcg::cuda_engine {
 namespace {
 
 constexpr std::uint32_t kOfficialThreads = 128;
+constexpr std::uint32_t kMaxOfficialCodecOptions = kOfficialOptionCapacity;
 
 constexpr std::uint32_t official_blocks(std::uint32_t count) {
     return (count + kOfficialThreads - 1) / kOfficialThreads;
@@ -344,14 +345,17 @@ __device__ bool official_codec_add_entity(
         return false;
     }
 
-    const OfficialCardRule* master = official_card_rule(
-        rules, static_cast<std::uint32_t>(card->card_id));
+    const OfficialCardRule* master = kind == kPolicyKindPokemon
+        ? official_card_rule(rules, static_cast<std::uint32_t>(card->card_id))
+        : nullptr;
     const std::int32_t max_hp = master == nullptr
         ? 0
         : ((master->values[kCardHp] + card->hp_change) > 0
             ? (master->values[kCardHp] + card->hp_change)
             : 0);
-    const std::int32_t damage = card->damage > 0 ? card->damage : 0;
+    const std::int32_t damage = kind == kPolicyKindPokemon && card->damage > 0
+        ? card->damage
+        : 0;
     const std::int32_t hp = max_hp > damage ? max_hp - damage : 0;
     std::int32_t energy_count = 0;
     std::int32_t tool_count = 0;
@@ -618,10 +622,10 @@ __global__ void encode_official_policy_codec_v1_kernel(
     auto* entity_num = codec.entity_num + env * kMaxCodecEntities * kEntityNumWidth;
     auto* entity_parent = codec.entity_parent + env * kMaxCodecEntities;
     auto* entity_mask = codec.entity_mask + env * kMaxCodecEntities;
-    auto* option_cat = codec.option_cat + env * kMaxCodecOptions * kOptionCatWidth;
-    auto* option_num = codec.option_num + env * kMaxCodecOptions * kOptionNumWidth;
-    auto* option_equiv = codec.option_equiv + env * kMaxCodecOptions;
-    auto* option_mask = codec.option_mask + env * kMaxCodecOptions;
+    auto* option_cat = codec.option_cat + env * kMaxOfficialCodecOptions * kOptionCatWidth;
+    auto* option_num = codec.option_num + env * kMaxOfficialCodecOptions * kOptionNumWidth;
+    auto* option_equiv = codec.option_equiv + env * kMaxOfficialCodecOptions;
+    auto* option_mask = codec.option_mask + env * kMaxOfficialCodecOptions;
 
     for (std::uint32_t index = 0; index < kGlobalCatWidth; ++index) {
         global_cat[index] = 0;
@@ -639,14 +643,14 @@ __global__ void encode_official_policy_codec_v1_kernel(
     for (std::uint32_t index = 0; index < kMaxCodecEntities * kEntityNumWidth; ++index) {
         entity_num[index] = 0.0F;
     }
-    for (std::uint32_t index = 0; index < kMaxCodecOptions; ++index) {
+    for (std::uint32_t index = 0; index < kMaxOfficialCodecOptions; ++index) {
         option_equiv[index] = -1;
         option_mask[index] = 0;
     }
-    for (std::uint32_t index = 0; index < kMaxCodecOptions * kOptionCatWidth; ++index) {
+    for (std::uint32_t index = 0; index < kMaxOfficialCodecOptions * kOptionCatWidth; ++index) {
         option_cat[index] = 0;
     }
-    for (std::uint32_t index = 0; index < kMaxCodecOptions * kOptionNumWidth; ++index) {
+    for (std::uint32_t index = 0; index < kMaxOfficialCodecOptions * kOptionNumWidth; ++index) {
         option_num[index] = 0.0F;
     }
 
@@ -795,7 +799,7 @@ __global__ void encode_official_policy_codec_v1_kernel(
         return;
     }
 
-    if (state->options.count > kMaxCodecOptions) {
+    if (state->options.count > kMaxOfficialCodecOptions) {
         official_pod_fail(
             state,
             OfficialPodError::kOptionOverflow,
@@ -913,7 +917,7 @@ __global__ void encode_official_policy_codec_v1_kernel(
         const std::int64_t target_position = target_entity >= 0
             ? entity_cat[target_entity * kEntityCatWidth + 3]
             : 0;
-        std::int64_t group = option_index;
+        std::int64_t group = 0;
         for (std::uint16_t previous = 0; previous < option_index; ++previous) {
             const std::int64_t* prior = option_cat + previous * kOptionCatWidth;
             const std::int32_t prior_source_entity = static_cast<std::int32_t>(prior[8] - 1);
@@ -950,6 +954,8 @@ __global__ void encode_official_policy_codec_v1_kernel(
                 group = option_equiv[previous];
                 break;
             }
+            const std::int64_t next_group = option_equiv[previous] + 1;
+            if (next_group > group) group = next_group;
         }
         option_equiv[option_index] = group;
         option_mask[option_index] = 1;
@@ -1074,7 +1080,7 @@ cudaError_t allocate_official_arena(
     }
     status = official_allocate(
         &arena->codec.option_cat,
-        batch * kMaxCodecOptions * kOptionCatWidth,
+        batch * kMaxOfficialCodecOptions * kOptionCatWidth,
         &arena->allocated_bytes);
     if (status != cudaSuccess) {
         free_official_arena(arena);
@@ -1082,7 +1088,7 @@ cudaError_t allocate_official_arena(
     }
     status = official_allocate(
         &arena->codec.option_num,
-        batch * kMaxCodecOptions * kOptionNumWidth,
+        batch * kMaxOfficialCodecOptions * kOptionNumWidth,
         &arena->allocated_bytes);
     if (status != cudaSuccess) {
         free_official_arena(arena);
@@ -1090,7 +1096,7 @@ cudaError_t allocate_official_arena(
     }
     status = official_allocate(
         &arena->codec.option_equiv,
-        batch * kMaxCodecOptions,
+        batch * kMaxOfficialCodecOptions,
         &arena->allocated_bytes);
     if (status != cudaSuccess) {
         free_official_arena(arena);
@@ -1098,7 +1104,7 @@ cudaError_t allocate_official_arena(
     }
     status = official_allocate(
         &arena->codec.option_mask,
-        batch * kMaxCodecOptions,
+        batch * kMaxOfficialCodecOptions,
         &arena->allocated_bytes);
     if (status != cudaSuccess) {
         free_official_arena(arena);

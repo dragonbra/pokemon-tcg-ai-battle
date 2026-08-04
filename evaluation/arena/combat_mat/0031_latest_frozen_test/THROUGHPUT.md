@@ -40,3 +40,22 @@ All accepted graph runs use the full 64-step decoder and 128-option codec. The m
 The 304-lane exploratory run only modestly exceeded 152-lane decision throughput while raising Torch reservation to about 1.20 GB. For shared rollout plus learner training, 152 lanes is the current practical operating point.
 
 These are throughput and legality results, not policy-strength evidence and not strict 0031 continuation. The 0032 actor uses a new POD contract; compatible 0031 parameters are initialization only.
+
+## Formal PPO topology
+
+All 38 CUDA-supported exact decks participate in every update with four lanes
+each. They use one shared 0019 Epoch 13 Foundation decoder. The 48 materialized
+0022 V11 update-0 decoders were verified tensor-identical to this immutable
+foundation, so no grouped deck-head routing is required.
+
+The selected 256-step persistent CUDA Graph canary measured 2,282.910 rollout
+decisions/s and 988.121 end-to-end engine decisions/s including PPO. It
+completed 176 Episodes and admitted 10,704 focal PPO decisions in one update,
+with all 38 decks represented, zero illegal/error rows, behavior log-prob MAE
+2.33e-7, and 3.84 GiB reserved memory. This window has much higher effective
+PPO-sample throughput than 64 or 128 steps despite lower raw end-to-end engine
+decision throughput.
+
+Formal V4 retains all 200 updates as action-decoder plus value-head checkpoints.
+That payload has 1,130,243 FP32 parameters (about 4.31 MiB raw) and does not
+duplicate the frozen encoder or store optimizer/RNG/rollout state.
