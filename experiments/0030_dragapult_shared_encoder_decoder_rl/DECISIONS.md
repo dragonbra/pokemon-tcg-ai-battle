@@ -1,5 +1,13 @@
 # 0030 experiment decisions
 
+## 2026-08-04: Kaggle raw-exec fix and successful one-shot resubmissions
+
+- Root cause of refs `55226701` and `55226710` was the package entrypoint's unconditional `Path(__file__)`: Kaggle's raw `exec(code_object, env)` loader does not define `__file__`. Local evaluation had used `importlib`, which supplied it and created a false-positive validation boundary.
+- Added an isolated Kaggle-equivalent raw-exec gate and made the 0030 exporter normalize copied entrypoints to a CWD-based root with an explicit `/kaggle_simulations/agent` fallback. The exporter now fails closed before publishing a package if raw-exec initialization cannot return the exact deck.
+- Preserved both failed archives and created new `kaggle_exec_fix` identities. Directory validation, extracted-tar validation, exact 60-card initialization, model hash preservation, member safety, 26 shared package tests, and 28 project tests all passed.
+- Per user instruction, fixed U50 was submitted first exactly once as ref `55227026`, followed by fixed U81 exactly once as ref `55227052`; no automatic retry was issued. Both reached `COMPLETE`. Each initially reported `600.0`; at receipt finalization the live rolling scores were U50 `703.4` and U81 `698.2`, which are point-in-time observations rather than immutable offline metrics.
+- Exact archive hashes, messages, timestamps, command counts, local reports, and Kaggle refs are recorded in `submission_receipt_u50_u81_kaggle_exec_fix.json`.
+
 ## 2026-08-04: U50 and U81 one-shot Kaggle submissions
 
 - The two self-contained flat-root archives passed local package validation, exact 60-card initialization, archive traversal/symlink/forbidden-file checks, and exported-model hash verification before submission.

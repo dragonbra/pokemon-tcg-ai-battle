@@ -12,6 +12,8 @@ from typing import Any
 
 import torch
 
+from evaluation.packages.loader import validate_kaggle_raw_exec
+
 from .checkpoint import load_model_checkpoint
 from .policy import load_actor_critic
 
@@ -24,6 +26,13 @@ DEFAULT_SOURCE_PACKAGE = (
     / "candidates"
     / "0028_v3_latest_dragapult_ex_001_zero_shot"
 )
+
+_UNSAFE_PACKAGE_ROOT = "ROOT = Path(__file__).resolve().parent"
+_KAGGLE_PACKAGE_ROOT = """ROOT = Path(globals().get("__file__", Path.cwd())).resolve()
+if ROOT.is_file():
+    ROOT = ROOT.parent
+if not (ROOT / "deck.csv").is_file() and Path("/kaggle_simulations/agent/deck.csv").is_file():
+    ROOT = Path("/kaggle_simulations/agent")"""
 
 
 def _sha256(path: Path) -> str:
@@ -39,6 +48,14 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         json.dumps(payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def _kaggle_compatible_main(source: str) -> str:
+    if _KAGGLE_PACKAGE_ROOT in source:
+        return source
+    if _UNSAFE_PACKAGE_ROOT not in source:
+        raise ValueError("source package main.py has an unknown root resolution contract")
+    return source.replace(_UNSAFE_PACKAGE_ROOT, _KAGGLE_PACKAGE_ROOT, 1)
 
 
 def export_candidate(
@@ -97,6 +114,7 @@ def export_candidate(
             "0028 V3 latest zero-shot Dragapult ex evaluation entrypoint.",
             "0030 Dragapult decoder-RL evaluation entrypoint.",
         )
+        main_source = _kaggle_compatible_main(main_source)
         main_path.write_text(main_source, encoding="utf-8")
 
         model_path = staging / "strategy" / "model.bin"
@@ -123,6 +141,12 @@ def export_candidate(
             "runtime": "0028_canonical_semantic_online_with_0030_decoder_v1",
         }
         _write_json(staging / "manifest.json", manifest)
+        deck = [
+            int(card_id)
+            for card_id in (staging / "deck.csv").read_text(encoding="utf-8").splitlines()
+            if card_id.strip()
+        ]
+        validate_kaggle_raw_exec(main_path, staging, deck)
         staging.replace(output)
         return manifest
     finally:

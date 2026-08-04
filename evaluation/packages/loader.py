@@ -136,6 +136,39 @@ finally:
         pass
 """
 
+_KAGGLE_RAW_EXEC_VALIDATION_SCRIPT = f"""
+import os
+import sys
+from pathlib import Path
+
+
+try:
+    entrypoint = Path(sys.argv[1]).resolve()
+    package_root = Path(sys.argv[2]).resolve()
+    deck = [int(card_id) for card_id in sys.argv[3:]]
+    os.chdir(package_root)
+    sys.path.insert(0, str(package_root))
+    environment = {{}}
+    source = entrypoint.read_text(encoding="utf-8")
+    exec(compile(source, str(entrypoint), "exec"), environment)
+    agent = environment.get("agent")
+    if not callable(agent):
+        raise ValueError("main.py must define a callable agent")
+    returned_deck = agent({{"select": None}})
+    if not isinstance(returned_deck, list) or returned_deck != deck:
+        raise ValueError("agent({{'select': None}}) must return the deck.csv card IDs")
+except BaseException as exc:
+    print(f"{{type(exc).__name__}}: {{exc}}", file=sys.stderr)
+    raise SystemExit(1) from exc
+else:
+    os.write({_VALIDATION_SUCCESS_FD}, {_VALIDATION_SUCCESS_MARKER!r})
+finally:
+    try:
+        os.close({_VALIDATION_SUCCESS_FD})
+    except OSError:
+        pass
+"""
+
 
 @contextmanager
 def _validation_success_pipe() -> Iterator[int]:
@@ -237,6 +270,58 @@ def _validate_agent_in_subprocess(entrypoint: Path, root: Path, deck: list[int])
     if not detail:
         detail = f"subprocess exited with code {result.returncode}"
     raise PackageValidationError(f"main.py subprocess validation failed: {detail}")
+
+
+def validate_kaggle_raw_exec(entrypoint: Path, root: Path, deck: list[int]) -> None:
+    """Validate the loader contract used by Kaggle, which omits ``__file__``."""
+    environment = os.environ.copy()
+    environment.pop("PYTHONPATH", None)
+    environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    try:
+        with _validation_success_pipe() as validation_read_fd:
+            try:
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        "-c",
+                        _KAGGLE_RAW_EXEC_VALIDATION_SCRIPT,
+                        str(entrypoint),
+                        str(root),
+                        *(str(card_id) for card_id in deck),
+                    ],
+                    cwd=root,
+                    env=environment,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    timeout=SUBPROCESS_VALIDATION_TIMEOUT_SECONDS,
+                    pass_fds=(_VALIDATION_SUCCESS_FD,),
+                )
+            except subprocess.TimeoutExpired as exc:
+                raise PackageValidationError(
+                    "Kaggle raw-exec validation timed out"
+                ) from exc
+
+            try:
+                success_marker = os.read(
+                    validation_read_fd,
+                    len(_VALIDATION_SUCCESS_MARKER),
+                )
+            except BlockingIOError:
+                success_marker = b""
+    except PackageValidationError:
+        raise
+    except OSError as exc:
+        raise PackageValidationError(
+            f"Kaggle raw-exec validation failed: {exc}"
+        ) from exc
+
+    if result.returncode == 0 and success_marker == _VALIDATION_SUCCESS_MARKER:
+        return
+    detail = result.stderr.strip() or result.stdout.strip()
+    if not detail:
+        detail = f"subprocess exited with code {result.returncode}"
+    raise PackageValidationError(f"Kaggle raw-exec validation failed: {detail}")
 
 
 def _hash_file(path: Path) -> str:

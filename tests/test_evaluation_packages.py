@@ -87,6 +87,45 @@ class EvaluationPackageTests(unittest.TestCase):
         self.assertEqual(len(loader_pids), 1)
         self.assertNotEqual(int(loader_pids[0]), os.getpid())
 
+    def test_kaggle_raw_exec_rejects_unconditional_dunder_file(self) -> None:
+        package_root = self.make_package(
+            deck=[1] * 60,
+            main_source=(
+                "from pathlib import Path\n"
+                "ROOT = Path(__file__).resolve().parent\n\n"
+                "def agent(observation):\n"
+                "    return [1] * 60\n"
+            ),
+        )
+
+        with self.assertRaisesRegex(PackageValidationError, "__file__"):
+            package_loader.validate_kaggle_raw_exec(
+                package_root / "main.py",
+                package_root,
+                [1] * 60,
+            )
+
+    def test_kaggle_raw_exec_accepts_cwd_fallback(self) -> None:
+        package_root = self.make_package(
+            deck=[1] * 60,
+            main_source=(
+                "from pathlib import Path\n"
+                "ROOT = Path(globals().get('__file__', Path.cwd())).resolve()\n"
+                "if ROOT.is_file():\n"
+                "    ROOT = ROOT.parent\n"
+                "DECK = [int(value) for value in "
+                "(ROOT / 'deck.csv').read_text().splitlines()]\n\n"
+                "def agent(observation):\n"
+                "    return list(DECK)\n"
+            ),
+        )
+
+        package_loader.validate_kaggle_raw_exec(
+            package_root / "main.py",
+            package_root,
+            [1] * 60,
+        )
+
     def test_loader_rejects_system_exit_during_main_import(self) -> None:
         package_root = self.make_package(
             deck=[1] * 60,

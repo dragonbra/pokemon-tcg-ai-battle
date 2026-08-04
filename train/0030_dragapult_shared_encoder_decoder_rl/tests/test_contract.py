@@ -271,6 +271,17 @@ class ProjectContractTest(unittest.TestCase):
         config.validate()
         self.assertNotIn(".unlink(", inspect.getsource(run_module))
 
+    def test_exporter_enforces_kaggle_raw_exec_contract(self):
+        exporter = Path(__file__).resolve().parents[1] / "export_candidate.py"
+        source = exporter.read_text(encoding="utf-8")
+        self.assertIn('globals().get("__file__", Path.cwd())', source)
+        self.assertIn('Path("/kaggle_simulations/agent/deck.csv")', source)
+        self.assertIn("validate_kaggle_raw_exec(", source)
+        self.assertLess(
+            source.index("validate_kaggle_raw_exec("),
+            source.index("staging.replace(output)"),
+        )
+
     def test_run_config_rejects_missing_initialization_checkpoint(self):
         config = RunConfig(
             version="V999_missing_checkpoint",

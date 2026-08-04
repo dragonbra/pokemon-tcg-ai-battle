@@ -1,0 +1,33 @@
+{
+  "candidate": "0030_dragapult_ex_001_rl_update81_kaggle_exec_fix",
+  "deck_id": "dragapult_ex_001",
+  "deck_sha256": "9c4565e1d4256d612c04c78f85ceaf24acfc36144ec8812459c5cc870c08fe72",
+  "decoder_checkpoint": "rl_runs/0030_dragapult_shared_encoder_decoder_rl/versions/V10_update81_frozen0019_audit/checkpoint/source-update-0081.pt",
+  "decoder_checkpoint_sha256": "e415136f50c3ad04725e287cbe1d08449f80b9524aea1a9f2ea347b2a5c9fbc4",
+  "decoder_sha256": "8e92524c3d7f0399113335153971b8d5850bff9d8bff3298a0527a5262c86b82",
+  "exported_model_sha256": "ee792bd8c99a147fcc65e2b5e3d63c931cfcd28437bacc5de477e3902c9746d5",
+  "formal_evaluation": {
+    "completed_games": 510,
+    "errors": 0,
+    "losses": 210,
+    "report": "experiments/0030_dragapult_shared_encoder_decoder_rl/evaluation/V10_update81_frozen0019_audit.html",
+    "win_rate": 0.5882352941176471,
+    "wins": 300
+  },
+  "foundation_checkpoint_sha256": "5e0a6eea42bf228a9bd977cf56fdd14ad360fbceffcf5c19e2d9fe1b39713d98",
+  "kaggle_raw_exec_compatible": true,
+  "model_only_source": true,
+  "optimizer_state_saved": false,
+  "project_id": "0030_dragapult_shared_encoder_decoder_rl",
+  "representation_sha256": "dc841118cc146d45aa7d9b41bc002cddcd8d5681f916dded8db872bd49100b9a",
+  "runtime": "0028_canonical_semantic_online_with_0030_decoder_v1",
+  "schema_version": "0030_decoder_rl_candidate_v1",
+  "source_candidate": "0030_dragapult_ex_001_v3_update81_v10_update81_frozen0019_audit",
+  "source_failed_submission": {
+    "archive_sha256": "9029a51bb85329e438d4a1dc1c9e64680c2ee5a9256a8579f8b4d54e07eb459b",
+    "error": "Validation Episode failed: __file__ was not defined",
+    "submission_ref": 55226710
+  },
+  "update": 81,
+  "version": "V3_lightweight_engine_workers"
+}
