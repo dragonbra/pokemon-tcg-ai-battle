@@ -1,5 +1,24 @@
 # 0032 Decisions
 
+## 2026-08-05: Stop V4 after the RL throughput pathway was accepted
+
+The user requested an intentional stop after update 81 because the primary
+RL-throughput question had been answered. V4 completed 3,151,872 official CUDA
+engine decisions and 13,100 Episodes with zero engine errors, illegal rows or
+OOM events. Aggregate rollout throughput was 2,332.086 engine decisions/s;
+aggregate end-to-end throughput including PPO and checkpoint/logging work was
+905.419 engine decisions/s; effective admitted focal PPO throughput was
+295.301 decisions/s.
+
+All 81 completed action-decoder/value-head checkpoints remain retained. The
+runner's mechanical `KeyboardInterrupt` failure status was replaced with
+`completed_user_stop_after_throughput_acceptance`; no training metrics or
+checkpoint payloads were rewritten. Across sampled on-policy rollouts the
+focal record was 6,978 wins, 6,117 losses and 5 draws. This is training
+diagnostic evidence only. No balanced fixed-seed official-engine greedy
+checkpoint-strength evaluation has been run, so V4 makes no policy-improvement
+claim.
+
 ## 2026-08-05: Follow the user-selected Mega Lopunny/Froslass 001 pathway
 
 The formal focal deck is `mega_lopunny_ex_mega_froslass_ex_001`, using the

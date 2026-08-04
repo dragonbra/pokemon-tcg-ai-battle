@@ -11,8 +11,9 @@ explicit mappings. It is initialization, not input or behavior parity.
 
 V1 remains the historical POD/CUDA adapter validation. V2 freezes the focal
 selection and preflight evidence. V3 was stopped after update 4 when the run
-budget and opponent contract changed. Formal 200-update PPO is
-`V4_mega_lopunny_froslass_001_cuda_ppo_200u`.
+budget and opponent contract changed. V4 was configured for 200 updates as
+`V4_mega_lopunny_froslass_001_cuda_ppo_200u` and intentionally stopped after
+81 complete updates once the user accepted the RL-throughput result.
 
 Official game legality and card behavior remain the responsibility of the
 unmodified official engine and the audited CUDA port. Attack commitment,
@@ -95,10 +96,11 @@ decks represented, zero illegal/error rows, and behavior log-prob MAE
 This has substantially higher effective PPO-sample throughput than the 64- and
 128-step windows even though its raw end-to-end engine-decision rate is lower.
 
-Every update retains an atomic trainable-head checkpoint containing schema,
+Every completed update retains an atomic trainable-head checkpoint containing schema,
 update, `action_decoder.*`, `value_head.*` and reconstruction metadata. The
-1,130,243 saved FP32 parameters occupy about 4.31 MiB before serialization, so
-200 updates are about 862 MiB of raw weights. The frozen
+1,130,243 saved FP32 parameters occupy about 4.31 MiB before serialization.
+The 81 retained serialized checkpoints occupy 366,768,405 bytes (349.78 MiB).
+The frozen
 encoder is referenced by its immutable 0031 hash rather than copied. Optimizer,
 scheduler, scaler, RNG,
 DataLoader position and rollout buffers are excluded. Canonical metrics are
@@ -107,10 +109,17 @@ the existing host credential without recording it. A foreground process
 watchdog owns the training child and records
 heartbeat, GPU, host memory, swap, disk, stale metrics and fatal errors.
 
-## Current and next stage
+## Completed outcome and next stage
 
-V4 is the formal 200-update, 256-step CUDA PPO training stage. Every update covers all 38
-supported frozen decks and is throughput/learning-path evidence. Policy
-strength must later be established by balanced, fixed-seed, official-engine
-greedy evaluation under a new immutable evaluation version; sampled training
-rollouts alone cannot promote a candidate package.
+V4 stopped intentionally after update 81 of the planned 200. It produced
+3,151,872 engine decisions, 13,100 complete Episodes and 1,027,978 admitted
+focal training decisions. Aggregate rollout throughput was 2,332.086 engine
+decisions/s, end-to-end throughput was 905.419 engine decisions/s, and
+effective PPO-sample throughput was 295.301 focal decisions/s. Peak reserved
+GPU memory was 4.041 GiB; engine-error lanes and illegal rows were both zero.
+
+The sampled on-policy rollout record was 6,978 wins, 6,117 losses and 5 draws
+(53.286% score rate). This measures the behavior policies that generated each
+batch, not the strength of checkpoint 81. The throughput pathway is accepted;
+policy strength remains unverified until balanced, fixed-seed, official-engine
+greedy evaluation is recorded under a new immutable evaluation version.

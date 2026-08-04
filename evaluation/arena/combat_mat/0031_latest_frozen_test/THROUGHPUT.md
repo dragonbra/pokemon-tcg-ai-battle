@@ -56,6 +56,17 @@ with all 38 decks represented, zero illegal/error rows, behavior log-prob MAE
 PPO-sample throughput than 64 or 128 steps despite lower raw end-to-end engine
 decision throughput.
 
-Formal V4 retains all 200 updates as action-decoder plus value-head checkpoints.
-That payload has 1,130,243 FP32 parameters (about 4.31 MiB raw) and does not
-duplicate the frozen encoder or store optimizer/RNG/rollout state.
+V4 was planned for 200 updates and intentionally stopped after update 81 when
+the user accepted the RL-throughput result. It processed 3,151,872 engine
+decisions and completed 13,100 Episodes. Aggregate rollout throughput was
+2,332.086 engine decisions/s, end-to-end throughput including PPO was 905.419
+engine decisions/s, and effective admitted focal PPO throughput was 295.301
+decisions/s. All 81 action-decoder plus value-head checkpoints are retained
+(366,768,405 serialized bytes total); they do not duplicate the frozen encoder
+or store optimizer/RNG/rollout state. The run recorded zero engine-error lanes,
+illegal rows or OOM events, with 4.041 GiB peak reserved Torch memory.
+
+The sampled rollout record (6,978 wins, 6,117 losses and 5 draws) is a training
+diagnostic over successive behavior policies. No fixed-seed frozen greedy
+checkpoint-strength evaluation has been run, so this acceptance is strictly
+about runtime support and RL throughput.

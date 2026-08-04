@@ -2,7 +2,7 @@
   "schema": "0032_experiment_manifest_v1",
   "project_id": "0032_dragapult_pod_native_cuda_rl",
   "created_at": "2026-08-05",
-  "stage": "formal_cuda_ppo",
+  "stage": "throughput_acceptance_completed_user_stop",
   "focal_deck": "mega_lopunny_ex_mega_froslass_ex_001",
   "actor_contract": "pure_policy_codec_v1",
   "actor_tensor_capacity": {
@@ -44,6 +44,17 @@
     "checkpoint_payload": "action_decoder_and_value_head_only",
     "checkpoint_trainable_parameters": 1130243,
     "wandb_mode": "online",
-    "watchdog": "foreground_process_owner"
+    "watchdog": "foreground_process_owner",
+    "outcome": {
+      "state": "completed_user_stop_after_throughput_acceptance",
+      "updates_completed": 81,
+      "engine_decisions": 3151872,
+      "completed_episodes": 13100,
+      "checkpoints_retained": 81,
+      "aggregate_rollout_decisions_per_second": 2332.085820040901,
+      "aggregate_end_to_end_decisions_per_second": 905.4194302957613,
+      "aggregate_effective_ppo_samples_per_second": 295.3010957033078,
+      "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0032-v4-mega-lopunny-froslass-001-cuda-ppo-200u"
+    }
   }
 }

@@ -1,0 +1,49 @@
+{
+  "checkpoint": {
+    "count": 81,
+    "latest_update": 81,
+    "optimizer_state_saved": false,
+    "payload": "action_decoder_and_value_head_only",
+    "retention": "all_completed_updates",
+    "serialized_bytes_each": 4528005,
+    "serialized_bytes_total": 366768405
+  },
+  "engine": {
+    "decisions": 3151872,
+    "error_lanes": 0,
+    "illegal_rows": 0
+  },
+  "episodes": {
+    "completed": 13100,
+    "draws": 5,
+    "focal_losses": 6117,
+    "focal_wins": 6978,
+    "sampled_score_rate": 0.5328625954198474,
+    "sampled_win_rate_excluding_draws": 0.5328751431844215
+  },
+  "focal_training_decisions": 1027978,
+  "planned_updates": 200,
+  "reason": "user_requested_stop_after_rl_throughput_acceptance",
+  "schema": "0032_cuda_ppo_training_summary_v1",
+  "state": "completed_user_stop_after_throughput_acceptance",
+  "throughput": {
+    "aggregate_effective_ppo_samples_per_second": 295.3010957033078,
+    "aggregate_end_to_end_engine_decisions_per_second": 905.4194302957613,
+    "aggregate_rollout_engine_decisions_per_second": 2332.085820040901,
+    "end_to_end_wall_seconds": 3481.1181365639786,
+    "mean_end_to_end_engine_decisions_per_second": 907.165057644054,
+    "mean_rollout_engine_decisions_per_second": 2333.9260642900017,
+    "peak_gpu_reserved_gib": 4.041015625,
+    "ppo_wall_seconds": 2044.38453479897,
+    "rollout_wall_seconds": 1351.5248765350843
+  },
+  "updates_completed": 81,
+  "wandb": {
+    "entity": "dragon_bra",
+    "project": "pokemon-tcg-policy-learning",
+    "run_id": "0032-v4-mega-lopunny-froslass-001-cuda-ppo-200u",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0032-v4-mega-lopunny-froslass-001-cuda-ppo-200u"
+  },
+  "warning": "Sampled on-policy rollout rates are training diagnostics, not frozen greedy checkpoint-strength evidence."
+}

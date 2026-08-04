@@ -25,12 +25,12 @@
   </style>
 </head>
 <body><main>
-  <header><h1>0032 Mega Lopunny / Froslass CUDA PPO</h1><p>Authoritative V4 200-update model, rollout, PPO, checkpoint, and evidence contract.</p></header>
+  <header><h1>0032 Mega Lopunny / Froslass CUDA PPO</h1><p>Authoritative V4 model, rollout, PPO, checkpoint, and completed throughput-acceptance record.</p></header>
   <section class="status">
     <div><strong>128</strong>entity slots</div><div><strong>128</strong>option slots</div><div><strong>14.58M</strong>parameters</div><div><strong>64</strong>action steps</div>
   </section>
   <h2>Evidence boundary</h2>
-  <p>The formal focal deck is the exact frozen <code>mega_lopunny_ex_mega_froslass_ex_001</code> package. V4 starts from the 0031 V4 epoch-2 checkpoint and uses the official CUDA engine. V3 was stopped after update 4 when the requested budget and opponent contract changed. Official rules and runtime card behavior determine legality; reward, value, setup quality and long-horizon resource use are learned policy concerns.</p>
+  <p>The formal focal deck is the exact frozen <code>mega_lopunny_ex_mega_froslass_ex_001</code> package. V4 starts from the 0031 V4 epoch-2 checkpoint and uses the official CUDA engine. V3 was stopped after update 4 when the requested budget and opponent contract changed. V4 was configured for 200 updates and intentionally stopped after 81 complete updates once the user accepted the RL-throughput result. Official rules and runtime card behavior determine legality; reward, value, setup quality and long-horizon resource use are learned policy concerns.</p>
   <h2>Actor-visible tensors</h2>
   <table><thead><tr><th>Field</th><th>Shape</th><th>Type</th><th>Purpose</th></tr></thead><tbody>
     <tr><td><code>global_cat</code> / <code>global_num</code></td><td>[B,8] / [B,16]</td><td>int64 / float</td><td>Global game, select, turn and resource state</td></tr>
@@ -58,7 +58,10 @@
     <tr><td>Selected 256-step PPO canary</td><td>2,282.910 rollout and 988.121 end-to-end engine decisions/s; 176 Episodes and 10,704 focal PPO decisions</td></tr>
     <tr><td>Behavior replay</td><td>Log-prob MAE 2.33e-7 before PPO; threshold 1e-4</td></tr>
     <tr><td>Persistent memory</td><td>Graph and fixed buffers reused; 2.60 GiB peak allocation and 3.84 GiB reserved</td></tr>
+    <tr><td>Completed V4 run</td><td>81 updates; 3,151,872 decisions; 13,100 Episodes; 2,332.086 rollout, 905.419 end-to-end and 295.301 effective focal PPO decisions/s</td></tr>
+    <tr><td>Run health</td><td>Zero engine-error lanes, illegal rows or OOM events; 4.041 GiB peak reserved memory</td></tr>
   </tbody></table>
   <h2>Checkpoint and current stage</h2>
-  <p>V4 retains all 200 updates in atomic trainable-head checkpoints. Only <code>action_decoder.*</code> and <code>value_head.*</code> are stored: 1,130,243 FP32 parameters, about 4.31 MiB raw per update. The frozen encoder is reconstructed from its immutable 0031 hash; optimizer, RNG and rollout state are excluded. Canonical JSONL precedes TensorBoard and W&amp;B online mirroring after SDK credential preflight. A foreground watchdog owns the training child. Sampled rollout rates remain training diagnostics; policy strength requires later balanced official-engine greedy evaluation.</p>
+  <p>V4 retains all 81 completed updates in atomic trainable-head checkpoints, totaling 366,768,405 serialized bytes (349.78 MiB). Only <code>action_decoder.*</code> and <code>value_head.*</code> are stored: 1,130,243 FP32 parameters, about 4.31 MiB raw per update. The frozen encoder is reconstructed from its immutable 0031 hash; optimizer, RNG and rollout state are excluded. Canonical JSONL preceded TensorBoard and W&amp;B online mirroring, and the W&amp;B run is synced.</p>
+  <p class="note">The sampled on-policy rollout record was 6,978 wins, 6,117 losses and 5 draws (53.286% score rate). It measures the successive behavior policies that generated the batches, not checkpoint 81 strength. The throughput pathway is accepted; policy strength remains unverified until a balanced fixed-seed official-engine greedy evaluation is recorded.</p>
 </main></body></html>
