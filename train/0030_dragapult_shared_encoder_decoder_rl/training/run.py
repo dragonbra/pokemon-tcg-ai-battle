@@ -40,7 +40,7 @@ class RunConfig:
     seed: int = 20260802
     eval_every: int = 5
     eval_games: int = 102
-    checkpoint_retention: int = 6
+    checkpoint_retention: str = "all"
     wandb_mode: str = "online"
     initialization_checkpoint: str | None = None
     ppo: PPOConfig = PPOConfig()
@@ -56,8 +56,8 @@ class RunConfig:
             )
         if self.eval_every < 1 or self.eval_games != 102:
             raise ValueError("frozen evaluation contract is exactly 102 games")
-        if self.checkpoint_retention < 2:
-            raise ValueError("checkpoint_retention must preserve at least last and best")
+        if self.checkpoint_retention != "all":
+            raise ValueError("0030 must preserve every model-only checkpoint")
         if self.wandb_mode not in {"disabled", "offline", "online"}:
             raise ValueError("invalid W&B mode")
         if self.initialization_checkpoint is not None:
@@ -217,15 +217,6 @@ def _system_metrics(device: torch.device) -> dict[str, float]:
     return metrics
 
 
-def _retain_checkpoints(directory: Path, limit: int, protected: set[Path]) -> None:
-    checkpoints = sorted(directory.glob("update-*.pt"))
-    removable = [path for path in checkpoints if path not in protected]
-    while len(checkpoints) > limit and removable:
-        victim = removable.pop(0)
-        victim.unlink()
-        checkpoints.remove(victim)
-
-
 def _eval_collector_metrics(
     collector: HeterogeneousRolloutCollector, prefix: str
 ) -> dict[str, float]:
@@ -341,7 +332,6 @@ def run(config: RunConfig) -> dict[str, Any]:
     best_path = paths["checkpoint"] / "update-0000.pt"
     cumulative_episodes = 0
     cumulative_decisions = 0
-    protected = {best_path}
     started = time.time()
     _status(paths["status"], {
         "state": "running", "version": config.version, "pid": os.getpid(),
@@ -431,8 +421,6 @@ def run(config: RunConfig) -> dict[str, Any]:
                         best_eval = eval_score
                         best_update = update
                         best_path = checkpoint_path
-                protected = {best_path, checkpoint_path}
-                _retain_checkpoints(paths["checkpoint"], config.checkpoint_retention, protected)
                 logger.log(update, metrics)
                 _status(paths["status"], {
                     "state": "running", "version": config.version, "pid": os.getpid(),

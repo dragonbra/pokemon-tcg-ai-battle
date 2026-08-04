@@ -1,7 +1,9 @@
 {
+  "interruption_reason": "user_reselected_update50_and_update82",
   "kind": "frozen0019_checkpoint_audit",
   "source_training_version": "V3_lightweight_engine_workers",
   "source_update": 81,
-  "state": "running",
+  "state": "interrupted",
+  "stopped_at": "2026-08-04T02:03:45.572976+00:00",
   "version": "V8_update81_frozen0019_audit"
 }

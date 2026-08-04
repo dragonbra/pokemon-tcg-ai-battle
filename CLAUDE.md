@@ -107,7 +107,7 @@
 - 后续 BC 预训练、value calibration 和 RL/PPO 默认只保存 model-only checkpoint：模型权重、schema/version、epoch 或 update、模型/数据/来源 checkpoint/config hash，以及足以定位该权重的关键指标。不得默认保存 optimizer、scheduler、GradScaler、RNG state、DataLoader 位置、rollout buffer、replay 或其他用于逐 bit 恢复训练轨迹的状态。
 - model-only checkpoint 必须原子写入并在测试中拒绝上述恢复状态字段。它保证策略推理、导出和正式评测可复现，但不声称可以精确续跑原优化轨迹。
 - 从历史权重继续训练时必须分配新的 `V<n>_<tag>`，重新初始化 optimizer，并重新采集 on-policy 数据或重新开始明确的数据 pass；不得向旧版本追加一条语义不同的训练曲线。
-- checkpoint 保留数量必须有限并写入训练配置。默认优先保留最后、最佳和明确分支点所需的少量权重，不得仅因每个 epoch/update 都可保存就无限累积。
+- model-only checkpoint 默认必须逐 epoch/update 全量保留，并在训练配置中明确记录 `checkpoint_retention: all`。任何自动 retention、轮转或删除都必须事先取得用户明确授权；不得仅因磁盘成本主动删除中间节点。需要控制空间时应先报告容量预测并请求决定。
 - 只有用户明确要求精确断点恢复，并在版本设计中记录额外磁盘成本、恢复边界和清理策略时，才允许保存 optimizer 等恢复状态；该例外不得成为其他项目的默认模板。
 
 ## 宝可梦 TCG 规则学习长期记忆

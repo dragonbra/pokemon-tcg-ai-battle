@@ -1,5 +1,19 @@
 # 0030 experiment decisions
 
+## 2026-08-04: U50 and U81 one-shot Kaggle submissions
+
+- The two self-contained flat-root archives passed local package validation, exact 60-card initialization, archive traversal/symlink/forbidden-file checks, and exported-model hash verification before submission.
+- Per explicit user instruction, U50 was submitted first and U81 second, with exactly one submission command per archive and no automatic retry. U50 is ref `55226701`; U81 is ref `55226710`.
+- Both submissions reached terminal `ERROR` with Kaggle's only exposed diagnostic `Validation Episode failed.` and no public score. The one-shot constraint remains binding, so neither archive was resubmitted.
+- The immutable receipt, archive hashes, exact messages, local Frozen 0019 results, and Kaggle timestamps are recorded in `submission_receipt_u50_u81.json`.
+
+## 2026-08-04: V3 stopped at update 83 and checkpoint retention retired
+
+- The user requested a normal stop after update 83 had fully written its model-only checkpoint and metrics. V3 is recorded as interrupted by `user_requested_stop`; no optimizer or rollout state is retained.
+- Root-cause audit found that V3 configured `checkpoint_retention=6` and called a deletion function after every update. It preserved the best checkpoint plus recent checkpoints but deleted intermediate files, including requested updates 53 and 75. Those weights were not uploaded to W&B and cannot be reconstructed from scalar metrics.
+- Surviving V3 weights at stop time are update 50 and updates 79-83. Update 50 already has a 510-game formal Frozen 0019 report. The high rollout record at `trainer/update=82` explicitly reports `rollout/source_policy_update=81`, so checkpoint 81, not checkpoint 82, is the selected recent comparison point; checkpoint 82 was produced only after consuming that rollout batch.
+- This retention policy is retired. Subsequent 0030 runs must record `checkpoint_retention: all`, preserve every atomic model-only checkpoint, and contain no automatic checkpoint deletion path. Cleanup requires prior explicit user authorization.
+
 ## 2026-08-04: V3 update 5 independent Frozen 0019 package evaluation
 
 - Exported `evaluation/arena/candidates/0030_dragapult_ex_001_v3_update5` from model-only checkpoint `15fd16529e55ba673a4f4e282181940d63b9ae0a9011af9a8053cb43b8a8baf0`. The self-contained actor package embeds decoder hash `bb28e23748c7493db21f1b5e6f12392834bed5536ff16892280e7e8fd4daa466` and exported model hash `81ef9630a52a211fd6985b3cef19b578c924ef52bcf38151ed09444fb910e2b1`.

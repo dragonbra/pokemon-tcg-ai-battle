@@ -1,0 +1,14 @@
+{
+  "candidate_device": "cuda:0",
+  "games_per_opponent": 10,
+  "opponent_count": 51,
+  "opponent_device": "cuda:0",
+  "project_id": "0030_dragapult_shared_encoder_decoder_rl",
+  "schema_version": "0030_frozen0019_checkpoint_audit_v1",
+  "source_training_version": "V3_lightweight_engine_workers",
+  "source_update": 82,
+  "trigger_eval_foundation_0019_win_rate": 0.0,
+  "version": "V9_update82_frozen0019_audit",
+  "worker_cpu_threads": 1,
+  "workers": 8
+}
