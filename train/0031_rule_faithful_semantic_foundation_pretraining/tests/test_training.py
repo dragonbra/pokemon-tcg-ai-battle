@@ -44,6 +44,18 @@ class TrainingContractTests(unittest.TestCase):
     def test_teacher_loss_is_finite_and_backward_reaches_decoder(self) -> None:
         result = OBJECTIVE.teacher_batch(self.model, self.batch)
         self.assertTrue(torch.isfinite(result.loss))
+        pending = [result.loss.grad_fn]
+        gradient_nodes = set()
+        while pending:
+            node = pending.pop()
+            if node is None or node in gradient_nodes:
+                continue
+            gradient_nodes.add(node)
+            pending.extend(child for child, _ in node.next_functions)
+        index_backward_count = sum(
+            type(node).__name__ == "IndexBackward0" for node in gradient_nodes
+        )
+        self.assertLessEqual(index_backward_count, 4)
         result.loss.backward()
         self.assertIsNotNone(self.model.action_decoder.query.weight.grad)
 
@@ -61,7 +73,6 @@ class TrainingContractTests(unittest.TestCase):
         )
         self.assertEqual(result["decisions"], 1)
         self.assertTrue(0 <= result["legal_action"] <= 1)
-
 
 if __name__ == "__main__":
     unittest.main()

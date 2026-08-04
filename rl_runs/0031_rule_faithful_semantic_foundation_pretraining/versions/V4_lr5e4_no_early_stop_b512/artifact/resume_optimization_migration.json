@@ -1,0 +1,13 @@
+{
+  "epoch": 2,
+  "global_step": 33002,
+  "migration": "compatibility_only_for_semantics_preserving_execution_optimization",
+  "migrated_resume_sha256": "6921db1d8b30f081374eb79cec06dc69efa6629b4c7329a76798478abcf2ab16",
+  "new_implementation_sha256": "44edc71041cb1871323a750c2da1315780e3d1ce1ea10cd404855eb17687215c",
+  "new_training_config_sha256": "83c249f364e01f55a25a450e462dfd52edb7bd94a58ff6a495f93ef9b6621477",
+  "non_compatibility_payload_unchanged": true,
+  "old_implementation_sha256": "ff1a4aac030dcb77c6e26ec24e7fa3df6a2b9c6e53f54488b01a14acdb64303d",
+  "original_preserved_path": "checkpoint/resume/epoch_0002_pre_optimization_resume.pt",
+  "original_resume_sha256": "e59b7b73a95c476787b9bfca0e120b6ac133f946a24311b83bc661ac744be75a",
+  "schema_version": "0031_resume_optimization_migration_v1"
+}

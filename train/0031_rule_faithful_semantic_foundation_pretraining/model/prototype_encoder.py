@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 import torch
 from torch import Tensor, nn
+from torch.nn import functional as F
 
 from ..domain.prototypes import PrototypeIndex
 from .config import ModelConfig
@@ -53,16 +54,16 @@ class PrototypeEmbeddings:
     effects: Tensor
 
     def card(self, identity: Tensor) -> Tensor:
-        return self.cards[identity]
+        return F.embedding(identity, self.cards)
 
     def attack(self, identity: Tensor) -> Tensor:
-        return self.attacks[identity]
+        return F.embedding(identity, self.attacks)
 
     def skill(self, identity: Tensor) -> Tensor:
-        return self.skills[identity]
+        return F.embedding(identity, self.skills)
 
     def effect(self, identity: Tensor) -> Tensor:
-        return self.effects[identity]
+        return F.embedding(identity, self.effects)
 
 
 def _symbols(prototypes: PrototypeIndex) -> dict[str, int]:

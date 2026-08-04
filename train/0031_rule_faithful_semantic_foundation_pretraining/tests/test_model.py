@@ -273,6 +273,17 @@ class ModelTests(unittest.TestCase):
                 identities = torch.arange(maximum + 1)
                 self.assertTrue(torch.equal(direct(identities), shared(identities)))
 
+    def test_shared_prototype_lookups_use_embedding_backward(self) -> None:
+        memory = self.model.prototype_encoder.encode_all()
+        lookups = (
+            memory.card(torch.tensor([1, 2, 1])),
+            memory.attack(torch.tensor([1, 2, 1])),
+            memory.skill(torch.tensor([1, 2, 1])),
+            memory.effect(torch.tensor([1, 2, 1])),
+        )
+        for lookup in lookups:
+            self.assertEqual(type(lookup.grad_fn).__name__, "EmbeddingBackward0")
+
     def test_cached_decoder_constants_preserve_logits(self) -> None:
         with torch.inference_mode():
             batch, state, options = self.model.encode(self.batch)

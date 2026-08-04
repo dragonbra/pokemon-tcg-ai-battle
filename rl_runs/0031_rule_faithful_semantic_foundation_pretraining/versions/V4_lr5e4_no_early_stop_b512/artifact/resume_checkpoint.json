@@ -1,8 +1,8 @@
 {
-  "bytes": 915801587,
+  "bytes": 915793267,
   "optimizer_state_saved": true,
   "path": "latest_resume.pt",
   "resumable_training_state_saved": true,
   "schema_version": "0031_exact_training_state_v1",
-  "sha256": "e59b7b73a95c476787b9bfca0e120b6ac133f946a24311b83bc661ac744be75a"
+  "sha256": "6921db1d8b30f081374eb79cec06dc69efa6629b4c7329a76798478abcf2ab16"
 }

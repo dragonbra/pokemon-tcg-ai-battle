@@ -1,5 +1,15 @@
 # 0031 Decisions
 
+## 2026-08-05: epoch-2 continuation throughput optimization
+
+- Profile the exact epoch-2 batch-512 path before resuming. Representative post-warmup work attributed about 401 ms/batch to forward, 270 ms/batch to backward, 23 ms/batch to host-to-device transfer, 1.3 ms/batch to gradient clipping, and 2.7 ms/batch to fused AdamW. The dominant GPU autograd cost was repeated generic `IndexBackward` from shared prototype-table advanced indexing; gzip/JSON/collation remained a secondary producer cost.
+- Replace differentiable prototype-table advanced indexing with `torch.nn.functional.embedding`. Table values, shapes, and trainability are unchanged, while the backward path uses the dedicated embedding operator.
+- Replace masked-logit materialization in teacher loss with dense cross entropy over transposed logits and `ignore_index=-100`. Targets, valid-token mean reduction, teacher forcing, and gradients retain the same contract. Parse canonical JSON rows with `orjson` 3.11.5 while retaining the same decoded Python values and gzip shards.
+- Admit the combined eager path after an exact epoch-2 equivalence audit: loss delta `5.96e-8`, gradient relative L2 `9.65e-4`, maximum absolute gradient delta `7.63e-6`, finite gradients for all 197 trainable parameter tensors, and maximum BF16 logit delta `9.77e-4` (one BF16 quantization unit).
+- On same-period batch-512 measurements, the unoptimized reference reached 620.3 decisions/s. The admitted path reached 721.4 decisions/s over 150 measured batches (+16.3%) and 706.5 decisions/s over 300 measured batches (+13.9%), with peak CUDA memory approximately unchanged at 8.32/9.90 GB allocated/reserved. Treat this as the local RTX 5080 execution envelope, not a cross-hardware guarantee.
+- Reject asynchronous finite guards and reduced progress scalar synchronization because they did not improve throughput. Reject decoder-only Inductor because GRUCell FakeTensor support and the local Triton compiler toolchain did not satisfy the formal path. Reject a manually expanded GRU because BF16 numerical drift exceeded the equivalence boundary. Reject threaded/process collation, pinned-memory CUDA-stream prefetch, and prefetch depth 8 because each was slower; retain prefetch depth 4.
+- Continue the same `V4_lr5e4_no_early_stop_b512` semantic run and stable W&B identity from exact epoch 2/update 33002. Because the admitted execution implementation changes the implementation commitment without changing model/optimizer/RNG/trainer state, preserve the original epoch-2 resume file and publish an audited compatibility-only migrated resume file before launch.
+
 ## 2026-08-04: formal training start
 
 - Preserve `V1_rule_faithful_foundation` as interrupted before its first completed epoch and without a checkpoint. It was stopped to investigate low startup throughput; subsequent controlled evidence rejected the initial loader-bottleneck hypothesis.
@@ -54,4 +64,4 @@
 - The exact boundary is the end of a completed epoch. An interrupted partial epoch is rerun; batch-level continuation is not claimed.
 - Resume files are finite-retention training assets and never enter candidate packages.
 
-Verification evidence includes 58/58 passing project tests, the chronological semantic/padding benchmark under `.tmp/0031_feature_benchmark/run-20260804-v2/`, the full row audit under `.tmp/0031_training_optimization/full_dataset_verification.json`, and the completed-dataset CUDA fixed-bucket smoke under `.tmp/0031_rule_faithful_bc_smoke/run-c81d419894`. No formal training version was created.
+Verification evidence includes 61/61 passing project tests, 41/41 relevant repository experiment/W&B tests, the chronological semantic/padding benchmark under `.tmp/0031_feature_benchmark/run-20260804-v2/`, the full row audit under `.tmp/0031_training_optimization/full_dataset_verification.json`, the completed-dataset CUDA fixed-bucket smoke under `.tmp/0031_rule_faithful_bc_smoke/run-c81d419894`, and the epoch-2 optimization/equivalence artifacts under `.tmp/0031_training_optimization/`.

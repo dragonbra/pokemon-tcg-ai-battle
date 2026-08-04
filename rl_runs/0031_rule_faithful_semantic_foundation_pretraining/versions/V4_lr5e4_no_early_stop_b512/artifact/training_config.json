@@ -46,7 +46,7 @@
   "fixed_bucket_bounds": null,
   "fixed_bucket_padding": false,
   "grad_clip": 1.0,
-  "implementation_sha256": "ff1a4aac030dcb77c6e26ec24e7fa3df6a2b9c6e53f54488b01a14acdb64303d",
+  "implementation_sha256": "44edc71041cb1871323a750c2da1315780e3d1ce1ea10cd404855eb17687215c",
   "initialized_from_checkpoint": null,
   "learning_rate": 0.0005,
   "length_bucketed_train_batches": true,

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import gzip
 import hashlib
-import json
 import math
 import random
 from collections.abc import Iterator, Mapping
 from pathlib import Path
 from typing import Any
 
+import orjson
 from torch import Tensor
 
 from ..features.collate import BucketPadding, collate_canonical_records
@@ -35,7 +35,7 @@ class CanonicalDecisionDataset:
         self.root = Path(root)
         self.bucket_padding = bucket_padding
         manifest_path = self.root / "manifest.json"
-        self.manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.manifest = orjson.loads(manifest_path.read_bytes())
         if self.manifest.get("schema_version") != SCHEMA_VERSION or self.manifest.get("status") != "complete":
             raise ValueError("canonical dataset manifest is not complete/supported")
         self.shards: dict[str, list[dict[str, Any]]] = {}
@@ -64,7 +64,7 @@ class CanonicalDecisionDataset:
         rows = []
         with gzip.open(self.root / str(item["path"]), "rt", encoding="utf-8") as handle:
             for line in handle:
-                row = json.loads(line)
+                row = orjson.loads(line)
                 if row.get("schema_version") != SCHEMA_VERSION or row.get("audit", {}).get("split") != split:
                     raise ValueError("canonical shard row contract mismatch")
                 rows.append(row)
