@@ -1,0 +1,13 @@
+{
+    "deck_id":  "alakazam_hau_9dd3a463",
+    "decoder_ref":  "foundation",
+    "display_name":  "Alakazam / Genesect / Fan Rotom — hau_uah",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 398; player hau_uah; exact deck hash 9dd3a4635ff9; episode 88956059",
+                       "source":  "kaggle_episode:88956059"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

@@ -1,10 +1,13 @@
 #include "ptcg_cuda/runtime.h"
+#include "ptcg_cuda/official_runtime.h"
 
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <torch/extension.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -196,10 +199,402 @@ private:
     int device_index_ = 0;
 };
 
+class OfficialCudaEngine {
+public:
+    OfficialCudaEngine(
+        std::int64_t batch_size,
+        std::int64_t rule_pack_bytes,
+        std::int64_t device_index,
+        std::int64_t device_stack_bytes)
+        : device_index_(static_cast<int>(device_index)) {
+        if (batch_size <= 0 || batch_size > 0xFFFFFFFFLL
+            || rule_pack_bytes < static_cast<std::int64_t>(
+                sizeof(engine::OfficialRulePackHeader))
+            || device_stack_bytes < static_cast<std::int64_t>(
+                engine::kOfficialMinimumDeviceStackBytes)) {
+            throw std::invalid_argument("invalid official CUDA engine dimensions");
+        }
+        c10::cuda::CUDAGuard guard(device_index_);
+        engine::OfficialRuntimeConfig config{};
+        config.batch_size = static_cast<std::uint32_t>(batch_size);
+        config.rule_pack_bytes = static_cast<std::size_t>(rule_pack_bytes);
+        config.device_stack_bytes = static_cast<std::size_t>(device_stack_bytes);
+        check_cuda(
+            engine::allocate_official_arena(&arena_, config),
+            "allocate_official_arena");
+    }
+
+    ~OfficialCudaEngine() {
+        c10::cuda::CUDAGuard guard(device_index_);
+        engine::free_official_arena(&arena_);
+    }
+
+    OfficialCudaEngine(const OfficialCudaEngine&) = delete;
+    OfficialCudaEngine& operator=(const OfficialCudaEngine&) = delete;
+
+    void upload_rule_pack(torch::Tensor rule_pack) {
+        require_bytes(
+            rule_pack,
+            static_cast<std::int64_t>(arena_.config.rule_pack_bytes),
+            "official_rule_pack",
+            false);
+        c10::cuda::CUDAGuard guard(device_index_);
+        check_cuda(
+            engine::upload_official_rule_pack(
+                &arena_,
+                rule_pack.data_ptr<std::uint8_t>(),
+                arena_.config.rule_pack_bytes),
+            "upload_official_rule_pack");
+    }
+
+    void reset_states(torch::Tensor states) {
+        const std::size_t expected_size =
+            static_cast<std::size_t>(arena_.config.batch_size)
+            * sizeof(engine::OfficialStatePod);
+        if (expected_size > static_cast<std::size_t>(
+                std::numeric_limits<std::int64_t>::max())) {
+            throw std::invalid_argument("official state tensor is too large");
+        }
+        require_bytes(
+            states,
+            static_cast<std::int64_t>(expected_size),
+            "official_states",
+            true);
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        if (states.is_cuda()) {
+            if (states.get_device() != device_index_) {
+                throw std::invalid_argument(
+                    "official_states is on the wrong CUDA device");
+            }
+            check_cuda(
+                engine::upload_official_states_async(
+                    &arena_,
+                    reinterpret_cast<const engine::OfficialStatePod*>(
+                        states.data_ptr<std::uint8_t>()),
+                    cudaMemcpyDeviceToDevice,
+                    stream),
+                "upload_official_states_device");
+        } else {
+            check_cuda(
+                engine::upload_official_states_async(
+                    &arena_,
+                    reinterpret_cast<const engine::OfficialStatePod*>(
+                        states.data_ptr<std::uint8_t>()),
+                    cudaMemcpyHostToDevice,
+                    stream),
+                "upload_official_states_host");
+            // The caller may release the CPU tensor as soon as this method
+            // returns; reset is outside the decision hot path.
+            check_cuda(cudaStreamSynchronize(stream), "official reset synchronize");
+        }
+    }
+
+    void reset_seeded_first_min(torch::Tensor decks, torch::Tensor seeds) {
+        reset_seeded_impl(decks, seeds, nullptr, false);
+    }
+
+    void reset_seeded_first_min_masked(
+        torch::Tensor decks,
+        torch::Tensor seeds,
+        torch::Tensor lane_mask) {
+        reset_seeded_impl(decks, seeds, &lane_mask, false);
+    }
+
+    void reset_seeded_interactive(torch::Tensor decks, torch::Tensor seeds) {
+        reset_seeded_impl(decks, seeds, nullptr, true);
+    }
+
+    void reset_seeded_interactive_masked(
+        torch::Tensor decks,
+        torch::Tensor seeds,
+        torch::Tensor lane_mask) {
+        reset_seeded_impl(decks, seeds, &lane_mask, true);
+    }
+
+    void classify() {
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        check_cuda(
+            engine::classify_official_states_async(&arena_, stream),
+            "classify_official_states_async");
+    }
+
+    void advance_to_decision() {
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        check_cuda(
+            engine::advance_official_states_to_decision_async(&arena_, stream),
+            "advance_official_states_to_decision_async");
+    }
+
+    void pack_actions(torch::Tensor option_indices, torch::Tensor counts) {
+        if (!option_indices.is_cuda() || !counts.is_cuda()
+            || option_indices.get_device() != device_index_
+            || counts.get_device() != device_index_
+            || !option_indices.is_contiguous() || !counts.is_contiguous()
+            || option_indices.dim() != 2 || counts.dim() != 1
+            || option_indices.size(0) != arena_.config.batch_size
+            || counts.size(0) != arena_.config.batch_size
+            || option_indices.size(1) <= 0
+            || option_indices.size(1) > engine::kOfficialOptionCapacity) {
+            throw std::invalid_argument(
+                "official action indices/counts have invalid CUDA shapes");
+        }
+        const auto option_capacity = static_cast<std::uint32_t>(
+            option_indices.size(1));
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        if (option_indices.scalar_type() == torch::kInt32
+            && counts.scalar_type() == torch::kInt32) {
+            check_cuda(
+                engine::pack_official_actions_i32_async(
+                    &arena_,
+                    option_indices.data_ptr<std::int32_t>(),
+                    counts.data_ptr<std::int32_t>(),
+                    option_capacity,
+                    stream),
+                "pack_official_actions_i32_async");
+            return;
+        }
+        if (option_indices.scalar_type() == torch::kInt64
+            && counts.scalar_type() == torch::kInt64) {
+            check_cuda(
+                engine::pack_official_actions_i64_async(
+                    &arena_,
+                    option_indices.data_ptr<std::int64_t>(),
+                    counts.data_ptr<std::int64_t>(),
+                    option_capacity,
+                    stream),
+                "pack_official_actions_i64_async");
+            return;
+        }
+        throw std::invalid_argument(
+            "official action indices/counts must both be int32 or both int64");
+    }
+
+    void apply_actions(torch::Tensor action_pods) {
+        if (!action_pods.is_cuda() || action_pods.get_device() != device_index_) {
+            throw std::invalid_argument("official action PODs must be on the target CUDA device");
+        }
+        const std::size_t expected_size =
+            static_cast<std::size_t>(arena_.config.batch_size)
+            * sizeof(engine::OfficialActionPod);
+        require_bytes(
+            action_pods,
+            static_cast<std::int64_t>(expected_size),
+            "official_action_pods",
+            true);
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        check_cuda(
+            cudaMemcpyAsync(
+                arena_.actions,
+                action_pods.data_ptr<std::uint8_t>(),
+                expected_size,
+                cudaMemcpyDeviceToDevice,
+                stream),
+            "copy_official_action_pods");
+        check_cuda(
+            engine::apply_official_actions_and_advance_async(&arena_, nullptr, stream),
+            "apply_official_actions_and_advance_async");
+    }
+
+    void apply_packed_actions() {
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        check_cuda(
+            engine::apply_official_packed_ready_actions_async(&arena_, stream),
+            "apply_official_packed_ready_actions_async");
+    }
+
+    void apply_packed_setup_actions() {
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        check_cuda(
+            engine::apply_official_packed_setup_actions_async(&arena_, stream),
+            "apply_official_packed_setup_actions_async");
+    }
+
+    std::unordered_map<std::string, torch::Tensor> encode_policy_v1() {
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        check_cuda(
+            engine::encode_official_policy_codec_v1_async(&arena_, stream),
+            "encode_official_policy_codec_v1_async");
+        const auto batch = static_cast<std::int64_t>(arena_.config.batch_size);
+        return {
+            {"global_cat", view_typed(arena_.codec.global_cat, {batch, 8}, torch::kInt64)},
+            {"global_num", view_typed(arena_.codec.global_num, {batch, 16}, torch::kFloat32)},
+            {"entity_cat", view_typed(arena_.codec.entity_cat, {batch, 128, 6}, torch::kInt64)},
+            {"entity_num", view_typed(arena_.codec.entity_num, {batch, 128, 10}, torch::kFloat32)},
+            {"entity_parent", view_typed(arena_.codec.entity_parent, {batch, 128}, torch::kInt64)},
+            {"entity_mask", view_typed(arena_.codec.entity_mask, {batch, 128}, torch::kUInt8)},
+            {"option_cat", view_typed(arena_.codec.option_cat, {batch, 80, 12}, torch::kInt64)},
+            {"option_num", view_typed(arena_.codec.option_num, {batch, 80, 4}, torch::kFloat32)},
+            {"option_equiv", view_typed(arena_.codec.option_equiv, {batch, 80}, torch::kInt64)},
+            {"option_mask", view_typed(arena_.codec.option_mask, {batch, 80}, torch::kUInt8)},
+            {"min_count", view_typed(arena_.codec.min_count, {batch}, torch::kInt64)},
+            {"max_count", view_typed(arena_.codec.max_count, {batch}, torch::kInt64)},
+        };
+    }
+
+    torch::Tensor state_bytes() const {
+        return view(
+            arena_.states,
+            {
+                static_cast<std::int64_t>(arena_.config.batch_size),
+                static_cast<std::int64_t>(sizeof(engine::OfficialStatePod)),
+            });
+    }
+
+    torch::Tensor statuses() const {
+        return view(
+            arena_.statuses,
+            {static_cast<std::int64_t>(arena_.config.batch_size)});
+    }
+
+    torch::Tensor game_results() const {
+        auto* pointer = reinterpret_cast<std::uint8_t*>(arena_.states)
+            + offsetof(engine::OfficialStatePod, game_result);
+        const auto options = torch::TensorOptions()
+            .device(torch::kCUDA, device_index_)
+            .dtype(torch::kUInt8);
+        return torch::from_blob(
+            pointer,
+            {static_cast<std::int64_t>(arena_.config.batch_size)},
+            {static_cast<std::int64_t>(sizeof(engine::OfficialStatePod))},
+            [](void*) {},
+            options);
+    }
+
+    torch::Tensor action_bytes() const {
+        return view(
+            arena_.actions,
+            {
+                static_cast<std::int64_t>(arena_.config.batch_size),
+                static_cast<std::int64_t>(sizeof(engine::OfficialActionPod)),
+            });
+    }
+
+    std::int64_t allocated_bytes() const {
+        return static_cast<std::int64_t>(arena_.allocated_bytes);
+    }
+
+    std::int64_t batch_size() const {
+        return static_cast<std::int64_t>(arena_.config.batch_size);
+    }
+
+    std::int64_t rule_pack_bytes() const {
+        return static_cast<std::int64_t>(arena_.config.rule_pack_bytes);
+    }
+
+private:
+    void reset_seeded_impl(
+        const torch::Tensor& decks,
+        const torch::Tensor& seeds,
+        const torch::Tensor* lane_mask,
+        bool interactive) {
+        const auto batch = static_cast<std::int64_t>(arena_.config.batch_size);
+        if (!decks.is_cuda() || decks.get_device() != device_index_
+            || !decks.is_contiguous()
+            || decks.numel() != batch * 2 * 60
+            || (decks.scalar_type() != torch::kInt32
+                && decks.scalar_type() != torch::kInt64)) {
+            throw std::invalid_argument(
+                "official seeded decks must be contiguous CUDA int32/int64 "
+                "with batch*2*60 elements");
+        }
+        if (!seeds.is_cuda() || seeds.get_device() != device_index_
+            || !seeds.is_contiguous() || seeds.dim() != 1
+            || seeds.size(0) != batch || seeds.scalar_type() != torch::kInt64) {
+            throw std::invalid_argument(
+                "official seeded seeds must be contiguous CUDA int64[batch]");
+        }
+        const std::uint8_t* mask_pointer = nullptr;
+        if (lane_mask != nullptr) {
+            if (!lane_mask->is_cuda() || lane_mask->get_device() != device_index_
+                || !lane_mask->is_contiguous() || lane_mask->dim() != 1
+                || lane_mask->size(0) != batch
+                || (lane_mask->scalar_type() != torch::kUInt8
+                    && lane_mask->scalar_type() != torch::kBool)) {
+                throw std::invalid_argument(
+                    "official seeded lane mask must be contiguous CUDA bool/uint8[batch]");
+            }
+            mask_pointer = reinterpret_cast<const std::uint8_t*>(
+                lane_mask->data_ptr());
+        }
+        c10::cuda::CUDAGuard guard(device_index_);
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        cudaError_t status = cudaErrorInvalidValue;
+        if (decks.scalar_type() == torch::kInt32) {
+            status = interactive
+                ? engine::reset_official_states_seeded_interactive_i32_async(
+                    &arena_,
+                    decks.data_ptr<std::int32_t>(),
+                    seeds.data_ptr<std::int64_t>(),
+                    mask_pointer,
+                    stream)
+                : engine::reset_official_states_seeded_first_min_i32_async(
+                    &arena_,
+                    decks.data_ptr<std::int32_t>(),
+                    seeds.data_ptr<std::int64_t>(),
+                    mask_pointer,
+                    stream);
+        } else {
+            status = interactive
+                ? engine::reset_official_states_seeded_interactive_i64_async(
+                    &arena_,
+                    decks.data_ptr<std::int64_t>(),
+                    seeds.data_ptr<std::int64_t>(),
+                    mask_pointer,
+                    stream)
+                : engine::reset_official_states_seeded_first_min_i64_async(
+                    &arena_,
+                    decks.data_ptr<std::int64_t>(),
+                    seeds.data_ptr<std::int64_t>(),
+                    mask_pointer,
+                    stream);
+        }
+        check_cuda(
+            status,
+            interactive
+                ? "reset_official_states_seeded_interactive_async"
+                : "reset_official_states_seeded_first_min_async");
+    }
+
+    torch::Tensor view(void* pointer, std::vector<std::int64_t> sizes) const {
+        return view_typed(pointer, std::move(sizes), torch::kUInt8);
+    }
+
+    torch::Tensor view_typed(
+        void* pointer,
+        std::vector<std::int64_t> sizes,
+        torch::ScalarType dtype) const {
+        const auto options = torch::TensorOptions()
+                                 .dtype(dtype)
+                                 .device(torch::Device(torch::kCUDA, device_index_));
+        return torch::from_blob(pointer, std::move(sizes), [](void*) {}, options);
+    }
+
+    engine::OfficialDeviceArena arena_{};
+    int device_index_ = 0;
+};
+
 }  // namespace
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
     module.attr("ABI_VERSION") = engine::kAbiVersion;
+    module.attr("MAX_POLICIES") = engine::kMaxPolicies;
     module.attr("STATE_BYTES") = sizeof(engine::BattleState);
     module.attr("KNOWN_DIVERGENCE_660_1207") =
         static_cast<std::int32_t>(engine::EngineError::kKnownDivergence6601207);
@@ -218,4 +613,46 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
         .def("digest", &CudaEngine::digest)
         .def_property_readonly("allocated_bytes", &CudaEngine::allocated_bytes)
         .def_property_readonly("batch_size", &CudaEngine::batch_size);
+    module.attr("OFFICIAL_STATE_BYTES") = sizeof(engine::OfficialStatePod);
+    module.attr("OFFICIAL_ACTION_BYTES") = sizeof(engine::OfficialActionPod);
+    module.attr("OFFICIAL_STATE_ABI_VERSION") = engine::kOfficialStateAbiVersion;
+    module.attr("OFFICIAL_RULE_ABI_VERSION") = engine::kOfficialRuleAbiVersion;
+    module.attr("OFFICIAL_SELECT_CONTEXT_OFFSET") =
+        offsetof(engine::OfficialStatePod, select_context);
+    module.attr("OFFICIAL_SEEDED_SETUP_POLICY") = "first_min_v1";
+    module.attr("OFFICIAL_INTERACTIVE_SETUP_POLICY") = "device_action_v1";
+    pybind11::class_<OfficialCudaEngine>(module, "OfficialCudaEngine")
+        .def(
+            pybind11::init<std::int64_t, std::int64_t, std::int64_t, std::int64_t>(),
+            pybind11::arg("batch_size"),
+            pybind11::arg("rule_pack_bytes"),
+            pybind11::arg("device_index") = 0,
+            pybind11::arg("device_stack_bytes") =
+                static_cast<std::int64_t>(engine::kOfficialMinimumDeviceStackBytes))
+        .def("upload_rule_pack", &OfficialCudaEngine::upload_rule_pack)
+        .def("reset_states", &OfficialCudaEngine::reset_states)
+        .def("reset_seeded_first_min", &OfficialCudaEngine::reset_seeded_first_min)
+        .def(
+            "reset_seeded_first_min_masked",
+            &OfficialCudaEngine::reset_seeded_first_min_masked)
+        .def("reset_seeded_interactive", &OfficialCudaEngine::reset_seeded_interactive)
+        .def(
+            "reset_seeded_interactive_masked",
+            &OfficialCudaEngine::reset_seeded_interactive_masked)
+        .def("classify", &OfficialCudaEngine::classify)
+        .def("advance_to_decision", &OfficialCudaEngine::advance_to_decision)
+        .def("pack_actions", &OfficialCudaEngine::pack_actions)
+        .def("apply_actions", &OfficialCudaEngine::apply_actions)
+        .def("apply_packed_actions", &OfficialCudaEngine::apply_packed_actions)
+        .def(
+            "apply_packed_setup_actions",
+            &OfficialCudaEngine::apply_packed_setup_actions)
+        .def("encode_policy_v1", &OfficialCudaEngine::encode_policy_v1)
+        .def("state_bytes", &OfficialCudaEngine::state_bytes)
+        .def("statuses", &OfficialCudaEngine::statuses)
+        .def("game_results", &OfficialCudaEngine::game_results)
+        .def("action_bytes", &OfficialCudaEngine::action_bytes)
+        .def_property_readonly("allocated_bytes", &OfficialCudaEngine::allocated_bytes)
+        .def_property_readonly("batch_size", &OfficialCudaEngine::batch_size)
+        .def_property_readonly("rule_pack_bytes", &OfficialCudaEngine::rule_pack_bytes);
 }

@@ -1,0 +1,13 @@
+{
+    "deck_id":  "alakazam_baogaoshou_326649d9",
+    "decoder_ref":  "foundation",
+    "display_name":  "Alakazam / Fezandipiti / Shaymin — 宝糕手",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 27; player 宝糕手; exact deck hash 326649d9357e; episode 88991980",
+                       "source":  "kaggle_episode:88991980"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

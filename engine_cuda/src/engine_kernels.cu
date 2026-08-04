@@ -14,15 +14,6 @@ __host__ __device__ constexpr std::uint32_t blocks_for(std::uint32_t count) {
     return (count + kThreads - 1) / kThreads;
 }
 
-__device__ std::uint64_t next_random(std::uint64_t* state) {
-    std::uint64_t value = *state;
-    value ^= value >> 12;
-    value ^= value << 25;
-    value ^= value >> 27;
-    *state = value;
-    return value * 0x2545F4914F6CDD1DULL;
-}
-
 __device__ std::uint8_t resolve_target(std::uint8_t encoded, std::uint16_t actor) {
     switch (static_cast<Target>(encoded)) {
         case Target::kActor:
@@ -60,16 +51,12 @@ __global__ void reset_kernel(
     }
 
     const ResetSpec spec = specs[env];
-    state->rng_state = (static_cast<std::uint64_t>(spec.seed) << 32U) ^
-                       (static_cast<std::uint64_t>(env) + 0x9E3779B97F4A7C15ULL);
-    if (state->rng_state == 0) {
-        state->rng_state = 0xD1B54A32D192ED03ULL;
-    }
+    official_seed_mt19937(&state->rng, spec.seed);
     state->episode_id = (static_cast<std::uint64_t>(spec.seed) << 32U) | env;
     state->status = static_cast<std::int32_t>(EngineStatus::kNeedsPolicy);
     state->error = static_cast<std::int32_t>(EngineError::kNone);
     state->winner = -1;
-    state->actor = static_cast<std::uint16_t>(next_random(&state->rng_state) & 1ULL);
+    state->actor = static_cast<std::uint16_t>(official_mt19937_next(&state->rng) & 1U);
     state->action_count = static_cast<std::uint16_t>(action_count);
     state->entity_count = 2;
 
@@ -229,7 +216,7 @@ __device__ void execute_program(
                 const std::uint32_t threshold = instruction.arg0 < 0
                     ? 0U
                     : (instruction.arg0 > 10000 ? 10000U : static_cast<std::uint32_t>(instruction.arg0));
-                const bool left = (next_random(&state->rng_state) % 10000ULL) < threshold;
+                const bool left = (official_mt19937_next(&state->rng) % 10000U) < threshold;
                 const std::int32_t delta = left ? instruction.arg1 : instruction.arg2;
                 const std::int64_t destination = static_cast<std::int64_t>(pc) + delta;
                 if (destination < static_cast<std::int64_t>(action.program_offset) ||
@@ -461,7 +448,11 @@ __global__ void digest_kernel(
     }
     const BattleState* state = states + env;
     std::uint64_t digest = 1469598103934665603ULL;
-    hash_value(&digest, state->rng_state);
+    for (std::uint32_t i = 0; i < OfficialMt19937::kStateSize; ++i) {
+        hash_value(&digest, state->rng.words[i]);
+    }
+    hash_value(&digest, state->rng.index);
+    hash_value(&digest, state->rng.draw_count);
     hash_value(&digest, state->turn);
     hash_value(&digest, state->decision_count);
     hash_value(&digest, static_cast<std::uint32_t>(state->status));

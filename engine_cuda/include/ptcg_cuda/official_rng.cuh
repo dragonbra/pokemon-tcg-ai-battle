@@ -1,9 +1,13 @@
 #pragma once
 
-#include <cuda_runtime.h>
-
 #include <cstddef>
 #include <cstdint>
+
+#if defined(__CUDACC__)
+#define PTCG_CUDA_HD __host__ __device__
+#else
+#define PTCG_CUDA_HD
+#endif
 
 namespace ptcg::cuda_engine {
 
@@ -12,9 +16,10 @@ struct OfficialMt19937 {
 
     std::uint32_t words[kStateSize];
     std::uint32_t index;
+    std::uint64_t draw_count;
 };
 
-__host__ __device__ inline std::uint32_t official_fold_seed32(std::uint64_t seed) {
+PTCG_CUDA_HD inline std::uint32_t official_fold_seed32(std::uint64_t seed) {
     std::uint64_t value = seed + 0x9E3779B97F4A7C15ULL;
     value = (value ^ (value >> 30U)) * 0xBF58476D1CE4E5B9ULL;
     value = (value ^ (value >> 27U)) * 0x94D049BB133111EBULL;
@@ -23,77 +28,20 @@ __host__ __device__ inline std::uint32_t official_fold_seed32(std::uint64_t seed
     return folded == 0 ? 1U : folded;
 }
 
-__host__ __device__ inline void official_seed_mt19937(
+PTCG_CUDA_HD inline void official_seed_mt19937(
     OfficialMt19937* engine,
     std::uint64_t seed) {
-    constexpr std::size_t n = OfficialMt19937::kStateSize;
-    constexpr std::size_t s = 4;
-    constexpr std::size_t t = 11;
-    constexpr std::size_t p = (n - t) / 2;
-    constexpr std::size_t q = p + t;
-    constexpr std::size_t m = n;
-    const std::uint32_t seeds[s] = {
-        official_fold_seed32(seed),
-        official_fold_seed32(seed ^ 0xA5A5A5A55A5A5A5AULL),
-        official_fold_seed32(seed + 0xD1B54A32D192ED03ULL),
-        official_fold_seed32(seed ^ 0x94D049BB133111EBULL),
-    };
-
-    for (std::size_t i = 0; i < n; ++i) {
-        engine->words[i] = 0x8B8B8B8BU;
+    engine->words[0] = static_cast<std::uint32_t>(seed);
+    for (std::size_t index = 1; index < OfficialMt19937::kStateSize; ++index) {
+        const std::uint32_t previous = engine->words[index - 1];
+        engine->words[index] = 1812433253U * (previous ^ (previous >> 30U))
+            + static_cast<std::uint32_t>(index);
     }
-
-    {
-        const std::uint32_t r1 = 1371501266U;
-        const std::uint32_t r2 = r1 + static_cast<std::uint32_t>(s);
-        engine->words[p] += r1;
-        engine->words[q] += r2;
-        engine->words[0] = r2;
-    }
-
-    for (std::size_t k = 1; k <= s; ++k) {
-        const std::size_t kn = k % n;
-        const std::size_t kpn = (k + p) % n;
-        const std::size_t kqn = (k + q) % n;
-        const std::uint32_t arg =
-            engine->words[kn] ^ engine->words[kpn] ^ engine->words[(k - 1) % n];
-        const std::uint32_t r1 = 1664525U * (arg ^ (arg >> 27U));
-        const std::uint32_t r2 =
-            r1 + static_cast<std::uint32_t>(kn) + seeds[k - 1];
-        engine->words[kpn] += r1;
-        engine->words[kqn] += r2;
-        engine->words[kn] = r2;
-    }
-
-    for (std::size_t k = s + 1; k < m; ++k) {
-        const std::size_t kn = k % n;
-        const std::size_t kpn = (k + p) % n;
-        const std::size_t kqn = (k + q) % n;
-        const std::uint32_t arg =
-            engine->words[kn] ^ engine->words[kpn] ^ engine->words[(k - 1) % n];
-        const std::uint32_t r1 = 1664525U * (arg ^ (arg >> 27U));
-        const std::uint32_t r2 = r1 + static_cast<std::uint32_t>(kn);
-        engine->words[kpn] += r1;
-        engine->words[kqn] += r2;
-        engine->words[kn] = r2;
-    }
-
-    for (std::size_t k = m; k < m + n; ++k) {
-        const std::size_t kn = k % n;
-        const std::size_t kpn = (k + p) % n;
-        const std::size_t kqn = (k + q) % n;
-        const std::uint32_t arg =
-            engine->words[kn] + engine->words[kpn] + engine->words[(k - 1) % n];
-        const std::uint32_t r3 = 1566083941U * (arg ^ (arg >> 27U));
-        const std::uint32_t r4 = r3 - static_cast<std::uint32_t>(kn);
-        engine->words[kpn] ^= r3;
-        engine->words[kqn] ^= r4;
-        engine->words[kn] = r4;
-    }
-    engine->index = static_cast<std::uint32_t>(n);
+    engine->index = static_cast<std::uint32_t>(OfficialMt19937::kStateSize);
+    engine->draw_count = 0;
 }
 
-__host__ __device__ inline void official_twist_mt19937(OfficialMt19937* engine) {
+PTCG_CUDA_HD inline void official_twist_mt19937(OfficialMt19937* engine) {
     constexpr std::size_t n = OfficialMt19937::kStateSize;
     constexpr std::size_t m = 397;
     constexpr std::uint32_t upper_mask = 0x80000000U;
@@ -119,12 +67,13 @@ __host__ __device__ inline void official_twist_mt19937(OfficialMt19937* engine) 
     engine->index = 0;
 }
 
-__host__ __device__ inline std::uint32_t official_mt19937_next(
+PTCG_CUDA_HD inline std::uint32_t official_mt19937_next(
     OfficialMt19937* engine) {
     if (engine->index >= OfficialMt19937::kStateSize) {
         official_twist_mt19937(engine);
     }
     std::uint32_t value = engine->words[engine->index++];
+    ++engine->draw_count;
     value ^= value >> 11U;
     value ^= (value << 7U) & 0x9D2C5680U;
     value ^= (value << 15U) & 0xEFC60000U;
@@ -132,7 +81,7 @@ __host__ __device__ inline std::uint32_t official_mt19937_next(
     return value;
 }
 
-__host__ __device__ inline std::uint32_t official_uniform_below(
+PTCG_CUDA_HD inline std::uint32_t official_uniform_below(
     OfficialMt19937* engine,
     std::uint32_t range) {
     std::uint64_t product =
@@ -149,12 +98,13 @@ __host__ __device__ inline std::uint32_t official_uniform_below(
     return static_cast<std::uint32_t>(product >> 32U);
 }
 
-__host__ __device__ inline void official_shuffle_60(
-    std::uint16_t* cards,
+template <typename T>
+PTCG_CUDA_HD inline void official_shuffle_60(
+    T* cards,
     OfficialMt19937* engine) {
     std::uint32_t i = 1;
     const std::uint32_t first_position = official_uniform_below(engine, 2);
-    std::uint16_t temporary = cards[i];
+    T temporary = cards[i];
     cards[i++] = cards[first_position];
     cards[first_position] = temporary;
 
@@ -175,3 +125,5 @@ __host__ __device__ inline void official_shuffle_60(
 }
 
 }  // namespace ptcg::cuda_engine
+
+#undef PTCG_CUDA_HD

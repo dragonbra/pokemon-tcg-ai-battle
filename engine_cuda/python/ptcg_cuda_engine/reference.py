@@ -5,10 +5,12 @@ from enum import IntEnum
 from typing import Iterable
 
 from .schema import OPCODES, RulePack
+from .official_rng import OfficialMt19937, mt19937_next, seed_mt19937
 
 
 MASK64 = (1 << 64) - 1
 MAX_COUNTERS = 32
+MAX_POLICIES = 64
 INTERPRETER_BUDGET = 64
 
 
@@ -70,7 +72,7 @@ class PlayerState:
 
 @dataclass
 class BattleState:
-    rng_state: int
+    rng: OfficialMt19937
     episode_id: int
     status: Status
     error: Error
@@ -82,15 +84,6 @@ class BattleState:
     turn: int = 0
     decision_count: int = 0
     counters: list[int] = field(default_factory=lambda: [0] * MAX_COUNTERS)
-
-
-def _next_random(state: BattleState) -> int:
-    value = state.rng_state & MASK64
-    value ^= value >> 12
-    value ^= (value << 25) & MASK64
-    value ^= value >> 27
-    state.rng_state = value & MASK64
-    return (value * 0x2545F4914F6CDD1D) & MASK64
 
 
 def _resolve_target(encoded: int, actor: int) -> int:
@@ -121,8 +114,8 @@ class BatchedReferenceEngine:
         rule_pack.validate()
         if batch_size <= 0:
             raise ValueError("batch_size must be positive")
-        if not 1 <= policy_count <= 32:
-            raise ValueError("policy_count must be in [1, 32]")
+        if not 1 <= policy_count <= MAX_POLICIES:
+            raise ValueError(f"policy_count must be in [1, {MAX_POLICIES}]")
         self.rule_pack = rule_pack
         self.batch_size = batch_size
         self.policy_count = policy_count
@@ -134,9 +127,7 @@ class BatchedReferenceEngine:
             raise ValueError("reset spec count does not match batch size")
         states: list[BattleState] = []
         for env, spec in enumerate(rows):
-            rng_state = (((spec.seed & 0xFFFFFFFF) << 32) ^ (env + 0x9E3779B97F4A7C15)) & MASK64
-            if rng_state == 0:
-                rng_state = 0xD1B54A32D192ED03
+            rng = seed_mt19937(spec.seed)
             players = [
                 PlayerState(
                     policy_id=spec.policy_ids[player],
@@ -156,7 +147,7 @@ class BatchedReferenceEngine:
                 for player in range(2)
             ]
             state = BattleState(
-                rng_state=rng_state,
+                rng=rng,
                 episode_id=((spec.seed & 0xFFFFFFFF) << 32) | env,
                 status=Status.NEEDS_POLICY,
                 error=Error.NONE,
@@ -166,7 +157,7 @@ class BatchedReferenceEngine:
                 players=players,
                 cards=cards,
             )
-            state.actor = _next_random(state) & 1
+            state.actor = mt19937_next(state.rng) & 1
             if any(policy < 0 or policy >= self.policy_count for policy in spec.policy_ids):
                 _fail(state, Error.INVALID_POLICY_ID)
             states.append(state)
@@ -273,7 +264,11 @@ class BatchedReferenceEngine:
                     pc = destination
             elif opcode == OPCODES["RANDOM_BRANCH"]:
                 threshold = min(10000, max(0, instruction.arg0))
-                delta = instruction.arg1 if _next_random(state) % 10000 < threshold else instruction.arg2
+                delta = (
+                    instruction.arg1
+                    if mt19937_next(state.rng) % 10000 < threshold
+                    else instruction.arg2
+                )
                 destination = pc + delta
                 if not 0 <= destination <= len(action.program):
                     _fail(state, Error.RULE_PACK_BOUNDS)
@@ -416,7 +411,10 @@ class BatchedReferenceEngine:
             digest ^= value & MASK64
             digest = (digest * 1099511628211) & MASK64
 
-        add(state.rng_state)
+        for word in state.rng.words:
+            add(word)
+        add(state.rng.index)
+        add(state.rng.draw_count)
         add(state.turn)
         add(state.decision_count)
         add(int(state.status) & 0xFFFFFFFF)

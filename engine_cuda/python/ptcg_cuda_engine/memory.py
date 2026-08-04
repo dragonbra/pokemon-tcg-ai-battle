@@ -10,6 +10,7 @@ from .policy_pool import PolicyPoolManifest, PolicySpec
 
 MIB = 1024**2
 GIB = 1024**3
+OFFICIAL_STATE_BYTES_PER_ENV = 119_936
 
 
 DTYPE_SCALE_FROM_FP32 = {
@@ -70,7 +71,7 @@ def estimate_memory(
     *,
     workspace_root: str | Path | None = None,
     cohort_capacity: int | None = None,
-    state_bytes_per_env: int = 32 * 1024,
+    state_bytes_per_env: int = OFFICIAL_STATE_BYTES_PER_ENV,
     codec_bytes_per_env: int = 22_224,
     scratch_bytes_per_env: int = 8 * 1024,
     control_bytes_per_env: int = 2 * 1024,
@@ -153,6 +154,7 @@ def estimate_memory(
     )
     assumptions = {
         "state_bytes_per_env": state_bytes_per_env,
+        "state_contract": "OfficialStatePod ABI v6",
         "codec_bytes_per_env": codec_bytes_per_env,
         "scratch_bytes_per_env": scratch_bytes_per_env,
         "control_bytes_per_env": control_bytes_per_env,

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "name": "heterogeneous_10_frozen_bc_plus_1_bc_learner_example",
-  "max_policies": 32,
+  "max_policies": 64,
   "notes": "BC-only opponent-pool example. It excludes the standalone Alakazam strategy runtime. Duplicate archetypes must be replaced by promotion winners when the league manifest is frozen.",
   "routing": {
     "mode": "fixed_padded_device_cohorts",

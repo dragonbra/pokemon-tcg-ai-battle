@@ -23,10 +23,11 @@ class MemoryEstimateTest(unittest.TestCase):
     def test_engine_only_estimate_matches_target_bands(self) -> None:
         small = estimate_memory(4096, self.manifest, workspace_root=WORKSPACE_ROOT)
         large = estimate_memory(16384, self.manifest, workspace_root=WORKSPACE_ROOT)
-        self.assertGreater(small.engine_operational_bytes / GIB, 0.3)
-        self.assertLess(small.engine_operational_bytes / GIB, 0.5)
-        self.assertGreater(large.engine_operational_bytes / GIB, 1.1)
-        self.assertLess(large.engine_operational_bytes / GIB, 1.7)
+        self.assertGreater(small.engine_operational_bytes / GIB, 0.75)
+        self.assertLess(small.engine_operational_bytes / GIB, 1.0)
+        self.assertGreater(large.engine_operational_bytes / GIB, 2.6)
+        self.assertLess(large.engine_operational_bytes / GIB, 3.2)
+        self.assertEqual(small.assumptions["state_contract"], "OfficialStatePod ABI v6")
 
     def test_full_example_pool_fits_32_gib_estimate(self) -> None:
         estimate = estimate_memory(16384, self.manifest, workspace_root=WORKSPACE_ROOT)

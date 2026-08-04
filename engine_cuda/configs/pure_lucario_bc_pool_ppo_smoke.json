@@ -1,11 +1,11 @@
 {
   "version": "pure_lucario_bc_pool_ppo_smoke_v1",
-  "teacher": "arena_agents/agent_pure_lucario_v1_bc512_e4_probe",
+  "teacher": "bc_models/archive/agent_pure_lucario_v1_bc512_e4_probe",
   "deck_sha256": "b9e592461cc3aa19b73eaaac34596c99af8e4d49e3ee061fa09632088f03c1f8",
   "teacher_main_sha256": "runtime provenance is recomputed by the PPO entrypoint",
   "run_root": "/root/autodl-tmp/pokemon/runs/pure_lucario_bc_pool_ppo_smoke",
   "opponents": [
-    {"name": "arena_agents/agent_pure_lucario_v1_bc512_e4_probe", "archetype": "lucario", "weight": 0.1666666667, "hard": false},
+    {"name": "bc_models/archive/agent_pure_lucario_v1_bc512_e4_probe", "archetype": "lucario", "weight": 0.1666666667, "hard": false},
     {"name": "bc_models/agent_cynthia_core_meanpool_epochmix_v1_c7b3253f_20260727", "archetype": "cynthia", "weight": 0.1666666667, "hard": false},
     {"name": "bc_models/agent_kangaskhan_crustle_core_meanpool_epochmix_v2_e510e4d4_20260728", "archetype": "kangaskhan_crustle", "weight": 0.1666666667, "hard": false},
     {"name": "bc_models/agent_marnie_prize_control_v4_3121746f_20260728", "archetype": "marnie", "weight": 0.1666666667, "hard": false},

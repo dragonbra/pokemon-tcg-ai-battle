@@ -15,6 +15,7 @@ option(PTCG_CUDA_BUILD_TORCH "Build the optional PyTorch extension" OFF)
 
 add_library(ptcg_cuda_engine STATIC
     src/engine_kernels.cu
+    src/official_engine_kernels.cu
 )
 target_include_directories(ptcg_cuda_engine PUBLIC include)
 target_link_libraries(ptcg_cuda_engine PUBLIC CUDA::cudart)
@@ -37,6 +38,159 @@ if(PTCG_CUDA_BUILD_BENCHMARK)
     add_executable(ptcg_cuda_status_core benchmarks/official_status_core.cu)
     target_include_directories(ptcg_cuda_status_core PRIVATE include)
     target_link_libraries(ptcg_cuda_status_core PRIVATE CUDA::cudart)
+
+    add_executable(ptcg_cuda_continuation_vm_smoke benchmarks/continuation_vm_smoke.cu)
+    target_include_directories(ptcg_cuda_continuation_vm_smoke PRIVATE include)
+    target_link_libraries(ptcg_cuda_continuation_vm_smoke PRIVATE CUDA::cudart)
+
+    add_executable(
+        ptcg_cuda_official_continuation_dispatch_smoke
+        benchmarks/official_continuation_dispatch_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_continuation_dispatch_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_continuation_dispatch_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(ptcg_cuda_official_rule_pack_smoke benchmarks/official_rule_pack_smoke.cu)
+    target_include_directories(ptcg_cuda_official_rule_pack_smoke PRIVATE include)
+    target_link_libraries(ptcg_cuda_official_rule_pack_smoke PRIVATE CUDA::cudart)
+
+    add_executable(ptcg_cuda_official_core_pod_smoke benchmarks/official_core_pod_smoke.cu)
+    target_include_directories(ptcg_cuda_official_core_pod_smoke PRIVATE include)
+    target_link_libraries(ptcg_cuda_official_core_pod_smoke PRIVATE CUDA::cudart)
+
+    add_executable(
+        ptcg_cuda_official_effect_interpreter_smoke
+        benchmarks/official_effect_interpreter_smoke.cu
+    )
+    target_include_directories(ptcg_cuda_official_effect_interpreter_smoke PRIVATE include)
+    target_link_libraries(
+        ptcg_cuda_official_effect_interpreter_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_continual_refresh_smoke
+        benchmarks/official_continual_refresh_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_continual_refresh_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_continual_refresh_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_trigger_pull_smoke
+        benchmarks/official_trigger_pull_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_trigger_pull_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_trigger_pull_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_trigger_resolver_smoke
+        benchmarks/official_trigger_resolver_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_trigger_resolver_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_trigger_resolver_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_knockout_smoke
+        benchmarks/official_knockout_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_knockout_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_knockout_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_turn_flow_smoke
+        src/official_engine_kernels.cu
+        benchmarks/official_turn_flow_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_turn_flow_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_turn_flow_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_attack_smoke
+        benchmarks/official_attack_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_attack_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_attack_smoke
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_runtime_smoke
+        benchmarks/official_runtime_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_runtime_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_runtime_smoke
+        PRIVATE ptcg_cuda_engine CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_flow_resume_diagnostic
+        benchmarks/official_flow_resume_diagnostic.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_flow_resume_diagnostic
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_flow_resume_diagnostic
+        PRIVATE CUDA::cudart
+    )
+
+    add_executable(
+        ptcg_cuda_official_main_smoke
+        benchmarks/official_main_smoke.cu
+    )
+    target_include_directories(
+        ptcg_cuda_official_main_smoke
+        PRIVATE include
+    )
+    target_link_libraries(
+        ptcg_cuda_official_main_smoke
+        PRIVATE ptcg_cuda_engine CUDA::cudart
+    )
 endif()
 
 if(PTCG_CUDA_BUILD_TORCH)

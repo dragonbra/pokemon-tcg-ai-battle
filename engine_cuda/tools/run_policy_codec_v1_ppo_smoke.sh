@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${POKEMON_REPO_ROOT:-/root/autodl-tmp/pokemon/repo}"
-RUN_DIR="${PPO_SMOKE_RUN_DIR:-$ROOT/engine_cuda/artifacts/ppo_smoke_6bc_gpu_semantics_v2_20260730/run}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="${POKEMON_REPO_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+RUN_DIR="${PPO_SMOKE_RUN_DIR:-$ROOT/engine_cuda/artifacts/ppo_smoke_6bc_decoder_only/run}"
 MODE="${1:-fresh}"
-PYTHON_BIN="${PYTHON_BIN:-/root/miniconda3/bin/python}"
-INITIAL_CHECKPOINT="$ROOT/arena_agents/agent_pure_lucario_v1_bc512_e4_probe/policy.pt"
+PYTHON_BIN="${PYTHON_BIN:-python}"
+INITIAL_CHECKPOINT="$ROOT/bc_models/archive/agent_pure_lucario_v1_bc512_e4_probe/policy.pt"
+GAMES_PER_ITER="${PPO_SMOKE_GAMES_PER_ITER:-6}"
+ROLLOUT_ENVS="${PPO_SMOKE_ROLLOUT_ENVS:-6}"
+ENGINE_THREADS="${PPO_SMOKE_ENGINE_THREADS:-15}"
 
 case "$MODE" in
   fresh)
@@ -32,22 +36,23 @@ exec "$PYTHON_BIN" tools/train_pure_lucario_ppo.py \
   --reference-checkpoint "$INITIAL_CHECKPOINT" \
   --out "$RUN_DIR" \
   --iters "$ITERATIONS" \
-  --games-per-iter 12 \
-  --rollout-envs 12 \
+  --games-per-iter "$GAMES_PER_ITER" \
+  --rollout-envs "$ROLLOUT_ENVS" \
   --max-steps 700 \
-  --seed 2026073031 \
+  --seed 2026073131 \
   --temperature 1.0 \
   --rollout-policy-mode sample \
   --hard-multiplier 1.0 \
   --opponent-sampling stratified \
   --gamma 1.0 \
   --gae-lambda 0.95 \
+  --train-scope decoder_only \
   --lr 1e-6 \
   --weight-decay 0.01 \
   --ppo-epochs 1 \
-  --batch-size 128 \
+  --batch-size 64 \
   --update-pipeline cached \
-  --ppo-bucket-multiplier 8 \
+  --ppo-bucket-multiplier 4 \
   --clip-eps 0.1 \
   --value-clip 0.2 \
   --value-coef 0.5 \
@@ -60,7 +65,7 @@ exec "$PYTHON_BIN" tools/train_pure_lucario_ppo.py \
   --keep-last 1 \
   --checkpoint-mode last \
   --env-backend batch \
-  --engine-threads 8 \
+  --engine-threads "$ENGINE_THREADS" \
   --no-rollout-amp \
   --rollout-profile \
   --native-rollout-codec \

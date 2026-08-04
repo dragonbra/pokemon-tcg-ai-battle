@@ -1,142 +1,63 @@
-# PTCG CUDA-only engine prototype
+# Pokemon TCG CUDA Engine
 
-> **CUDA-specific experimental subtree.** Everything under `engine_cuda/` is
-> intended for the GPU-resident training path. It is not a drop-in replacement
-> for the frozen CPU/official engine, and generated builds, benchmark artifacts,
-> model checkpoints, and competition-private generated rules are not committed.
+`engine_cuda/` is the GPU-resident Pokemon TCG battle engine and differential
+validation suite used by this repository. It includes the CUDA/POD runtime,
+PyTorch bindings, Docker runners, the audited 0022 40-deck fixture, and CPU vs
+CUDA semantic/outcome parity tests.
 
-This directory is an independent, deck-agnostic prototype for a GPU-resident
-Pokemon TCG training environment. It is intentionally separate from the frozen
-official/local C++ engine.
+For installation, private rule-pack preparation, Docker commands, Python API,
+and 40-deck validation, read [docs/usage_guide_zh.md](docs/usage_guide_zh.md).
 
-The imported manifests under `configs/` are historical source-repository
-examples. Paths such as `bc_models/`, `arena_agents/`, and `/root/autodl-tmp`
-are not authoritative in this repository and must not be used as the 0020
-opponent snapshot. A 0020 manifest must be regenerated from versioned packages
-under `evaluation/arena/opponents/` and record their hashes.
+## Current Validation Snapshot
 
-The target hot loop is:
+Validated on 2026-08-04 in Docker with an RTX 3060 Laptop GPU:
 
-```text
-device battle state
-  -> fixed-capacity routing by policy_id and codec_id
-  -> device codec adapter into a reusable cohort buffer
-  -> 10+ resident frozen BC models (plus one trainable learner)
-  -> device action normalization
-  -> device rule interpreter
-```
+- production `OfficialDeviceArena` turn-flow smoke: passed, zero state/status mismatch;
+- 40 mirror matchups: 800 battles, 165,623 decisions, zero mismatch, 13 official draws;
+- all 1,560 non-mirror ordered matchups: 319,574 decisions, zero mismatch, 9 official draws;
+- targeted high-risk decks: 1,500 battles, 312,530 decisions, zero mismatch;
+- semantic micro fixture: 154 checks passed;
+- focused Python regression tests: 3/3 passed.
 
-No per-decision JSON, Python observation lists, `.cpu()`, `.item()`, ctypes
-`Select`, or host read of route counts is part of the target contract. Host
-traffic is allowed at reset, checkpoint load, training batch export, metrics,
-and explicit debug/parity checkpoints.
+These results cover the audited 0022 deck catalog and deterministic parity
+policies. They do not prove every possible card interaction or stochastic
+policy trajectory. The unmodified official CPU engine remains the oracle.
 
-## What works now
+## Repository Boundary
 
-- A fixed-layout batched CUDA state with one environment per CUDA thread.
-- A numeric opcode interpreter whose behavior is independent of deck identity.
-- Device-side PolicyCodecV1-shaped smoke buffers and policy routing.
-- Per-player `policy_id`, with a configurable capacity up to 32 policies.
-- A standalone CUDA smoke benchmark.
-- A deterministic Python reference interpreter for tests without CUDA.
-- A heterogeneous policy-pool interface that keeps tensors on the device.
-- A model-pool and engine VRAM estimator.
-- A versioned JSON rule-pack compiler/validator.
+The following are source-controlled:
 
-This is a vertical slice, not a claim of full official-engine parity. The smoke
-rule pack implements a small generic opcode subset. Full card coverage must be
-earned through differential replay and opcode coverage gates described in
-[`docs/implementation_plan.md`](docs/implementation_plan.md).
+- CUDA kernels, POD state and rule interpreter;
+- host/PyTorch runtime bindings;
+- public deck fixtures and tests;
+- Docker build and parity runners.
 
-The current strongest local BC packages are heterogeneous in both model and
-codec. The example manifest contains legacy ID-only and Marnie prize/compact
-codec IDs. It deliberately excludes the standalone Alakazam strategy runtime:
-opponents and the learner are BC models only. Those exact device codecs are not
-implemented by this smoke slice yet. Production should route first and encode
-one fixed cohort at a time so every codec layout is not materialized per
-environment.
+The following must remain local and are ignored by Git:
 
-## Known divergence kept explicit
+- `engine_cuda/generated/private/` official rule packs and extraction output;
+- `engine_cuda/build/` compiled binaries/extensions;
+- `engine_cuda/artifacts/` benchmark and parity reports;
+- checkpoints, W&B staging, traces, and official generated fixtures.
 
-The frozen local engine can crash when Ninetales card `660`, Supernatural
-Shapeshifter, borrows Amarys card `1207` and executes its delayed effect. This
-prototype does not silently choose new semantics. That exact path becomes
-`KNOWN_DIVERGENCE_660_1207` and terminates the affected environment. It can be
-changed only after a fixed official engine is obtained and paired regression is
-completed. The frozen `libcg_seeded.so` must not be overwritten.
+Do not modify `engine/source/`. The tools mount it read-only and compare CUDA
+behavior against that official implementation.
 
-## Quick checks
-
-CPU-only validation uses only the Python standard library:
-
-```powershell
-python -m unittest discover -s engine_cuda/tests -v
-python engine_cuda/tools/compile_rule_pack.py `
-  engine_cuda/rules/smoke_rules.json `
-  --check
-python engine_cuda/tools/estimate_memory.py `
-  --envs 4096 16384 `
-  --manifest engine_cuda/configs/policy_pool.example.json
-```
-
-CUDA build (the default architecture is the local RTX 3060 Laptop, SM 86):
+## Minimal Checks
 
 ```bash
-cmake -S engine_cuda -B engine_cuda/build -G Ninja \
-  -DCMAKE_CUDA_ARCHITECTURES=86
-cmake --build engine_cuda/build
-./engine_cuda/build/ptcg_cuda_smoke --envs 16384 --steps 1000 --policies 12
+python -m unittest discover -s engine_cuda/tests -p "test_*.py" -v
+python engine_cuda/tools/compile_rule_pack.py \
+  engine_cuda/rules/smoke_rules.json --check
 ```
 
-Use `-DPTCG_CUDA_BUILD_TORCH=ON` only in an environment where PyTorch and its
-matching CUDA development toolkit are both installed.
-
-Some PyTorch images require an explicit config path, for example:
+After preparing the private rule pack and confirming Docker GPU access:
 
 ```bash
-cmake -S engine_cuda -B engine_cuda/build/torch -G Ninja \
-  -DPTCG_CUDA_BUILD_TORCH=ON \
-  -DTorch_DIR=/path/to/site-packages/torch/share/cmake/Torch
-cmake --build engine_cuda/build/torch --parallel
+python engine_cuda/tools/run_official_turn_flow_paired.py
+
+python engine_cuda/tools/run_0022_deck40_official_parity.py \
+  --pair-mode mirrors --seed-count 20
 ```
 
-After building the extension, validate zero-copy tensor views and the named
-divergence path with:
-
-```bash
-PYTHONPATH=engine_cuda/build/torch \
-python engine_cuda/tools/smoke_torch_extension.py --batch 4096 --steps 100
-```
-
-To load the example pool's 10 actual frozen BC checkpoints plus one actual BC
-learner and measure local CUDA residency (including a conservative learner
-optimizer-state reserve), run:
-
-```bash
-PYTHONPATH=engine_cuda/build/torch \
-python engine_cuda/tools/probe_actual_policy_residency.py \
-  --batch 4096 --engine-steps 100 --dtype bf16
-```
-
-See `docs/acceptance_status_20260729.md` for the distinction between completed
-prototype checks and outstanding formal promotion gates.
-
-The reproducible six-BC transition smoke uses
-`tools/run_policy_codec_v1_ppo_smoke.sh`. It deliberately runs the seeded CPU
-engine with a CUDA FP32 learner and therefore validates PPO/checkpoint plumbing,
-not completion of the CUDA battle engine. Validate its resumable checkpoint
-with `tools/verify_policy_codec_v1_ppo_smoke.py`.
-
-The `CudaEngine` Python object owns the allocations and must remain alive while
-any zero-copy tensor returned by `encode_policy_v1`, `route_ready`, or `digest`
-is in use.
-
-## Private engine boundary
-
-Official engine source is competition-use-only. Do not copy `CardImpl.h`,
-effect headers, or other official source into this directory or a public
-dataset. A future extractor may consume the private source locally and emit a
-numeric rule pack under `generated/private/`; that path is ignored here and
-must also be excluded by every packaging script. Generated provenance must
-record source hashes, extractor version, card/opcode counts, and unsupported
-rules.
+The default CUDA architecture is SM 86 for RTX 3060. Set
+`CMAKE_CUDA_ARCHITECTURES` explicitly when building for another GPU.

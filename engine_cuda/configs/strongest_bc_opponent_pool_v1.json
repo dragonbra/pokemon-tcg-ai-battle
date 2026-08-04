@@ -12,7 +12,7 @@
       "name": "pure_lucario_bc512_e4",
       "archetype": "lucario",
       "kind": "policy_codec_v1",
-      "directory": "arena_agents/agent_pure_lucario_v1_bc512_e4_probe",
+      "directory": "bc_models/archive/agent_pure_lucario_v1_bc512_e4_probe",
       "checkpoint": "policy.pt",
       "adapter": "entity_pointer_v1",
       "codec": "policy_codec_v1"

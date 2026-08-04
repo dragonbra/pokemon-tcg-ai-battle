@@ -8,7 +8,7 @@ from pathlib import Path
 CUDA_ENGINE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(CUDA_ENGINE_ROOT / "python"))
 
-from ptcg_cuda_engine.policy_pool import FixedRoutePlanner, PolicyPoolManifest  # noqa: E402
+from ptcg_cuda_engine.policy_pool import MAX_POLICIES, FixedRoutePlanner, PolicyPoolManifest  # noqa: E402
 
 
 class PolicyPoolTest(unittest.TestCase):
@@ -39,6 +39,30 @@ class PolicyPoolTest(unittest.TestCase):
         plan = planner.route([0, 1, 1, 0], [True, False, True, False])
         self.assertEqual(plan.counts, (1, 1))
         self.assertEqual(plan.routes, ((0, -1, -1), (2, -1, -1)))
+
+    def test_forty_policy_manifest_and_router_are_supported(self) -> None:
+        policies = [
+            {
+                "policy_id": policy_id,
+                "name": f"policy_{policy_id}",
+                "deck": f"deck_{policy_id}.csv",
+                "checkpoint": f"policy_{policy_id}.pt",
+                "adapter": "foundation",
+                "codec": "foundation_0020_codec_v1",
+                "frozen": True,
+            }
+            for policy_id in range(40)
+        ]
+        manifest = PolicyPoolManifest.from_dict(
+            {"name": "deck40", "max_policies": MAX_POLICIES, "policies": policies}
+        )
+        self.assertEqual(len(manifest.policies), 40)
+        self.assertEqual(manifest.policies[-1].policy_id, 39)
+
+        planner = FixedRoutePlanner(policy_count=40, capacity=2)
+        plan = planner.route(list(range(40)) + list(range(40)), [True] * 80)
+        self.assertEqual(plan.counts, (2,) * 40)
+        self.assertEqual(plan.routes[39], (39, 79))
 
 
 if __name__ == "__main__":

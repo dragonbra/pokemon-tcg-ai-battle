@@ -12,8 +12,10 @@ CUDA_ENGINE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(CUDA_ENGINE_ROOT / "python"))
 
 from ptcg_cuda_engine.policy_adapters import (  # noqa: E402
+    AutocastDeviceAdapter,
     EntityPointerPolicyV1DeviceAdapter,
     IDOnlyPointerPolicyDeviceAdapter,
+    StaticBatchFieldsDeviceAdapter,
 )
 
 
@@ -145,6 +147,62 @@ class IDOnlyPointerPolicyDeviceAdapterTest(unittest.TestCase):
         source = inspect.getsource(IDOnlyPointerPolicyDeviceAdapter.act_device)
         for forbidden in (".cpu(", ".item(", ".tolist(", "bool(active.any())"):
             self.assertNotIn(forbidden, source)
+
+
+class StaticBatchFieldsDeviceAdapterTest(unittest.TestCase):
+    def test_singleton_fields_expand_as_device_views(self) -> None:
+        class CaptureAdapter:
+            def act_device(self, batch):
+                self.batch = batch
+                count = batch["option_mask"].shape[0]
+                return torch.zeros((count, 1), dtype=torch.long), torch.ones(
+                    count, dtype=torch.long
+                )
+
+        inner = CaptureAdapter()
+        deck_ids = torch.arange(60).view(1, 60)
+        adapter = StaticBatchFieldsDeviceAdapter(inner, {"deck_ids": deck_ids})
+        adapter.act_device({"option_mask": torch.ones((4, 2), dtype=torch.bool)})
+        self.assertEqual(tuple(inner.batch["deck_ids"].shape), (4, 60))
+        self.assertEqual(inner.batch["deck_ids"].untyped_storage().data_ptr(), deck_ids.untyped_storage().data_ptr())
+
+    def test_hot_path_has_no_host_tensor_materialization(self) -> None:
+        source = inspect.getsource(StaticBatchFieldsDeviceAdapter.act_device)
+        for forbidden in (".cpu(", ".item(", ".tolist(", ".numpy("):
+            self.assertNotIn(forbidden, source)
+
+
+@unittest.skipUnless(torch.cuda.is_available(), "CUDA is unavailable")
+class AutocastDeviceAdapterTest(unittest.TestCase):
+    def test_autocast_is_explicit_and_returns_device_actions(self) -> None:
+        class LinearAdapter:
+            def __init__(self):
+                self.linear = torch.nn.Linear(
+                    4, 2, device="cuda", dtype=torch.bfloat16
+                )
+
+            def act_device(self, batch):
+                output = self.linear(batch["numeric"])
+                self.output_dtype = output.dtype
+                return output.argmax(1, keepdim=True), torch.ones(
+                    output.shape[0], dtype=torch.long, device=output.device
+                )
+
+        inner = LinearAdapter()
+        adapter = AutocastDeviceAdapter(inner, torch.bfloat16)
+        actions, lengths = adapter.act_device(
+            {
+                "option_mask": torch.ones(
+                    (3, 2), dtype=torch.bool, device="cuda"
+                ),
+                "numeric": torch.ones(
+                    (3, 4), dtype=torch.float32, device="cuda"
+                ),
+            }
+        )
+        self.assertEqual(inner.output_dtype, torch.bfloat16)
+        self.assertTrue(actions.is_cuda)
+        self.assertTrue(lengths.is_cuda)
 
 
 if __name__ == "__main__":

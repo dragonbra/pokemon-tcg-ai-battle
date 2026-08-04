@@ -1,5 +1,9 @@
 # CUDA engine acceptance status - 2026-07-29
 
+> Historical snapshot. The current status, official POD ABI v5 measurements,
+> and corrected VRAM estimates are in
+> [`acceptance_status_20260730.md`](acceptance_status_20260730.md).
+
 This file distinguishes prototype evidence from the formal promotion gates in
 `implementation_plan.md`. A partial result is not a pass. At this snapshot,
 zero of the six combined formal gates below are complete.

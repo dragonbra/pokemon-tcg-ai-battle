@@ -6,6 +6,7 @@ from typing import Iterable
 
 from .reference import ReferenceResetSpec
 from .schema import RulePack
+from .official_rule_pack import validate_official_rule_pack
 
 
 RESET_STRUCT = struct.Struct("<I2H2H2H2H2HH6x")
@@ -57,4 +58,35 @@ def create_engine(
     instruction_tensor = torch.frombuffer(bytearray(instructions), dtype=torch.uint8)
     action_tensor = torch.frombuffer(bytearray(actions), dtype=torch.uint8)
     engine.upload_rule_pack(instruction_tensor, action_tensor)
+    return engine
+
+
+def create_official_engine(
+    rule_pack: bytes | bytearray | memoryview,
+    *,
+    batch_size: int,
+    device_index: int = 0,
+    device_stack_bytes: int = 32 * 1024,
+):
+    """Create the GPU-resident official POD runtime.
+
+    Rule-pack upload is intentionally a one-time host operation.  After
+    ``reset_states`` has completed, callers can use ``advance_to_decision``,
+    ``pack_actions`` and ``apply_actions`` with CUDA tensors only; the returned
+    state/status/action views are borrowed device tensors owned by the engine.
+    """
+
+    import torch
+
+    packed = bytes(rule_pack)
+    validate_official_rule_pack(packed)
+    extension = load_extension()
+    engine = extension.OfficialCudaEngine(
+        batch_size,
+        len(packed),
+        device_index,
+        device_stack_bytes,
+    )
+    rule_tensor = torch.frombuffer(bytearray(packed), dtype=torch.uint8)
+    engine.upload_rule_pack(rule_tensor)
     return engine

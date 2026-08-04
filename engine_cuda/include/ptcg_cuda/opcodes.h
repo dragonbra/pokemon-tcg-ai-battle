@@ -6,9 +6,10 @@ namespace ptcg::cuda_engine {
 
 constexpr std::uint32_t kAbiVersion = 1;
 constexpr std::uint32_t kRulePackVersion = 1;
-constexpr std::uint32_t kMaxPolicies = 32;
+constexpr std::uint32_t kMaxPolicies = 64;
 constexpr std::uint32_t kMaxCardInstances = 160;
 constexpr std::uint32_t kMaxEffectFrames = 128;
+constexpr std::uint32_t kMaxContinuationFrames = 256;
 constexpr std::uint32_t kMaxDelayedEffects = 32;
 constexpr std::uint32_t kMaxCounters = 32;
 constexpr std::uint32_t kMaxCodecEntities = 128;

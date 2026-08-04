@@ -1,0 +1,13 @@
+{
+    "deck_id":  "dragapult_third_7c605fb2",
+    "decoder_ref":  "foundation",
+    "display_name":  "Pure Dragapult — THIRD PTCG Club",
+    "focal":  true,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 32; player THIRD PTCG Club; exact deck hash 7c605fb25d81; episode 89017265",
+                       "source":  "kaggle_episode:89017265"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

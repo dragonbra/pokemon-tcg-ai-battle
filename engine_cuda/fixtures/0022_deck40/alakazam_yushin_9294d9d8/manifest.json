@@ -1,0 +1,13 @@
+{
+    "deck_id":  "alakazam_yushin_9294d9d8",
+    "decoder_ref":  "foundation",
+    "display_name":  "Alakazam / Fezandipiti / Shaymin — Yushin Ito",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 16; player Yushin Ito; exact deck hash 9294d9d8360a; episode 89020573",
+                       "source":  "kaggle_episode:89020573"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

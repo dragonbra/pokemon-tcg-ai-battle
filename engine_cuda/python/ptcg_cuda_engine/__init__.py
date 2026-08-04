@@ -2,7 +2,7 @@
 
 from .memory import MemoryEstimate, estimate_memory
 from .native import create_engine, pack_reset_specs
-from .policy_pool import FixedRoutePlanner, PolicyPoolManifest, PolicySpec
+from .policy_pool import MAX_POLICIES, FixedRoutePlanner, PolicyPoolManifest, PolicySpec
 from .reference import BatchedReferenceEngine, ReferenceResetSpec
 from .schema import Action, Instruction, RulePack
 
@@ -12,6 +12,7 @@ __all__ = [
     "FixedRoutePlanner",
     "Instruction",
     "MemoryEstimate",
+    "MAX_POLICIES",
     "PolicyPoolManifest",
     "PolicySpec",
     "ReferenceResetSpec",

@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include "ptcg_cuda/engine_abi.h"
+#include "ptcg_cuda/official_rng.cuh"
 
 namespace ptcg::cuda_engine {
 
@@ -41,6 +42,17 @@ struct alignas(16) DelayedEffect {
 };
 static_assert(sizeof(DelayedEffect) == 16);
 
+struct ContinuationFrame {
+    std::int32_t args[3];
+    std::uint16_t opcode;
+    std::uint8_t arg_type;
+    std::uint8_t call_count;
+    std::uint8_t called_count;
+    std::uint8_t flags;
+    std::uint16_t reserved;
+};
+static_assert(sizeof(ContinuationFrame) == 20);
+
 struct alignas(32) PlayerState {
     std::uint16_t policy_id;
     std::uint16_t active_entity;
@@ -57,7 +69,7 @@ struct alignas(32) PlayerState {
 static_assert(sizeof(PlayerState) == 32);
 
 struct alignas(64) BattleState {
-    std::uint64_t rng_state;
+    OfficialMt19937 rng;
     std::uint64_t episode_id;
     std::uint32_t turn;
     std::uint32_t decision_count;
@@ -67,18 +79,19 @@ struct alignas(64) BattleState {
     std::uint16_t actor;
     std::uint16_t action_count;
     std::uint16_t entity_count;
-    std::uint16_t stack_size;
+    std::uint16_t effect_stack_size;
+    std::uint16_t continuation_stack_size;
     std::uint16_t delayed_count;
-    std::uint16_t reserved0;
     std::uint32_t counters[kMaxCounters];
     PlayerState players[2];
     CardInstance cards[kMaxCardInstances];
     EffectFrame stack[kMaxEffectFrames];
+    ContinuationFrame continuations[kMaxContinuationFrames];
     DelayedEffect delayed[kMaxDelayedEffects];
 };
 
 static_assert(std::is_trivially_copyable_v<BattleState>);
-static_assert(sizeof(BattleState) <= 8192, "prototype state exceeded its memory budget");
+static_assert(sizeof(BattleState) <= 32768, "state exceeded the planned per-environment budget");
 
 struct PolicyCodecBuffers {
     std::int64_t* global_cat = nullptr;
