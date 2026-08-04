@@ -117,8 +117,14 @@ def main() -> None:
     parser.add_argument("--epochs", type=int, default=40)
     parser.add_argument("--batch-size", type=int, default=512)
     parser.add_argument("--validation-batch-size", type=int, default=512)
+    parser.add_argument("--learning-rate", type=float, default=3e-4)
     parser.add_argument("--early-stopping-patience", type=int, default=6)
     parser.add_argument("--prefetch-depth", type=int, default=2)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume this exact version from its complete-epoch checkpoint.",
+    )
     args = parser.parse_args()
     if not 5 <= args.heartbeat_seconds <= 60:
         raise ValueError("heartbeat interval must be between 5 and 60 seconds")
@@ -141,11 +147,15 @@ def main() -> None:
         str(args.batch_size),
         "--validation-batch-size",
         str(args.validation_batch_size),
+        "--learning-rate",
+        str(args.learning_rate),
         "--early-stopping-patience",
         str(args.early_stopping_patience),
         "--prefetch-depth",
         str(args.prefetch_depth),
     ]
+    if args.resume:
+        command.append("--resume")
     environment = {
         **os.environ,
         "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",

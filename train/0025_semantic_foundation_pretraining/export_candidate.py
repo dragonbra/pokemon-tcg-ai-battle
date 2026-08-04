@@ -36,16 +36,15 @@ def _read_deck(path: Path) -> list[int]:
 
 
 def _main_source(arm: str) -> str:
-    policy_import = (
-        "from strategy.deployment.canonical_inference import PortableCanonicalPolicy\n"
-        if arm == "canonical_semantic"
-        else "from strategy.portable_inference import PortablePolicy\n"
-    )
-    policy_load = (
-        "PortableCanonicalPolicy.from_checkpoint(ROOT / \"strategy/model.bin\", DECK)"
-        if arm == "canonical_semantic"
-        else "PortablePolicy.from_checkpoint(ROOT / \"strategy/model.bin\", DECK)"
-    )
+    if arm == "canonical_semantic":
+        policy_import = "from strategy.deployment.canonical_inference import PortableCanonicalPolicy\n"
+        policy_load = "PortableCanonicalPolicy.from_checkpoint(ROOT / \"strategy/model.bin\", DECK)"
+    elif arm == "semantic":
+        policy_import = "from strategy.deployment.semantic_inference import PortableSemanticPolicy\n"
+        policy_load = "PortableSemanticPolicy.from_checkpoint(ROOT / \"strategy/model.bin\", DECK)"
+    else:
+        policy_import = "from strategy.portable_inference import PortablePolicy\n"
+        policy_load = "PortablePolicy.from_checkpoint(ROOT / \"strategy/model.bin\", DECK)"
     return '''import os
 from pathlib import Path
 import sys
@@ -119,6 +118,46 @@ def _copy_canonical_runtime(source_root: Path, strategy: Path) -> None:
     )
 
 
+def _copy_semantic_runtime(source_root: Path, strategy: Path) -> None:
+    for relative in (
+        "features/__init__.py",
+        "features/compiler.py",
+        "features/prototypes.py",
+        "knowledge/__init__.py",
+        "knowledge/ledger.py",
+        "knowledge/state.py",
+        "legacy/__init__.py",
+        "legacy/base_model.py",
+        "model/__init__.py",
+        "model/batching.py",
+        "model/multi_memory.py",
+        "deployment/__init__.py",
+        "deployment/inference.py",
+        "deployment/semantic_inference.py",
+        "deployment/semantic_online_runtime.py",
+    ):
+        source = source_root / relative
+        target = strategy / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+    assets = source_root / "assets"
+    deployment = strategy / "deployment"
+    for name in (
+        "official_public_prototypes_v1.json",
+        "official_full_engine_prototypes_v1.json",
+    ):
+        shutil.copy2(assets / name, deployment / name)
+    (strategy / "inference.py").write_text(
+        "from .deployment.inference import legal_fallback\n\n__all__ = ['legal_fallback']\n",
+        encoding="ascii",
+    )
+    (strategy / "online_runtime.py").write_text(
+        "from .deployment.semantic_online_runtime import OnlineCausalEncoder\n\n"
+        "__all__ = ['OnlineCausalEncoder']\n",
+        encoding="ascii",
+    )
+
+
 def export_candidate(
     *,
     checkpoint: Path,
@@ -136,6 +175,7 @@ def export_candidate(
     if not isinstance(metadata, dict) or metadata.get("arm") not in {
         "legacy_default",
         "canonical_semantic",
+        "semantic",
     }:
         raise ValueError("unsupported 0025 checkpoint arm")
     arm = metadata["arm"]
@@ -158,6 +198,8 @@ def export_candidate(
         source_root = Path(__file__).resolve().parent
         if arm == "canonical_semantic":
             _copy_canonical_runtime(source_root, strategy)
+        elif arm == "semantic":
+            _copy_semantic_runtime(source_root, strategy)
         else:
             copies = {
                 source_root / "legacy/base_model.py": strategy / "base_model.py",
@@ -171,7 +213,7 @@ def export_candidate(
         manifest = {
             "schema_version": f"0025_{arm}_candidate_v1",
             "candidate": output.name,
-            "project_id": PROJECT_ID,
+            "project_id": metadata.get("project_id", PROJECT_ID),
             "deck_id": deck_id,
             "deck_sha256": _deck_hash(deck),
             "checkpoint": str(checkpoint),

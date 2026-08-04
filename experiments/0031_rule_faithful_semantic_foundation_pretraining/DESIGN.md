@@ -1,12 +1,14 @@
 # 0031 Rule-Faithful Semantic Foundation Pretraining
 
-Status: **V2 semantic implementation is training-ready; no formal 0031 dataset or run has been created. `torch.compile` is not admitted for formal training.**
+Status: **Formal training is active in `V4_lr5e4_no_early_stop_b512`. `torch.compile` is not admitted for formal training.**
 
 ## Dataset boundary
 
 The audited source interval is now 2026-07-10 through 2026-08-02. The immutable winner catalog contains 111,697 unique positive-terminal winner Episodes: 100,559 train and 11,138 validation, covering 423 exact decks and 596 provenance sources. Its catalog SHA-256 is `f34f48392929cdc6adb351296c72511c1448c96859f649ae6e5eba8d4475b86d`.
 
-No 0031 V2 decision dataset has been materialized yet. Applying the observed 0028 mean of 83.8707 decisions per winner Episode projects about 9.37 million decisions; this is a planning estimate, not a manifest count. The final train/validation decision counts become authoritative only after the immutable V2 materialization completes.
+The immutable canonical dataset is `rl_runs/0031_rule_faithful_semantic_foundation_pretraining/dataset/V1_rule_faithful_winners_20260710_20260802`. It contains **9,385,376** decisions: 8,448,060 train and 937,316 validation. Materialization used eight CPU workers and gzip level 3, completed in 4,729.74 seconds (78 minutes 49.74 seconds), and produced 9,756,163,489 payload bytes. Its manifest SHA-256 is `6a7ceab6938a456d7d0ae1e45c38086af54fb01af563a3feb69223f2bde89a7b`.
+
+All 2,292 shards were independently hash-checked and then decompressed row by row. The second pass verified all row counts, schema and split contracts, global maxima, and fixed-bucket collation of the seven boundary representatives. Source/team identity remains audit-only and is absent from actor forward.
 
 ## Evidence boundary
 
@@ -68,15 +70,15 @@ Canonical materialization performs feature compilation and canonical JSON serial
 Dynamic eager collation remains the formal default. Optional fixed upper-bound buckets are:
 
 ```text
-card:   16, 32, 64, 96, 128
+card:   16, 32, 64, 96, 128, 160
 event:  8, 16, 32, 64
-option: 4, 8, 16, 32, 64
-effect: 8, 16, 32, 64, 96, 128
-skill:  8, 16, 32, 64
+option: 4, 8, 16, 32, 64, 96
+effect: 8, 16, 32, 64, 96, 128, 192, 256, 384
+skill:  8, 16, 32, 64, 96
 action steps including STOP: 2, 4, 8, 16, 32, 64
 ```
 
-The originally proposed effect maximum 64 is invalid: the real sample reaches 91. V2 therefore includes 96/128 buckets and fails closed above 128. The collator never truncates. When fixed padding is selected, training records are ordered by the exact joint bucket signature to improve shape reuse.
+The complete dataset maxima are card 134, resource 30, event 64, option 78, effect 317, skill 82, and action including STOP 32. The earlier sample-derived maxima were insufficient, so the finite defaults now cover these audited values and still fail closed above their final bounds. The collator never truncates. When fixed padding is selected, training records are ordered by the exact joint bucket signature to improve shape reuse.
 
 For the 512-row sample at batch 32, fixed buckets increased padded cells versus dynamic padding by 17.8% for cards, 54.2% for options, 19.4% for effects, 49.3% for skills, and 1.5% for events. An RTX 5080 d64/layer-2 diagnostic measured eager forward+backward+AdamW at 243.8 decisions/s dynamic and 245.1 fixed; the 0.5% difference is noise, not evidence of a speedup.
 
@@ -88,7 +90,7 @@ Inductor is **not** ready for formal use. Even d32/batch-1 full-graph compilatio
 
 ## Training and checkpoint contract
 
-BC performs exactly one optimization pass over train and a complete teacher-forced plus greedy validation pass each epoch. CUDA training uses fused AdamW and default prefetch depth 4. Formal runs use private W&B project `dragon_bra/pokemon-tcg-policy-learning`; source provenance remains in manifests/audits and never reaches actor forward.
+BC performs exactly one optimization pass over train and a complete teacher-forced plus greedy validation pass each epoch. CUDA training uses fused AdamW and prefetch depth 4. Formal runs use private W&B project `dragon_bra/pokemon-tcg-policy-learning`; source provenance remains in manifests/audits and never reaches actor forward.
 
 0031 has an explicit exact-resume exception to the repository's model-only default:
 
@@ -98,10 +100,14 @@ BC performs exactly one optimization pass over train and a complete teacher-forc
 - the exact boundary is a completed epoch. A crash inside an epoch replays that incomplete epoch; batch-level sampler/prefetch state is not claimed;
 - current bfloat16 autocast uses no GradScaler and current trainer has no scheduler, but the checkpoint format supports both.
 
-With 56.9M fp32 parameters, one model-only file is roughly 217 MiB and a populated AdamW resume file is roughly 650 MiB before serialization overhead. Four model-only slots plus one resume slot therefore require roughly 1.5-1.8 GiB at peak. Retention is finite and resume state is never exported to a candidate.
+With 56.35M fp32 parameters, one model-only file is roughly 215 MiB and a populated AdamW resume file is roughly 645 MiB before serialization overhead. Four model-only slots plus one resume slot therefore require roughly 1.5-1.8 GiB at peak. Retention is finite and resume state is never exported to a candidate.
 
 ## Readiness and verification
 
-No formal 0031 version exists. Formal start must materialize a new immutable V2 dataset and allocate `V1_rule_faithful_foundation`; 0025/0028 shards cannot be reused because the actor schema changed.
+`V1_rule_faithful_foundation` was stopped before completing epoch 1 while investigating low startup throughput; it has no checkpoint and remains an interrupted audit record. Controlled full-data tests rejected multi-process shard loading: serial loading at batch 256 reached 456.0 decisions/s with only 5.5% data wait, whereas four-process whole-shard IPC reached 295.0 decisions/s. The experimental loader was fully reverted.
 
-The implementation passes the project semantic, model, fixed-bucket, compile-fullgraph, checkpoint, and training tests. The chronological benchmark artifact is `.tmp/0031_feature_benchmark/run-20260804-v2/feature_benchmark.json`; the eager GPU padding diagnostic is beside it as `gpu_eager_padding_benchmark.json`. The earlier noncanonical smoke remains historical V1 evidence and does not validate the new V2 dataset or formal run.
+`V2_no_early_stop_b384` was stopped before epoch 1 completed so the user-requested learning rate could change from 0.0003 to 0.0005. `V3_lr5e4_no_early_stop_b384` was then stopped after 20 batches so batch 512 could receive a same-contract full-data benchmark. Neither version has a checkpoint or completed epoch.
+
+The active formal version is `V4_lr5e4_no_early_stop_b512`: learning rate 0.0005, batch and validation batch 512, bfloat16, fused AdamW, dynamic length bucketing, prefetch depth 4, and `early_stopping_patience=0`. A 100-batch full-data preflight measured **629.8 decisions/s**, 7.5% data wait, and 8.11/9.89 GB peak CUDA allocated/reserved memory, 11.2% faster than batch 384. The configured epoch limit is intentionally nonbinding at 1,000,000; training stops only by user decision or an operational fault. W&B run ID is `0031_rule_faithful_semantic_foundation_pretraining--v-cbffa699bd`.
+
+The implementation passes 58 project semantic, model, fixed-bucket, compile-fullgraph, checkpoint, and training tests. The chronological benchmark artifact is `.tmp/0031_feature_benchmark/run-20260804-v2/feature_benchmark.json`; full-data batch preflights are `.tmp/0031_training_optimization/full_serial_b256.json`, `full_serial_b384.json`, and `full_serial_b512.json`. Full dataset verification is `.tmp/0031_training_optimization/full_dataset_verification.json`; the completed dataset CUDA/fixed-bucket smoke is `.tmp/0031_rule_faithful_bc_smoke/run-c81d419894`.

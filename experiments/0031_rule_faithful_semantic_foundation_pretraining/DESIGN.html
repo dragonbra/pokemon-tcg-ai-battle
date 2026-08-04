@@ -3,11 +3,12 @@
 <title>0031 Rule-Faithful Semantic Foundation</title>
 <style>body{font:15px/1.55 system-ui,sans-serif;color:#20252b;max-width:1080px;margin:0 auto;padding:32px}h1,h2{letter-spacing:0}h1{font-size:30px}h2{font-size:20px;margin-top:30px;border-bottom:1px solid #ccd2d8;padding-bottom:6px}code{background:#eef1f3;padding:2px 4px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #cbd1d6;padding:7px;text-align:left}th{background:#f3f5f6}.status{border-left:4px solid #247a4b;padding:10px 14px;background:#eef7f1}.warn{border-left:4px solid #b06b18;padding:10px 14px;background:#fff7e8}pre{padding:12px;background:#f3f5f6;overflow:auto}</style></head>
 <body><h1>0031 Rule-Faithful Semantic Foundation Pretraining</h1>
-<p class="status"><strong>Status:</strong> V2 semantic implementation is training-ready. No formal dataset or run exists. <code>torch.compile</code> is not admitted for formal training.</p>
+<p class="status"><strong>Status:</strong> Formal training is active in <code>V4_lr5e4_no_early_stop_b512</code>. <code>torch.compile</code> is not admitted for formal training.</p>
 
 <h2>Dataset Boundary</h2>
 <p>The audited official source interval is 2026-07-10 through 2026-08-02. The immutable catalog contains <strong>111,697</strong> unique positive-terminal winner Episodes: 100,559 train and 11,138 validation, spanning 423 exact decks and 596 provenance sources. Catalog SHA-256: <code>f34f48392929cdc6adb351296c72511c1448c96859f649ae6e5eba8d4475b86d</code>.</p>
-<p>No V2 decision dataset has been materialized. The 0028 mean Episode length projects about 9.37 million decisions; this remains an estimate until the V2 dataset manifest records exact split counts.</p>
+<p>The immutable canonical dataset contains <strong>9,385,376</strong> decisions: 8,448,060 train and 937,316 validation. Eight CPU workers completed materialization in 4,729.74 seconds (78 minutes 49.74 seconds) using gzip level 3; payload size is 9,756,163,489 bytes. Manifest SHA-256: <code>6a7ceab6938a456d7d0ae1e45c38086af54fb01af563a3feb69223f2bde89a7b</code>.</p>
+<p>All 2,292 shards were hash-checked and independently decompressed row by row. Counts, schema, split, length maxima, and boundary fixed-bucket collation all passed. Source/team identity remains audit-only.</p>
 
 <h2>Evidence Boundary</h2>
 <p>General rules follow the repository rule research. Concrete card/event semantics come from the unmodified official engine and <code>official_full_engine_prototypes_v2.json</code>. Model and training choices are project hypotheses.</p>
@@ -36,13 +37,13 @@
 
 <h2>Variable Lengths And Buckets</h2>
 <p>Cards, events, options, skills, and effects are genuinely variable in count. Semantic records remain ragged; collation pads dense batch tensors and supplies masks. Fixed shape does not mean lost information.</p>
-<pre>card:   16, 32, 64, 96, 128
+<pre>card:   16, 32, 64, 96, 128, 160
 event:  8, 16, 32, 64
-option: 4, 8, 16, 32, 64
-effect: 8, 16, 32, 64, 96, 128
-skill:  8, 16, 32, 64
+option: 4, 8, 16, 32, 64, 96
+effect: 8, 16, 32, 64, 96, 128, 192, 256, 384
+skill:  8, 16, 32, 64, 96
 action including STOP: 2, 4, 8, 16, 32, 64</pre>
-<p class="warn">Effect max 64 is invalid: real decisions reach 91. The 96/128 buckets are required; values above 128 fail closed.</p>
+<p class="warn">Complete-data maxima are card 134, resource 30, event 64, option 78, effect 317, skill 82, and action including STOP 32. The finite defaults cover these values and still fail closed above their final bounds; no tensor is truncated.</p>
 <p>At batch 32, fixed buckets add padding but a d64 RTX 5080 eager diagnostic was effectively tied: 243.8 decisions/s dynamic versus 245.1 fixed. This is noise, not a fixed-padding speedup.</p>
 
 <h2>Compile Status</h2>
@@ -52,7 +53,10 @@ action including STOP: 2, 4, 8, 16, 32, 64</pre>
 <h2>Training And Resume</h2>
 <p>BC performs one train pass and full teacher-forced plus greedy validation per epoch, with fused AdamW on CUDA, prefetch depth 4, and private W&amp;B for formal runs. Four model-only slots remain inference/export artifacts. One atomic <code>checkpoint/resume/latest_resume.pt</code> additionally stores model, AdamW, optional scheduler/GradScaler, completed-epoch trainer state, and Python/NumPy/Torch RNG.</p>
 <p>Resume requires identical dataset, training config, model contract, and implementation hashes plus agreement with the canonical metrics epoch. The exact boundary is a completed epoch; an interrupted partial epoch is rerun. Estimated peak checkpoint retention is roughly 1.5-1.8 GiB. Resume state never enters a candidate.</p>
+<p><code>V1_rule_faithful_foundation</code> was stopped before its first completed epoch while investigating low startup throughput and has no checkpoint. Full-data A/B rejected whole-shard multiprocessing: serial batch 256 reached 456.0 decisions/s with 5.5% data wait; four-process IPC reached 295.0 decisions/s and was reverted.</p>
+<p><code>V2_no_early_stop_b384</code> was stopped before epoch 1 for the user-requested learning-rate change to 0.0005. <code>V3_lr5e4_no_early_stop_b384</code> was stopped after 20 batches for a same-contract batch-512 benchmark. Neither completed an epoch or produced a checkpoint.</p>
+<p>The active <code>V4_lr5e4_no_early_stop_b512</code> run uses learning rate 0.0005, batch/validation batch 512, BF16, fused AdamW, dynamic length bucketing, prefetch 4, and <code>early_stopping_patience=0</code>. Its full-data 100-batch preflight measured <strong>629.8 decisions/s</strong>, 7.5% data wait, and 8.11/9.89 GB peak allocated/reserved CUDA memory, 11.2% faster than batch 384. The epoch limit is intentionally nonbinding at 1,000,000; stopping is a user decision. W&amp;B run ID: <code>0031_rule_faithful_semantic_foundation_pretraining--v-cbffa699bd</code>.</p>
 
 <h2>Verification</h2>
-<p>No formal 0031 assets were created. A new V2 dataset must precede <code>V1_rule_faithful_foundation</code>. Chronological benchmark evidence is stored under <code>.tmp/0031_feature_benchmark/run-20260804-v2/</code>; final test totals are recorded in the accompanying decisions after final verification.</p>
+<p>The immutable dataset is complete and formal V4 training is active. The 58 project tests pass. Full-data batch preflights are <code>.tmp/0031_training_optimization/full_serial_b256.json</code>, <code>full_serial_b384.json</code>, and <code>full_serial_b512.json</code>; row verification is <code>.tmp/0031_training_optimization/full_dataset_verification.json</code>.</p>
 </body></html>

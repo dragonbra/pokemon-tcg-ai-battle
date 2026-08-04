@@ -1,0 +1,49 @@
+{
+  "arms": {
+    "rule_faithful_semantic": {
+      "best_greedy_exact": {
+        "bytes": 464775449,
+        "name": "best_greedy_exact",
+        "optimizer_state_saved": false,
+        "path": "best_greedy_exact.pt",
+        "resumable_training_state_saved": false,
+        "schema_version": "0031_model_only_checkpoint_v1",
+        "sha256": "b49d10cbe4e37db79aba311b7ae0c6e1548fdfdbdf343199b800e889c5cd6e66"
+      },
+      "best_teacher_exact": {
+        "bytes": 464775748,
+        "name": "best_teacher_exact",
+        "optimizer_state_saved": false,
+        "path": "best_teacher_exact.pt",
+        "resumable_training_state_saved": false,
+        "schema_version": "0031_model_only_checkpoint_v1",
+        "sha256": "d5d56cbca1fa96bf617eab8f9b708d3d1917d9a93de4ed69ba3f19ccd68994b5"
+      },
+      "best_validation_loss": {
+        "bytes": 464776538,
+        "name": "best_validation_loss",
+        "optimizer_state_saved": false,
+        "path": "best_validation_loss.pt",
+        "resumable_training_state_saved": false,
+        "schema_version": "0031_model_only_checkpoint_v1",
+        "sha256": "4058cc49721b09812999f31d070e05479b445d6a3e6fd470671c785e023fee9b"
+      },
+      "latest": {
+        "bytes": 464771584,
+        "name": "latest",
+        "optimizer_state_saved": false,
+        "path": "latest.pt",
+        "resumable_training_state_saved": false,
+        "schema_version": "0031_model_only_checkpoint_v1",
+        "sha256": "05f98e2a562f0037713ebd4b96a5a324151c91b187d7edaa879cc1c024134a51"
+      }
+    }
+  },
+  "retention_slots": [
+    "latest",
+    "best_validation_loss",
+    "best_teacher_exact",
+    "best_greedy_exact"
+  ],
+  "schema_version": "0031_checkpoint_selection_v1"
+}

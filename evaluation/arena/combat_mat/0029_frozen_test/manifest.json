@@ -1,0 +1,120 @@
+{
+  "checkpoint": ".tmp/model_loading/0029_large/semantic/best_greedy_exact.pt",
+  "checkpoint_selection": "best_greedy_exact",
+  "checkpoint_sha256": "407b69ca74f276260b07ed03351b2c200f9e98ec9587d521e539d4fb2500053a",
+  "games_per_opponent": 10,
+  "league_catalog": "rl_runs/0022_league_training/versions/V11_multidecoder_league_20h/artifact/league_catalog.json",
+  "league_catalog_sha256": "d16488e6bb191ddffd626bbdfdaf6b978b1d1d5184922a61c64ec179e2bab97b",
+  "league_deck_count": 48,
+  "opponents_per_report": 51,
+  "pool_id": "0019_foundation_51_exact_decks_v4",
+  "priority_decks": [
+    "marnies_grimmsnarl_ex_froslass_001",
+    "dragapult_ex_001",
+    "mega_lucario_ex_solrock_001",
+    "mega_lopunny_ex_mega_froslass_ex_001",
+    "raging_bolt_ex_james_cox_henry_chao_001"
+  ],
+  "project_id": "0029_multi_deck_semantic_foundation_bc",
+  "published_games": 1530,
+  "published_reports": 3,
+  "reports": [
+    {
+      "checkpoint_sha256": "407b69ca74f276260b07ed03351b2c200f9e98ec9587d521e539d4fb2500053a",
+      "completion_rate": 1.0,
+      "deck_id": "marnies_grimmsnarl_ex_froslass_001",
+      "deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "errors": 0,
+      "finished_at": "2026-08-04T14:16:01.872138+00:00",
+      "games": 510,
+      "losses": 378,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/marnies_grimmsnarl_ex_froslass_001.html",
+      "report_sha256": "f5eacb95004102792702de8d1c53f71e5231f314df6078a1d1a94c5ed5cdac74",
+      "run_id": "run-f71a3ad723584383bd52f2585a2733b0",
+      "started_at": "2026-08-04T14:09:42.836239+00:00",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 183,
+          "wins": 72
+        },
+        "second": {
+          "draws": 0,
+          "losses": 195,
+          "wins": 60
+        }
+      },
+      "wall_time_seconds": 398.31654794100905,
+      "win_rate": 0.25882352941176473,
+      "wins": 132
+    },
+    {
+      "checkpoint_sha256": "407b69ca74f276260b07ed03351b2c200f9e98ec9587d521e539d4fb2500053a",
+      "completion_rate": 1.0,
+      "deck_id": "dragapult_ex_001",
+      "deck_sha256": "6f784c7049ab4a4cfbc012c5bee8cc040d1030d54b4e572e4a4a9f35d0f6ea81",
+      "display_name": "Dragapult ex - Limitless",
+      "draws": 0,
+      "errors": 0,
+      "finished_at": "2026-08-04T13:58:41.864021+00:00",
+      "games": 510,
+      "losses": 446,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/dragapult_ex_001.html",
+      "report_sha256": "9f9afcae3c7f13c59ab19d34786e513b959e1ef13b879ecfd7a5147d28bc9faf",
+      "run_id": "run-e3943924066847a888e6ea7b8e496d80",
+      "started_at": "2026-08-04T13:51:39.598842+00:00",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 224,
+          "wins": 31
+        },
+        "second": {
+          "draws": 0,
+          "losses": 222,
+          "wins": 33
+        }
+      },
+      "wall_time_seconds": 451.39202733899583,
+      "win_rate": 0.12549019607843137,
+      "wins": 64
+    },
+    {
+      "checkpoint_sha256": "407b69ca74f276260b07ed03351b2c200f9e98ec9587d521e539d4fb2500053a",
+      "completion_rate": 1.0,
+      "deck_id": "mega_lucario_ex_solrock_001",
+      "deck_sha256": "5a1a6ac264ccfd017ae137a035205d769fe57512323d474c22be9107177e36a8",
+      "display_name": "Mega Lucario ex / Solrock",
+      "draws": 0,
+      "errors": 0,
+      "finished_at": "2026-08-04T14:05:15.307127+00:00",
+      "games": 510,
+      "losses": 329,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/mega_lucario_ex_solrock_001.html",
+      "report_sha256": "bba41927a01039e72adc9a3caa1d99a464c1d5bf49dc9a923224e0654a5c20de",
+      "run_id": "run-3cb3ae460f5a41aba5276da407e94fc1",
+      "started_at": "2026-08-04T13:59:12.363197+00:00",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 159,
+          "wins": 96
+        },
+        "second": {
+          "draws": 0,
+          "losses": 170,
+          "wins": 85
+        }
+      },
+      "wall_time_seconds": 383.6685570960108,
+      "win_rate": 0.35490196078431374,
+      "wins": 181
+    }
+  ],
+  "schema_version": "0029_semantic_frozen_test_v1"
+}

@@ -8,6 +8,10 @@
 
 **Tech Stack:** Python 3.11, PyTorch 2.11, CUDA 12.8, BF16 AMP, SDPA Transformer layers, gzip JSONL canonical datasets, `unittest`.
 
+## Completion Status
+
+Completed on 2026-08-04. Tasks 1-7 are implemented and verified. The accepted formal path uses packed typed-field operators, complete hierarchical state memory, fused CUDA AdamW, and prefetch depth 4. Inductor compile was benchmarked but deliberately not admitted. The complete immutable 2026-07-10 through 2026-08-02 dataset contains 9,385,376 decisions; all 2,292 shards and every decompressed row passed verification. Formal BC training was not started.
+
 ## Global Constraints
 
 - Do not modify `engine/source/`.
@@ -32,10 +36,10 @@
 - Consumes: `CanonicalDecisionDataset`, `SemanticPolicy`, fixed seed and real canonical rows.
 - Produces: a JSON benchmark with synchronized step latency, decisions/s, data wait, peak CUDA memory, parameter count, model architecture label, and environment/load metadata.
 
-- [ ] Add benchmark arguments for model configuration, warmup steps, timed repeats, optional profiler trace, and fixed-bucket padding while keeping real dataset rows as the only input.
-- [ ] Record `nvidia-smi`-equivalent device facts and whether another GPU process is active, so contaminated measurements cannot be mistaken for isolated throughput.
-- [ ] Materialize a bounded canonical sample from the audited raw sources if no suitable 0031 sample exists.
-- [ ] Run the unchanged model on the sample with eager dynamic padding and save the baseline JSON.
+- [x] Add benchmark arguments for model configuration, warmup steps, timed repeats, optional profiler trace, and fixed-bucket padding while keeping real dataset rows as the only input.
+- [x] Record `nvidia-smi`-equivalent device facts and whether another GPU process is active, so contaminated measurements cannot be mistaken for isolated throughput.
+- [x] Materialize a bounded canonical sample from the audited raw sources if no suitable 0031 sample exists.
+- [x] Run the unchanged model on the sample with eager dynamic padding and save the baseline JSON.
 
 ### Task 2: Packed Categorical Fields
 
@@ -47,11 +51,11 @@
 - Consumes: `values: Tensor[..., field_count]`, per-field vocabulary sizes, independent padding row zero.
 - Produces: `CategoricalFields.forward(values) -> Tensor[..., d_model]` using one disjoint-offset embedding lookup and reduction.
 
-- [ ] Add a test-only legacy reference that owns one `nn.Embedding` per field and copy identical weights into the packed implementation.
-- [ ] Assert exact/equivalent CPU forward output, CUDA BF16-tolerant forward output, input-independent embedding gradients, zero padding gradients, vocabulary validation, and state-dict round trip.
-- [ ] Run the focused test and verify it fails before the packed implementation exists.
-- [ ] Store all field rows in one embedding table, reserve a distinct zero padding row per field through offsets, perform one lookup, mask local zero values, and sum along the field axis.
-- [ ] Run focused tests and the real-sample A/B benchmark; retain the change only if semantics pass and dispatch/step time improves or is neutral within benchmark noise.
+- [x] Add a test-only legacy reference that owns one `nn.Embedding` per field and copy identical weights into the packed implementation.
+- [x] Assert exact/equivalent CPU forward output, CUDA BF16-tolerant forward output, input-independent embedding gradients, zero padding gradients, vocabulary validation, and state-dict round trip.
+- [x] Run the focused test and verify it fails before the packed implementation exists.
+- [x] Store all field rows in one embedding table, reserve a distinct zero padding row per field through offsets, perform one lookup, mask local zero values, and sum along the field axis.
+- [x] Run focused tests and the real-sample A/B benchmark; retain the change only if semantics pass and dispatch/step time improves or is neutral within benchmark noise.
 
 ### Task 3: Batched Independent Numeric Fields
 
@@ -63,11 +67,11 @@
 - Consumes: `values: Tensor[..., width]`, `states: Tensor[..., width]` where state 1 means present.
 - Produces: the sum of independent per-field `Linear(1,d) -> GELU -> Linear(d,d)` projections and independent four-state embeddings using batched tensor contractions.
 
-- [ ] Add a legacy numeric reference and copy every field's two linear layers and state embedding into packed tensors.
-- [ ] Assert forward and all parameter gradients match in FP32, absent numeric values cannot affect output, default-present state matches explicit state 1, and invalid shapes fail closed.
-- [ ] Run the focused test and verify it fails before packed numeric parameters exist.
-- [ ] Implement batched first-layer affine, GELU, batched second-layer affine, present-state masking, and disjoint-offset state embedding without a Python field loop.
-- [ ] Run focused tests and the real-sample A/B benchmark independently from Task 2 evidence.
+- [x] Add a legacy numeric reference and copy every field's two linear layers and state embedding into packed tensors.
+- [x] Assert forward and all parameter gradients match in FP32, absent numeric values cannot affect output, default-present state matches explicit state 1, and invalid shapes fail closed.
+- [x] Run the focused test and verify it fails before packed numeric parameters exist.
+- [x] Implement batched first-layer affine, GELU, batched second-layer affine, present-state masking, and disjoint-offset state embedding without a Python field loop.
+- [x] Run focused tests and the real-sample A/B benchmark independently from Task 2 evidence.
 
 ### Task 4: Complete Hierarchical State Memory
 
@@ -80,12 +84,12 @@
 - Consumes: unchanged `DecisionBatch` global/card/resource/event tensors and prototype embeddings.
 - Produces: `EncodedState(tokens, mask, summary, cards)` with all family tokens present, plus explicit family spans for audit tests if needed.
 
-- [ ] Add config fields for board, resource, event, and fusion layer counts with validation and serialization.
-- [ ] Add tests proving output token count/mask still equals `1 + cards + resources + events`, padded tokens remain zero, card gather semantics remain stable, and every family can affect summary and option logits.
-- [ ] Run the focused tests against the old joint encoder and capture the expected contract failure for family-specific architecture metadata.
-- [ ] Encode global plus relation-enriched cards with the deep board stack, resources with a lightweight stack, and participant-enriched events with a shallow temporal stack.
-- [ ] Build a small fusion bank from masked family summaries and inject fused context into every family while preserving all per-instance tokens for option retrieval.
-- [ ] Benchmark the hierarchical encoder against the fused-field joint encoder using identical real batches and retain only a materially faster configuration with finite gradients and semantic sensitivity.
+- [x] Add config fields for board, resource, event, and fusion layer counts with validation and serialization.
+- [x] Add tests proving output token count/mask still equals `1 + cards + resources + events`, padded tokens remain zero, card gather semantics remain stable, and every family can affect summary and option logits.
+- [x] Run the focused tests against the old joint encoder and capture the expected contract failure for family-specific architecture metadata.
+- [x] Encode global plus relation-enriched cards with the deep board stack, resources with a lightweight stack, and participant-enriched events with a shallow temporal stack.
+- [x] Build a small fusion bank from masked family summaries and inject fused context into every family while preserving all per-instance tokens for option retrieval.
+- [x] Benchmark the hierarchical encoder against the fused-field joint encoder using identical real batches and retain only a materially faster configuration with finite gradients and semantic sensitivity.
 
 ### Task 5: Regional Compile and Optimizer A/B
 
@@ -98,11 +102,11 @@
 - Consumes: finite bucket-upper-bound padded batch shapes and the accepted eager hierarchical model.
 - Produces: explicit `--compile-regions` and fused-AdamW configuration only when benchmark-admitted; ordinary eager checkpoints remain standard `state_dict` weights.
 
-- [ ] Add a benchmark-only regional compile mode and record compile warmup separately from steady-state steps.
-- [ ] Compare eager dynamic padding, eager fixed bucket padding, and regional compile fixed bucket padding on high-coverage real shapes.
-- [ ] Compare standard and `fused=True` AdamW independently.
-- [ ] Admit runtime flags only for configurations that pass output/gradient sanity and improve steady-state throughput enough to amortize compilation.
-- [ ] Test that model-only and exact epoch-resume checkpoints remain loadable by an uncompiled `SemanticPolicy`.
+- [x] Add a benchmark-only regional compile mode and record compile warmup separately from steady-state steps.
+- [x] Compare eager dynamic padding, eager fixed bucket padding, and regional compile fixed bucket padding on high-coverage real shapes.
+- [x] Compare standard and `fused=True` AdamW independently.
+- [x] Admit runtime flags only for configurations that pass output/gradient sanity and improve steady-state throughput enough to amortize compilation.
+- [x] Test that model-only and exact epoch-resume checkpoints remain loadable by an uncompiled `SemanticPolicy`.
 
 ### Task 6: Documentation and Contract Verification
 
@@ -116,10 +120,10 @@
 - Consumes: accepted code, measured parameter count, benchmark JSON, tests, and checkpoint contract.
 - Produces: synchronized authoritative model/data-flow documentation and auditable optimization evidence.
 
-- [ ] Document unchanged semantic schema, new family-specific tensor flow, exact layer counts, parameter count, padding/compile status, checkpoint portability, and exact-resume boundary.
-- [ ] Record baseline and accepted throughput, peak memory, benchmark contamination boundary, and rejected optimizations.
-- [ ] Cross-check markdown and HTML figures against live code and generated benchmark artifacts.
-- [ ] Run the complete 0031 suite and `git diff --check`.
+- [x] Document unchanged semantic schema, new family-specific tensor flow, exact layer counts, parameter count, padding/compile status, checkpoint portability, and exact-resume boundary.
+- [x] Record baseline and accepted throughput, peak memory, benchmark contamination boundary, and rejected optimizations.
+- [x] Cross-check markdown and HTML figures against live code and generated benchmark artifacts.
+- [x] Run the complete 0031 suite and `git diff --check`.
 
 ### Task 7: Full Audited Dataset Materialization
 
@@ -132,9 +136,8 @@
 - Consumes: every immutable raw root named by `winners_2026-07-10_2026-08-02.json`, public/full-engine prototype assets, and complete catalog coverage.
 - Produces: immutable gzipped train/validation shards plus a complete manifest with hashes, episode/decision counts, maximum lengths, source provenance, elapsed time, and payload bytes.
 
-- [ ] Resolve and verify all raw roots, catalog commitments, free disk, RAM, and current 0030 RL CPU/GPU load before launch.
-- [ ] Choose a bounded worker count from a short CPU materialization benchmark; leave GPU unused and avoid memory pressure on 0030.
-- [ ] Start full materialization in a foreground monitored terminal session and inspect progress, RSS, swap, disk, and 0030 health at intervals no longer than 60 seconds.
-- [ ] Require atomic completion and `status: complete`; do not accept partial directories or catalog subsets.
-- [ ] Load the finished dataset, verify shard hashes/counts, sample-collate boundary lengths, and record actual materialization time and size in project records.
-
+- [x] Resolve and verify all raw roots, catalog commitments, free disk, RAM, and current 0030 RL CPU/GPU load before launch.
+- [x] Choose a bounded worker count from a short CPU materialization benchmark; leave GPU unused and avoid memory pressure on 0030.
+- [x] Start full materialization in a foreground monitored terminal session and inspect progress, RSS, swap, disk, and 0030 health at intervals no longer than 60 seconds.
+- [x] Require atomic completion and `status: complete`; do not accept partial directories or catalog subsets.
+- [x] Load the finished dataset, verify shard hashes/counts, sample-collate boundary lengths, and record actual materialization time and size in project records.

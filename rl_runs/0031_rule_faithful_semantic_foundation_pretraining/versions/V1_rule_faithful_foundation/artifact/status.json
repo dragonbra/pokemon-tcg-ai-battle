@@ -1,0 +1,21 @@
+{
+  "device": "cuda",
+  "started_at": 1785809785.1091762,
+  "state": "interrupted",
+  "interrupted_at": 1785809952.0,
+  "reason": "diagnostic stop before first epoch to investigate low startup throughput; controlled full-data A/B later rejected the loader-bottleneck hypothesis and selected batch 384 instead",
+  "completed_epochs": 0,
+  "resume_checkpoint_available": false,
+  "version": "V1_rule_faithful_foundation",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0031_rule_faithful_semantic_foundation_pretraining--v-19fccfde95",
+    "state": "interrupted",
+    "sync_state": "interrupted_before_first_epoch",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0031_rule_faithful_semantic_foundation_pretraining--v-19fccfde95"
+  },
+  "wandb_expected_mode": "online"
+}

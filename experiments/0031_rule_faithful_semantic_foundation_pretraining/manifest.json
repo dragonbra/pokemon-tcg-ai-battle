@@ -1,6 +1,6 @@
 {
   "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
-  "status": "training_ready_formal_training_not_started",
+  "status": "formal_training_in_progress",
   "created_at": "2026-08-04",
   "actor_source_identity_visible": false,
   "implementation_lineage": {
@@ -22,8 +22,31 @@
     "validation_episodes": 11138,
     "exact_decks": 423,
     "sources": 596,
-    "materialized_decisions": null,
+    "materialized_decisions": 9385376,
     "estimated_decisions_from_0028_mean_episode_length": 9368110
+  },
+  "canonical_dataset": {
+    "path": "rl_runs/0031_rule_faithful_semantic_foundation_pretraining/dataset/V1_rule_faithful_winners_20260710_20260802",
+    "manifest_sha256": "6a7ceab6938a456d7d0ae1e45c38086af54fb01af563a3feb69223f2bde89a7b",
+    "decisions": 9385376,
+    "train_decisions": 8448060,
+    "validation_decisions": 937316,
+    "shards": 2292,
+    "gzip_compression_level": 3,
+    "materialization_workers": 8,
+    "materialization_seconds": 4729.737881932,
+    "dataset_payload_bytes": 9756163489,
+    "maximum_lengths": {
+      "card_cat": 134,
+      "resource_cat": 30,
+      "event_cat": 64,
+      "option_cat": 78,
+      "option_effect_id": 317,
+      "option_skill_id": 82,
+      "action_including_stop": 32
+    },
+    "all_shards_hash_verified": true,
+    "all_rows_decompressed_and_contract_verified": true
   },
   "actor_schema": "0031_rule_faithful_semantic_decision_v2",
   "training_schema": "0031_rule_faithful_bc_training_v1",
@@ -36,10 +59,43 @@
     "model_only_slots": 4,
     "exact_training_state_slots": 1
   },
-  "formal_versions": [],
-  "formal_training_started": false,
+  "formal_versions": [
+    {
+      "version": "V1_rule_faithful_foundation",
+      "state": "interrupted_before_first_epoch",
+      "completed_epochs": 0,
+      "resume_checkpoint_available": false
+    },
+    {
+      "version": "V2_no_early_stop_b384",
+      "state": "interrupted_before_first_epoch",
+      "batch_size": 384,
+      "early_stopping": false,
+      "exact_resume_boundary": "completed_epoch",
+      "wandb_run_id": "0031_rule_faithful_semantic_foundation_pretraining--v-d2dfeeddd0"
+    },
+    {
+      "version": "V3_lr5e4_no_early_stop_b384",
+      "state": "interrupted_before_first_epoch",
+      "learning_rate": 0.0005,
+      "batch_size": 384,
+      "completed_epochs": 0,
+      "resume_checkpoint_available": false
+    },
+    {
+      "version": "V4_lr5e4_no_early_stop_b512",
+      "state": "training",
+      "learning_rate": 0.0005,
+      "batch_size": 512,
+      "validation_batch_size": 512,
+      "early_stopping": false,
+      "exact_resume_boundary": "completed_epoch",
+      "wandb_run_id": "0031_rule_faithful_semantic_foundation_pretraining--v-cbffa699bd"
+    }
+  ],
+  "formal_training_started": true,
   "verification": {
-    "unit_tests": 53,
+    "unit_tests": 58,
     "unit_test_status": "passed",
     "chronological_real_0025_raw_rows_compiled": 512,
     "real_row_forward_batch": 1,
@@ -55,6 +111,8 @@
     "benchmark_path": ".tmp/0031_feature_benchmark/run-20260804-v2",
     "noncanonical_smoke_updates": 2,
     "noncanonical_smoke_status": "completed",
-    "noncanonical_smoke_path": ".tmp/0031_rule_faithful_bc_smoke/run-088a7d1cc1"
+    "noncanonical_smoke_path": ".tmp/0031_rule_faithful_bc_smoke/run-c81d419894",
+    "full_dataset_verification_path": ".tmp/0031_training_optimization/full_dataset_verification.json",
+    "full_dataset_fixed_bucket_smoke": true
   }
 }

@@ -19,6 +19,14 @@ class SemanticModelConfig:
     max_effect_ref: int = 8192
     dropout: float = 0.0
 
+    @property
+    def max_options(self) -> int:
+        return 128
+
+    @property
+    def max_action_steps(self) -> int:
+        return 64
+
 
 class MemoryQuery(nn.Module):
     def __init__(self, d_model: int, heads: int, dropout: float):
