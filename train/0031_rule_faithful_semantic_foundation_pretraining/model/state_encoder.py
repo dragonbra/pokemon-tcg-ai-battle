@@ -26,6 +26,7 @@ class EncodedState:
     mask: Tensor
     summary: Tensor
     cards: Tensor
+    family_lengths: tuple[int, int, int, int]
 
     def gather_cards(self, one_based_index: Tensor) -> Tensor:
         return gather_one_based(self.cards, one_based_index)
@@ -49,28 +50,42 @@ class StateEncoder(nn.Module):
         self.event_num = NumericFields(WIDTHS.event_num, d)
         self.event_participant = nn.Linear(d, d, bias=False)
         self.segment = nn.Embedding(5, d, padding_idx=0)
+        self.architecture = config.state_architecture
 
-        layer = nn.TransformerEncoderLayer(
-            d_model=d,
-            nhead=config.heads,
-            dim_feedforward=d * config.ffn_multiplier,
-            dropout=config.dropout,
-            activation="gelu",
-            batch_first=True,
-            norm_first=True,
-        )
-        self.transformer = nn.TransformerEncoder(
-            layer,
-            num_layers=config.state_layers,
-            norm=nn.LayerNorm(d),
-        )
-        self.summary_query = nn.Parameter(torch.zeros(1, 1, d))
-        self.summary_attention = nn.MultiheadAttention(
-            d,
-            config.heads,
-            dropout=config.dropout,
-            batch_first=True,
-        )
+        def encoder(layers: int) -> nn.TransformerEncoder:
+            layer = nn.TransformerEncoderLayer(
+                d_model=d,
+                nhead=config.heads,
+                dim_feedforward=d * config.ffn_multiplier,
+                dropout=config.dropout,
+                activation="gelu",
+                batch_first=True,
+                norm_first=True,
+            )
+            return nn.TransformerEncoder(
+                layer,
+                num_layers=layers,
+                norm=nn.LayerNorm(d),
+            )
+
+        if self.architecture == "joint":
+            self.joint_encoder = encoder(config.state_layers)
+            self.summary_query = nn.Parameter(torch.zeros(1, 1, d))
+            self.summary_attention = nn.MultiheadAttention(
+                d,
+                config.heads,
+                dropout=config.dropout,
+                batch_first=True,
+            )
+        else:
+            self.board_encoder = encoder(config.state_layers)
+            self.event_encoder = encoder(config.event_layers)
+            self.resource_norm = nn.LayerNorm(d)
+            self.family_fusion = nn.Sequential(
+                nn.Linear(3 * d, d),
+                nn.GELU(),
+                nn.Linear(d, d),
+            )
         self.summary_norm = nn.LayerNorm(d)
 
     def forward(
@@ -109,39 +124,85 @@ class StateEncoder(nn.Module):
             + prototype_memory.card(batch.event_cat[..., 2])
             + self.segment.weight[4]
         )
+        if self.architecture == "joint":
+            participants = (
+                gather_one_based(cards, batch.event_source)
+                + gather_one_based(cards, batch.event_target)
+                + gather_one_based(cards, batch.event_before)
+                + gather_one_based(cards, batch.event_after)
+            )
+            events = events + self.event_participant(participants)
+            tokens = torch.cat((global_token, cards, resources, events), dim=1)
+            mask = torch.cat(
+                (global_mask, batch.card_mask, batch.resource_mask, batch.event_mask),
+                dim=1,
+            )
+            encoded = self.joint_encoder(tokens, src_key_padding_mask=~mask)
+            encoded = encoded * mask.unsqueeze(-1)
+            encoded_cards = encoded[:, 1 : 1 + cards.shape[1]]
+            query = self.summary_query.expand(batch.batch_size, -1, -1)
+            summary, _ = self.summary_attention(
+                query, encoded, encoded, key_padding_mask=~mask, need_weights=False
+            )
+            return EncodedState(
+                tokens=encoded,
+                mask=mask,
+                summary=self.summary_norm(summary.squeeze(1)),
+                cards=encoded_cards,
+                family_lengths=(
+                    1,
+                    cards.shape[1],
+                    resources.shape[1],
+                    events.shape[1],
+                ),
+            )
+
+        board_mask = torch.cat((global_mask, batch.card_mask), dim=1)
+        event_mask = torch.cat((global_mask, batch.event_mask), dim=1)
+        board = self.board_encoder(
+            torch.cat((global_token, cards), dim=1),
+            src_key_padding_mask=~board_mask,
+        )
+        encoded_cards = board[:, 1:] * batch.card_mask.unsqueeze(-1)
         participants = (
-            gather_one_based(cards, batch.event_source)
-            + gather_one_based(cards, batch.event_target)
-            + gather_one_based(cards, batch.event_before)
-            + gather_one_based(cards, batch.event_after)
+            gather_one_based(encoded_cards, batch.event_source)
+            + gather_one_based(encoded_cards, batch.event_target)
+            + gather_one_based(encoded_cards, batch.event_before)
+            + gather_one_based(encoded_cards, batch.event_after)
         )
         events = events + self.event_participant(participants)
-
-        tokens = torch.cat((global_token, cards, resources, events), dim=1)
-        mask = torch.cat(
-            (global_mask, batch.card_mask, batch.resource_mask, batch.event_mask),
-            dim=1,
+        event_memory = self.event_encoder(
+            torch.cat((board[:, :1], events), dim=1),
+            src_key_padding_mask=~event_mask,
         )
-        encoded = self.transformer(tokens, src_key_padding_mask=~mask)
-        encoded = encoded * mask.unsqueeze(-1)
+        resource_tokens = self.resource_norm(resources)
+        event_tokens = event_memory[:, 1:]
+        board = board * board_mask.unsqueeze(-1)
+        resource_tokens = resource_tokens * batch.resource_mask.unsqueeze(-1)
+        event_tokens = event_tokens * batch.event_mask.unsqueeze(-1)
+        encoded = torch.cat((board, resource_tokens, event_tokens), dim=1)
+        mask = torch.cat(
+            (board_mask, batch.resource_mask, batch.event_mask), dim=1
+        )
 
-        card_start = 1
-        card_end = card_start + cards.shape[1]
-        encoded_cards = encoded[:, card_start:card_end] * batch.card_mask.unsqueeze(-1)
-
-        query = self.summary_query.expand(batch.batch_size, -1, -1)
-        summary, _ = self.summary_attention(
-            query,
-            encoded,
-            encoded,
-            key_padding_mask=~mask,
-            need_weights=False,
+        resource_count = batch.resource_mask.sum(dim=1, keepdim=True).clamp_min(1)
+        event_count = batch.event_mask.sum(dim=1, keepdim=True).clamp_min(1)
+        resource_summary = resource_tokens.sum(dim=1) / resource_count
+        event_summary = event_tokens.sum(dim=1) / event_count
+        summary = self.family_fusion(
+            torch.cat((board[:, 0], resource_summary, event_summary), dim=-1)
         )
         return EncodedState(
             tokens=encoded,
             mask=mask,
-            summary=self.summary_norm(summary.squeeze(1)),
+            summary=self.summary_norm(summary),
             cards=encoded_cards,
+            family_lengths=(
+                1,
+                cards.shape[1],
+                resources.shape[1],
+                events.shape[1],
+            ),
         )
 
 

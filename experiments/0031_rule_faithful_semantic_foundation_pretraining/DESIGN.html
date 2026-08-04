@@ -5,6 +5,10 @@
 <body><h1>0031 Rule-Faithful Semantic Foundation Pretraining</h1>
 <p class="status"><strong>Status:</strong> V2 semantic implementation is training-ready. No formal dataset or run exists. <code>torch.compile</code> is not admitted for formal training.</p>
 
+<h2>Dataset Boundary</h2>
+<p>The audited official source interval is 2026-07-10 through 2026-08-02. The immutable catalog contains <strong>111,697</strong> unique positive-terminal winner Episodes: 100,559 train and 11,138 validation, spanning 423 exact decks and 596 provenance sources. Catalog SHA-256: <code>f34f48392929cdc6adb351296c72511c1448c96859f649ae6e5eba8d4475b86d</code>.</p>
+<p>No V2 decision dataset has been materialized. The 0028 mean Episode length projects about 9.37 million decisions; this remains an estimate until the V2 dataset manifest records exact split counts.</p>
+
 <h2>Evidence Boundary</h2>
 <p>General rules follow the repository rule research. Concrete card/event semantics come from the unmodified official engine and <code>official_full_engine_prototypes_v2.json</code>. Model and training choices are project hypotheses.</p>
 <p>Team Rocket's Energy (card 15) remains the canonical regression: <code>Psychic | Darkness = 80</code>, count 2, Team Rocket restriction, and skill 8. The actor receives physical identity/serial/attachment, static engine facts, and one Pokemon-parented token per official resolved Energy unit. The API does not partition flattened units by physical card, so no mapping is fabricated and the card is never replaced by Colorless or zero Energy.</p>
@@ -24,8 +28,11 @@
 <p>Attack Energy symbols, base damage, effect constants/coefficients/comparators, targets, areas, and conditions are facts. The actor does not receive Energy deficit/surplus, removal advice, attach counterfactuals, newly-enabled flags, post-damage HP, KO labels, source/team/persona, future information, or target leakage. Matching and arithmetic remain model work.</p>
 
 <h2>Model And Cost</h2>
-<p>Default: 320 dimensions, 8 heads, four state layers, three option cross-attention layers, ordered option pointer plus STOP, <strong>56,868,802 parameters</strong>. 0028 had 21,837,082; 0031 is 2.60x, mainly from the lossless prototype ontology and typed fields.</p>
-<p>Across 512 chronological real decisions, card-family tokens average 55.85 versus 45.11 (+23.8%); 5.87 are resolved Energy units. Median warm feature compile is 0.573 ms/decision versus 0.301 ms for 0025 (1.90x), still below 1 ms. A production-size 0031 epoch has not run, so no exact training slowdown is claimed.</p>
+<p>Default: 320 dimensions and 8 heads; a four-layer global+card board encoder; one event layer; tokenwise resource memory; a three-family summary MLP; two option cross-attention layers; and an ordered pointer plus STOP. Capacity is <strong>56,352,322 parameters</strong>. The complete option memory remains exactly <code>1 + C + R + E</code> tokens. Every card, resource, and event instance stays actor-visible; only the expensive interaction topology changed.</p>
+<p>Categorical columns retain disjoint parameter rows but execute as one packed lookup per family. Numeric scalars retain independent two-layer parameters and field-state embeddings but execute as batched contractions. These fusions do not merge semantic fields.</p>
+<p>Across 512 chronological real decisions, card-family tokens average 55.85 versus 45.11 (+23.8%); 5.87 are resolved Energy units. Median warm feature compile is 0.573 ms/decision versus 0.301 ms for 0025 (1.90x), still below 1 ms.</p>
+<p>A coarse production-width batch-32 A/B on 2,098 real V2 decisions, while 0030 RL shared the GPU, measured the accepted hierarchy plus fused AdamW at 150.6 decisions/s versus 128.6 for the packed-field joint-state reference (1.17x). Fused AdamW measured 150.6 versus 134.7 for standard AdamW (1.12x). These runs establish direction, not isolated formal throughput.</p>
+<p>Canonical compile workers now serialize their final rows and return only compact audit metadata; decompressed train/validation hashes match the former main-process serializer byte for byte on all 2,098 sample decisions. Canonical shards use manifest-recorded gzip level 3 to reduce one-time build time without changing training records.</p>
 
 <h2>Variable Lengths And Buckets</h2>
 <p>Cards, events, options, skills, and effects are genuinely variable in count. Semantic records remain ragged; collation pads dense batch tensors and supplies masks. Fixed shape does not mean lost information.</p>
@@ -43,7 +50,7 @@ action including STOP: 2, 4, 8, 16, 32, 64</pre>
 <p>Inductor is not ready. Even d32/batch-1 full-prototype compilation created a very large graph and 16 multi-GB compile workers without finishing in the diagnostic window. The sample also had 124 joint bucket signatures across 2,048 decisions. Formal <code>run_bc</code> therefore exposes no compile switch.</p>
 
 <h2>Training And Resume</h2>
-<p>BC performs one train pass and full teacher-forced plus greedy validation per epoch, with private W&amp;B for formal runs. Four model-only slots remain inference/export artifacts. One atomic <code>checkpoint/resume/latest_resume.pt</code> additionally stores model, AdamW, optional scheduler/GradScaler, completed-epoch trainer state, and Python/NumPy/Torch RNG.</p>
+<p>BC performs one train pass and full teacher-forced plus greedy validation per epoch, with fused AdamW on CUDA, prefetch depth 4, and private W&amp;B for formal runs. Four model-only slots remain inference/export artifacts. One atomic <code>checkpoint/resume/latest_resume.pt</code> additionally stores model, AdamW, optional scheduler/GradScaler, completed-epoch trainer state, and Python/NumPy/Torch RNG.</p>
 <p>Resume requires identical dataset, training config, model contract, and implementation hashes plus agreement with the canonical metrics epoch. The exact boundary is a completed epoch; an interrupted partial epoch is rerun. Estimated peak checkpoint retention is roughly 1.5-1.8 GiB. Resume state never enters a candidate.</p>
 
 <h2>Verification</h2>

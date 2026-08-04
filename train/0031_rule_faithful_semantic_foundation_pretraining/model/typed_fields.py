@@ -9,31 +9,29 @@ from torch import Tensor, nn
 class CategoricalFields(nn.Module):
     def __init__(self, vocabularies: tuple[int, ...], d_model: int):
         super().__init__()
+        if not vocabularies or min(vocabularies) < 1:
+            raise ValueError("categorical vocabularies must be non-empty and positive")
         self.vocabularies = vocabularies
-        self.fields = nn.ModuleList(
-            nn.Embedding(size, d_model, padding_idx=0) for size in vocabularies
+        offsets = []
+        cursor = 0
+        for size in vocabularies:
+            offsets.append(cursor)
+            cursor += size - 1
+        self.register_buffer(
+            "offsets", torch.tensor(offsets, dtype=torch.long), persistent=False
         )
+        self.embedding = nn.Embedding(cursor + 1, d_model, padding_idx=0)
 
     def forward(self, values: Tensor) -> Tensor:
-        if values.shape[-1] != len(self.fields):
+        if values.shape[-1] != len(self.vocabularies):
             raise ValueError("categorical width does not match field specification")
-        output = torch.zeros(
-            (*values.shape[:-1], self.fields[0].embedding_dim),
-            device=values.device,
-            dtype=self.fields[0].weight.dtype,
-        )
-        for index, (embedding, vocabulary) in enumerate(
-            zip(self.fields, self.vocabularies, strict=True)
-        ):
-            field = values[..., index]
-            # Canonical batches are validated before transfer. Reading a CUDA
-            # boolean here forces a host synchronization for every field.
-            if field.device.type == "cpu" and (
-                torch.any(field < 0) or torch.any(field >= vocabulary)
-            ):
-                raise ValueError(f"categorical field {index} exceeds vocabulary {vocabulary}")
-            output = output + embedding(field)
-        return output
+        if values.device.type == "cpu":
+            limits = values.new_tensor(self.vocabularies)
+            if torch.any(values < 0) or torch.any(values >= limits):
+                raise ValueError("categorical field exceeds its vocabulary")
+        indices = values + self.offsets
+        indices = indices.masked_fill(values.eq(0), 0)
+        return self.embedding(indices).sum(dim=-2)
 
 
 class NumericFields(nn.Module):
@@ -41,14 +39,31 @@ class NumericFields(nn.Module):
 
     def __init__(self, width: int, d_model: int):
         super().__init__()
+        if width < 1:
+            raise ValueError("numeric width must be positive")
         self.width = width
-        self.projections = nn.ModuleList(
-            nn.Sequential(nn.Linear(1, d_model), nn.GELU(), nn.Linear(d_model, d_model))
-            for _ in range(width)
+        self.d_model = d_model
+        self.first_weight = nn.Parameter(torch.empty(width, d_model))
+        self.first_bias = nn.Parameter(torch.empty(width, d_model))
+        self.second_weight = nn.Parameter(torch.empty(width, d_model, d_model))
+        self.second_bias = nn.Parameter(torch.empty(width, d_model))
+        self.state_embedding = nn.Embedding(1 + width * 3, d_model, padding_idx=0)
+        self.register_buffer(
+            "state_offsets",
+            torch.arange(width, dtype=torch.long) * 3,
+            persistent=False,
         )
-        self.states = nn.ModuleList(
-            nn.Embedding(4, d_model, padding_idx=0) for _ in range(width)
-        )
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        for index in range(self.width):
+            nn.init.kaiming_uniform_(self.first_weight[index].unsqueeze(-1), a=5**0.5)
+            bound = 1.0
+            nn.init.uniform_(self.first_bias[index], -bound, bound)
+            nn.init.kaiming_uniform_(self.second_weight[index], a=5**0.5)
+            bound = 1.0 / self.d_model**0.5
+            nn.init.uniform_(self.second_bias[index], -bound, bound)
+        self.state_embedding.reset_parameters()
 
     def forward(self, values: Tensor, states: Tensor | None = None) -> Tensor:
         if values.shape[-1] != self.width:
@@ -57,15 +72,18 @@ class NumericFields(nn.Module):
             states = values.new_ones(values.shape, dtype=torch.long)
         if states.shape != values.shape:
             raise ValueError("numeric values and field states must align")
-        output = values.new_zeros((*values.shape[:-1], self.projections[0][-1].out_features))
-        for index, (projection, state_embedding) in enumerate(
-            zip(self.projections, self.states, strict=True)
+        if states.device.type == "cpu" and (
+            torch.any(states < 0) or torch.any(states >= 4)
         ):
-            state = states[..., index]
-            present = state.eq(1).unsqueeze(-1)
-            output = output + projection(values[..., index : index + 1]) * present
-            output = output + state_embedding(state)
-        return output
+            raise ValueError("numeric field state must be in [0, 3]")
+        hidden = values.unsqueeze(-1) * self.first_weight + self.first_bias
+        hidden = torch.nn.functional.gelu(hidden)
+        projected = torch.einsum("...fi,foi->...fo", hidden, self.second_weight)
+        projected = projected + self.second_bias
+        projected = projected * states.eq(1).unsqueeze(-1)
+        state_indices = states + self.state_offsets
+        state_indices = state_indices.masked_fill(states.eq(0), 0)
+        return (projected + self.state_embedding(state_indices)).sum(dim=-2)
 
 
 def gather_one_based(memory: Tensor, one_based_index: Tensor) -> Tensor:

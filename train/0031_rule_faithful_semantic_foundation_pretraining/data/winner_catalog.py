@@ -456,7 +456,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--archives-dir", type=Path)
     parser.add_argument("--start-date", default="2026-07-10")
-    parser.add_argument("--end-date", default="2026-08-01")
+    parser.add_argument("--end-date", default="2026-08-02")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--workers", type=int, default=1)
     parser.add_argument("--patches-dir", type=Path)

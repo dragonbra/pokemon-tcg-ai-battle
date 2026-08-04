@@ -2,6 +2,12 @@
 
 Status: **V2 semantic implementation is training-ready; no formal 0031 dataset or run has been created. `torch.compile` is not admitted for formal training.**
 
+## Dataset boundary
+
+The audited source interval is now 2026-07-10 through 2026-08-02. The immutable winner catalog contains 111,697 unique positive-terminal winner Episodes: 100,559 train and 11,138 validation, covering 423 exact decks and 596 provenance sources. Its catalog SHA-256 is `f34f48392929cdc6adb351296c72511c1448c96859f649ae6e5eba8d4475b86d`.
+
+No 0031 V2 decision dataset has been materialized yet. Applying the observed 0028 mean of 83.8707 decisions per winner Episode projects about 9.37 million decisions; this is a planning estimate, not a manifest count. The final train/validation decision counts become authoritative only after the immutable V2 materialization completes.
+
 ## Evidence boundary
 
 Official general rules follow `docs/rules/pokemon-tcg-par-rulebook-and-v6-rules-2026-07-19.md`. Concrete card and event semantics come from the current unmodified official engine runtime and `official_full_engine_prototypes_v2.json`. Feature selection, network capacity, bucketing, and BC optimization are project choices, not official rules.
@@ -20,7 +26,7 @@ Schema: `0031_rule_faithful_semantic_decision_v2`.
 | bounded event | 31 | 4 | 4 | source, target, before, after |
 | legal option | 19 | 2 | 2 | source, target, context, effect card, skill, effect |
 
-These are separate named tensors, not one flat first-layer tensor. Each categorical column has its own embedding; each numeric family has an explicit applicability tensor and numeric projection. Padding is masked and does not create actor facts.
+These are separate named tensors, not one flat first-layer tensor. Categorical columns retain disjoint parameter rows but use one packed lookup per family. Numeric scalars retain independent two-layer projection parameters and independent state embeddings but execute as batched tensor contractions. These are exact operator fusions, not shared field semantics. Each numeric family has an explicit applicability tensor; padding is masked and does not create actor facts.
 
 V2 preserves:
 
@@ -45,9 +51,15 @@ The actor does not receive typed/total Energy deficit, surplus Energy, preferred
 
 ## Model and cost
 
-Default configuration is `d_model=320`, 8 heads, four state layers, three option cross-attention layers, and an ordered legal-option pointer decoder with STOP. Current capacity is **56,868,802 parameters**. The 0028 model had 21,837,082 parameters, so V2 adds 35,031,720 parameters (2.60x total), primarily because the lossless engine prototype encoder and typed dynamic fields contain substantially more independent categorical semantics.
+Default configuration is `d_model=320`, 8 heads, a four-layer `global + cards` board encoder, a one-layer event encoder, a tokenwise normalized resource memory, a three-family summary MLP, two option cross-attention layers, and an ordered legal-option pointer decoder with STOP. Current capacity is **56,352,322 parameters**. The 0028 model had 21,837,082 parameters, so optimized V2 is 2.58x its capacity, primarily because the lossless engine prototype encoder and typed dynamic fields retain substantially more independent categorical semantics.
 
-On 512 chronological real 0025 raw decisions, 0031 V2 averages 55.85 card-family tokens versus 45.11 in 0025/0028-compatible encoding (+23.8%). Of these, 5.87 on average are resolved Energy-unit tokens. Event, resource, and option counts are unchanged on the aligned sample; skill/effect reference means are 4.84/20.86 versus 5.17/21.90. Seven warm CPU repetitions measured median feature compilation at 0.573 ms/decision versus 0.301 ms for 0025 (1.90x), still below 1 ms/decision. The larger model and longer card memory are expected to reduce formal training throughput, but no production-size apples-to-apples 0031 epoch has run, so a precise slowdown is not claimed.
+The state memory still contains exactly `1 + C + R + E` tokens. Card attachment/parent relations enter the board encoder; event participant edges retrieve the encoded card instances; every resource and event instance remains directly available to option cross-attention. Only the expensive interaction topology changed: four deep layers no longer apply quadratic self-attention to the full combined sequence. Resource/event/global family summaries initialize the ordered decoder, while option-specific retrieval performs the required fine-grained cross-family interaction.
+
+On 512 chronological real 0025 raw decisions, 0031 V2 averages 55.85 card-family tokens versus 45.11 in 0025/0028-compatible encoding (+23.8%). Of these, 5.87 on average are resolved Energy-unit tokens. Event, resource, and option counts are unchanged on the aligned sample; skill/effect reference means are 4.84/20.86 versus 5.17/21.90. Seven warm CPU repetitions measured median feature compilation at 0.573 ms/decision versus 0.301 ms for 0025 (1.90x), still below 1 ms/decision.
+
+A new 2,098-decision real V2 sample was compiled from 32 audited Episodes. While 0030 RL concurrently occupied the RTX 5080, a deliberately coarse production-width batch-32 A/B measured the accepted hierarchical state path plus fused AdamW at 150.6 decisions/s versus 128.6 for the same packed-field joint-state reference, about **1.17x**. On the accepted state path, fused AdamW measured 150.6 versus 134.7 for standard AdamW, about **1.12x**. These short contaminated runs establish direction, not isolated formal throughput. The rejected first hierarchy (`board + resource Transformer + event Transformer + fusion Transformer`) was slower at small batch because extra launches outweighed its attention savings.
+
+Canonical materialization performs feature compilation and canonical JSON serialization in the same Episode worker. The parent receives only final serialized rows plus compact audit counters, avoiding round trips of full raw observations and compiled dictionaries. Decompressed payload hashes match the former serializer byte for byte on the 2,098-row sample. Shards use recorded gzip level 3 to trade modest additional disk for faster one-time dataset construction.
 
 ## Variable lengths and padding
 
@@ -76,7 +88,7 @@ Inductor is **not** ready for formal use. Even d32/batch-1 full-graph compilatio
 
 ## Training and checkpoint contract
 
-BC performs exactly one optimization pass over train and a complete teacher-forced plus greedy validation pass each epoch. Formal runs use private W&B project `dragon_bra/pokemon-tcg-policy-learning`; source provenance remains in manifests/audits and never reaches actor forward.
+BC performs exactly one optimization pass over train and a complete teacher-forced plus greedy validation pass each epoch. CUDA training uses fused AdamW and default prefetch depth 4. Formal runs use private W&B project `dragon_bra/pokemon-tcg-policy-learning`; source provenance remains in manifests/audits and never reaches actor forward.
 
 0031 has an explicit exact-resume exception to the repository's model-only default:
 

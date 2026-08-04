@@ -30,17 +30,30 @@ class ProjectContractTests(unittest.TestCase):
         )
         self.assertFalse(any(path.exists() for path in forbidden))
 
-    def test_initial_dataset_interval_matches_available_archives(self) -> None:
+    def test_dataset_interval_matches_audited_archives(self) -> None:
         manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
         self.assertEqual(
             manifest["dataset_scope"],
             {
                 "perspective": "unique_positive_terminal_winner",
                 "start_date": "2026-07-10",
-                "end_date": "2026-08-01",
-                "end_date_basis": "latest_locally_available_official_archive_at_project_creation",
+                "end_date": "2026-08-02",
+                "end_date_basis": "latest_user_requested_locally_validated_official_archive",
             },
         )
+
+    def test_training_defaults_use_current_dataset_boundary(self) -> None:
+        run_bc = (
+            REPOSITORY_ROOT / "train" / PROJECT_ID / "run_bc.py"
+        ).read_text(encoding="utf-8")
+        monitor = (
+            REPOSITORY_ROOT / "train" / PROJECT_ID / "monitor_training.py"
+        ).read_text(encoding="utf-8")
+        current = "V1_rule_faithful_winners_20260710_20260802"
+        self.assertIn(current, run_bc)
+        self.assertIn(current, monitor)
+        self.assertNotIn("V1_mid_winners_20260710_20260801", run_bc)
+        self.assertNotIn("V1_mid_winners_20260710_20260801", monitor)
 
 
 if __name__ == "__main__":

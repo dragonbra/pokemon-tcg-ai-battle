@@ -10,7 +10,11 @@ class ModelConfig:
     d_model: int = 320
     heads: int = 8
     state_layers: int = 4
-    option_layers: int = 3
+    resource_layers: int = 0
+    event_layers: int = 1
+    fusion_layers: int = 0
+    option_layers: int = 2
+    state_architecture: str = "hierarchical"
     ffn_multiplier: int = 3
     dropout: float = 0.10
     max_card_id: int = 2048
@@ -23,10 +27,19 @@ class ModelConfig:
     def validate(self) -> None:
         if self.d_model <= 0 or self.d_model % self.heads:
             raise ValueError("d_model must be positive and divisible by heads")
-        if min(self.state_layers, self.option_layers, self.ffn_multiplier) < 1:
+        if min(
+            self.state_layers,
+            self.event_layers,
+            self.option_layers,
+            self.ffn_multiplier,
+        ) < 1:
             raise ValueError("layer counts and ffn_multiplier must be positive")
+        if self.resource_layers != 0 or self.fusion_layers != 0:
+            raise ValueError("0031 lightweight resource/fusion layer counts must be zero")
         if not 0 <= self.dropout < 1:
             raise ValueError("dropout must be in [0, 1)")
+        if self.state_architecture not in {"hierarchical", "joint"}:
+            raise ValueError("state_architecture must be hierarchical or joint")
         if min(
             self.max_card_id,
             self.max_attack_id,
@@ -37,7 +50,7 @@ class ModelConfig:
         ) < 1:
             raise ValueError("identity and action limits must be positive")
 
-    def to_dict(self) -> dict[str, int | float]:
+    def to_dict(self) -> dict[str, int | float | str]:
         return asdict(self)
 
 

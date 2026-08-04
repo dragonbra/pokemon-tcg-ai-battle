@@ -138,7 +138,7 @@ def _init_compile_worker(prototype_path: str) -> None:
 def _compile_episode(
     rows: list[Mapping[str, Any]],
     prototypes: PrototypeIndex | None = None,
-) -> list[tuple[Mapping[str, Any], dict[str, Any]]]:
+) -> list[tuple[str, str, tuple[Any, ...], str, dict[str, int]]]:
     index = prototypes or _WORKER_PROTOTYPES
     if index is None or not rows:
         raise RuntimeError("canonical compile worker is not initialized")
@@ -147,13 +147,43 @@ def _compile_episode(
         int(first["identity"]["player_index"]),
         _deck(first),
     )
-    output = []
+    output: list[tuple[str, str, tuple[Any, ...], str, dict[str, int]]] = []
     expected_key = _group_key(first)
+    deck_sha256 = _deck_sha256(_deck(first))
     for raw in rows:
         if _group_key(raw) != expected_key:
             raise ValueError("canonical compile group crossed Episode boundary")
         snapshot = knowledge.consume(raw["actor_observation"], raw["event_cursor"])
-        output.append((raw, compile_canonical_row(raw, snapshot, index)))
+        compiled = compile_canonical_row(raw, snapshot, index)
+        split = str(raw["split"])
+        identity = raw["identity"]
+        record = {
+            "schema_version": SCHEMA_VERSION,
+            "actor": compiled["actor"],
+            "target": compiled["target"],
+            "audit": {
+                "identity": identity,
+                "split": split,
+                "source_id": raw.get("source_id"),
+                "source_team_name": raw.get("source_team_name"),
+                "deck_sha256": raw["deck_manifest"].get("sha256"),
+                "source_payload_sha256": raw.get("source_payload_sha256"),
+            },
+        }
+        lengths = {
+            name: len(compiled["actor"][name])
+            for name in (
+                "card_cat",
+                "resource_cat",
+                "event_cat",
+                "option_cat",
+                "option_skill_id",
+                "option_effect_id",
+            )
+        }
+        output.append(
+            (split, _canonical(record), expected_key, deck_sha256, lengths)
+        )
     return output
 
 
@@ -164,7 +194,7 @@ def _compiled_groups(
     prototypes: PrototypeIndex,
     workers: int,
     require_complete_catalog: bool,
-) -> Iterator[list[tuple[Mapping[str, Any], dict[str, Any]]]]:
+) -> Iterator[list[tuple[str, str, tuple[Any, ...], str, dict[str, int]]]]:
     if workers < 1:
         raise ValueError("workers must be positive")
     groups = _iter_episode_groups(
@@ -196,14 +226,15 @@ def _compiled_groups(
 
 
 class _ShardWriter:
-    def __init__(self, root: Path, records_per_shard: int):
+    def __init__(self, root: Path, records_per_shard: int, compression_level: int):
         self.root = root
         self.records_per_shard = records_per_shard
-        self.pending: dict[str, list[dict[str, Any]]] = {"train": [], "validation": []}
+        self.compression_level = compression_level
+        self.pending: dict[str, list[str]] = {"train": [], "validation": []}
         self.shards: dict[str, list[dict[str, Any]]] = {"train": [], "validation": []}
 
-    def add(self, split: str, row: dict[str, Any]) -> None:
-        self.pending[split].append(row)
+    def add(self, split: str, serialized: str) -> None:
+        self.pending[split].append(serialized)
         if len(self.pending[split]) >= self.records_per_shard:
             self.flush(split)
 
@@ -214,9 +245,13 @@ class _ShardWriter:
         name = f"{split}-{len(self.shards[split]):05d}.jsonl.gz"
         final = self.root / name
         temporary = self.root / f".{name}.{uuid.uuid4().hex}.tmp"
-        with gzip.open(temporary, "wt", encoding="utf-8", compresslevel=6) as handle:
-            for row in rows:
-                handle.write(_canonical(row))
+        with gzip.open(
+            temporary,
+            "wt",
+            encoding="utf-8",
+            compresslevel=self.compression_level,
+        ) as handle:
+            handle.writelines(rows)
         os.replace(temporary, final)
         self.shards[split].append(
             {
@@ -243,10 +278,13 @@ def materialize_canonical(
     records_per_shard: int = 4096,
     max_decisions_per_split: int | None = None,
     workers: int = 1,
+    compression_level: int = 3,
     require_complete_catalog: bool = True,
 ) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError(f"refusing to overwrite canonical dataset: {output}")
+    if not 1 <= compression_level <= 9:
+        raise ValueError("gzip compression level must be in [1, 9]")
     output.parent.mkdir(parents=True, exist_ok=True)
     stage = output.parent / f".{output.name}.partial-{uuid.uuid4().hex}"
     stage.mkdir()
@@ -269,7 +307,7 @@ def materialize_canonical(
         prototype_path.with_name("official_full_engine_prototypes_v2.json"),
         stage / "official_full_engine_prototypes_v2.json",
     )
-    writer = _ShardWriter(stage, records_per_shard)
+    writer = _ShardWriter(stage, records_per_shard, compression_level)
     counts: Counter[str] = Counter()
     maxima: Counter[str] = Counter()
     deck_hashes: set[str] = set()
@@ -288,43 +326,18 @@ def materialize_canonical(
             require_complete_catalog,
         ):
             processed_groups += 1
-            for raw, compiled in group:
-                split = str(raw["split"])
+            for split, serialized, key, deck_sha256, lengths in group:
                 if (
                     max_decisions_per_split is not None
                     and counts[split] >= max_decisions_per_split
                 ):
                     continue
-                identity = raw["identity"]
-                key = _group_key(raw)
-                deck_hashes.add(_deck_sha256(_deck(raw)))
+                deck_hashes.add(deck_sha256)
                 episodes[split].add(key)
-                writer.add(
-                    split,
-                    {
-                        "schema_version": SCHEMA_VERSION,
-                        "actor": compiled["actor"],
-                        "target": compiled["target"],
-                        "audit": {
-                            "identity": identity,
-                            "split": split,
-                            "source_id": raw.get("source_id"),
-                            "source_team_name": raw.get("source_team_name"),
-                            "deck_sha256": raw["deck_manifest"].get("sha256"),
-                            "source_payload_sha256": raw.get("source_payload_sha256"),
-                        },
-                    },
-                )
+                writer.add(split, serialized)
                 counts[split] += 1
-                for name in (
-                    "card_cat",
-                    "resource_cat",
-                    "event_cat",
-                    "option_cat",
-                    "option_skill_id",
-                    "option_effect_id",
-                ):
-                    maxima[name] = max(maxima[name], len(compiled["actor"][name]))
+                for name, length in lengths.items():
+                    maxima[name] = max(maxima[name], length)
             if processed_groups % 100 == 0:
                 print(
                     json.dumps(
@@ -364,6 +377,7 @@ def materialize_canonical(
             "exact_deck_conditioning": "registered_60_card_multiset",
             "sources": catalog.get("sources", []),
             "records_per_shard": records_per_shard,
+            "gzip_compression_level": compression_level,
             "materialization_workers": workers,
             "processed_episode_groups": processed_groups,
             "shards": writer.shards,
@@ -404,6 +418,7 @@ def main() -> None:
     parser.add_argument("--catalog", type=Path, required=True)
     parser.add_argument("--records-per-shard", type=int, default=4096)
     parser.add_argument("--workers", type=int, default=1)
+    parser.add_argument("--compression-level", type=int, default=3)
     parser.add_argument("--allow-catalog-subset", action="store_true")
     parser.add_argument(
         "--max-decisions-per-split",
@@ -421,6 +436,7 @@ def main() -> None:
                 records_per_shard=args.records_per_shard,
                 max_decisions_per_split=args.max_decisions_per_split,
                 workers=args.workers,
+                compression_level=args.compression_level,
                 require_complete_catalog=not args.allow_catalog_subset,
             ),
             indent=2,

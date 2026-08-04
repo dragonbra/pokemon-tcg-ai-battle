@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import unittest
 from collections import Counter
 from tempfile import TemporaryDirectory
@@ -260,6 +261,15 @@ class ProjectContractTest(unittest.TestCase):
         for forbidden in FORBIDDEN_FIELDS:
             with self.assertRaises(ValueError):
                 _validate({forbidden: torch.tensor(0)})
+
+    def test_checkpoint_contract_preserves_every_update(self):
+        run_module = importlib.import_module(
+            "train.0030_dragapult_shared_encoder_decoder_rl.training.run"
+        )
+        config = RunConfig(version="V999_all_checkpoints", workers=1)
+        self.assertEqual(config.checkpoint_retention, "all")
+        config.validate()
+        self.assertNotIn(".unlink(", inspect.getsource(run_module))
 
     def test_run_config_rejects_missing_initialization_checkpoint(self):
         config = RunConfig(

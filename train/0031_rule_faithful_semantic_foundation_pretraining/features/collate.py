@@ -16,11 +16,11 @@ from ..contracts.fields import ACTOR_KEYS, WIDTHS
 class BucketPadding:
     """Finite shape families for optional torch.compile training."""
 
-    card: tuple[int, ...] = (16, 32, 64, 96, 128)
+    card: tuple[int, ...] = (16, 32, 64, 96, 128, 160)
     event: tuple[int, ...] = (8, 16, 32, 64)
-    option: tuple[int, ...] = (4, 8, 16, 32, 64)
-    effect: tuple[int, ...] = (8, 16, 32, 64, 96, 128)
-    skill: tuple[int, ...] = (8, 16, 32, 64)
+    option: tuple[int, ...] = (4, 8, 16, 32, 64, 96)
+    effect: tuple[int, ...] = (8, 16, 32, 64, 96, 128, 192, 256, 384)
+    skill: tuple[int, ...] = (8, 16, 32, 64, 96)
     action: tuple[int, ...] = (2, 4, 8, 16, 32, 64)
 
     def upper_bound(self, family: str, length: int) -> int:

@@ -30,7 +30,7 @@ from .training.trainer import train_ablation
 
 DATASET_ROOT = Path(
     "rl_runs/0031_rule_faithful_semantic_foundation_pretraining/dataset/"
-    "V1_mid_winners_20260710_20260801"
+    "V1_rule_faithful_winners_20260710_20260802"
 )
 PROTOTYPES = Path(
     "train/0031_rule_faithful_semantic_foundation_pretraining/assets/"
@@ -113,7 +113,7 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=20260802)
     parser.add_argument("--early-stopping-patience", type=int, default=6)
     parser.add_argument("--early-stopping-min-delta", type=float, default=0.0005)
-    parser.add_argument("--prefetch-depth", type=int, default=2)
+    parser.add_argument("--prefetch-depth", type=int, default=4)
     parser.add_argument(
         "--fixed-bucket-padding",
         action="store_true",
@@ -217,7 +217,7 @@ def main() -> None:
         "dataset_path": str(args.dataset_root),
         "dataset_manifest_sha256": dataset.manifest_sha256,
         "dataset_split_counts": dataset.split_counts,
-        "dataset_interval": ["2026-07-10", "2026-08-01"],
+        "dataset_interval": ["2026-07-10", "2026-08-02"],
         "winner_perspective_only": True,
         "exact_deck_conditioning": "registered_60_card_multiset",
         "source_count": len(dataset.manifest.get("sources", [])),
@@ -247,6 +247,7 @@ def main() -> None:
         else None,
         "torch_compile": False,
         "torch_compile_status": "not_admitted_pending_bounded_compile_benchmark",
+        "optimizer_fused": torch.cuda.is_available(),
         "prefetch_depth": args.prefetch_depth,
         "checkpoint_payload": "four_model_only_slots_plus_one_exact_epoch_resume_slot",
         "model_only_checkpoint_retention_slots": 4,
@@ -296,7 +297,10 @@ def main() -> None:
         paths.model_contract.write_text(model_contract, encoding="utf-8")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay
+        model.parameters(),
+        lr=args.learning_rate,
+        weight_decay=args.weight_decay,
+        fused=device.type == "cuda",
     )
     print(
         json.dumps(

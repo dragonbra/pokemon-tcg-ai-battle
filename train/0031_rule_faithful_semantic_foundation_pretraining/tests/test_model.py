@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 
 import torch
+from torch import nn
 
 
 CONTRACTS = importlib.import_module(
@@ -24,6 +25,9 @@ FEATURES = importlib.import_module(
 )
 COLLATE = importlib.import_module(
     "train.0031_rule_faithful_semantic_foundation_pretraining.features.collate"
+)
+TYPED_FIELDS = importlib.import_module(
+    "train.0031_rule_faithful_semantic_foundation_pretraining.model.typed_fields"
 )
 _row = importlib.import_module(
     "train.0031_rule_faithful_semantic_foundation_pretraining.tests.test_features"
@@ -62,6 +66,130 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(options.shape[:2], self.batch.option_mask.shape)
         self.assertEqual(logits.shape, (self.batch.batch_size, self.batch.option_count + 1))
         self.assertTrue(torch.isfinite(logits).all())
+
+    def test_packed_categorical_fields_match_independent_reference(self) -> None:
+        vocabularies = (3, 5, 2)
+        packed = TYPED_FIELDS.CategoricalFields(vocabularies, 7)
+        reference = nn.ModuleList(
+            nn.Embedding(size, 7, padding_idx=0) for size in vocabularies
+        )
+        with torch.no_grad():
+            cursor = 1
+            for embedding, size in zip(reference, vocabularies, strict=True):
+                embedding.weight[0].zero_()
+                packed.embedding.weight[cursor : cursor + size - 1].copy_(
+                    embedding.weight[1:]
+                )
+                cursor += size - 1
+        values = torch.tensor(
+            [[[0, 1, 1], [2, 4, 0]], [[1, 0, 1], [2, 3, 1]]],
+            dtype=torch.long,
+        )
+        expected = sum(
+            embedding(values[..., index])
+            for index, embedding in enumerate(reference)
+        )
+        actual = packed(values)
+        torch.testing.assert_close(actual, expected, rtol=0.0, atol=0.0)
+        actual.square().sum().backward()
+        expected.square().sum().backward()
+        cursor = 1
+        for embedding, size in zip(reference, vocabularies, strict=True):
+            torch.testing.assert_close(
+                packed.embedding.weight.grad[cursor : cursor + size - 1],
+                embedding.weight.grad[1:],
+            )
+            cursor += size - 1
+        self.assertTrue(torch.equal(packed.embedding.weight.grad[0], torch.zeros(7)))
+        with self.assertRaisesRegex(ValueError, "vocabulary"):
+            packed(torch.tensor([[0, 5, 0]]))
+
+    def test_packed_numeric_fields_match_independent_reference_and_gradients(self) -> None:
+        width, d_model = 4, 6
+        packed = TYPED_FIELDS.NumericFields(width, d_model)
+        projections = nn.ModuleList(
+            nn.Sequential(
+                nn.Linear(1, d_model), nn.GELU(), nn.Linear(d_model, d_model)
+            )
+            for _ in range(width)
+        )
+        states = nn.ModuleList(
+            nn.Embedding(4, d_model, padding_idx=0) for _ in range(width)
+        )
+        with torch.no_grad():
+            packed.state_embedding.weight[0].zero_()
+            for index, (projection, state_embedding) in enumerate(
+                zip(projections, states, strict=True)
+            ):
+                packed.first_weight[index].copy_(projection[0].weight[:, 0])
+                packed.first_bias[index].copy_(projection[0].bias)
+                packed.second_weight[index].copy_(projection[2].weight)
+                packed.second_bias[index].copy_(projection[2].bias)
+                start = 1 + index * 3
+                packed.state_embedding.weight[start : start + 3].copy_(
+                    state_embedding.weight[1:]
+                )
+        values = torch.randn(2, 3, width)
+        field_states = torch.tensor(
+            [[[1, 0, 2, 3], [1, 1, 1, 1], [0, 2, 3, 1]]] * 2
+        )
+        expected = values.new_zeros((2, 3, d_model))
+        for index, (projection, state_embedding) in enumerate(
+            zip(projections, states, strict=True)
+        ):
+            present = field_states[..., index].eq(1).unsqueeze(-1)
+            expected = expected + projection(values[..., index : index + 1]) * present
+            expected = expected + state_embedding(field_states[..., index])
+        actual = packed(values, field_states)
+        torch.testing.assert_close(actual, expected, rtol=1e-6, atol=1e-6)
+        actual.square().sum().backward()
+        expected.square().sum().backward()
+        for index, (projection, state_embedding) in enumerate(
+            zip(projections, states, strict=True)
+        ):
+            torch.testing.assert_close(
+                packed.first_weight.grad[index], projection[0].weight.grad[:, 0]
+            )
+            torch.testing.assert_close(
+                packed.second_weight.grad[index], projection[2].weight.grad
+            )
+            start = 1 + index * 3
+            torch.testing.assert_close(
+                packed.state_embedding.weight.grad[start : start + 3],
+                state_embedding.weight.grad[1:],
+            )
+        changed = values.clone()
+        changed[field_states.ne(1)] += 1000
+        torch.testing.assert_close(
+            packed(changed, field_states), actual.detach(), rtol=1e-6, atol=1e-6
+        )
+
+    def test_hierarchical_state_preserves_all_family_tokens(self) -> None:
+        with torch.inference_mode():
+            state = self.model.encode_state(self.batch)
+        expected_lengths = (
+            1,
+            self.batch.card_cat.shape[1],
+            self.batch.resource_cat.shape[1],
+            self.batch.event_cat.shape[1],
+        )
+        self.assertEqual(state.family_lengths, expected_lengths)
+        self.assertEqual(state.tokens.shape[1], sum(expected_lengths))
+        self.assertEqual(state.mask.shape[1], sum(expected_lengths))
+        self.assertTrue(torch.equal(state.tokens[~state.mask], torch.zeros_like(state.tokens[~state.mask])))
+
+    def test_resource_and_event_families_each_affect_policy_logits(self) -> None:
+        baseline = self.batch.as_dict()
+        resource_changed = {name: value.clone() for name, value in baseline.items()}
+        event_changed = {name: value.clone() for name, value in baseline.items()}
+        resource_changed["resource_num"][:, 0, 0] += 3.0
+        event_changed["event_num"][:, 0, 0] += 3.0
+        with torch.inference_mode():
+            logits = self.model(baseline)
+            resource_logits = self.model(resource_changed)
+            event_logits = self.model(event_changed)
+        self.assertFalse(torch.allclose(logits, resource_logits))
+        self.assertFalse(torch.allclose(logits, event_logits))
 
     def test_teacher_and_greedy_actions_are_finite_and_legal(self) -> None:
         one = {

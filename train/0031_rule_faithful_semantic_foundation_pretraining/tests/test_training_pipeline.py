@@ -199,13 +199,26 @@ class TrainingPipelineTests(unittest.TestCase):
     def test_fixed_bucket_padding_fails_closed_above_maximum(self) -> None:
         record = self._record(1, 1)
         actor = record["actor"]
-        actor["option_effect_id"] = [1] * 129
-        actor["option_effect_role"] = [1] * 129
-        actor["option_effect_parent"] = [1] * 129
-        with self.assertRaisesRegex(ValueError, "effect length 129 exceeds"):
+        overflow = COLLATE.BucketPadding().effect[-1] + 1
+        actor["option_effect_id"] = [1] * overflow
+        actor["option_effect_role"] = [1] * overflow
+        actor["option_effect_parent"] = [1] * overflow
+        with self.assertRaisesRegex(ValueError, f"effect length {overflow} exceeds"):
             COLLATE.collate_canonical_records(
                 [record], bucket_padding=COLLATE.BucketPadding()
             )
+
+    def test_fixed_bucket_defaults_cover_materialized_dataset_maxima(self) -> None:
+        bounds = COLLATE.BucketPadding()
+        audited_maxima = {
+            "card": 134,
+            "event": 64,
+            "option": 78,
+            "effect": 317,
+            "skill": 82,
+        }
+        for family, maximum in audited_maxima.items():
+            self.assertGreaterEqual(bounds.upper_bound(family, maximum), maximum)
 
     def test_prefetch_preserves_order_and_reports_counts(self) -> None:
         prefetch = importlib.import_module(f"{BASE}.training.prefetch")

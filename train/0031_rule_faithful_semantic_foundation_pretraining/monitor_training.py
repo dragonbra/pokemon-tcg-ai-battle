@@ -103,14 +103,14 @@ def _emit(event: str, payload: dict[str, Any], monitor_path: Path | None) -> Non
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--version", default="V3_shared_prototype_batch512"
+        "--version", default="V1_rule_faithful_foundation"
     )
     parser.add_argument(
         "--dataset-root",
         type=Path,
         default=Path(
             "rl_runs/0031_rule_faithful_semantic_foundation_pretraining/dataset/"
-            "V1_mid_winners_20260710_20260801"
+            "V1_rule_faithful_winners_20260710_20260802"
         ),
     )
     parser.add_argument("--heartbeat-seconds", type=float, default=30.0)
