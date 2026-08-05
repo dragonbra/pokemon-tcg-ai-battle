@@ -94,13 +94,13 @@ BC performs exactly one optimization pass over train and a complete teacher-forc
 
 0031 has an explicit exact-resume exception to the repository's model-only default:
 
-- four finite model-only slots (`latest` plus three best criteria) remain the inference/export artifacts;
+- every completed epoch is retained as an immutable model-only `epoch_XXXX.pt`; `latest` plus three best criteria remain replaceable inference/export aliases;
 - one atomically replaced `checkpoint/resume/latest_resume.pt` stores all arm weights, AdamW state, optional scheduler/GradScaler state, completed epoch, global update, early-stop/best/history state, Python/NumPy/Torch CPU/CUDA RNG, and compatibility commitments;
 - resume is permitted only for the same version and exact dataset, training config, model contract, and implementation hashes; canonical metrics and resume epoch must agree;
 - the exact boundary is a completed epoch. A crash inside an epoch replays that incomplete epoch; batch-level sampler/prefetch state is not claimed;
 - current bfloat16 autocast uses no GradScaler and current trainer has no scheduler, but the checkpoint format supports both.
 
-With 56.35M fp32 parameters, one model-only file is roughly 215 MiB and a populated AdamW resume file is roughly 645 MiB before serialization overhead. Four model-only slots plus one resume slot therefore require roughly 1.5-1.8 GiB at peak. Retention is finite and resume state is never exported to a candidate.
+The active V4 epoch-3 model-only artifact is approximately 443 MiB on disk. Retention is unbounded by design and grows by approximately 443 MiB per completed epoch, in addition to four replaceable aliases and the exact-resume slot. No automatic rotation or deletion is permitted; resume state is never exported to a candidate. V4 epoch 3 was recovered byte-for-byte from `latest.pt` as `epoch_0003.pt` after the old four-slot policy was detected, with matching SHA-256 `e1c0a59289185d9a508c49a679ff954a30c54c3cdc7a3602de0834c4af015ed0`.
 
 ## Readiness and verification
 

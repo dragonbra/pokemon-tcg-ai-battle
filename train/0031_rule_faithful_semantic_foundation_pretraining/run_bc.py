@@ -249,8 +249,9 @@ def main() -> None:
         "torch_compile_status": "not_admitted_pending_bounded_compile_benchmark",
         "optimizer_fused": torch.cuda.is_available(),
         "prefetch_depth": args.prefetch_depth,
-        "checkpoint_payload": "four_model_only_slots_plus_one_exact_epoch_resume_slot",
-        "model_only_checkpoint_retention_slots": 4,
+        "checkpoint_payload": "all_epoch_model_only_plus_four_aliases_and_one_exact_resume_slot",
+        "checkpoint_retention": "all",
+        "model_only_checkpoint_retention_slots": "all_completed_epochs_plus_four_aliases",
         "training_state_checkpoint_retention_slots": 1,
         "training_state_checkpoint_boundary": "completed_epoch",
         "wandb": {

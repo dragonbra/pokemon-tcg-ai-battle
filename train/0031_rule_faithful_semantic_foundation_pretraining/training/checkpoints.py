@@ -82,6 +82,29 @@ def save_checkpoint(
     }
 
 
+def epoch_checkpoint_name(epoch: int) -> str:
+    if epoch <= 0:
+        raise ValueError("checkpoint epoch must be positive")
+    return f"epoch_{epoch:04d}"
+
+
+def save_epoch_checkpoint(
+    root: Path,
+    *,
+    epoch: int,
+    model: nn.Module,
+    metadata: dict[str, Any],
+) -> dict[str, Any]:
+    """Publish one immutable model-only checkpoint for a completed epoch."""
+    if metadata.get("epoch") != epoch:
+        raise ValueError("checkpoint metadata epoch does not match requested epoch")
+    name = epoch_checkpoint_name(epoch)
+    final = root / f"{name}.pt"
+    if final.exists():
+        raise FileExistsError(f"epoch checkpoint already exists: {final}")
+    return save_checkpoint(root, name=name, model=model, metadata=metadata)
+
+
 def save_training_state(
     root: Path,
     *,
@@ -206,7 +229,9 @@ def load_training_state(
 __all__ = [
     "SCHEMA_VERSION",
     "TRAINING_STATE_SCHEMA_VERSION",
+    "epoch_checkpoint_name",
     "load_training_state",
     "save_checkpoint",
+    "save_epoch_checkpoint",
     "save_training_state",
 ]

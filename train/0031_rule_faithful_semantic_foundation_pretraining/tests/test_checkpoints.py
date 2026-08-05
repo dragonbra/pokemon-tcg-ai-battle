@@ -16,6 +16,48 @@ CHECKPOINTS = importlib.import_module(
 
 
 class CheckpointContractTests(unittest.TestCase):
+    def test_distinct_epoch_checkpoints_are_retained(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model = nn.Linear(3, 2)
+            records = []
+            for epoch in (1, 2):
+                records.append(
+                    CHECKPOINTS.save_epoch_checkpoint(
+                        root,
+                        epoch=epoch,
+                        model=model,
+                        metadata={"arm": "semantic", "epoch": epoch},
+                    )
+                )
+
+            self.assertEqual(
+                [record["path"] for record in records],
+                ["epoch_0001.pt", "epoch_0002.pt"],
+            )
+            for epoch, record in enumerate(records, start=1):
+                payload = torch.load(root / record["path"], weights_only=True)
+                self.assertEqual(payload["metadata"]["epoch"], epoch)
+                self.assertEqual(
+                    set(payload), {"schema_version", "state_dict", "metadata"}
+                )
+                self.assertFalse(record["optimizer_state_saved"])
+                self.assertFalse(record["resumable_training_state_saved"])
+
+            with self.assertRaisesRegex(FileExistsError, "already exists"):
+                CHECKPOINTS.save_epoch_checkpoint(
+                    root,
+                    epoch=2,
+                    model=model,
+                    metadata={"arm": "semantic", "epoch": 2},
+                )
+
+    def test_epoch_checkpoint_name_rejects_non_positive_epoch(self) -> None:
+        for epoch in (0, -1):
+            with self.subTest(epoch=epoch):
+                with self.assertRaisesRegex(ValueError, "positive"):
+                    CHECKPOINTS.epoch_checkpoint_name(epoch)
+
     def test_checkpoint_is_model_only_and_reloadable(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             model = nn.Linear(3, 2)

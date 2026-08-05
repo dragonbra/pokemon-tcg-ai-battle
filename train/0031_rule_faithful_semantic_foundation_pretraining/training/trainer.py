@@ -18,7 +18,12 @@ from tqdm.auto import tqdm
 from rl_environment.logging import TrainingLogger
 from rl_environment.runs import VersionPaths, write_version_status
 
-from .checkpoints import load_training_state, save_checkpoint, save_training_state
+from .checkpoints import (
+    load_training_state,
+    save_checkpoint,
+    save_epoch_checkpoint,
+    save_training_state,
+)
 from .objective import evaluate_audited_batches, evaluate_batches, teacher_batch
 from .prefetch import PrefetchIterator
 
@@ -398,6 +403,15 @@ def train_ablation(
                         "validation": validation,
                     }
                     arm_root = paths.checkpoints / arm
+                    epoch_record = save_epoch_checkpoint(
+                        arm_root,
+                        epoch=epoch,
+                        model=model,
+                        metadata=metadata,
+                    )
+                    checkpoint_records[arm].setdefault("all_epochs", {})[
+                        str(epoch)
+                    ] = epoch_record
                     for criterion in criteria:
                         checkpoint_records[arm][criterion] = save_checkpoint(
                             arm_root,
@@ -428,6 +442,7 @@ def train_ablation(
                     {
                         "schema_version": "0031_checkpoint_selection_v1",
                         "retention_slots": [
+                            "all_completed_epochs",
                             "latest",
                             "best_validation_loss",
                             "best_teacher_exact",
