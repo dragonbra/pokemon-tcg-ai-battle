@@ -122,8 +122,89 @@ class DeploymentTests(unittest.TestCase):
             self.assertEqual(manifest["checkpoint_epoch"], 2)
             self.assertEqual(len((output / "deck.csv").read_text().splitlines()), 60)
             self.assertTrue((output / "strategy/inference.py").is_file())
+            self.assertTrue((output / "strategy/online_runtime.py").is_file())
             self.assertTrue((output / "strategy/model/policy.py").is_file())
             self.assertFalse(any(path.is_symlink() for path in output.rglob("*")))
+            portable = torch.load(
+                output / "strategy/model.bin", map_location="cpu", weights_only=True
+            )
+            self.assertEqual(
+                portable["schema_version"],
+                "0031_shared_prototype_candidate_checkpoint_v1",
+            )
+            self.assertTrue(
+                any(key.startswith("prototype_encoder.") for key in portable["state_dict"])
+            )
+            self.assertFalse(
+                any(
+                    key.startswith(("state_encoder.prototypes.", "option_encoder.prototypes."))
+                    for key in portable["state_dict"]
+                )
+            )
+
+            fp16_output = root / "candidate_fp16"
+            fp16_manifest = EXPORT.export_candidate(
+                checkpoint=checkpoint,
+                deck_path=deck_path,
+                cg_source=cg,
+                output=fp16_output,
+                deck_id="test_rule_faithful_deck",
+                storage_dtype="fp16",
+                runtime_dtype="fp16",
+            )
+            self.assertEqual(fp16_manifest["storage_dtype"], "fp16")
+            fp16_payload = torch.load(
+                fp16_output / "strategy/model.bin",
+                map_location="cpu",
+                weights_only=True,
+            )
+            self.assertEqual(
+                fp16_payload["schema_version"],
+                "0031_shared_prototype_fp16_storage_candidate_checkpoint_v1",
+            )
+            self.assertTrue(
+                all(
+                    value.dtype == torch.float16
+                    for value in fp16_payload["state_dict"].values()
+                    if torch.is_floating_point(value)
+                )
+            )
+            fp16_policy = INFERENCE.PortableSemanticPolicy.from_checkpoint(
+                fp16_output / "strategy/model.bin", deck
+            )
+            self.assertTrue(
+                all(
+                    parameter.dtype == torch.float16
+                    for parameter in fp16_policy.model.parameters()
+                )
+            )
+            row, _ = _first_raw_row()
+            action = fp16_policy.select(row["actor_observation"])
+            select = row["actor_observation"]["select"]
+            self.assertGreaterEqual(len(action), int(select["minCount"]))
+            self.assertLessEqual(len(action), int(select["maxCount"]))
+
+            fp16_fp32_output = root / "candidate_fp16_storage_fp32_runtime"
+            fp16_fp32_manifest = EXPORT.export_candidate(
+                checkpoint=checkpoint,
+                deck_path=deck_path,
+                cg_source=cg,
+                output=fp16_fp32_output,
+                deck_id="test_rule_faithful_deck",
+                storage_dtype="fp16",
+                runtime_dtype="fp32",
+            )
+            self.assertEqual(fp16_fp32_manifest["storage_dtype"], "fp16")
+            self.assertEqual(fp16_fp32_manifest["runtime_dtype"], "fp32")
+            fp16_fp32_policy = INFERENCE.PortableSemanticPolicy.from_checkpoint(
+                fp16_fp32_output / "strategy/model.bin", deck
+            )
+            self.assertTrue(
+                all(
+                    parameter.dtype == torch.float32
+                    for parameter in fp16_fp32_policy.model.parameters()
+                )
+            )
 
             environment = dict(os.environ)
             environment.pop("PYTHONPATH", None)

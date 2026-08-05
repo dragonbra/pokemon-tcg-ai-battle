@@ -1,0 +1,13 @@
+{
+  "candidate_validation": "passed",
+  "checkpoint_epoch": 2,
+  "checkpoint_sha256": "05f98e2a562f0037713ebd4b96a5a324151c91b187d7edaa879cc1c024134a51",
+  "deck_cards": 60,
+  "kind": "zero_shot_frozen0019_evaluation",
+  "completed_games": 509,
+  "errors": 1,
+  "report": "experiments/0031_rule_faithful_semantic_foundation_pretraining/evaluation/V5_epoch2_alakazam_hammer_zero_shot_0019.html",
+  "state": "completed_with_worker_error",
+  "total_games": 510,
+  "version": "V5_epoch2_alakazam_hammer_zero_shot_0019"
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "0032_version_status_v1",
+  "project_id": "0032_dragapult_pod_native_cuda_rl",
+  "version": "V1_pod_native_adapter",
+  "stage": "adapter_validation",
+  "status": "completed",
+  "formal_training": false,
+  "policy_strength_claimed": false,
+  "wandb": {
+    "enabled": false,
+    "reason": "V1 contains contract, transfer, parity, and throughput diagnostics only; it is not a formal optimization run."
+  },
+  "gates": {
+    "pod_contract": "passed",
+    "actor_forward": "passed",
+    "weight_transfer": "passed_initialization_only",
+    "adaptation_smoke": "passed_cross_source_diagnostic_only",
+    "cuda_extension": "passed_sm120_cuda12_8",
+    "codec_parity": "passed_400_decisions_zero_mismatch",
+    "resident_legality": "passed_19000_decisions_zero_errors",
+    "resident_throughput": "passed_cuda_graph_3579_865_decisions_per_second_b152"
+  },
+  "contract": {
+    "codec": "pure_policy_codec_v1",
+    "entity_capacity": 128,
+    "option_capacity": 128,
+    "max_action_steps": 64
+  },
+  "limitations": [
+    "0031 parameters are initialization only; strict feature or behavior parity is not claimed",
+    "the audited source corpus contains zero exact dragapult_ex_001 decisions",
+    "the CPU comparison is contextual rather than a strict same-contract A/B",
+    "reward, value calibration, PPO, and frozen greedy policy-strength evaluation remain future versions"
+  ],
+  "evidence": {
+    "weight_transfer": "weight_transfer.json",
+    "adaptation_corpus": "adaptation_corpus_option128/manifest.json",
+    "adaptation_smoke": "bc_smoke_option128.json",
+    "codec_parity": "codec_parity_option128.json",
+    "resident_throughput_baseline": "../../../../../evaluation/arena/combat_mat/0031_latest_frozen_test/0032_pod_native_throughput_eager_seed32032.json",
+    "resident_throughput_graph_b38": "../../../../../evaluation/arena/combat_mat/0031_latest_frozen_test/0032_pod_native_throughput_cuda_graph_seed32032.json",
+    "resident_throughput_graph_b152": "../../../../../evaluation/arena/combat_mat/0031_latest_frozen_test/0032_pod_native_throughput_cuda_graph_b152_seed32032.json"
+  }
+}

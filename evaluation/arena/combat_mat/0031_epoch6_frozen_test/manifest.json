@@ -1,0 +1,206 @@
+{
+  "checkpoint": "rl_runs/0031_rule_faithful_semantic_foundation_pretraining/versions/V4_lr5e4_no_early_stop_b512/checkpoint/rule_faithful_semantic/latest.pt",
+  "checkpoint_epoch": 6,
+  "checkpoint_global_step": 99006,
+  "checkpoint_selection": "latest",
+  "checkpoint_sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc",
+  "frozen_manifest_sha256": "f6e4ccb18a55c0e28410349b1299f3e9d5a61a2ca5cc7828c1b805fadf4cfa66",
+  "games_per_opponent": 10,
+  "opponents_per_report": 51,
+  "pool_id": "0019_foundation_51_exact_decks_v4",
+  "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
+  "published_games": 3060,
+  "published_reports": 6,
+  "reports": [
+    {
+      "checkpoint_sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc",
+      "completion_rate": 1.0,
+      "deck_id": "mega_lopunny_ex_001",
+      "deck_sha256": "f03203e5bc6fc1cd4c29b4e3e728f360d37abe55aaaf34a73b053085dbe21553",
+      "display_name": "Mega Lopunny ex - Limitless Champion",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 222,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/mega_lopunny_ex_001.html",
+      "report_sha256": "d7ea9ea8d50ecf4332a14471b7545f82ca8304bd4396b05ddc9d69927464ab93",
+      "run_id": "run-b015a0c173414d31b4a9da6c7cd34f90",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 107,
+          "wins": 148
+        },
+        "second": {
+          "draws": 0,
+          "losses": 115,
+          "wins": 140
+        }
+      },
+      "wall_time_seconds": 396.52935600100005,
+      "win_rate": 0.5647058823529412,
+      "wins": 288
+    },
+    {
+      "checkpoint_sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc",
+      "completion_rate": 1.0,
+      "deck_id": "dragapult_ex_001",
+      "deck_sha256": "6f784c7049ab4a4cfbc012c5bee8cc040d1030d54b4e572e4a4a9f35d0f6ea81",
+      "display_name": "Dragapult ex - Limitless",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 248,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/dragapult_ex_001.html",
+      "report_sha256": "0bdc334b2bdb1ca1257ab64278d051f34768ecf785eb34282c3af2fae2672dcd",
+      "run_id": "run-81b666897d41465c95b0fe8a2e583d87",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 116,
+          "wins": 139
+        },
+        "second": {
+          "draws": 0,
+          "losses": 132,
+          "wins": 123
+        }
+      },
+      "wall_time_seconds": 479.1860810840001,
+      "win_rate": 0.5137254901960784,
+      "wins": 262
+    },
+    {
+      "checkpoint_sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc",
+      "completion_rate": 1.0,
+      "deck_id": "dragapult_ex_dusknoir_001",
+      "deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+      "display_name": "Dragapult ex / Dusknoir",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 319,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/dragapult_ex_dusknoir_001.html",
+      "report_sha256": "c241a98ec872a161ef8e8f974da24e4874ba3f8f48e0a4592d3e6c3d18c9c3dd",
+      "run_id": "run-29822287a31c40c1ad7eca78c7e8659b",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 154,
+          "wins": 101
+        },
+        "second": {
+          "draws": 0,
+          "losses": 165,
+          "wins": 90
+        }
+      },
+      "wall_time_seconds": 425.41520778999984,
+      "win_rate": 0.37450980392156863,
+      "wins": 191
+    },
+    {
+      "checkpoint_sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc",
+      "completion_rate": 1.0,
+      "deck_id": "alakazam_dudunsparce_003",
+      "deck_sha256": "1f16d6d486572bf033ef455b38825f370658a95cebd80c40693dc027af97e78d",
+      "display_name": "Alakazam / Dudunsparce",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 237,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/alakazam_dudunsparce_003.html",
+      "report_sha256": "ea29303f03f646fc9d62bae67cc7e645f9ff56b62eaed0d5e042623a89ae3d10",
+      "run_id": "run-0d542620d2fd465fa5f4162b3510021a",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 111,
+          "wins": 144
+        },
+        "second": {
+          "draws": 0,
+          "losses": 126,
+          "wins": 129
+        }
+      },
+      "wall_time_seconds": 389.80326812700014,
+      "win_rate": 0.5352941176470588,
+      "wins": 273
+    },
+    {
+      "checkpoint_sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc",
+      "completion_rate": 1.0,
+      "deck_id": "marnies_grimmsnarl_ex_froslass_limitless",
+      "deck_sha256": "c39e7d9e07202667c417d8728469b8449dc8b1cbaff95617f9bad6c5d07a9605",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass - Limitless",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 270,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/marnies_grimmsnarl_ex_froslass_limitless.html",
+      "report_sha256": "62350415262d567ee39b89e7c56eb13dd19f36c5f5f91f3cf00b764fc964a975",
+      "run_id": "run-098e9fd576a742e889743d6fcc13f556",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 134,
+          "wins": 121
+        },
+        "second": {
+          "draws": 0,
+          "losses": 136,
+          "wins": 119
+        }
+      },
+      "wall_time_seconds": 432.00847037799986,
+      "win_rate": 0.47058823529411764,
+      "wins": 240
+    },
+    {
+      "checkpoint_sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc",
+      "completion_rate": 1.0,
+      "deck_id": "raging_bolt_ex_james_cox_henry_chao_001",
+      "deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+      "display_name": "Raging Bolt ex / Mega Kangaskhan ex",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 400,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/raging_bolt_ex_james_cox_henry_chao_001.html",
+      "report_sha256": "4bca930c56bdc130c516bfa916d6555e21062c55332254ddc4d5664b474a57a5",
+      "run_id": "run-c3d835cbc7db49e5bf1d9a79bee18281",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 197,
+          "wins": 58
+        },
+        "second": {
+          "draws": 0,
+          "losses": 203,
+          "wins": 52
+        }
+      },
+      "wall_time_seconds": 391.69318113200006,
+      "win_rate": 0.21568627450980393,
+      "wins": 110
+    }
+  ],
+  "requested_decks": [
+    "mega_lopunny_ex_001",
+    "dragapult_ex_001",
+    "dragapult_ex_dusknoir_001",
+    "alakazam_dudunsparce_003",
+    "marnies_grimmsnarl_ex_froslass_limitless",
+    "raging_bolt_ex_james_cox_henry_chao_001"
+  ],
+  "schema_version": "0031_epoch6_frozen_test_v1",
+  "version": "V4_lr5e4_no_early_stop_b512"
+}

@@ -13,6 +13,14 @@ import torch
 
 
 PROJECT_ID = "0031_rule_faithful_semantic_foundation_pretraining"
+PORTABLE_SCHEMA_VERSION = "0031_shared_prototype_candidate_checkpoint_v1"
+FP16_STORAGE_SCHEMA_VERSION = (
+    "0031_shared_prototype_fp16_storage_candidate_checkpoint_v1"
+)
+FP16_STORAGE_FP32_RUNTIME_SCHEMA_VERSION = (
+    "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
+)
+_PROTOTYPE_ALIASES = ("state_encoder.prototypes.", "option_encoder.prototypes.")
 
 
 def _sha256(path: Path) -> str:
@@ -81,8 +89,60 @@ def _copy_runtime(source_root: Path, strategy: Path) -> None:
     )
 
 
+def _portable_checkpoint(
+    payload: dict[str, Any], *, storage_dtype: str, runtime_dtype: str
+) -> dict[str, Any]:
+    """Store the registered shared prototype encoder exactly once."""
+    if storage_dtype not in {"fp32", "fp16"}:
+        raise ValueError(f"unsupported storage dtype: {storage_dtype}")
+    if runtime_dtype not in {"fp32", "fp16"}:
+        raise ValueError(f"unsupported runtime dtype: {runtime_dtype}")
+    state_dict = payload["state_dict"]
+    canonical = {
+        key: value.half()
+        if storage_dtype == "fp16" and torch.is_floating_point(value)
+        else value
+        for key, value in state_dict.items()
+        if not key.startswith(_PROTOTYPE_ALIASES)
+    }
+    prototype_keys = {
+        key.removeprefix("prototype_encoder.")
+        for key in canonical
+        if key.startswith("prototype_encoder.")
+    }
+    for alias in _PROTOTYPE_ALIASES:
+        alias_keys = {
+            key.removeprefix(alias) for key in state_dict if key.startswith(alias)
+        }
+        if alias_keys != prototype_keys:
+            raise ValueError(f"prototype alias does not match canonical encoder: {alias}")
+        for suffix in prototype_keys:
+            if not torch.equal(
+                state_dict[f"prototype_encoder.{suffix}"], state_dict[f"{alias}{suffix}"]
+            ):
+                raise ValueError(f"prototype alias tensor differs: {alias}{suffix}")
+    return {
+        "schema_version": (
+            FP16_STORAGE_SCHEMA_VERSION
+            if storage_dtype == "fp16" and runtime_dtype == "fp16"
+            else FP16_STORAGE_FP32_RUNTIME_SCHEMA_VERSION
+            if storage_dtype == "fp16" and runtime_dtype == "fp32"
+            else PORTABLE_SCHEMA_VERSION
+        ),
+        "state_dict": canonical,
+        "metadata": dict(payload["metadata"]),
+    }
+
+
 def export_candidate(
-    *, checkpoint: Path, deck_path: Path, cg_source: Path, output: Path, deck_id: str
+    *,
+    checkpoint: Path,
+    deck_path: Path,
+    cg_source: Path,
+    output: Path,
+    deck_id: str,
+    storage_dtype: str = "fp32",
+    runtime_dtype: str = "fp32",
 ) -> dict[str, Any]:
     if output.exists():
         raise FileExistsError(output)
@@ -118,7 +178,10 @@ def export_candidate(
         (output / "main.py").write_text(_main_source(), encoding="ascii")
         (strategy / "__init__.py").write_text("", encoding="ascii")
         _copy_runtime(Path(__file__).resolve().parent, strategy)
-        shutil.copy2(checkpoint, strategy / "model.bin")
+        portable = _portable_checkpoint(
+            payload, storage_dtype=storage_dtype, runtime_dtype=runtime_dtype
+        )
+        torch.save(portable, strategy / "model.bin")
         manifest = {
             "schema_version": "0031_rule_faithful_semantic_candidate_v1",
             "candidate": output.name,
@@ -130,6 +193,10 @@ def export_candidate(
             "checkpoint": str(checkpoint),
             "checkpoint_sha256": _sha256(checkpoint),
             "checkpoint_schema_version": payload["schema_version"],
+            "portable_checkpoint_schema_version": portable["schema_version"],
+            "portable_checkpoint_sha256": _sha256(strategy / "model.bin"),
+            "storage_dtype": storage_dtype,
+            "runtime_dtype": runtime_dtype,
             "checkpoint_selection": checkpoint.stem,
             "checkpoint_epoch": metadata.get("epoch"),
             "checkpoint_global_step": metadata.get("global_step"),
@@ -155,6 +222,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--cg-source", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--deck-id", required=True)
+    parser.add_argument(
+        "--storage-dtype", choices=("fp32", "fp16"), default="fp32"
+    )
+    parser.add_argument(
+        "--runtime-dtype", choices=("fp32", "fp16"), default="fp32"
+    )
     args = parser.parse_args(argv)
     print(json.dumps(export_candidate(**vars(args)), indent=2, sort_keys=True))
     return 0

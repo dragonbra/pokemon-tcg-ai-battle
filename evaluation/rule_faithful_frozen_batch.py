@@ -1,4 +1,4 @@
-"""Evaluate the 0031 latest rule-faithful checkpoint on four exact League decks."""
+"""Evaluate the 0031 epoch-6 checkpoint on selected Frozen exact decks."""
 
 from __future__ import annotations
 
@@ -19,27 +19,26 @@ from evaluation.reporting.index import _embedded_report_data
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
-LEAGUE_CATALOG = REPOSITORY_ROOT / (
-    "rl_runs/0022_league_training/versions/V11_multidecoder_league_20h/"
-    "artifact/league_catalog.json"
-)
+FROZEN_ROOT = REPOSITORY_ROOT / "evaluation/arena/frozen"
 CHECKPOINT = REPOSITORY_ROOT / (
     "rl_runs/0031_rule_faithful_semantic_foundation_pretraining/versions/"
     "V4_lr5e4_no_early_stop_b512/checkpoint/rule_faithful_semantic/latest.pt"
 )
 CG_SOURCE = REPOSITORY_ROOT / "evaluation/arena/frozen/_policy/cg"
-PACKAGE_ROOT = REPOSITORY_ROOT / ".tmp/model_loading/0031_latest/candidates"
-TEMP_ROOT = REPOSITORY_ROOT / ".tmp/evaluation/0031_latest_frozen_test"
-OUTPUT_ROOT = REPOSITORY_ROOT / "evaluation/arena/combat_mat/0031_latest_frozen_test"
+PACKAGE_ROOT = REPOSITORY_ROOT / ".tmp/model_loading/0031_epoch6/candidates"
+TEMP_ROOT = REPOSITORY_ROOT / ".tmp/evaluation/0031_epoch6_frozen_test"
+OUTPUT_ROOT = REPOSITORY_ROOT / "evaluation/arena/combat_mat/0031_epoch6_frozen_test"
 PROJECT_ID = "0031_rule_faithful_semantic_foundation_pretraining"
 VERSION = "V4_lr5e4_no_early_stop_b512"
 ARM = "rule_faithful_semantic"
 POOL_ID = "0019_foundation_51_exact_decks_v4"
 EXPECTED_GAMES = 510
 DECKS = (
+    "mega_lopunny_ex_001",
     "dragapult_ex_001",
-    "marnies_grimmsnarl_ex_froslass_001",
-    "mega_lopunny_ex_mega_froslass_ex_001",
+    "dragapult_ex_dusknoir_001",
+    "alakazam_dudunsparce_003",
+    "marnies_grimmsnarl_ex_froslass_limitless",
     "raging_bolt_ex_james_cox_henry_chao_001",
 )
 
@@ -57,25 +56,24 @@ def _deck_hash(deck: list[int]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def load_decks(path: Path = LEAGUE_CATALOG) -> list[dict[str, object]]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    raw_decks = payload.get("decks")
-    if not isinstance(raw_decks, list) or len(raw_decks) != 48:
-        raise ValueError("0022 V11 League catalog must contain exactly 48 decks")
-    indexed = {raw.get("deck_id"): raw for raw in raw_decks if isinstance(raw, dict)}
-    if len(indexed) != len(raw_decks) or any(deck_id not in indexed for deck_id in DECKS):
-        raise ValueError("League catalog deck identities are incomplete or duplicated")
+def load_decks(path: Path = FROZEN_ROOT) -> list[dict[str, object]]:
     result = []
     for deck_id in DECKS:
-        record = indexed[deck_id]
-        deck = record.get("deck")
+        deck_root = path / deck_id
+        record = json.loads((deck_root / "manifest.json").read_text(encoding="utf-8"))
+        deck = [
+            int(line)
+            for line in (deck_root / "deck.csv").read_text(encoding="ascii").splitlines()
+            if line.strip()
+        ]
         if (
-            not isinstance(deck, list)
+            record.get("deck_id") != deck_id
             or len(deck) != 60
             or not all(type(card_id) is int and card_id > 0 for card_id in deck)
             or record.get("deck_sha256") != _deck_hash(deck)
         ):
-            raise ValueError(f"League deck identity mismatch: {deck_id}")
+            raise ValueError(f"Frozen deck identity mismatch: {deck_id}")
+        record["deck"] = deck
         result.append(record)
     return result
 
@@ -93,8 +91,8 @@ def validate_checkpoint(path: Path = CHECKPOINT) -> dict[str, object]:
         or metadata.get("project_id") != PROJECT_ID
         or metadata.get("version") != VERSION
         or metadata.get("arm") != ARM
-        or metadata.get("epoch") != 2
-        or metadata.get("global_step") != 33002
+        or metadata.get("epoch") != 6
+        or metadata.get("global_step") != 99006
         or not isinstance(contract, dict)
         or contract.get("model") != "SemanticPolicy"
     ):
@@ -249,15 +247,15 @@ def refresh_index(
             raise ValueError("unexpected CUDA support report schema")
         support = candidate
     manifest = {
-        "schema_version": "0031_latest_frozen_test_v1",
+        "schema_version": "0031_epoch6_frozen_test_v1",
         "project_id": PROJECT_ID,
         "version": VERSION,
         "checkpoint": str(CHECKPOINT.relative_to(REPOSITORY_ROOT)),
         "checkpoint_selection": "latest",
-        "checkpoint_epoch": 2,
-        "checkpoint_global_step": 33002,
+        "checkpoint_epoch": 6,
+        "checkpoint_global_step": 99006,
         "checkpoint_sha256": checkpoint_sha256,
-        "league_catalog_sha256": _sha256(LEAGUE_CATALOG),
+        "frozen_manifest_sha256": _sha256(FROZEN_ROOT / "manifest.json"),
         "pool_id": POOL_ID,
         "games_per_opponent": 10,
         "opponents_per_report": 51,
@@ -304,10 +302,10 @@ def refresh_index(
             'The reports below remain official CPU-engine strength evaluations.</p>'
         )
     document = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>0031 Latest Frozen Test</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>0031 Epoch 6 Frozen Test</title>
 <style>body{{font:14px/1.5 system-ui;margin:0;background:#f4f7f6;color:#17231f}}main{{max-width:1200px;margin:auto;padding:28px 20px}}table{{width:100%;border-collapse:collapse;background:white}}th,td{{padding:10px;border:1px solid #d9e3de;text-align:right}}th:first-child,td:first-child{{text-align:left}}small{{display:block;color:#687870}}a{{color:#176b4d;font-weight:650}}</style>
-</head><body><main><h1>0031 Latest · Frozen Arena</h1><p>V4 epoch 2 / step 33002 latest checkpoint. Each complete report contains 51 Frozen opponents × 10 official-engine games.</p>
-<p><code>{checkpoint_sha256}</code> · {len(records)}/4 reports · {sum(int(r['games']) for r in records)} games</p>
+</head><body><main><h1>0031 Epoch 6 · Frozen Arena</h1><p>V4 epoch 6 / step 99006 latest checkpoint. Each complete report contains 51 Frozen opponents × 10 official-engine games.</p>
+<p><code>{checkpoint_sha256}</code> · {len(records)}/{len(DECKS)} reports · {sum(int(r['games']) for r in records)} games</p>
 {support_banner}
 <table><thead><tr><th>Deck / report</th><th>W-L-D</th><th>Win rate</th><th>Games</th><th>Wall</th><th>Run ID</th></tr></thead><tbody>{rows}</tbody></table></main></body></html>'''
     (output_root / "index.html").write_text(document, encoding="utf-8")

@@ -1,0 +1,20 @@
+{
+  "batch": 4,
+  "codec_mismatch_count": 0,
+  "contract": "pure_policy_codec_v1_cpu_observation_vs_official_cuda_policy_codec_v1",
+  "cpu_library_sha256": "6a57746a1017b04a11483dfe566144de6198b75c29867a6c1e9fd7d208a635bb",
+  "decisions_compared": 400,
+  "deck_sha256": [
+    "9c4565e1d4256d612c04c78f85ceaf24acfc36144ec8812459c5cc870c08fe72",
+    "92b92bac9f9163ecff933b3dc39294d2cc154c8684f3c8497877661419ebc59d"
+  ],
+  "device": "NVIDIA GeForce RTX 5080",
+  "episodes_reset_paired": 0,
+  "extension_sha256": "9cc8f17157e0dd6ebeb36d4ce3f50412f8c68a36d8ddd26e3159cf4c8bfcf7b5",
+  "first_codec_mismatches": [],
+  "passed": true,
+  "requested_steps": 100,
+  "rules_sha256": "e8bb8537ccadc5d77b75c4198ffb1467d9b73d119e1e8c6325a9e5cd503a80e6",
+  "schema": "0032_policy_codec_cpu_cuda_parity_v1",
+  "status_mismatches": 0
+}

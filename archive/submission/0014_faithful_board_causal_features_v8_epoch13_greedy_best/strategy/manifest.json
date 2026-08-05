@@ -1,9 +1,0 @@
-{
-  "checkpoint": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0014_faithful_board_causal_features/versions/V8_0010_faithful_100epoch_strict_epoch_axis/checkpoint/epoch-0013-a6adf6d64f73e933.pt",
-  "checkpoint_sha256": "a6adf6d64f73e933175aaa402df410a25f68617ad3a240f7caf42f4c2c2b9fa0",
-  "deck_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
-  "model_bytes": 28650247,
-  "model_sha256": "d69602de94da44159123394610127fe4dc50b96857e3b14e6fad51012d2ae234",
-  "schema_version": "0014_a0_candidate_v1",
-  "source_package": "/home/cyd/repos/pokemon-tcg-ai-battle/archive/submission/0010_alakazam_sota_model_v4_loss_best"
-}\n

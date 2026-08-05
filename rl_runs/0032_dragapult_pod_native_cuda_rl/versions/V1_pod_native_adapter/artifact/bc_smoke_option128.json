@@ -1,0 +1,73 @@
+{
+  "arms": [
+    {
+      "final_validation": {
+        "examples": 32,
+        "examples_per_second": 557.9534962528099,
+        "loss": 1.0291610062122345,
+        "seconds": 0.05735245000687428,
+        "teacher_exact": 0.5625,
+        "token_accuracy": 0.5448916405439377
+      },
+      "initial_validation": {
+        "examples": 32,
+        "examples_per_second": 40.2037127153932,
+        "loss": 1.3747711181640625,
+        "seconds": 0.7959463899896946,
+        "teacher_exact": 0.40625,
+        "token_accuracy": 0.4102167338132858
+      },
+      "initialization": "random",
+      "optimization": {
+        "batches": 4,
+        "examples": 64,
+        "examples_per_second": 119.97211195597819,
+        "grad_norm": 3.236633837223053,
+        "loss": 1.4452397525310516,
+        "peak_cuda_memory_bytes": 449158656,
+        "seconds": 0.5334573090076447,
+        "teacher_exact": 0.390625,
+        "token_accuracy": 0.37986111268401146
+      },
+      "transfer_fraction": 0.0
+    },
+    {
+      "final_validation": {
+        "examples": 32,
+        "examples_per_second": 1036.7976331745474,
+        "loss": 1.2252108454704285,
+        "seconds": 0.03086426798836328,
+        "teacher_exact": 0.5625,
+        "token_accuracy": 0.547987625002861
+      },
+      "initial_validation": {
+        "examples": 32,
+        "examples_per_second": 593.7946309955378,
+        "loss": 2.016401469707489,
+        "seconds": 0.05389068598742597,
+        "teacher_exact": 0.34375,
+        "token_accuracy": 0.29876161366701126
+      },
+      "initialization": "0031_explicit_transfer",
+      "optimization": {
+        "batches": 4,
+        "examples": 64,
+        "examples_per_second": 252.39473106799878,
+        "grad_norm": 2.2749229073524475,
+        "loss": 1.6738631129264832,
+        "peak_cuda_memory_bytes": 446854656,
+        "seconds": 0.25357106199953705,
+        "teacher_exact": 0.171875,
+        "token_accuracy": 0.17395833879709244
+      },
+      "transfer_fraction": 0.7580439652196529
+    }
+  ],
+  "batch_size": 16,
+  "device": "cuda",
+  "purpose": "gradient_and_label_contract_diagnostic_not_policy_strength",
+  "schema": "0032_pod_bc_smoke_v1",
+  "torch_version": "2.11.0+cu128",
+  "train_batches": 4,
+  "validation_batches": 2
+}

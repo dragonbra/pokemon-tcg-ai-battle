@@ -8,7 +8,7 @@
         "path": "best_greedy_exact.pt",
         "resumable_training_state_saved": false,
         "schema_version": "0031_model_only_checkpoint_v1",
-        "sha256": "b49d10cbe4e37db79aba311b7ae0c6e1548fdfdbdf343199b800e889c5cd6e66"
+        "sha256": "a9642012d6aca2149a4b875106cde19fc4d5d41175e6d01be0072e45a1f10a7e"
       },
       "best_teacher_exact": {
         "bytes": 464775748,
@@ -17,7 +17,7 @@
         "path": "best_teacher_exact.pt",
         "resumable_training_state_saved": false,
         "schema_version": "0031_model_only_checkpoint_v1",
-        "sha256": "d5d56cbca1fa96bf617eab8f9b708d3d1917d9a93de4ed69ba3f19ccd68994b5"
+        "sha256": "6defe195ce8f85ef882caf03dba74b73bc886fa3a0d194c9e1134ae8e7d06af0"
       },
       "best_validation_loss": {
         "bytes": 464776538,
@@ -26,7 +26,7 @@
         "path": "best_validation_loss.pt",
         "resumable_training_state_saved": false,
         "schema_version": "0031_model_only_checkpoint_v1",
-        "sha256": "4058cc49721b09812999f31d070e05479b445d6a3e6fd470671c785e023fee9b"
+        "sha256": "15c124f23e42b0eafd32defeab99939b18bd34a5824c40aecc706ad4d7d7da02"
       },
       "latest": {
         "bytes": 464771584,
@@ -35,7 +35,7 @@
         "path": "latest.pt",
         "resumable_training_state_saved": false,
         "schema_version": "0031_model_only_checkpoint_v1",
-        "sha256": "05f98e2a562f0037713ebd4b96a5a324151c91b187d7edaa879cc1c024134a51"
+        "sha256": "1c0132f7c3cc49bf1b70d83684196fdc6387b855fba90cb3c0b0fa8389d6aefc"
       }
     }
   },

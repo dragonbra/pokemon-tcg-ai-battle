@@ -1,7 +1,20 @@
 {
+  "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
-  "status": "formal_training_in_progress",
-  "created_at": "2026-08-04",
+  "objective": "Rule-faithful, exact-deck-conditioned multi-deck BC foundation pretraining with official-engine zero-shot evaluation.",
+  "deck": "423 audited exact 60-card training identities; evaluation decks are immutable version variables and are never inferred from source identity.",
+  "expert_source": "Unique positive-terminal winners from audited official Episodes dated 2026-07-10 through 2026-08-02; source identity is provenance-only and actor-invisible.",
+  "dataset_contract": "9,385,376 canonical decisions split by whole Episode and exact deck/seat; one train pass and one complete validation pass per epoch.",
+  "engine_revision": "Unmodified official engine runtime is authoritative for evaluation; the model uses committed official_full_engine_prototypes_v2 facts.",
+  "opponent_pool_snapshot": "0019_foundation_51_exact_decks_v4 for formal zero-shot strength evaluation.",
+  "status": "initialized",
+  "training_status": "resuming_v4_from_exact_epoch_2_boundary",
+  "created_at": "2026-08-04T00:00:00+08:00",
+  "paths": {
+    "training": "train/0031_rule_faithful_semantic_foundation_pretraining",
+    "archive": "experiments/0031_rule_faithful_semantic_foundation_pretraining",
+    "runs": "rl_runs/0031_rule_faithful_semantic_foundation_pretraining"
+  },
   "actor_source_identity_visible": false,
   "implementation_lineage": {
     "source_project": "0028_universal_semantic_foundation_pretraining",

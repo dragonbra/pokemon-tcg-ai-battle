@@ -1,0 +1,22 @@
+{
+  "checkpoint_update": 4,
+  "decisions": 38912,
+  "episodes": 203,
+  "last_opponent": "archaludon_ex_cinderace_001",
+  "rollout_source_policy_update": 3,
+  "started_at_unix": 1785869049.4771125,
+  "state": "interrupted_configuration_change",
+  "training_started": true,
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0032-v3-mega-lopunny-froslass-001-cuda-ppo",
+    "state": "active",
+    "sync_state": "active",
+    "url": null
+  },
+  "wandb_mode": "offline",
+  "stop_reason": "User changed the requested update budget from 35 to 200 after update 4; the immutable V3 record is retained and the replacement run requires a new version."
+}
