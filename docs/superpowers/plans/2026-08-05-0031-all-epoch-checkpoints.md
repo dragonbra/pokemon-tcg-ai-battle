@@ -63,7 +63,7 @@ Run: `python3 -m unittest -v train.0031_rule_faithful_semantic_foundation_pretra
 
 Expected: PASS, with every serialized epoch payload remaining model-only.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs/superpowers/plans/2026-08-05-0031-all-epoch-checkpoints.md \
