@@ -200,6 +200,128 @@ official_consume_retreat_selection_continuation_mirror(OfficialStatePod* state) 
     return true;
 }
 
+PTCG_OFFICIAL_CONT_HD inline bool
+official_attack_selection_awaiting_action(const OfficialStatePod& state) {
+    const auto stage = static_cast<OfficialAttackStage>(state.attack_flow_stage);
+    if (state.select_type != static_cast<std::uint8_t>(
+            OfficialSelectTypeId::kAttack)) {
+        return false;
+    }
+    if (stage == OfficialAttackStage::kCopySelection
+        || stage == OfficialAttackStage::kSecondAttackSelection) {
+        return true;
+    }
+    // N Zoroark's self-copy candidate is exposed by the CPU as a regular
+    // SelectedAttackId callback while the parent attack fields remain at
+    // their previous boundary values.
+    return stage == OfficialAttackStage::kIdle
+        && state.options.count > 0
+        && state.options.values[0].type
+            == static_cast<std::uint8_t>(OfficialSelectOptionTypeId::kAttack)
+        && state.options.values[0].params[1] > 0;
+}
+
+PTCG_OFFICIAL_CONT_HD inline OfficialContinuationId
+official_attack_selection_callback(const OfficialStatePod& state) {
+    return static_cast<OfficialAttackStage>(state.attack_flow_stage)
+            == OfficialAttackStage::kSecondAttackSelection
+        ? OfficialContinuationId::kSelectedSecondAttack
+        : OfficialContinuationId::kSelectedAttackId;
+}
+
+PTCG_OFFICIAL_CONT_HD inline bool
+official_build_attack_selection_continuation_mirror(OfficialStatePod* state) {
+    if (state == nullptr || !official_pod_ok(state)
+        || !official_attack_selection_awaiting_action(*state)) {
+        if (state != nullptr && official_pod_ok(state)) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kUnsupportedContinuation,
+                state->attack_flow_stage);
+        }
+        return false;
+    }
+    const auto stage = static_cast<OfficialAttackStage>(state->attack_flow_stage);
+    state->continuations.count = 0;
+    if (stage == OfficialAttackStage::kCopySelection) {
+        if (!official_push_continuation(
+                state,
+                OfficialContinuationId::kAttackEffects,
+                2,
+                0)
+            || !official_push_continuation(
+                state, OfficialContinuationId::kAttackDamage)) {
+            return false;
+        }
+    }
+    if (stage == OfficialAttackStage::kIdle) {
+        const std::int32_t source_attack_id = state->options.count > 0
+            ? state->options.values[0].params[1] : 0;
+        return official_push_continuation(
+            state,
+            OfficialContinuationId::kSelectedAttackId,
+            1,
+            source_attack_id);
+    }
+    return official_push_continuation(
+        state, official_attack_selection_callback(*state));
+}
+
+PTCG_OFFICIAL_CONT_HD inline bool
+official_consume_attack_selection_continuation_mirror(OfficialStatePod* state) {
+    if (state == nullptr || !official_pod_ok(state)
+        || !official_attack_selection_awaiting_action(*state)
+        || state->continuations.count == 0
+        || state->continuations.values[state->continuations.count - 1].opcode
+            != static_cast<std::uint16_t>(
+                official_attack_selection_callback(*state))) {
+        if (state != nullptr && official_pod_ok(state)) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kUnsupportedContinuation,
+                state->continuations.count);
+        }
+        return false;
+    }
+    const auto stage = static_cast<OfficialAttackStage>(state->attack_flow_stage);
+    if (stage == OfficialAttackStage::kCopySelection) {
+        if (state->continuations.count != 3
+            || state->continuations.values[0].opcode
+                != static_cast<std::uint16_t>(
+                    OfficialContinuationId::kAttackEffects)
+            || state->continuations.values[0].arg_type != 2
+            || state->continuations.values[0].args[0] != 0
+            || state->continuations.values[1].opcode
+                != static_cast<std::uint16_t>(
+                    OfficialContinuationId::kAttackDamage)) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kUnsupportedContinuation,
+                state->continuations.count);
+            return false;
+        }
+    } else if (stage == OfficialAttackStage::kIdle) {
+        if (state->continuations.count != 1
+            || state->continuations.values[0].arg_type != 1
+            || state->continuations.values[0].args[0] <= 0
+            || state->continuations.values[0].args[1] != 0) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kUnsupportedContinuation,
+                state->continuations.count);
+            return false;
+        }
+    } else if (state->continuations.count != 1) {
+        official_pod_fail(
+            state,
+            OfficialPodError::kUnsupportedContinuation,
+            state->continuations.count);
+        return false;
+    }
+    state->continuations.count = 0;
+    return true;
+}
+
 PTCG_OFFICIAL_CONT_HD inline OfficialContinuationId
 official_effect_selection_callback(const OfficialStatePod& state) {
     const auto resume = static_cast<OfficialEffectResumeKind>(
@@ -236,6 +358,9 @@ official_effect_selection_callback(const OfficialStatePod& state) {
     }
     if (resume == OfficialEffectResumeKind::kSelectActivate) {
         return OfficialContinuationId::kSelectedActivate;
+    }
+    if (resume == OfficialEffectResumeKind::kSkillChooseEffect) {
+        return OfficialContinuationId::kSelectedWhichEffect;
     }
     if (resume == OfficialEffectResumeKind::kSelectEffect) {
         return OfficialContinuationId::kSelectedFirstEffect;
@@ -401,8 +526,15 @@ official_build_effect_selection_continuation_mirror(OfficialStatePod* state) {
             state->trigger_resolver.depth)) {
         return false;
     }
+    const auto resume = static_cast<OfficialEffectResumeKind>(
+        state->effect_interpreter.resume_kind);
+    if (resume == OfficialEffectResumeKind::kSkillChooseEffect) {
+        return official_push_continuation(
+            state, OfficialContinuationId::kSelectedWhichEffect);
+    }
     const bool retain_effect_frame =
-        state->effect_interpreter.effect_index + 1
+        resume != OfficialEffectResumeKind::kSkillChooseEffect
+        && state->effect_interpreter.effect_index + 1
             < state->effect_interpreter.effect_count;
     if (retain_effect_frame) {
         if (!official_push_continuation(
@@ -447,8 +579,36 @@ official_build_effect_selection_continuation_mirror(OfficialStatePod* state) {
             state, OfficialContinuationId::kSeparatorProc)) {
         return false;
     }
-    const auto resume = static_cast<OfficialEffectResumeKind>(
-        state->effect_interpreter.resume_kind);
+    if (resume == OfficialEffectResumeKind::kApplyPrimitive
+        && state->effect_interpreter.reserved2[2] != 0) {
+        const std::uint32_t total = state->effect_interpreter.reserved2[0];
+        const std::uint32_t completed = state->effect_interpreter.reserved2[1];
+        if (total == 0 || total > 0xffU || completed >= total) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kUnsupportedContinuation,
+                static_cast<std::int32_t>(total));
+            return false;
+        }
+        // State::step executes the first SelectDamageMulti frame before the
+        // first decision is exposed, so only total-completed-1 frames remain
+        // below the SelectedDamageMulti callback.
+        const std::uint32_t remaining = total - completed - 1U;
+        if (!official_push_continuation(
+                state, OfficialContinuationId::kAfterEffect)
+            || !official_push_continuation(
+                state, OfficialContinuationId::kSelectedDamageMultiAll)) {
+            return false;
+        }
+        for (std::uint32_t index = 0; index < remaining; ++index) {
+            if (!official_push_continuation(
+                    state, OfficialContinuationId::kSelectDamageMulti)) {
+                return false;
+            }
+        }
+        return official_push_continuation(
+            state, OfficialContinuationId::kSelectedDamageMulti);
+    }
     if (resume == OfficialEffectResumeKind::kEnergyLoop) {
         return official_push_continuation(
                 state, OfficialContinuationId::kSelectedPokemonEnergy)
@@ -553,7 +713,8 @@ official_consume_effect_selection_continuation_mirror(OfficialStatePod* state) {
                         ? 2
                         : (post_attack_effect ? 1 : 0))));
     const bool retain_effect_frame =
-        state->effect_interpreter.effect_index + 1
+        resume != OfficialEffectResumeKind::kSkillChooseEffect
+        && state->effect_interpreter.effect_index + 1
             < state->effect_interpreter.effect_count;
     const bool retain_repeat_frame =
         state->effect_interpreter.repeat_continuation != 0
@@ -565,6 +726,47 @@ official_consume_effect_selection_continuation_mirror(OfficialStatePod* state) {
         base_prefix_count + (retain_effect_frame ? 1 : 0)
             + (retain_repeat_frame ? 1 : 0)
             + (retain_separator_frame ? 1 : 0));
+    if (resume == OfficialEffectResumeKind::kApplyPrimitive
+        && state->effect_interpreter.reserved2[2] != 0) {
+        const std::uint32_t total = state->effect_interpreter.reserved2[0];
+        const std::uint32_t completed = state->effect_interpreter.reserved2[1];
+        if (total == 0 || total > 0xffU || completed >= total) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kUnsupportedContinuation,
+                static_cast<std::int32_t>(total));
+            return false;
+        }
+        const std::uint32_t remaining = total - completed - 1U;
+        const std::uint16_t expected_count = static_cast<std::uint16_t>(
+            prefix_count + 3U + remaining);
+        const std::uint16_t selected_all_index = prefix_count + 1U;
+        const std::uint16_t select_begin = selected_all_index + 1U;
+        bool matches = base_prefix_count > 0
+            && state->continuations.count == expected_count
+            && state->continuations.values[prefix_count].opcode
+                == static_cast<std::uint16_t>(OfficialContinuationId::kAfterEffect)
+            && state->continuations.values[selected_all_index].opcode
+                == static_cast<std::uint16_t>(
+                    OfficialContinuationId::kSelectedDamageMultiAll)
+            && state->continuations.values[expected_count - 1].opcode
+                == static_cast<std::uint16_t>(
+                    OfficialContinuationId::kSelectedDamageMulti);
+        for (std::uint32_t index = 0; matches && index < remaining; ++index) {
+            matches = state->continuations.values[select_begin + index].opcode
+                == static_cast<std::uint16_t>(
+                    OfficialContinuationId::kSelectDamageMulti);
+        }
+        if (!matches) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kUnsupportedContinuation,
+                state->continuations.count);
+            return false;
+        }
+        state->continuations.count = 0;
+        return true;
+    }
     const bool after_effect_frame =
         resume == OfficialEffectResumeKind::kRemoveDamageCounter
         || resume == OfficialEffectResumeKind::kSelectActivate

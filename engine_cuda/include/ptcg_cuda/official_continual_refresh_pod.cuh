@@ -209,15 +209,13 @@ PTCG_OFFICIAL_REFRESH_HD inline bool official_apply_static_continual_skill(
     const OfficialSkillRule* skill = official_skill_rule(
         rules, static_cast<std::uint32_t>(source.skill_id));
     if (card == nullptr || master == nullptr || skill == nullptr) return false;
-    if (official_continual_flag(*card, 0)) {
-        card->skill_order = 0;
-        return true;
-    }
     const std::int32_t saved_order = card->skill_order;
     // Official StaticEffect marks every collected source as unordered before
-    // checking disabled Tool effects or an already-stacked notStack ability.
+    // checking an ability disabled by an earlier source in this same pass,
+    // disabled Tool effects, or an already-stacked notStack ability.
     // Those early returns deliberately leave INT_MAX serialized on the card.
     card->skill_order = kOfficialSkillOrderUnset;
+    if (official_continual_flag(*card, 0)) return true;
     if ((state->continual_state & 1U) != 0
         && master->values[kCardType] == 2) return true;
     if ((skill->flags & kOfficialSkillNotStackFlag) != 0

@@ -112,6 +112,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Reuse the existing persistent CUDA matrix executable.",
     )
+    parser.add_argument(
+        "--nvcc-threads",
+        type=int,
+        default=4,
+        help="Host threads available to persistent nvcc compilation (default: 4).",
+    )
     return parser.parse_args()
 
 
@@ -177,7 +183,8 @@ def run_persistent_container(
         ""
         if args.skip_persistent_build
         else (
-            "nvcc --threads 4 --split-compile 1 -std=c++20 -O0 -arch=sm_86 "
+            f"nvcc --threads {args.nvcc_threads} "
+            "--split-compile 1 -std=c++20 -O0 -arch=sm_86 "
             + coverage_define
             + "-I/official -I/workspace/engine_cuda/include "
             "-I/workspace/engine_cuda/extractor "
@@ -253,7 +260,12 @@ def run_persistent_container(
 
 def main() -> None:
     args = parse_args()
-    if args.seed_start < 0 or args.seed_count <= 0 or args.decision_limit <= 0:
+    if (
+        args.seed_start < 0
+        or args.seed_count <= 0
+        or args.decision_limit <= 0
+        or args.nvcc_threads <= 0
+    ):
         raise SystemExit("seed and decision arguments must be positive")
     manifest_path = args.manifest.resolve()
     if not manifest_path.is_file():

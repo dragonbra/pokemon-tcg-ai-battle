@@ -108,6 +108,16 @@ PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options(
             state, rules, *master, &offset, &count)) {
         return false;
     }
+    const std::int32_t player = attacker->player;
+
+    // The CPU engine's main attack list is not limited to the attacks printed
+    // on the active card.  For attacks such as Zoroark's "copy an N Pokemon"
+    // and Mimikyu's "copy the active Terastal Pokemon", SetAttackEnergy
+    // expands the source attack into one option per eligible copied attack,
+    // retaining the source attack id in params[1].  Keep that expansion here
+    // as well; otherwise CUDA exposes only the source (e.g. 403/612), which
+    // makes the official and CUDA option sets diverge before the attack flow
+    // even starts.
     for (std::int32_t index = 0; index < count; ++index) {
         const std::int32_t attack_id = static_cast<std::int32_t>(
             rules.card_attack_ids[offset + index]);
@@ -121,28 +131,125 @@ PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options(
         if (bench_index >= 0 && (attack->flags & kAttackCanUseBench) == 0) {
             continue;
         }
-        if ((attack->flags
-                & (kAttackCopyEnemy | kAttackCopyEnemyTerastal | kAttackCopyBenchN))
-            != 0) {
-            official_pod_fail(
-                state, OfficialPodError::kUnsupportedContinuation, attack_id);
-            return false;
-        }
-        if (!official_attack_initial_action_is_legal(
-                state, rules, attacker_ref, *attack, 0)) {
-            if (!official_pod_ok(state)) return false;
+
+        const std::uint64_t copy_flags = attack->flags
+            & (kAttackCopyEnemy | kAttackCopyEnemyCoin
+                | kAttackCopyEnemyTerastal | kAttackCopyBenchN);
+        if (copy_flags == 0) {
+            if (!official_attack_initial_action_is_legal(
+                    state, rules, attacker_ref, *attack, 0)) {
+                if (!official_pod_ok(state)) return false;
+                continue;
+            }
+            OfficialSelectOptionPod option{};
+            option.type = static_cast<std::uint8_t>(
+                OfficialSelectOptionTypeId::kAttack);
+            option.params[0] = static_cast<std::int16_t>(attack_id);
+            option.params[1] = 0;
+            option.params[2] = static_cast<std::int16_t>(bench_index);
+            option.option_equiv = static_cast<std::uint16_t>(attack_id);
+            if (!official_pod_push(
+                    state, &state->options, option,
+                    OfficialPodError::kOptionOverflow)) {
+                return false;
+            }
             continue;
         }
-        OfficialSelectOptionPod option{};
-        option.type = static_cast<std::uint8_t>(
-            OfficialSelectOptionTypeId::kAttack);
-        option.params[0] = static_cast<std::int16_t>(attack_id);
-        option.params[1] = 0;
-        option.params[2] = static_cast<std::int16_t>(bench_index);
-        option.option_equiv = static_cast<std::uint16_t>(attack_id);
-        if (!official_pod_push(
-                state, &state->options, option, OfficialPodError::kOptionOverflow)) {
-            return false;
+
+        // Match the CPU SetAttackEnergy extraction rules.  Copy-enemy
+        // variants read attacks from the opponent's active Pokemon; the
+        // Bench-N variant reads attacks from each benched N Pokemon.  A
+        // Terastal copy is available only when the opponent's active master
+        // carries the Terastal flag (bit 0 in the packed card flags).
+        const OfficialCardRefPod* source_values = nullptr;
+        std::uint16_t source_count = 0;
+        OfficialCardRefPod enemy_active{};
+        if ((copy_flags & (kAttackCopyEnemy | kAttackCopyEnemyCoin
+                | kAttackCopyEnemyTerastal)) != 0) {
+            const std::int32_t enemy = 1 - player;
+            const OfficialPlayerStatePod& enemy_player = state->players[enemy];
+            if (enemy_player.active.count == 0) continue;
+            enemy_active = enemy_player.active.values[0];
+            const OfficialCardStatePod* enemy_card = official_pod_card(
+                state, enemy_active);
+            const OfficialCardRule* enemy_master = enemy_card == nullptr ? nullptr
+                : official_card_rule(
+                    rules, static_cast<std::uint32_t>(enemy_card->card_id));
+            if (enemy_master == nullptr) {
+                official_pod_fail(
+                    state, OfficialPodError::kRulePackBounds,
+                    enemy_card == nullptr ? 0 : enemy_card->card_id);
+                return false;
+            }
+            if ((copy_flags & kAttackCopyEnemyTerastal) != 0
+                && (enemy_master->flags & 1ULL) == 0) {
+                continue;
+            }
+            source_values = enemy_player.active.values;
+            source_count = enemy_player.active.count;
+        } else {
+            const OfficialPlayerStatePod& own_player = state->players[player];
+            source_values = own_player.bench.values;
+            source_count = own_player.bench.count;
+        }
+
+        for (std::uint16_t source_index = 0;
+             source_index < source_count;
+             ++source_index) {
+            const OfficialCardRefPod source_ref = source_values[source_index];
+            const OfficialCardStatePod* source_card = official_pod_card(
+                state, source_ref);
+            const OfficialCardRule* source_master = source_card == nullptr ? nullptr
+                : official_card_rule(
+                    rules, static_cast<std::uint32_t>(source_card->card_id));
+            if (source_master == nullptr) {
+                official_pod_fail(
+                    state, OfficialPodError::kRulePackBounds,
+                    source_card == nullptr ? 0 : source_card->card_id);
+                return false;
+            }
+            if ((copy_flags & kAttackCopyBenchN) != 0
+                && (source_master->flags & (1ULL << 16U)) == 0) {
+                continue;
+            }
+            std::int32_t copied_offset = 0;
+            std::int32_t copied_count = 0;
+            if (!official_attack_card_attack_range(
+                    state, rules, *source_master,
+                    &copied_offset, &copied_count)) {
+                return false;
+            }
+            for (std::int32_t copied_index = 0;
+                 copied_index < copied_count;
+                 ++copied_index) {
+                const std::int32_t copied_attack_id = static_cast<std::int32_t>(
+                    rules.card_attack_ids[copied_offset + copied_index]);
+                const OfficialAttackRule* copied_attack = official_attack_rule(
+                    rules, static_cast<std::uint32_t>(copied_attack_id));
+                if (copied_attack == nullptr) {
+                    official_pod_fail(
+                        state, OfficialPodError::kRulePackBounds,
+                        copied_attack_id);
+                    return false;
+                }
+                if (!official_attack_initial_action_is_legal(
+                        state, rules, attacker_ref, *copied_attack, attack_id)) {
+                    if (!official_pod_ok(state)) return false;
+                    continue;
+                }
+                OfficialSelectOptionPod option{};
+                option.type = static_cast<std::uint8_t>(
+                    OfficialSelectOptionTypeId::kAttack);
+                option.params[0] = static_cast<std::int16_t>(copied_attack_id);
+                option.params[1] = static_cast<std::int16_t>(attack_id);
+                option.params[2] = static_cast<std::int16_t>(bench_index);
+                option.option_equiv = static_cast<std::uint16_t>(copied_attack_id);
+                if (!official_pod_push(
+                        state, &state->options, option,
+                        OfficialPodError::kOptionOverflow)) {
+                    return false;
+                }
+            }
         }
     }
     return true;
@@ -1759,22 +1866,106 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
                 rules, static_cast<std::uint32_t>(play_id));
             const OfficialAreaRefPod effect_card = official_pod_area_ref(
                 state, moved);
-            if (play_skill == nullptr
-                || !official_record_resolved_skill(
-                    state, *play_skill, effect_card)) {
-                if (official_pod_ok(state)) {
-                    official_pod_fail(
-                        state, OfficialPodError::kRulePackBounds, play_id);
-                }
+            if (play_skill == nullptr) {
+                official_pod_fail(
+                    state, OfficialPodError::kRulePackBounds, play_id);
                 return OfficialMainResult::kError;
             }
             state->flow_flags |= kOfficialPlayEffectReturnToMainFlag;
-            const OfficialEffectInterpreterResult effect = official_begin_skill_effects(
-                state,
-                rules,
-                play_id,
-                effect_card,
-                player);
+            // ActivateAbility clears transient effect state before deciding
+            // whether the first branch is available and exposing the choice.
+            state->targets.count = 0;
+            state->control_flags &= static_cast<std::uint8_t>(
+                ~kOfficialChangedFlag);
+            const std::int32_t second_effect_start =
+                play_skill->values[kSkillSecondEffectStart];
+            bool first_effect_satisfied = true;
+            if (second_effect_start > 0
+                && !official_resolver_satisfy_skill_conditions(
+                    state,
+                    rules,
+                    *play_skill,
+                    0,
+                    effect_card,
+                    player,
+                    &first_effect_satisfied)) {
+                return OfficialMainResult::kError;
+            }
+
+            OfficialEffectInterpreterResult effect =
+                OfficialEffectInterpreterResult::kComplete;
+            if (second_effect_start > 0 && first_effect_satisfied) {
+                // Official ActivateAbility waits for SelectedWhichEffect before
+                // ActivateAbility2 records the skill use or starts either
+                // branch.  Preserve only the metadata needed by that callback.
+                state->effect_state.ability = OfficialActivateAbilityPod{};
+                state->effect_state.ability.skill_id = play_id;
+                state->effect_state.ability.effect_card = effect_card;
+                state->effect_state.ability.use_player =
+                    static_cast<std::int8_t>(player);
+                state->effect_state.effect_rate = 1;
+                state->effect_interpreter = OfficialEffectInterpreterPod{};
+                state->effect_interpreter.effect_offset = static_cast<std::uint32_t>(
+                    play_skill->values[kSkillEffectOffset]);
+                state->effect_interpreter.effect_count = static_cast<std::uint16_t>(
+                    play_skill->values[kSkillEffectCount]);
+                state->effect_interpreter.first_condition_count =
+                    static_cast<std::uint8_t>(
+                        play_skill->values[kSkillFirstConditionCount]);
+                state->effect_interpreter.active = 1;
+                state->effect_interpreter.effect_owner =
+                    static_cast<std::int8_t>(player);
+                state->effect_interpreter.effect_card = effect_card;
+                state->effect_interpreter.step_budget =
+                    kOfficialDefaultEffectStepBudget;
+                if (!official_begin_effect_selection(
+                        state,
+                        OfficialSelectTypeId::kYesNo,
+                        kOfficialEffectSelectContextFirstEffect,
+                        player,
+                        1,
+                        1,
+                        OfficialEffectResumeKind::kSkillChooseEffect)) {
+                    return OfficialMainResult::kError;
+                }
+                OfficialSelectOptionPod yes{};
+                yes.type = static_cast<std::uint8_t>(
+                    OfficialSelectOptionTypeId::kYes);
+                OfficialSelectOptionPod no{};
+                no.type = static_cast<std::uint8_t>(
+                    OfficialSelectOptionTypeId::kNo);
+                if (!official_pod_push(
+                        state,
+                        &state->options,
+                        yes,
+                        OfficialPodError::kOptionOverflow)
+                    || !official_pod_push(
+                        state,
+                        &state->options,
+                        no,
+                        OfficialPodError::kOptionOverflow)) {
+                    return OfficialMainResult::kError;
+                }
+                state->context_card = effect_card.card;
+                effect = OfficialEffectInterpreterResult::kNeedsAction;
+            } else {
+                if (!official_record_resolved_skill(
+                        state, *play_skill, effect_card)) {
+                    return OfficialMainResult::kError;
+                }
+                const std::uint16_t start_index =
+                    second_effect_start > 0 && !first_effect_satisfied
+                    ? static_cast<std::uint16_t>(second_effect_start)
+                    : static_cast<std::uint16_t>(
+                        play_skill->values[kSkillTriggerStart]);
+                effect = official_begin_skill_effects_at(
+                    state,
+                    rules,
+                    play_id,
+                    effect_card,
+                    player,
+                    start_index);
+            }
             if (effect == OfficialEffectInterpreterResult::kError) {
                 return OfficialMainResult::kError;
             }

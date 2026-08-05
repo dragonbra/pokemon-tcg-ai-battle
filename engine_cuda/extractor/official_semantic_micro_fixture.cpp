@@ -1738,6 +1738,131 @@ int main(int argc, char** argv) {
         }
 
         {
+            constexpr std::uint16_t source_ref = 28;
+            constexpr std::uint16_t damaged_ref = 29;
+            OfficialStatePod remove_all{};
+            remove_all.abi_version = kOfficialStateAbiVersion;
+            add_pod_card(
+                &remove_all,
+                source_ref,
+                432,
+                0,
+                OfficialArea::kActive);
+            add_pod_card(
+                &remove_all,
+                damaged_ref,
+                432,
+                0,
+                OfficialArea::kBench);
+            remove_all.cards[damaged_ref].damage = 70;
+
+            const OfficialAttackRule* rocket_mirror = official_attack_rule(rules, 609);
+            require(rocket_mirror != nullptr, "Rocket Mirror attack");
+            const std::uint32_t post_offset = static_cast<std::uint32_t>(
+                rocket_mirror->values[kAttackPostEffectOffset]);
+            const std::uint16_t post_count = static_cast<std::uint16_t>(
+                rocket_mirror->values[kAttackPostEffectCount]);
+            require(post_count > 0, "Rocket Mirror post effects");
+            std::int32_t remove_all_index = -1;
+            for (std::uint16_t index = 0; index < post_count; ++index) {
+                if (rules.effects[post_offset + index].values[kEffectType]
+                    == static_cast<std::int32_t>(
+                        OfficialEffectTypeId::kRemoveDamageCounterAll)) {
+                    remove_all_index = index;
+                    break;
+                }
+            }
+            require(remove_all_index >= 0, "Rocket Mirror remove-all effect");
+
+            remove_all.effect_interpreter.effect_offset = post_offset;
+            remove_all.effect_interpreter.effect_count = static_cast<std::uint16_t>(
+                remove_all_index + 1);
+            remove_all.effect_interpreter.effect_index = static_cast<std::uint16_t>(
+                remove_all_index);
+            remove_all.effect_interpreter.effect_owner = 0;
+            remove_all.effect_interpreter.effect_card = official_pod_area_ref(
+                &remove_all, OfficialCardRefPod{source_ref});
+            remove_all.effect_interpreter.active = 1;
+            remove_all.effect_interpreter.awaiting_selection = 1;
+            remove_all.effect_interpreter.resume_kind = static_cast<std::uint8_t>(
+                OfficialEffectResumeKind::kApplyPrimitive);
+            remove_all.effect_interpreter.repeat_count = 1;
+            remove_all.effect_interpreter.step_budget = 32;
+            remove_all.effect_state.ability.effect_card =
+                remove_all.effect_interpreter.effect_card;
+            remove_all.effect_state.ability.use_player = 0;
+            remove_all.select_min = 1;
+            remove_all.select_max = 1;
+            remove_all.options.count = 1;
+            remove_all.options.values[0].type = static_cast<std::uint8_t>(
+                OfficialSelectOptionTypeId::kCard);
+            remove_all.options.values[0].resolved_card = damaged_ref;
+
+            const std::uint16_t target_choice = 0;
+            require(
+                official_apply_effect_action(
+                    &remove_all, rules, &target_choice, 1)
+                    == OfficialEffectInterpreterResult::kComplete,
+                "remove all damage counters completes without count selection");
+            require(
+                remove_all.cards[damaged_ref].damage == 0
+                    && remove_all.removed_damage_counter == 7,
+                "remove all damage counters applies full count");
+            checks += 5;
+        }
+
+        {
+            const OfficialSkillRule* janine = official_skill_rule(rules, 361);
+            require(janine != nullptr, "Janine's Secret Art skill");
+            std::int32_t each_selected_index = -1;
+            for (std::int32_t index = 0;
+                 index < janine->values[kSkillEffectCount];
+                 ++index) {
+                const OfficialEffectRule& candidate = rules.effects[
+                    janine->values[kSkillEffectOffset] + index];
+                if ((candidate.flags & kOfficialEffectEachSelectedList) != 0) {
+                    each_selected_index = index;
+                    break;
+                }
+            }
+            require(each_selected_index >= 0, "Janine each-selected effect");
+
+            OfficialStatePod empty_repeat{};
+            empty_repeat.abi_version = kOfficialStateAbiVersion;
+            empty_repeat.flow_flags = 1U << 5U;
+            empty_repeat.effect_interpreter.effect_offset = static_cast<std::uint32_t>(
+                janine->values[kSkillEffectOffset]);
+            empty_repeat.effect_interpreter.effect_count = static_cast<std::uint16_t>(
+                each_selected_index + 1);
+            empty_repeat.effect_interpreter.effect_index = static_cast<std::uint16_t>(
+                each_selected_index);
+            empty_repeat.effect_interpreter.effect_owner = 0;
+            empty_repeat.effect_interpreter.active = 1;
+            empty_repeat.effect_interpreter.repeat_count = 2;
+            empty_repeat.effect_interpreter.repeat_index = 0;
+            empty_repeat.effect_interpreter.repeat_continuation =
+                static_cast<std::uint16_t>(
+                    OfficialContinuationId::kActivateEffectEachSelected);
+            const OfficialEffectRule& each_selected = rules.effects[
+                empty_repeat.effect_interpreter.effect_offset
+                + empty_repeat.effect_interpreter.effect_index];
+            require(
+                official_prepare_effect_selection(
+                    &empty_repeat,
+                    rules,
+                    each_selected,
+                    static_cast<OfficialEffectSelectTypeId>(
+                        each_selected.values[kEffectSelectType]),
+                    1)
+                    == OfficialEffectInterpreterResult::kComplete,
+                "Janine empty first repeat auto-completes");
+            require(
+                empty_repeat.turn_action_count == 1,
+                "Janine empty first repeat records State::step boundary");
+            checks += 4;
+        }
+
+        {
             constexpr std::uint16_t old_basic_ref = 30;
             constexpr std::uint16_t new_basic_ref = 31;
             constexpr std::uint16_t stage2_ref = 32;

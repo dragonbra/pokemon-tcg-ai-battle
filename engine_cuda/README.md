@@ -6,38 +6,39 @@ PyTorch bindings, Docker runners, the audited 0022 40-deck fixture, and CPU vs
 CUDA semantic/outcome parity tests.
 
 For installation, private rule-pack preparation, Docker commands, Python API,
-and 40-deck validation, read [docs/usage_guide_zh.md](docs/usage_guide_zh.md).
+and Frozen51 validation, read [docs/usage_guide_zh.md](docs/usage_guide_zh.md).
 
 ## Current Validation Snapshot
 
-Validated on 2026-08-04 in Docker with an RTX 3060 Laptop GPU:
+Validated through 2026-08-06 in Docker with an RTX 3060 Laptop GPU:
 
 - production `OfficialDeviceArena` turn-flow smoke: passed, zero state/status mismatch;
 - 40 mirror matchups: 800 battles, 165,623 decisions, zero mismatch, 13 official draws;
 - all 1,560 non-mirror ordered matchups: 319,574 decisions, zero mismatch, 9 official draws;
 - targeted high-risk decks: 1,500 battles, 312,530 decisions, zero mismatch;
-- semantic micro fixture: 154 checks passed;
+- Frozen51 non-mirror ordered matrix: 2,550 battles, 545,094 decisions,
+  zero state/status/outcome mismatch, 13 official draws;
+- semantic micro fixture: 163 checks passed;
 - focused Python regression tests: 3/3 passed.
 
-These results cover the audited 0022 deck catalog and deterministic parity
-policies. They do not prove every possible card interaction or stochastic
-policy trajectory. The unmodified official CPU engine remains the oracle.
+These results cover the audited 0022 and Frozen51 deck catalogs under the
+recorded deterministic parity policies. They do not prove every possible card
+interaction, seed, mirror matchup, or stochastic policy trajectory. The
+unmodified official CPU engine remains the oracle.
 
 ## Frozen51 Acceptance
 
-The 2026-08-04 fail-closed audit of
-`evaluation/arena/frozen/` admits 38 of 51 exact decks. The complete 38 x 38
-ordered matrix compared 297,285 decisions over 1,444 battles with zero
-CPU/POD/CUDA state, status, or outcome mismatch. Thirteen decks are rejected
-for missing selection continuations, unsupported copy-attack paths, or a
-reproduced continual-state interaction mismatch.
+The 2026-08-06 fail-closed audit of `evaluation/arena/frozen/` admits all 51
+exact decks for the tested engine-semantic contract. The complete non-mirror
+ordered matrix covers all 51 x 50 seat-ordered pairs and compares 545,094
+decisions over 2,550 battles with zero CPU/POD/CUDA state, status, or outcome
+mismatch. The 13 draws are official engine results and remain draws on CUDA.
 
 The durable report is
 `evaluation/arena/combat_mat/0031_latest_frozen_test/cuda_support.html`, with
 machine-readable evidence in the adjacent `cuda_support.json`. This admission
-does not make the 0031 checkpoint resident-compatible: its chronological
-observation and causal-event feature contract is not exposed by the current
-`OfficialStatePod` binding.
+is finite trajectory evidence for engine semantics; model observation and
+training compatibility are separate contracts.
 
 ## Repository Boundary
 

@@ -78,6 +78,7 @@ enum class OfficialEffectResumeKind : std::uint8_t {
     kSelectActivate = 5,
     kSelectEffect = 6,
     kDamageCounterAny = 7,
+    kSkillChooseEffect = 8,
 };
 
 constexpr std::uint64_t kOfficialEffectEnemySelect = 1ULL << 1;
@@ -105,6 +106,7 @@ constexpr std::uint8_t kOfficialInterpreterLoopStopFlag = 1U << 2;
 constexpr std::uint32_t kOfficialDefaultEffectStepBudget = 4096;
 constexpr std::uint8_t kOfficialSelectContextEvolve = 38;
 constexpr std::uint8_t kOfficialSelectContextDamageCounterAny = 15;
+constexpr std::uint8_t kOfficialSelectContextDamage = 16;
 constexpr std::uint8_t kOfficialSelectContextRemoveDamageCounterCount = 41;
 constexpr std::uint8_t kOfficialEffectSelectContextActivate = 44;
 constexpr std::uint8_t kOfficialEffectSelectContextFirstEffect = 45;
@@ -530,6 +532,21 @@ official_advance_effect_interpreter(
     OfficialStatePod* state,
     const OfficialRulePackView& rules);
 
+PTCG_OFFICIAL_INTERPRETER_HD inline OfficialEffectInterpreterResult
+official_begin_skill_effects_at(
+    OfficialStatePod* state,
+    const OfficialRulePackView& rules,
+    std::int32_t skill_id,
+    OfficialAreaRefPod effect_card,
+    std::int32_t use_player,
+    std::uint16_t start_index,
+    std::uint32_t step_budget);
+
+PTCG_OFFICIAL_INTERPRETER_HD inline bool official_record_resolved_skill(
+    OfficialStatePod* state,
+    const OfficialSkillRule& skill,
+    OfficialAreaRefPod effect_card);
+
 PTCG_OFFICIAL_INTERPRETER_HD inline void
 official_complete_energy_selection_scratch(OfficialStatePod* state);
 
@@ -911,19 +928,26 @@ official_prepare_effect_selection(
             && state->effect_interpreter.repeat_count == 1
             && state->effect_interpreter.effect_index + 1
                 < state->effect_interpreter.effect_count;
-        const bool played_card_has_later_empty_repeat =
+        const bool played_card_has_empty_repeat =
             (state->flow_flags & play_effect_return_to_main_flag) != 0
             && state->effect_interpreter.repeat_count > 1
-            && state->effect_interpreter.repeat_index > 0
             && state->effect_interpreter.repeat_continuation
                 == static_cast<std::uint16_t>(
                     OfficialContinuationId::kActivateEffectEachSelected);
+        const bool played_card_has_final_empty_each_selected =
+            (state->flow_flags & play_effect_return_to_main_flag) != 0
+            && state->effect_interpreter.effect_index + 1
+                == state->effect_interpreter.effect_count
+            && state->effect_interpreter.repeat_count == 1
+            && official_interpreter_has_flag(
+                effect, kOfficialEffectEachSelectedList);
         if (played_card_has_following_effect
-            || played_card_has_later_empty_repeat) {
+            || played_card_has_empty_repeat
+            || played_card_has_final_empty_each_selected) {
             // ApiSelect counts this zero-cardinality boundary before it
-            // auto-advances into the played card's following effects. It also
-            // counts a later empty iteration after an earlier repeated
-            // selection was exposed to the player.
+            // auto-advances into the played card's following effects or Main.
+            // Every repeated each-selected frame is a separate State::step,
+            // including the first frame when all iterations are empty.
             ++state->turn_action_count;
         }
         state->effect_interpreter.awaiting_selection = 0;
@@ -1002,6 +1026,153 @@ official_prepare_damage_counter_any_selection(OfficialStatePod* state) {
         return OfficialEffectInterpreterResult::kComplete;
     }
     return OfficialEffectInterpreterResult::kNeedsAction;
+}
+
+PTCG_OFFICIAL_INTERPRETER_HD inline bool
+official_effect_is_attack_damage_multi(
+    const OfficialStatePod& state,
+    const OfficialEffectRule& effect) {
+    return effect.values[kEffectType]
+        == static_cast<std::int32_t>(OfficialEffectTypeId::kAttackDamageMulti)
+        && state.attack_flow_stage != 0;
+}
+
+PTCG_OFFICIAL_INTERPRETER_HD inline OfficialEffectInterpreterResult
+official_prepare_attack_damage_multi_selection(
+    OfficialStatePod* state,
+    const OfficialRulePackView& rules,
+    const OfficialEffectRule& effect) {
+    // The CPU function stack keeps the six choices as separate
+    // SelectDamageMulti frames and accumulates their card-position counts in
+    // selectCounts before SelectedDamageMultiAll applies damage.  The
+    // reserved interpreter words are scratch only; canonical boundary state
+    // clears the whole interpreter frame before parity comparison.
+    if (state->effect_interpreter.reserved2[2] == 0) {
+        const std::int32_t total = official_effect_value(*state, effect, 0);
+        if (total < 0 || total > 255) {
+            official_pod_fail(state, OfficialPodError::kUnsupportedEffect, total);
+            return OfficialEffectInterpreterResult::kError;
+        }
+        state->effect_interpreter.reserved2[0] =
+            static_cast<std::uint32_t>(total);
+        state->effect_interpreter.reserved2[1] = 0;
+        state->effect_interpreter.reserved2[2] = 1;
+        for (std::int16_t& count : state->select_counts) count = 0;
+    }
+    const std::uint32_t total = state->effect_interpreter.reserved2[0];
+    const std::uint32_t completed = state->effect_interpreter.reserved2[1];
+    if (completed >= total) {
+        state->effect_interpreter.reserved2[2] = 0;
+        official_finish_effect_iteration(state);
+        return official_advance_effect_interpreter(state, rules);
+    }
+
+    if (!official_begin_effect_selection(
+            state,
+            OfficialSelectTypeId::kCard,
+            kOfficialSelectContextDamage,
+            state->effect_interpreter.effect_owner,
+            1,
+            1,
+            OfficialEffectResumeKind::kApplyPrimitive)
+        || !official_prepare_card_options(
+            state,
+            OfficialSelectTypeId::kCard,
+            OfficialSelectOptionTypeId::kCard)) {
+        return OfficialEffectInterpreterResult::kError;
+    }
+    if (state->options.count == 0) {
+        // SelectDamageMulti has no legal card to expose.  Treat the remaining
+        // choices as no-ops and let SelectedDamageMultiAll finish the effect.
+        state->effect_interpreter.reserved2[1] = total;
+        state->effect_interpreter.reserved2[2] = 0;
+        official_clear_effect_selection(state);
+        official_finish_effect_iteration(state);
+        return official_advance_effect_interpreter(state, rules);
+    }
+    return OfficialEffectInterpreterResult::kNeedsAction;
+}
+
+PTCG_OFFICIAL_INTERPRETER_HD inline OfficialEffectInterpreterResult
+official_apply_attack_damage_multi_selection(
+    OfficialStatePod* state,
+    const OfficialRulePackView& rules,
+    const OfficialEffectRule& effect,
+    const std::uint16_t* option_indices,
+    std::uint16_t count) {
+    if (count != 1 || option_indices == nullptr
+        || option_indices[0] >= state->options.count) {
+        official_pod_fail(state, OfficialPodError::kInvalidAction, count);
+        return OfficialEffectInterpreterResult::kError;
+    }
+    const OfficialSelectOptionPod option = state->options.values[option_indices[0]];
+    if (option.type != static_cast<std::uint8_t>(OfficialSelectOptionTypeId::kCard)
+        || option.params[2] < 0 || option.params[2] > 1
+        || option.params[1] < 0) {
+        official_pod_fail(
+            state, OfficialPodError::kInvalidAction, option_indices[0]);
+        return OfficialEffectInterpreterResult::kError;
+    }
+    if (option.params[2]
+        != 1 - state->effect_interpreter.effect_owner) {
+        official_pod_fail(
+            state, OfficialPodError::kInvalidAction, option.params[2]);
+        return OfficialEffectInterpreterResult::kError;
+    }
+    if (option.params[0] == static_cast<std::int16_t>(OfficialArea::kActive)) {
+        if (option.params[1] != 0) {
+            official_pod_fail(
+                state, OfficialPodError::kInvalidAction, option.params[1]);
+            return OfficialEffectInterpreterResult::kError;
+        }
+        ++state->select_counts[0];
+    } else if (option.params[0]
+        == static_cast<std::int16_t>(OfficialArea::kBench)) {
+        if (option.params[1] >= kOfficialBenchCapacity) {
+            official_pod_fail(
+                state, OfficialPodError::kInvalidAction, option.params[1]);
+            return OfficialEffectInterpreterResult::kError;
+        }
+        ++state->select_counts[1 + option.params[1]];
+    } else {
+        official_pod_fail(
+            state, OfficialPodError::kInvalidAction, option.params[0]);
+        return OfficialEffectInterpreterResult::kError;
+    }
+
+    official_clear_effect_selection(state);
+    state->effect_interpreter.awaiting_selection = 0;
+    const std::uint32_t total = state->effect_interpreter.reserved2[0];
+    const std::uint32_t completed = ++state->effect_interpreter.reserved2[1];
+    if (completed < total) {
+        return official_prepare_attack_damage_multi_selection(state, rules, effect);
+    }
+
+    const std::int32_t target_player = 1 - state->effect_interpreter.effect_owner;
+    OfficialCardRefPod refs[kOfficialBenchCapacity + 1]{};
+    const OfficialPlayerStatePod& player = state->players[target_player];
+    if (player.active.count > 0) refs[0] = player.active.values[0];
+    for (std::uint16_t index = 0;
+         index < player.bench.count && index < kOfficialBenchCapacity;
+         ++index) {
+        refs[1 + index] = player.bench.values[index];
+    }
+    const std::int32_t base_damage = official_effect_value(*state, effect, 1);
+    for (std::int32_t index = 0; index <= kOfficialBenchCapacity; ++index) {
+        if (state->select_counts[index] <= 0 || refs[index].index == 0) continue;
+        official_pod_mark_changed(state);
+        official_apply_attack_damage_to_card(
+            state,
+            rules,
+            refs[index],
+            base_damage * state->select_counts[index]);
+        if (!official_pod_ok(state)) {
+            return OfficialEffectInterpreterResult::kError;
+        }
+    }
+    state->effect_interpreter.reserved2[2] = 0;
+    official_finish_effect_iteration(state);
+    return official_advance_effect_interpreter(state, rules);
 }
 
 PTCG_OFFICIAL_INTERPRETER_HD inline OfficialEffectInterpreterResult
@@ -1140,6 +1311,12 @@ official_advance_effect_interpreter(
             if (selection != OfficialEffectInterpreterResult::kComplete) return selection;
             continue;
         }
+        if (effect_type == OfficialEffectTypeId::kAttackDamageMulti) {
+            const OfficialEffectInterpreterResult selection =
+                official_prepare_attack_damage_multi_selection(state, rules, effect);
+            if (selection != OfficialEffectInterpreterResult::kComplete) return selection;
+            continue;
+        }
 
         const OfficialEffectSelectTypeId select_type =
             static_cast<OfficialEffectSelectTypeId>(effect.values[kEffectSelectType]);
@@ -1242,14 +1419,6 @@ official_complete_energy_selection_scratch(OfficialStatePod* state) {
     state->targets.count = 0;
 }
 
-PTCG_OFFICIAL_INTERPRETER_HD inline bool
-official_card_cannot_move_damage_counter(const OfficialCardStatePod& card) {
-    constexpr std::uint32_t bit = static_cast<std::uint32_t>(
-        OfficialEffectTypeId::kCannotMoveDamageCounter)
-        - static_cast<std::uint32_t>(OfficialEffectTypeId::kNoAbility);
-    return official_continual_flag(card, bit);
-}
-
 PTCG_OFFICIAL_INTERPRETER_HD inline OfficialEffectInterpreterResult
 official_prepare_remove_damage_counter(
     OfficialStatePod* state,
@@ -1328,6 +1497,56 @@ official_apply_effect_action(
         return OfficialEffectInterpreterResult::kError;
     }
     const OfficialEffectRule& effect = rules.effects[absolute];
+
+    if (state->effect_interpreter.reserved2[2] != 0
+        && official_effect_is_attack_damage_multi(*state, effect)) {
+        return official_apply_attack_damage_multi_selection(
+            state, rules, effect, option_indices, count);
+    }
+
+    if (resume == OfficialEffectResumeKind::kSkillChooseEffect) {
+        if (count != 1) {
+            official_pod_fail(state, OfficialPodError::kInvalidAction, count);
+            return OfficialEffectInterpreterResult::kError;
+        }
+        const std::uint8_t option_type = state->options.values[
+            option_indices[0]].type;
+        if (option_type != static_cast<std::uint8_t>(
+                OfficialSelectOptionTypeId::kYes)
+            && option_type != static_cast<std::uint8_t>(
+                OfficialSelectOptionTypeId::kNo)) {
+            official_pod_fail(
+                state, OfficialPodError::kInvalidAction, option_type);
+            return OfficialEffectInterpreterResult::kError;
+        }
+        const bool selected_yes = option_type == static_cast<std::uint8_t>(
+            OfficialSelectOptionTypeId::kYes);
+        const std::int32_t skill_id = state->effect_state.ability.skill_id;
+        const OfficialSkillRule* skill = official_skill_rule(
+            rules, static_cast<std::uint32_t>(skill_id));
+        if (skill == nullptr) {
+            official_pod_fail(state, OfficialPodError::kRulePackBounds, skill_id);
+            return OfficialEffectInterpreterResult::kError;
+        }
+        const OfficialAreaRefPod effect_card = state->effect_interpreter.effect_card;
+        const std::int32_t use_player = state->effect_interpreter.effect_owner;
+        const std::uint16_t start_index = selected_yes
+            ? static_cast<std::uint16_t>(skill->values[kSkillTriggerStart])
+            : static_cast<std::uint16_t>(skill->values[kSkillSecondEffectStart]);
+        if (!official_record_resolved_skill(state, *skill, effect_card)) {
+            return OfficialEffectInterpreterResult::kError;
+        }
+        official_clear_effect_selection(state);
+        state->effect_interpreter.awaiting_selection = 0;
+        return official_begin_skill_effects_at(
+            state,
+            rules,
+            skill_id,
+            effect_card,
+            use_player,
+            start_index,
+            kOfficialDefaultEffectStepBudget);
+    }
 
     if (resume == OfficialEffectResumeKind::kSelectActivate
         || resume == OfficialEffectResumeKind::kSelectEffect) {

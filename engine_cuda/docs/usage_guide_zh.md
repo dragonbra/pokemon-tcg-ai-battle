@@ -1,11 +1,11 @@
 # CUDA 引擎使用说明
 
 本文说明 `dev/cyd_main` 分支下 `engine_cuda/` 的构建、Docker CUDA 运行、
-0022 的 40 牌组 parity 验证，以及 PyTorch/GPU 常驻接口。所有命令都从仓库根目录执行。
+0022 的 40 牌组与 Frozen51 parity 验证，以及 PyTorch/GPU 常驻接口。所有命令都从仓库根目录执行。
 
 ## 1. 当前状态与证据边界
 
-2026-08-04 在 Docker + RTX 3060 Laptop GPU 上完成了以下验证：
+截至 2026-08-06，在 Docker + RTX 3060 Laptop GPU 上完成了以下验证：
 
 | 验证集 | 对局/检查量 | CPU 官方引擎与 CUDA 结果 |
 |---|---:|---:|
@@ -13,14 +13,15 @@
 | 40 副牌镜像对局 | 800 局，165,623 decisions | mismatch 0，官方平局 13 |
 | 40 副牌全部非镜像有序 matchup | 1,560 局，319,574 decisions | mismatch 0，官方平局 9 |
 | 3 个高风险牌组定向回归 | 1,500 局，312,530 decisions | mismatch 0 |
-| semantic micro fixture | 154 checks | 全部通过 |
+| Frozen51 全部非镜像有序 matchup | 2,550 局，545,094 decisions | mismatch 0，官方平局 13 |
+| semantic micro fixture | 163 checks | 全部通过 |
 
 这里的 parity 不只比较最终胜负。每个 decision 都比较合法动作语义、CPU POD/CUDA
 原始状态、flow status，终局再比较 win/loss/draw。官方引擎产生的 draw 保留为 draw，
 不会改写为任意一方胜负。
 
-这些结果证明当前 40 牌组验收语料在已运行 seeds/策略下语义一致，不等于穷举了所有
-随机策略、卡牌组合和未来牌组。`engine/source/` 中未修改的官方 CPU 引擎仍是 oracle。
+这些结果证明当前 40 牌组与 Frozen51 验收语料在已运行 seeds/策略下语义一致，不等于穷举了所有
+随机策略、镜像对局、卡牌组合和未来牌组。`engine/source/` 中未修改的官方 CPU 引擎仍是 oracle。
 
 ## 2. 目录
 
@@ -186,7 +187,9 @@ cpu_digest = gpu_digest
 默认 runner 为 RTX 3060 编译 `sm_86`。在其他 architecture 上运行前，应同步调整工具的
 nvcc architecture 或使用对应 CMake 构建，不要依赖 JIT 猜测。
 
-## 8. 0022 的 40 牌组验证
+## 8. 0022 与 Frozen51 牌组验证
+
+### 8.1 0022 的 40 牌组
 
 先跑两个 case 的快速检查：
 
@@ -232,6 +235,51 @@ engine_cuda/artifacts/0022_deck40_official_parity.json
 - `unfinished_battles`：达到 decision limit 仍未终局。
 
 `draws` 可以非 0。它是官方规则结果，不是 parity 失败。
+
+### 8.2 Frozen51 的 Docker CUDA 全矩阵
+
+先生成冻结牌组的私有 matchup manifest，不运行对局：
+
+```powershell
+python engine_cuda/tools/run_0022_deck40_official_parity.py `
+  --deck-root evaluation/arena/frozen `
+  --pair-mode all `
+  --seed-start 1 `
+  --seed-count 1 `
+  --decision-limit 512 `
+  --policy coverage-first-legal `
+  --skip-setup `
+  --skip-battle `
+  --output engine_cuda/artifacts/frozen51_manifest_summary.json
+```
+
+然后在一个 persistent Docker GPU 容器中编译并运行全部 51 x 50 个非镜像有序 matchup：
+
+```powershell
+python engine_cuda/tools/run_official_battle_ordered_matrix_cuda.py `
+  --manifest engine_cuda/generated/private/official_3aaeaa92/frozen51_all_s1_1/manifest.json `
+  --seed-start 1 `
+  --seed-count 1 `
+  --decision-limit 512 `
+  --policy coverage-first-legal `
+  --persistent-container `
+  --nvcc-threads 1 `
+  --output engine_cuda/artifacts/frozen51_all_ordered_s1.json
+```
+
+RTX 3060/Windows Docker 建议使用 `--nvcc-threads 1` 控制主机内存峰值。代码未变化时可加
+`--skip-persistent-build` 复用已有二进制；修改任何 CUDA header 后必须重新编译，不能复用旧 runner。
+
+最终报告必须满足：`completed_cases=2550`、`decisions_compared=545094`、
+`state_mismatches=0`、`status_mismatches=0`、`outcome_mismatches=0`、
+`unfinished_battles=0`。本次报告包含 `draws=13`，与官方 CPU 引擎逐场一致。
+
+生成可提交的 Frozen51 支持摘要（原始 matrix artifact 仍保持 Git ignore）：
+
+```powershell
+python engine_cuda/tools/audit_frozen51_support.py `
+  --evidence engine_cuda/artifacts/frozen51_all_ordered_s1.json
+```
 
 ## 9. Python/PyTorch runtime 接口
 

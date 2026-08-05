@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from engine_cuda.tools.audit_frozen51_support import reachable_rules, walk_refs
+from engine_cuda.tools.audit_frozen51_support import (
+    reachable_rules,
+    validate_matrix_evidence,
+    walk_refs,
+)
 
 
 class Frozen51SupportAuditTests(unittest.TestCase):
@@ -24,6 +28,41 @@ class Frozen51SupportAuditTests(unittest.TestCase):
             reachable_rules(rules, [1]),
             {"cards": [1], "skills": [2, 5], "attacks": [3, 4]},
         )
+
+    def test_matrix_evidence_requires_every_non_mirror_ordered_pair(self) -> None:
+        cases = []
+        for left in ("a", "b", "c"):
+            for right in ("a", "b", "c"):
+                if left == right:
+                    continue
+                cases.append(
+                    {
+                        "deck0_name": left,
+                        "deck1_name": right,
+                        "passed": True,
+                        "state_mismatches": 0,
+                        "status_mismatches": 0,
+                        "outcome_mismatches": 0,
+                        "unfinished_battles": 0,
+                    }
+                )
+        report = {
+            "passed": True,
+            "contract": "official_cpu_reference_cuda_ordered_battle_matrix_v1",
+            "case_count": 6,
+            "completed_cases": 6,
+            "battles_compared": 6,
+            "state_mismatches": 0,
+            "status_mismatches": 0,
+            "outcome_mismatches": 0,
+            "unfinished_battles": 0,
+            "first_failure": None,
+            "cases": cases,
+        }
+        self.assertEqual(len(validate_matrix_evidence(report, ("a", "b", "c"))), 6)
+        report["cases"] = cases[:-1] + [cases[0]]
+        with self.assertRaisesRegex(ValueError, "missing, duplicated"):
+            validate_matrix_evidence(report, ("a", "b", "c"))
 
 
 if __name__ == "__main__":

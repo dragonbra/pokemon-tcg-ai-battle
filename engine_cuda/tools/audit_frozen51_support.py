@@ -4,7 +4,7 @@ from __future__ import annotations
 
 The official CPU engine remains the oracle. This tool does not execute private
 card logic; it validates and aggregates evidence produced by the paired
-CPU/POD/CUDA runner, then records the known static or interaction blockers.
+CPU/POD/CUDA runner. Every non-mirror ordered pair must be present and clean.
 """
 
 import argparse
@@ -21,71 +21,13 @@ CUDA_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = CUDA_ROOT.parent
 DEFAULT_FROZEN_ROOT = REPOSITORY_ROOT / "evaluation/arena/frozen"
 DEFAULT_FIXTURE_ROOT = CUDA_ROOT / "fixtures/0022_deck40"
-DEFAULT_SUPPORTED = REPOSITORY_ROOT / ".tmp/cuda_support_audit/supported38_decks.txt"
 DEFAULT_EVIDENCE = (
-    REPOSITORY_ROOT / ".tmp/cuda_support_audit/supported38_ordered_s1.jsonl"
+    CUDA_ROOT / "artifacts/frozen51_all_ordered_s1.json"
 )
 DEFAULT_OUTPUT = (
     REPOSITORY_ROOT
     / "evaluation/arena/combat_mat/0031_latest_frozen_test/cuda_support.json"
 )
-
-
-BLOCKERS: dict[str, dict[str, Any]] = {
-    "arboliva_ex_meganium_001": {
-        "kind": "missing_selection_continuation",
-        "cards": [{"id": 404, "name": "Arboliva ex"}],
-        "effect_types": [{"id": 39, "name": "AttackDamageMulti"}],
-        "reason": "AttackDamageMulti can require a selection continuation that the CUDA runtime does not implement.",
-    },
-    "cynthias_garchomp_ex_roserade_002": {
-        "kind": "continual_state_mismatch",
-        "cards": [{"id": 1249, "name": "Grand Tree"}],
-        "reason": "The continual refresh/control flag state diverges from the official engine.",
-    },
-    "festival_lead_dipplin_001": {
-        "kind": "missing_selection_continuation",
-        "cards": [{"id": 93, "name": "Dipplin"}],
-        "attacks": [115],
-        "continuations": [{"id": 88, "name": "SelectedSecondAttack"}],
-        "reason": "The selected second-attack continuation is not implemented.",
-    },
-    "festival_lead_dipplin_002": {"same_as": "festival_lead_dipplin_001"},
-    "festival_lead_dipplin_003": {"same_as": "festival_lead_dipplin_001"},
-    "hydrapple_ex_meganium_001": {"same_as": "festival_lead_dipplin_001"},
-    "ns_zoroark_ex_001": {
-        "kind": "unsupported_copy_attack",
-        "cards": [{"id": 293, "name": "N's Zoroark ex"}],
-        "attacks": [403],
-        "reason": "The copy-attack continuation explicitly returns unsupported_continuation.",
-    },
-    "team_rockets_mewtwo_ex_spidops_001": {
-        "kind": "unsupported_copy_attack",
-        "cards": [{"id": 434, "name": "Team Rocket's Mimikyu"}],
-        "attacks": [612],
-        "reason": "The copy-attack path explicitly returns unsupported_continuation.",
-    },
-    "team_rockets_mewtwo_ex_spidops_002": {"same_as": "team_rockets_mewtwo_ex_spidops_001"},
-    "team_rockets_mewtwo_ex_spidops_003": {"same_as": "team_rockets_mewtwo_ex_spidops_001"},
-    "team_rockets_mewtwo_ex_spidops_004": {"same_as": "team_rockets_mewtwo_ex_spidops_001"},
-    "dragapult_ex_dusknoir_002": {
-        "kind": "cross_interaction_state_mismatch",
-        "cards": [
-            {"id": 44, "name": "Bloodmoon Ursaluna ex"},
-            {"id": 1256, "name": "Team Rocket's Watchtower", "role": "opposing_card"},
-        ],
-        "failed_case": 333,
-        "failed_matchup": ["dragapult_ex_crushing_hammer_001", "dragapult_ex_dusknoir_002"],
-        "reason": "A continual-state byte differs when Bloodmoon Ursaluna ex interacts with Team Rocket's Watchtower.",
-    },
-    "team_rockets_mewtwo_ex_spidops_005": {
-        "kind": "missing_selection_continuation",
-        "cards": [{"id": 432, "name": "Team Rocket's Wobbuffet"}],
-        "attacks": [609],
-        "effect_types": [{"id": 42, "name": "RemoveDamageCounter"}],
-        "reason": "RemoveDamageCounter lacks the required selection continuation when an opposing target is valid.",
-    },
-}
 
 
 def sha256_file(path: Path) -> str:
@@ -162,31 +104,67 @@ def reachable_rules(rules: dict[str, Any], card_ids: Iterable[int]) -> dict[str,
     }
 
 
-def parse_case_evidence(path: Path) -> list[dict[str, Any]]:
-    cases: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("CASE\t"):
-            continue
-        _, ordinal, payload = line.split("\t", 2)
-        row = json.loads(payload)
-        row["ordinal"] = int(ordinal)
-        cases.append(row)
+def load_matrix_evidence(path: Path) -> dict[str, Any]:
+    report = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict):
+        raise ValueError("ordered matrix evidence must be a JSON object")
+    return report
+
+
+def validate_matrix_evidence(
+    report: dict[str, Any], deck_ids: Iterable[str]
+) -> list[dict[str, Any]]:
+    ids = sorted(set(deck_ids))
+    expected_pairs = {
+        (left, right) for left in ids for right in ids if left != right
+    }
+    cases = report.get("cases")
+    if not isinstance(cases, list):
+        raise ValueError("ordered matrix evidence has no cases list")
+    if (
+        report.get("passed") is not True
+        or report.get("contract")
+            != "official_cpu_reference_cuda_ordered_battle_matrix_v1"
+        or int(report.get("case_count", -1)) != len(expected_pairs)
+        or int(report.get("completed_cases", -1)) != len(expected_pairs)
+        or int(report.get("battles_compared", -1)) != len(expected_pairs)
+        or report.get("first_failure") is not None
+    ):
+        raise ValueError("ordered matrix evidence is incomplete or failed")
+    for field in (
+        "state_mismatches",
+        "status_mismatches",
+        "outcome_mismatches",
+        "unfinished_battles",
+    ):
+        if int(report.get(field, -1)) != 0:
+            raise ValueError(f"ordered matrix evidence has nonzero {field}")
+
+    observed_pairs: list[tuple[str, str]] = []
+    for ordinal, row in enumerate(cases, start=1):
+        if not isinstance(row, dict):
+            raise ValueError(f"ordered case {ordinal} is not an object")
+        pair = (str(row.get("deck0_name", "")), str(row.get("deck1_name", "")))
+        observed_pairs.append(pair)
+        if (
+            row.get("passed") is not True
+            or int(row.get("state_mismatches", -1)) != 0
+            or int(row.get("status_mismatches", -1)) != 0
+            or int(row.get("outcome_mismatches", -1)) != 0
+            or int(row.get("unfinished_battles", -1)) != 0
+        ):
+            raise ValueError(f"ordered case {ordinal} is not parity-clean")
+    if (
+        len(observed_pairs) != len(expected_pairs)
+        or set(observed_pairs) != expected_pairs
+    ):
+        raise ValueError("ordered matrix has missing, duplicated, mirrored, or unknown pairs")
     return cases
-
-
-def resolved_blocker(deck_id: str) -> dict[str, Any]:
-    blocker = dict(BLOCKERS[deck_id])
-    source = blocker.pop("same_as", None)
-    if source:
-        blocker = dict(BLOCKERS[source])
-        blocker["shared_with"] = source
-    return blocker
 
 
 def build_report(
     frozen_root: Path,
     fixture_root: Path,
-    supported_path: Path,
     evidence_path: Path,
     *,
     rules_path: Path | None = None,
@@ -197,27 +175,8 @@ def build_report(
         raise ValueError(f"expected 51 Frozen decks, found {len(frozen)}")
     if len(fixtures) != 40:
         raise ValueError(f"expected 40 prior fixture decks, found {len(fixtures)}")
-    supported_paths = [Path(line) for line in supported_path.read_text().splitlines() if line.strip()]
-    supported = [path.parent.name for path in supported_paths]
-    if len(supported) != 38 or len(set(supported)) != 38:
-        raise ValueError("supported admission list must contain 38 unique decks")
-    if set(supported) | set(BLOCKERS) != set(frozen) or set(supported) & set(BLOCKERS):
-        raise ValueError("supported and blocked decks must partition Frozen51")
-
-    cases = parse_case_evidence(evidence_path)
-    if len(cases) != len(supported) ** 2:
-        raise ValueError(f"expected {len(supported) ** 2} ordered cases, found {len(cases)}")
-    if [row["ordinal"] for row in cases] != list(range(1, len(cases) + 1)):
-        raise ValueError("ordered evidence has missing or duplicated ordinals")
-    for row in cases:
-        if (
-            row.get("passed") is not True
-            or int(row.get("state_mismatches", 0)) != 0
-            or int(row.get("status_mismatches", 0)) != 0
-            or int(row.get("outcome_mismatches", 0)) != 0
-            or int(row.get("unfinished_battles", 0)) != 0
-        ):
-            raise ValueError(f"ordered case {row['ordinal']} is not parity-clean")
+    matrix = load_matrix_evidence(evidence_path)
+    cases = validate_matrix_evidence(matrix, frozen)
 
     fixture_hashes = {exact_deck_hash(deck) for deck in fixtures.values()}
     frozen_cards = set(card for deck in frozen.values() for card in deck)
@@ -232,32 +191,15 @@ def build_report(
         rule_inventory = reachable_rules(rules, frozen_cards)
     deck_rows = []
     for deck_id, deck in frozen.items():
-        if deck_id in supported:
-            status = "supported"
-            detail: dict[str, Any] = {
-                "evidence": "complete_supported38_ordered_matrix",
-                "ordered_opponents": 38,
-                "seeds_per_matchup": 1,
-            }
-            if deck_id == "mega_lopunny_ex_001":
-                detail["rl_contract_note"] = (
-                    "One mirror seed did not terminate within 2048 decisions without a parity mismatch; "
-                    "RL must define a truncation horizon."
-                )
-        else:
-            status = "unsupported"
-            detail = resolved_blocker(deck_id)
-            own_cards = set(deck)
-            for card in detail.get("cards", []):
-                if card.get("role") != "opposing_card" and int(card["id"]) not in own_cards:
-                    raise ValueError(f"blocker card {card['id']} is absent from {deck_id}")
         deck_rows.append(
             {
                 "deck_id": deck_id,
-                "status": status,
+                "status": "supported",
                 "deck_sha256": exact_deck_hash(deck),
                 "prior_fixture_exact_match": exact_deck_hash(deck) in fixture_hashes,
-                **detail,
+                "evidence": "complete_frozen51_non_mirror_ordered_matrix",
+                "ordered_opponents": len(frozen) - 1,
+                "seeds_per_matchup": int(matrix.get("seeds_per_case", 0)),
             }
         )
 
@@ -280,28 +222,30 @@ def build_report(
             offsets[field].update(int(value) for value in row.get(field, []))
 
     return {
-        "schema_version": "cuda_frozen51_support_v1",
+        "schema_version": "cuda_frozen51_support_v2",
         "generated_from": {
-            "frozen_root": str(frozen_root.relative_to(REPOSITORY_ROOT)),
-            "prior_fixture_root": str(fixture_root.relative_to(REPOSITORY_ROOT)),
-            "supported_list_sha256": sha256_file(supported_path),
+            "frozen_root": frozen_root.relative_to(REPOSITORY_ROOT).as_posix(),
+            "prior_fixture_root": fixture_root.relative_to(REPOSITORY_ROOT).as_posix(),
             "ordered_evidence_sha256": sha256_file(evidence_path),
+            "ordered_evidence_manifest_sha256": matrix.get("manifest_sha256"),
+            "official_source_snapshot": matrix.get("official_source_snapshot"),
             "rules_sha256": sha256_file(rules_path) if rules_path else None,
         },
         "admission_contract": {
             "oracle": "unmodified official CPU engine",
             "candidate": "OfficialStatePod CUDA runtime",
             "policy": "coverage-first-legal",
-            "seed_start": 1,
-            "seeds_per_ordered_matchup": 1,
-            "decision_limit": 2048,
+            "seed_start": int(matrix.get("seed_start", 0)),
+            "seeds_per_ordered_matchup": int(matrix.get("seeds_per_case", 0)),
+            "decision_limit": 512,
+            "pair_mode": "all_non_mirror_ordered",
             "fail_closed": True,
             "cpu_fallback": False,
         },
         "summary": {
             "frozen_decks": len(frozen),
-            "supported": len(supported),
-            "unsupported": len(BLOCKERS),
+            "supported": len(frozen),
+            "unsupported": 0,
             "not_proven": 0,
             "unique_frozen_card_ids": len(frozen_cards),
             "prior_fixture_unique_card_ids": len(fixture_cards),
@@ -318,7 +262,7 @@ def build_report(
         "limitations": [
             "Finite deterministic trajectories do not prove every possible card interaction.",
             "This is engine-semantic admission evidence, not policy-strength evidence.",
-            "The 0031 chronological observation/event contract is not currently projected from OfficialStatePod on GPU.",
+            "Mirror matchups and additional seeds remain separate regression gates.",
         ],
     }
 
@@ -327,13 +271,7 @@ def render_html(report: dict[str, Any]) -> str:
     summary = report["summary"]
     rows = []
     for deck in report["decks"]:
-        if deck["status"] == "supported":
-            reason = "38x38 official CPU/POD/CUDA ordered parity passed"
-        else:
-            cards = ", ".join(
-                f"{card['name']} ({card['id']})" for card in deck.get("cards", [])
-            )
-            reason = f"{cards}: {deck['reason']}"
+        reason = "50 non-mirror ordered official CPU/POD/CUDA matchups passed"
         rows.append(
             "<tr>"
             f"<td><code>{html.escape(deck['deck_id'])}</code></td>"
@@ -348,9 +286,9 @@ def render_html(report: dict[str, Any]) -> str:
 <h1>Frozen51 CUDA engine support audit</h1>
 <p>Oracle: unmodified official CPU engine. Admission is fail-closed and has no CPU fallback.</p>
 <div class="metrics"><div class="metric"><b>{summary['supported']}/51</b>supported decks</div><div class="metric"><b>{summary['unsupported']}</b>unsupported decks</div><div class="metric"><b>{summary['ordered_matchups']:,}</b>ordered parity matchups</div><div class="metric"><b>{summary['decisions_compared']:,}</b>decisions compared</div></div>
-<p>The old 40-deck evidence overlaps only {summary['shared_card_ids']} of {summary['unique_frozen_card_ids']} Frozen card IDs and only {summary['prior_fixture_exact_deck_matches']} exact deck multisets. The new 38x38 gate completed with zero state, status, or outcome mismatch.</p>
-<p><strong>Important:</strong> this proves the admitted engine subset, not direct 0031 checkpoint compatibility. The 0031 causal observation/event tensors are not yet available from the resident GPU state.</p>
-<table><thead><tr><th>Deck</th><th>Status</th><th>Evidence / blocker</th><th>Exact old-fixture deck</th></tr></thead><tbody>{''.join(rows)}</tbody></table>
+<p>The old 40-deck evidence overlaps {summary['shared_card_ids']} of {summary['unique_frozen_card_ids']} Frozen card IDs and {summary['prior_fixture_exact_deck_matches']} exact deck multisets. The new 51-deck non-mirror ordered gate completed with zero state, status, or outcome mismatch, including official draws.</p>
+<p><strong>Important:</strong> this is finite deterministic engine-semantic evidence. It does not prove every seed, policy trajectory, mirror matchup, or model observation contract.</p>
+<table><thead><tr><th>Deck</th><th>Status</th><th>Evidence</th><th>Exact old-fixture deck</th></tr></thead><tbody>{''.join(rows)}</tbody></table>
 </main></body></html>'''
 
 
@@ -358,7 +296,6 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--frozen-root", type=Path, default=DEFAULT_FROZEN_ROOT)
     parser.add_argument("--fixture-root", type=Path, default=DEFAULT_FIXTURE_ROOT)
-    parser.add_argument("--supported", type=Path, default=DEFAULT_SUPPORTED)
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     parser.add_argument("--rules", type=Path)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
@@ -369,7 +306,7 @@ def main() -> int:
     args = parse_args()
     report = build_report(
         args.frozen_root.resolve(), args.fixture_root.resolve(),
-        args.supported.resolve(), args.evidence.resolve(),
+        args.evidence.resolve(),
         rules_path=args.rules.resolve() if args.rules else None,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)

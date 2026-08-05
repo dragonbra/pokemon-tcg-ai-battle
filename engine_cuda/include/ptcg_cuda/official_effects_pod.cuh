@@ -21,6 +21,17 @@ enum class OfficialEffectApplyResult : std::int32_t {
     kError = 3,
 };
 
+// official_effects_pod.cuh is included while the continual-refresh header is
+// still being defined.  EvolveProc nevertheless calls RefreshEffect before
+// it exposes any following selection, so keep an opaque declaration here and
+// use the definition completed by official_continual_refresh_pod.cuh.
+enum class OfficialContinualRefreshResult : std::int32_t;
+
+PTCG_OFFICIAL_EFFECT_HD inline OfficialContinualRefreshResult
+official_refresh_continual_effects(
+    OfficialStatePod* state,
+    const OfficialRulePackView& rules);
+
 constexpr std::uint64_t kEffectMultiplyPreTargetCount = 1ULL << 9;
 constexpr std::uint64_t kEffectMultiplyCoinHeadCount = 1ULL << 10;
 constexpr std::uint64_t kEffectNotClearSelectedList = 1ULL << 6;
@@ -655,6 +666,14 @@ PTCG_OFFICIAL_EFFECT_HD inline bool official_effect_blocks_damage_counter(
     return official_continual_flag(*target, 11) && source_type == 0;
 }
 
+PTCG_OFFICIAL_EFFECT_HD inline bool official_card_cannot_move_damage_counter(
+    const OfficialCardStatePod& card) {
+    constexpr std::uint32_t bit = static_cast<std::uint32_t>(
+        OfficialEffectTypeId::kCannotMoveDamageCounter)
+        - static_cast<std::uint32_t>(OfficialEffectTypeId::kNoAbility);
+    return official_continual_flag(card, bit);
+}
+
 PTCG_OFFICIAL_EFFECT_HD inline void official_effect_move_targets(
     OfficialStatePod* state,
     OfficialArea destination,
@@ -783,6 +802,18 @@ PTCG_OFFICIAL_EFFECT_HD inline bool official_effect_evolve_card(
         &state->turn_evolve,
         OfficialEvolveRecordPod{in_play_ref, evolution_ref},
         OfficialPodError::kZoneOverflow);
+    if (!official_pod_ok(state)) return false;
+    const OfficialContinualRefreshResult refreshed =
+        official_refresh_continual_effects(state, rules);
+    if (static_cast<std::int32_t>(refreshed) != 0) {
+        if (official_pod_ok(state)) {
+            official_pod_fail(
+                state,
+                OfficialPodError::kInterpreterBudget,
+                static_cast<std::int32_t>(refreshed));
+        }
+        return false;
+    }
     if (official_pod_ok(state)
         && evolution_area == OfficialArea::kHand
         && !official_pull_trigger(
@@ -1225,6 +1256,25 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                 }
             }
             break;
+        case OfficialEffectTypeId::kRemoveDamageCounterAll: {
+            bool changed = false;
+            for (std::uint16_t index = 0; index < state->targets.count; ++index) {
+                const OfficialAreaRefPod target = state->targets.values[index];
+                if (!official_pod_area_ref_valid(state, target)) continue;
+                OfficialCardStatePod* card = official_pod_card(state, target.card);
+                if (card == nullptr) continue;
+                if (official_effect_blocks_damage_counter(state, rules, target.card)
+                    || official_card_cannot_move_damage_counter(*card)) {
+                    continue;
+                }
+                state->removed_damage_counter = card->damage / 10;
+                if (state->removed_damage_counter <= 0) continue;
+                changed = true;
+                official_pod_heal(state, target.card, card->damage);
+            }
+            if (!changed) state->control_flags |= kOfficialBreakEffectFlag;
+            break;
+        }
         case OfficialEffectTypeId::kHeal:
             for (std::uint16_t index = 0; index < state->targets.count; ++index) {
                 const OfficialAreaRefPod target = state->targets.values[index];
@@ -1397,8 +1447,10 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                 for (std::uint16_t index = 0; index < state->targets.count; ++index) {
                     const OfficialAreaRefPod evolution = state->targets.values[index];
                     if (official_pod_area_ref_valid(state, evolution)) {
-                        official_effect_evolve_card(
-                            state, rules, evolution.card, in_play);
+                        if (official_effect_evolve_card(
+                                state, rules, evolution.card, in_play)) {
+                            official_pod_mark_changed(state);
+                        }
                     }
                 }
             }
@@ -1412,8 +1464,10 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                 for (std::uint16_t index = 0; index < state->targets.count; ++index) {
                     const OfficialAreaRefPod in_play = state->targets.values[index];
                     if (official_pod_area_ref_valid(state, in_play)) {
-                        official_effect_evolve_card(
-                            state, rules, evolution, in_play.card);
+                        if (official_effect_evolve_card(
+                                state, rules, evolution, in_play.card)) {
+                            official_pod_mark_changed(state);
+                        }
                         break;
                     }
                 }
@@ -2119,7 +2173,6 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
         case OfficialEffectTypeId::kDamageCounterAny:
         case OfficialEffectTypeId::kDamageCounterSwitchAny:
         case OfficialEffectTypeId::kRemoveDamageCounter:
-        case OfficialEffectTypeId::kRemoveDamageCounterAll:
         case OfficialEffectTypeId::kRecoverSpecialConditionSingle:
         case OfficialEffectTypeId::kAttackDamageChangePutDamageCounter:
         case OfficialEffectTypeId::kAttackDamageMulti:

@@ -1,4 +1,5 @@
 /build/
+/build_sm86/
 /artifacts/
 /.pytest_cache/
 /**/__pycache__/

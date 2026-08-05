@@ -93,7 +93,7 @@ def _catalog_fields(
 ) -> tuple[str, str, DeckRole, bool, bool, str, str | None, dict[str, str]]:
     schema = manifest.get("schema_version")
     deck_id = root.name
-    if manifest.get("directory") != deck_id:
+    if schema != "evaluation_frozen_deck_v1" and manifest.get("directory") != deck_id:
         raise ValueError(f"deck directory {deck_id} does not match manifest directory")
     declared_hash = _require_text(manifest, "deck_sha256")
     if declared_hash != deck_sha:
@@ -133,6 +133,41 @@ def _catalog_fields(
             ),
             "captured_at": str(manifest.get("source_date") or "2026-07-31"),
         }
+    elif schema == "evaluation_frozen_deck_v1":
+        display_name = _require_text(manifest, "display_name")
+        raw_provenance = manifest.get("provenance")
+        if not isinstance(raw_provenance, dict):
+            raise ValueError("frozen deck manifest provenance must be an object")
+        source = str(raw_provenance.get("source") or "").strip()
+        captured_at = str(
+            raw_provenance.get("captured_at")
+            or raw_provenance.get("captured_at_utc")
+            or ""
+        ).strip()
+        evidence = str(raw_provenance.get("evidence") or "").strip()
+        if not evidence:
+            evidence = "; ".join(
+                f"{key}={raw_provenance[key]}"
+                for key in sorted(raw_provenance)
+                if key not in {"source", "captured_at", "captured_at_utc"}
+            )
+        if not source or not captured_at or not evidence:
+            raise ValueError("frozen deck provenance lacks source/evidence/captured_at")
+        provenance = {
+            "captured_at": captured_at,
+            "evidence": evidence,
+            "source": source,
+        }
+        return (
+            deck_id,
+            display_name,
+            DeckRole.FROZEN,
+            True,
+            False,
+            "foundation",
+            None,
+            provenance,
+        )
     else:
         raise ValueError(f"unsupported curated deck schema: {schema}")
     return (
@@ -266,7 +301,7 @@ def load_deck_plugins(root: Path) -> tuple[DeckPlugin, ...]:
     plugin_roots = [
         path
         for path in sorted(root.iterdir())
-        if path.is_dir() and path.name != "__pycache__"
+        if path.is_dir() and path.name not in {"__pycache__", "_policy"}
     ]
     plugins = tuple(_load_plugin(path) for path in plugin_roots)
     ids = [plugin.deck_id for plugin in plugins]

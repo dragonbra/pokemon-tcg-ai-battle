@@ -60,6 +60,11 @@ def parse_args() -> argparse.Namespace:
             "all runs every ordered deck pair; mirrors runs each deck against itself."
         ),
     )
+    parser.add_argument(
+        "--focal-deck-id",
+        default="",
+        help="Override the catalog focal deck; useful for frozen51 focused parity.",
+    )
     parser.add_argument("--include-mirrors", action="store_true")
     parser.add_argument(
         "--case-limit",
@@ -170,7 +175,19 @@ def load_decks(deck_root: Path) -> tuple[list[Any], dict[str, Any]]:
     catalog: dict[str, Any] = json.loads(catalog_path.read_text(encoding="utf-8"))
     rows = catalog.get("decks")
     if not isinstance(rows, list):
-        raise RuntimeError("0022 deck40 catalog manifest has no decks list")
+        if catalog.get("schema_version") == "evaluation_frozen_arena_v1":
+            if int(catalog.get("deck_count", -1)) != len(plugins):
+                raise RuntimeError(
+                    "frozen arena manifest deck_count does not match loaded plugins"
+                )
+            if len(plugins) == 0:
+                raise RuntimeError("frozen arena catalog contains no deck plugins")
+            return plugins, {
+                **catalog,
+                "catalog": "frozen51",
+                "focal_deck_id": plugins[0].deck_id,
+            }
+        raise RuntimeError("deck catalog manifest has no decks list")
     if (
         int(catalog.get("deck_count", -1)) != 40
         or len(rows) != 40
@@ -529,7 +546,7 @@ def main() -> None:
     args = parse_args()
     validate_inputs(args)
     plugins, catalog = load_decks(args.deck_root)
-    focal_deck_id = str(catalog["focal_deck_id"])
+    focal_deck_id = str(args.focal_deck_id or catalog["focal_deck_id"])
     cases = make_cases(
         plugins,
         focal_deck_id=focal_deck_id,
@@ -545,12 +562,15 @@ def main() -> None:
     suffix = f"{args.pair_mode}_s{args.seed_start}_{args.seed_count}" + (
         f"_n{args.case_limit}" if args.case_limit else ""
     )
+    catalog_label = (
+        "frozen51" if catalog.get("catalog") == "frozen51" else "0022_deck40"
+    )
     private_dir = (
         CUDA_ENGINE_ROOT
         / "generated"
         / "private"
         / "official_3aaeaa92"
-        / f"0022_deck40_{suffix}"
+        / f"{catalog_label}_{suffix}"
     )
     private_dir.mkdir(parents=True, exist_ok=True)
     private_manifest = write_private_manifest(args, cases, private_dir=private_dir)

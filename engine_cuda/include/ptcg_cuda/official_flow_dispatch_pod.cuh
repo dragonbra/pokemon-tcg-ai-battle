@@ -98,6 +98,10 @@ PTCG_OFFICIAL_FLOW_HD inline OfficialFlowStatus official_yield_decision_impl(
         if (!official_build_refresh_overflow_continuation_mirror(state)) {
             return OfficialFlowStatus::kError;
         }
+    } else if (official_attack_selection_awaiting_action(*state)) {
+        if (!official_build_attack_selection_continuation_mirror(state)) {
+            return OfficialFlowStatus::kError;
+        }
     } else if (state->effect_interpreter.awaiting_selection != 0) {
         if (!official_build_effect_selection_continuation_mirror(state)) {
             return OfficialFlowStatus::kError;
@@ -196,6 +200,40 @@ PTCG_OFFICIAL_FLOW_HD inline OfficialFlowStatus official_apply_pending_action(
     if (state->effect_interpreter.awaiting_selection != 0
         && !official_consume_effect_selection_continuation_mirror(state)) {
         return OfficialFlowStatus::kError;
+    }
+    if (official_attack_selection_awaiting_action(*state)
+        && !official_consume_attack_selection_continuation_mirror(state)) {
+        return OfficialFlowStatus::kError;
+    }
+
+    if (state->attack_flow_stage == static_cast<std::uint8_t>(OfficialAttackStage::kIdle)
+        && state->select_type == static_cast<std::uint8_t>(OfficialSelectTypeId::kAttack)
+        && state->options.count > 0
+        && state->options.values[0].type
+            == static_cast<std::uint8_t>(OfficialSelectOptionTypeId::kAttack)) {
+        const bool return_to_main =
+            (state->attack_flow_flags & kOfficialAttackReturnToMainFlag) != 0;
+        const OfficialAttackResult result =
+            official_resume_regular_attack_selection(
+                state, rules, option_indices, count);
+        if (result == OfficialAttackResult::kError) {
+            return OfficialFlowStatus::kError;
+        }
+        if (result == OfficialAttackResult::kNeedsAction) {
+            return official_yield_decision(state);
+        }
+        if (return_to_main) {
+            state->attack_flow_flags &= static_cast<std::uint8_t>(
+                ~kOfficialAttackReturnToMainFlag);
+            const OfficialMainResult main = official_main_after_flow(state, rules);
+            if (main == OfficialMainResult::kError) {
+                return OfficialFlowStatus::kError;
+            }
+            if (main == OfficialMainResult::kNeedsAction) {
+                return official_yield_decision(state);
+            }
+        }
+        return official_boundary_status(state);
     }
 
     if (state->attack_flow_stage != 0) {
@@ -354,6 +392,9 @@ PTCG_OFFICIAL_FLOW_HD inline OfficialFlowStatus official_apply_pending_action(
                 state, rules);
             if (main == OfficialMainResult::kError) return OfficialFlowStatus::kError;
             if (main == OfficialMainResult::kNeedsAction) {
+                return official_yield_decision(state);
+            }
+            if (official_flow_status(*state) == OfficialFlowStatus::kNeedsAction) {
                 return official_yield_decision(state);
             }
             return official_boundary_status(state);

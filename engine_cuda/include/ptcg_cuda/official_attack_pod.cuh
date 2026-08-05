@@ -604,7 +604,8 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_begin_pre_ef
 
 PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_prepare_special(
     OfficialStatePod* state,
-    const OfficialRulePackView& rules) {
+    const OfficialRulePackView& rules,
+    bool regular_copy_selection = false) {
     const OfficialAttackRule* attack = official_attack_rule(
         rules, static_cast<std::uint32_t>(state->current_attack_id));
     const OfficialCardStatePod* attacker = official_pod_card(state, state->attacker);
@@ -784,6 +785,13 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_prepare_spec
         official_clear_effect_selection(state);
         return official_attack_after_body(state, rules);
     }
+    if (regular_copy_selection) {
+        // State::SpecialAttackProc exposes this as a normal Attack selection
+        // while the parent attack frame is still the caller's stack frame.
+        // The copied body is resumed through SelectedAttackId, rather than
+        // through the CUDA CopySelection attack-flow stage.
+        return OfficialAttackResult::kNeedsAction;
+    }
     state->attack_flow_stage = static_cast<std::uint8_t>(
         OfficialAttackStage::kCopySelection);
     return OfficialAttackResult::kNeedsAction;
@@ -867,6 +875,25 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_begin_attack(
             official_pod_add_damage(state, rules, attacker_ref, 30);
             return official_attack_after_body(state, rules);
         }
+    }
+    if (source_attack_id == attack_id
+        && (attack->flags & kAttackCopyBenchN) != 0) {
+        ++state->turn_attack_count;
+        if (state->turn_attack_count > 10000) {
+            return official_attack_after_body(state, rules);
+        }
+        const std::int32_t saved_attack_id = state->current_attack_id;
+        const std::int32_t saved_source_attack_id = state->source_attack_id;
+        const OfficialAttackResult prepared = official_attack_prepare_special(
+            state, rules, true);
+        if (prepared == OfficialAttackResult::kNeedsAction) {
+            // CPU leaves the resumable parent attack fields untouched while
+            // SelectedAttackId is exposed; the source attack is carried by
+            // the continuation argument instead.
+            state->current_attack_id = saved_attack_id;
+            state->source_attack_id = saved_source_attack_id;
+        }
+        return prepared;
     }
     return official_attack_enter_selected_body(state, rules);
 }
@@ -1007,6 +1034,47 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_resume_attack(
     }
     if (stage == OfficialAttackStage::kSecondAttackSelection) {
         state->second_attack = 1;
+    }
+    return official_attack_enter_selected_body(state, rules);
+}
+
+// CPU SelectedAttackId resumes a copy attack's nested choice without using
+// the parent CopySelection function frame.  This is observable for an N
+// Zoroark ex copied attack whose selected body has the same id as the source.
+PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult
+official_resume_regular_attack_selection(
+    OfficialStatePod* state,
+    const OfficialRulePackView& rules,
+    const std::uint16_t* option_indices,
+    std::uint16_t count) {
+    if (state == nullptr || !official_pod_ok(state)
+        || state->attack_flow_stage != static_cast<std::uint8_t>(OfficialAttackStage::kIdle)
+        || state->select_type != static_cast<std::uint8_t>(OfficialSelectTypeId::kAttack)
+        || !official_attack_validate_selection(state, option_indices, count)) {
+        if (state != nullptr && official_pod_ok(state)) {
+            official_pod_fail(state, OfficialPodError::kInvalidAction, count);
+        }
+        return OfficialAttackResult::kError;
+    }
+    if (count == 0) {
+        official_clear_effect_selection(state);
+        return official_attack_after_body(state, rules);
+    }
+    const OfficialSelectOptionPod selected = state->options.values[option_indices[0]];
+    const OfficialAttackRule* attack = official_attack_rule(
+        rules, static_cast<std::uint32_t>(selected.params[0]));
+    const OfficialCardStatePod* attacker = official_pod_card(state, state->attacker);
+    if (attack == nullptr || attacker == nullptr || selected.params[1] <= 0) {
+        official_pod_fail(state, OfficialPodError::kInvalidAction, selected.params[0]);
+        return OfficialAttackResult::kError;
+    }
+    const std::int32_t source_attack_id = selected.params[1];
+    official_clear_effect_selection(state);
+    state->current_attack_id = selected.params[0];
+    state->source_attack_id = source_attack_id;
+    if (!official_attack_state_condition(
+            state, rules, *attacker, *attack, source_attack_id)) {
+        return official_attack_after_body(state, rules);
     }
     return official_attack_enter_selected_body(state, rules);
 }
