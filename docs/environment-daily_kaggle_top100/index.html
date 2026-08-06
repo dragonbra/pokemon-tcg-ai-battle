@@ -40,6 +40,14 @@
   <section>
     <h2>日报归档</h2>
     <article class="report">
+      <time datetime="2026-08-06">2026-08-06</time>
+      <div>
+        <h3>Top 500 exact deck 构筑环境分布</h3>
+        <p>按 Top 100 / Top 500 比较 500 套 exact 60-card deck，分析牌型份额、完全相同构筑、卡池投入与高位稀有变种；不使用 15 局胜率判断强度。</p>
+      </div>
+      <a class="button" href="ranked/2026-08-06-top500.html">查看分析</a>
+    </article>
+    <article class="report">
       <time datetime="2026-08-05">2026-08-05</time>
       <div>
         <h3>Top 100 实时环境快照 · 0805</h3>
@@ -132,6 +140,7 @@
   <section>
     <h2>目录约定</h2>
     <p class="note">以后收到“根据现在的快照做 Kaggle Top 100 环境日报”的任务时，统一即时冻结官方 leaderboard，以每行 <code>submissionDate</code> 绑定 submission，并使用冻结点以前最新的公开已完成 Episode、真实胜率和 exact 60-card deck。最终 HTML 保存为 <code>daily/YYYY-MM-DD.html</code>，本页按日期倒序增加入口。</p>
+    <p class="note"><code>ranked/</code> 保存超出 Top 100 日报合同的专题排名构筑分析；其 frozen exact-deck 数据和原始来源分别保存在报告同目录的 <code>data/</code> 与 <code>source/</code>，不得与实时日报快照混用。</p>
   </section>
 </main>
 </body>

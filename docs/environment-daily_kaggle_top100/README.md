@@ -57,6 +57,7 @@ python3 -m data.processed.environment_daily.generate_live_snapshot \
 
 当前报告：
 
+- [2026-08-06 — Top 500 exact deck 构筑环境分布（Top 100 / Top 500、同构变种与卡池）](ranked/2026-08-06-top500.html)
 - [2026-07-30 — Top 100 实时环境快照 0730（leaderboard score + 高分 submission + 官方 Meta）](daily/2026-07-30.html)
 - [0726–0728 — Top 100 跨日环境变迁分析（构筑、排名、卡池与证据边界）](environment-transition.html)
 - [2026-07-28 — Top 100 实时环境快照 0728（最终 submission + 官方 completed/public Meta）](daily/2026-07-28.html)
@@ -64,3 +65,13 @@ python3 -m data.processed.environment_daily.generate_live_snapshot \
 - [2026-07-26 — Top 100 今日环境快照 0726（最终 submission + 官方 completed/public Meta）](daily/2026-07-26.html)
 - [2026-07-25 — Top 100 Deck 环境与 Match-up 分析](daily/2026-07-25.html)
 - [2026-07-23 — Kaggle Top 100 BC 候选调研](daily/2026-07-23.html)
+
+## 排名构筑专题
+
+- `ranked/` 保存 Top 500 等超出实时 Top 100 日报合同的专题分析，不冒充 `daily/` 日报。
+- `ranked/data/` 保存用户提供的 frozen exact-deck 审计数据，`ranked/source/` 保存原始粗报告。
+- 2026-08-06 Top 500 报告由
+  `python3 -m data.processed.environment_daily.generate_ranked_deck_report` 确定性生成；只用排名、
+  exact 60-card deck 和官方卡牌元数据做构筑统计，明确排除近期 15 场 reward 作为强度依据。
+- 当前 snapshot 只覆盖 Top 500，因此 Top 1000 / Top 5000 必须显示“当前快照不可重建”，不得按
+  Top 500 比例外推。500 行中存在 submissionDate 回退的 score-mismatch，报告必须保留该证据边界。
