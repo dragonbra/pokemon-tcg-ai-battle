@@ -1,0 +1,18 @@
+{
+  "state": "completed",
+  "version": "V1_large_model_zero_shot_frozen0019",
+  "candidate_validation": "passed",
+  "checkpoint_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+  "portable_checkpoint_sha256": "4133ddc9911474b0fd23a90a71333fcfe2503530e7f240289791137ed978b01b",
+  "report": "experiments/0034_dragapult_third_large_model_rl/evaluation/V1_large_model_zero_shot_frozen0019.html",
+  "report_sha256": "66166705dc5a8fd8c65dfdc43bf2a184de300cc754e0ee23c557d0792fd0260c",
+  "run_id": "run-4bf0f4e06b7d4bc88856f1d7ccbf0f07",
+  "total_games": 510,
+  "completed_games": 510,
+  "wins": 257,
+  "losses": 253,
+  "draws": 0,
+  "errors": 0,
+  "unfinished": 0,
+  "win_rate": 0.503921568627451
+}

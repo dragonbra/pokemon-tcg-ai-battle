@@ -66,6 +66,11 @@
       "version": "V10_turn_clock_lambda097_200u",
       "state": "user_stopped",
       "kind": "turn_clock_lambda097_selected_ppo_200_update_long_run"
+    },
+    {
+      "version": "V11_pt0805_third_frozen0019_repeat",
+      "state": "completed",
+      "kind": "pt0805_zero_shot_frozen0019_repeat_evaluation"
     }
   ],
   "zero_shot_baseline": {
@@ -76,6 +81,17 @@
     "draws": 0,
     "errors": 0,
     "win_rate": 0.4764705882352941
+  },
+  "zero_shot_repeat_evaluation": {
+    "version": "V11_pt0805_third_frozen0019_repeat",
+    "games": 510,
+    "wins": 242,
+    "losses": 268,
+    "draws": 0,
+    "errors": 0,
+    "win_rate": 0.4745098039215686,
+    "report": "experiments/0033_dragapult_third_ptcg_club_rl/evaluation/V11_pt0805_third_frozen0019_repeat.html",
+    "evidence_boundary": "Independent repeat of the exact V1 PT0805 checkpoint and Third PTCG Club deck. The official outcome contract completed 510/510 with zero game errors; league_deck_quality diagnostics failed to parse all 510 traces and are unavailable."
   },
   "planned_training_version": "V10_turn_clock_lambda097_200u",
   "active_training_version": null,

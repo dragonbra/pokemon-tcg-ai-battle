@@ -1,0 +1,95 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0034_dragapult_third_large_model_rl",
+  "objective": "Initialize the selected V6 full-semantic PPO design from the 0806 large model and measure a 200-update Frozen 0019 learning curve for the exact Third PTCG Club Dragapult deck.",
+  "deck": "Dragapult Third PTCG Club exact 60-card list; file SHA-256 5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2.",
+  "expert_source": "0031 V2 full-winners best-validation-loss Epoch 11 / step 141878 is initialization provenance; source/team identity is actor-invisible.",
+  "dataset_contract": "No BC dataset is consumed by 0034 PPO; every update uses fresh on-policy official-engine Episodes and never reuses a rollout buffer.",
+  "engine_revision": "Unmodified official CPU engine supplies observations, legal actions and terminal outcomes; CUDA is used only for semantic-policy inference and PPO optimization.",
+  "opponent_pool_snapshot": "All 51 exact decks from the Frozen 0019 catalog with immutable 0019 Epoch 13 policy weights, both focal seats and two seeds per seat per update.",
+  "status": "initialized",
+  "experiment_status": "v2_user_stopped_at_update1",
+  "created_at": "2026-08-06T23:41:33+08:00",
+  "paths": {
+    "training": "train/0034_dragapult_third_large_model_rl",
+    "archive": "experiments/0034_dragapult_third_large_model_rl",
+    "runs": "rl_runs/0034_dragapult_third_large_model_rl"
+  },
+  "source_checkpoint": {
+    "path": "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt",
+    "sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+    "source_archive": "large-model-0806.tar.gz",
+    "source_archive_sha256": "940d2ffeaf49e23ae2b387375c600150a49d06009c86451f03e0b195539f73c6",
+    "version": "V2_full_winners_bs1024_20260616_20260803",
+    "epoch": 11,
+    "global_step": 141878,
+    "actor_parameters": 56352322,
+    "actor_tensors": 293,
+    "validation_exact_action": 0.8140225270283232,
+    "validation_legal_action": 1.0
+  },
+  "candidate": {
+    "path": "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot",
+    "portable_checkpoint_sha256": "4133ddc9911474b0fd23a90a71333fcfe2503530e7f240289791137ed978b01b",
+    "storage_dtype": "fp16",
+    "runtime_dtype": "fp32",
+    "validation": "passed"
+  },
+  "actor_source_identity_visible": false,
+  "formal_versions": [
+    {
+      "version": "V1_large_model_zero_shot_frozen0019",
+      "state": "completed",
+      "kind": "zero_shot_frozen0019_evaluation"
+    },
+    {
+      "version": "V2_turn_clock_lambda097_200u",
+      "state": "user_stopped",
+      "kind": "selected_v6_design_200_update_ppo"
+    }
+  ],
+  "planned_training_version": "V2_turn_clock_lambda097_200u",
+  "active_training_version": null,
+  "zero_shot_baseline": {
+    "version": "V1_large_model_zero_shot_frozen0019",
+    "report": "experiments/0034_dragapult_third_large_model_rl/evaluation/V1_large_model_zero_shot_frozen0019.html",
+    "run_id": "run-4bf0f4e06b7d4bc88856f1d7ccbf0f07",
+    "games": 510,
+    "wins": 257,
+    "losses": 253,
+    "draws": 0,
+    "errors": 0,
+    "unfinished": 0,
+    "win_rate": 0.503921568627451
+  },
+  "active_training": {
+    "version": "V2_turn_clock_lambda097_200u",
+    "started_at": "2026-08-06T23:59:41+08:00",
+    "updates": 200,
+    "games_per_update": 204,
+    "gae_lambda": 0.97,
+    "credit_clock": "turn",
+    "loss_weighting": "episode_equal_decisions",
+    "eval_every": 10,
+    "wandb_run_id": "0034-v2-turn-clock-lambda097-200u",
+    "wandb_display_name": "0034 · dragapult_third_large_model_rl · V2_turn_clock_lambda097_200u",
+    "tmux_session": "0034_v2_turn_clock_200u",
+    "state": "user_stopped",
+    "stopped_at": "2026-08-07T00:06:55+08:00",
+    "stop_reason": "User requested stopping to verify another important issue.",
+    "latest_complete_update": 1,
+    "first_completed_update": {
+      "checkpoint_update": 1,
+      "rollout_source_policy_update": 0,
+      "episodes": 204,
+      "decisions": 21590,
+      "wins": 96,
+      "losses": 108,
+      "draws": 0,
+      "errors": 0,
+      "sampled_rollout_win_rate": 0.47058823529411764,
+      "behavior_kl": 0.0000022151401978331727,
+      "representation_unchanged": true
+    }
+  }
+}

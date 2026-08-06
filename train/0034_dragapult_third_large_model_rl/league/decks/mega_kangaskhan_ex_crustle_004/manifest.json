@@ -1,0 +1,139 @@
+{
+  "schema_version": "daily_deck_catalog_v1",
+  "directory": "mega_kangaskhan_ex_crustle_004",
+  "deck_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+  "short_hash": "67cf83ea7e09",
+  "archetype": "Mega Kangaskhan ex / Crustle",
+  "source_archetype": "Mega Kangaskhan ex / Crustle",
+  "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
+  "source_date": "2026-07-30",
+  "member_count": 2,
+  "best_rank": 42,
+  "best_score": 1072.7,
+  "aggregate_record": {
+    "wins": 114,
+    "losses": 43,
+    "draws": 0
+  },
+  "aggregate_effective_win_rate": 0.7261146496815286,
+  "members": [
+    {
+      "rank": 42,
+      "team_name": "Kusanagi",
+      "submission_id": 55078272,
+      "episode_id": 88830941,
+      "episode_create_time": "2026-07-29T16:27:59.078000+00:00",
+      "player_index": 1,
+      "leaderboard_score": 1072.7,
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "wins": 50,
+      "losses": 14,
+      "draws": 0
+    },
+    {
+      "rank": 74,
+      "team_name": "Lunariz",
+      "submission_id": 55057686,
+      "episode_id": 88833787,
+      "episode_create_time": "2026-07-29T16:51:57.351000+00:00",
+      "player_index": 1,
+      "leaderboard_score": 1043.9,
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "wins": 64,
+      "losses": 29,
+      "draws": 0
+    }
+  ],
+  "cards": [
+    {
+      "card_id": 345,
+      "name": "Crustle",
+      "count": 4
+    },
+    {
+      "card_id": 344,
+      "name": "Dwebble",
+      "count": 4
+    },
+    {
+      "card_id": 756,
+      "name": "Mega Kangaskhan ex",
+      "count": 4
+    },
+    {
+      "card_id": 1264,
+      "name": "Battle Cage",
+      "count": 2
+    },
+    {
+      "card_id": 1182,
+      "name": "Boss’s Orders",
+      "count": 2
+    },
+    {
+      "card_id": 1086,
+      "name": "Buddy-Buddy Poffin",
+      "count": 4
+    },
+    {
+      "card_id": 1087,
+      "name": "Hand Trimmer",
+      "count": 2
+    },
+    {
+      "card_id": 1159,
+      "name": "Hero’s Cape",
+      "count": 1
+    },
+    {
+      "card_id": 1225,
+      "name": "Hilda",
+      "count": 4
+    },
+    {
+      "card_id": 1147,
+      "name": "Jumbo Ice Cream",
+      "count": 4
+    },
+    {
+      "card_id": 1227,
+      "name": "Lillie's Determination",
+      "count": 4
+    },
+    {
+      "card_id": 1122,
+      "name": "Pokégear 3.0",
+      "count": 4
+    },
+    {
+      "card_id": 1123,
+      "name": "Switch",
+      "count": 4
+    },
+    {
+      "card_id": 1197,
+      "name": "Xerosic’s Machinations",
+      "count": 4
+    },
+    {
+      "card_id": 1,
+      "name": "Basic {G} Energy",
+      "count": 1
+    },
+    {
+      "card_id": 18,
+      "name": "Grow Grass Energy",
+      "count": 4
+    },
+    {
+      "card_id": 11,
+      "name": "Mist Energy",
+      "count": 4
+    },
+    {
+      "card_id": 14,
+      "name": "Spiky Energy",
+      "count": 4
+    }
+  ]
+}

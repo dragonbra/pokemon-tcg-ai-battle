@@ -1,0 +1,23 @@
+{
+  "candidate_validation": "passed",
+  "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+  "completed_games": 510,
+  "deck_cards": 60,
+  "deck_sha256": "5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2",
+  "draws": 0,
+  "errors": 0,
+  "finished_at": "2026-08-06T15:08:16.230051+00:00",
+  "kind": "pt0805_zero_shot_frozen0019_repeat_evaluation",
+  "league_deck_quality_error_games": 510,
+  "losses": 268,
+  "report": "experiments/0033_dragapult_third_ptcg_club_rl/evaluation/V11_pt0805_third_frozen0019_repeat.html",
+  "report_sha256": "992e08ee1e5604cdcf1aec43e62c2a90a617308b61b81cf083a8b696ff55ef47",
+  "run_id": "run-b9c8eae58ec14123b5328bb00c67cb42",
+  "started_at": "2026-08-06T14:59:29.164279+00:00",
+  "state": "completed",
+  "total_games": 510,
+  "version": "V11_pt0805_third_frozen0019_repeat",
+  "wall_time_seconds": 564.697455415997,
+  "win_rate": 0.4745098039215686,
+  "wins": 242
+}

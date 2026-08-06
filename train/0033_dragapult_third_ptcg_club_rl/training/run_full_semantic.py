@@ -29,6 +29,7 @@ from .storage_full_semantic import save_model_only
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0033_dragapult_third_ptcg_club_rl"
+WANDB_DISPLAY_PREFIX = "0033 · dragapult_third_ptcg_club_rl"
 FORMAL_VERSION = "V6_turn_clock_lambda097_20u"
 SOURCE_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_pt0805_epoch13_best_validation_loss/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0033_dragapult_third_ptcg_club_zero_shot"
@@ -323,7 +324,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_PROJECT": "pokemon-tcg-policy-learning",
             "WANDB_JOB_TYPE": "ppo_decoder_only",
             "WANDB_RUN_ID": run_id,
-            "WANDB_NAME": config.version,
+            "WANDB_NAME": f"{WANDB_DISPLAY_PREFIX} · {config.version}",
             "WANDB_RUN_GROUP": PROJECT,
             "WANDB_TAGS": (
                 "0033,full_semantic,official_cpu,ppo,dragapult_third_ptcg_club,"

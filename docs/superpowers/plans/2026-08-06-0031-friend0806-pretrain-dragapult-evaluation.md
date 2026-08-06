@@ -33,15 +33,15 @@
 - Consumes: `large-model-0806.tar.gz` containing `best_validation_loss_0806.pt`.
 - Produces: `model.pt` with SHA-256 `0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8` and a strict `load_model(device)` API.
 
-- [ ] **Step 1: Validate source payload identity**
+- [x] **Step 1: Validate source payload identity**
 
 Run a weights-only load and require schema `0031_model_only_checkpoint_v1`, project `0031_rule_faithful_semantic_foundation_pretraining`, arm `rule_faithful_semantic`, version `V2_full_winners_bs1024_20260616_20260803`, epoch 11, step 141878, and `SemanticPolicy` parameter contract 56,352,322.
 
-- [ ] **Step 2: Materialize the release without changing weights**
+- [x] **Step 2: Materialize the release without changing weights**
 
 Copy the checkpoint to `model.pt`, copy the self-contained 0031 inference/model source and prototype assets, and write release metadata containing archive/checkpoint hashes, selection metrics, source tar hash, and the model-only boundary.
 
-- [ ] **Step 3: Verify the archive**
+- [x] **Step 3: Verify the archive**
 
 Run `python3 archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/verify_archive.py` and require strict state loading, manifest hash agreement, no symlinks/caches, and a finite minimal forward pass.
 
@@ -56,15 +56,15 @@ Run `python3 archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/ve
 - Consumes: the published `model.pt`, 0033 deck SHA-256 `5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2`, and frozen pool `0019_foundation_51_exact_decks_v4`.
 - Produces: one embedded, authoritative official-engine report with 510 ordered games.
 
-- [ ] **Step 1: Export and validate the zero-shot candidate**
+- [x] **Step 1: Export and validate the zero-shot candidate**
 
 Use `train.0031_rule_faithful_semantic_foundation_pretraining.export_candidate.export_candidate`, then run `python3 -m evaluation validate <candidate>`.
 
-- [ ] **Step 2: Execute the formal evaluation**
+- [x] **Step 2: Execute the formal evaluation**
 
 Run `python3 -m evaluation --pool frozen run --candidate <candidate> --opponents all --games 10 --workers 8 --worker-cpu-threads 1 --candidate-device cuda:0 --opponent-device cuda:0 --metric-profile league_deck_quality --output .tmp/evaluation/0031_friend_0806_dragapult_frozen0019`.
 
-- [ ] **Step 3: Fail closed and publish**
+- [x] **Step 3: Fail closed and publish**
 
 Parse embedded report data and require the exact checkpoint hash, deck hash, pool identity, 51 opponents, 510 games, 510 completed, zero errors, and zero unfinished games before copying it to the V9 authoritative path.
 
@@ -82,14 +82,14 @@ Parse embedded report data and require the exact checkpoint hash, deck hash, poo
 - Consumes: validated V9 report summary and immutable identities from Tasks 1-2.
 - Produces: auditable version metadata and clickable 0031 evaluation index entry.
 
-- [ ] **Step 1: Write immutable V9 provenance**
+- [x] **Step 1: Write immutable V9 provenance**
 
 Record checkpoint/archive/deck/pool hashes, run ID, game counts, W-L-D, completion rate, metric profile, worker settings, and the authoritative report path. Mark this as evaluation-only zero-shot evidence, not a training run or automatic promotion claim.
 
-- [ ] **Step 2: Refresh project records**
+- [x] **Step 2: Refresh project records**
 
 Append the 0806 release/evaluation decision, update the project manifest without changing the current training semantics, and regenerate the evaluation index from all `V*.html` reports.
 
-- [ ] **Step 3: Run final checks**
+- [x] **Step 3: Run final checks**
 
 Run the pretrained verifier, evaluation report parser checks, relevant experiment/evaluation tests, `git diff --check`, and confirm `git status` contains no changes under `engine/source/`.

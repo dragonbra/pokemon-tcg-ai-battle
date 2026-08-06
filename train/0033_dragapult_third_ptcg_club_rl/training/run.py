@@ -129,7 +129,7 @@ def run(args: argparse.Namespace) -> int:
             "WANDB_PROJECT": "pokemon-tcg-policy-learning",
             "WANDB_JOB_TYPE": "ppo",
             "WANDB_RUN_ID": f"0033-{args.version.lower().replace('_', '-')}",
-            "WANDB_NAME": args.version,
+            "WANDB_NAME": f"0033 · dragapult_third_ptcg_club_rl · {args.version}",
             "WANDB_RUN_GROUP": PROJECT,
             "WANDB_TAGS": "0033,cuda,ppo,dragapult_third_ptcg_club,third_ptcg_club",
             "WANDB_DIR": str(wandb_dir),

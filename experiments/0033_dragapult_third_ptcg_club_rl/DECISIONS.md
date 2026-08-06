@@ -1,5 +1,9 @@
 # 0033 Decisions
 
+## 2026-08-06: Restore full W&B display-name prefixes
+
+The seven 0033 W&B runs had stable `0033-...` IDs and the correct project group, but their display names contained only `V<n>_...`. Their display names are normalized in place to `0033 · dragapult_third_ptcg_club_rl · V<n>_...`; IDs, URLs, groups, metrics and run states remain unchanged. Future 0033 launches use the same full display-name contract.
+
 ## 2026-08-06: Select the Third PTCG Club exact Dragapult list
 
 The user replaced the earlier Limitless Dragapult 001 proposal with the exact
@@ -262,3 +266,20 @@ update 40, scoring 49-53-0 (48.0392%) over 102 games; this remains a diagnostic
 probe only, not a formal strength conclusion. Because V10 did not complete 200
 updates, it is recorded as user-stopped rather than as the final selected
 long-run result.
+
+## 2026-08-06: V11 archives the independent PT0805 zero-shot repeat
+
+V11 preserves the temporary `run-b9c8eae58ec14123b5328bb00c67cb42`
+report as an immutable formal evaluation. The source `pt0805.tar.gz`
+checkpoint hash is `285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae`,
+the exact Third PTCG Club deck hash is
+`5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2`,
+and the Frozen 0019 pool remains `0019_foundation_51_exact_decks_v4`.
+
+The official-engine outcome contract completed 510/510 games with zero game
+errors at 242-268-0 (47.4510%), one win below the original V1 result. This is
+a repeat evaluation of unchanged weights, not a new training version or a new
+policy checkpoint. The `league_deck_quality` diagnostic parser returned a
+`ValueError` for all 510 traces, so its process metrics are unavailable and
+must not be interpreted as zero-valued gameplay behavior; official outcomes,
+seat splits and per-opponent records remain valid.

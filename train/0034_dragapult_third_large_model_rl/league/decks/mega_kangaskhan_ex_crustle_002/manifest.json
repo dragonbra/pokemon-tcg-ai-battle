@@ -1,0 +1,156 @@
+{
+  "schema_version": "daily_deck_catalog_v1",
+  "directory": "mega_kangaskhan_ex_crustle_002",
+  "deck_sha256": "ca60839cba73b0054f0854952ec3a5e98cb8178db1f71e264aafceb44ffd7adb",
+  "short_hash": "ca60839cba73",
+  "archetype": "Mega Kangaskhan ex / Crustle",
+  "source_archetype": "Mega Kangaskhan ex / Crustle",
+  "source_report": "docs/environment-daily_kaggle_top100/daily/2026-07-30.html",
+  "source_date": "2026-07-30",
+  "member_count": 1,
+  "best_rank": 4,
+  "best_score": 1160.8,
+  "aggregate_record": {
+    "wins": 258,
+    "losses": 151,
+    "draws": 0
+  },
+  "aggregate_effective_win_rate": 0.6308068459657702,
+  "members": [
+    {
+      "rank": 4,
+      "team_name": "flg",
+      "submission_id": 55033457,
+      "episode_id": 88833995,
+      "episode_create_time": "2026-07-29T16:51:57.765000+00:00",
+      "player_index": 0,
+      "leaderboard_score": 1160.8,
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "wins": 258,
+      "losses": 151,
+      "draws": 0
+    }
+  ],
+  "cards": [
+    {
+      "card_id": 117,
+      "name": "Cornerstone Mask Ogerpon ex",
+      "count": 1
+    },
+    {
+      "card_id": 345,
+      "name": "Crustle",
+      "count": 3
+    },
+    {
+      "card_id": 344,
+      "name": "Dwebble",
+      "count": 4
+    },
+    {
+      "card_id": 756,
+      "name": "Mega Kangaskhan ex",
+      "count": 2
+    },
+    {
+      "card_id": 1264,
+      "name": "Battle Cage",
+      "count": 1
+    },
+    {
+      "card_id": 1182,
+      "name": "Boss’s Orders",
+      "count": 4
+    },
+    {
+      "card_id": 1086,
+      "name": "Buddy-Buddy Poffin",
+      "count": 2
+    },
+    {
+      "card_id": 1194,
+      "name": "Colress’s Tenacity",
+      "count": 2
+    },
+    {
+      "card_id": 1159,
+      "name": "Hero’s Cape",
+      "count": 1
+    },
+    {
+      "card_id": 1225,
+      "name": "Hilda",
+      "count": 2
+    },
+    {
+      "card_id": 1147,
+      "name": "Jumbo Ice Cream",
+      "count": 4
+    },
+    {
+      "card_id": 1227,
+      "name": "Lillie's Determination",
+      "count": 4
+    },
+    {
+      "card_id": 1122,
+      "name": "Pokégear 3.0",
+      "count": 4
+    },
+    {
+      "card_id": 1123,
+      "name": "Switch",
+      "count": 1
+    },
+    {
+      "card_id": 1257,
+      "name": "Team Rocket's Factory",
+      "count": 1
+    },
+    {
+      "card_id": 1219,
+      "name": "Team Rocket's Petrel",
+      "count": 4
+    },
+    {
+      "card_id": 1137,
+      "name": "Tool Scrapper",
+      "count": 1
+    },
+    {
+      "card_id": 1121,
+      "name": "Ultra Ball",
+      "count": 2
+    },
+    {
+      "card_id": 1197,
+      "name": "Xerosic’s Machinations",
+      "count": 1
+    },
+    {
+      "card_id": 1,
+      "name": "Basic {G} Energy",
+      "count": 2
+    },
+    {
+      "card_id": 18,
+      "name": "Grow Grass Energy",
+      "count": 4
+    },
+    {
+      "card_id": 11,
+      "name": "Mist Energy",
+      "count": 4
+    },
+    {
+      "card_id": 20,
+      "name": "Rock Fighting Energy",
+      "count": 2
+    },
+    {
+      "card_id": 14,
+      "name": "Spiky Energy",
+      "count": 4
+    }
+  ]
+}

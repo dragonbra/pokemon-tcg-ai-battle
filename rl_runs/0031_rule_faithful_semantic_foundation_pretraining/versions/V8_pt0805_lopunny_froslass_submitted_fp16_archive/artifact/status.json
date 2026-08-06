@@ -1,0 +1,8 @@
+{
+  "evaluation_run_id": "run-5afcabbc5f484a6688210bed164b1993",
+  "source_archive": "archive/submission/dist/0031_mega_lopunny_ex_mega_froslass_ex_pt0805_shared_prototype_fp16.tar.gz",
+  "source_archive_sha256": "d5901d055ed60c8cc3e892867b7e3546a5c507af86babe6e544d1266b52908fc",
+  "state": "evaluated",
+  "training_performed": false,
+  "version": "V8_pt0805_lopunny_froslass_submitted_fp16_archive"
+}

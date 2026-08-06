@@ -1,5 +1,12 @@
 # 0031 Decisions
 
+## 2026-08-06: friend-0806 pretrained release and Third PTCG Club zero-shot evaluation
+
+- Publish `large-model-0806.tar.gz` as the self-contained pretrained asset `archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/`. Preserve the supplied `0031_model_only_checkpoint_v1` payload byte-for-byte as `model.pt` with SHA-256 `0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8`; it is epoch 11 / global step 141878 from metadata version `V2_full_winners_bs1024_20260616_20260803` and contains no resumable optimizer state.
+- Bind the release to its own checkpoint metadata and external dataset/config/implementation hashes. This release is an additional pretrained asset; it does not replace or append to the active local `V4_lr5e4_no_early_stop_b512` training run.
+- Evaluate the exact 0033 Third PTCG Club Dragapult deck (`deck.csv` SHA-256 `5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2`) using an fp16-storage/fp16-runtime zero-shot export against `0019_foundation_51_exact_decks_v4`. The official-engine run `run-8f9bef885a85483db2103d2cf291501d` completed 510/510 games with 265 wins, 245 losses, 0 draws, 0 errors, and 51.96% win rate.
+- Store the authoritative result at `evaluation/V9_friend0806_epoch11_dragapult_third_frozen0019.html`. Under the same deck/pool/runtime-precision contract, the two friend-0805 reference runs were 47.65% and 47.45%; the 0806 point estimate is respectively +4.31 and +4.51 percentage points. Treat these finite official-engine samples as comparable strength evidence, not an automatic promotion or statistical-certainty claim.
+
 ## 2026-08-05: epoch-2 continuation throughput optimization
 
 - Profile the exact epoch-2 batch-512 path before resuming. Representative post-warmup work attributed about 401 ms/batch to forward, 270 ms/batch to backward, 23 ms/batch to host-to-device transfer, 1.3 ms/batch to gradient clipping, and 2.7 ms/batch to fused AdamW. The dominant GPU autograd cost was repeated generic `IndexBackward` from shared prototype-table advanced indexing; gzip/JSON/collation remained a secondary producer cost.
