@@ -83,11 +83,16 @@ class BatchConfig:
     opponent_pool_id: str = "legacy_opponents"
     opponent_catalog_sha256: str | None = None
     opponent_policy_hash: str | None = None
+    opponent_policy_label: str | None = None
     share_policy_inference_server: bool = False
     seed: int = 22022
     worker_crash_retries: int = 0
     games_by_opponent: tuple[int, ...] | None = None
     opponent_schedule_id: str | None = None
+    candidate_inference_socket: Path | None = None
+    opponent_inference_socket: Path | None = None
+    inference_ability_repeat_limit: int = 0
+    engine_turn_draw_limit: int = 0
 
 
 @dataclass(frozen=True)
@@ -121,12 +126,31 @@ def run_batch(config: BatchConfig) -> BatchResult:
         )
     if config.opponent_schedule_id is not None and not config.opponent_schedule_id:
         raise ValueError("opponent_schedule_id cannot be empty")
+    if (config.candidate_inference_socket is None) != (
+        config.opponent_inference_socket is None
+    ):
+        raise ValueError("external inference sockets must be supplied together")
+    if config.candidate_inference_socket is not None:
+        missing = [
+            path
+            for path in (
+                config.candidate_inference_socket,
+                config.opponent_inference_socket,
+            )
+            if path is None or not path.exists()
+        ]
+        if missing:
+            raise ValueError("external inference socket does not exist")
     if config.worker_cpu_threads is not None and config.worker_cpu_threads < 1:
         raise ValueError("worker_cpu_threads must be at least one")
     if config.candidate_inference_batch_size < 1:
         raise ValueError("candidate_inference_batch_size must be at least one")
     if config.candidate_inference_batch_wait_ms < 0:
         raise ValueError("candidate_inference_batch_wait_ms cannot be negative")
+    if config.inference_ability_repeat_limit < 0:
+        raise ValueError("inference_ability_repeat_limit cannot be negative")
+    if config.engine_turn_draw_limit < 0:
+        raise ValueError("engine_turn_draw_limit cannot be negative")
     if (config.opponent_inference_root is None) != (
         config.opponent_inference_device is None
     ):
@@ -439,6 +463,7 @@ def _game_jobs(
                     else game_number % 2 == 1
                 ),
                 max_steps=config.max_steps,
+                engine_turn_draw_limit=config.engine_turn_draw_limit,
                 visualize=config.visualize,
                 seed=_stable_game_seed(
                     config.seed, config.candidate.name, opponent.name, game_number
@@ -465,12 +490,17 @@ def _candidate_socket_path() -> Path:
 def _policy_inference_servers(
     config: BatchConfig,
 ) -> Iterator[tuple[Path | None, Path | None]]:
+    if config.candidate_inference_socket is not None:
+        assert config.opponent_inference_socket is not None
+        yield config.candidate_inference_socket, config.opponent_inference_socket
+        return
     with _policy_inference_server(
         root=config.candidate.root,
         device=config.candidate_inference_device,
         batch_size=config.candidate_inference_batch_size,
         batch_wait_ms=config.candidate_inference_batch_wait_ms,
         label="candidate",
+        ability_repeat_limit=config.inference_ability_repeat_limit,
     ) as candidate_socket:
         if config.share_policy_inference_server:
             yield candidate_socket, candidate_socket
@@ -481,6 +511,7 @@ def _policy_inference_servers(
             batch_size=config.candidate_inference_batch_size,
             batch_wait_ms=config.candidate_inference_batch_wait_ms,
             label="opponent",
+            ability_repeat_limit=config.inference_ability_repeat_limit,
         ) as opponent_socket:
             yield candidate_socket, opponent_socket
 
@@ -493,6 +524,7 @@ def _policy_inference_server(
     batch_size: int,
     batch_wait_ms: float,
     label: str,
+    ability_repeat_limit: int = 0,
 ) -> Iterator[Path | None]:
     if root is None or device is None:
         yield None
@@ -514,6 +546,8 @@ def _policy_inference_server(
             str(batch_size),
             "--batch-wait-ms",
             str(batch_wait_ms),
+            "--ability-repeat-limit",
+            str(ability_repeat_limit),
         ],
         cwd=Path(__file__).resolve().parents[2],
         env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
@@ -725,6 +759,7 @@ def _request_payload(request: GameRequest, trace_path: Path) -> dict[str, object
         "opponent": _package_payload(request.opponent),
         "candidate_first": request.candidate_first,
         "max_steps": request.max_steps,
+        "engine_turn_draw_limit": request.engine_turn_draw_limit,
         "visualize": request.visualize,
         "seed": request.seed,
         "trace_path": str(trace_path),
@@ -1059,7 +1094,13 @@ def _manifest(
         "worker_crash_retries": config.worker_crash_retries,
         "worker_cpu_threads": config.worker_cpu_threads,
         "candidate_inference": {
-            "mode": "shared_server" if config.candidate_inference_device else "in_worker",
+            "mode": (
+                "external_shared_server"
+                if config.candidate_inference_socket is not None
+                else "shared_server"
+                if config.candidate_inference_device
+                else "in_worker"
+            ),
             "device": config.candidate_inference_device or "cpu",
             "batch_size": (
                 config.candidate_inference_batch_size
@@ -1076,9 +1117,16 @@ def _manifest(
             "pool_id": config.opponent_pool_id,
             "catalog_sha256": config.opponent_catalog_sha256,
             "policy_hash": config.opponent_policy_hash,
+            "policy_label": config.opponent_policy_label,
         },
         "opponent_inference": {
-            "mode": "shared_server" if config.opponent_inference_device else "in_worker",
+            "mode": (
+                "external_shared_server"
+                if config.opponent_inference_socket is not None
+                else "shared_server"
+                if config.opponent_inference_device
+                else "in_worker"
+            ),
             "device": config.opponent_inference_device or "cpu",
             "batch_size": (
                 config.candidate_inference_batch_size
@@ -1092,6 +1140,17 @@ def _manifest(
             ),
         },
         "shared_policy_inference_process": config.share_policy_inference_server,
+        "inference_progress_guard": {
+            "kind": "same_turn_identical_ability_repeat_then_end",
+            "ability_repeat_limit": config.inference_ability_repeat_limit,
+            "applies_to": "candidate_and_opponent",
+        },
+        "engine_turn_draw_limit": config.engine_turn_draw_limit,
+        "full_round_draw_limit": (
+            config.engine_turn_draw_limit // 2
+            if config.engine_turn_draw_limit > 0
+            else 0
+        ),
         "swap_policy": (
             "alternate_candidate_first_globally"
             if config.games_by_opponent is not None

@@ -364,6 +364,31 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     )
                     break
 
+                engine_turn = current.get("turn")
+                if (
+                    request.engine_turn_draw_limit > 0
+                    and type(engine_turn) is int
+                    and engine_turn >= request.engine_turn_draw_limit
+                ):
+                    trace.append({"step": step, "state": summary, "observation": observation})
+                    result = GameResult(
+                        game_id=request.game_id,
+                        opponent=request.opponent.name,
+                        candidate_first=request.candidate_first,
+                        candidate_physical_index=candidate_physical_index,
+                        finished=True,
+                        winner=None,
+                        status="finished",
+                        error_kind=None,
+                        error=(
+                            "Arena turn-limit draw at engine turn "
+                            f"{request.engine_turn_draw_limit}"
+                        ),
+                        steps=selection_count,
+                        trace_path=trace_path,
+                    )
+                    break
+
                 current_player = int(current.get("yourIndex", 0))
                 selected_agent = candidate_agent if current_player == candidate_physical_index else opponent_agent
                 try:
@@ -531,6 +556,7 @@ def _request_from_payload(payload: dict[str, Any]) -> tuple[GameRequest, Path]:
         opponent=_package_from_payload(payload["opponent"]),
         candidate_first=bool(payload["candidate_first"]),
         max_steps=int(payload["max_steps"]),
+        engine_turn_draw_limit=int(payload.get("engine_turn_draw_limit", 0)),
         visualize=bool(payload["visualize"]),
         seed=int(payload.get("seed", 0)),
     )

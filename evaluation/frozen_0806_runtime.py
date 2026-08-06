@@ -154,6 +154,7 @@ def _routed_package(
     policy: SubmissionPackage,
     pool: Frozen0806Pool,
     deck_id: str,
+    deck_number: int,
     role: str,
     card_catalog: dict[int, dict],
 ) -> SubmissionPackage:
@@ -175,11 +176,18 @@ def _routed_package(
         f"{policy.package_hash}:{role}:{deck.exact_deck_sha256}".encode("ascii")
     ).hexdigest()
     package_manifest = dict(policy.package_manifest or {})
+    number_label = f"{deck_number:03d}"
+    deck_slug, separator, suffix = deck_id.rpartition("_")
+    if not separator or len(suffix) != 12 or any(character not in "0123456789abcdef" for character in suffix):
+        deck_slug = deck_id
     package_manifest.update(
         {
             "frozen_pool_id": pool.pool_id,
             "frozen_role": role,
+            "frozen_policy_label": "Policy-0806" if role == "candidate" else "Policy-0019",
             "deck_id": deck_id,
+            "frozen_deck_number": number_label,
+            "frozen_report_href": f"{number_label}_{deck_slug}.html",
             "exact_deck_sha256": deck.exact_deck_sha256,
             "schedule_games": schedule.games,
             "schedule_segment": schedule.segment,
@@ -229,12 +237,33 @@ def load_frozen_0806_runtime_catalog(
     _policy_identity(candidate_policy, role="candidate", expected_sha256=POLICY_0806_SHA256)
     assert_cg_compatible(candidate_policy, opponent_policy)
     ordered_ids = tuple(entry.deck_id for entry in pool.schedule)
+    frequency_order = sorted(
+        pool.schedule,
+        key=lambda entry: (-entry.games, entry.best_rank, entry.deck_id),
+    )
+    deck_number_by_id = {
+        entry.deck_id: number for number, entry in enumerate(frequency_order, start=1)
+    }
     candidates = tuple(
-        _routed_package(candidate_policy, pool, deck_id, "candidate", official_cards)
+        _routed_package(
+            candidate_policy,
+            pool,
+            deck_id,
+            deck_number_by_id[deck_id],
+            "candidate",
+            official_cards,
+        )
         for deck_id in ordered_ids
     )
     opponents = tuple(
-        _routed_package(opponent_policy, pool, deck_id, "opponent", official_cards)
+        _routed_package(
+            opponent_policy,
+            pool,
+            deck_id,
+            deck_number_by_id[deck_id],
+            "opponent",
+            official_cards,
+        )
         for deck_id in ordered_ids
     )
     return Frozen0806RuntimeCatalog(

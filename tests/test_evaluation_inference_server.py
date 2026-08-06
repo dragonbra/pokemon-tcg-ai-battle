@@ -9,6 +9,8 @@ import torch
 
 from evaluation.runner.batch import _candidate_socket_path
 from evaluation.runner.inference_server import (
+    _AbilityRepeatGuard,
+    _apply_ability_repeat_guard,
     _inject_source_id_if_required,
     _normalize_request_deck,
     _stack_batches,
@@ -17,6 +19,40 @@ from evaluation.runner.worker import _remote_policy_agent
 
 
 class CandidateInferenceServerTest(unittest.TestCase):
+    def test_repeat_guard_ends_turn_after_eight_identical_ability_entries(self) -> None:
+        observation = {
+            "select": {
+                "type": 0,
+                "option": [
+                    {"type": 10, "area": 5, "index": 1},
+                    {"type": 13, "attackId": 120},
+                    {"type": 14},
+                ],
+            },
+            "current": {"turn": 10, "yourIndex": 1},
+        }
+        guard = _AbilityRepeatGuard(limit=8)
+        for _ in range(8):
+            self.assertEqual(_apply_ability_repeat_guard(observation, [0], guard), [0])
+        self.assertEqual(_apply_ability_repeat_guard(observation, [0], guard), [2])
+
+    def test_repeat_guard_does_not_change_attacks_or_disabled_contract(self) -> None:
+        observation = {
+            "select": {"type": 0, "option": [{"type": 13}, {"type": 14}]},
+            "current": {"turn": 4, "yourIndex": 0},
+        }
+        self.assertEqual(
+            _apply_ability_repeat_guard(observation, [0], _AbilityRepeatGuard(limit=8)),
+            [0],
+        )
+        ability = {
+            "select": {"type": 0, "option": [{"type": 10}, {"type": 14}]},
+            "current": {"turn": 4, "yourIndex": 0},
+        }
+        guard = _AbilityRepeatGuard(limit=0)
+        for _ in range(20):
+            self.assertEqual(_apply_ability_repeat_guard(ability, [0], guard), [0])
+
     def test_source_identity_is_only_injected_for_declared_policies(self) -> None:
         canonical = type("Canonical", (), {"requires_source_id": False})()
         legacy = type("Legacy", (), {})()

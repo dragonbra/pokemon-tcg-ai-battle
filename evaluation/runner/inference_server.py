@@ -15,6 +15,53 @@ from pathlib import Path
 from typing import Any
 
 
+@dataclass
+class _AbilityRepeatGuard:
+    limit: int
+    turn_actor: tuple[int, int] | None = None
+    counts: dict[tuple[tuple[str, Any], ...], int] = field(default_factory=dict)
+
+
+def _apply_ability_repeat_guard(
+    observation: dict[str, Any], action: Any, guard: _AbilityRepeatGuard
+) -> Any:
+    if guard.limit <= 0 or not isinstance(action, list) or len(action) != 1:
+        return action
+    select = observation.get("select") or {}
+    current = observation.get("current") or {}
+    if select.get("type") != 0:
+        return action
+    turn = current.get("turn")
+    actor = current.get("yourIndex")
+    if type(turn) is not int or actor not in (0, 1):
+        return action
+    turn_actor = (turn, actor)
+    if guard.turn_actor != turn_actor:
+        guard.turn_actor = turn_actor
+        guard.counts.clear()
+    options = select.get("option") or []
+    selected = action[0]
+    if type(selected) is not int or not 0 <= selected < len(options):
+        return action
+    option = options[selected]
+    if not isinstance(option, dict) or option.get("type") != 10:
+        return action
+    identity = tuple(
+        sorted(
+            (str(key), value)
+            for key, value in option.items()
+            if isinstance(value, (int, str, bool, type(None)))
+        )
+    )
+    guard.counts[identity] = guard.counts.get(identity, 0) + 1
+    if guard.counts[identity] <= guard.limit:
+        return action
+    return next(
+        ([index] for index, item in enumerate(options) if item.get("type") == 14),
+        action,
+    )
+
+
 class PolicyServer:
     def __init__(
         self,
@@ -22,6 +69,7 @@ class PolicyServer:
         device: str,
         batch_size: int,
         batch_wait_ms: float,
+        ability_repeat_limit: int,
     ) -> None:
         self._candidate_root = candidate_root.resolve()
         if str(self._candidate_root) not in sys.path:
@@ -53,6 +101,8 @@ class PolicyServer:
         self._requests: queue.Queue[_InferenceRequest] = queue.Queue()
         self._default_deck = _normalize_request_deck(None, tuple(self._policy.deck))
         self._encoders: dict[str, tuple[tuple[int, ...], Any]] = {}
+        self._ability_guards: dict[str, _AbilityRepeatGuard] = {}
+        self._ability_repeat_limit = ability_repeat_limit
         self._thread = threading.Thread(target=self._dispatch, daemon=True)
         self._thread.start()
 
@@ -75,6 +125,7 @@ class PolicyServer:
 
     def close_session(self, session_id: str) -> None:
         self._encoders.pop(session_id, None)
+        self._ability_guards.pop(session_id, None)
 
     def _dispatch(self) -> None:
         while True:
@@ -104,6 +155,7 @@ class PolicyServer:
             if request not in model_requests:
                 request.action = list(request.deck)
                 self._encoders.pop(request.session_id, None)
+                self._ability_guards.pop(request.session_id, None)
                 request.ready.set()
         if not model_requests:
             return
@@ -170,9 +222,16 @@ class PolicyServer:
                 self._policy, "fail_closed_inference_errors", False
             ):
                 raise RuntimeError("canonical policy produced an illegal action sequence")
-            request.action = [
+            action = [
                 int(value) for value in sequences[index][: lengths[index]]
             ] if legal[index] else self._legal_fallback(request.observation)
+            guard = self._ability_guards.setdefault(
+                request.session_id,
+                _AbilityRepeatGuard(limit=self._ability_repeat_limit),
+            )
+            request.action = _apply_ability_repeat_guard(
+                request.observation, action, guard
+            )
             request.ready.set()
 
 
@@ -238,9 +297,16 @@ def serve(
     device: str,
     batch_size: int,
     batch_wait_ms: float,
+    ability_repeat_limit: int,
 ) -> None:
     socket_path.unlink(missing_ok=True)
-    server = PolicyServer(candidate_root, device, batch_size, batch_wait_ms)
+    server = PolicyServer(
+        candidate_root,
+        device,
+        batch_size,
+        batch_wait_ms,
+        ability_repeat_limit,
+    )
     listener = Listener(str(socket_path), family="AF_UNIX")
     try:
         while True:
@@ -284,8 +350,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--batch-wait-ms", type=float, default=2.0)
+    parser.add_argument("--ability-repeat-limit", type=int, default=0)
     args = parser.parse_args(argv)
-    serve(args.candidate, args.socket, args.device, args.batch_size, args.batch_wait_ms)
+    serve(
+        args.candidate,
+        args.socket,
+        args.device,
+        args.batch_size,
+        args.batch_wait_ms,
+        args.ability_repeat_limit,
+    )
     return 0
 
 

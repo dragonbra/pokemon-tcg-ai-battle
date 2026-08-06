@@ -242,6 +242,7 @@ class EvaluationWorkerTests(unittest.TestCase):
         candidate: SubmissionPackage | None = None,
         opponent: SubmissionPackage | None = None,
         max_steps: int = 10,
+        engine_turn_draw_limit: int = 0,
         visualize: bool = False,
     ) -> GameRequest:
         return GameRequest(
@@ -251,6 +252,7 @@ class EvaluationWorkerTests(unittest.TestCase):
             opponent=opponent or self.make_package("opponent", 8),
             candidate_first=candidate_first,
             max_steps=max_steps,
+            engine_turn_draw_limit=engine_turn_draw_limit,
             visualize=visualize,
         )
 
@@ -318,6 +320,23 @@ class EvaluationWorkerTests(unittest.TestCase):
         self.assertEqual(result.steps, 3)
         trace = json.loads(trace_path.read_text(encoding="utf-8"))
         self.assertEqual(len(trace["trace"]), 4)
+
+    def test_engine_turn_limit_is_a_finished_draw(self) -> None:
+        request = self.make_request(
+            candidate_first=True,
+            max_steps=10,
+            engine_turn_draw_limit=2,
+        )
+        trace_path = self.root / "trace-turn-limit-draw.json"
+
+        result = run_game(request, trace_path)
+
+        self.assertTrue(result.finished)
+        self.assertEqual(result.status, "finished")
+        self.assertIsNone(result.winner)
+        self.assertIsNone(result.error_kind)
+        self.assertEqual(result.steps, 2)
+        self.assertIn("engine turn 2", result.error or "")
 
     def test_delayed_cg_import_works_and_parent_cg_state_is_restored(self) -> None:
         parent_cg = types.ModuleType("cg")

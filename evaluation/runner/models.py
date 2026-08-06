@@ -15,6 +15,7 @@ class GameRequest:
     candidate_first: bool
     max_steps: int
     visualize: bool
+    engine_turn_draw_limit: int = 0
     seed: int = 0
 
 

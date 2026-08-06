@@ -49,6 +49,7 @@ main{max-width:1240px;margin:0 auto;padding:36px 28px 64px}
   background:var(--brand-dark);
 }
 .eyebrow{margin:0 0 6px;color:#c8eadb;font-size:12px;font-weight:700;letter-spacing:.12em}
+.back-link{display:inline-block;margin-bottom:8px;color:#d8eee5;font-size:12px;font-weight:700;text-decoration:none}.back-link:hover{text-decoration:underline}
 h1{margin:0;font-size:32px;line-height:1.2;letter-spacing:0}
 h2{margin:0 0 6px;font-size:20px;line-height:1.35;letter-spacing:0}
 h3{margin:0 0 10px}
@@ -94,7 +95,7 @@ section{
 }
 .chart-row{
   display:grid;
-  grid-template-columns:minmax(190px,250px) 1fr 56px;
+  grid-template-columns:minmax(210px,270px) 1fr 150px;
   gap:8px;
   align-items:center;
   padding:3px 5px;
@@ -102,6 +103,8 @@ section{
 }
 .chart-row:hover{background:var(--surface-soft)}
 .opponent-identity{display:flex;align-items:center;min-width:0;gap:7px}
+.opponent-link{color:inherit;text-decoration:none}.opponent-link:hover .opponent-name{color:var(--brand);text-decoration:underline}
+.deck-number{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:2px 5px;border:1px solid #b8cec4;border-radius:4px;background:#edf6f1;color:var(--brand-dark);font-weight:800;font-variant-numeric:tabular-nums}
 .opponent-thumbnails{display:flex;flex:0 0 auto;padding-left:3px}
 .opponent-thumb{
   width:29px;
@@ -114,7 +117,7 @@ section{
   box-shadow:0 2px 5px rgba(23,43,37,.12);
 }
 .opponent-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chart-rate{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.chart-result{text-align:right;font-variant-numeric:tabular-nums}.chart-rate{font-weight:800}.chart-record{margin-left:5px;color:var(--muted);font-size:11px;white-space:nowrap}
 .bar-track{height:7px;overflow:hidden;border-radius:999px;background:#e4ece8}
 .bar{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2a8d65,#54b184)}
 table{width:100%;min-width:820px;margin-top:14px;border-collapse:separate;border-spacing:0}
@@ -203,7 +206,7 @@ td:first-child{font-weight:600}
   section{padding:17px 14px;border-radius:8px}
   .profile-grid{grid-template-columns:1fr}
   .matchup-chart{grid-template-columns:1fr}
-  .chart-row{grid-template-columns:minmax(170px,1fr) 1fr 54px;gap:7px;padding:4px 0}
+  .chart-row{grid-template-columns:minmax(180px,1fr) 72px 128px;gap:7px;padding:4px 0}
   .summary{grid-template-columns:repeat(2,minmax(0,1fr))}
   .length-distribution-grid{grid-template-columns:1fr}
   .candidate-lead{grid-template-columns:1fr;padding:18px}
@@ -258,8 +261,21 @@ def render_html(data: ReportData) -> str:
     candidate = as_mapping(manifest.get("candidate"))
     candidate_title = candidate.get("display_name") or candidate.get("name") or "评测报告"
     package_manifest = as_mapping(candidate.get("package_manifest"))
+    deck_number = package_manifest.get("frozen_deck_number")
+    numbered_title = f"{deck_number} · {candidate_title}" if deck_number else candidate_title
+    back_link = (
+        '<a class="back-link" href="../index.html">返回 Frozen-0806 总览</a>'
+        if deck_number
+        else ""
+    )
     update = package_manifest.get("update")
-    hero_label = f"League update {update}" if update is not None else "Official-engine evaluation"
+    candidate_policy = package_manifest.get("frozen_policy_label")
+    opponent_policy = as_mapping(manifest.get("opponent_pool")).get("policy_label")
+    hero_label = (
+        f"{candidate_policy} vs {opponent_policy} · Official-engine evaluation"
+        if candidate_policy and opponent_policy
+        else f"League update {update}" if update is not None else "Official-engine evaluation"
+    )
     return "\n".join(
         (
             "<!doctype html>",
@@ -267,13 +283,13 @@ def render_html(data: ReportData) -> str:
             "<head>",
             '<meta charset="utf-8">',
             '<meta name="viewport" content="width=device-width, initial-scale=1">',
-            f"<title>{_text(candidate_title)} - {run_id}</title>",
+            f"<title>{_text(numbered_title)} - {run_id}</title>",
             f"<style>{REPORT_STYLES}</style>",
             "</head>",
             "<body><main>",
-            '<header class="hero"><div>'
+            f'<header class="hero"><div>{back_link}'
             '<p class="eyebrow">POKÉMON TCG · EVALUATION</p>'
-            f'<h1>{_text(candidate_title)}</h1><p>{_text(hero_label)}</p></div>'
+            f'<h1>{_text(numbered_title)}</h1><p>{_text(hero_label)}</p></div>'
             f'<div class="run-id">{run_id}</div></header>',
             _candidate_overview_html(manifest, data.metric_profile),
             _profile_html(data.metric_profile),
@@ -298,6 +314,8 @@ def _candidate_overview_html(
         return ""
     package_manifest = as_mapping(candidate.get("package_manifest"))
     title = candidate.get("display_name") or candidate.get("name") or "Candidate"
+    deck_number = package_manifest.get("frozen_deck_number")
+    numbered_title = f"{deck_number} · {title}" if deck_number else title
     update = package_manifest.get("update", "-")
     representatives = "".join(
         f'<img src="{_text(as_mapping(card).get("image_url"))}" '
@@ -320,7 +338,7 @@ def _candidate_overview_html(
     return (
         '<section class="candidate-overview">'
         '<div class="candidate-lead"><div><p class="candidate-kicker">主视角卡组</p>'
-        f'<h2 class="candidate-title">{_text(title)}</h2>'
+        f'<h2 class="candidate-title">{_text(numbered_title)}</h2>'
         '<div class="candidate-meta">'
         f'<span>Update {_text(update)}</span><span>Exact {_text(candidate.get("deck_total", "-"))} cards</span>'
         f'<span>Frozen Arena · {_text(manifest.get("opponent_pool", {}).get("pool_id", "-"))}</span>'
@@ -445,12 +463,23 @@ def _matchup_html(
         for item in manifest.get("opponents", ())
         if isinstance(item, Mapping) and item.get("name")
     }
+    matchup_rows = list(ordered_mapping(summary.get("by_opponent")))
+    matchup_rows.sort(
+        key=lambda item: int(
+            as_mapping(as_mapping(opponent_visuals.get(item[0])).get("package_manifest")).get(
+                "frozen_deck_number", 999
+            )
+        )
+    )
     chart_rows = []
-    for opponent, result in ordered_mapping(summary.get("by_opponent")):
+    for opponent, result in matchup_rows:
         values = as_mapping(result)
         rate = values.get("win_rate")
         visual = as_mapping(opponent_visuals.get(opponent))
         display_name = visual.get("display_name") or opponent
+        package_manifest = as_mapping(visual.get("package_manifest"))
+        deck_number = package_manifest.get("frozen_deck_number")
+        report_href = package_manifest.get("frozen_report_href")
         thumbnails = []
         for card in visual.get("representative_cards", ()):
             card_values = as_mapping(card)
@@ -465,13 +494,20 @@ def _matchup_html(
         identity = (
             '<span class="opponent-identity">'
             f'<span class="opponent-thumbnails">{"".join(thumbnails)}</span>'
-            f'<span class="opponent-name" title="{_text(display_name)}">'
+            + (f'<span class="deck-number">{_text(deck_number)}</span>' if deck_number else '')
+            + f'<span class="opponent-name" title="{_text(display_name)}">'
             f'{_text(display_name)}</span></span>'
         )
+        if report_href:
+            identity = f'<a class="opponent-link" href="{_text(report_href)}">{identity}</a>'
         chart_rows.append(
             f'<div class="chart-row">{identity}<span class="bar-track">'
             f'<span class="bar" style="width:{_width(rate)}"></span></span>'
-            f'<span class="chart-rate">{_text(percentage(rate))}</span></div>'
+            '<span class="chart-result">'
+            f'<span class="chart-rate">{_text(percentage(rate))}</span>'
+            f'<span class="chart-record">{_text(values.get("wins", 0))}-'
+            f'{_text(values.get("losses", 0))}-{_text(values.get("draws", 0))}'
+            f' / {_text(values.get("games", 0))}局</span></span></div>'
         )
     return (
         '<section class="matchup-section"><h2>对局胜率图</h2><div class="matchup-chart">'
