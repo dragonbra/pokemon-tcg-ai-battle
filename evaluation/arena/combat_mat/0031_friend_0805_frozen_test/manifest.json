@@ -11,8 +11,8 @@
   "opponents_per_report": 51,
   "pool_id": "0019_foundation_51_exact_decks_v4",
   "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
-  "published_games": 8670,
-  "published_reports": 17,
+  "published_games": 14790,
+  "published_reports": 29,
   "reports": [
     {
       "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
@@ -317,6 +317,36 @@
     {
       "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
       "completion_rate": 1.0,
+      "deck_id": "cynthias_garchomp_ex_roserade_002",
+      "deck_sha256": "d340f23802cf7af508327c234e890041b446e26911db670c93dd2c86eb4dc766",
+      "display_name": "Cynthia's Garchomp ex / Roserade",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 299,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/cynthias_garchomp_ex_roserade_002.html",
+      "report_sha256": "48e7423e396c6b3674dcde5dcbae0f33057490ecb22d4c2ca8b56c3efae4d349",
+      "run_id": "run-1ffd5f6a0ca9422aadc0619854c6a926",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 135,
+          "wins": 120
+        },
+        "second": {
+          "draws": 0,
+          "losses": 164,
+          "wins": 91
+        }
+      },
+      "wall_time_seconds": 407.1884282689989,
+      "win_rate": 0.4137254901960784,
+      "wins": 211
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
       "deck_id": "dragapult_ex_001",
       "deck_sha256": "6f784c7049ab4a4cfbc012c5bee8cc040d1030d54b4e572e4a4a9f35d0f6ea81",
       "display_name": "Dragapult ex - Limitless",
@@ -343,6 +373,36 @@
       "wall_time_seconds": 519.289006813,
       "win_rate": 0.492156862745098,
       "wins": 251
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "dragapult_ex_blaziken_ex_001",
+      "deck_sha256": "0a78adbfd08f99ec83b3d7c10043e06c3c349a5d9708e44df41275f169b0b9fc",
+      "display_name": "Dragapult ex / Blaziken ex - External 01",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 309,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/dragapult_ex_blaziken_ex_001.html",
+      "report_sha256": "b5bbd6658a38d2c7f49d41d54c71b453be7c3d1cea29cb963f0859c42c5d2c73",
+      "run_id": "run-8a9d66e6a0984c408b1ff8062173a8d2",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 140,
+          "wins": 115
+        },
+        "second": {
+          "draws": 0,
+          "losses": 169,
+          "wins": 86
+        }
+      },
+      "wall_time_seconds": 539.2440268589999,
+      "win_rate": 0.3941176470588235,
+      "wins": 201
     },
     {
       "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
@@ -403,6 +463,306 @@
       "wall_time_seconds": 494.42110032099845,
       "win_rate": 0.39215686274509803,
       "wins": 200
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "dragapult_ex_dunsparce_002",
+      "deck_sha256": "c49e78d7cb256803274aa87d2d783b17ca5e4a64bea41cbe616dfced953579b1",
+      "display_name": "Dragapult ex / Dudunsparce - External 02",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 308,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/dragapult_ex_dunsparce_002.html",
+      "report_sha256": "a59bf52b9f3a3ff221404d23bfead19120095e4435f2350677750383f7ffb336",
+      "run_id": "run-88f30335adba479fa5154791c0ab9f15",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 144,
+          "wins": 111
+        },
+        "second": {
+          "draws": 0,
+          "losses": 164,
+          "wins": 91
+        }
+      },
+      "wall_time_seconds": 660.6067179889997,
+      "win_rate": 0.396078431372549,
+      "wins": 202
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "dragapult_ex_dusknoir_002",
+      "deck_sha256": "1b8e9548e4b69cad198801fc244290d96873517a390cb357dc3689a01c194cc3",
+      "display_name": "Dragapult ex / Dusknoir - External 02",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 354,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/dragapult_ex_dusknoir_002.html",
+      "report_sha256": "d7e964373298ab16bb39c2129daf13e7611d03aa3a4d42d14910b840522196c3",
+      "run_id": "run-e50c34e06e3d471d92c6529139db0e8a",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 172,
+          "wins": 83
+        },
+        "second": {
+          "draws": 0,
+          "losses": 182,
+          "wins": 73
+        }
+      },
+      "wall_time_seconds": 562.7273873199993,
+      "win_rate": 0.3058823529411765,
+      "wins": 156
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "dragapult_ex_mega_froslass_ex_001",
+      "deck_sha256": "d3d18fe9f0fea53376b4ff54889dc6e58402f5b3b3bd5e542e9ddbb3c8fa08be",
+      "display_name": "Dragapult ex / Mega Froslass ex - External 01",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 334,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/dragapult_ex_mega_froslass_ex_001.html",
+      "report_sha256": "ac28483f25d01d9bf9399cf930e0ef0e09694473870158949e295b3379d5eb7e",
+      "run_id": "run-c83feef317804862afd584408da635c2",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 157,
+          "wins": 98
+        },
+        "second": {
+          "draws": 0,
+          "losses": 177,
+          "wins": 78
+        }
+      },
+      "wall_time_seconds": 565.8034474679989,
+      "win_rate": 0.34509803921568627,
+      "wins": 176
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "festival_lead_dipplin_002",
+      "deck_sha256": "79e43c0a0b83e17a0b5264163000f8b656749d1878141864a863fb34818a1422",
+      "display_name": "Festival Lead / Dipplin",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 292,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/festival_lead_dipplin_002.html",
+      "report_sha256": "9cefd823a913a831738aae439a9a44adef98e13a8982b866ce3e3ac2febe81e6",
+      "run_id": "run-2ad8518f9beb45a895fc31d996227bdc",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 134,
+          "wins": 121
+        },
+        "second": {
+          "draws": 0,
+          "losses": 158,
+          "wins": 97
+        }
+      },
+      "wall_time_seconds": 516.3058725570008,
+      "win_rate": 0.42745098039215684,
+      "wins": 218
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "festival_lead_dipplin_003",
+      "deck_sha256": "5adce4b9b664bbee40748fd146283877db16189ee0baf8dce0ab8d5ab44e2302",
+      "display_name": "Festival Lead / Dipplin - External 03",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 353,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/festival_lead_dipplin_003.html",
+      "report_sha256": "c07bd9317fb37b43eeea0f3ad99eaa697b6bbc25587b079fefe238f89b38c07d",
+      "run_id": "run-e23be89749804f9baf9b87c57ca17939",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 170,
+          "wins": 85
+        },
+        "second": {
+          "draws": 0,
+          "losses": 183,
+          "wins": 72
+        }
+      },
+      "wall_time_seconds": 366.7004803580021,
+      "win_rate": 0.307843137254902,
+      "wins": 157
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "hydrapple_ex_meganium_001",
+      "deck_sha256": "9cf402085661342b7b73a5c502ce7d807d061f1d5117b8e59690b4637b98ea6c",
+      "display_name": "Hydrapple ex / Meganium / Teal Mask Ogerpon ex - External 01",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 310,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/hydrapple_ex_meganium_001.html",
+      "report_sha256": "35d1544dbc64e2dc0f5ebe6eb55a7f2e9e8d4c5a9373a2bc00a5629713605d22",
+      "run_id": "run-398610137c70425b8619e3741a40a39b",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 154,
+          "wins": 101
+        },
+        "second": {
+          "draws": 0,
+          "losses": 156,
+          "wins": 99
+        }
+      },
+      "wall_time_seconds": 375.67040507300044,
+      "win_rate": 0.39215686274509803,
+      "wins": 200
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "ionos_bellibolt_ex_kilowattrel_01",
+      "deck_sha256": "7dc29ba6002f31aefaaacab06721d54e39b31e866b54c34e9b973d5133795f8c",
+      "display_name": "Iono's Bellibolt ex / Kilowattrel - Arena 01",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 491,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/ionos_bellibolt_ex_kilowattrel_01.html",
+      "report_sha256": "aa6ec46d85799fc004ee60098336fb6928dcd26cef3ceee27f9a3d26f40beb5a",
+      "run_id": "run-b5432c917c244410bec1b9838f2c206c",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 247,
+          "wins": 8
+        },
+        "second": {
+          "draws": 0,
+          "losses": 244,
+          "wins": 11
+        }
+      },
+      "wall_time_seconds": 573.4955311170015,
+      "win_rate": 0.03725490196078431,
+      "wins": 19
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "marnies_grimmsnarl_ex_froslass_001",
+      "deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 181,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/marnies_grimmsnarl_ex_froslass_001.html",
+      "report_sha256": "5090c1a250ae6a6895498008926958178b9de8b584e7722896b76407c0bfcfbc",
+      "run_id": "run-98a2d18c65474fe3b18195ed4c95e9ee",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 76,
+          "wins": 179
+        },
+        "second": {
+          "draws": 0,
+          "losses": 105,
+          "wins": 150
+        }
+      },
+      "wall_time_seconds": 481.8287862299985,
+      "win_rate": 0.6450980392156863,
+      "wins": 329
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "marnies_grimmsnarl_ex_froslass_002",
+      "deck_sha256": "978ab31c50aa7fdaf11e38ba108cf0eda7fab6ca3597bfa3b45a7f74cd6a9327",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 234,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/marnies_grimmsnarl_ex_froslass_002.html",
+      "report_sha256": "1d9e99202b6910c08b3f7a5e0b32969120e9f89f9e6040af1288b46a596fe165",
+      "run_id": "run-b288c6fdd5c24c6d8647170831da7b49",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 108,
+          "wins": 147
+        },
+        "second": {
+          "draws": 0,
+          "losses": 126,
+          "wins": 129
+        }
+      },
+      "wall_time_seconds": 439.7896808519981,
+      "win_rate": 0.5411764705882353,
+      "wins": 276
+    },
+    {
+      "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+      "completion_rate": 1.0,
+      "deck_id": "marnies_grimmsnarl_ex_froslass_003",
+      "deck_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "errors": 0,
+      "games": 510,
+      "losses": 199,
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "report": "reports/marnies_grimmsnarl_ex_froslass_003.html",
+      "report_sha256": "4f77bccfd7023f8b60432e69fec9a6fee0ab6cc1f9648400d372e01a0ae2d72e",
+      "run_id": "run-03557c3dfce3494eaf4d122e25bf4ca9",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "losses": 87,
+          "wins": 168
+        },
+        "second": {
+          "draws": 0,
+          "losses": 112,
+          "wins": 143
+        }
+      },
+      "wall_time_seconds": 450.06040694200055,
+      "win_rate": 0.6098039215686275,
+      "wins": 311
     },
     {
       "checkpoint_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
