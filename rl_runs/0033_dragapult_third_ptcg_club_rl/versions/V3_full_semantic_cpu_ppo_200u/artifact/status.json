@@ -1,0 +1,51 @@
+{
+  "checkpoint_update": 84,
+  "decisions": 1857882,
+  "decoder_sha256": "ee080b719062bc53ab3d6dcb4d787093b104d04e226fb1d39fcf2011e4df7e26",
+  "elapsed_seconds": 19053.136887073517,
+  "episodes": 17136,
+  "full_schema_parity": true,
+  "initial_decoder_sha256": "1c31bfe355ab5f10f60ecd0ca02406cded4971f4010af742a0d1035034d1cadf",
+  "pid": 352168,
+  "representation_sha256": "15fedc68246c00377a8fd4eca07f88f303fa4af95f5b17493e93ecf9ba564361",
+  "representation_sha256_unchanged": true,
+  "rollout_source_policy_update": 83,
+  "state": "interrupted",
+  "version": "V3_full_semantic_cpu_ppo_200u",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0033-v3-full-semantic-cpu-ppo-200u",
+    "state": "crashed",
+    "sync_state": "process_terminated",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0033-v3-full-semantic-cpu-ppo-200u"
+  },
+  "wandb_run_id": "0033-v3-full-semantic-cpu-ppo-200u",
+  "wandb_sync_status": "remote_crashed_after_user_sigterm",
+  "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0033-v3-full-semantic-cpu-ppo-200u",
+  "stopped_at": "2026-08-06T10:02:19+08:00",
+  "stop_reason": "Stopped at the user's request before checkpoint selection and formal evaluation.",
+  "valid_for_selection": true,
+  "valid_for_continuation": true,
+  "selected_checkpoint_update": 20,
+  "secondary_evaluation_checkpoint_update": 74,
+  "selection_contract": "highest comparable periodic frozen greedy eval/win_rate; latest checkpoint on ties",
+  "selection_evidence": {
+    "games": 102,
+    "wins": 55,
+    "losses": 47,
+    "draws": 0,
+    "win_rate": 0.5392156862745098
+  },
+  "secondary_selection_evidence": {
+    "rollout_metric_row_update": 75,
+    "rollout_source_policy_update": 74,
+    "games": 204,
+    "wins": 69,
+    "losses": 135,
+    "draws": 0,
+    "win_rate": 0.3382352941176471
+  }
+}

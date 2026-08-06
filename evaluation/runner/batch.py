@@ -44,7 +44,7 @@ _INITIALIZED_MANIFEST_FIELDS = (
     "paths",
 )
 _INITIALIZED_VERSION_STATES = frozenset(
-    {"allocated", "running", "completed", "failed", "interrupted"}
+    {"allocated", "running", "complete", "completed", "failed", "interrupted"}
 )
 
 

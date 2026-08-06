@@ -1,0 +1,22 @@
+{
+  "candidate": "evaluation/arena/candidates/0033_dragapult_third_ptcg_club_rl_update20",
+  "checkpoint_update": 20,
+  "kind": "official_frozen0019_checkpoint_evaluation",
+  "source_training_version": "V3_full_semantic_cpu_ppo_200u",
+  "state": "completed",
+  "storage_dtype": "fp16",
+  "runtime_dtype": "fp32",
+  "inference_device": "cuda:0",
+  "version": "V4_update20_frozen0019_eval",
+  "completed_games": 510,
+  "wins": 252,
+  "losses": 258,
+  "draws": 0,
+  "errors": 0,
+  "win_rate": 0.49411764705882355,
+  "first_win_rate": 0.5176470588235295,
+  "second_win_rate": 0.47058823529411764,
+  "run_id": "run-312ea04ce1f74410bb2d631c67965d62",
+  "report": "experiments/0033_dragapult_third_ptcg_club_rl/evaluation/V4_update20_frozen0019_eval.html",
+  "report_sha256": "0882b662e4c93c8bfba68b476f669564d0d15b4d199a13522f1359648997c98e"
+}

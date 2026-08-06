@@ -1,0 +1,14 @@
+{
+  "checkpoint_retention": "all",
+  "decisions": 442439,
+  "elapsed_seconds": 4796.0674040317535,
+  "episodes": 4080,
+  "final_decoder_sha256": "c5e63b1df9c05ba299fb876fcbea07888551708d83f95a136b53e4ad64b23d6e",
+  "initial_decoder_sha256": "1c31bfe355ab5f10f60ecd0ca02406cded4971f4010af742a0d1035034d1cadf",
+  "representation_sha256": "15fedc68246c00377a8fd4eca07f88f303fa4af95f5b17493e93ecf9ba564361",
+  "representation_unchanged": true,
+  "state": "complete",
+  "updates": 20,
+  "version": "V7_turn_equal_loss_weighting_20u",
+  "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0033-v7-turn-equal-loss-weighting-20u"
+}

@@ -1,0 +1,112 @@
+{
+  "credit_clock_turn_values": [
+    1
+  ],
+  "curves": {
+    "ppo/behavior_kl": {
+      "first_5_mean": 0.00010445740830996726,
+      "last_5_mean": 9.627080607153005e-05,
+      "slope_per_update": -3.24472532297901e-07
+    },
+    "ppo/entropy": {
+      "first_5_mean": 0.7066140991404551,
+      "last_5_mean": 0.6965901917410783,
+      "slope_per_update": -0.0009131595242570118
+    },
+    "ppo/explained_variance": {
+      "first_5_mean": 0.08427639007568359,
+      "last_5_mean": 0.1908976674079895,
+      "slope_per_update": 0.006122650418962751
+    },
+    "ppo/first_decision_terminal_credit_mean": {
+      "first_5_mean": 0.7257934243682411,
+      "last_5_mean": 0.7287469948649459,
+      "slope_per_update": 0.00018574566781591375
+    },
+    "ppo/reference_kl": {
+      "first_5_mean": 0.00013880003623957982,
+      "last_5_mean": 0.0003967773839333033,
+      "slope_per_update": 1.7441618314838994e-05
+    },
+    "ppo/return_std": {
+      "first_5_mean": 0.7727513790130616,
+      "last_5_mean": 0.8262441873550415,
+      "slope_per_update": 0.0036009717256503
+    },
+    "ppo/value_loss": {
+      "first_5_mean": 0.5346663766206431,
+      "last_5_mean": 0.5479355676662658,
+      "slope_per_update": 0.0014678077606836849
+    },
+    "rollout/win_rate": {
+      "first_5_mean": 0.2647058823529412,
+      "last_5_mean": 0.31862745098039214,
+      "slope_per_update": 0.0036930561698363543
+    },
+    "system/end_to_end/wall_seconds": {
+      "first_5_mean": 222.21998211380122,
+      "last_5_mean": 231.12757803740243,
+      "slope_per_update": 0.586713338558687
+    }
+  },
+  "frozen_evaluations": [
+    {
+      "checkpoint_update": 5,
+      "draws": 0,
+      "first_win_rate": 0.5490196078431373,
+      "losses": 48,
+      "second_win_rate": 0.5098039215686274,
+      "win_rate": 0.5294117647058824,
+      "wins": 54
+    },
+    {
+      "checkpoint_update": 10,
+      "draws": 0,
+      "first_win_rate": 0.5490196078431373,
+      "losses": 46,
+      "second_win_rate": 0.5490196078431373,
+      "win_rate": 0.5490196078431373,
+      "wins": 56
+    },
+    {
+      "checkpoint_update": 15,
+      "draws": 0,
+      "first_win_rate": 0.5882352941176471,
+      "losses": 53,
+      "second_win_rate": 0.37254901960784315,
+      "win_rate": 0.4803921568627451,
+      "wins": 49
+    },
+    {
+      "checkpoint_update": 20,
+      "draws": 0,
+      "first_win_rate": 0.5882352941176471,
+      "losses": 48,
+      "second_win_rate": 0.47058823529411764,
+      "win_rate": 0.5294117647058824,
+      "wins": 54
+    }
+  ],
+  "gae_lambda_values": [
+    0.97
+  ],
+  "loss_weighting_turn_equal_values": [
+    1
+  ],
+  "rollout_error_games": 0.0,
+  "schema": "0033_credit_experiment_analysis_v1",
+  "selected_checkpoint": {
+    "checkpoint_update": 10,
+    "draws": 0,
+    "first_win_rate": 0.5490196078431373,
+    "losses": 46,
+    "second_win_rate": 0.5490196078431373,
+    "win_rate": 0.5490196078431373,
+    "wins": 56
+  },
+  "selection_rule": "highest comparable frozen greedy win rate; latest checkpoint on ties",
+  "strength_boundary": "rollout curves are diagnostics; checkpoint strength requires the formal official-engine Frozen51 evaluation",
+  "updates": 20,
+  "version": "V7_turn_equal_loss_weighting_20u",
+  "zero_error": true
+}

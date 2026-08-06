@@ -1,0 +1,159 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0033_dragapult_third_ptcg_club_rl",
+  "objective": "Adapt the audited PT0805 Epoch 13 semantic foundation to the exact Third PTCG Club Dragapult deck with decoder/value-only PPO.",
+  "deck": "Dragapult Third PTCG Club; exact user-provided 60-card list; SHA-256 5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2.",
+  "expert_source": "PT0805 best_validation_loss Epoch 13 is initialization provenance; Third PTCG Club identity is provenance-only and actor-invisible.",
+  "dataset_contract": "No new BC dataset; valid V3+ PPO versions use fresh on-policy trajectories from the unmodified official CPU engine.",
+  "engine_revision": "Unmodified official CPU engine for all valid V3+ rollout and evaluation; CUDA is used only for complete semantic policy inference and PPO optimization.",
+  "opponent_pool_snapshot": "Valid V3+ runs use all 51 exact decks from 0019_foundation_51_exact_decks_v4 with shared immutable 0019 Epoch 13 foundation weights.",
+  "status": "initialized",
+  "experiment_status": "v10_turn_clock_lambda097_200u_user_stopped",
+  "created_at": "2026-08-06T00:00:00+08:00",
+  "paths": {
+    "training": "train/0033_dragapult_third_ptcg_club_rl",
+    "archive": "experiments/0033_dragapult_third_ptcg_club_rl",
+    "runs": "rl_runs/0033_dragapult_third_ptcg_club_rl"
+  },
+  "actor_source_identity_visible": false,
+  "formal_versions": [
+    {
+      "version": "V1_pt0805_epoch13_zero_shot_frozen0019",
+      "state": "completed",
+      "kind": "zero_shot_frozen0019_evaluation"
+    },
+    {
+      "version": "V2_third_ptcg_club_cuda_ppo_200u",
+      "state": "allocated",
+      "kind": "decoder_value_only_cuda_ppo"
+    },
+    {
+      "version": "V3_full_semantic_cpu_ppo_200u",
+      "state": "interrupted",
+      "kind": "full_semantic_decoder_value_only_cpu_ppo"
+    },
+    {
+      "version": "V4_update20_frozen0019_eval",
+      "state": "completed",
+      "kind": "official_frozen0019_checkpoint_evaluation"
+    },
+    {
+      "version": "V5_update74_frozen0019_eval",
+      "state": "completed",
+      "kind": "official_frozen0019_checkpoint_evaluation"
+    },
+    {
+      "version": "V6_turn_clock_lambda097_20u",
+      "state": "completed",
+      "kind": "turn_semantic_credit_experiment"
+    },
+    {
+      "version": "V7_turn_equal_loss_weighting_20u",
+      "state": "completed",
+      "kind": "turn_equal_loss_weighting_experiment"
+    },
+    {
+      "version": "V8_turn_clock_lambda097_408ep_20u",
+      "state": "completed",
+      "kind": "double_rollout_batch_experiment"
+    },
+    {
+      "version": "V9_action_clock_lambda095_control_20u",
+      "state": "completed",
+      "kind": "legacy_action_clock_lambda095_control"
+    },
+    {
+      "version": "V10_turn_clock_lambda097_200u",
+      "state": "user_stopped",
+      "kind": "turn_clock_lambda097_selected_ppo_200_update_long_run"
+    }
+  ],
+  "zero_shot_baseline": {
+    "version": "V1_pt0805_epoch13_zero_shot_frozen0019",
+    "games": 510,
+    "wins": 243,
+    "losses": 267,
+    "draws": 0,
+    "errors": 0,
+    "win_rate": 0.4764705882352941
+  },
+  "planned_training_version": "V10_turn_clock_lambda097_200u",
+  "active_training_version": null,
+  "conditional_control_version": "V9_action_clock_lambda095_control_20u",
+  "long_run_selection_rule": {
+    "schema": "0033_credit_selection_rule_v1",
+    "primary_evidence": "zero-error formal 510-game official CPU Frozen51 evaluation",
+    "v8_threshold": "Select V8 408-Episode design for V10 only if it beats V6 by at least 15 formal wins.",
+    "v8_formal_result": "V8 update 10 formal Frozen51 evaluation scored 252-258-0 with zero errors, 21 wins below V6, so V9 legacy control was triggered.",
+    "fallback": "If V8 does not clear threshold, run V9 legacy action-clock lambda-0.95 control and select the best zero-error 204-Episode design by formal wins.",
+    "rollout_strength_boundary": "Sampled rollout win-rate spikes are diagnostics only and cannot select the 200-update run.",
+    "v9_formal_result": "V9 action-clock lambda-0.95 control update 10 formal Frozen51 evaluation scored 242-268-0 with zero errors, below V6 and V8.",
+    "selected_result": "Selected V6 turn-clock lambda-0.97 design for V10 200-update fresh run."
+  },
+  "v8_formal_evaluation": {
+    "version": "V8_turn_clock_lambda097_408ep_20u",
+    "checkpoint_update": 10,
+    "games": 510,
+    "wins": 252,
+    "losses": 258,
+    "draws": 0,
+    "errors": 0,
+    "win_rate": 0.49411764705882355,
+    "report": "experiments/0033_dragapult_third_ptcg_club_rl/evaluation/V8_turn_clock_lambda097_408ep_20u.html",
+    "selection_effect": "failed +15 formal-win threshold versus V6; triggered V9 legacy control"
+  },
+  "checkpoint_evaluation_versions": [
+    "V4_update20_frozen0019_eval",
+    "V5_update74_frozen0019_eval"
+  ],
+  "provisional_checkpoint_selection": {
+    "version": "V6_turn_clock_lambda097_20u",
+    "checkpoint_update": 15,
+    "basis": "Highest same-contract 510-game point estimate so far; paired advantage over V3 update 74 is not statistically conclusive (McNemar p=0.282).",
+    "wins": 273,
+    "losses": 237,
+    "draws": 0,
+    "errors": 0,
+    "win_rate": 0.5352941176470588
+  },
+  "v9_formal_evaluation": {
+    "version": "V9_action_clock_lambda095_control_20u",
+    "checkpoint_update": 10,
+    "games": 510,
+    "wins": 242,
+    "losses": 268,
+    "draws": 0,
+    "errors": 0,
+    "win_rate": 0.4745098039215686,
+    "report": "experiments/0033_dragapult_third_ptcg_club_rl/evaluation/V9_action_clock_lambda095_control_20u.html",
+    "selection_effect": "failed to beat V6 and V8 formal evidence; selected V6 turn-clock lambda-0.97 design for V10"
+  },
+  "selected_long_run": {
+    "version": "V10_turn_clock_lambda097_200u",
+    "source_design": "V6_turn_clock_lambda097_20u",
+    "rationale": "V6 formal Frozen51 result remains best among V6/V8/V9: V6 273 wins, V8 252 wins, V9 242 wins, all zero-error 510-game evaluations.",
+    "updates": 200,
+    "games_per_update": 204,
+    "gae_lambda": 0.97,
+    "gamma": 1,
+    "credit_clock": "turn",
+    "loss_weighting": "episode_equal_decisions",
+    "eval_every": 10,
+    "started_at": "2026-08-06T18:47:36+08:00",
+    "state": "user_stopped",
+    "stopped_at": "2026-08-06T21:35:36+08:00",
+    "stop_reason": "User requested stopping before the planned 200 updates.",
+    "latest_checkpoint_update": 44,
+    "episodes": 8976,
+    "decisions": 969191,
+    "last_periodic_eval": {
+      "checkpoint_update": 40,
+      "games": 102,
+      "wins": 49,
+      "losses": 53,
+      "draws": 0,
+      "win_rate": 0.4803921568627451,
+      "evidence_boundary": "periodic frozen diagnostic only, not a formal strength conclusion"
+    }
+  }
+}

@@ -1,0 +1,1483 @@
+{
+  "copied_tensors": [
+    {
+      "destination": "summary_norm.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.summary_norm.weight"
+    },
+    {
+      "destination": "summary_norm.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.summary_norm.bias"
+    },
+    {
+      "destination": "entity_parent_relation.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "state_encoder.card_parent.weight"
+    },
+    {
+      "destination": "entity_child_relation.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "state_encoder.card_parent.weight"
+    },
+    {
+      "destination": "option_source_relation.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "option_encoder.source_relation.weight"
+    },
+    {
+      "destination": "option_target_relation.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "option_encoder.target_relation.weight"
+    },
+    {
+      "destination": "option_norm.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.input_norm.weight"
+    },
+    {
+      "destination": "option_norm.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.input_norm.bias"
+    },
+    {
+      "destination": "action_decoder.initial.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "action_decoder.initial.bias"
+    },
+    {
+      "destination": "action_decoder.initial.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "action_decoder.initial.weight"
+    },
+    {
+      "destination": "action_decoder.key.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "action_decoder.key.weight"
+    },
+    {
+      "destination": "action_decoder.option_bias.bias",
+      "mode": "exact",
+      "parameters": 1,
+      "shape": [
+        1
+      ],
+      "source": "action_decoder.option_bias.bias"
+    },
+    {
+      "destination": "action_decoder.option_bias.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        1,
+        320
+      ],
+      "source": "action_decoder.option_bias.weight"
+    },
+    {
+      "destination": "action_decoder.query.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "action_decoder.query.weight"
+    },
+    {
+      "destination": "action_decoder.recurrent.bias_hh",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "action_decoder.recurrent.bias_hh"
+    },
+    {
+      "destination": "action_decoder.recurrent.bias_ih",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "action_decoder.recurrent.bias_ih"
+    },
+    {
+      "destination": "action_decoder.recurrent.weight_hh",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "action_decoder.recurrent.weight_hh"
+    },
+    {
+      "destination": "action_decoder.recurrent.weight_ih",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "action_decoder.recurrent.weight_ih"
+    },
+    {
+      "destination": "action_decoder.stop.0.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "action_decoder.stop.0.bias"
+    },
+    {
+      "destination": "action_decoder.stop.0.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "action_decoder.stop.0.weight"
+    },
+    {
+      "destination": "action_decoder.stop.2.bias",
+      "mode": "exact",
+      "parameters": 1,
+      "shape": [
+        1
+      ],
+      "source": "action_decoder.stop.2.bias"
+    },
+    {
+      "destination": "action_decoder.stop.2.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        1,
+        320
+      ],
+      "source": "action_decoder.stop.2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.0.linear1.bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.0.linear1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.0.linear1.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.linear1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.0.linear2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.linear2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.0.linear2.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        320,
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.0.linear2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.0.norm1.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.norm1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.0.norm1.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.norm1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.0.norm2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.norm2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.0.norm2.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.norm2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.0.self_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.0.self_attn.in_proj_bias"
+    },
+    {
+      "destination": "state_encoder.layers.0.self_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.self_attn.in_proj_weight"
+    },
+    {
+      "destination": "state_encoder.layers.0.self_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.self_attn.out_proj.bias"
+    },
+    {
+      "destination": "state_encoder.layers.0.self_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.0.self_attn.out_proj.weight"
+    },
+    {
+      "destination": "state_encoder.layers.1.linear1.bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.1.linear1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.1.linear1.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.linear1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.1.linear2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.linear2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.1.linear2.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        320,
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.1.linear2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.1.norm1.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.norm1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.1.norm1.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.norm1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.1.norm2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.norm2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.1.norm2.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.norm2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.1.self_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.1.self_attn.in_proj_bias"
+    },
+    {
+      "destination": "state_encoder.layers.1.self_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.self_attn.in_proj_weight"
+    },
+    {
+      "destination": "state_encoder.layers.1.self_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.self_attn.out_proj.bias"
+    },
+    {
+      "destination": "state_encoder.layers.1.self_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.1.self_attn.out_proj.weight"
+    },
+    {
+      "destination": "state_encoder.layers.2.linear1.bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.2.linear1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.2.linear1.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.linear1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.2.linear2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.linear2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.2.linear2.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        320,
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.2.linear2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.2.norm1.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.norm1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.2.norm1.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.norm1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.2.norm2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.norm2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.2.norm2.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.norm2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.2.self_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.2.self_attn.in_proj_bias"
+    },
+    {
+      "destination": "state_encoder.layers.2.self_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.self_attn.in_proj_weight"
+    },
+    {
+      "destination": "state_encoder.layers.2.self_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.self_attn.out_proj.bias"
+    },
+    {
+      "destination": "state_encoder.layers.2.self_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.2.self_attn.out_proj.weight"
+    },
+    {
+      "destination": "state_encoder.layers.3.linear1.bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.3.linear1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.3.linear1.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.linear1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.3.linear2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.linear2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.3.linear2.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        320,
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.3.linear2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.3.norm1.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.norm1.bias"
+    },
+    {
+      "destination": "state_encoder.layers.3.norm1.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.norm1.weight"
+    },
+    {
+      "destination": "state_encoder.layers.3.norm2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.norm2.bias"
+    },
+    {
+      "destination": "state_encoder.layers.3.norm2.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.norm2.weight"
+    },
+    {
+      "destination": "state_encoder.layers.3.self_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "state_encoder.board_encoder.layers.3.self_attn.in_proj_bias"
+    },
+    {
+      "destination": "state_encoder.layers.3.self_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.self_attn.in_proj_weight"
+    },
+    {
+      "destination": "state_encoder.layers.3.self_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.self_attn.out_proj.bias"
+    },
+    {
+      "destination": "state_encoder.layers.3.self_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "state_encoder.board_encoder.layers.3.self_attn.out_proj.weight"
+    },
+    {
+      "destination": "state_encoder.norm.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.norm.bias"
+    },
+    {
+      "destination": "state_encoder.norm.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "state_encoder.board_encoder.norm.weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.linear1.bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.linear1.bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.linear1.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.linear1.weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.linear2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.linear2.bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.linear2.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        320,
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.linear2.weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.multihead_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.multihead_attn.in_proj_bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.multihead_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.multihead_attn.in_proj_weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.multihead_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.multihead_attn.out_proj.bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.multihead_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.multihead_attn.out_proj.weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.norm1.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.norm1.bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.norm1.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.norm1.weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.norm2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.norm2.bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.norm2.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.norm2.weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.norm3.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.norm3.bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.norm3.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.norm3.weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.self_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.self_attn.in_proj_bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.self_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.self_attn.in_proj_weight"
+    },
+    {
+      "destination": "option_encoder.layers.0.self_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.self_attn.out_proj.bias"
+    },
+    {
+      "destination": "option_encoder.layers.0.self_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.0.self_attn.out_proj.weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.linear1.bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.linear1.bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.linear1.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.linear1.weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.linear2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.linear2.bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.linear2.weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        320,
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.linear2.weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.multihead_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.multihead_attn.in_proj_bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.multihead_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.multihead_attn.in_proj_weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.multihead_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.multihead_attn.out_proj.bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.multihead_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.multihead_attn.out_proj.weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.norm1.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.norm1.bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.norm1.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.norm1.weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.norm2.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.norm2.bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.norm2.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.norm2.weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.norm3.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.norm3.bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.norm3.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.norm3.weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.self_attn.in_proj_bias",
+      "mode": "exact",
+      "parameters": 960,
+      "shape": [
+        960
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.self_attn.in_proj_bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.self_attn.in_proj_weight",
+      "mode": "exact",
+      "parameters": 307200,
+      "shape": [
+        960,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.self_attn.in_proj_weight"
+    },
+    {
+      "destination": "option_encoder.layers.1.self_attn.out_proj.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.self_attn.out_proj.bias"
+    },
+    {
+      "destination": "option_encoder.layers.1.self_attn.out_proj.weight",
+      "mode": "exact",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.layers.1.self_attn.out_proj.weight"
+    },
+    {
+      "destination": "option_encoder.norm.bias",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.norm.bias"
+    },
+    {
+      "destination": "option_encoder.norm.weight",
+      "mode": "exact",
+      "parameters": 320,
+      "shape": [
+        320
+      ],
+      "source": "option_encoder.cross_attention_transformer.norm.weight"
+    },
+    {
+      "destination": "entity_cat_embeddings.fields.0.weight",
+      "destination_shape": [
+        4097,
+        320
+      ],
+      "mode": "leading_rows",
+      "parameters": 655680,
+      "rows": 2049,
+      "source": "prototype_encoder.card_identity.weight",
+      "source_shape": [
+        2049,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.4.weight",
+      "destination_shape": [
+        4097,
+        320
+      ],
+      "mode": "leading_rows",
+      "parameters": 655680,
+      "rows": 2049,
+      "source": "prototype_encoder.card_identity.weight",
+      "source_shape": [
+        2049,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.5.weight",
+      "destination_shape": [
+        4097,
+        320
+      ],
+      "mode": "leading_rows",
+      "parameters": 655680,
+      "rows": 2049,
+      "source": "prototype_encoder.card_identity.weight",
+      "source_shape": [
+        2049,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.6.weight",
+      "destination_shape": [
+        4097,
+        320
+      ],
+      "mode": "leading_rows",
+      "parameters": 655680,
+      "rows": 2049,
+      "source": "prototype_encoder.attack_identity.weight",
+      "source_shape": [
+        2049,
+        320
+      ]
+    }
+  ],
+  "destination_parameter_count": 14579843,
+  "mapping_policy": "explicit_semantic_map_only_no_shape_matching",
+  "newly_initialized_tensors": [
+    {
+      "destination": "global_cat_embeddings.fields.0.weight",
+      "parameters": 41280,
+      "shape": [
+        129,
+        320
+      ]
+    },
+    {
+      "destination": "global_cat_embeddings.fields.1.weight",
+      "parameters": 82240,
+      "shape": [
+        257,
+        320
+      ]
+    },
+    {
+      "destination": "global_cat_embeddings.fields.2.weight",
+      "parameters": 1280,
+      "shape": [
+        4,
+        320
+      ]
+    },
+    {
+      "destination": "global_cat_embeddings.fields.3.weight",
+      "parameters": 1280,
+      "shape": [
+        4,
+        320
+      ]
+    },
+    {
+      "destination": "global_cat_embeddings.fields.4.weight",
+      "parameters": 20800,
+      "shape": [
+        65,
+        320
+      ]
+    },
+    {
+      "destination": "global_cat_embeddings.fields.5.weight",
+      "parameters": 5120,
+      "shape": [
+        16,
+        320
+      ]
+    },
+    {
+      "destination": "global_cat_embeddings.fields.6.weight",
+      "parameters": 5120,
+      "shape": [
+        16,
+        320
+      ]
+    },
+    {
+      "destination": "global_cat_embeddings.fields.7.weight",
+      "parameters": 20480,
+      "shape": [
+        64,
+        320
+      ]
+    },
+    {
+      "destination": "global_num_projection.0.weight",
+      "parameters": 5120,
+      "shape": [
+        320,
+        16
+      ]
+    },
+    {
+      "destination": "global_num_projection.0.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "global_num_projection.2.weight",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ]
+    },
+    {
+      "destination": "global_num_projection.2.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "global_norm.weight",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "global_norm.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "entity_cat_embeddings.fields.1.weight",
+      "parameters": 1280,
+      "shape": [
+        4,
+        320
+      ]
+    },
+    {
+      "destination": "entity_cat_embeddings.fields.2.weight",
+      "parameters": 10240,
+      "shape": [
+        32,
+        320
+      ]
+    },
+    {
+      "destination": "entity_cat_embeddings.fields.3.weight",
+      "parameters": 20800,
+      "shape": [
+        65,
+        320
+      ]
+    },
+    {
+      "destination": "entity_cat_embeddings.fields.4.weight",
+      "parameters": 2560,
+      "shape": [
+        8,
+        320
+      ]
+    },
+    {
+      "destination": "entity_cat_embeddings.fields.5.weight",
+      "parameters": 20480,
+      "shape": [
+        64,
+        320
+      ]
+    },
+    {
+      "destination": "entity_num_projection.0.weight",
+      "parameters": 3200,
+      "shape": [
+        320,
+        10
+      ]
+    },
+    {
+      "destination": "entity_num_projection.0.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "entity_num_projection.2.weight",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ]
+    },
+    {
+      "destination": "entity_num_projection.2.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "entity_norm.weight",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "entity_norm.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "state_segment.weight",
+      "parameters": 640,
+      "shape": [
+        2,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.0.weight",
+      "parameters": 20800,
+      "shape": [
+        65,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.1.weight",
+      "parameters": 10560,
+      "shape": [
+        33,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.2.weight",
+      "parameters": 10560,
+      "shape": [
+        33,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.3.weight",
+      "parameters": 1280,
+      "shape": [
+        4,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.7.weight",
+      "parameters": 41280,
+      "shape": [
+        129,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.8.weight",
+      "parameters": 41280,
+      "shape": [
+        129,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.9.weight",
+      "parameters": 41280,
+      "shape": [
+        129,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.10.weight",
+      "parameters": 41280,
+      "shape": [
+        129,
+        320
+      ]
+    },
+    {
+      "destination": "option_cat_embeddings.fields.11.weight",
+      "parameters": 41280,
+      "shape": [
+        129,
+        320
+      ]
+    },
+    {
+      "destination": "option_num_projection.0.weight",
+      "parameters": 1280,
+      "shape": [
+        320,
+        4
+      ]
+    },
+    {
+      "destination": "option_num_projection.0.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "option_num_projection.2.weight",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ]
+    },
+    {
+      "destination": "option_num_projection.2.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "value_head.0.weight",
+      "parameters": 102400,
+      "shape": [
+        320,
+        320
+      ]
+    },
+    {
+      "destination": "value_head.0.bias",
+      "parameters": 320,
+      "shape": [
+        320
+      ]
+    },
+    {
+      "destination": "value_head.2.weight",
+      "parameters": 320,
+      "shape": [
+        1,
+        320
+      ]
+    },
+    {
+      "destination": "value_head.2.bias",
+      "parameters": 1,
+      "shape": [
+        1
+      ]
+    }
+  ],
+  "schema": "0033_weight_transfer_audit_v1",
+  "source_checkpoint": "archive/pretrained/0031_friend_pt0805_epoch13_best_validation_loss/model.pt",
+  "source_metadata": {
+    "arm": "rule_faithful_semantic",
+    "dataset_manifest_sha256": "c7b23a24082d3c2fed286f515b80b44f1d7085ec7349c595d8fe5b12fe920eb5",
+    "epoch": 13,
+    "global_step": 109135,
+    "implementation_sha256": "3960f477fc111e79a97f54fc2ff9e89107abace60390626796fdddfdd073769a",
+    "initialized_from_checkpoint": null,
+    "model_config": {
+      "actor_view": "canonical_typed_state_and_option_relations_only",
+      "config": {
+        "d_model": 320,
+        "dropout": 0.1,
+        "event_layers": 1,
+        "ffn_multiplier": 3,
+        "fusion_layers": 0,
+        "heads": 8,
+        "max_action_steps": 64,
+        "max_attack_id": 2048,
+        "max_card_id": 2048,
+        "max_effect_id": 4096,
+        "max_options": 128,
+        "max_skill_id": 512,
+        "option_layers": 2,
+        "resource_layers": 0,
+        "state_architecture": "hierarchical",
+        "state_layers": 4
+      },
+      "legacy_tensor_dependency": false,
+      "model": "SemanticPolicy",
+      "parameter_count": 56352322
+    },
+    "model_contract_sha256": "de0721ca50c5d57dfc0a8cdaea6059607375c24d993ec27337509d734a2182b8",
+    "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
+    "training_config_sha256": "4f9a3678ecacb4110909e991cca23db24e3f168e7449eb6fdf7c8157dff54c2a",
+    "validation": {
+      "action_length_accuracy": 0.9908740957058472,
+      "decisions": 241072,
+      "exact_action": 0.7678867724165395,
+      "legal_action": 1.0,
+      "loss": 0.32231759211638855,
+      "teacher_exact_action": 0.7678867724165395,
+      "token_accuracy": 0.8835396054518504,
+      "tokens": 497886
+    },
+    "version": "V1_starter_daily_topn_20260729_20260803"
+  },
+  "source_schema": "0031_model_only_checkpoint_v1",
+  "source_sha256": "285b88f5e30c40ad07ad025b429c5bd1594f0359cc0d44849c368056222d63ae",
+  "strict_feature_parity_claimed": false,
+  "transferred_parameter_count": 11052162,
+  "transferred_parameter_fraction": 0.7580439652196529
+}

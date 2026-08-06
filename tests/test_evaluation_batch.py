@@ -22,6 +22,7 @@ from evaluation.runner.batch import (
     _finalize_formal_report,
     _metric_refs,
     _manifest_package,
+    _validate_formal_destination,
     _write_evaluation_backlink_atomic,
     _metric_registry,
     _stable_game_seed,
@@ -561,6 +562,17 @@ class OverridePlugin:
                     with self.assertRaisesRegex(ValueError, "manifest|status"):
                         run_batch(config)
                 run_worker.assert_not_called()
+
+    def test_formal_preflight_accepts_completed_training_state(self) -> None:
+        paths = self._formal_runtime_paths("V1_completed_training")
+        self._initialize_formal_runtime(paths)
+        paths.status.write_text(
+            json.dumps({"state": "complete", "version": paths.version_name}),
+            encoding="utf-8",
+        )
+
+        with patch("evaluation.runner.batch._formal_version_paths", return_value=paths):
+            _validate_formal_destination(paths.evaluation)
 
     def test_formal_preflight_rejects_report_and_backlink_collisions_before_workers(self) -> None:
         candidate = self.make_package("candidate", 7)

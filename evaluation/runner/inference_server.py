@@ -146,6 +146,20 @@ class PolicyServer:
             return
 
         batch = _stack_batches(self._torch, encoded, self._device)
+        # Shared inference bypasses the candidate's single-row ``select`` path.
+        # Align floating inputs with the loaded model while preserving categorical
+        # indices and masks as integer tensors.
+        model_dtype = next(
+            (parameter.dtype for parameter in self._policy.model.parameters()
+             if parameter.dtype.is_floating_point),
+            None,
+        )
+        if model_dtype is not None:
+            batch = {
+                name: value.to(dtype=model_dtype)
+                if value.dtype.is_floating_point else value
+                for name, value in batch.items()
+            }
         with self._torch.inference_mode():
             result = self._policy.model.deterministic_action_tensors(batch)
         sequences = result.sequences.cpu().tolist()

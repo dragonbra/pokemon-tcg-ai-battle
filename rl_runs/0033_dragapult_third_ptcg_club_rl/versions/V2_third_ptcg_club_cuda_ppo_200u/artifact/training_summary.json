@@ -1,0 +1,13 @@
+{
+  "checkpoint_retention": "all",
+  "decisions": 233472,
+  "episodes": 942,
+  "state": "stopped_by_user_invalid_feature_contract",
+  "stop_reason": "The resident PolicyCodecV1 omitted the full 0031 semantic resource, event, registered-deck, and prototype feature contract.",
+  "updates": 6,
+  "valid_for_continuation": false,
+  "valid_for_selection": false,
+  "version": "V2_third_ptcg_club_cuda_ppo_200u",
+  "wandb_run_id": "0033-v2-third-ptcg-club-cuda-ppo-200u",
+  "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0033-v2-third-ptcg-club-cuda-ppo-200u"
+}
