@@ -599,11 +599,12 @@ def run_full(
 ) -> list[dict[str, Any]]:
     if candidate_concurrency < 1:
         raise ValueError("candidate_concurrency must be at least one")
-    refresh_index(
+    published = refresh_index(
         catalog,
         candidate_concurrency=candidate_concurrency,
         workers_per_candidate=workers,
     )
+    published_ids = {record["deck_id"] for record in published}
     with ExitStack() as stack:
         candidate_socket = stack.enter_context(
             _policy_inference_server(
@@ -626,34 +627,39 @@ def run_full(
             )
         )
         assert candidate_socket is not None and opponent_socket is not None
+        candidate_list = [
+            candidate for candidate in candidates if candidate.name not in published_ids
+        ]
         with ThreadPoolExecutor(max_workers=candidate_concurrency) as executor:
-            futures = {
-                executor.submit(
-                    run_deck,
-                    catalog,
-                    candidate,
-                    workers=workers,
-                    batch_size=batch_size,
-                    batch_wait_ms=batch_wait_ms,
-                    candidate_socket=candidate_socket,
-                    opponent_socket=opponent_socket,
-                ): candidate
-                for candidate in candidates
-            }
-            for future in as_completed(futures):
-                candidate = futures[future]
-                record = future.result()
-                refresh_index(
-                    catalog,
-                    candidate_concurrency=candidate_concurrency,
-                    workers_per_candidate=workers,
-                )
-                print(
-                    "FROZEN_0806_COMPLETE "
-                    f"deck={candidate.name} run_id={record['run_id']} "
-                    f"record={record['wins']}-{record['losses']}-{record['draws']}",
-                    flush=True,
-                )
+            for offset in range(0, len(candidate_list), candidate_concurrency):
+                batch = candidate_list[offset : offset + candidate_concurrency]
+                futures = {
+                    executor.submit(
+                        run_deck,
+                        catalog,
+                        candidate,
+                        workers=workers,
+                        batch_size=batch_size,
+                        batch_wait_ms=batch_wait_ms,
+                        candidate_socket=candidate_socket,
+                        opponent_socket=opponent_socket,
+                    ): candidate
+                    for candidate in batch
+                }
+                for future in as_completed(futures):
+                    candidate = futures[future]
+                    record = future.result()
+                    refresh_index(
+                        catalog,
+                        candidate_concurrency=candidate_concurrency,
+                        workers_per_candidate=workers,
+                    )
+                    print(
+                        "FROZEN_0806_COMPLETE "
+                        f"deck={candidate.name} run_id={record['run_id']} "
+                        f"record={record['wins']}-{record['losses']}-{record['draws']}",
+                        flush=True,
+                    )
     return refresh_index(
         catalog,
         candidate_concurrency=candidate_concurrency,
