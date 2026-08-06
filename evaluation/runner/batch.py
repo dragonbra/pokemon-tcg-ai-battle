@@ -86,6 +86,8 @@ class BatchConfig:
     share_policy_inference_server: bool = False
     seed: int = 22022
     worker_crash_retries: int = 0
+    games_by_opponent: tuple[int, ...] | None = None
+    opponent_schedule_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +112,15 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("workers must be at least one")
     if config.worker_crash_retries < 0:
         raise ValueError("worker_crash_retries cannot be negative")
+    if config.games_by_opponent is not None and (
+        len(config.games_by_opponent) != len(config.opponents)
+        or any(type(count) is not int or count < 1 for count in config.games_by_opponent)
+    ):
+        raise ValueError(
+            "games_by_opponent must contain one positive integer per opponent"
+        )
+    if config.opponent_schedule_id is not None and not config.opponent_schedule_id:
+        raise ValueError("opponent_schedule_id cannot be empty")
     if config.worker_cpu_threads is not None and config.worker_cpu_threads < 1:
         raise ValueError("worker_cpu_threads must be at least one")
     if config.candidate_inference_batch_size < 1:
@@ -411,15 +422,22 @@ def _game_jobs(
     store: TraceStore,
 ) -> list[tuple[GameRequest, Path]]:
     jobs: list[tuple[GameRequest, Path]] = []
-    for opponent in config.opponents:
-        for game_number in range(1, config.games_per_opponent + 1):
+    counts = config.games_by_opponent or (config.games_per_opponent,) * len(config.opponents)
+    global_game_number = 0
+    for opponent, game_count in zip(config.opponents, counts, strict=True):
+        for game_number in range(1, game_count + 1):
+            global_game_number += 1
             game_id = f"{opponent.name}-{game_number:03d}"
             request = GameRequest(
                 run_id=run_id,
                 game_id=game_id,
                 candidate=config.candidate,
                 opponent=opponent,
-                candidate_first=game_number % 2 == 1,
+                candidate_first=(
+                    global_game_number % 2 == 1
+                    if config.games_by_opponent is not None
+                    else game_number % 2 == 1
+                ),
                 max_steps=config.max_steps,
                 visualize=config.visualize,
                 seed=_stable_game_seed(
@@ -1020,7 +1038,17 @@ def _manifest(
         "candidate": _manifest_package(config.candidate, include_deck=True),
         "opponents": [_manifest_package(opponent) for opponent in config.opponents],
         "control": _manifest_package(config.control) if config.control else None,
-        "games": len(config.opponents) * config.games_per_opponent,
+        "games": (
+            sum(config.games_by_opponent)
+            if config.games_by_opponent is not None
+            else len(config.opponents) * config.games_per_opponent
+        ),
+        "games_per_opponent": (
+            list(config.games_by_opponent)
+            if config.games_by_opponent is not None
+            else config.games_per_opponent
+        ),
+        "opponent_schedule_id": config.opponent_schedule_id,
         "seed": config.seed,
         "seed_policy": "sha256(base_seed:candidate:opponent:game_number)",
         "engine_rng_contract": (
@@ -1064,7 +1092,11 @@ def _manifest(
             ),
         },
         "shared_policy_inference_process": config.share_policy_inference_server,
-        "swap_policy": "alternate_candidate_first",
+        "swap_policy": (
+            "alternate_candidate_first_globally"
+            if config.games_by_opponent is not None
+            else "alternate_candidate_first"
+        ),
         "plugins": list(metric_ids),
         "metric_profile": profile.manifest(),
         "presentation_errors": list(presentation_errors),

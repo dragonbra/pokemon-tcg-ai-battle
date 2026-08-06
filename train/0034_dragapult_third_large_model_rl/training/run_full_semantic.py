@@ -1,4 +1,4 @@
-"""Formal full-0031 decoder PPO over official CPU engine Frozen51 games."""
+"""Formal full-0031 decoder PPO over the Frozen-0806 256-game schedule."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ class RunConfig:
     coalesce_ms: float = 5.0
     device: str = "cuda:0"
     seed: int = 330031001
-    games_per_update: int = 204
+    games_per_update: int = 256
     eval_every: int = 10
     wandb_mode: str = "online"
     ppo: PPOConfig = PPOConfig(gae_lambda=0.97, credit_clock="turn")
@@ -54,8 +54,8 @@ class RunConfig:
             raise ValueError("version must match V<n>_<ascii_snake_case>")
         if min(self.updates, self.workers, self.eval_every) < 1 or self.coalesce_ms < 0:
             raise ValueError("updates, workers, and eval_every must be positive")
-        if self.games_per_update not in {204, 408}:
-            raise ValueError("games_per_update must be 204 or 408 balanced Frozen51 games")
+        if self.games_per_update not in {256, 512}:
+            raise ValueError("games_per_update must be 256 or 512 Frozen-0806 games")
         if self.wandb_mode not in {"online", "offline"}:
             raise ValueError("invalid W&B mode")
         self.ppo.validate()
@@ -128,35 +128,33 @@ def build_jobs(
     *,
     source_policy_update: int,
     seed: int,
-    count: int = 102,
+    count: int = 256,
     greedy: bool = False,
 ) -> list[RolloutJob]:
     catalog = load_frozen_catalog()
     if count < 2 or count % 2:
         raise ValueError("job count must be positive and seat-balanced")
-    full_repeats = count // 102 if count >= 102 and count % 102 == 0 else 0
-    selected = catalog if full_repeats else catalog[: count // 2]
+    fixed_slots = [opponent for opponent in catalog for _ in range(opponent.games)]
+    full_repeats = count // 256 if count >= 256 and count % 256 == 0 else 0
+    selected = fixed_slots * full_repeats if full_repeats else fixed_slots[:count]
     jobs: list[RolloutJob] = []
     deck = focal_deck()
     root = runtime_root()
-    for repeat in range(max(1, full_repeats)):
-        for opponent in selected:
-            for focal_first in (True, False):
-                index = len(jobs)
-                jobs.append(
-                    RolloutJob(
-                    game_id=("eval" if greedy else "rollout")
-                    + f"-u{source_policy_update:04d}-{index:04d}",
-                    opponent_id=opponent.deck_id,
-                    focal_first=focal_first,
-                    seed=seed + source_policy_update * 1_000_003 + repeat * 100_003 + index,
-                    source_policy_update=source_policy_update,
-                    focal_deck=deck,
-                    opponent_deck=opponent.deck,
-                    runtime_root=root,
-                    )
-                )
-    if full_repeats and len({job.opponent_id for job in jobs}) != 51:
+    for index, opponent in enumerate(selected):
+        jobs.append(
+            RolloutJob(
+                game_id=("eval" if greedy else "rollout")
+                + f"-u{source_policy_update:04d}-{index:04d}",
+                opponent_id=opponent.deck_id,
+                focal_first=index % 2 == 0,
+                seed=seed + source_policy_update * 1_000_003 + index,
+                source_policy_update=source_policy_update,
+                focal_deck=deck,
+                opponent_deck=opponent.deck,
+                runtime_root=root,
+            )
+        )
+    if full_repeats and len({job.opponent_id for job in jobs}) != 55:
         raise RuntimeError("formal schedule omitted a Frozen opponent")
     if len(jobs) != count:
         raise RuntimeError(f"schedule produced {len(jobs)} jobs instead of {count}")
@@ -196,13 +194,21 @@ def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
 def _opponent_snapshot() -> dict[str, Any]:
     catalog = load_frozen_catalog()
     return {
-        "schema": "0034_full_frozen0019_cpu_snapshot_v1",
+        "schema": "0034_frozen0806_256_snapshot_v1",
         "opponent_count": len(catalog),
-        "seat_contract": "every_opponent_twice_each_seat_per_update",
+        "total_games": sum(item.games for item in catalog),
+        "seat_contract": "global_fixed_schedule_alternation_128_each_seat",
+        "pool_id": "0806_kaggle_top100_plus_v1",
+        "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
         "policy": "0019_epoch13_immutable_foundation",
         "policy_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
         "opponents": [
-            {"deck_id": item.deck_id, "deck_sha256": item.deck_sha256}
+            {
+                "deck_id": item.deck_id,
+                "deck_sha256": item.deck_sha256,
+                "games": item.games,
+                "segment": item.segment,
+            }
             for item in catalog
         ],
     }
@@ -346,7 +352,9 @@ def run(config: RunConfig) -> dict[str, Any]:
         "source_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
         "actor": "exact_0031_semantic_policy_no_reduction",
-        "opponent_count": 51,
+        "opponent_count": 55,
+        "opponent_games_per_batch": 256,
+        "opponent_schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
         "official_engine": "cpu_cg_runtime",
         "trainable_contract": ["actor.action_decoder.*", "value_head.*"],
         "checkpoint_retention": "all",
@@ -490,7 +498,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                         build_jobs(
                             source_policy_update=update,
                             seed=config.seed + 70_000_000,
-                            count=102,
+                            count=256,
                             greedy=True,
                         )
                     )
@@ -553,7 +561,7 @@ def main() -> int:
     parser.add_argument("--updates", type=int, default=200)
     parser.add_argument("--workers", type=int, default=24)
     parser.add_argument("--coalesce-ms", type=float, default=5.0)
-    parser.add_argument("--games-per-update", type=int, choices=(204, 408), default=204)
+    parser.add_argument("--games-per-update", type=int, choices=(256, 512), default=256)
     parser.add_argument("--eval-every", type=int, default=10)
     parser.add_argument("--gae-lambda", type=float, default=0.97)
     parser.add_argument("--credit-clock", choices=("selection", "turn"), default="turn")

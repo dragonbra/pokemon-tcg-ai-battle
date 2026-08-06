@@ -83,7 +83,7 @@ Frozen League 全量循环评测使用 `--metric-profile league_deck_quality`（
 不复用胡地专属 Powerful Hand 作为全局指标，而是统一提取首次攻击回合、攻击连续率、可攻击却
 未提交的回合、Prize/attack、多 Prize 回合、KO 后攻击间隔、Bench/进化/能量场面、牌库消耗、
 Supporter/手填能量利用、对手攻击受阻、关键主攻成形、Ability 动作、伤害事件和主动离场。
-`evaluation/metrics/league_profiles.py` 将 51 套 Frozen deck 完整覆盖为策略类别；每类只从
+`evaluation/metrics/league_profiles.py` 保留对历史 51 套 Frozen-0019 deck 的策略类别覆盖；每类只从
 通用原子指标中选择重点解释字段，并记录独立的 reward warning。过程指标只用于解释 checkpoint、
 定位退化和形成 reward 假设，不能覆盖 official-engine 胜负护栏。
 
@@ -121,9 +121,11 @@ Evaluation 只负责指标测量、证据审计和可视化，不执行自动迭
 名称、deck hash、cg tree hash 与 60-card 校验结果；任何预检、卡组或 cg hash 兼容错误都会在
 启动对局前退出。
 
-默认 Frozen catalog 是 [`configs/frozen.json`](configs/frozen.json)，只引用
-`arena/frozen/` 下的 49 个轻量 exact-deck identity，并绑定 `arena/frozen/_policy/` 中唯一的
-Foundation package。legacy catalog 是 [`configs/opponents.json`](configs/opponents.json)。`all`
+默认 Frozen catalog 是 [`configs/frozen_0806.json`](configs/frozen_0806.json)，引用
+`arena/frozen_pools/0806_kaggle_top100_plus_v1/` 下的 55 个轻量 exact-deck identity，并分别绑定
+唯一的 Policy-0806 candidate runtime 和 Policy-0019 opponent runtime。旧 51 套 Frozen-0019
+及其 Combat Mat 已迁入 `archive/evaluation/pre_0806_0019/`。legacy catalog 是
+[`configs/opponents.json`](configs/opponents.json)。`all`
 按所选 catalog 启用项的固定顺序选择；传入逗号分隔名称时，
 只能选择 catalog 中已启用的项。新增的候选 opponent 先作为标准 package 放入
 `arena/candidates/<name>/`，完成验证并经用户确认后，才按实际关键宝可梦分配
@@ -132,6 +134,14 @@ Foundation package。legacy catalog 是 [`configs/opponents.json`](configs/oppon
 确实存在于该 deck 的代表宝可梦 card ID。Report 的紧凑胜率图使用这些元数据展示小卡图；
 图片加载失败时仍保留文字名称和胜率。候选在获准收编前保持原名。这里的 arena candidate
 描述存放与准入状态，CLI `--candidate` 则描述本次被测对象。
+
+Frozen-0806 的独立配置是 [`configs/frozen_0806.json`](configs/frozen_0806.json)，资产位于
+`arena/frozen_pools/0806_kaggle_top100_plus_v1/`。它固定保存 55 个 unique exact deck 和
+256 局整数频率：240 局按 2026-08-06 Top 100 的 41 个 exact deck 做最大余数分配，16 局来自
+101–500 名的 14 个潜力 exact deck。该表同时作为 Arena、PPO rollout batch 和最终冻结评测的
+分布合同；运行时不得重新按权重抽样。对手角色固定引用 Policy-0019，主视角固定引用
+Policy-0806。默认 CLI 已使用这份固定 schedule；`--games` 只适用于 legacy opponent pool，
+Frozen-0806 每次固定运行 256 局。
 
 ## 产物和 trace 生命周期
 

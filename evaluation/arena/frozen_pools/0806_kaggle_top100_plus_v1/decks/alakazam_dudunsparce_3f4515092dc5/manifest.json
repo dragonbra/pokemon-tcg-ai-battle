@@ -1,0 +1,36 @@
+{
+  "archetype": "Alakazam / Dudunsparce",
+  "deck_id": "alakazam_dudunsparce_3f4515092dc5",
+  "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "provenance": {
+    "binding_counts": {
+      "leaderboard_score": 8,
+      "submission_date_exact_score_mismatch": 6
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      7,
+      14,
+      16,
+      30,
+      33,
+      44,
+      54,
+      60,
+      64,
+      75,
+      82,
+      89,
+      97,
+      100
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    743,
+    66
+  ],
+  "schema_version": "evaluation_frozen_0806_deck_v1"
+}

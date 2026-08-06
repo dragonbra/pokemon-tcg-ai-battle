@@ -7,12 +7,10 @@ venv/
 *.zip
 *.7z
 *.pkl
+*.bin
 *.pt
-!archive/pretrained/0019_universal_winner_bc_0730_epoch13/model.pt
-!archive/pretrained/0028_universal_semantic_foundation_pretraining/model.pt
-!evaluation/arena/opponents/marnies_grimmsnarl_ex_froslass_02/policy.pt
-!evaluation/arena/opponents/team_rockets_mewtwo_ex_spidops_01/policy.pt
 *.pth
+*.ckpt
 *.safetensors
 engine/build/
 data/competition/

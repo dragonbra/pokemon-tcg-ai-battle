@@ -1,0 +1,5 @@
+{
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_manifest": "arena/frozen_pools/0806_kaggle_top100_plus_v1/manifest.json",
+  "schema_version": "evaluation_frozen_pool_config_v1"
+}

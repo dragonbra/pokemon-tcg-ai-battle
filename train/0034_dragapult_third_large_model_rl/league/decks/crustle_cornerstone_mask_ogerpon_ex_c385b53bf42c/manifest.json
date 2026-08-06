@@ -1,0 +1,22 @@
+{
+  "archetype": "Crustle / Cornerstone Mask Ogerpon ex",
+  "deck_id": "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c",
+  "exact_deck_sha256": "c385b53bf42c2af2bc8daedde5b28d921dd913e9886c1e86f326ad229ee20e6a",
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "provenance": {
+    "binding_counts": {
+      "leaderboard_score": 1
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      79
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    345,
+    117
+  ],
+  "schema_version": "evaluation_frozen_0806_deck_v1"
+}

@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import re
 import unittest
+from collections import Counter
 
 
 runtime = importlib.import_module(
@@ -17,6 +18,7 @@ exporter = importlib.import_module(
 full_runner = importlib.import_module(
     "train.0034_dragapult_third_large_model_rl.training.run_full_semantic"
 )
+league = importlib.import_module("train.0034_dragapult_third_large_model_rl.league")
 
 
 class ProjectIdentityTest(unittest.TestCase):
@@ -66,6 +68,25 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(
             full_runner.WANDB_DISPLAY_PREFIX,
             "0034 · dragapult_third_large_model_rl",
+        )
+
+    def test_frozen_0806_catalog_is_exact_fixed_256_distribution(self) -> None:
+        catalog = league.load_frozen_catalog()
+
+        self.assertEqual(len(catalog), 55)
+        self.assertEqual(len({item.deck_sha256 for item in catalog}), 55)
+        self.assertEqual(sum(item.games for item in catalog), 256)
+        self.assertTrue(all(len(item.deck) == 60 for item in catalog))
+
+    def test_formal_rollout_reuses_schedule_and_balances_seats_globally(self) -> None:
+        catalog = league.load_frozen_catalog()
+        jobs = full_runner.build_jobs(source_policy_update=0, seed=123, count=256)
+
+        self.assertEqual(len(jobs), 256)
+        self.assertEqual(sum(job.focal_first for job in jobs), 128)
+        self.assertEqual(
+            Counter(job.opponent_id for job in jobs),
+            Counter({item.deck_id: item.games for item in catalog}),
         )
 
 

@@ -1,0 +1,52 @@
+{
+  "deck_count": 55,
+  "policies": {
+    "main": {
+      "archive": "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss",
+      "asset_id": "0031-friend-0806-epoch11-best-validation-loss",
+      "exact_deck_conditioned": true,
+      "policy_id": "Policy-0806",
+      "role": "main",
+      "shared_across_decks": true,
+      "weights_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
+    },
+    "opponent": {
+      "archive": "archive/pretrained/0019_universal_winner_bc_0730_epoch13",
+      "asset_id": "0019-0730-epoch13",
+      "deployment_source_id": 0,
+      "policy_id": "Policy-0019",
+      "role": "opponent",
+      "shared_across_decks": true,
+      "weights_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
+    }
+  },
+  "policy_runtimes": {
+    "opponent": {
+      "path": "policies/policy_0019",
+      "tree_sha256": "3c280e8dc070b5cecbafa582ceec9457d35cb1db78ad6c6d2af85341374402ca"
+    },
+    "main": {
+      "path": "policies/policy_0806",
+      "tree_sha256": "ecb4c7793b4b4f36ce655ecce5af2f55a1158c3189709183eb64a2b4d404e57d"
+    }
+  },
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "schedule_path": "schedule.json",
+  "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
+  "schema_version": "evaluation_frozen_distribution_v1",
+  "source_snapshot": {
+    "captured_at_utc": "2026-08-06T07:37:02.116349+00:00",
+    "path": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json",
+    "sha256": "30c4db92ef44df28d1c63f4da4d55eab7a75e528d4aac7caa29424f2ffbe9e5f"
+  },
+  "total_games": 256,
+  "usage_contract": {
+    "arena_validation": true,
+    "final_frozen_evaluation": true,
+    "fixed_integer_counts": true,
+    "official_engine_required": true,
+    "ppo_rollout_batch": true,
+    "reward": "terminal_win_loss_only",
+    "runtime_resampling": false
+  }
+}

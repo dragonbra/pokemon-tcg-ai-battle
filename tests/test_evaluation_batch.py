@@ -20,6 +20,7 @@ from evaluation.runner.batch import (
     _case_candidate,
     _deck_card_category,
     _finalize_formal_report,
+    _game_jobs,
     _metric_refs,
     _manifest_package,
     _validate_formal_destination,
@@ -456,6 +457,56 @@ class OverridePlugin:
         self.assertEqual(set(result.metric_results), set(CORE_METRIC_IDS))
         self.assertEqual(result.report_data.metrics, result.metric_results)
         self.assertEqual({path.name for path in report_root.iterdir()}, {"report.html"})
+
+    def test_variable_opponent_counts_use_one_fixed_balanced_schedule(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponents = (
+            self.make_package("opponent-a", 8),
+            self.make_package("opponent-b", 9),
+            self.make_package("opponent-c", 10),
+        )
+        config = replace(
+            self.make_config(candidate, opponents, games=1),
+            games_by_opponent=(3, 2, 251),
+            opponent_schedule_id="fixed-256-v1",
+        )
+        store = TraceStore(self.root / "schedule-temp", self.root / "schedule-report")
+
+        jobs = _game_jobs(config, "run-fixed", store)
+
+        self.assertEqual(len(jobs), 256)
+        self.assertEqual(
+            [request.opponent.name for request, _ in jobs[:6]],
+            ["opponent-a"] * 3 + ["opponent-b"] * 2 + ["opponent-c"],
+        )
+        self.assertEqual(sum(request.candidate_first for request, _ in jobs), 128)
+        self.assertEqual(len({request.game_id for request, _ in jobs}), 256)
+        self.assertEqual(
+            jobs[0][0].seed,
+            _stable_game_seed(22022, "candidate", "opponent-a", 1),
+        )
+
+    def test_variable_opponent_counts_are_validated_before_workers(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponents = (
+            self.make_package("opponent-a", 8),
+            self.make_package("opponent-b", 9),
+        )
+        invalid = (
+            (1,),
+            (1, 0),
+            (1, True),
+        )
+        for counts in invalid:
+            with self.subTest(counts=counts):
+                config = replace(
+                    self.make_config(candidate, opponents, games=1),
+                    games_by_opponent=counts,
+                )
+                with patch("evaluation.runner.batch._run_worker") as run_worker:
+                    with self.assertRaisesRegex(ValueError, "games_by_opponent"):
+                        run_batch(config)
+                run_worker.assert_not_called()
 
     def test_batch_rejects_arbitrary_explicit_report_before_workers(self) -> None:
         candidate = self.make_package("candidate", 7)

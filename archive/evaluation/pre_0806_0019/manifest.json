@@ -1,0 +1,41 @@
+{
+  "archived_at": "2026-08-07T00:54:39+08:00",
+  "reason": "Replaced by the Frozen-0806 55-deck fixed 256-game distribution",
+  "schema_version": "evaluation_archive_manifest_v1",
+  "assets": [
+    {
+      "bytes": 244655164,
+      "file_count": 243,
+      "from": "evaluation/arena/combat_mat",
+      "to": "archive/evaluation/pre_0806_0019/evaluation_arena/combat_mat",
+      "tree_sha256": "8749b1c177e7d37361ebc71b62a36adf3ce8c28e2f3d091b530c4862348394d3"
+    },
+    {
+      "bytes": 78773393,
+      "file_count": 135,
+      "from": "evaluation/arena/frozen",
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "to": "archive/evaluation/pre_0806_0019/evaluation_arena/frozen",
+      "tree_sha256": "e248f8cf4b21815e9816404d393e096ca8d650168763743f16da735fc201cd0f"
+    },
+    {
+      "bytes": 19985,
+      "from": "evaluation/configs/frozen.json",
+      "sha256": "296ba0891df600de0025247c064dbc8a5d086029b2387db4ef0c4d000bd5849a",
+      "to": "archive/evaluation/pre_0806_0019/evaluation_configs/frozen.json"
+    },
+    {
+      "from": "train/0034_dragapult_third_large_model_rl/league/decks and frozen_catalog.json",
+      "pool_id": "0019_foundation_51_exact_decks_v4",
+      "to": "archive/evaluation/pre_0806_0019/train_0034_league",
+      "catalog_sha256": "296ba0891df600de0025247c064dbc8a5d086029b2387db4ef0c4d000bd5849a"
+    }
+  ],
+  "replacement": {
+    "pool_id": "0806_kaggle_top100_plus_v1",
+    "root": "evaluation/arena/frozen_pools/0806_kaggle_top100_plus_v1",
+    "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
+    "total_games": 256,
+    "unique_exact_decks": 55
+  }
+}

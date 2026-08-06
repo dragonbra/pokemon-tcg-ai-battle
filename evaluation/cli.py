@@ -16,6 +16,7 @@ from evaluation.packages.loader import (
 )
 from evaluation.cards import card_image_url, load_card_catalog
 from evaluation.frozen import FrozenCatalog, load_frozen_catalog
+from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
 from evaluation.metrics.profiles import available_metric_profiles
 from evaluation.runner.batch import BatchConfig, default_worker_count, run_batch
 from evaluation.runtime import assert_cg_compatible
@@ -25,7 +26,7 @@ EXPECTED_FIELDS = frozenset(
     {"name", "package", "display_name", "representative_card_ids", "enabled", "tags"}
 )
 DEFAULT_CATALOG = Path(__file__).resolve().parent / "configs" / "opponents.json"
-DEFAULT_FROZEN_CATALOG = Path(__file__).resolve().parent / "configs" / "frozen.json"
+DEFAULT_FROZEN_CATALOG = Path(__file__).resolve().parent / "configs" / "frozen_0806.json"
 ARENA_OPPONENTS_RELATIVE = Path("arena") / "opponents"
 DEFAULT_MAX_STEPS = 1_000
 MIN_RESEARCH_GAMES = 10
@@ -313,7 +314,7 @@ def _parser() -> argparse.ArgumentParser:
         "--pool",
         choices=("frozen", "opponents"),
         default="frozen",
-        help="评测池；默认使用共享 0019 Foundation 的 51-deck Frozen Arena",
+        help="评测池；默认使用 Frozen-0806 的固定 55-deck / 256-game 分布",
     )
     parser.add_argument("--catalog", type=Path, default=None)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -329,7 +330,7 @@ def _parser() -> argparse.ArgumentParser:
         "--games",
         type=int,
         default=10,
-        help="每个 opponent 的对局数（默认且至少 10；固定 18 opponent catalog）",
+        help="legacy opponent 的每项局数；Frozen-0806 固定使用 schedule 中的 256 局",
     )
     run.add_argument(
         "--output",
@@ -433,32 +434,42 @@ def _run(args: argparse.Namespace) -> str:
         else None
     )
     frozen_catalog: FrozenCatalog | None = None
+    frozen_0806 = None
     if args.pool == "frozen":
-        frozen_catalog = load_frozen_catalog(catalog_path, evaluation_root)
-        available_opponents = frozen_catalog.opponents
-        candidate = _decorate_candidate_from_frozen_identity(candidate, frozen_catalog)
+        frozen_0806 = load_frozen_0806_runtime_catalog(catalog_path, evaluation_root)
+        available_opponents = frozen_0806.opponents
+        candidate = _decorate_candidate_from_identities(candidate, frozen_0806.candidates)
     else:
         available_opponents = tuple(load_opponent_catalog(catalog_path, evaluation_root))
     opponents = _selected_opponents(args.opponents, available_opponents)
     args.output, args.report_path = _evaluation_output_paths(args.output)
-    _validate_research_coverage(
-        args.opponents,
-        args.games,
-        opponents,
-        require_full_catalog=args.report_path is not None,
-    )
+    if frozen_0806 is not None:
+        if args.opponents.strip() != "all":
+            raise PackageValidationError("Frozen-0806 requires --opponents all")
+    else:
+        _validate_research_coverage(
+            args.opponents,
+            args.games,
+            opponents,
+            require_full_catalog=args.report_path is not None,
+        )
     for opponent in opponents:
         assert_cg_compatible(candidate, opponent)
 
-    candidate_device = args.candidate_device or ("cuda:0" if frozen_catalog else None)
+    candidate_device = args.candidate_device or ("cuda:0" if frozen_0806 else None)
     opponent_device = (
-        (args.opponent_device or candidate_device) if frozen_catalog else None
+        (args.opponent_device or candidate_device) if frozen_0806 else None
+    )
+    games_by_opponent = (
+        tuple(entry.games for entry in frozen_0806.pool.schedule)
+        if frozen_0806 is not None
+        else None
     )
     result = run_batch(
         BatchConfig(
             candidate=candidate,
             opponents=opponents,
-            games_per_opponent=args.games,
+            games_per_opponent=(1 if frozen_0806 is not None else args.games),
             output_root=args.output,
             report_path=args.report_path,
             update_project_index=args.report_path is not None,
@@ -473,14 +484,26 @@ def _run(args: argparse.Namespace) -> str:
             candidate_inference_device=candidate_device,
             candidate_inference_batch_size=args.candidate_batch_size,
             candidate_inference_batch_wait_ms=args.candidate_batch_wait_ms,
-            opponent_inference_root=(frozen_catalog.policy.root if frozen_catalog else None),
+            opponent_inference_root=(
+                frozen_0806.opponent_policy.root if frozen_0806 is not None else None
+            ),
             opponent_inference_device=opponent_device,
-            opponent_pool_id=(frozen_catalog.pool_id if frozen_catalog else "legacy_opponents"),
+            opponent_pool_id=(
+                frozen_0806.pool.pool_id if frozen_0806 is not None else "legacy_opponents"
+            ),
             opponent_catalog_sha256=(
-                frozen_catalog.manifest_sha256 if frozen_catalog else None
+                frozen_0806.pool.manifest_sha256 if frozen_0806 is not None else None
             ),
             opponent_policy_hash=(
-                frozen_catalog.policy.package_hash if frozen_catalog else None
+                frozen_0806.pool.policies["opponent"]["weights_sha256"]
+                if frozen_0806 is not None
+                else None
+            ),
+            games_by_opponent=games_by_opponent,
+            opponent_schedule_id=(
+                frozen_0806.pool.manifest["schedule_sha256"]
+                if frozen_0806 is not None
+                else None
             ),
         )
     )
@@ -510,6 +533,27 @@ def _decorate_candidate_from_frozen_identity(
     )
 
 
+def _decorate_candidate_from_identities(
+    candidate: SubmissionPackage, identities: tuple[SubmissionPackage, ...]
+) -> SubmissionPackage:
+    requested_deck_id = str((candidate.package_manifest or {}).get("deck_id", ""))
+    matches = [
+        identity
+        for identity in identities
+        if Counter(identity.deck) == Counter(candidate.deck)
+        and (not requested_deck_id or identity.name == requested_deck_id)
+    ]
+    if len(matches) != 1:
+        return candidate
+    identity = matches[0]
+    return replace(
+        candidate,
+        name=identity.name,
+        display_name=identity.display_name,
+        representative_cards=identity.representative_cards,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _parser()
     args = parser.parse_args(argv)
@@ -520,7 +564,9 @@ def main(argv: list[str] | None = None) -> int:
                 evaluation_root = catalog_path.resolve().parent.parent
                 names = [
                     package.name
-                    for package in load_frozen_catalog(catalog_path, evaluation_root).opponents
+                    for package in load_frozen_0806_runtime_catalog(
+                        catalog_path, evaluation_root
+                    ).opponents
                 ]
             else:
                 names = list_enabled_opponents(catalog_path)

@@ -22,7 +22,8 @@ EXTRA_PROFILED_CANDIDATES = {
 class LeagueQualityProfileTest(unittest.TestCase):
     def test_every_frozen_deck_has_exactly_one_nonempty_profile(self) -> None:
         catalog = load_frozen_catalog(
-            ROOT / "evaluation" / "configs" / "frozen.json",
+            ROOT / "archive" / "evaluation" / "pre_0806_0019"
+            / "evaluation_configs" / "frozen.json",
             ROOT / "evaluation",
         )
         frozen_names = tuple(sorted(package.name for package in catalog.opponents))

@@ -1,15 +1,9 @@
-# Arena Combat Matrix
+# Frozen-0806 Combat Mat
 
-This directory is the durable audit package for the current formal opponent pool.
+The active Combat Mat was reset on 2026-08-07 for pool
+`0806_kaggle_top100_plus_v1`. Pre-0806 reports are preserved under
+`archive/evaluation/pre_0806_0019/evaluation_arena/combat_mat/`.
 
-- `index.html` is the generated matrix dashboard.
-- `matrix.json` is the generated aggregate payload embedded by the dashboard.
-- reports/<package>/<run_id>/report.html retains only historical heterogeneous
-  opponents-catalog reports.
-- reports_frozen/<pool_id>/<package>/<run_id>/report.html retains Frozen Arena
-  reports, isolated by immutable pool ID. Frozen reports must never be written to or
-  aggregated with reports/.
-
-Every directed package matchup contains 10 games, including self-play. A complete round
-combines the first-player phase and following second-player phase and is calculated as
-`ceil(engine_turn / 2)`. Action-selection counts are not used as game length.
+The next published result must contain 55 candidate reports, exactly 256
+official-engine games per candidate, Policy-0806 candidates, Policy-0019
+opponents, and zero errors.

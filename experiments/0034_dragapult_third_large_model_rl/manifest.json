@@ -1,12 +1,12 @@
 {
   "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0034_dragapult_third_large_model_rl",
-  "objective": "Initialize the selected V6 full-semantic PPO design from the 0806 large model and measure a 200-update Frozen 0019 learning curve for the exact Third PTCG Club Dragapult deck.",
+  "objective": "Initialize the selected full-semantic PPO design from Policy-0806 and train against the fixed 256-game Frozen-0806 distribution using Policy-0019 opponents.",
   "deck": "Dragapult Third PTCG Club exact 60-card list; file SHA-256 5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2.",
   "expert_source": "0031 V2 full-winners best-validation-loss Epoch 11 / step 141878 is initialization provenance; source/team identity is actor-invisible.",
   "dataset_contract": "No BC dataset is consumed by 0034 PPO; every update uses fresh on-policy official-engine Episodes and never reuses a rollout buffer.",
   "engine_revision": "Unmodified official CPU engine supplies observations, legal actions and terminal outcomes; CUDA is used only for semantic-policy inference and PPO optimization.",
-  "opponent_pool_snapshot": "All 51 exact decks from the Frozen 0019 catalog with immutable 0019 Epoch 13 policy weights, both focal seats and two seeds per seat per update.",
+  "opponent_pool_snapshot": "Frozen-0806 pool 0806_kaggle_top100_plus_v1: 55 unique exact decks, fixed 256 integer slots, schedule SHA-256 16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c, immutable 0019 Epoch 13 opponents, and global 128/128 focal-seat alternation.",
   "status": "initialized",
   "experiment_status": "v2_user_stopped_at_update1",
   "created_at": "2026-08-06T23:41:33+08:00",
@@ -48,7 +48,7 @@
       "kind": "selected_v6_design_200_update_ppo"
     }
   ],
-  "planned_training_version": "V2_turn_clock_lambda097_200u",
+  "planned_training_version": "next_version_after_v2_frozen0806_256",
   "active_training_version": null,
   "zero_shot_baseline": {
     "version": "V1_large_model_zero_shot_frozen0019",

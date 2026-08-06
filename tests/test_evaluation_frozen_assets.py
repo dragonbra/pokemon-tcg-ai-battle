@@ -7,8 +7,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FROZEN_ROOT = ROOT / "evaluation" / "arena" / "frozen"
-CATALOG_PATH = ROOT / "evaluation" / "configs" / "frozen.json"
+ARCHIVE_ROOT = ROOT / "archive" / "evaluation" / "pre_0806_0019"
+FROZEN_ROOT = ARCHIVE_ROOT / "evaluation_arena" / "frozen"
+CATALOG_PATH = ARCHIVE_ROOT / "evaluation_configs" / "frozen.json"
 EXPECTED_FOUNDATION_SHA256 = (
     "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
 )

@@ -101,6 +101,15 @@ def _entry_list(catalog_path: Path) -> list[dict[str, Any]]:
 def load_frozen_catalog(path: Path, evaluation_root: Path) -> FrozenCatalog:
     """Load 51 deck identities bound to one immutable Foundation policy."""
     frozen_root = (evaluation_root / "arena" / "frozen").resolve()
+    if not frozen_root.is_dir():
+        frozen_root = (
+            evaluation_root.parent
+            / "archive"
+            / "evaluation"
+            / "pre_0806_0019"
+            / "evaluation_arena"
+            / "frozen"
+        ).resolve()
     manifest_path = frozen_root / "manifest.json"
     manifest = _read_json(manifest_path, "Arena manifest")
     foundation = manifest.get("foundation")
@@ -148,7 +157,7 @@ def load_frozen_catalog(path: Path, evaluation_root: Path) -> FrozenCatalog:
             raise PackageValidationError(
                 f"Frozen package must be {expected_package}: {entry['package']}"
             )
-        deck_root = (evaluation_root / entry["package"]).resolve()
+        deck_root = (frozen_root / name).resolve()
         if deck_root.parent != frozen_root or not deck_root.is_dir():
             raise PackageValidationError(f"Frozen deck path escapes pool or is missing: {name}")
         if {item.name for item in deck_root.iterdir()} != {"deck.csv", "manifest.json"}:
