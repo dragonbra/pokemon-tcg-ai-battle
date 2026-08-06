@@ -13,6 +13,7 @@ from evaluation.runner.inference_server import (
     _apply_ability_repeat_guard,
     _inject_source_id_if_required,
     _normalize_request_deck,
+    _resolve_inference_dtype,
     _stack_batches,
 )
 from evaluation.runner.worker import _remote_policy_agent
@@ -143,6 +144,20 @@ class CandidateInferenceServerTest(unittest.TestCase):
             with self.subTest(invalid=type(invalid).__name__, length=len(invalid)):
                 with self.assertRaisesRegex(ValueError, "60 positive integer"):
                     _normalize_request_deck(invalid, expected)
+
+    def test_inference_dtype_requires_supported_cuda_precision(self) -> None:
+        self.assertIs(
+            _resolve_inference_dtype(torch, "fp32", torch.device("cpu")),
+            torch.float32,
+        )
+        self.assertIs(
+            _resolve_inference_dtype(torch, "fp16", torch.device("cuda:0")),
+            torch.float16,
+        )
+        with self.assertRaisesRegex(ValueError, "requires a CUDA device"):
+            _resolve_inference_dtype(torch, "fp16", torch.device("cpu"))
+        with self.assertRaisesRegex(ValueError, "unsupported inference dtype"):
+            _resolve_inference_dtype(torch, "tf32", torch.device("cuda:0"))
 
 
 if __name__ == "__main__":

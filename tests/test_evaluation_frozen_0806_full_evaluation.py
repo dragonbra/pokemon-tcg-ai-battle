@@ -7,6 +7,7 @@ from evaluation.frozen_0806_full_evaluation import (
     EXPECTED_FIRST,
     EXPECTED_GAMES,
     EXPECTED_SECOND,
+    POLICY_0806_TARGET,
     _schedule_counts,
     _turn_order,
     validate_report_payload,
@@ -54,6 +55,67 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
         self.assertEqual(
             self.catalog.opponents[0].package_manifest["frozen_report_href"],
             "007_dragapult_ex.html",
+        )
+
+    def test_policy_0806_opponents_reuse_the_candidate_runtime_and_exact_decks(self) -> None:
+        catalog = load_frozen_0806_runtime_catalog(opponent_policy_label="0806")
+        self.assertEqual(catalog.opponent_policy.root, catalog.candidate_policy.root)
+        self.assertEqual(len(catalog.opponents), 55)
+        self.assertEqual(POLICY_0806_TARGET.label, "Policy-0806")
+        for candidate, opponent in zip(
+            catalog.candidates, catalog.opponents, strict=True
+        ):
+            self.assertEqual(opponent.deck, candidate.deck)
+            self.assertEqual(
+                opponent.package_manifest["frozen_policy_label"], "Policy-0806"
+            )
+            self.assertEqual(
+                opponent.package_manifest["frozen_deck_number"],
+                candidate.package_manifest["frozen_deck_number"],
+            )
+
+    def test_pending_candidates_can_be_ordered_by_display_number(self) -> None:
+        published_ids = {self.catalog.candidates[0].name}
+        pending = sorted(
+            (
+                candidate
+                for candidate in self.catalog.candidates
+                if candidate.name not in published_ids
+            ),
+            key=lambda candidate: int(
+                candidate.package_manifest["frozen_deck_number"]
+            ),
+        )
+        numbers = [
+            int(candidate.package_manifest["frozen_deck_number"])
+            for candidate in pending
+        ]
+        self.assertEqual(numbers, sorted(numbers))
+
+    def test_special_deck_presentations_match_exact_deck_identity(self) -> None:
+        by_number = {
+            package.package_manifest["frozen_deck_number"]: package
+            for package in self.catalog.candidates
+        }
+        ogerpon = by_number["015"]
+        slowking = by_number["016"]
+        self.assertEqual(
+            ogerpon.display_name,
+            "Wellspring Mask Ogerpon ex / Teal Mask Ogerpon ex",
+        )
+        self.assertEqual(
+            [card["card_id"] for card in ogerpon.representative_cards],
+            [108, 96],
+        )
+        self.assertEqual(ogerpon.package_manifest["frozen_report_href"], "015_wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex.html")
+        self.assertEqual(slowking.display_name, "Slowking Toolbox")
+        self.assertEqual(
+            [card["card_id"] for card in slowking.representative_cards],
+            [163],
+        )
+        self.assertEqual(
+            slowking.package_manifest["frozen_report_href"],
+            "016_slowking_toolbox.html",
         )
 
     def test_matchup_row_links_numbered_report_and_shows_sample_size(self) -> None:

@@ -1,0 +1,193 @@
+{
+  "schema_version": "sp_zero_shot_archive_v1",
+  "series": "SP_MAGA",
+  "updated_at": "2026-08-07",
+  "evaluation_contract": {
+    "candidate_policy": "Policy-0806",
+    "candidate_policy_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+    "opponent_policy": "Policy-0806",
+    "opponent_policy_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+    "opponent_pool_id": "0806_kaggle_top100_plus_v1",
+    "opponent_pool_manifest_sha256": "272c6dc068de453e3ef386c45afc87c791b17157b1183951a67938fd703a7acc",
+    "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
+    "games_per_run": 256,
+    "candidate_first_games": 128,
+    "candidate_second_games": 128,
+    "engine_round_draw_limit": 50,
+    "inference_dtype": "fp32",
+    "inference_batch_size": 32,
+    "inference_batch_wait_ms": 2.0
+  },
+  "decks": [
+    {
+      "deck_id": "SP01_MAGA",
+      "exact_deck_sha256": "d255e4dc821c45a76acdab4bab272337b41ef292e9bcff17d6fa1ca6abbffaea",
+      "deck": "decks/SP01_MAGA/deck.csv",
+      "deck_manifest": "decks/SP01_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 4, "Dudunsparce": 3, "Shaymin": 0, "Boss's Orders": 3, "Xerosic's Machinations": 1, "Battle Cage": 4},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-9d32793b5b9b42aea6acde96bc86cf5e",
+        "report": "reports/policy_0806/SP01_MAGA/run-9d32793b5b9b42aea6acde96bc86cf5e/report.html",
+        "games": 256,
+        "wins": 126,
+        "losses": 128,
+        "draws": 2,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.4921875,
+        "first": {"wins": 76, "losses": 51, "draws": 1},
+        "second": {"wins": 50, "losses": 77, "draws": 1}
+      }]
+    },
+    {
+      "deck_id": "SP02_MAGA",
+      "exact_deck_sha256": "40d9ef034c90c907380e903dc1eaea93a8317f37f21b5cdeb8d41171227a995b",
+      "deck": "decks/SP02_MAGA/deck.csv",
+      "deck_manifest": "decks/SP02_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 4, "Dudunsparce": 2, "Shaymin": 0, "Boss's Orders": 2, "Xerosic's Machinations": 3, "Battle Cage": 4},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-9530aa2c357245dd8ff84ebfc40d1552",
+        "report": "reports/policy_0806/SP02_MAGA/run-9530aa2c357245dd8ff84ebfc40d1552/report.html",
+        "games": 256,
+        "wins": 132,
+        "losses": 122,
+        "draws": 2,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.515625,
+        "first": {"wins": 73, "losses": 54, "draws": 1},
+        "second": {"wins": 59, "losses": 68, "draws": 1}
+      }]
+    },
+    {
+      "deck_id": "SP03_MAGA",
+      "exact_deck_sha256": "6b62e058ff7af7049b679a95154dbbeac82c83193f665ffc93f113e685d1cfc9",
+      "deck": "decks/SP03_MAGA/deck.csv",
+      "deck_manifest": "decks/SP03_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 3, "Dudunsparce": 2, "Shaymin": 1, "Boss's Orders": 2, "Xerosic's Machinations": 3, "Battle Cage": 4},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-4c7178f0383241fe84d486469c301b37",
+        "report": "reports/policy_0806/SP03_MAGA/run-4c7178f0383241fe84d486469c301b37/report.html",
+        "games": 256,
+        "wins": 139,
+        "losses": 114,
+        "draws": 3,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.54296875,
+        "first": {"wins": 75, "losses": 53, "draws": 0},
+        "second": {"wins": 64, "losses": 61, "draws": 3}
+      }]
+    },
+    {
+      "deck_id": "SP04_MAGA",
+      "exact_deck_sha256": "4fde3b2a53102d072fe13ee14a0679dbf11b4d4b62e15ff9646e910a27df23d2",
+      "deck": "decks/SP04_MAGA/deck.csv",
+      "deck_manifest": "decks/SP04_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 4, "Dudunsparce": 2, "Shaymin": 1, "Boss's Orders": 3, "Xerosic's Machinations": 3, "Battle Cage": 2},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-35226fed49d64fdfb0602415b8afdff6",
+        "report": "reports/policy_0806/SP04_MAGA/run-35226fed49d64fdfb0602415b8afdff6/report.html",
+        "games": 256,
+        "wins": 148,
+        "losses": 103,
+        "draws": 5,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.578125,
+        "first": {"wins": 73, "losses": 53, "draws": 2},
+        "second": {"wins": 75, "losses": 50, "draws": 3}
+      }]
+    },
+    {
+      "deck_id": "SP05_MAGA",
+      "exact_deck_sha256": "56024e4e17512f2c66e86f08da54552e49b9de9ad7c5df8ab0b8a4fe80f38ea4",
+      "deck": "decks/SP05_MAGA/deck.csv",
+      "deck_manifest": "decks/SP05_MAGA/manifest.json",
+      "duplicate_frozen_deck_id": "alakazam_dudunsparce_56024e4e1751",
+      "duplicate_frozen_deck_number": "034",
+      "key_counts": {"Alakazam": 4, "Dudunsparce": 3, "Shaymin": 1, "Boss's Orders": 3, "Xerosic's Machinations": 1, "Battle Cage": 4, "Enhanced Hammer": 2, "Wondrous Patch": 1},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-d0cc128ef06644e5811030efef83e14d",
+        "report": "reports/policy_0806/SP05_MAGA/run-d0cc128ef06644e5811030efef83e14d/report.html",
+        "games": 256,
+        "wins": 131,
+        "losses": 120,
+        "draws": 5,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.51171875,
+        "first": {"wins": 73, "losses": 53, "draws": 2},
+        "second": {"wins": 58, "losses": 67, "draws": 3}
+      }]
+    },
+    {
+      "deck_id": "SP06_MAGA",
+      "exact_deck_sha256": "0899407e4e188e6c2084ab9939feea1ea4db4195779c286ea6b136ee5a838156",
+      "deck": "decks/SP06_MAGA/deck.csv",
+      "deck_manifest": "decks/SP06_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 3, "Dudunsparce": 3, "Shaymin": 1, "Boss's Orders": 2, "Xerosic's Machinations": 3, "Battle Cage": 4, "Enhanced Hammer": 2, "Wondrous Patch": 1},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-2fc35cacfe274bb1bd0312bcc5f22dae",
+        "report": "reports/policy_0806/SP06_MAGA/run-2fc35cacfe274bb1bd0312bcc5f22dae/report.html",
+        "games": 256,
+        "wins": 135,
+        "losses": 120,
+        "draws": 1,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.52734375,
+        "first": {"wins": 74, "losses": 53, "draws": 1},
+        "second": {"wins": 61, "losses": 67, "draws": 0}
+      }]
+    },
+    {
+      "deck_id": "SP07_MAGA",
+      "exact_deck_sha256": "257b9a091d2719be2cd20156a245fb1ee2ddc52e1e7e51dd4af203b7416275a2",
+      "deck": "decks/SP07_MAGA/deck.csv",
+      "deck_manifest": "decks/SP07_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 4, "Dudunsparce": 3, "Shaymin": 1, "Boss's Orders": 2, "Xerosic's Machinations": 3, "Battle Cage": 4, "Enhanced Hammer": 2, "Wondrous Patch": 0},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-8c5cabf74de9409bb6aa729282fb414a",
+        "report": "reports/policy_0806/SP07_MAGA/run-8c5cabf74de9409bb6aa729282fb414a/report.html",
+        "games": 256,
+        "wins": 133,
+        "losses": 122,
+        "draws": 1,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.51953125,
+        "first": {"wins": 70, "losses": 58, "draws": 0},
+        "second": {"wins": 63, "losses": 64, "draws": 1}
+      }]
+    },
+    {
+      "deck_id": "SP08_MAGA",
+      "exact_deck_sha256": "7b466e7eeb3bc0625f3e780533c8c0f0fb1bc5f59ab328b41f6cdb41153b7b25",
+      "deck": "decks/SP08_MAGA/deck.csv",
+      "deck_manifest": "decks/SP08_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 4, "Dudunsparce": 2, "Shaymin": 1, "Boss's Orders": 2, "Xerosic's Machinations": 3, "Battle Cage": 4, "Enhanced Hammer": 3, "Wondrous Patch": 0},
+      "runs": [{
+        "policy": "Policy-0806",
+        "run_id": "run-cb4b82dae0b14d63a231d64ea889ba84",
+        "report": "reports/policy_0806/SP08_MAGA/run-cb4b82dae0b14d63a231d64ea889ba84/report.html",
+        "games": 256,
+        "wins": 142,
+        "losses": 112,
+        "draws": 2,
+        "errors": 0,
+        "unfinished": 0,
+        "win_rate": 0.5546875,
+        "first": {"wins": 80, "losses": 47, "draws": 1},
+        "second": {"wins": 62, "losses": 65, "draws": 1}
+      }]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": "temporary_zero_shot_deck_v1",
+  "deck_id": "SP02_MAGA",
+  "display_name": "SP02_MAGA - Alakazam / Dudunsparce",
+  "exact_deck_sha256": "40d9ef034c90c907380e903dc1eaea93a8317f37f21b5cdeb8d41171227a995b",
+  "cards": 60,
+  "candidate_policy": "Policy-0806",
+  "opponent_policy": "Policy-0806",
+  "opponent_pool_id": "0806_kaggle_top100_plus_v1",
+  "scheduled_games": 256,
+  "runtime_dtype": "fp32",
+  "temporary": true
+}

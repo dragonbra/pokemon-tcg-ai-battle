@@ -1,0 +1,1445 @@
+{
+  "candidate_concurrency": 2,
+  "complete": false,
+  "expected_decks": 55,
+  "expected_games": 14080,
+  "games_per_deck": 256,
+  "maximum_game_workers": 64,
+  "opponent_policy_label": "Policy-0806",
+  "opponent_policy_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+  "policy_0806_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_manifest_sha256": "272c6dc068de453e3ef386c45afc87c791b17157b1183951a67938fd703a7acc",
+  "published_decks": 25,
+  "published_games": 6400,
+  "reports": [
+    {
+      "best_rank": 1,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "dragapult_ex_07bedfffbfad",
+      "deck_number": "007",
+      "display_name": "Dragapult ex",
+      "draws": 0,
+      "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+      "games": 256,
+      "losses": 108,
+      "observed_players": 3,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/007_dragapult_ex.html",
+      "report_sha256": "d49964ee0e6f165fa0459bf58765d369a5e22b27bcbb15be21a5eaf203ed2f1a",
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex"
+        }
+      ],
+      "run_id": "run-541e1dcc57fc4c1288867b548580ff77",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 46,
+          "wins": 82
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 62,
+          "wins": 66
+        }
+      },
+      "wall_time_seconds": 361.0461984929989,
+      "win_rate": 0.578125,
+      "wins": 148,
+      "workers": 32
+    },
+    {
+      "best_rank": 2,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c",
+      "deck_number": "003",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 0,
+      "exact_deck_sha256": "dd63244cb42c5002bb2c7e415e8224e3dc8440ee02743f0db22d9d44594a72cc",
+      "games": 256,
+      "losses": 80,
+      "observed_players": 6,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/003_mega_lopunny_ex_mega_froslass_ex.html",
+      "report_sha256": "903202c97aca878710bcd2b4bd732f360e0404a609133c4f1449b1e6d4103076",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        },
+        {
+          "card_id": 861,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex"
+        }
+      ],
+      "run_id": "run-ce937a56a1bd466a8e505ea4f8a06473",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 44,
+          "wins": 84
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 36,
+          "wins": 92
+        }
+      },
+      "wall_time_seconds": 375.983839945,
+      "win_rate": 0.6875,
+      "wins": 176,
+      "workers": 32
+    },
+    {
+      "best_rank": 5,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6",
+      "deck_number": "001",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "exact_deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "games": 256,
+      "losses": 102,
+      "observed_players": 21,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/001_marnie_s_grimmsnarl_ex_froslass.html",
+      "report_sha256": "f759b18f365d317cfd74007c25c37f8f4acb14aa48fa5dc57af033b8c747b8df",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "run_id": "run-f07e7f16608e4d37ab25d4860ad5c60d",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 51,
+          "wins": 77
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 51,
+          "wins": 77
+        }
+      },
+      "wall_time_seconds": 359.2528190390003,
+      "win_rate": 0.6015625,
+      "wins": 154,
+      "workers": 32
+    },
+    {
+      "best_rank": 7,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "alakazam_dudunsparce_3f4515092dc5",
+      "deck_number": "002",
+      "display_name": "Alakazam / Dudunsparce",
+      "draws": 0,
+      "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "games": 256,
+      "losses": 115,
+      "observed_players": 14,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/002_alakazam_dudunsparce.html",
+      "report_sha256": "f7725167e3e7e693e54728b346e52f92c78e1ae22e3ac77748dd394a7f5048d5",
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam"
+        },
+        {
+          "card_id": 66,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce"
+        }
+      ],
+      "run_id": "run-bed1974912cc4db1a6481c203a5332a4",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 52,
+          "wins": 76
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 63,
+          "wins": 65
+        }
+      },
+      "wall_time_seconds": 339.1288648659993,
+      "win_rate": 0.55078125,
+      "wins": 141,
+      "workers": 32
+    },
+    {
+      "best_rank": 8,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
+      "deck_number": "009",
+      "display_name": "Mega Lucario ex / Solrock",
+      "draws": 0,
+      "exact_deck_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
+      "games": 256,
+      "losses": 110,
+      "observed_players": 2,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/009_mega_lucario_ex_solrock.html",
+      "report_sha256": "cd52fd7f6c2d56dd31dc4bfa7b7d5dc82a9965bb92a0c5cd0ef469bfc66a0567",
+      "representative_cards": [
+        {
+          "card_id": 678,
+          "image_url": "https://images.pokemontcg.io/me1/77.png",
+          "name": "Mega Lucario ex"
+        },
+        {
+          "card_id": 676,
+          "image_url": "https://images.pokemontcg.io/me1/75.png",
+          "name": "Solrock"
+        }
+      ],
+      "run_id": "run-e267b6098653421395b302c51b4201fb",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 45,
+          "wins": 83
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 65,
+          "wins": 63
+        }
+      },
+      "wall_time_seconds": 322.5575058909999,
+      "win_rate": 0.5703125,
+      "wins": 146,
+      "workers": 32
+    },
+    {
+      "best_rank": 9,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_310ede704da1",
+      "deck_number": "015",
+      "display_name": "Wellspring Mask Ogerpon ex / Teal Mask Ogerpon ex",
+      "draws": 0,
+      "exact_deck_sha256": "310ede704da1adc09e09efc2b3e4f96cd2201abdbcb3f51ada245472cac2742a",
+      "games": 256,
+      "losses": 195,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/015_wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex.html",
+      "report_sha256": "1efd2c4791a597f945d49abe9a10f7eefa8e5db2f26ab55df3442afb671ded4b",
+      "representative_cards": [
+        {
+          "card_id": 108,
+          "image_url": "https://images.pokemontcg.io/sv6/64.png",
+          "name": "Wellspring Mask Ogerpon ex"
+        },
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        }
+      ],
+      "run_id": "run-46793fd5fdaf430fa88ac1987ea7c4a6",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 97,
+          "wins": 31
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 98,
+          "wins": 30
+        }
+      },
+      "wall_time_seconds": 362.562900515999,
+      "win_rate": 0.23828125,
+      "wins": 61,
+      "workers": 32
+    },
+    {
+      "best_rank": 15,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_df6f74437196",
+      "deck_number": "016",
+      "display_name": "Slowking Toolbox",
+      "draws": 0,
+      "exact_deck_sha256": "df6f7443719675711c2dcead3559087de996f3b8c43192d55ebfe6182e43cb7c",
+      "games": 256,
+      "losses": 202,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/016_slowking_toolbox.html",
+      "report_sha256": "72d0ab32e6116667dc78bfac01b7f4bf4baea8e12c24986c3b699a709702771a",
+      "representative_cards": [
+        {
+          "card_id": 163,
+          "image_url": "https://images.pokemontcg.io/sv7/58.png",
+          "name": "Slowking"
+        }
+      ],
+      "run_id": "run-b72d8f719cb84ff080cea0576ed6eb31",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 104,
+          "wins": 24
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 98,
+          "wins": 30
+        }
+      },
+      "wall_time_seconds": 361.5690323589988,
+      "win_rate": 0.2109375,
+      "wins": 54,
+      "workers": 32
+    },
+    {
+      "best_rank": 18,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
+      "deck_number": "004",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 0,
+      "exact_deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "games": 256,
+      "losses": 109,
+      "observed_players": 6,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/004_mega_lopunny_ex_mega_froslass_ex.html",
+      "report_sha256": "deaa279532a22e5fa6fe4d30c646cbecc2b48f01b2e03c090c299c5ac2284630",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "run_id": "run-9251dcd6d3df4c74a9c589ee3a2c6d9e",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 48,
+          "wins": 80
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 61,
+          "wins": 67
+        }
+      },
+      "wall_time_seconds": 375.1718555369989,
+      "win_rate": 0.57421875,
+      "wins": 147,
+      "workers": 32
+    },
+    {
+      "best_rank": 20,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a",
+      "deck_number": "017",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "exact_deck_sha256": "a9cf3d228c6a32c3c2cfdbf4b42f570fc7d00f081e4e39e395c3a6793271d26c",
+      "games": 256,
+      "losses": 129,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/017_marnie_s_grimmsnarl_ex_froslass.html",
+      "report_sha256": "9ff4025f224eadcb9fe75bb60d88341e987666935dd9fb0c44a7e19feca18ba0",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "run_id": "run-0730b2040f97438f9bc04c6b1bc0540c",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 61,
+          "wins": 67
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 68,
+          "wins": 60
+        }
+      },
+      "wall_time_seconds": 408.95346999399953,
+      "win_rate": 0.49609375,
+      "wins": 127,
+      "workers": 32
+    },
+    {
+      "best_rank": 21,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "dragapult_ex_daa1cce90790",
+      "deck_number": "018",
+      "display_name": "Dragapult ex",
+      "draws": 0,
+      "exact_deck_sha256": "daa1cce9079016e357f7ab3f1666f0ecc4ddca3b8e4131b88ade164c14ddcb4c",
+      "games": 256,
+      "losses": 114,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/018_dragapult_ex.html",
+      "report_sha256": "6590c169a995ac103b4314baee0e8f2a1cda66d98e50ca5dd3f13e98ee59eea8",
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex"
+        }
+      ],
+      "run_id": "run-f1eb58e3b47d4058b87646157b639b97",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 59,
+          "wins": 69
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 55,
+          "wins": 73
+        }
+      },
+      "wall_time_seconds": 412.367292754001,
+      "win_rate": 0.5546875,
+      "wins": 142,
+      "workers": 32
+    },
+    {
+      "best_rank": 22,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "festival_lead_dipplin_d6c573dd89bd",
+      "deck_number": "010",
+      "display_name": "Festival Lead / Dipplin",
+      "draws": 0,
+      "exact_deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "games": 256,
+      "losses": 113,
+      "observed_players": 2,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/010_festival_lead_dipplin.html",
+      "report_sha256": "55a46cacaf89027c4dc762fd48cfd97aceca742e060397b943fd813e4c566e7e",
+      "representative_cards": [
+        {
+          "card_id": 93,
+          "image_url": "https://images.pokemontcg.io/sv6/18.png",
+          "name": "Dipplin"
+        }
+      ],
+      "run_id": "run-29931165b1194740a2bf2348f816789e",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 47,
+          "wins": 81
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 66,
+          "wins": 62
+        }
+      },
+      "wall_time_seconds": 339.0279223999987,
+      "win_rate": 0.55859375,
+      "wins": 143,
+      "workers": 32
+    },
+    {
+      "best_rank": 23,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95",
+      "deck_number": "005",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "exact_deck_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "games": 256,
+      "losses": 135,
+      "observed_players": 4,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/005_marnie_s_grimmsnarl_ex_froslass.html",
+      "report_sha256": "6b327618fdbe007ac817f223b9ce4690d16b028722c01f4c9d4626d7fa5af50a",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "run_id": "run-7bdfb654d9404178950315c6ec358783",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 66,
+          "wins": 62
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 69,
+          "wins": 59
+        }
+      },
+      "wall_time_seconds": 351.9325346679998,
+      "win_rate": 0.47265625,
+      "wins": 121,
+      "workers": 32
+    },
+    {
+      "best_rank": 24,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e",
+      "deck_number": "019",
+      "display_name": "Barbaracle / Cornerstone Mask Ogerpon ex",
+      "draws": 0,
+      "exact_deck_sha256": "275d23c9ed3eb47996ee9d6a6d7f9c31b77bff0902d881ce30c1d99a223c833b",
+      "games": 256,
+      "losses": 132,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/019_barbaracle_cornerstone_mask_ogerpon_ex.html",
+      "report_sha256": "8ec42783d37c8540dd563ba39bd9b10454bfa1ec4c307cc4e9a687aeedbc19ba",
+      "representative_cards": [
+        {
+          "card_id": 1052,
+          "image_url": "https://images.scrydex.com/pokemon/me3-43/small",
+          "name": "Barbaracle"
+        },
+        {
+          "card_id": 117,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex"
+        }
+      ],
+      "run_id": "run-fdcabed973734d83a68a5f92bb9defd4",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 71,
+          "wins": 57
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 61,
+          "wins": 67
+        }
+      },
+      "wall_time_seconds": 388.87892339000064,
+      "win_rate": 0.484375,
+      "wins": 124,
+      "workers": 32
+    },
+    {
+      "best_rank": 25,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_venusaur_ex_meganium_8c6c9898455c",
+      "deck_number": "020",
+      "display_name": "Mega Venusaur ex / Meganium",
+      "draws": 0,
+      "exact_deck_sha256": "8c6c9898455cca1b49e41993e2962051d48c5ffee42cb02f3b18152991c71e2b",
+      "games": 256,
+      "losses": 198,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/020_mega_venusaur_ex_meganium.html",
+      "report_sha256": "a5d08851f09cf264b9d3dd62fdf54e0e43fae7ecd1600a6b4c71b4228b7a0704",
+      "representative_cards": [
+        {
+          "card_id": 652,
+          "image_url": "https://images.pokemontcg.io/me1/3.png",
+          "name": "Mega Venusaur ex"
+        },
+        {
+          "card_id": 710,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium"
+        }
+      ],
+      "run_id": "run-85531e5620ad41989117908187a43be9",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 97,
+          "wins": 31
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 101,
+          "wins": 27
+        }
+      },
+      "wall_time_seconds": 391.86565161900035,
+      "win_rate": 0.2265625,
+      "wins": 58,
+      "workers": 32
+    },
+    {
+      "best_rank": 28,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_03822cc73f78",
+      "deck_number": "011",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "draws": 0,
+      "exact_deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "games": 256,
+      "losses": 138,
+      "observed_players": 2,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/011_mega_kangaskhan_ex_crustle.html",
+      "report_sha256": "2807034d7c1706a3faac42ad8460f8d2bf5ea59707003b89c5487313005a046f",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "run_id": "run-3ff5dc6782264be28140b0e136c035a4",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 67,
+          "wins": 61
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 71,
+          "wins": 57
+        }
+      },
+      "wall_time_seconds": 357.71181684600015,
+      "win_rate": 0.4609375,
+      "wins": 118,
+      "workers": 32
+    },
+    {
+      "best_rank": 32,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0",
+      "deck_number": "021",
+      "display_name": "Team Rocket's Mewtwo ex / Spidops",
+      "draws": 0,
+      "exact_deck_sha256": "ead283b0f4b07414749ba86b819f00b9c849f32d965178de6629f63d3901505c",
+      "games": 256,
+      "losses": 157,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/021_team_rocket_s_mewtwo_ex_spidops.html",
+      "report_sha256": "1af8358d4d17c5ceb736aa0b6f1e4029cfa2c7d2cd08ce4da1377302455f4c42",
+      "representative_cards": [
+        {
+          "card_id": 431,
+          "image_url": "https://images.pokemontcg.io/sv10/81.png",
+          "name": "Team Rocket's Mewtwo ex"
+        }
+      ],
+      "run_id": "run-ee0643b40f7c44bf888c319b05cf329a",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 76,
+          "wins": 52
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 81,
+          "wins": 47
+        }
+      },
+      "wall_time_seconds": 392.34620891399936,
+      "win_rate": 0.38671875,
+      "wins": 99,
+      "workers": 32
+    },
+    {
+      "best_rank": 34,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9",
+      "deck_number": "006",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "draws": 0,
+      "exact_deck_sha256": "e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34",
+      "games": 256,
+      "losses": 132,
+      "observed_players": 4,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/006_teal_mask_ogerpon_ex_hero_s_cape.html",
+      "report_sha256": "76deab535cbf4f3a2e4def47eb732ce6e3e3ca9f4effa6e25d4271c4cb883c20",
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        },
+        {
+          "card_id": 1159,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape"
+        }
+      ],
+      "run_id": "run-d12ed6badccf4d6da486f2206d0c44f8",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 55,
+          "wins": 73
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 77,
+          "wins": 51
+        }
+      },
+      "wall_time_seconds": 309.89783600699957,
+      "win_rate": 0.484375,
+      "wins": 124,
+      "workers": 32
+    },
+    {
+      "best_rank": 36,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_053b4950d40b",
+      "deck_number": "012",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 0,
+      "exact_deck_sha256": "053b4950d40b4a85f4c63511b1f89f90f82b691754d1aaa57b0a4df9f9806e75",
+      "games": 256,
+      "losses": 111,
+      "observed_players": 2,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/012_mega_lopunny_ex_mega_froslass_ex.html",
+      "report_sha256": "678d59088adc0b4dd018eecb0fc0a390f374a765fcc8d5d866e29e5eb0294189",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "run_id": "run-9fb97271aa4b49d39d461710cb76c442",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 52,
+          "wins": 76
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 59,
+          "wins": 69
+        }
+      },
+      "wall_time_seconds": 373.34542300999965,
+      "win_rate": 0.56640625,
+      "wins": 145,
+      "workers": 32
+    },
+    {
+      "best_rank": 37,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_546b39d1d134",
+      "deck_number": "022",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 0,
+      "exact_deck_sha256": "546b39d1d1340529eb93a53907f2d46e15f58297902f0c1a68f2563673df8fc6",
+      "games": 256,
+      "losses": 139,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/022_mega_lopunny_ex_mega_froslass_ex.html",
+      "report_sha256": "81bed9b832cfa5ed80e24cf818c5b9deea08ba08448bd8641deaac9281b5ffdd",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "run_id": "run-35de133f46c5405f9250e6b8fbf58549",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 70,
+          "wins": 58
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 69,
+          "wins": 59
+        }
+      },
+      "wall_time_seconds": 380.86733857999934,
+      "win_rate": 0.45703125,
+      "wins": 117,
+      "workers": 32
+    },
+    {
+      "best_rank": 39,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "hydrapple_ex_meganium_415af0a5541c",
+      "deck_number": "023",
+      "display_name": "Hydrapple ex / Meganium",
+      "draws": 0,
+      "exact_deck_sha256": "415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d",
+      "games": 256,
+      "losses": 177,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/023_hydrapple_ex_meganium.html",
+      "report_sha256": "84eacfe3b467b5df62a408fbc6377eec5e95af755e5c97f333bd058b2f5fc5fc",
+      "representative_cards": [
+        {
+          "card_id": 150,
+          "image_url": "https://images.pokemontcg.io/sv7/14.png",
+          "name": "Hydrapple ex"
+        },
+        {
+          "card_id": 710,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium"
+        }
+      ],
+      "run_id": "run-6d23fcd16be6419790bf9688ee89a39a",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 87,
+          "wins": 41
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 90,
+          "wins": 38
+        }
+      },
+      "wall_time_seconds": 362.28127011200013,
+      "win_rate": 0.30859375,
+      "wins": 79,
+      "workers": 32
+    },
+    {
+      "best_rank": 41,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d",
+      "deck_number": "024",
+      "display_name": "Crustle / Cornerstone Mask Ogerpon ex",
+      "draws": 3,
+      "exact_deck_sha256": "69fc3c54920d906e1784e0e76a35a6688c86a941ac369fc1b0f23f4bc226202b",
+      "games": 256,
+      "losses": 147,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/024_crustle_cornerstone_mask_ogerpon_ex.html",
+      "report_sha256": "d4b899c87f00c2ad9b8079fe4af56b9eddf3cec257df5b9e990cffd825c10225",
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        },
+        {
+          "card_id": 117,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex"
+        }
+      ],
+      "run_id": "run-4480912eac2141728fb13b0a41b7fa3e",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 74,
+          "wins": 54
+        },
+        "second": {
+          "draws": 3,
+          "games": 128,
+          "losses": 73,
+          "wins": 52
+        }
+      },
+      "wall_time_seconds": 404.1490773000005,
+      "win_rate": 0.4140625,
+      "wins": 106,
+      "workers": 32
+    },
+    {
+      "best_rank": 42,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_5b509baed30a",
+      "deck_number": "025",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 0,
+      "exact_deck_sha256": "5b509baed30a8f00d65b15eeaebb8b098cf0cc46b4b37ae685bd563ea5450e02",
+      "games": 256,
+      "losses": 168,
+      "observed_players": 1,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/025_mega_lopunny_ex_mega_froslass_ex.html",
+      "report_sha256": "724958799ac5357cf3ae0b725da7e1c5778f306621ed4619af809f2999e018d6",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "run_id": "run-036ba63b6973438986191c311e7b6400",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 82,
+          "wins": 46
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 86,
+          "wins": 42
+        }
+      },
+      "wall_time_seconds": 376.83058889899985,
+      "win_rate": 0.34375,
+      "wins": 88,
+      "workers": 32
+    },
+    {
+      "best_rank": 46,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc",
+      "deck_number": "008",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "draws": 0,
+      "exact_deck_sha256": "5e60b8c7eafc87e69cb063ae0ed7f7351fbf415b4c021567790b977bece49fbf",
+      "games": 256,
+      "losses": 124,
+      "observed_players": 3,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/008_teal_mask_ogerpon_ex_hero_s_cape.html",
+      "report_sha256": "e8bb7da1d5534044ba47829b767cded705125977cf19302cc6f1b25d1c312dbc",
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        },
+        {
+          "card_id": 1159,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape"
+        }
+      ],
+      "run_id": "run-a74042fd6ab34fb688c4ac8161393d99",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 64,
+          "wins": 64
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 60,
+          "wins": 68
+        }
+      },
+      "wall_time_seconds": 336.2388745010012,
+      "win_rate": 0.515625,
+      "wins": 132,
+      "workers": 32
+    },
+    {
+      "best_rank": 56,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
+      "deck_number": "013",
+      "display_name": "Cynthia's Garchomp ex / Roserade",
+      "draws": 0,
+      "exact_deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "games": 256,
+      "losses": 123,
+      "observed_players": 2,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/013_cynthia_s_garchomp_ex_roserade.html",
+      "report_sha256": "66f56db13f0d3387384c42b94d8f784837091c3f633d1a66962e7e78c2fdbed4",
+      "representative_cards": [
+        {
+          "card_id": 381,
+          "image_url": "https://images.pokemontcg.io/sv10/104.png",
+          "name": "Cynthia's Garchomp ex"
+        }
+      ],
+      "run_id": "run-f6bf392366ad47b88990022fed1be06d",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 55,
+          "wins": 73
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 68,
+          "wins": 60
+        }
+      },
+      "wall_time_seconds": 360.25067493299866,
+      "win_rate": 0.51953125,
+      "wins": 133,
+      "workers": 32
+    },
+    {
+      "best_rank": 58,
+      "candidate_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_67cf83ea7e09",
+      "deck_number": "014",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "draws": 0,
+      "exact_deck_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+      "games": 256,
+      "losses": 129,
+      "observed_players": 2,
+      "opponent_inference": {
+        "batch_size": 32,
+        "batch_wait_ms": 2.0,
+        "device": "cuda:0",
+        "dtype": "fp32",
+        "mode": "external_shared_server"
+      },
+      "report": "reports/014_mega_kangaskhan_ex_crustle.html",
+      "report_sha256": "440c4ccc2363130358e0aed1637ea25ef495abc9b724e1c201b15944321b50cc",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "run_id": "run-9d99fd456888422686f4e814dcb68f02",
+      "segment": "top100",
+      "turn_order": {
+        "first": {
+          "draws": 0,
+          "games": 128,
+          "losses": 57,
+          "wins": 71
+        },
+        "second": {
+          "draws": 0,
+          "games": 128,
+          "losses": 72,
+          "wins": 56
+        }
+      },
+      "wall_time_seconds": 358.92266355300126,
+      "win_rate": 0.49609375,
+      "wins": 127,
+      "workers": 32
+    }
+  ],
+  "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
+  "schema_version": "frozen_0806_full_evaluation_v1",
+  "workers_per_candidate": 32
+}

@@ -40,6 +40,19 @@ POLICY_0806_CHECKPOINT = (
     / "model.pt"
 )
 
+_DECK_PRESENTATION_OVERRIDES = {
+    "mega_kangaskhan_ex_crustle_310ede704da1": {
+        "display_name": "Wellspring Mask Ogerpon ex / Teal Mask Ogerpon ex",
+        "representative_card_ids": (108, 96),
+        "report_slug": "wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex",
+    },
+    "mega_kangaskhan_ex_crustle_df6f74437196": {
+        "display_name": "Slowking Toolbox",
+        "representative_card_ids": (163,),
+        "report_slug": "slowking_toolbox",
+    },
+}
+
 
 @dataclass(frozen=True)
 class Frozen0806RuntimeCatalog:
@@ -156,12 +169,17 @@ def _routed_package(
     deck_id: str,
     deck_number: int,
     role: str,
+    policy_label: str,
     card_catalog: dict[int, dict],
 ) -> SubmissionPackage:
     deck = next(item for item in pool.decks if item.deck_id == deck_id)
     schedule = next(item for item in pool.schedule if item.deck_id == deck_id)
+    presentation = _DECK_PRESENTATION_OVERRIDES.get(deck_id, {})
     representative_cards = []
-    for card_id in deck.manifest["representative_card_ids"]:
+    representative_card_ids = presentation.get(
+        "representative_card_ids", deck.manifest["representative_card_ids"]
+    )
+    for card_id in representative_card_ids:
         metadata = card_catalog[card_id]
         representative_cards.append(
             {
@@ -180,11 +198,12 @@ def _routed_package(
     deck_slug, separator, suffix = deck_id.rpartition("_")
     if not separator or len(suffix) != 12 or any(character not in "0123456789abcdef" for character in suffix):
         deck_slug = deck_id
+    deck_slug = str(presentation.get("report_slug", deck_slug))
     package_manifest.update(
         {
             "frozen_pool_id": pool.pool_id,
             "frozen_role": role,
-            "frozen_policy_label": "Policy-0806" if role == "candidate" else "Policy-0019",
+            "frozen_policy_label": policy_label,
             "deck_id": deck_id,
             "frozen_deck_number": number_label,
             "frozen_report_href": f"{number_label}_{deck_slug}.html",
@@ -199,15 +218,19 @@ def _routed_package(
         deck=list(deck.cards),
         package_hash=identity_hash,
         deck_hash=_sha256(deck.root / "deck.csv"),
-        display_name=schedule.archetype,
+        display_name=str(presentation.get("display_name", schedule.archetype)),
         representative_cards=tuple(representative_cards),
         package_manifest=package_manifest,
     )
 
 
 def load_frozen_0806_runtime_catalog(
-    config_path: Path = DEFAULT_CONFIG, evaluation_root: Path = EVALUATION_ROOT
+    config_path: Path = DEFAULT_CONFIG,
+    evaluation_root: Path = EVALUATION_ROOT,
+    opponent_policy_label: str = "0019",
 ) -> Frozen0806RuntimeCatalog:
+    if opponent_policy_label not in {"0019", "0806"}:
+        raise ValueError("opponent_policy_label must be 0019 or 0806")
     pool = load_frozen_0806_pool(config_path, evaluation_root)
     official_cards = load_card_catalog(
         evaluation_root.parent / "data" / "official" / "EN_Card_Data.csv"
@@ -251,17 +274,23 @@ def load_frozen_0806_runtime_catalog(
             deck_id,
             deck_number_by_id[deck_id],
             "candidate",
+            "Policy-0806",
             official_cards,
         )
         for deck_id in ordered_ids
     )
+    routed_opponent_policy = (
+        opponent_policy if opponent_policy_label == "0019" else candidate_policy
+    )
+    routed_opponent_label = f"Policy-{opponent_policy_label}"
     opponents = tuple(
         _routed_package(
-            opponent_policy,
+            routed_opponent_policy,
             pool,
             deck_id,
             deck_number_by_id[deck_id],
             "opponent",
+            routed_opponent_label,
             official_cards,
         )
         for deck_id in ordered_ids
@@ -269,7 +298,7 @@ def load_frozen_0806_runtime_catalog(
     return Frozen0806RuntimeCatalog(
         pool=pool,
         candidate_policy=candidate_policy,
-        opponent_policy=opponent_policy,
+        opponent_policy=routed_opponent_policy,
         candidates=candidates,
         opponents=opponents,
     )

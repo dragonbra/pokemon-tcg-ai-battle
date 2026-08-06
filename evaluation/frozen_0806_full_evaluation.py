@@ -13,6 +13,7 @@ import uuid
 from collections import Counter
 from contextlib import ExitStack
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -47,6 +48,41 @@ EXPECTED_GAMES = 256
 EXPECTED_FIRST = 128
 EXPECTED_SECOND = 128
 DEFAULT_SEED = 8062026
+
+
+@dataclass(frozen=True)
+class FrozenEvaluationTarget:
+    key: str
+    label: str
+    policy_sha256: str
+    output_root: Path
+    legacy_output_root: Path | None = None
+
+
+POLICY_0019_TARGET = FrozenEvaluationTarget(
+    key="0019",
+    label="Policy-0019",
+    policy_sha256=POLICY_0019_SHA256,
+    output_root=OUTPUT_ROOT,
+    legacy_output_root=LEGACY_OUTPUT_ROOT,
+)
+POLICY_0806_TARGET = FrozenEvaluationTarget(
+    key="0806",
+    label="Policy-0806",
+    policy_sha256=POLICY_0806_SHA256,
+    output_root=(
+        ROOT
+        / "evaluation/arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1"
+    ),
+)
+
+
+def evaluation_target(policy: str) -> FrozenEvaluationTarget:
+    targets = {"0019": POLICY_0019_TARGET, "0806": POLICY_0806_TARGET}
+    try:
+        return targets[policy]
+    except KeyError as exc:
+        raise ValueError("opponent policy must be 0019 or 0806") from exc
 
 
 def _sha256(path: Path) -> str:
@@ -107,6 +143,7 @@ def validate_report_payload(
     payload: dict[str, Any],
     candidate: Any,
     catalog: Frozen0806RuntimeCatalog,
+    target: FrozenEvaluationTarget = POLICY_0019_TARGET,
 ) -> dict[str, Any]:
     manifest = payload.get("manifest")
     summary = payload.get("summary")
@@ -138,7 +175,7 @@ def validate_report_payload(
         not isinstance(pool, dict)
         or pool.get("pool_id") != catalog.pool.pool_id
         or pool.get("catalog_sha256") != catalog.pool.manifest_sha256
-        or pool.get("policy_hash") != POLICY_0019_SHA256
+        or pool.get("policy_hash") != target.policy_sha256
         or manifest.get("opponent_schedule_id")
         != catalog.pool.manifest["schedule_sha256"]
         or manifest.get("games_per_opponent") != expected_counts
@@ -192,8 +229,11 @@ def validate_report(
     path: Path,
     candidate: Any,
     catalog: Frozen0806RuntimeCatalog,
+    target: FrozenEvaluationTarget = POLICY_0019_TARGET,
 ) -> dict[str, Any]:
-    record = validate_report_payload(_embedded_report_data(path), candidate, catalog)
+    record = validate_report_payload(
+        _embedded_report_data(path), candidate, catalog, target
+    )
     record["report"] = f'reports/{candidate.package_manifest["frozen_report_href"]}'
     record["report_sha256"] = _sha256(path)
     return record
@@ -203,6 +243,7 @@ def _refresh_report_navigation(
     path: Path,
     candidate: Any,
     catalog: Frozen0806RuntimeCatalog,
+    target: FrozenEvaluationTarget = POLICY_0019_TARGET,
 ) -> None:
     payload = _embedded_report_data(path)
     manifest = payload.get("manifest")
@@ -220,7 +261,10 @@ def _refresh_report_navigation(
         and candidate_manifest.get("frozen_deck_number")
         == candidate.package_manifest.get("frozen_deck_number")
         and isinstance(opponent_pool, dict)
-        and opponent_pool.get("policy_label") == "Policy-0019"
+        and opponent_pool.get("policy_label") == target.label
+        and candidate_record.get("display_name") == candidate.display_name
+        and tuple(candidate_record.get("representative_cards", ()))
+        == tuple(candidate.representative_cards)
         and all(
             isinstance(item, dict)
             and isinstance(item.get("package_manifest"), dict)
@@ -233,6 +277,10 @@ def _refresh_report_navigation(
             == opponent_by_name[str(item.get("name"))].package_manifest.get(
                 "frozen_report_href"
             )
+            and item.get("display_name")
+            == opponent_by_name[str(item.get("name"))].display_name
+            and tuple(item.get("representative_cards", ()))
+            == tuple(opponent_by_name[str(item.get("name"))].representative_cards)
             for item in opponents
         )
     )
@@ -240,14 +288,18 @@ def _refresh_report_navigation(
         return
 
     candidate_record["package_manifest"] = dict(candidate.package_manifest or {})
+    candidate_record["display_name"] = candidate.display_name
+    candidate_record["representative_cards"] = list(candidate.representative_cards)
     if isinstance(opponent_pool, dict):
-        opponent_pool["policy_label"] = "Policy-0019"
+        opponent_pool["policy_label"] = target.label
     for item in opponents:
         if not isinstance(item, dict):
             continue
         package = opponent_by_name.get(str(item.get("name")))
         if package is not None:
             item["package_manifest"] = dict(package.package_manifest or {})
+            item["display_name"] = package.display_name
+            item["representative_cards"] = list(package.representative_cards)
     presentations = {
         str(metric_id): MetricPresentation(
             metric_id=str(values.get("metric_id", metric_id)),
@@ -291,11 +343,13 @@ def _publish(source: Path, target: Path) -> None:
 def _batch_config(
     catalog: Frozen0806RuntimeCatalog,
     candidate: Any,
+    target: FrozenEvaluationTarget,
     *,
     output_root: Path,
     workers: int,
     batch_size: int,
     batch_wait_ms: float,
+    inference_dtype: str,
     candidate_socket: Path,
     opponent_socket: Path,
     opponents: tuple[Any, ...] | None = None,
@@ -322,12 +376,15 @@ def _batch_config(
         opponent_inference_device="cuda:0",
         candidate_inference_batch_size=batch_size,
         candidate_inference_batch_wait_ms=batch_wait_ms,
+        candidate_inference_dtype=inference_dtype,
+        opponent_inference_dtype=inference_dtype,
         candidate_inference_socket=candidate_socket,
         opponent_inference_socket=opponent_socket,
         opponent_pool_id=catalog.pool.pool_id,
         opponent_catalog_sha256=catalog.pool.manifest_sha256,
-        opponent_policy_hash=POLICY_0019_SHA256,
-        opponent_policy_label="Policy-0019",
+        opponent_policy_hash=target.policy_sha256,
+        opponent_policy_label=target.label,
+        share_policy_inference_server=target.key == "0806",
         seed=DEFAULT_SEED,
         inference_ability_repeat_limit=8,
         engine_turn_draw_limit=100,
@@ -337,26 +394,30 @@ def _batch_config(
 def run_deck(
     catalog: Frozen0806RuntimeCatalog,
     candidate: Any,
+    target: FrozenEvaluationTarget,
     *,
     workers: int,
     batch_size: int,
     batch_wait_ms: float,
+    inference_dtype: str,
     candidate_socket: Path,
     opponent_socket: Path,
 ) -> dict[str, Any]:
-    target = OUTPUT_ROOT / "reports" / str(
+    report_path = target.output_root / "reports" / str(
         candidate.package_manifest["frozen_report_href"]
     )
-    if target.is_file():
-        return validate_report(target, candidate, catalog)
+    if report_path.is_file():
+        return validate_report(report_path, candidate, catalog, target)
     result = run_batch(
         _batch_config(
             catalog,
             candidate,
+            target,
             output_root=TEMP_ROOT / candidate.name,
             workers=workers,
             batch_size=batch_size,
             batch_wait_ms=batch_wait_ms,
+            inference_dtype=inference_dtype,
             candidate_socket=candidate_socket,
             opponent_socket=opponent_socket,
         )
@@ -369,9 +430,10 @@ def run_deck(
         },
         candidate,
         catalog,
+        target,
     )
-    _publish(result.report_path, target)
-    return validate_report(target, candidate, catalog)
+    _publish(result.report_path, report_path)
+    return validate_report(report_path, candidate, catalog, target)
 
 
 def _rate(row: dict[str, int]) -> float:
@@ -417,7 +479,11 @@ def _index_row(record: dict[str, Any]) -> str:
     )
 
 
-def _index_html(records: list[dict[str, Any]], catalog: Frozen0806RuntimeCatalog) -> str:
+def _index_html(
+    records: list[dict[str, Any]],
+    catalog: Frozen0806RuntimeCatalog,
+    target: FrozenEvaluationTarget = POLICY_0019_TARGET,
+) -> str:
     completed_by_id = {record["deck_id"]: record for record in records}
     ordered = []
     for candidate, schedule in zip(catalog.candidates, catalog.pool.schedule, strict=True):
@@ -448,7 +514,7 @@ def _index_html(records: list[dict[str, Any]], catalog: Frozen0806RuntimeCatalog
     total_seconds = sum(record["wall_time_seconds"] for record in records)
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Policy-0019 Report · Frozen-0806 卡组强度</title><style>
+<title>{target.label} Report · Frozen-0806 卡组强度</title><style>
 :root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d;--red:#a54343}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}
 header{{padding:28px max(20px,calc((100vw - 1500px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px;letter-spacing:0}}header p{{max-width:980px;margin:7px 0 0;color:#cfe1da}}
@@ -461,43 +527,70 @@ th{{position:sticky;top:0;background:#e9f0ec;color:#486158;font-size:12px;cursor
 .number{{font-size:16px;font-weight:850;color:var(--green);font-variant-numeric:tabular-nums}}.done{{color:var(--green)}}.pending{{color:#8a6b28}}
 .contract{{margin-top:16px;padding:14px 16px;border-left:4px solid var(--green);background:#fff;color:var(--muted)}}
 @media(max-width:760px){{.stats{{grid-template-columns:1fr 1fr}}.stat:nth-child(2){{border-right:0}}header{{padding:22px 16px}}main{{padding:14px}}}}
-</style></head><body><header><h1>Policy-0019 Report</h1><p>55 套 exact deck 均加载 Policy-0806，对战同一份 256 局 Policy-0019 固定分布。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
+</style></head><body><header><h1>{target.label} Report</h1><p>55 套 exact deck 均加载 Policy-0806，对战同一份 256 局 {target.label} 固定分布。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
 <div class="stats"><div class="stat"><b>{len(records)}/{EXPECTED_DECKS}</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>正式对局</span></div><div class="stat"><b>{sum(r['wins'] for r in records):,}</b><span>Policy-0806 胜局</span></div><div class="stat"><b>{total_seconds/3600:.2f}h</b><span>累计 wall time</span></div></div>
 <div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div>
 <div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 256 局报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
-<div class="contract">Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{catalog.pool.manifest['schedule_sha256']}</code> · Policy-0806 <code>{POLICY_0806_SHA256}</code> · Policy-0019 <code>{POLICY_0019_SHA256}</code></div>
-<script>const q=document.querySelector('#search'),body=document.querySelector('tbody');q.addEventListener('input',()=>{{const s=q.value.toLowerCase();for(const r of body.rows)r.hidden=!r.innerText.toLowerCase().includes(s)}});</script>
+<div class="contract">Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{catalog.pool.manifest['schedule_sha256']}</code> · Candidate Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
+<script>
+const q=document.querySelector('#search'),body=document.querySelector('tbody');
+q.addEventListener('input',()=>{{
+  const s=q.value.toLowerCase();
+  for(const r of body.rows)r.hidden=!r.innerText.toLowerCase().includes(s);
+}});
+const publishedDecks={len(records)},evaluationComplete={str(len(records) == EXPECTED_DECKS).lower()};
+if(!evaluationComplete)setInterval(async()=>{{
+  try{{
+    const response=await fetch(`manifest.json?updated=${{Date.now()}}`,{{cache:'no-store'}});
+    const manifest=await response.json();
+    if(manifest.published_decks>publishedDecks)location.reload();
+  }}catch(_error){{}}
+}},5000);
+</script>
 </main></body></html>"""
 
 
 def refresh_index(
     catalog: Frozen0806RuntimeCatalog,
     *,
+    target: FrozenEvaluationTarget = POLICY_0019_TARGET,
     candidate_concurrency: int = 2,
     workers_per_candidate: int = 16,
 ) -> list[dict[str, Any]]:
-    if LEGACY_OUTPUT_ROOT.is_dir() and not OUTPUT_ROOT.exists():
-        OUTPUT_ROOT.parent.mkdir(parents=True, exist_ok=True)
-        LEGACY_OUTPUT_ROOT.replace(OUTPUT_ROOT)
+    if (
+        target.legacy_output_root is not None
+        and target.legacy_output_root.is_dir()
+        and not target.output_root.exists()
+    ):
+        target.output_root.parent.mkdir(parents=True, exist_ok=True)
+        target.legacy_output_root.replace(target.output_root)
     records = []
     for candidate in catalog.candidates:
-        path = OUTPUT_ROOT / "reports" / str(
+        path = target.output_root / "reports" / str(
             candidate.package_manifest["frozen_report_href"]
         )
-        legacy_path = OUTPUT_ROOT / "reports" / f"{candidate.name}.html"
+        legacy_path = target.output_root / "reports" / f"{candidate.name}.html"
         if legacy_path.is_file() and not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
             legacy_path.replace(path)
+        if not path.exists():
+            number = candidate.package_manifest["frozen_deck_number"]
+            numbered_legacy = list(
+                (target.output_root / "reports").glob(f"{number}_*.html")
+            )
+            if len(numbered_legacy) == 1:
+                numbered_legacy[0].replace(path)
         if path.is_file():
-            _refresh_report_navigation(path, candidate, catalog)
-            records.append(validate_report(path, candidate, catalog))
+            _refresh_report_navigation(path, candidate, catalog, target)
+            records.append(validate_report(path, candidate, catalog, target))
     manifest = {
         "schema_version": "frozen_0806_full_evaluation_v1",
         "pool_id": catalog.pool.pool_id,
         "pool_manifest_sha256": catalog.pool.manifest_sha256,
         "schedule_sha256": catalog.pool.manifest["schedule_sha256"],
         "policy_0806_sha256": POLICY_0806_SHA256,
-        "policy_0019_sha256": POLICY_0019_SHA256,
+        "opponent_policy_label": target.label,
+        "opponent_policy_sha256": target.policy_sha256,
         "expected_decks": EXPECTED_DECKS,
         "games_per_deck": EXPECTED_GAMES,
         "expected_games": EXPECTED_DECKS * EXPECTED_GAMES,
@@ -509,24 +602,31 @@ def refresh_index(
         "maximum_game_workers": candidate_concurrency * workers_per_candidate,
         "reports": records,
     }
-    _atomic_json(OUTPUT_ROOT / "manifest.json", manifest)
-    _atomic_text(OUTPUT_ROOT / "index.html", _index_html(records, catalog))
+    _atomic_json(target.output_root / "manifest.json", manifest)
+    _atomic_text(
+        target.output_root / "index.html", _index_html(records, catalog, target)
+    )
     _atomic_text(
         ROOT / "evaluation/arena/combat_mat/index.html",
-        '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" '
-        'content="0;url=policy_0019/0806_kaggle_top100_plus_v1/index.html">'
-        '<a href="policy_0019/0806_kaggle_top100_plus_v1/index.html">Policy-0019 Report</a>\n',
+        '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
+        '<title>Frozen-0806 Reports</title><body><h1>Frozen-0806 Reports</h1><ul>'
+        '<li><a href="policy_0806/0806_kaggle_top100_plus_v1/index.html">'
+        'Policy-0806 Report</a></li>'
+        '<li><a href="policy_0019/0806_kaggle_top100_plus_v1/index.html">'
+        'Policy-0019 Report</a></li></ul></body></html>\n',
     )
     return records
 
 
 def benchmark(
     catalog: Frozen0806RuntimeCatalog,
+    target: FrozenEvaluationTarget,
     *,
     worker_counts: Iterable[int],
     games: int,
     batch_size: int,
     batch_wait_ms: float,
+    inference_dtype: str,
 ) -> list[dict[str, Any]]:
     if games < 2 or games % 2:
         raise ValueError("benchmark games must be an even integer of at least two")
@@ -543,18 +643,22 @@ def benchmark(
                 batch_wait_ms=batch_wait_ms,
                 label="candidate",
                 ability_repeat_limit=8,
+                inference_dtype=inference_dtype,
             )
         )
-        opponent_socket = stack.enter_context(
-            _policy_inference_server(
-                root=catalog.opponent_policy.root,
-                device="cuda:0",
-                batch_size=batch_size,
-                batch_wait_ms=batch_wait_ms,
-                label="opponent",
-                ability_repeat_limit=8,
+        opponent_socket = candidate_socket
+        if target.key != "0806":
+            opponent_socket = stack.enter_context(
+                _policy_inference_server(
+                    root=catalog.opponent_policy.root,
+                    device="cuda:0",
+                    batch_size=batch_size,
+                    batch_wait_ms=batch_wait_ms,
+                    label="opponent",
+                    ability_repeat_limit=8,
+                    inference_dtype=inference_dtype,
+                )
             )
-        )
         assert candidate_socket is not None and opponent_socket is not None
         for workers in worker_counts:
             started = time.perf_counter()
@@ -562,10 +666,12 @@ def benchmark(
                 _batch_config(
                     catalog,
                     candidate,
+                    target,
                     output_root=BENCHMARK_ROOT / f"workers_{workers}",
                     workers=workers,
                     batch_size=batch_size,
                     batch_wait_ms=batch_wait_ms,
+                    inference_dtype=inference_dtype,
                     candidate_socket=candidate_socket,
                     opponent_socket=opponent_socket,
                     opponents=opponents,
@@ -591,16 +697,19 @@ def benchmark(
 def run_full(
     catalog: Frozen0806RuntimeCatalog,
     candidates: Iterable[Any],
+    target: FrozenEvaluationTarget,
     *,
     workers: int,
     candidate_concurrency: int,
     batch_size: int,
     batch_wait_ms: float,
+    inference_dtype: str,
 ) -> list[dict[str, Any]]:
     if candidate_concurrency < 1:
         raise ValueError("candidate_concurrency must be at least one")
     published = refresh_index(
         catalog,
+        target=target,
         candidate_concurrency=candidate_concurrency,
         workers_per_candidate=workers,
     )
@@ -614,22 +723,33 @@ def run_full(
                 batch_wait_ms=batch_wait_ms,
                 label="candidate",
                 ability_repeat_limit=8,
+                inference_dtype=inference_dtype,
             )
         )
-        opponent_socket = stack.enter_context(
-            _policy_inference_server(
-                root=catalog.opponent_policy.root,
-                device="cuda:0",
-                batch_size=batch_size,
-                batch_wait_ms=batch_wait_ms,
-                label="opponent",
-                ability_repeat_limit=8,
+        opponent_socket = candidate_socket
+        if target.key != "0806":
+            opponent_socket = stack.enter_context(
+                _policy_inference_server(
+                    root=catalog.opponent_policy.root,
+                    device="cuda:0",
+                    batch_size=batch_size,
+                    batch_wait_ms=batch_wait_ms,
+                    label="opponent",
+                    ability_repeat_limit=8,
+                    inference_dtype=inference_dtype,
+                )
             )
-        )
         assert candidate_socket is not None and opponent_socket is not None
-        candidate_list = [
-            candidate for candidate in candidates if candidate.name not in published_ids
-        ]
+        candidate_list = sorted(
+            (
+                candidate
+                for candidate in candidates
+                if candidate.name not in published_ids
+            ),
+            key=lambda candidate: int(
+                candidate.package_manifest["frozen_deck_number"]
+            ),
+        )
         with ThreadPoolExecutor(max_workers=candidate_concurrency) as executor:
             for offset in range(0, len(candidate_list), candidate_concurrency):
                 batch = candidate_list[offset : offset + candidate_concurrency]
@@ -638,9 +758,11 @@ def run_full(
                         run_deck,
                         catalog,
                         candidate,
+                        target,
                         workers=workers,
                         batch_size=batch_size,
                         batch_wait_ms=batch_wait_ms,
+                        inference_dtype=inference_dtype,
                         candidate_socket=candidate_socket,
                         opponent_socket=opponent_socket,
                     ): candidate
@@ -651,6 +773,7 @@ def run_full(
                     record = future.result()
                     refresh_index(
                         catalog,
+                        target=target,
                         candidate_concurrency=candidate_concurrency,
                         workers_per_candidate=workers,
                     )
@@ -662,6 +785,7 @@ def run_full(
                     )
     return refresh_index(
         catalog,
+        target=target,
         candidate_concurrency=candidate_concurrency,
         workers_per_candidate=workers,
     )
@@ -678,18 +802,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--candidate-concurrency", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--batch-wait-ms", type=float, default=2.0)
+    parser.add_argument("--inference-dtype", choices=("fp32", "fp16"), default="fp32")
+    parser.add_argument("--opponent-policy", choices=("0019", "0806"), default="0019")
     args = parser.parse_args(argv)
-    catalog = load_frozen_0806_runtime_catalog()
+    target = evaluation_target(args.opponent_policy)
+    catalog = load_frozen_0806_runtime_catalog(
+        opponent_policy_label=args.opponent_policy
+    )
     if len(catalog.candidates) != EXPECTED_DECKS or catalog.pool.total_games != EXPECTED_GAMES:
         raise RuntimeError("Frozen-0806 runtime catalog does not match the formal contract")
     if args.benchmark:
         worker_counts = tuple(int(value) for value in args.benchmark_workers.split(","))
         records = benchmark(
             catalog,
+            target,
             worker_counts=worker_counts,
             games=args.benchmark_games,
             batch_size=args.batch_size,
             batch_wait_ms=args.batch_wait_ms,
+            inference_dtype=args.inference_dtype,
         )
         print(json.dumps(records, indent=2, sort_keys=True))
         return 0
@@ -703,10 +834,12 @@ def main(argv: list[str] | None = None) -> int:
     run_full(
         catalog,
         (by_id[deck_id] for deck_id in requested),
+        target,
         workers=args.workers,
         candidate_concurrency=args.candidate_concurrency,
         batch_size=args.batch_size,
         batch_wait_ms=args.batch_wait_ms,
+        inference_dtype=args.inference_dtype,
     )
     return 0
 

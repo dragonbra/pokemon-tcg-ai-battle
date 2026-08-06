@@ -70,6 +70,7 @@ class PolicyServer:
         batch_size: int,
         batch_wait_ms: float,
         ability_repeat_limit: int,
+        inference_dtype: str = "fp32",
     ) -> None:
         self._candidate_root = candidate_root.resolve()
         if str(self._candidate_root) not in sys.path:
@@ -89,10 +90,15 @@ class PolicyServer:
         from strategy.inference import legal_fallback
         from strategy.online_runtime import OnlineCausalEncoder
 
-        self._policy.model = self._policy.model.to(device).eval()
         self._device = torch.device(device)
         if self._device.type == "cuda" and not torch.cuda.is_available():
             raise RuntimeError(f"CUDA device requested but unavailable: {device}")
+        dtype = _resolve_inference_dtype(torch, inference_dtype, self._device)
+        self._policy.model = self._policy.model.to(
+            device=self._device,
+            dtype=dtype,
+        ).eval()
+        self._policy.runtime_dtype = dtype
         self._torch = torch
         self._encoder_type = OnlineCausalEncoder
         self._legal_fallback = legal_fallback
@@ -281,6 +287,15 @@ def _normalize_request_deck(value: Any, fallback: tuple[int, ...]) -> tuple[int,
     return tuple(deck)
 
 
+def _resolve_inference_dtype(torch: Any, value: str, device: Any) -> Any:
+    dtypes = {"fp32": torch.float32, "fp16": torch.float16}
+    if value not in dtypes:
+        raise ValueError(f"unsupported inference dtype: {value}")
+    if value == "fp16" and device.type != "cuda":
+        raise ValueError("fp16 inference requires a CUDA device")
+    return dtypes[value]
+
+
 @dataclass
 class _InferenceRequest:
     session_id: str
@@ -298,6 +313,7 @@ def serve(
     batch_size: int,
     batch_wait_ms: float,
     ability_repeat_limit: int,
+    inference_dtype: str = "fp32",
 ) -> None:
     socket_path.unlink(missing_ok=True)
     server = PolicyServer(
@@ -306,6 +322,7 @@ def serve(
         batch_size,
         batch_wait_ms,
         ability_repeat_limit,
+        inference_dtype,
     )
     listener = Listener(str(socket_path), family="AF_UNIX")
     try:
@@ -351,6 +368,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--batch-wait-ms", type=float, default=2.0)
     parser.add_argument("--ability-repeat-limit", type=int, default=0)
+    parser.add_argument("--inference-dtype", choices=("fp32", "fp16"), default="fp32")
     args = parser.parse_args(argv)
     serve(
         args.candidate,
@@ -359,6 +377,7 @@ def main(argv: list[str] | None = None) -> int:
         args.batch_size,
         args.batch_wait_ms,
         args.ability_repeat_limit,
+        args.inference_dtype,
     )
     return 0
 

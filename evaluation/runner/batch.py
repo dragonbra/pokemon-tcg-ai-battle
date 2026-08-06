@@ -78,8 +78,10 @@ class BatchConfig:
     candidate_inference_device: str | None = None
     candidate_inference_batch_size: int = 32
     candidate_inference_batch_wait_ms: float = 2.0
+    candidate_inference_dtype: str = "fp32"
     opponent_inference_root: Path | None = None
     opponent_inference_device: str | None = None
+    opponent_inference_dtype: str = "fp32"
     opponent_pool_id: str = "legacy_opponents"
     opponent_catalog_sha256: str | None = None
     opponent_policy_hash: str | None = None
@@ -147,6 +149,10 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("candidate_inference_batch_size must be at least one")
     if config.candidate_inference_batch_wait_ms < 0:
         raise ValueError("candidate_inference_batch_wait_ms cannot be negative")
+    if config.candidate_inference_dtype not in {"fp32", "fp16"}:
+        raise ValueError("candidate_inference_dtype must be fp32 or fp16")
+    if config.opponent_inference_dtype not in {"fp32", "fp16"}:
+        raise ValueError("opponent_inference_dtype must be fp32 or fp16")
     if config.inference_ability_repeat_limit < 0:
         raise ValueError("inference_ability_repeat_limit cannot be negative")
     if config.engine_turn_draw_limit < 0:
@@ -501,6 +507,7 @@ def _policy_inference_servers(
         batch_wait_ms=config.candidate_inference_batch_wait_ms,
         label="candidate",
         ability_repeat_limit=config.inference_ability_repeat_limit,
+        inference_dtype=config.candidate_inference_dtype,
     ) as candidate_socket:
         if config.share_policy_inference_server:
             yield candidate_socket, candidate_socket
@@ -512,6 +519,7 @@ def _policy_inference_servers(
             batch_wait_ms=config.candidate_inference_batch_wait_ms,
             label="opponent",
             ability_repeat_limit=config.inference_ability_repeat_limit,
+            inference_dtype=config.opponent_inference_dtype,
         ) as opponent_socket:
             yield candidate_socket, opponent_socket
 
@@ -525,6 +533,7 @@ def _policy_inference_server(
     batch_wait_ms: float,
     label: str,
     ability_repeat_limit: int = 0,
+    inference_dtype: str = "fp32",
 ) -> Iterator[Path | None]:
     if root is None or device is None:
         yield None
@@ -548,6 +557,8 @@ def _policy_inference_server(
             str(batch_wait_ms),
             "--ability-repeat-limit",
             str(ability_repeat_limit),
+            "--inference-dtype",
+            inference_dtype,
         ],
         cwd=Path(__file__).resolve().parents[2],
         env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
@@ -1112,6 +1123,7 @@ def _manifest(
                 if config.candidate_inference_device
                 else 0.0
             ),
+            "dtype": config.candidate_inference_dtype,
         },
         "opponent_pool": {
             "pool_id": config.opponent_pool_id,
@@ -1138,6 +1150,7 @@ def _manifest(
                 if config.opponent_inference_device
                 else 0.0
             ),
+            "dtype": config.opponent_inference_dtype,
         },
         "shared_policy_inference_process": config.share_policy_inference_server,
         "inference_progress_guard": {
