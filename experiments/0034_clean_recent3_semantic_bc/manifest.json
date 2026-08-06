@@ -1,0 +1,105 @@
+{
+  "project_id": "0034_clean_recent3_semantic_bc",
+  "status": "cleaned_recent3_trained_and_evaluated",
+  "created_at": "2026-08-04",
+  "completed_at": "2026-08-07",
+  "actor_source_identity_visible": false,
+  "implementation_lineage": {
+    "source_project": "0032_audited_semantic_foundation_pretraining",
+    "semantic_relationship": "type_aware_effect_summary_extension_with_minimal_action_cleaning",
+    "executable_dependency": false
+  },
+  "dataset_scope": {
+    "status": "accepted",
+    "perspective": "unique_positive_terminal_winner",
+    "start_date": "2026-08-01",
+    "end_date": "2026-08-03",
+    "records": 1204592,
+    "split_counts": {
+      "train": 1081527,
+      "validation": 123065
+    },
+    "winner_only": true,
+    "sample_weights": [0.95, 1.0, 1.15],
+    "event_source_relations": 0,
+    "event_target_relations": 0,
+    "combined_manifest_sha256": "1237df73ef95c0ae0b4eff01e31a1bad9a3dd6cf81dcf897634b4c37bd700db3",
+    "daily_manifest_sha256": {
+      "2026-08-01": "51cda6d3ee11f15fa65c13d1421510999eec37f2195de25e8a607e08e2d44559",
+      "2026-08-02": "39a08891395a6bcce6beb25b8ac159f65b8d862af14ed8dff7f053094be192ed",
+      "2026-08-03": "3ed71078da0c109efc5202f63a1eda59fbe44321edcb1a2d40e14a89bf92d8db"
+    },
+    "validation_report": "D:/w33/tmp/0034_clean_v5_20260806_163033/ptcg_0032_01_clean_recent3_data/validation_report.json"
+  },
+  "actor_schema": "0034_clean_recent3_semantic_decision_v1",
+  "training_schema": "0034_cleaned_bc_training_v1",
+  "prototype_schema": "0031_official_full_engine_prototypes_v2",
+  "public_prototype_sha256": "f4212a6c7b3e33d88c980599668c85fd3f86393964922629ef00630ba86e8776",
+  "full_engine_prototype_sha256": "cf37489f00152d2de77a81bc9ebdff9663575bb65f7660f96a0791cbbcb35fa1",
+  "default_parameter_count": 22595202,
+  "feature_audit": "train/0034_clean_recent3_semantic_bc/contracts/feature_audit.json",
+  "design": "experiments/0034_clean_recent3_semantic_bc/DESIGN.md",
+  "formal_training": {
+    "status": "complete",
+    "kaggle_kernel": "horizen12/ptcg-0034-02-train-recent3-cleaned-bc",
+    "kaggle_version": 2,
+    "epochs_completed": 3,
+    "full_train_passes_completed": 3,
+    "full_validation_passes_completed": 3,
+    "train_decisions_per_epoch": 1081527,
+    "validation_decisions_per_epoch": 123065,
+    "random_initialization": true,
+    "initialized_from_checkpoint": null,
+    "wandb": null,
+    "data_parallel_device_names": ["Tesla T4", "Tesla T4"],
+    "model_config": {
+      "d_model": 320,
+      "state_layers": 4,
+      "option_layers": 3,
+      "ffn_multiplier": 3,
+      "heads": 8
+    },
+    "best_model_bytes": 90610211,
+    "best_model_sha256": "6bb23f0b23c04c478c7c0926310967c73325685b0308959f147240219e3538ff",
+    "final_validation": {
+      "weighted_loss": 0.43694939374690595,
+      "token_accuracy": 0.8502931570456066,
+      "teacher_exact_action": 0.7036606671271279,
+      "action_type_accuracy": 0.9323456498642427,
+      "attach_target_exact_action": 0.49753825681969394,
+      "attack_action_exact": 0.6915836101882613
+    },
+    "model_validation_report": "experiments/0034_clean_recent3_semantic_bc/evaluation/model_validation_report.json"
+  },
+  "evaluation": {
+    "status": "complete",
+    "protocol": "experiments/0034_clean_recent3_semantic_bc/evaluation_protocol.json",
+    "report": "experiments/0034_clean_recent3_semantic_bc/evaluation/marnie_six_bc_report.json",
+    "inference_device": "cuda",
+    "games": 300,
+    "wins": 169,
+    "losses": 131,
+    "draws": 0,
+    "errors": 0,
+    "fallback_decisions": 0,
+    "win_rate": 0.5633333333333334
+  },
+  "verification": {
+    "model_package_validation": "passed",
+    "model_only_checkpoints": true,
+    "package_only_load": true,
+    "finite_smoke_forward": true,
+    "smoke_forward_shape": [8, 6, 8],
+    "final_test_suite_status": "passed",
+    "project_tests": {
+      "0033_effect_summary_semantic_foundation_pretraining": 60,
+      "0034_clean_recent3_semantic_bc": 78
+    },
+    "compileall": "passed",
+    "ruff_source_and_builders": "passed",
+    "json_validation": {
+      "status": "passed",
+      "files": 35
+    }
+  }
+}

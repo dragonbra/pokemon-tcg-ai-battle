@@ -1,0 +1,27 @@
+{
+  "id": "horizen12/ptcg-0034-01-clean-recent3-data",
+  "title": "PTCG 0034 01 Clean Recent3 Data",
+  "code_file": "01_clean_recent3_data.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "machine_shape": "None",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "pokemon-tcg",
+    "0034",
+    "cleaning",
+    "winner-bc"
+  ],
+  "dataset_sources": [
+    "kaggle/pokemon-tcg-ai-battle-episodes-2026-08-01",
+    "kaggle/pokemon-tcg-ai-battle-episodes-2026-08-02",
+    "kaggle/pokemon-tcg-ai-battle-episodes-2026-08-03",
+    "horizen12/ptcg-0033-source"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "0034_marnie_six_bc_evaluation_protocol_v1",
+  "candidate": {
+    "deck": "bc_models/agent_marnie_prize_control_v4_3121746f_20260728/deck.csv",
+    "model_package": "downloaded 0034 Kaggle model package",
+    "inference_device": "cuda:0",
+    "fallback_policy": "legal_minimum_only_on_runtime_error",
+    "required_fallback_rate": 0.0
+  },
+  "engine": {
+    "runner": "tools.evaluate_candidates CPU official sample runner",
+    "max_steps": 700,
+    "seed": 2026080501,
+    "candidate_seat": "alternating_by_game_index",
+    "first_player": "engine_model_choice"
+  },
+  "opponent_pool": {
+    "source": "cuda_engine/configs/strongest_bc_opponent_pool_v1.json",
+    "games_per_opponent": 50,
+    "expected_total_games": 300,
+    "opponents": [
+      {
+        "name": "pure_lucario_bc512_e4",
+        "archetype": "lucario"
+      },
+      {
+        "name": "cynthia_core_meanpool_epochmix_v1",
+        "archetype": "cynthia"
+      },
+      {
+        "name": "kangaskhan_crustle_meanpool_epochmix_v2",
+        "archetype": "kangaskhan_crustle"
+      },
+      {
+        "name": "marnie_prize_control_v4",
+        "archetype": "marnie"
+      },
+      {
+        "name": "yushin_alakazam_idonly_bc_v1",
+        "archetype": "alakazam"
+      },
+      {
+        "name": "dragapult_large_data_decoder_2layer",
+        "archetype": "dragapult"
+      }
+    ]
+  },
+  "required_report_fields": [
+    "opponent",
+    "games",
+    "wins",
+    "losses",
+    "draws",
+    "errors",
+    "win_rate_decided",
+    "candidate_decisions",
+    "fallback_decisions",
+    "fallback_rate"
+  ],
+  "baseline_reference": "output/0033-marnie-gpu-vs-six-bc-g50-20260805/report.json"
+}

@@ -26,6 +26,13 @@ logs/
 test-results/
 .superpowers/
 
+# Local experiment materializations and generated Kaggle outputs.
+/tmp/
+/experiments/0033_effect_summary_semantic_foundation_pretraining/data/
+/experiments/0034_clean_recent3_semantic_bc/data/
+/experiments/0033_effect_summary_semantic_foundation_pretraining/kaggle/**/output/
+/experiments/0034_clean_recent3_semantic_bc/kaggle/**/output/
+
 # RL artifacts: large supervised datasets and checkpoints stay local.
 # Run metadata, metrics, evaluation reports, and TensorBoard events are tracked.
 rl_runs/dataset/*

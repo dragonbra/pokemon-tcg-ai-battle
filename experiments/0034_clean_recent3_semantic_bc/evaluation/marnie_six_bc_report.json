@@ -1,0 +1,26 @@
+{
+  "schema_version": "0034_marnie_six_bc_eval_v1",
+  "candidate": "0034_clean_recent3_semantic_decision_v1_marnie_deck",
+  "model_sha256": "6bb23f0b23c04c478c7c0926310967c73325685b0308959f147240219e3538ff",
+  "inference_device": "cuda",
+  "games_per_opponent": 50,
+  "max_steps": 700,
+  "seed": 2026080501,
+  "totals": {
+    "games": 300,
+    "wins": 169,
+    "losses": 131,
+    "draws": 0,
+    "errors": 0,
+    "fallback_decisions": 0,
+    "win_rate": 0.5633333333333334
+  },
+  "by_opponent": [
+    {"opponent": "pure_lucario_bc512_e4", "archetype": "lucario", "games": 50, "wins": 30, "losses": 20, "draws": 0, "errors": 0, "fallback_decisions": 0, "win_rate": 0.6},
+    {"opponent": "cynthia_core_meanpool_epochmix_v1", "archetype": "cynthia", "games": 50, "wins": 21, "losses": 29, "draws": 0, "errors": 0, "fallback_decisions": 0, "win_rate": 0.42},
+    {"opponent": "kangaskhan_crustle_meanpool_epochmix_v2", "archetype": "kangaskhan_crustle", "games": 50, "wins": 22, "losses": 28, "draws": 0, "errors": 0, "fallback_decisions": 0, "win_rate": 0.44},
+    {"opponent": "marnie_prize_control_v4", "archetype": "marnie", "games": 50, "wins": 22, "losses": 28, "draws": 0, "errors": 0, "fallback_decisions": 0, "win_rate": 0.44},
+    {"opponent": "yushin_alakazam_idonly_bc_v1", "archetype": "alakazam", "games": 50, "wins": 28, "losses": 22, "draws": 0, "errors": 0, "fallback_decisions": 0, "win_rate": 0.56},
+    {"opponent": "dragapult_large_data_decoder_2layer", "archetype": "dragapult", "games": 50, "wins": 46, "losses": 4, "draws": 0, "errors": 0, "fallback_decisions": 0, "win_rate": 0.92}
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "best_model": {
+    "bytes": 90610211,
+    "sha256": "6bb23f0b23c04c478c7c0926310967c73325685b0308959f147240219e3538ff"
+  },
+  "device_names": ["Tesla T4", "Tesla T4"],
+  "epochs_completed": 3,
+  "final_validation": {
+    "action_type_accuracy": 0.9323456498642427,
+    "attach_target_exact_action": 0.49753825681969394,
+    "attack_action_exact": 0.6915836101882613,
+    "decisions": 123065,
+    "loss": 0.4362501610720007,
+    "teacher_exact_action": 0.7036606671271279,
+    "token_accuracy": 0.8502931570456066,
+    "tokens": 254130,
+    "weighted_loss": 0.43694939374690595
+  },
+  "parameter_count": 22595202,
+  "smoke_forward": {"finite": true, "shape": [8, 6, 8]},
+  "status": "passed",
+  "train_decisions_per_epoch": 1081527,
+  "validation_decisions_per_epoch": 123065
+}

@@ -1,0 +1,28 @@
+{
+  "id": "horizen12/ptcg-0033-04-train-recent3-rolling-t4",
+  "title": "PTCG 0033 04 Train Recent3 Rolling T4",
+  "code_file": "04_train_recent3_rolling_t4.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "pokemon-tcg",
+    "0033",
+    "rolling",
+    "attach-bc"
+  ],
+  "dataset_sources": [
+    "horizen12/ptcg-0033-source"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [
+    "horizen12/ptcg-0033-01-day-0801",
+    "horizen12/ptcg-0033-02-day-0802",
+    "horizen12/ptcg-0033-03-day-0803"
+  ],
+  "model_sources": []
+}

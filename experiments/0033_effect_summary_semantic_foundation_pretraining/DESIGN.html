@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>0032 Audited Semantic Foundation</title></head>
+<body>
+<h1>0032 Audited Semantic Foundation Pretraining</h1>
+<p><strong>Status:</strong> feature contract verified; formal five-day dataset accepted; training version 1 running.</p>
+<h2>Requirement</h2>
+<p>Every input must be actor-visible, truthful, consumed by forward, useful for legal-option choice, and not exactly recoverable from another retained input. The audited path is observation to compiler to canonical record to batch to encoder to logits.</p>
+<h2>Dynamic input</h2>
+<table><thead><tr><th>Family</th><th>Categorical</th><th>Numeric</th><th>Relations</th></tr></thead><tbody>
+<tr><td>Global</td><td>7</td><td>11</td><td>-</td></tr>
+<tr><td>Card instance</td><td>6</td><td>14</td><td>card_parent</td></tr>
+<tr><td>Resource ledger</td><td>3</td><td>10</td><td>-</td></tr>
+<tr><td>Event</td><td>17</td><td>4</td><td>event_source, event_target</td></tr>
+<tr><td>Legal option</td><td>11</td><td>2</td><td>option_source, option_target</td></tr>
+</tbody></table>
+<p>Physical attachments are instance tokens plus card_parent. Attach options bind the actual Energy and target Pokemon. Attack and Retreat bind the own Active; owner/area remains unknown when an option has no real source or target. Log booleans are explicit unknown/false/true categories, and official serial fields are relation keys rather than actor scalars.</p>
+<h2>Energy</h2>
+<p>Energy cards retain nine primitive engine type-mask bits, engine unit count, condition flags, identity, and skills. In-play Pokemon retain a 12-bin engine-resolved EnergyTypeIndex histogram whose repetition preserves unit count. Physical and proposed attachment uses card_parent, option_source, and option_target. No attach counterfactual, deficit, or newly-enabled answer is fabricated.</p>
+<h2>Static prototypes and triggers</h2>
+<p>Cards retain rule facts and forward card-to-attack/card-to-skill relations. Attacks retain ordered Energy requirements, flags, and damage. Skills retain area masks, flags, trigger type, and the complete static Trigger.subject target specification. The engine has no separate static trigger_target. Runtime TriggerInfo.subject/object is excluded because the official actor observation does not expose it; public instances enter through event_source/event_target.</p>
+<h2>Exclusions</h2>
+<p>The effect graph, is_condition, repeated select context and zone counts, reconstructable option-skill and reverse prototype relations, card serial scalars, duplicate identities, unobservable deck order, Energy counterfactuals, post-damage HP, and KO answers are excluded.</p>
+<h2>Model and verification</h2>
+<p>The default 20,567,042-parameter policy uses a state transformer, option cross-attention, and ordered legal-option decoder. Source, target, context, and effect card prototypes have distinct projections. Batch validation fails closed; tests require every retained dynamic field/relation and every approved prototype column to be live, verify role-swap sensitivity, and prove full engine-asset slot coverage.</p>
+<p>Official 2026-08-01 Episode 89228732 produced 68 winner decisions; all 68 compile under the final contract. All 94 Attach options have source/target instance relations, all 520 attached child tokens have a parent, and an eight-row CUDA teacher forward is finite with shape [8, 4, 11].</p>
+<p>The accepted 2026-07-28 through 2026-08-01 dataset contains 2,048,069 winner-only decisions: 1,851,008 train and 197,061 validation. Every daily shard and record passed local checksum, relation, batch-contract, and exact-policy-forward validation. Dual-T4 five-epoch training version 1 is running; no model result is claimed before downloaded artifact verification.</p>
+</body>
+</html>

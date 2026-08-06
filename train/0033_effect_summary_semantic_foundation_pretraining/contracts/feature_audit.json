@@ -1,0 +1,200 @@
+{
+  "schema_version": "0033_effect_summary_feature_audit_v1",
+  "actor_schema": "0033_effect_summary_semantic_decision_v1",
+  "requirement": "truthful_sufficient_nonredundant_effect_summary_prototype",
+  "observation_fields": {
+    "global_categorical": [
+      "select_type",
+      "select_context",
+      "relative_first_player",
+      "supporter_played",
+      "stadium_played",
+      "energy_attached",
+      "retreated"
+    ],
+    "global_numeric": [
+      "turn",
+      "turn_action_count",
+      "own_deck_count",
+      "opponent_deck_count",
+      "opponent_hand_count",
+      "own_prize_count",
+      "opponent_prize_count",
+      "own_bench_max",
+      "opponent_bench_max",
+      "remaining_damage_counter",
+      "remaining_energy_cost"
+    ],
+    "card_categorical": [
+      "card_id",
+      "relative_owner",
+      "zone",
+      "zone_slot",
+      "status_bits",
+      "appeared_this_turn_state"
+    ],
+    "card_numeric": [
+      "current_hp",
+      "maximum_hp",
+      "resolved_energy_type_0_count",
+      "resolved_energy_type_1_count",
+      "resolved_energy_type_2_count",
+      "resolved_energy_type_3_count",
+      "resolved_energy_type_4_count",
+      "resolved_energy_type_5_count",
+      "resolved_energy_type_6_count",
+      "resolved_energy_type_7_count",
+      "resolved_energy_type_8_count",
+      "resolved_energy_type_9_count",
+      "resolved_energy_type_10_count",
+      "resolved_energy_type_11_count"
+    ],
+    "resource_categorical": [
+      "card_id",
+      "deck_knowledge",
+      "prize_knowledge"
+    ],
+    "resource_numeric": [
+      "initial_count",
+      "visible_playing",
+      "deck_value",
+      "deck_lower",
+      "deck_upper",
+      "prize_value",
+      "prize_lower",
+      "prize_upper",
+      "deck_information_age",
+      "prize_information_age"
+    ],
+    "event_categorical": [
+      "log_type",
+      "relative_actor",
+      "card_id",
+      "target_card_id",
+      "attack_id",
+      "from_area",
+      "to_area",
+      "active_card_id",
+      "bench_card_id",
+      "before_card_id",
+      "after_card_id",
+      "is_recover",
+      "put_damage_counter",
+      "coin_head",
+      "special_condition_type",
+      "result_type",
+      "reason_type"
+    ],
+    "event_numeric": [
+      "age",
+      "value",
+      "count",
+      "number"
+    ],
+    "option_categorical": [
+      "action_type",
+      "source_owner",
+      "source_area",
+      "target_owner",
+      "target_area",
+      "source_card_id",
+      "target_card_id",
+      "attack_id",
+      "special_condition_type",
+      "context_card_id",
+      "effect_card_id"
+    ],
+    "option_numeric": [
+      "number",
+      "count"
+    ],
+    "relations": [
+      "card_parent",
+      "event_source",
+      "event_target",
+      "option_source",
+      "option_target"
+    ]
+  },
+  "prototype_facts": {
+    "card": [
+      "card_type",
+      "pokemon_type",
+      "evolution_type",
+      "evolves_from",
+      "evolves_from_2",
+      "rule_affiliation_flags",
+      "energy_type_mask_bits_9",
+      "weakness_mask_bits_9",
+      "resistance_mask_bits_9",
+      "hp",
+      "retreat_cost",
+      "engine_energy_count",
+      "shared_type_space_projection",
+      "card_type_specific_projection",
+      "card_skill_relations",
+      "card_attack_relations"
+    ],
+    "attack": [
+      "attack_flag_bits_20",
+      "ordered_required_energy_slots_5",
+      "last_cancel_fail_attack",
+      "base_damage",
+      "shared_attack_cost_type_projection",
+      "effect_summary_slots_12"
+    ],
+    "skill": [
+      "skill_type",
+      "skill_area_mask_bits_25",
+      "skill_flags",
+      "trigger_type",
+      "trigger_subject_target_player",
+      "trigger_subject_not_me",
+      "trigger_subject_skip_enemy_target",
+      "trigger_subject_ordered_areas",
+      "trigger_subject_ordered_conditions",
+      "effect_summary_slots_12"
+    ]
+  },
+  "explicitly_excluded": [
+    "effect_node_graph",
+    "is_condition",
+    "runtime_trigger_subject",
+    "runtime_trigger_target",
+    "physical_attached_energy_count",
+    "resolved_energy_units",
+    "resolved_energy_type_mask",
+    "attach_provides_type_mask",
+    "attach_provides_units",
+    "typed_or_total_energy_deficit",
+    "newly_enabled_attack_count",
+    "retreat_deficit",
+    "post_damage_hp",
+    "ko_answer",
+    "card_serial_actor_feature",
+    "duplicate_dynamic_identity_embedding",
+    "owner_specific_zone_codes",
+    "source_team_or_persona_identity",
+    "repeated_option_select_type_or_context",
+    "repeated_resource_visible_zone_counts",
+    "reconstructable_option_skill_relations",
+    "reverse_attack_or_skill_to_card_relation",
+    "unobservable_deck_order_flag"
+  ],
+  "truthfulness_evidence": {
+    "resolved_energy_histogram": "current.players[*].active_or_bench[*].energies from engine State.getEnergies/getEnergyInfo",
+    "physical_attachment": "energyCards/tools/preEvolution instance tokens plus exact card_parent reconstructed in observation order",
+    "attach_option_relations": "official option area/index and inPlayArea/inPlayIndex recomputed to exact owner/zone/slot instances, including duplicate card IDs",
+    "event_instance_relations": "official serial pairs recomputed to exact actor-visible instances",
+    "static_trigger_subject": "full-engine Trigger.triggerType and Trigger.subject Target fields",
+    "runtime_trigger_subject_or_object": "excluded because official actor observation does not expose TriggerInfo.subject/object"
+  },
+  "consumers": {
+    "global": "StateEncoder.global_cat/global_num",
+    "card": "StateEncoder.card_cat/card_num plus OfficialPrototypeEncoder.card",
+    "resource": "StateEncoder.resource_cat/resource_num plus card prototype",
+    "event": "StateEncoder.event_cat/event_num plus role-specific card prototypes, attack prototype, and directional source/target relation projections",
+    "option": "OptionEncoder categorical/numeric plus role-specific card/attack prototypes and source/target relations",
+    "constraints": "ActionDecoder min_count/max_count legality mask"
+  }
+}

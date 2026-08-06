@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>0034 Clean Recent3 Semantic BC</title></head>
+<body>
+<h1>0034 Clean Recent3 Semantic BC</h1>
+<p><strong>Status:</strong> cleaned dataset accepted; dual-T4 training and fixed six-opponent evaluation complete.</p>
+<h2>Model</h2>
+<p>The 22,595,202-parameter SemanticPolicy uses d_model 320, four state-transformer layers, three option cross-attention layers, FFN multiplier 3, and an ordered legal-option pointer decoder. It retains the 0034 shared type space, card-type projections, static effect summaries, prototype assets, and actor contract.</p>
+<h2>Dataset</h2>
+<p>The accepted 2026-08-01 through 2026-08-03 winner-only corpus contains 1,204,592 decisions: 1,081,527 train and 123,065 validation. One epoch is a full pass over all three merged days. Minimal action cleaning uses sample weights 0.95, 1.0, and 1.15.</p>
+<h2>Training</h2>
+<p>Kaggle training version 2 completed three train and validation passes from random initialization on dual Tesla T4 GPUs with weighted cross-entropy, FP16, no pretrained checkpoint, and no W&amp;B. Final validation weighted loss was 0.436949, token accuracy 0.850293, teacher exact action 0.703661, Attach target accuracy 0.497538, and Attack accuracy 0.691584.</p>
+<p>The model-only best checkpoint is 90,610,211 bytes with SHA-256 <code>6bb23f0b23c04c478c7c0926310967c73325685b0308959f147240219e3538ff</code>. Package-only loading produced finite logits with shape [8, 6, 8].</p>
+<h2>Evaluation</h2>
+<p>The Marnie deck played 50 CUDA-inference games against each fixed BC opponent. All 300 games completed with zero errors and zero fallback decisions: 169 wins, 131 losses, 56.33% aggregate win rate.</p>
+<table><thead><tr><th>Opponent</th><th>Wins</th><th>Losses</th><th>Win rate</th></tr></thead><tbody>
+<tr><td>Lucario</td><td>30</td><td>20</td><td>60%</td></tr>
+<tr><td>Cynthia</td><td>21</td><td>29</td><td>42%</td></tr>
+<tr><td>Kangaskhan/Crustle</td><td>22</td><td>28</td><td>44%</td></tr>
+<tr><td>Marnie prize control</td><td>22</td><td>28</td><td>44%</td></tr>
+<tr><td>Alakazam</td><td>28</td><td>22</td><td>56%</td></tr>
+<tr><td>Dragapult</td><td>46</td><td>4</td><td>92%</td></tr>
+</tbody></table>
+<p>The result is specific to this deck and fixed protocol. Attach-target accuracy and the weaker Cynthia, Kangaskhan/Crustle, and Marnie matchups remain follow-up targets.</p>
+</body>
+</html>

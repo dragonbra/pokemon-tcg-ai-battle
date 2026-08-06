@@ -1,0 +1,20 @@
+{
+  "id": "horizen12/ptcg-0032-03-day-0730",
+  "title": "PTCG 0032 03 Day 0730",
+  "code_file": "03_day_0730.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "machine_shape": "None",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": ["pokemon-tcg", "0032", "audited-semantic"],
+  "dataset_sources": [
+    "kaggle/pokemon-tcg-ai-battle-episodes-2026-07-30",
+    "horizen12/ptcg-0032-source"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

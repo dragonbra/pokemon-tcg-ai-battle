@@ -1,0 +1,22 @@
+{
+  "id": "horizen12/ptcg-0032-05-train-dual-t4",
+  "title": "PTCG 0032 05 Train Dual T4",
+  "code_file": "05_train_dual_t4.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": ["pokemon-tcg", "0032", "audited-semantic"],
+  "dataset_sources": ["horizen12/ptcg-0032-source"],
+  "competition_sources": [],
+  "kernel_sources": [
+    "horizen12/ptcg-0032-01-day-0728",
+    "horizen12/ptcg-0032-02-day-0729",
+    "horizen12/ptcg-0032-03-day-0730",
+    "horizen12/ptcg-0032-04-days-0731-0801"
+  ],
+  "model_sources": []
+}

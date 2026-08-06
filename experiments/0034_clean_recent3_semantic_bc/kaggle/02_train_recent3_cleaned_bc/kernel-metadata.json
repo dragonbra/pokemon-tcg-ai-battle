@@ -1,0 +1,24 @@
+{
+  "id": "horizen12/ptcg-0034-02-train-recent3-cleaned-bc",
+  "title": "PTCG 0034 02 Train Recent3 Cleaned BC",
+  "code_file": "02_train_recent3_cleaned_bc.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "pokemon-tcg",
+    "0034",
+    "cleaned-bc",
+    "dual-t4"
+  ],
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": [
+    "horizen12/ptcg-0034-01-clean-recent3-data"
+  ],
+  "model_sources": []
+}

@@ -1,0 +1,25 @@
+{
+  "id": "horizen12/ptcg-0033-03-day-0803",
+  "title": "PTCG 0033 03 Day 0803",
+  "code_file": "03_day_0803.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "machine_shape": "None",
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [
+    "pokemon-tcg",
+    "0033",
+    "effect-summary",
+    "winner-bc"
+  ],
+  "dataset_sources": [
+    "kaggle/pokemon-tcg-ai-battle-episodes-2026-08-03",
+    "horizen12/ptcg-0033-source"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

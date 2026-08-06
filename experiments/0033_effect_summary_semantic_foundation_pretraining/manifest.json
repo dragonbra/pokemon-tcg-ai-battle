@@ -1,0 +1,47 @@
+{
+  "project_id": "0033_effect_summary_semantic_foundation_pretraining",
+  "status": "prototype_model_structure_verified",
+  "created_at": "2026-08-04",
+  "actor_source_identity_visible": false,
+  "implementation_lineage": {
+    "source_project": "0032_audited_semantic_foundation_pretraining",
+    "semantic_relationship": "type_aware_effect_summary_extension",
+    "executable_dependency": false
+  },
+  "dataset_scope": {
+    "status": "not_rematerialized_for_0033",
+    "compatible_source_project": "0032_audited_semantic_foundation_pretraining",
+    "perspective": "unique_positive_terminal_winner",
+    "start_date": "2026-07-28",
+    "end_date": "2026-08-01",
+    "records": 2048069,
+    "split_counts": {
+      "train": 1851008,
+      "validation": 197061
+    },
+    "note": "0033 changes prototype/model-side encoding only; the dynamic actor batch contract remains compatible with the accepted 0032 materialization until a dedicated 0033 dataset is produced."
+  },
+  "actor_schema": "0033_effect_summary_semantic_decision_v1",
+  "training_schema": "not_started",
+  "prototype_schema": "0031_official_full_engine_prototypes_v2",
+  "public_prototype_sha256": "f4212a6c7b3e33d88c980599668c85fd3f86393964922629ef00630ba86e8776",
+  "full_engine_prototype_sha256": "cf37489f00152d2de77a81bc9ebdff9663575bb65f7660f96a0791cbbcb35fa1",
+  "default_parameter_count": 22595202,
+  "feature_audit": "train/0033_effect_summary_semantic_foundation_pretraining/contracts/feature_audit.json",
+  "design": "experiments/0033_effect_summary_semantic_foundation_pretraining/DESIGN.md",
+  "formal_training_started": false,
+  "training_notebook": null,
+  "verification": {
+    "unit_tests_passed": 60,
+    "compileall_passed": true,
+    "effect_slot_capacity_tested": true,
+    "attack_effect_summary_forward_influence_tested": true,
+    "skill_effect_summary_forward_influence_tested": true,
+    "shared_type_space_forward_influence_tested": true,
+    "card_type_projection_forward_influence_tested": true,
+    "finite_prototype_memory_smoke": true,
+    "model_forward_contract_inherited_from_0032": true,
+    "formal_data_claimed": false,
+    "formal_training_claimed": false
+  }
+}

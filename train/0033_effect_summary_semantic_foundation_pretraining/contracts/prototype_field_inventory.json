@@ -1,0 +1,69 @@
+{
+  "schema_version": "0033_prototype_field_inventory_v1",
+  "source_schema": "0031_official_full_engine_prototypes_v2",
+  "card": {
+    "categorical": [
+      "card_type",
+      "pokemon_type",
+      "evolution_type",
+      "evolves_from",
+      "evolves_from_2"
+    ],
+    "boolean_groups": [
+      "rule_and_affiliation_flags",
+      "energy_type_mask_bits_9",
+      "weakness_mask_bits_9",
+      "resistance_mask_bits_9"
+    ],
+    "numeric": [
+      "hp",
+      "retreat_cost",
+      "energy_count"
+    ],
+    "relations": [
+      "ability_skill_id",
+      "play_skill_id",
+      "delay_skill_id",
+      "attack_ids"
+    ]
+  },
+  "attack": {
+    "categorical": [
+      "attack_flag_bits_20",
+      "ordered_energy_slots_5",
+      "last_cancel_fail_attack"
+    ],
+    "numeric": [
+      "damage"
+    ]
+  },
+  "skill": {
+    "categorical": [
+      "skill_type",
+      "area_mask_bits_25",
+      "skill_flags",
+      "trigger_type",
+      "trigger_subject_target_player",
+      "trigger_subject_not_me",
+      "trigger_subject_skip_enemy_target",
+      "trigger_subject_ordered_areas",
+      "trigger_subject_condition_type",
+      "trigger_subject_condition_comparator",
+      "trigger_subject_condition_name"
+    ],
+    "numeric_with_state": [
+      "trigger_subject_condition_value",
+      "trigger_subject_condition_value2"
+    ]
+  },
+  "excluded": [
+    "effect_nodes",
+    "is_condition",
+    "effect_execution_order",
+    "runtime_trigger_subject",
+    "runtime_trigger_target",
+    "text_fields",
+    "display_names",
+    "card_number"
+  ]
+}
