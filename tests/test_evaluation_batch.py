@@ -23,6 +23,7 @@ from evaluation.runner.batch import (
     _game_jobs,
     _metric_refs,
     _manifest_package,
+    _partition_pool_jobs,
     _validate_formal_destination,
     _write_evaluation_backlink_atomic,
     _metric_registry,
@@ -104,6 +105,14 @@ class TraceStoreTests(unittest.TestCase):
             error=None,
             steps=1,
             trace_path=trace_path,
+            performance={
+                "worker_wall_seconds": 0.4,
+                "engine_start_seconds": 0.1,
+                "engine_select_seconds": 0.2,
+                "agent_seconds": 0.1,
+                "agent_calls": 1,
+                "engine_select_calls": 1,
+            },
         )
         trace = {
             "run_id": "run-1",
@@ -115,6 +124,7 @@ class TraceStoreTests(unittest.TestCase):
         store.write_game_record(result, trace)
 
         self.assertEqual(json.loads(trace_path.read_text(encoding="utf-8")), trace)
+        self.assertEqual(store.game_records[0]["performance"], result.performance)
 
 
 class BatchRunnerTests(unittest.TestCase):
@@ -239,6 +249,39 @@ class BatchRunnerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "both candidate and opponents"):
             run_batch(config)
+
+    def test_engine_pool_rejects_invalid_or_non_resident_configuration(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        base = self.make_config(candidate, (opponent,), games=2)
+        with self.assertRaisesRegex(ValueError, "engine_pool_size"):
+            run_batch(replace(base, engine_pool_size=0))
+        with self.assertRaisesRegex(ValueError, "resident inference"):
+            run_batch(replace(base, engine_pool_size=2))
+        with self.assertRaisesRegex(ValueError, "visualization"):
+            run_batch(
+                replace(
+                    base,
+                    engine_pool_size=2,
+                    visualize=True,
+                    candidate_inference_device="cuda:0",
+                    opponent_inference_root=opponent.root,
+                    opponent_inference_device="cuda:0",
+                )
+            )
+
+    def test_pool_partition_keeps_n_processes_and_stable_job_order(self) -> None:
+        jobs = [(f"request-{index}", f"trace-{index}") for index in range(10)]
+        groups = _partition_pool_jobs(jobs, workers=3)
+
+        self.assertEqual(len(groups), 3)
+        self.assertEqual([len(group) for group in groups], [4, 3, 3])
+        flattened = sorted(
+            (index, job)
+            for group in groups
+            for index, job in group
+        )
+        self.assertEqual([job for _, job in flattened], jobs)
 
     def test_metric_refs_include_lightweight_payload_and_denominators(self) -> None:
         metric = GameMetric(

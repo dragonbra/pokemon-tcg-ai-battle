@@ -6,8 +6,9 @@ import json
 import os
 import random
 import sys
+import time
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from multiprocessing.connection import Client
 from pathlib import Path
 from typing import Any, Iterator
@@ -184,6 +185,12 @@ def _load_game_api_with_runtime(runtime_root: Path) -> object:
 def _load_agents(request: GameRequest) -> tuple[Any, Any]:
     _clear_cg_modules()
     game_module = _load_game_api_with_runtime(request.candidate.root)
+    if request.arbitrary_legal_actions:
+        return (
+            game_module,
+            _arbitrary_legal_agent(request.candidate.deck),
+            _arbitrary_legal_agent(request.opponent.deck),
+        )
     candidate_exclusions = (request.opponent.root,)
     opponent_exclusions = (request.candidate.root,)
     candidate_inference_socket = os.environ.get(
@@ -232,6 +239,39 @@ def _load_agents(request: GameRequest) -> tuple[Any, Any]:
         candidate_agent,
         opponent_agent,
     )
+
+
+def _arbitrary_legal_agent(deck: list[int]):
+    exact_deck = tuple(int(card_id) for card_id in deck)
+
+    def call(observation: dict[str, Any]) -> list[int]:
+        select = observation.get("select")
+        if select is None:
+            return list(exact_deck)
+        if not isinstance(select, dict) or not isinstance(select.get("option"), list):
+            raise ValueError("engine observation has no legal option list")
+        minimum = select.get("minCount", 0)
+        maximum = select.get("maxCount", len(select["option"]))
+        if (
+            type(minimum) is not int
+            or type(maximum) is not int
+            or not 0 <= minimum <= maximum <= len(select["option"])
+        ):
+            raise ValueError("engine observation has invalid selection bounds")
+        if select.get("type") == 0 and minimum <= 1 <= maximum:
+            end = next(
+                (
+                    index
+                    for index, option in enumerate(select["option"])
+                    if isinstance(option, dict) and option.get("type") == 14
+                ),
+                None,
+            )
+            if end is not None:
+                return [end]
+        return list(range(minimum))
+
+    return call
 
 
 def _normalize_winner(physical_winner: int | None, candidate_physical_index: int) -> int | None:
@@ -286,6 +326,12 @@ def _serialized_result(result: GameResult) -> dict[str, Any]:
 
 
 def run_game(request: GameRequest, trace_path: Path) -> GameResult:
+    worker_started_ns = time.perf_counter_ns()
+    engine_start_ns = 0
+    engine_select_ns = 0
+    agent_ns = 0
+    agent_calls = 0
+    engine_select_calls = 0
     random.seed(request.seed)
     candidate_physical_index = 0 if request.candidate_first else 1
     physical_packages = (
@@ -326,10 +372,14 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
         game_module, candidate_agent, opponent_agent = _load_agents(request)
         phase = "start"
         start_attempted = True
-        observation, _start_data = game_module.battle_start(
-            physical_packages[0].deck,
-            physical_packages[1].deck,
-        )
+        engine_started_ns = time.perf_counter_ns()
+        try:
+            observation, _start_data = game_module.battle_start(
+                physical_packages[0].deck,
+                physical_packages[1].deck,
+            )
+        finally:
+            engine_start_ns += time.perf_counter_ns() - engine_started_ns
 
         if observation is None:
             result = _error_result(
@@ -392,7 +442,12 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                 current_player = int(current.get("yourIndex", 0))
                 selected_agent = candidate_agent if current_player == candidate_physical_index else opponent_agent
                 try:
-                    action = selected_agent(observation)
+                    agent_started_ns = time.perf_counter_ns()
+                    try:
+                        action = selected_agent(observation)
+                    finally:
+                        agent_ns += time.perf_counter_ns() - agent_started_ns
+                        agent_calls += 1
                 except BaseException as exc:
                     error_side = (
                         "candidate_error"
@@ -428,7 +483,12 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     }
                 )
                 try:
-                    observation = game_module.battle_select(action)
+                    engine_selected_ns = time.perf_counter_ns()
+                    try:
+                        observation = game_module.battle_select(action)
+                    finally:
+                        engine_select_ns += time.perf_counter_ns() - engine_selected_ns
+                        engine_select_calls += 1
                 except IndexError as exc:
                     error_side = (
                         "candidate_error"
@@ -525,6 +585,17 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     error_kind="worker_error",
                     error="worker did not produce a result",
                 )
+            result = replace(
+                result,
+                performance={
+                    "worker_wall_seconds": (time.perf_counter_ns() - worker_started_ns) / 1e9,
+                    "engine_start_seconds": engine_start_ns / 1e9,
+                    "engine_select_seconds": engine_select_ns / 1e9,
+                    "agent_seconds": agent_ns / 1e9,
+                    "agent_calls": agent_calls,
+                    "engine_select_calls": engine_select_calls,
+                },
+            )
             payload["result"] = _serialized_result(result)
             trace_path.parent.mkdir(parents=True, exist_ok=True)
             trace_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -559,6 +630,7 @@ def _request_from_payload(payload: dict[str, Any]) -> tuple[GameRequest, Path]:
         engine_turn_draw_limit=int(payload.get("engine_turn_draw_limit", 0)),
         visualize=bool(payload["visualize"]),
         seed=int(payload.get("seed", 0)),
+        arbitrary_legal_actions=bool(payload.get("arbitrary_legal_actions", False)),
     )
     return request, Path(payload["trace_path"])
 

@@ -370,6 +370,12 @@ def _parser() -> argparse.ArgumentParser:
         help="限制每个 worker 的 OMP/MKL CPU 线程数",
     )
     run.add_argument(
+        "--engine-pool-size",
+        type=int,
+        default=1,
+        help="每个 worker 进程并发维护的 official-engine 环境数；需要双方 resident inference",
+    )
+    run.add_argument(
         "--candidate-device",
         default=None,
         help="在共享推理服务中常驻 candidate，例如 cuda:0；Frozen pool 默认 cuda:0",
@@ -423,6 +429,7 @@ def _run(args: argparse.Namespace) -> str:
         _validate_positive(args.workers, "--workers")
     if args.worker_cpu_threads is not None:
         _validate_positive(args.worker_cpu_threads, "--worker-cpu-threads")
+    _validate_positive(args.engine_pool_size, "--engine-pool-size")
     _validate_positive(args.candidate_batch_size, "--candidate-batch-size")
     if args.candidate_batch_wait_ms < 0:
         raise ValueError("--candidate-batch-wait-ms cannot be negative")
@@ -481,6 +488,7 @@ def _run(args: argparse.Namespace) -> str:
             keep_temp=args.keep_temp,
             workers=args.workers if args.workers is not None else default_worker_count(),
             worker_cpu_threads=args.worker_cpu_threads,
+            engine_pool_size=args.engine_pool_size,
             candidate_inference_device=candidate_device,
             candidate_inference_batch_size=args.candidate_batch_size,
             candidate_inference_batch_wait_ms=args.candidate_batch_wait_ms,

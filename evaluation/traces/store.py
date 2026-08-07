@@ -65,6 +65,7 @@ class TraceStore:
             "error_kind": result.error_kind,
             "trace_path": None,
             "metric_refs": metric_refs,
+            "performance": dict(result.performance) if result.performance is not None else None,
         }
         self._records.append(record)
 

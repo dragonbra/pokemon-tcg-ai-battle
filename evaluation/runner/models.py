@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from evaluation.packages.loader import SubmissionPackage
 
@@ -17,6 +18,7 @@ class GameRequest:
     visualize: bool
     engine_turn_draw_limit: int = 0
     seed: int = 0
+    arbitrary_legal_actions: bool = False
 
 
 @dataclass(frozen=True)
@@ -32,3 +34,4 @@ class GameResult:
     error: str | None
     steps: int
     trace_path: Path
+    performance: dict[str, Any] | None = None

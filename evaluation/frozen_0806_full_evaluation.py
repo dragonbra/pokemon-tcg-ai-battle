@@ -354,6 +354,7 @@ def _batch_config(
     opponent_socket: Path,
     opponents: tuple[Any, ...] | None = None,
     counts: tuple[int, ...] | None = None,
+    engine_pool_size: int = 1,
 ) -> BatchConfig:
     selected_opponents = opponents or catalog.opponents
     selected_counts = counts or _schedule_counts(catalog)
@@ -388,6 +389,7 @@ def _batch_config(
         seed=DEFAULT_SEED,
         inference_ability_repeat_limit=8,
         engine_turn_draw_limit=100,
+        engine_pool_size=engine_pool_size,
     )
 
 
@@ -402,6 +404,7 @@ def run_deck(
     inference_dtype: str,
     candidate_socket: Path,
     opponent_socket: Path,
+    engine_pool_size: int = 1,
 ) -> dict[str, Any]:
     report_path = target.output_root / "reports" / str(
         candidate.package_manifest["frozen_report_href"]
@@ -420,6 +423,7 @@ def run_deck(
             inference_dtype=inference_dtype,
             candidate_socket=candidate_socket,
             opponent_socket=opponent_socket,
+            engine_pool_size=engine_pool_size,
         )
     )
     validate_report_payload(
@@ -627,6 +631,7 @@ def benchmark(
     batch_size: int,
     batch_wait_ms: float,
     inference_dtype: str,
+    engine_pool_size: int = 1,
 ) -> list[dict[str, Any]]:
     if games < 2 or games % 2:
         raise ValueError("benchmark games must be an even integer of at least two")
@@ -676,6 +681,7 @@ def benchmark(
                     opponent_socket=opponent_socket,
                     opponents=opponents,
                     counts=counts,
+                    engine_pool_size=engine_pool_size,
                 )
             )
             summary = result.report_data.summary
@@ -704,6 +710,7 @@ def run_full(
     batch_size: int,
     batch_wait_ms: float,
     inference_dtype: str,
+    engine_pool_size: int = 1,
 ) -> list[dict[str, Any]]:
     if candidate_concurrency < 1:
         raise ValueError("candidate_concurrency must be at least one")
@@ -765,6 +772,7 @@ def run_full(
                         inference_dtype=inference_dtype,
                         candidate_socket=candidate_socket,
                         opponent_socket=opponent_socket,
+                        engine_pool_size=engine_pool_size,
                     ): candidate
                     for candidate in batch
                 }
@@ -799,6 +807,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--benchmark-games", type=int, default=24)
     parser.add_argument("--benchmark-workers", default="8,12,16")
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--engine-pool-size", type=int, default=1)
     parser.add_argument("--candidate-concurrency", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--batch-wait-ms", type=float, default=2.0)
@@ -821,6 +830,7 @@ def main(argv: list[str] | None = None) -> int:
             batch_size=args.batch_size,
             batch_wait_ms=args.batch_wait_ms,
             inference_dtype=args.inference_dtype,
+            engine_pool_size=args.engine_pool_size,
         )
         print(json.dumps(records, indent=2, sort_keys=True))
         return 0
@@ -840,6 +850,7 @@ def main(argv: list[str] | None = None) -> int:
         batch_size=args.batch_size,
         batch_wait_ms=args.batch_wait_ms,
         inference_dtype=args.inference_dtype,
+        engine_pool_size=args.engine_pool_size,
     )
     return 0
 

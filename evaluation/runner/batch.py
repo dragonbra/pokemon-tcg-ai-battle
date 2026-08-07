@@ -95,6 +95,10 @@ class BatchConfig:
     opponent_inference_socket: Path | None = None
     inference_ability_repeat_limit: int = 0
     engine_turn_draw_limit: int = 0
+    inference_profile: bool = False
+    inference_forced_action_shortcut: bool = False
+    arbitrary_legal_actions: bool = False
+    engine_pool_size: int = 1
 
 
 @dataclass(frozen=True)
@@ -117,6 +121,8 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("worker_timeout_seconds must be greater than zero")
     if config.workers < 1:
         raise ValueError("workers must be at least one")
+    if config.engine_pool_size < 1:
+        raise ValueError("engine_pool_size must be at least one")
     if config.worker_crash_retries < 0:
         raise ValueError("worker_crash_retries cannot be negative")
     if config.games_by_opponent is not None and (
@@ -157,6 +163,30 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("inference_ability_repeat_limit cannot be negative")
     if config.engine_turn_draw_limit < 0:
         raise ValueError("engine_turn_draw_limit cannot be negative")
+    if config.arbitrary_legal_actions and (
+        config.candidate_inference_device is not None
+        or config.opponent_inference_device is not None
+        or config.candidate_inference_socket is not None
+    ):
+        raise ValueError("arbitrary legal actions cannot use policy inference")
+    if config.engine_pool_size > 1:
+        if config.visualize:
+            raise ValueError("engine pool does not support visualization")
+        if config.arbitrary_legal_actions:
+            raise ValueError("engine pool requires resident inference")
+        candidate_resident = (
+            config.candidate_inference_socket is not None
+            or config.candidate_inference_device is not None
+        )
+        opponent_resident = (
+            config.opponent_inference_socket is not None
+            or (
+                config.opponent_inference_root is not None
+                and config.opponent_inference_device is not None
+            )
+        )
+        if not candidate_resident or not opponent_resident:
+            raise ValueError("engine pool requires resident inference for both players")
     if (config.opponent_inference_root is None) != (
         config.opponent_inference_device is None
     ):
@@ -257,6 +287,11 @@ def run_batch(config: BatchConfig) -> BatchResult:
             "engine_selections": total_selections,
             "selections_per_second": total_selections / wall_time_seconds,
             "workers": actual_workers,
+            "worker_processes": actual_workers,
+            "engine_pool_size": config.engine_pool_size,
+            "max_live_environments": min(
+                len(jobs), actual_workers * config.engine_pool_size
+            ),
             "worker_cpu_threads": config.worker_cpu_threads,
         }
         manifest = _manifest(
@@ -474,6 +509,7 @@ def _game_jobs(
                 seed=_stable_game_seed(
                     config.seed, config.candidate.name, opponent.name, game_number
                 ),
+                arbitrary_legal_actions=config.arbitrary_legal_actions,
             )
             jobs.append((request, store.temp_path(game_id)))
     return jobs
@@ -508,6 +544,8 @@ def _policy_inference_servers(
         label="candidate",
         ability_repeat_limit=config.inference_ability_repeat_limit,
         inference_dtype=config.candidate_inference_dtype,
+        profile=config.inference_profile,
+        forced_action_shortcut=config.inference_forced_action_shortcut,
     ) as candidate_socket:
         if config.share_policy_inference_server:
             yield candidate_socket, candidate_socket
@@ -520,6 +558,8 @@ def _policy_inference_servers(
             label="opponent",
             ability_repeat_limit=config.inference_ability_repeat_limit,
             inference_dtype=config.opponent_inference_dtype,
+            profile=config.inference_profile,
+            forced_action_shortcut=config.inference_forced_action_shortcut,
         ) as opponent_socket:
             yield candidate_socket, opponent_socket
 
@@ -534,14 +574,15 @@ def _policy_inference_server(
     label: str,
     ability_repeat_limit: int = 0,
     inference_dtype: str = "fp32",
+    profile: bool = False,
+    forced_action_shortcut: bool = False,
 ) -> Iterator[Path | None]:
     if root is None or device is None:
         yield None
         return
 
     socket_path = _candidate_socket_path()
-    process = subprocess.Popen(
-        [
+    command = [
             sys.executable,
             "-m",
             "evaluation.runner.inference_server",
@@ -559,7 +600,13 @@ def _policy_inference_server(
             str(ability_repeat_limit),
             "--inference-dtype",
             inference_dtype,
-        ],
+        ]
+    if profile:
+        command.append("--profile")
+    if forced_action_shortcut:
+        command.append("--forced-action-shortcut")
+    process = subprocess.Popen(
+        command,
         cwd=Path(__file__).resolve().parents[2],
         env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         stdout=subprocess.DEVNULL,
@@ -597,6 +644,15 @@ def _run_workers(
     candidate_inference_socket: Path | None = None,
     opponent_inference_socket: Path | None = None,
 ) -> Iterator[tuple[GameRequest, Path, GameResult]]:
+    if config.engine_pool_size > 1:
+        yield from _run_pool_workers(
+            config,
+            jobs,
+            temp_root,
+            candidate_inference_socket,
+            opponent_inference_socket,
+        )
+        return
     if config.workers == 1:
         for request, trace_path in jobs:
             yield request, trace_path, _run_worker_with_retries(
@@ -640,6 +696,192 @@ def _run_workers(
                     initial_result=result,
                 )
             yield request, trace_path, result
+
+
+def _partition_pool_jobs(
+    jobs: list[tuple[Any, Any]], workers: int
+) -> list[list[tuple[int, tuple[Any, Any]]]]:
+    process_count = min(workers, len(jobs))
+    if process_count < 1:
+        return []
+    groups: list[list[tuple[int, tuple[Any, Any]]]] = [
+        [] for _ in range(process_count)
+    ]
+    for index, job in enumerate(jobs):
+        groups[index % process_count].append((index, job))
+    return groups
+
+
+def _run_pool_workers(
+    config: BatchConfig,
+    jobs: list[tuple[GameRequest, Path]],
+    temp_root: Path,
+    candidate_inference_socket: Path | None,
+    opponent_inference_socket: Path | None,
+) -> Iterator[tuple[GameRequest, Path, GameResult]]:
+    if candidate_inference_socket is None or opponent_inference_socket is None:
+        raise RuntimeError("engine pool inference sockets are unavailable")
+    groups = _partition_pool_jobs(jobs, config.workers)
+    ordered: list[GameResult | None] = [None] * len(jobs)
+    with ThreadPoolExecutor(max_workers=len(groups)) as executor:
+        futures = [
+            executor.submit(
+                _run_pool_worker_group,
+                group_index,
+                group,
+                temp_root,
+                config.worker_timeout_seconds,
+                config.worker_cpu_threads,
+                config.engine_pool_size,
+                candidate_inference_socket,
+                opponent_inference_socket,
+            )
+            for group_index, group in enumerate(groups)
+        ]
+        for group, future in zip(groups, futures, strict=True):
+            results = future.result()
+            for (index, (request, trace_path)), result in zip(
+                group, results, strict=True
+            ):
+                if result.error_kind == "worker_crash":
+                    result = _run_worker_with_retries(
+                        config.worker_crash_retries,
+                        request,
+                        trace_path,
+                        temp_root,
+                        config.worker_timeout_seconds,
+                        config.worker_cpu_threads,
+                        candidate_inference_socket,
+                        opponent_inference_socket,
+                        initial_result=result,
+                    )
+                ordered[index] = result
+    for (request, trace_path), result in zip(jobs, ordered, strict=True):
+        assert result is not None
+        yield request, trace_path, result
+
+
+def _run_pool_worker_group(
+    group_index: int,
+    indexed_jobs: list[tuple[int, tuple[GameRequest, Path]]],
+    temp_root: Path,
+    timeout_seconds: float,
+    cpu_threads: int | None,
+    pool_size: int,
+    candidate_inference_socket: Path,
+    opponent_inference_socket: Path,
+) -> list[GameResult]:
+    request_path = temp_root / f"engine-pool-{group_index}.request.json"
+    result_path = temp_root / f"engine-pool-{group_index}.result.json"
+    request_path.write_text(
+        json.dumps(
+            {
+                "pool_size": pool_size,
+                "candidate_inference_socket": str(candidate_inference_socket),
+                "opponent_inference_socket": str(opponent_inference_socket),
+                "jobs": [
+                    {
+                        "request": _request_payload(request, trace_path),
+                        "trace_path": str(trace_path),
+                    }
+                    for _index, (request, trace_path) in indexed_jobs
+                ],
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    repository_root = Path(__file__).resolve().parents[2]
+    environment = os.environ.copy()
+    python_path = [str(repository_root)]
+    if environment.get("PYTHONPATH"):
+        python_path.append(environment["PYTHONPATH"])
+    environment["PYTHONPATH"] = os.pathsep.join(python_path)
+    if cpu_threads is not None:
+        thread_count = str(cpu_threads)
+        environment.update(
+            {
+                "OMP_NUM_THREADS": thread_count,
+                "MKL_NUM_THREADS": thread_count,
+                "OPENBLAS_NUM_THREADS": thread_count,
+                "NUMEXPR_NUM_THREADS": thread_count,
+            }
+        )
+    waves = max(1, (len(indexed_jobs) + pool_size - 1) // pool_size)
+    requests = [request for _index, (request, _trace) in indexed_jobs]
+    traces = [trace for _index, (_request, trace) in indexed_jobs]
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "evaluation.runner.engine_pool_worker",
+                str(request_path),
+                str(result_path),
+            ],
+            cwd=repository_root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout_seconds * waves,
+        )
+    except subprocess.TimeoutExpired:
+        return [
+            _worker_crash_result(
+                request,
+                trace,
+                f"engine pool worker timed out after {timeout_seconds * waves:g} seconds",
+            )
+            for request, trace in zip(requests, traces, strict=True)
+        ]
+    except OSError as exc:
+        return [
+            _worker_crash_result(request, trace, f"could not start engine pool worker: {exc}")
+            for request, trace in zip(requests, traces, strict=True)
+        ]
+    if completed.returncode != 0:
+        detail = completed.stderr.strip() or completed.stdout.strip()
+        return [
+            _worker_crash_result(
+                request,
+                trace,
+                detail or f"engine pool worker exited with code {completed.returncode}",
+            )
+            for request, trace in zip(requests, traces, strict=True)
+        ]
+    try:
+        payload = json.loads(result_path.read_text(encoding="utf-8"))
+        rows = payload["results"]
+        if not isinstance(rows, list) or len(rows) != len(indexed_jobs):
+            raise ValueError("engine pool result count mismatch")
+        return [
+            GameResult(
+                game_id=str(row["game_id"]),
+                opponent=str(row["opponent"]),
+                candidate_first=bool(row["candidate_first"]),
+                candidate_physical_index=int(row["candidate_physical_index"]),
+                finished=bool(row["finished"]),
+                winner=row["winner"],
+                status=str(row["status"]),
+                error_kind=row["error_kind"],
+                error=row["error"],
+                steps=int(row["steps"]),
+                trace_path=trace,
+                performance=(
+                    dict(row["performance"])
+                    if isinstance(row.get("performance"), dict)
+                    else None
+                ),
+            )
+            for row, trace in zip(rows, traces, strict=True)
+        ]
+    except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return [
+            _worker_crash_result(request, trace, f"invalid engine pool result: {exc}")
+            for request, trace in zip(requests, traces, strict=True)
+        ]
 
 
 def _run_worker_with_retries(
@@ -757,6 +999,11 @@ def _run_worker(
             error=payload["error"],
             steps=int(payload["steps"]),
             trace_path=trace_path,
+            performance=(
+                dict(payload["performance"])
+                if isinstance(payload.get("performance"), dict)
+                else None
+            ),
         )
     except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
         return _worker_crash_result(request, trace_path, f"invalid worker result: {exc}")
@@ -773,6 +1020,7 @@ def _request_payload(request: GameRequest, trace_path: Path) -> dict[str, object
         "engine_turn_draw_limit": request.engine_turn_draw_limit,
         "visualize": request.visualize,
         "seed": request.seed,
+        "arbitrary_legal_actions": request.arbitrary_legal_actions,
         "trace_path": str(trace_path),
     }
 
@@ -1102,6 +1350,16 @@ def _manifest(
         ),
         "workers": actual_workers,
         "requested_workers": config.workers,
+        "worker_processes": actual_workers,
+        "engine_pool_size": config.engine_pool_size,
+        "max_live_environments": min(
+            (
+                sum(config.games_by_opponent)
+                if config.games_by_opponent is not None
+                else len(config.opponents) * config.games_per_opponent
+            ),
+            actual_workers * config.engine_pool_size,
+        ),
         "worker_crash_retries": config.worker_crash_retries,
         "worker_cpu_threads": config.worker_cpu_threads,
         "candidate_inference": {
@@ -1124,6 +1382,8 @@ def _manifest(
                 else 0.0
             ),
             "dtype": config.candidate_inference_dtype,
+            "profile": config.inference_profile,
+            "forced_action_shortcut": config.inference_forced_action_shortcut,
         },
         "opponent_pool": {
             "pool_id": config.opponent_pool_id,
@@ -1151,8 +1411,11 @@ def _manifest(
                 else 0.0
             ),
             "dtype": config.opponent_inference_dtype,
+            "profile": config.inference_profile,
+            "forced_action_shortcut": config.inference_forced_action_shortcut,
         },
         "shared_policy_inference_process": config.share_policy_inference_server,
+        "arbitrary_legal_actions": config.arbitrary_legal_actions,
         "inference_progress_guard": {
             "kind": "same_turn_identical_ability_repeat_then_end",
             "ability_repeat_limit": config.inference_ability_repeat_limit,

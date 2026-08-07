@@ -13,10 +13,40 @@ from pathlib import Path
 from evaluation.packages.loader import SubmissionPackage
 from evaluation.runtime.loader import compute_cg_manifest
 from evaluation.runner.models import GameRequest, GameResult
-from evaluation.runner.worker import run_game
+from evaluation.runner.worker import _arbitrary_legal_agent, run_game
 
 
 class EvaluationWorkerTests(unittest.TestCase):
+    def test_arbitrary_legal_agent_returns_the_required_prefix(self) -> None:
+        deck = list(range(1, 61))
+        agent = _arbitrary_legal_agent(deck)
+        self.assertEqual(agent({"select": None}), deck)
+        self.assertEqual(
+            agent(
+                {
+                    "select": {
+                        "option": [{"type": 1}, {"type": 2}, {"type": 3}],
+                        "minCount": 2,
+                        "maxCount": 3,
+                    }
+                }
+            ),
+            [0, 1],
+        )
+        self.assertEqual(
+            agent(
+                {
+                    "select": {
+                        "type": 0,
+                        "option": [{"type": 10}, {"type": 14}],
+                        "minCount": 1,
+                        "maxCount": 1,
+                    }
+                }
+            ),
+            [1],
+        )
+
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.root = Path(self.temp_dir.name)
@@ -266,6 +296,17 @@ class EvaluationWorkerTests(unittest.TestCase):
         self.assertEqual(result.candidate_physical_index, 0)
         self.assertEqual(result.status, "finished")
         self.assertEqual(result.error_kind, None)
+        self.assertIsNotNone(result.performance)
+        performance = result.performance or {}
+        self.assertEqual(performance["agent_calls"], 3)
+        self.assertEqual(performance["engine_select_calls"], 3)
+        for key in (
+            "worker_wall_seconds",
+            "engine_start_seconds",
+            "engine_select_seconds",
+            "agent_seconds",
+        ):
+            self.assertGreaterEqual(performance[key], 0.0)
         self.assertEqual((request.candidate.root / "battle_finish_count.txt").read_text(), "1")
 
     def test_winner_is_normalized_when_candidate_is_player_one(self) -> None:
@@ -575,6 +616,7 @@ class EvaluationWorkerTests(unittest.TestCase):
         self.assertEqual(result.candidate_physical_index, 1)
         self.assertTrue(trace_path.is_file())
         self.assertEqual(payload["trace_path"], str(trace_path))
+        self.assertEqual(payload["performance"]["agent_calls"], 3)
         trace = json.loads(trace_path.read_text(encoding="utf-8"))
         self.assertEqual(trace["result"], payload)
 

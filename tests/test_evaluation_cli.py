@@ -62,6 +62,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertFalse(args.visualize)
         self.assertIsNone(args.workers)
         self.assertEqual(args.worker_cpu_threads, 1)
+        self.assertEqual(args.engine_pool_size, 1)
 
     def test_frozen_exact_deck_decorates_live_candidate_with_canonical_identity(self) -> None:
         live = package("0022_dragapult_update75", self.root / "live")
@@ -206,6 +207,8 @@ class EvaluationCliTests(unittest.TestCase):
                     "4",
                     "--worker-cpu-threads",
                     "1",
+                    "--engine-pool-size",
+                    "2",
                     "--metric-profile",
                     "auto_iteration_v8_setup_relay",
                     "--metric-module",
@@ -223,6 +226,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertFalse(config.visualize)
         self.assertTrue(config.keep_temp)
         self.assertEqual(config.max_steps, 77)
+        self.assertEqual(config.engine_pool_size, 2)
         self.assertEqual(config.workers, 4)
         self.assertEqual(config.worker_cpu_threads, 1)
         self.assertEqual(config.metric_profile_id, "auto_iteration_v8_setup_relay")

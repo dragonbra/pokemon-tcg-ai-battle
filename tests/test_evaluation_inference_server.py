@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib
 import tempfile
+import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -10,16 +12,181 @@ import torch
 from evaluation.runner.batch import _candidate_socket_path
 from evaluation.runner.inference_server import (
     _AbilityRepeatGuard,
+    _InferenceProfile,
+    _InferenceRequest,
     _apply_ability_repeat_guard,
+    _collate_raw_records_equivalent,
     _inject_source_id_if_required,
     _normalize_request_deck,
     _resolve_inference_dtype,
     _stack_batches,
+    _forced_action,
+    _install_static_loader_cache,
+    _install_raw_record_batching,
 )
 from evaluation.runner.worker import _remote_policy_agent
 
 
 class CandidateInferenceServerTest(unittest.TestCase):
+    @staticmethod
+    def _canonical_record(lengths: dict[str, int], action: list[int]) -> dict:
+        fields = importlib.import_module(
+            "evaluation.arena.candidates.0034_dragapult_third_large_model_zero_shot"
+            ".strategy.contracts.fields"
+        )
+        widths = fields.WIDTHS
+
+        def rows(count: int, width: int, value: int = 0) -> list[list[int]]:
+            return [[value + index] * width for index in range(count)]
+
+        actor = {
+            "global_cat": [1] * widths.global_cat,
+            "global_num": [0.5] * widths.global_num,
+            "global_state": [2] * widths.global_state,
+            "min_count": 1,
+            "max_count": 2,
+        }
+        for prefix in ("card", "resource", "event", "option"):
+            count = lengths[prefix]
+            actor[f"{prefix}_cat"] = rows(count, getattr(widths, f"{prefix}_cat"), 1)
+            actor[f"{prefix}_num"] = rows(count, getattr(widths, f"{prefix}_num"), 2)
+            actor[f"{prefix}_state"] = rows(count, getattr(widths, f"{prefix}_state"), 3)
+        actor["card_parent"] = list(range(lengths["card"]))
+        for name in ("source", "target", "before", "after"):
+            actor[f"event_{name}"] = list(range(lengths["event"]))
+        for name in ("source", "target", "context", "effect_card"):
+            actor[f"option_{name}"] = list(range(lengths["option"]))
+        for prefix, family in (("option_skill", "skill"), ("option_effect", "effect")):
+            actor[f"{prefix}_id"] = list(range(1, lengths[family] + 1))
+            actor[f"{prefix}_role"] = list(range(lengths[family]))
+            actor[f"{prefix}_parent"] = [index % lengths["option"] for index in range(lengths[family])]
+        return {"actor": actor, "target": {"ordered_action": action}}
+
+    def test_canonical_raw_records_are_collated_once_per_server_batch(self) -> None:
+        calls = []
+
+        def collate(records, **kwargs):
+            calls.append((list(records), kwargs))
+            return {"values": torch.tensor(records)}
+
+        module_name = "tests._fake_canonical_online_runtime"
+        module = type(sys)(module_name)
+        module.collate_canonical_records = collate
+        encoder_type = type("Encoder", (), {"__module__": module_name})
+        canonical = type("Canonical", (), {"requires_source_id": False})()
+        with patch.dict(sys.modules, {module_name: module}):
+            batch_collator = _install_raw_record_batching(encoder_type, canonical)
+            first = module.collate_canonical_records([1])
+            second = module.collate_canonical_records([2])
+            combined = batch_collator([first, second])
+
+        self.assertEqual(first, 1)
+        self.assertEqual(second, 2)
+        self.assertEqual(combined["values"].tolist(), [1, 2])
+        self.assertEqual(len(calls), 1)
+
+    def test_canonical_batch_collation_is_exactly_equivalent_to_old_stack(self) -> None:
+        collate_module = importlib.import_module(
+            "evaluation.arena.candidates.0034_dragapult_third_large_model_zero_shot"
+            ".strategy.features.collate"
+        )
+        records = [
+            self._canonical_record(
+                {"card": 2, "resource": 3, "event": 1, "option": 2, "skill": 1, "effect": 3},
+                [1],
+            ),
+            self._canonical_record(
+                {"card": 4, "resource": 1, "event": 3, "option": 5, "skill": 4, "effect": 1},
+                [2, 0],
+            ),
+        ]
+        old = _stack_batches(
+            torch,
+            [collate_module.collate_canonical_records([record]) for record in records],
+            torch.device("cpu"),
+        )
+        new = _collate_raw_records_equivalent(
+            collate_module.collate_canonical_records, records
+        )
+
+        self.assertEqual(set(new), set(old))
+        for name in sorted(old):
+            with self.subTest(name=name):
+                self.assertEqual(new[name].dtype, old[name].dtype)
+                self.assertEqual(tuple(new[name].shape), tuple(old[name].shape))
+                self.assertTrue(torch.equal(new[name], old[name]))
+
+    def test_legacy_source_conditioned_policy_keeps_single_row_collation(self) -> None:
+        module_name = "tests._fake_legacy_online_runtime"
+        module = type(sys)(module_name)
+        module.collate_canonical_records = lambda records: records
+        encoder_type = type("Encoder", (), {"__module__": module_name})
+        legacy = type("Legacy", (), {"requires_source_id": True})()
+        with patch.dict(sys.modules, {module_name: module}):
+            self.assertIsNone(_install_raw_record_batching(encoder_type, legacy))
+
+    def test_static_prototype_loader_is_cached_per_argument_tuple(self) -> None:
+        class PrototypeIndex:
+            calls = 0
+
+            @classmethod
+            def load(cls, path):
+                cls.calls += 1
+                return object()
+
+        module_name = "tests._fake_online_runtime"
+        module = type(sys)(module_name)
+        module.PrototypeIndex = PrototypeIndex
+        encoder_type = type("Encoder", (), {"__module__": module_name})
+        with patch.dict(sys.modules, {module_name: module}):
+            _install_static_loader_cache(encoder_type)
+            first = PrototypeIndex.load(Path("one.json"))
+            second = PrototypeIndex.load(Path("one.json"))
+            third = PrototypeIndex.load(Path("two.json"))
+
+        self.assertIs(first, second)
+        self.assertIsNot(first, third)
+        self.assertEqual(PrototypeIndex.calls, 2)
+
+    def test_profile_snapshot_aggregates_batches_and_request_latency(self) -> None:
+        profile = _InferenceProfile(enabled=True)
+        profile.increment("encoder_initializations")
+        profile.add_seconds("feature_encode_seconds", 0.25)
+        profile.record_batch(2)
+        profile.record_batch(4)
+        request = _InferenceRequest("session", {"select": {}}, tuple(range(1, 61)))
+        profile.finish_request(request)
+
+        snapshot = profile.snapshot()
+
+        self.assertEqual(snapshot["counters"]["encoder_initializations"], 1)
+        self.assertEqual(snapshot["counters"]["completed_requests"], 1)
+        self.assertEqual(snapshot["seconds"]["feature_encode_seconds"], 0.25)
+        self.assertEqual(snapshot["batches"], 2)
+        self.assertEqual(snapshot["mean_batch_size"], 3.0)
+        self.assertGreaterEqual(snapshot["request_latency_ms"]["p50"], 0.0)
+
+    def test_forced_action_requires_exactly_one_required_option(self) -> None:
+        required = {
+            "select": {"option": [{"type": 1}], "minCount": 1, "maxCount": 1}
+        }
+        self.assertEqual(_forced_action(required), [0])
+
+        optional = {
+            "select": {"option": [{"type": 1}], "minCount": 0, "maxCount": 1}
+        }
+        multiple = {
+            "select": {
+                "option": [{"type": 1}, {"type": 2}],
+                "minCount": 1,
+                "maxCount": 1,
+            }
+        }
+        zero = {"select": {"option": [], "minCount": 0, "maxCount": 0}}
+        self.assertIsNone(_forced_action(optional))
+        self.assertIsNone(_forced_action(multiple))
+        self.assertIsNone(_forced_action(zero))
+
     def test_repeat_guard_ends_turn_after_eight_identical_ability_entries(self) -> None:
         observation = {
             "select": {
