@@ -1,6 +1,6 @@
 # 0035 Lifetime-Aware Feature Compiler
 
-Status: **V3 persistent tensor bank implemented and semantically audited; local median and p95 improve, but production/evaluation defaults remain unchanged pending official-engine admission.**
+Status: **V4 model-static prototype GPU cache implemented, exact, and admitted for inference/frozen-prototype RL; equal-contract official-engine N16E16 throughput improves 6.0%.**
 
 ## Scope and evidence boundary
 
@@ -75,6 +75,14 @@ V3 moves the reuse boundary through canonical collation. Each battle/session may
 
 This is tensor persistence, not merely Python-record memoization. It still has a Python dirty-detection cost because V3 receives an ordinary canonical record and must compare its rows. Passing compiler-owned dirty ranges directly to the bank is the next optimization boundary; it can remove that second scan without changing the Engine ABI.
 
+## Model-static prototype GPU cache
+
+V4 closes a larger boundary after model loading. The default policy previously called `OfficialPrototypeEncoder.encode_all()` in every forward, re-encoding all configured card, attack, skill and effect identities even though frozen inference weights never change. `SemanticPolicy` now owns a derived, non-checkpoint `PrototypeEmbeddings` cache. Eval mode lazily builds it once on the model's current device/dtype; subsequent state and option encoding reuse the same GPU-resident tensors.
+
+The default 2,049 card + 2,049 attack + 513 skill + 4,097 effect rows at width 320 occupy 5,573,120 bytes in FP16. Initial construction costs about 2.12 ms on the RTX 5080 and is excluded from steady-state forward timing because it occurs once per loaded model. `_apply` device/dtype mutations and `load_state_dict` invalidate the derived cache. The cache is a plain runtime attribute: it is not an `nn.Parameter`, persistent buffer, or checkpoint key.
+
+Training semantics are explicit. If any prototype-encoder parameter requires gradients, train mode bypasses the cache and executes an autograd-connected `encode_all()` on every forward. If all prototype parameters are frozen, train mode may reuse the ordinary detached cache while downstream Transformer, LoRA and decoder parameters continue receiving gradients. This matches the intended RL boundary without silently freezing a trainable prototype path.
+
 ## Dirty graph and safety
 
 ```text
@@ -105,10 +113,14 @@ The final V3 full-vs-persistent paired/interleaved run used seven repetitions of
 
 A second paired run isolates the tensor boundary by holding the incremental compiler constant. Ordinary collation versus persistent tensors measured collate median `0.457 -> 0.420 ms` (-8.1%), collate p95 `1.033 -> 0.743 ms` (-28.0%), total median `1.076 -> 1.015 ms` (-5.7%), and total p95 `2.152 -> 1.738 ms` (-19.2%). The artifact is `.tmp/0035_lifetime_aware_feature_compiler/tensor_only_compare_7x10k.json`. These results show direct tensor persistence contributes independently; it does not account for the compiler-fragment gain.
 
+The V4 CUDA component benchmark used the real 56,352,322-parameter checkpoint, FP16, batch 64, seven alternating repetitions and 100 measured forwards after 20 warmups. Uncached versus cached forward median was `13.111 -> 10.801 ms` (-17.6%), p95 `33.660 -> 29.380 ms` (-12.7%), and modeled decisions/s `4,881 -> 5,925` (+21.4%). Cached and uncached deterministic action tensor commitments were identical. The artifact is `.tmp/0035_lifetime_aware_feature_compiler/prototype_cache_cuda_7x100_b64.json`.
+
+The strict official-engine ablation used two packages exported from the same 0035 source/checkpoint; the uncached package changes only `prototype_memory()` to recompute every forward. Each arm ran three 128-game N16E16 profiles with batch 64, 2 ms wait and FP16. All 768 games completed with zero errors. Across-run medians were: GPU model `20.572 -> 17.411 ms/batch` (-15.4%), model wall `22.383 -> 18.961 ms/batch` (-15.3%), total wall `67.068 -> 63.279 s` (-5.6%), and official-engine selections/s `335.35 -> 355.47` (+6.0%). The six artifacts are `.tmp/0035_lifetime_aware_feature_compiler/prototype_ablation_uncached_n16e16_r{1,2,3}.json` and `prototype_cache_official_cached_n16e16{,_r2,_r3}.json`.
+
 Admission requires exact Python-record and all-39-tensor parity, zero shadow/logit/action mismatches, compiler median no more than 0.25 ms and at least 50% below paired full rebuild, no p95 feature regression, 128/128 official-engine completion with zero errors, at least 10% N16E8 throughput gain, and no more than 3% N16E1 regression. Until those gates pass, deployment defaults to the stateless path.
 
 ## Current and next stage
 
-V3 retains the self-contained lineage and unchanged actor/model/action contracts. Exact persistent-tensor parity passes on the 35-decision golden trajectory and the audited 525-decision multi-trajectory fixture (560 decisions total), including nonempty-to-empty ragged transitions; the full 0035 suite passes 97 tests. `OnlineCausalEncoder(..., incremental=True, persistent_tensors=True)` is the explicit research path. Candidate export includes the tensor-bank implementation, but `PortableSemanticPolicy` and evaluation defaults remain stateless until official-engine N16E1/N16E8 admission is run.
+V4 retains the self-contained lineage and unchanged actor/model/action contracts. Prototype caching is automatic whenever its weights are semantically frozen, including ordinary inference and future frozen-prototype LoRA/decoder fine-tuning. The cached memory is intentionally rebuilt after checkpoint/device/dtype changes and omitted from serialized state. Candidate export carries this behavior without new assets or checkpoint fields. The complete 0035 suite passes 104/104 tests.
 
-The next implementation stage is to emit compiler-owned dirty slot/range tokens so the tensor bank does not compare every canonical row again. After that, run checkpoint logit/action shadow parity and equal-contract official-engine N16E1/N16E8 profiles. V3 creates no training checkpoint or W&B run.
+The next implementation stage is deck-static GPU resource bases, followed by compiler-owned dirty slot/range tokens so per-decision H2D contains only dynamic residuals. V4 creates no training checkpoint or W&B run.

@@ -83,6 +83,12 @@ class DeploymentTests(unittest.TestCase):
             self.assertTrue(all(0 <= value < len(select["option"]) for value in action))
             self.assertFalse(policy.requires_source_id)
             self.assertTrue(policy.fail_closed_inference_errors)
+            self.assertEqual(
+                policy.model.prototype_cache_stats()["builds"], 1
+            )
+            self.assertFalse(
+                any("prototype_cache" in name for name in policy.model.state_dict())
+            )
 
     def test_incremental_online_record_matches_full_rebuild(self) -> None:
         row, deck = _first_raw_row()

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 import unittest
+from unittest import mock
 
 import torch
 from torch import nn
@@ -66,6 +67,67 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(options.shape[:2], self.batch.option_mask.shape)
         self.assertEqual(logits.shape, (self.batch.batch_size, self.batch.option_count + 1))
         self.assertTrue(torch.isfinite(logits).all())
+
+    def test_eval_builds_prototype_memory_once_and_reuses_exact_logits(self) -> None:
+        encoder = self.model.prototype_encoder
+        with mock.patch.object(
+            encoder, "encode_all", wraps=encoder.encode_all
+        ) as encode_all:
+            with torch.inference_mode():
+                first = self.model(self.batch)
+                second = self.model(self.batch)
+        self.assertEqual(encode_all.call_count, 1)
+        torch.testing.assert_close(second, first, rtol=0.0, atol=0.0)
+        memory = self.model.prepare_prototype_cache()
+        for tensor in (memory.cards, memory.attacks, memory.skills, memory.effects):
+            self.assertEqual(tensor.device, next(self.model.parameters()).device)
+            self.assertEqual(tensor.dtype, next(self.model.parameters()).dtype)
+            self.assertFalse(tensor.requires_grad)
+        self.assertEqual(
+            self.model.prototype_cache_stats(),
+            {"builds": 1, "hits": 2, "invalidations": 0},
+        )
+
+    def test_device_dtype_and_state_load_invalidate_prototype_cache(self) -> None:
+        with torch.inference_mode():
+            self.model(self.batch)
+        self.assertEqual(self.model.prototype_cache_stats()["builds"], 1)
+        self.model.to(dtype=torch.float64)
+        self.assertEqual(self.model.prototype_cache_stats()["invalidations"], 1)
+        self.model.to(dtype=torch.float32)
+        state = {name: value.clone() for name, value in self.model.state_dict().items()}
+        self.model.load_state_dict(state, strict=True)
+        self.assertEqual(self.model.prototype_cache_stats()["invalidations"], 1)
+        with torch.inference_mode():
+            self.model(self.batch)
+        self.assertEqual(self.model.prototype_cache_stats()["builds"], 2)
+
+    def test_trainable_prototypes_bypass_cache_and_keep_autograd(self) -> None:
+        self.model.train()
+        encoder = self.model.prototype_encoder
+        with mock.patch.object(
+            encoder, "encode_all", wraps=encoder.encode_all
+        ) as encode_all:
+            loss = self.model.teacher_logits(self.batch).sum()
+            loss.backward()
+        self.assertEqual(encode_all.call_count, 1)
+        self.assertIsNotNone(encoder.card_identity.weight.grad)
+        self.assertEqual(self.model.prototype_cache_stats()["builds"], 0)
+
+    def test_frozen_prototypes_cache_in_train_mode_and_downstream_gets_gradients(self) -> None:
+        for parameter in self.model.prototype_encoder.parameters():
+            parameter.requires_grad_(False)
+        self.model.train()
+        encoder = self.model.prototype_encoder
+        with mock.patch.object(
+            encoder, "encode_all", wraps=encoder.encode_all
+        ) as encode_all:
+            first = self.model.teacher_logits(self.batch)
+            second = self.model.teacher_logits(self.batch)
+            (first.sum() + second.sum()).backward()
+        self.assertEqual(encode_all.call_count, 1)
+        self.assertEqual(self.model.prototype_cache_stats()["builds"], 1)
+        self.assertIsNotNone(self.model.state_encoder.global_cat.embedding.weight.grad)
 
     def test_packed_categorical_fields_match_independent_reference(self) -> None:
         vocabularies = (3, 5, 2)

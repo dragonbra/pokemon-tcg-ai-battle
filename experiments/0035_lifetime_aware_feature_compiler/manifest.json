@@ -2,7 +2,7 @@
   "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0035_lifetime_aware_feature_compiler",
   "objective": "Preserve the 0031 actor semantics while reducing online canonical feature materialization through battle-, turn-, and action-lifetime ownership.",
-  "status": "v3_persistent_tensor_bank_complete_official_engine_pending",
+  "status": "v4_prototype_gpu_cache_admitted",
   "created_at": "2026-08-08T00:00:00+08:00",
   "paths": {
     "implementation": "train/0035_lifetime_aware_feature_compiler",
@@ -141,6 +141,53 @@
       "official-engine N16E1/N16E8 admission has not yet been run"
     ]
   },
+  "v4_prototype_gpu_cache_result": {
+    "component_artifact": ".tmp/0035_lifetime_aware_feature_compiler/prototype_cache_cuda_7x100_b64.json",
+    "checkpoint": "rl_runs/0031_rule_faithful_semantic_foundation_pretraining/versions/V4_lr5e4_no_early_stop_b512/checkpoint/rule_faithful_semantic/latest.pt",
+    "device": "NVIDIA GeForce RTX 5080",
+    "dtype": "fp16",
+    "batch_size": 64,
+    "repetitions": 7,
+    "iterations_per_repetition": 100,
+    "warmup_iterations": 20,
+    "prototype_cache_bytes": 5573120,
+    "cache_build_median_ms": 2.1211841106414795,
+    "uncached_model_median_ms": 13.110879898071289,
+    "cached_model_median_ms": 10.801360130310059,
+    "model_median_relative_reduction": 0.17615291923320708,
+    "uncached_model_p95_ms": 33.660255432128906,
+    "cached_model_p95_ms": 29.379552841186523,
+    "model_p95_relative_reduction": 0.12717379996042533,
+    "uncached_modeled_decisions_per_second": 4881.442015910381,
+    "cached_modeled_decisions_per_second": 5925.179720691606,
+    "modeled_throughput_relative_gain": 0.21381749519492543,
+    "deterministic_action_sha256": "f28f0df15e212a839356348ca6699568dbfbb9f01e5b4be03ca9d7e70911830e",
+    "official_engine_contract": {
+      "games_per_run": 128,
+      "runs_per_arm": 3,
+      "workers": 16,
+      "engine_pool_size": 16,
+      "batch_size": 64,
+      "batch_wait_ms": 2,
+      "dtype": "fp16",
+      "completed_games": 768,
+      "errors": 0,
+      "uncached_artifacts": ".tmp/0035_lifetime_aware_feature_compiler/prototype_ablation_uncached_n16e16_r{1,2,3}.json",
+      "cached_artifacts": ".tmp/0035_lifetime_aware_feature_compiler/prototype_cache_official_cached_n16e16{,_r2,_r3}.json",
+      "uncached_gpu_model_median_ms_per_batch": 20.5716184758,
+      "cached_gpu_model_median_ms_per_batch": 17.4111892344,
+      "gpu_model_relative_reduction": 0.1536305587777579,
+      "uncached_wall_median_seconds": 67.068029759,
+      "cached_wall_median_seconds": 63.279191829,
+      "wall_relative_reduction": 0.05649245912865908,
+      "uncached_selections_per_second_median": 335.3460669833,
+      "cached_selections_per_second_median": 355.4723021872,
+      "selection_throughput_relative_gain": 0.060016315041208745
+    },
+    "training_contract": "Bypass in train mode when any prototype parameter requires gradients; reuse detached cache only when every prototype parameter is frozen.",
+    "checkpoint_state_unchanged": true,
+    "admitted": true
+  },
   "formal_versions": [
     {
       "version": "V1_lifetime_aware_feature_compiler",
@@ -158,6 +205,12 @@
       "version": "V3_persistent_tensor_bank",
       "kind": "runtime_optimization",
       "state": "complete_official_engine_pending",
+      "training_performed": false
+    },
+    {
+      "version": "V4_prototype_gpu_cache",
+      "kind": "runtime_optimization",
+      "state": "complete_admitted",
       "training_performed": false
     }
   ]
