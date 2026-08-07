@@ -1,0 +1,95 @@
+{
+  "schema_version": "ptcg_experiment_project_v1",
+  "project_id": "0035_lifetime_aware_feature_compiler",
+  "objective": "Preserve the 0031 actor semantics while reducing online canonical feature materialization through battle-, turn-, and action-lifetime ownership.",
+  "status": "v1_complete_performance_not_admitted",
+  "created_at": "2026-08-08T00:00:00+08:00",
+  "paths": {
+    "implementation": "train/0035_lifetime_aware_feature_compiler",
+    "archive": "experiments/0035_lifetime_aware_feature_compiler",
+    "temporary_evidence": ".tmp/0035_feature_compiler"
+  },
+  "engine_revision": "Unmodified official engine runtime; observation JSON and ctypes ABI are unchanged.",
+  "actor_source_identity_visible": false,
+  "actor_schema": "0031_rule_faithful_semantic_decision_v2",
+  "expected_actor_tensor_keys": 39,
+  "model_contract": "0031 SemanticPolicy; architecture, parameters, logits, decoder, and checkpoint tensors are unchanged.",
+  "action_contract": "Ordered legal-option pointer sequence with STOP; unchanged from 0031.",
+  "training_performed": false,
+  "implementation_lineage": {
+    "source_project": "0031_rule_faithful_semantic_foundation_pretraining",
+    "source_commit": "473f6e5bd83468c70fd977a841803aea19d854c5",
+    "semantic_relationship": "self_contained_semantics_preserving_runtime_fork",
+    "executable_dependency": false
+  },
+  "frozen_source_sha256": {
+    "official_public_prototypes_v1.json": "5b45041cd14beed8a847f2e99ce955a105fbeb63d09256769d41f8cc88bdbc9d",
+    "official_full_engine_prototypes_v2.json": "7228b2612da118e1ec353c7a2e08d4a306de0d4128f0c9e68b4075f2c6b54f73",
+    "contracts/fields.py": "73e0aaa61c69b2d7bac45940a651a8d1be04465d70654ececd24eaccaca7596a",
+    "features/compiler.py": "8ccc10d54954b8ceb2b55b657e86d4c830d92157b503c622b991e957f71d75b7",
+    "features/collate.py": "65ea6c7c77efe4f6cbcf4df5aa3c6ef237269104ff8f8902bfc00900ab3258f6",
+    "knowledge/state.py": "24d2f0064e61e86eac5eb97ab5cb97bfe325af246c0911fbf9949221908bb78c",
+    "model/config.py": "0d4ab95b20438ec87936da632e3dc016cea930409f76fd98769054f1840411ce",
+    "incremental_feature_trajectory.json.gz": "0db50f9991849143aba40053f2c5751f2063f76f4f636bb10e0ad0215b0c254e",
+    "extended_semantic_trajectories.json.gz": "87aa39bb7dd8023db0bd05afa954416519bc4abf64552d4a4eff270288d96485"
+  },
+  "reference_fixture": {
+    "trajectories": 1,
+    "chronological_decisions": 35,
+    "coverage": ["setup", "ordinary_main", "nested_selection", "deck_view", "evolution", "ability", "attack", "switch_or_ko_replacement", "terminal_near"]
+  },
+  "extended_reference_fixture": {
+    "trajectories": 10,
+    "chronological_decisions": 525,
+    "actor_zero_trajectories": 5,
+    "actor_one_trajectories": 5,
+    "exact_decks": 7
+  },
+  "baseline": {
+    "knowledge_median_ms": 0.1267365,
+    "compiler_median_ms": 0.579672,
+    "compiler_p95_ms": 0.838281,
+    "collate_median_ms": 0.453737,
+    "total_median_ms": 1.1900085,
+    "decisions_per_second": 796.3224656350304
+  },
+  "acceptance_gates": {
+    "record_and_39_tensor_exact_parity": true,
+    "compiler_median_ms_max": 0.25,
+    "compiler_relative_reduction_min": 0.5,
+    "n16e8_throughput_gain_min": 0.1,
+    "n16e1_regression_max": 0.03,
+    "official_engine_errors": 0
+  },
+  "v1_paired_result": {
+    "artifact": ".tmp/0035_feature_compiler/paired_v2_option_7x5000.json",
+    "repetitions": 7,
+    "decisions_per_repetition": 5000,
+    "warmup_decisions": 1000,
+    "full_compiler_median_ms": 0.573887,
+    "incremental_compiler_median_ms": 0.4298765,
+    "compiler_relative_reduction": 0.25093877366101697,
+    "full_compiler_p95_ms": 0.819679,
+    "incremental_compiler_p95_ms": 0.934201,
+    "full_total_median_ms": 1.1664845,
+    "incremental_total_median_ms": 1.0692145,
+    "full_decisions_per_second": 813.9260839919149,
+    "incremental_decisions_per_second": 826.6899570799852,
+    "record_and_39_tensor_parity_decisions": 560,
+    "fallbacks_on_audited_trajectories": 0,
+    "admitted": false,
+    "rejection_reasons": [
+      "compiler median exceeds 0.25 ms and reduction is below 50%",
+      "compiler p95 regressed",
+      "official-engine N16E1/N16E8 admission was not run for a compiler that failed microbenchmark gates"
+    ]
+  },
+  "formal_versions": [
+    {
+      "version": "V1_lifetime_aware_feature_compiler",
+      "kind": "runtime_optimization",
+      "state": "complete_not_admitted",
+      "training_performed": false
+    }
+  ]
+}

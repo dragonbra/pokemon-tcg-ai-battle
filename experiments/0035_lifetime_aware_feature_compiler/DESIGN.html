@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>0035 Lifetime-Aware Feature Compiler</title>
+<style>body{font:16px/1.65 system-ui,sans-serif;max-width:1100px;margin:40px auto;padding:0 24px;color:#172033}h1,h2{line-height:1.2}code,pre{background:#f3f5f8;border-radius:6px}code{padding:.12rem .3rem}pre{padding:14px;overflow:auto}table{border-collapse:collapse;width:100%;margin:16px 0}th,td{border:1px solid #ccd3dd;padding:8px;text-align:left;vertical-align:top}.status{padding:12px 16px;background:#fff5d6;border-left:5px solid #d49b00}</style>
+</head>
+<body>
+<h1>0035 Lifetime-Aware Feature Compiler</h1>
+<p class="status"><strong>状态：</strong>V1 实现与语义审计完成；性能准入未通过，优化 compiler 保持 opt-in。</p>
+<h2>范围与证据边界</h2>
+<p>0035 是 0031 的自包含、语义保持 runtime fork。官方规则来自项目规则调研，具体 observation/log 来自未修改的官方 Engine；battle/turn/action 生命周期与 dirty graph 是 0035 工程策略。Engine 仍通过 <code>GetBattleData</code> 返回内存 JSON 字节，Python 解码为 mapping；不修改 <code>engine/source/</code>、ABI 或 JSON 格式。</p>
+<h2>Lineage 与不变合同</h2>
+<p>来源 commit 为 <code>473f6e5bd83468c70fd977a841803aea19d854c5</code>，实际冻结文件 hash 见 manifest。0035 不 import 其他编号项目。actor schema 保持 <code>0031_rule_faithful_semantic_decision_v2</code>；模型、56,352,322 参数默认结构、checkpoint tensor、loss/reward/value、logits、ordered pointer decoder、STOP 与 action contract 均不变，V1 不训练。</p>
+<table><thead><tr><th>Family</th><th>Cat width</th><th>Num width</th><th>State width</th><th>Relations</th></tr></thead><tbody><tr><td>global</td><td>12</td><td>24</td><td>24</td><td>none</td></tr><tr><td>card / resolved Energy</td><td>9</td><td>7</td><td>7</td><td>parent</td></tr><tr><td>resource</td><td>4</td><td>15</td><td>15</td><td>none</td></tr><tr><td>event</td><td>31</td><td>4</td><td>4</td><td>source/target/before/after</td></tr><tr><td>option</td><td>19</td><td>2</td><td>2</td><td>source/target/context/effect/skill/effect</td></tr></tbody></table>
+<p>Batch 仍为精确 39 actor keys，字段顺序、mask、padding、relation 和 target sentinel 不变。</p>
+<h2>数据流</h2>
+<pre>official Engine JSON bytes
+→ Python observation
+→ unchanged CausalKnowledge
+→ FeatureCompileSession
+   ├ battle constants
+   ├ turn epoch
+   ├ action/entity fragments
+   ├ symbolic relation rebasing
+   └ fail-closed full compiler
+→ unchanged canonical record/collator/model/decoder</pre>
+<h2>生命周期</h2>
+<table><thead><tr><th>Lifetime</th><th>Ownership</th><th>Invalidation</th></tr></thead><tbody><tr><td>process/model</td><td>schema/vocab/zone/prototypes/static semantic expansions</td><td>schema/prototype/config change</td></tr><tr><td>battle/session</td><td>actor mapping, exact deck/counts, resource identity order/initial, verified first player</td><td>new session or actor/deck mismatch</td></tr><tr><td>turn epoch</td><td>turn key and optional turn-start instance snapshot</td><td>turn change/rewind</td></tr><tr><td>action/entity</td><td>zones, card dynamics, resource bounds/ages, event append/age, selection/options/globals/relations</td><td>affected transition</td></tr></tbody></table>
+<p><code>supporterPlayed</code>、<code>stadiumPlayed</code>、<code>energyAttached</code>、<code>retreated</code>、status、<code>appearThisTurn</code> 和 board/select 都可能在回合内变化，因此不是 turn-static。</p>
+<h2>缓存与 dirty graph</h2>
+<p>Card 使用稳定 <code>(kind, serial)</code> entity key 与 placement overlay；无附件 leaf 使用带类型护栏的 equality fast path，附件树仍做完整 consumed-field projection。Event 复用 immutable payload 并动态更新 age/relation；option 每步更新，但 prototype semantic expansion 按 normalized key 复用。绝对 card index 不跨 layout 复用，parent/event/option relations 按当前 layout 重定位；duplicate serial 会 fail closed。</p>
+<p>Resource age-split 原型仅独立验证，未接入 V1：median 改善 23.3%，但 p95 回退 36.1%。周期 shadow mode 也是下一阶段要求，V1 不声称已经实现。</p>
+<pre>zone/layout → affected cards → card index map → event/option relations
+card scalar → one dynamic card fragment
+event append/evict → payload delta + ages + new relations
+resource revision → affected card-ID rows
+selection → context/effect cards + options + globals
+turn → turn/global metadata only
+unknown/ambiguous → full rebuild and reseed</pre>
+<p>Logs 只是 dirty hint；primitive signatures 是护栏。禁止 whole-observation JSON hash 和 recursive whole-layer freeze。duplicate serial、chronology/actor/deck mismatch、未知结构与非法 relation 均 fail closed 到 stateless authority。</p>
+<h2>基线与准入</h2>
+<p>35-decision golden fixture SHA-256：<code>0db50f9991849143aba40053f2c5751f2063f76f4f636bb10e0ad0215b0c254e</code>；扩展 fixture 为 10 条完整 actor-local trajectories、525 decisions、双方 seat、7 套 exact deck，SHA-256：<code>87aa39bb7dd8023db0bd05afa954416519bc4abf64552d4a4eff270288d96485</code>。两者均通过完整 record 与 39 tensors exact parity。原始 full baseline：knowledge 0.127 ms、compiler 0.580 ms、collate 0.454 ms、total 1.190 ms；被拒绝的 coarse whole-layer 路径为 1.237 ms，而 full 为 0.593 ms。</p>
+<p>最终 paired/interleaved 基准为 7 repetitions × 5,000 chronological decisions（另有 1,000 warmup）：compiler median <code>0.574 → 0.430 ms</code>（-25.1%），total <code>1.166 → 1.069 ms</code>（-8.3%），wall throughput <code>813.9 → 826.7 decisions/s</code>（+1.6%）；compiler p95 <code>0.820 → 0.934 ms</code>（+14.0%）。因此 V1 未通过性能准入。</p>
+<p>准入要求：record 与 39 tensors 精确 parity；shadow/logit/action 0 mismatch；compiler ≤0.25 ms 且至少快 50%；128/128 official-engine、0 error；N16E8 至少 +10%；N16E1 不回退超过 3%。通过前默认使用 stateless full path。</p>
+<h2>阶段</h2>
+<p>V1 已完成自包含 lineage、golden commitment、525-decision 多轨迹 parity、card/event fragment、option semantic cache、fail-closed fallback 与 paired benchmark；项目测试 83/83 通过。由于 median、p95 和端到端门未全过，online/export 默认仍使用 stateless compiler。下一阶段必须通过 observation-boundary structural sharing 或 zone version token 避免整层 card traversal/materialization，再补 periodic shadow、checkpoint logit/action 与同合同 N16E1/N16E8 official-engine profile。V1 不产生训练 checkpoint 或 W&amp;B run。</p>
+</body>
+</html>
