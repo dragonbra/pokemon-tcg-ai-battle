@@ -32,6 +32,7 @@ from .data.replay_contract import DeckManifest
 from .domain.prototypes import PrototypeIndex
 from .features.collate import collate_canonical_records
 from .features.compiler import compile_canonical_row
+from .features.tensor_bank import PersistentTensorBank
 from .knowledge.state import CausalKnowledge
 
 
@@ -410,7 +411,7 @@ def _measure(
     mode: str,
     decisions: int,
 ) -> dict[str, Any]:
-    if mode not in {"full", "incremental"}:
+    if mode not in {"full", "incremental", "persistent"}:
         raise ValueError(f"unsupported measured mode: {mode}")
     knowledge_times: list[int] = []
     compile_times: list[int] = []
@@ -423,6 +424,9 @@ def _measure(
         for trajectory in trajectories:
             knowledge = CausalKnowledge(trajectory.actor, trajectory.deck)
             incremental = _new_incremental_compiler() if mode == "incremental" else None
+            if mode == "persistent":
+                incremental = _new_incremental_compiler()
+            tensor_bank = PersistentTensorBank() if mode == "persistent" else None
             for decision in trajectory.decisions:
                 if compiled >= decisions:
                     break
@@ -437,7 +441,10 @@ def _measure(
                     record = incremental.compile(decision.row(), snapshot)  # type: ignore[attr-defined]
                 compile_times.append(time.perf_counter_ns() - started)
                 started = time.perf_counter_ns()
-                collate_canonical_records([record])
+                if tensor_bank is None:
+                    collate_canonical_records([record])
+                else:
+                    tensor_bank.collate(record)
                 collate_times.append(time.perf_counter_ns() - started)
                 total_times.append(time.perf_counter_ns() - total_start)
                 compiled += 1
@@ -446,6 +453,12 @@ def _measure(
                     compiler_counter_totals, _compiler_counters(incremental)
                 )
                 compiler_sessions += 1
+            if tensor_bank is not None:
+                compiler_counter_totals.setdefault("tensor_bank", {})
+                for name, value in tensor_bank.stats.snapshot().items():
+                    compiler_counter_totals["tensor_bank"][name] = int(
+                        compiler_counter_totals["tensor_bank"].get(name, 0)
+                    ) + value
     elapsed_seconds = sum(total_times) / 1_000_000_000.0
     result: dict[str, Any] = {
         "compiled_decisions": compiled,
@@ -544,6 +557,31 @@ def _validate_incremental_parity(
     return checked
 
 
+def _validate_persistent_parity(
+    trajectories: Sequence[ParityTrajectory],
+) -> int:
+    checked = 0
+    for trajectory in trajectories:
+        knowledge = CausalKnowledge(trajectory.actor, trajectory.deck)
+        incremental = _new_incremental_compiler()
+        tensor_bank = PersistentTensorBank()
+        for decision in trajectory.decisions:
+            snapshot = knowledge.consume(decision.observation, decision.event_cursor)
+            full = compile_canonical_row(decision.row(), snapshot, PROTOTYPES)
+            candidate = incremental.compile(decision.row(), snapshot)  # type: ignore[attr-defined]
+            expected = collate_canonical_records([full])
+            actual = tensor_bank.collate(candidate)
+            if set(expected) != set(actual) or any(
+                not torch.equal(expected[key], actual[key]) for key in expected
+            ):
+                raise ValueError(
+                    "persistent/full tensor parity failed at "
+                    f"Episode {trajectory.provenance['episode_id']} decision {checked}"
+                )
+            checked += 1
+    return checked
+
+
 def _cpu_identity() -> str:
     try:
         with Path("/proc/cpuinfo").open("r", encoding="utf-8") as handle:
@@ -563,19 +601,32 @@ def run_benchmark(
     repetitions: int = 1,
     fixture_path: Path = FIXTURE_PATH,
 ) -> dict[str, Any]:
-    if mode not in {"full", "incremental", "compare"}:
-        raise ValueError("mode must be full, incremental, or compare")
+    if mode not in {
+        "full", "incremental", "persistent", "compare",
+        "compare_persistent", "compare_tensor",
+    }:
+        raise ValueError(
+            "mode must be full, incremental, persistent, compare, "
+            "compare_persistent, or compare_tensor"
+        )
     if decisions < 1 or warmup_decisions < 0 or repetitions < 1:
         raise ValueError(
             "decisions/repetitions must be positive and warmup decisions non-negative"
         )
     trajectories = load_parity_trajectories(fixture_path)
-    measured_modes = ("full", "incremental") if mode == "compare" else (mode,)
+    measured_modes = (
+        ("full", "incremental") if mode == "compare"
+        else ("full", "persistent") if mode == "compare_persistent"
+        else ("incremental", "persistent") if mode == "compare_tensor"
+        else (mode,)
+    )
     if "incremental" in measured_modes and not incremental_available():
         raise RuntimeError("incremental compiler is not available")
-    parity_decisions = (
-        _validate_incremental_parity(trajectories) if "incremental" in measured_modes else 0
-    )
+    parity_decisions = 0
+    if "incremental" in measured_modes:
+        parity_decisions = _validate_incremental_parity(trajectories)
+    if "persistent" in measured_modes:
+        parity_decisions = _validate_persistent_parity(trajectories)
     measurements: dict[str, list[dict[str, Any]]] = {
         measured_mode: [] for measured_mode in measured_modes
     }
@@ -630,7 +681,14 @@ def run_benchmark(
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mode", choices=("full", "incremental", "compare"), default="full")
+    parser.add_argument(
+        "--mode",
+        choices=(
+            "full", "incremental", "persistent", "compare",
+            "compare_persistent", "compare_tensor",
+        ),
+        default="full",
+    )
     parser.add_argument("--decisions", type=int, default=2000)
     parser.add_argument("--warmup-decisions", type=int, default=200)
     parser.add_argument("--repetitions", type=int, default=1)

@@ -2,12 +2,12 @@
   "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0035_lifetime_aware_feature_compiler",
   "objective": "Preserve the 0031 actor semantics while reducing online canonical feature materialization through battle-, turn-, and action-lifetime ownership.",
-  "status": "v2_complete_performance_not_admitted",
+  "status": "v3_persistent_tensor_bank_complete_official_engine_pending",
   "created_at": "2026-08-08T00:00:00+08:00",
   "paths": {
     "implementation": "train/0035_lifetime_aware_feature_compiler",
     "archive": "experiments/0035_lifetime_aware_feature_compiler",
-    "temporary_evidence": ".tmp/0035_feature_compiler"
+    "temporary_evidence": ".tmp/0035_lifetime_aware_feature_compiler"
   },
   "engine_revision": "Unmodified official engine runtime; observation JSON and ctypes ABI are unchanged.",
   "actor_source_identity_visible": false,
@@ -110,6 +110,37 @@
       "official-engine N16E1/N16E8 admission was not run after prerequisite microbenchmark failure"
     ]
   },
+  "v3_persistent_tensor_result": {
+    "artifact": ".tmp/0035_lifetime_aware_feature_compiler/persistent_tensor_compare_7x10k.json",
+    "tensor_only_artifact": ".tmp/0035_lifetime_aware_feature_compiler/tensor_only_compare_7x10k.json",
+    "repetitions": 7,
+    "decisions_per_repetition": 10000,
+    "warmup_decisions": 1000,
+    "full_compiler_median_ms": 0.578565,
+    "persistent_compiler_median_ms": 0.422082,
+    "full_collate_median_ms": 0.448358,
+    "persistent_collate_median_ms": 0.411302,
+    "full_total_median_ms": 1.177826,
+    "persistent_total_median_ms": 0.992951,
+    "total_relative_reduction": 0.156958,
+    "full_total_p95_ms": 1.830665,
+    "persistent_total_p95_ms": 1.671523,
+    "total_p95_relative_reduction": 0.086931,
+    "full_decisions_per_second": 791.995,
+    "persistent_decisions_per_second": 900.402,
+    "throughput_relative_gain": 0.136879,
+    "tensor_only_collate_median_ms": [0.457122, 0.419936],
+    "tensor_only_collate_p95_ms": [1.032505, 0.743465],
+    "record_and_39_tensor_parity_decisions": 560,
+    "production_default_enabled": false,
+    "official_engine_admission_run": false,
+    "admitted": false,
+    "remaining_reasons": [
+      "compiler absolute median remains above 0.25 ms",
+      "checkpoint logit/action shadow parity has not yet been recorded",
+      "official-engine N16E1/N16E8 admission has not yet been run"
+    ]
+  },
   "formal_versions": [
     {
       "version": "V1_lifetime_aware_feature_compiler",
@@ -121,6 +152,12 @@
       "version": "V2_type_exact_card_commitment",
       "kind": "runtime_optimization",
       "state": "complete_not_admitted",
+      "training_performed": false
+    },
+    {
+      "version": "V3_persistent_tensor_bank",
+      "kind": "runtime_optimization",
+      "state": "complete_official_engine_pending",
       "training_performed": false
     }
   ]

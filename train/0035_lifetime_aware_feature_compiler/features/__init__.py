@@ -15,10 +15,12 @@ from .layers import (
     compile_resource_layer,
 )
 from ..contracts.fields import ACTOR_KEYS, SCHEMA_VERSION
+from .tensor_bank import PersistentTensorBank, TensorBankStats
 
 __all__ = [
     "ACTOR_KEYS", "SCHEMA_VERSION", "CardLayer", "ResourceLayer", "EventLayer",
     "OptionLayer", "GlobalLayer", "compile_card_layer", "compile_resource_layer",
     "compile_event_layer", "compile_option_layer", "compile_global_layer",
     "assemble_canonical_record", "compile_canonical_layers", "compile_canonical_row",
+    "PersistentTensorBank", "TensorBankStats",
 ]

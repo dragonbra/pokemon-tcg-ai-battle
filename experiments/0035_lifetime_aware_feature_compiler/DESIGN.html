@@ -8,7 +8,7 @@
 </head>
 <body>
 <h1>0035 Lifetime-Aware Feature Compiler</h1>
-<p class="status"><strong>状态：</strong>V2 语义审计与 paired benchmark 完成；median 与 p95 均改善，但绝对准入目标未达到，优化 compiler 保持 opt-in。</p>
+<p class="status"><strong>状态：</strong>V3 persistent tensor bank 已实现并完成语义审计；本地 median 与 p95 均改善，official-engine 准入前 production/evaluation 默认保持不变。</p>
 <h2>范围与证据边界</h2>
 <p>0035 是 0031 的自包含、语义保持 runtime fork。官方规则来自项目规则调研，具体 observation/log 来自未修改的官方 Engine；battle/turn/action 生命周期与 dirty graph 是 0035 工程策略。Engine 仍通过 <code>GetBattleData</code> 返回内存 JSON 字节，Python 解码为 mapping；不修改 <code>engine/source/</code>、ABI 或 JSON 格式。</p>
 <h2>Lineage 与不变合同</h2>
@@ -25,13 +25,20 @@
    ├ action/entity fragments
    ├ symbolic relation rebasing
    └ fail-closed full compiler
-→ unchanged canonical record/collator/model/decoder</pre>
+→ unchanged canonical record
+→ reference collator 或 session-owned PersistentTensorBank
+   ├ stable CPU tensor storage
+   ├ unchanged slot 零分配、零转换复用
+   └ changed ragged rows 原位更新
+→ unchanged model/decoder</pre>
 <h2>生命周期</h2>
 <table><thead><tr><th>Lifetime</th><th>Ownership</th><th>Invalidation</th></tr></thead><tbody><tr><td>process/model</td><td>schema/vocab/zone/prototypes/static semantic expansions</td><td>schema/prototype/config change</td></tr><tr><td>battle/session</td><td>actor mapping, exact deck/counts, resource identity order/initial, verified first player</td><td>new session or actor/deck mismatch</td></tr><tr><td>turn epoch</td><td>turn key and optional turn-start instance snapshot</td><td>turn change/rewind</td></tr><tr><td>action/entity</td><td>zones, card dynamics, resource bounds/ages, event append/age, selection/options/globals/relations</td><td>affected transition</td></tr></tbody></table>
 <p><code>supporterPlayed</code>、<code>stadiumPlayed</code>、<code>energyAttached</code>、<code>retreated</code>、status、<code>appearThisTurn</code> 和 board/select 都可能在回合内变化，因此不是 turn-static。</p>
 <h2>缓存与 dirty graph</h2>
 <p>Card 使用稳定 <code>(kind, serial)</code> entity key 与 placement overlay；无附件 leaf 使用带类型护栏的 equality fast path，附件树仍做完整 consumed-field projection。Event 复用 immutable payload 并动态更新 age/relation；option 每步更新，但 prototype semantic expansion 按 normalized key 复用。绝对 card index 不跨 layout 复用，parent/event/option relations 按当前 layout 重定位；duplicate serial 会 fail closed。</p>
 <p>V2 实测了 decoded-observation boundary 的 whole-layer/zone version：语义正确，但 525 decisions 中完整 CardLayer 仅命中 10 次，zone 命中主要来自空或很小的区域，dirty zone 仍需 entity traversal 和第二次 assembly，因此该重复扫描没有接入 online path。最终接入的是标准库 C 实现的 protocol-5 type-exact binary commitment，用一次保类型的低成本 commitment 替代 Python recursive card projection；它不改变 Engine JSON，也不会把 <code>True</code>、<code>1</code>、<code>1.0</code> 混为一谈。</p>
+<p>V3 将复用边界推进到 39 个 canonical tensors。每个 battle/session 可拥有独立的 <code>PersistentTensorBank</code>：容量管理的 CPU storage 跨 decision 保留，未变化 slot 不再调用 <code>torch.tensor</code> 或重新分配，变化的 ragged rows 原位 patch；空 family 会显式清零 canonical padding row，session reset 会释放全部 buffer。返回 view 的生命周期到本 session 下一次 collate 为止，符合同步 online inference；需要历史快照的调用者必须 clone。</p>
+<p>这是真正的 tensor persistence，而不是只缓存 Python record。V3 仍需在 Python 侧比较 canonical rows 来发现 dirty range；下一步由 compiler 直接输出 dirty slot/range token，可以消除这次二次扫描，且仍无需修改 Engine。</p>
 <p>Resource age-split 原型仅独立验证，未接入 V1：median 改善 23.3%，但 p95 回退 36.1%。周期 shadow mode 也是下一阶段要求，V1 不声称已经实现。</p>
 <pre>zone/layout → affected cards → card index map → event/option relations
 card scalar → one dynamic card fragment
@@ -45,8 +52,9 @@ unknown/ambiguous → full rebuild and reseed</pre>
 <p>35-decision golden fixture SHA-256：<code>0db50f9991849143aba40053f2c5751f2063f76f4f636bb10e0ad0215b0c254e</code>；扩展 fixture 为 10 条完整 actor-local trajectories、525 decisions、双方 seat、7 套 exact deck，SHA-256：<code>87aa39bb7dd8023db0bd05afa954416519bc4abf64552d4a4eff270288d96485</code>。两者均通过完整 record 与 39 tensors exact parity。原始 full baseline：knowledge 0.127 ms、compiler 0.580 ms、collate 0.454 ms、total 1.190 ms；被拒绝的 coarse whole-layer 路径为 1.237 ms，而 full 为 0.593 ms。</p>
 <p>最终 paired/interleaved 基准为 7 repetitions × 5,000 chronological decisions（另有 1,000 warmup）：compiler median <code>0.574 → 0.430 ms</code>（-25.1%），total <code>1.166 → 1.069 ms</code>（-8.3%），wall throughput <code>813.9 → 826.7 decisions/s</code>（+1.6%）；compiler p95 <code>0.820 → 0.934 ms</code>（+14.0%）。因此 V1 未通过性能准入。</p>
 <p>V2 最终门禁为 7 repetitions × 10,000 chronological decisions（另有 1,000 warmup）：compiler median <code>0.591 → 0.437 ms</code>（-26.0%），compiler p95 <code>0.950 → 0.910 ms</code>（-4.3%），total <code>1.219 → 1.069 ms</code>（-12.3%），wall throughput <code>734.2 → 769.9 decisions/s</code>（+4.9%）。V2 已修复 V1 的 tail regression，但仍未达到 compiler ≤0.25 ms、relative ≥50% 和 end-to-end ≥10% 的准入目标。</p>
+<p>V3 full-vs-persistent 最终门禁同样为 7 × 10,000（1,000 warmup）：full compiler/collate/total 为 <code>0.579/0.448/1.178 ms</code>，persistent 为 <code>0.422/0.411/0.993 ms</code>；total median -15.7%，total p95 <code>1.831 → 1.672 ms</code>（-8.7%），throughput <code>792.0 → 900.4 decisions/s</code>（+13.7%）。固定 incremental compiler 的 tensor-only paired run 显示 collate median <code>0.457 → 0.420 ms</code>（-8.1%）、collate p95 <code>1.033 → 0.743 ms</code>（-28.0%）、total median <code>1.076 → 1.015 ms</code>（-5.7%），证明 tensor persistence 有独立收益。</p>
 <p>准入要求：record 与 39 tensors 精确 parity；shadow/logit/action 0 mismatch；compiler ≤0.25 ms 且至少快 50%；128/128 official-engine、0 error；N16E8 至少 +10%；N16E1 不回退超过 3%。通过前默认使用 stateless full path。</p>
 <h2>阶段</h2>
-<p>V2 保留自包含 lineage、golden commitment、525-decision 多轨迹 parity、card/event fragment、option semantic cache 与 fail-closed fallback。由于绝对 median 和端到端门仍未过，online/export 默认继续使用 stateless compiler。下一阶段若要跨过当前上限，必须让 observation producer 提供原生 dirty/version 信息，或直接复用 tensor segment，避免 Python 层再次遍历和 materialization；随后再补 periodic shadow、checkpoint logit/action 与同合同 N16E1/N16E8 official-engine profile。V2 不产生训练 checkpoint 或 W&amp;B run。</p>
+<p>V3 在 35 + 525 个 chronological decisions 上通过 39-key dtype/shape/value exact parity，完整 0035 suite 为 97/97。显式研究路径是 <code>OnlineCausalEncoder(..., incremental=True, persistent_tensors=True)</code>，export 会复制 tensor-bank 实现；official-engine N16E1/N16E8 尚未完成，因此 PortableSemanticPolicy 与 evaluation 默认仍使用 stateless path。下一阶段是 compiler-to-bank dirty-range 合同、checkpoint logit/action shadow parity 和同合同 official-engine profile。V3 不产生训练 checkpoint 或 W&amp;B run。</p>
 </body>
 </html>

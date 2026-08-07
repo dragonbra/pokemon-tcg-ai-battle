@@ -12,6 +12,7 @@ from ..domain.prototypes import PrototypeIndex
 from ..features.collate import collate_canonical_records
 from ..features.compiler import compile_canonical_row
 from ..features.incremental import IncrementalCanonicalCompiler
+from ..features.tensor_bank import PersistentTensorBank
 from ..knowledge.state import CausalKnowledge
 from ..model.config import ModelConfig
 
@@ -47,6 +48,7 @@ class OnlineCausalEncoder:
         config: ModelConfig,
         *,
         incremental: bool = False,
+        persistent_tensors: bool = False,
     ) -> None:
         if actor not in (0, 1):
             raise ValueError("actor must be 0 or 1")
@@ -60,6 +62,8 @@ class OnlineCausalEncoder:
         self.knowledge = CausalKnowledge(actor, self.deck)
         self.incremental = bool(incremental)
         self.incremental_compiler = IncrementalCanonicalCompiler(self.prototypes)
+        self.persistent_tensors = bool(persistent_tensors)
+        self.tensor_bank = PersistentTensorBank()
 
     def encode_record(self, observation: Mapping[str, Any]) -> dict[str, Any]:
         current = observation.get("current")
@@ -98,7 +102,10 @@ class OnlineCausalEncoder:
         return compile_canonical_row(row, snapshot, self.prototypes)
 
     def encode(self, observation: Mapping[str, Any]):
-        return collate_canonical_records([self.encode_record(observation)])
+        record = self.encode_record(observation)
+        if self.persistent_tensors:
+            return self.tensor_bank.collate(record)
+        return collate_canonical_records([record])
 
 
 __all__ = ["OnlineCausalEncoder"]

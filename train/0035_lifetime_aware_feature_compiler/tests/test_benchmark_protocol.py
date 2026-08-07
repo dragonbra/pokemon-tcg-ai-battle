@@ -63,6 +63,23 @@ class BenchmarkProtocolTests(unittest.TestCase):
         if "decisions" in diagnostics["stats"]:
             self.assertEqual(diagnostics["stats"]["decisions"], 4)
 
+    def test_persistent_compare_is_paired_and_checks_tensor_parity(self) -> None:
+        payload = BENCHMARK.run_benchmark(
+            mode="compare_persistent",
+            decisions=3,
+            warmup_decisions=0,
+            repetitions=2,
+        )
+        self.assertEqual(
+            [item["order"] for item in payload["paired_repetitions"]],
+            [["full", "persistent"], ["persistent", "full"]],
+        )
+        self.assertEqual(payload["incremental_parity_decisions"], 35)
+        diagnostics = payload["results"]["persistent"][
+            "compiler_diagnostics_per_repetition"
+        ][0]
+        self.assertEqual(diagnostics["tensor_bank"]["collates"], 3)
+
     def test_optional_stats_and_work_counter_surfaces_are_both_collected(self) -> None:
         class Counters:
             def __init__(self, values):

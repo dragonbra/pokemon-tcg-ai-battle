@@ -1,6 +1,6 @@
 # 0035 Lifetime-Aware Feature Compiler
 
-Status: **V2 semantic audit and paired benchmark complete; median and p95 both improve, but the optimized compiler remains opt-in because the absolute admission target is not met.**
+Status: **V3 persistent tensor bank implemented and semantically audited; local median and p95 improve, but production/evaluation defaults remain unchanged pending official-engine admission.**
 
 ## Scope and evidence boundary
 
@@ -39,7 +39,10 @@ official Engine JSON bytes
        relation rebasing
        fail-closed full compiler
   -> unchanged canonical record
-  -> unchanged 39-key collator
+  -> reference 39-key collator, or session-owned PersistentTensorBank
+       stable CPU tensor storage
+       unchanged slots reused without allocation/conversion
+       changed ragged rows patched in place
   -> unchanged SemanticPolicy and decoder
 ```
 
@@ -68,6 +71,10 @@ An independently tested resource prototype preserves battle-static card-ID order
 
 Options remain action-owned, but prototype skill/effect expansion is cached by normalized source/context/effect/attack semantics. Option ordinal, numeric values, availability, bounds and card relations are always rebuilt against the current selection and layout. Globals are small and action-dynamic, so they are rebuilt directly.
 
+V3 moves the reuse boundary through canonical collation. Each battle/session may own a `PersistentTensorBank` containing capacity-managed CPU tensors for all 39 keys. A slot that is unchanged returns the same underlying storage without calling `torch.tensor`; a changed ragged slot keeps its allocation and updates only its logical rows, while empty fields explicitly zero the canonical one-row padding placeholder. Masks and logical views change only when their lengths change. The returned views intentionally live only until the next call on that session, matching synchronous online inference; historical callers must clone them. Session reset discards every buffer. The reference collator remains the independent authority and the default path.
+
+This is tensor persistence, not merely Python-record memoization. It still has a Python dirty-detection cost because V3 receives an ordinary canonical record and must compare its rows. Passing compiler-owned dirty ranges directly to the bank is the next optimization boundary; it can remove that second scan without changing the Engine ABI.
+
 ## Dirty graph and safety
 
 ```text
@@ -94,10 +101,14 @@ The final V1 paired/interleaved run used seven repetitions of 5,000 chronologica
 
 The final V2 paired/interleaved run used seven repetitions of 10,000 chronological decisions after 1,000 warmup decisions. Across-repetition medians were: compiler `0.591 -> 0.437 ms` (-26.0%), compiler p95 `0.950 -> 0.910 ms` (-4.3%), total feature pipeline `1.219 -> 1.069 ms` (-12.3%), and wall throughput `734.2 -> 769.9 decisions/s` (+4.9%). Thus V2 fixes the V1 tail-regression failure, but still misses the absolute `<=0.25 ms`, relative `>=50%`, and end-to-end `>=10%` admission targets. The artifact is `.tmp/0035_feature_compiler/type_exact_commitment_v2_7x10000.json`.
 
+The final V3 full-vs-persistent paired/interleaved run used seven repetitions of 10,000 chronological decisions after 1,000 warmup decisions. Full rebuild plus ordinary collation measured `0.579 ms` compiler, `0.448 ms` collate, `1.178 ms` total and `792.0 decisions/s`; incremental compilation plus the persistent tensor bank measured `0.422 ms`, `0.411 ms`, `0.993 ms` and `900.4 decisions/s`. Total median fell 15.7%, total p95 fell from `1.831` to `1.672 ms` (-8.7%), and throughput rose 13.7%. The artifact is `.tmp/0035_lifetime_aware_feature_compiler/persistent_tensor_compare_7x10k.json`.
+
+A second paired run isolates the tensor boundary by holding the incremental compiler constant. Ordinary collation versus persistent tensors measured collate median `0.457 -> 0.420 ms` (-8.1%), collate p95 `1.033 -> 0.743 ms` (-28.0%), total median `1.076 -> 1.015 ms` (-5.7%), and total p95 `2.152 -> 1.738 ms` (-19.2%). The artifact is `.tmp/0035_lifetime_aware_feature_compiler/tensor_only_compare_7x10k.json`. These results show direct tensor persistence contributes independently; it does not account for the compiler-fragment gain.
+
 Admission requires exact Python-record and all-39-tensor parity, zero shadow/logit/action mismatches, compiler median no more than 0.25 ms and at least 50% below paired full rebuild, no p95 feature regression, 128/128 official-engine completion with zero errors, at least 10% N16E8 throughput gain, and no more than 3% N16E1 regression. Until those gates pass, deployment defaults to the stateless path.
 
 ## Current and next stage
 
-V2 retains the V1 self-contained lineage, 35-decision golden commitments, 525-decision multi-trajectory record/tensor parity, card/event fragment caching, option semantic caching and fail-closed fallback. The optimized compiler is deliberately not exported or enabled by default because it still misses the absolute median and end-to-end admission gates, even though its p95 now improves.
+V3 retains the self-contained lineage and unchanged actor/model/action contracts. Exact persistent-tensor parity passes on the 35-decision golden trajectory and the audited 525-decision multi-trajectory fixture (560 decisions total), including nonempty-to-empty ragged transitions; the full 0035 suite passes 97 tests. `OnlineCausalEncoder(..., incremental=True, persistent_tensors=True)` is the explicit research path. Candidate export includes the tensor-bank implementation, but `PortableSemanticPolicy` and evaluation defaults remain stateless until official-engine N16E1/N16E8 admission is run.
 
-The next implementation stage must eliminate whole-card-layer traversal/materialization rather than add more recursive signatures. It should introduce observation-boundary structural sharing or zone-version tokens, then add periodic shadow parity and run checkpoint logit/action plus equal-contract N16E1/N16E8 official-engine profiles. V1 creates no training checkpoint or W&B run.
+The next implementation stage is to emit compiler-owned dirty slot/range tokens so the tensor bank does not compare every canonical row again. After that, run checkpoint logit/action shadow parity and equal-contract official-engine N16E1/N16E8 profiles. V3 creates no training checkpoint or W&B run.

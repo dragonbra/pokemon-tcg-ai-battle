@@ -130,6 +130,32 @@ class DeploymentTests(unittest.TestCase):
         first.encode_record(observation)
         self.assertIs(first.deck_manifest, manifest)
 
+    def test_persistent_tensor_runtime_matches_reference_chronologically(self) -> None:
+        trajectory = BENCHMARK.load_parity_trajectories()[0]
+        config = MODEL.ModelConfig(d_model=64, heads=4, dropout=0.0)
+        reference = ONLINE_RUNTIME.OnlineCausalEncoder(
+            trajectory.actor, trajectory.deck, config, incremental=True
+        )
+        persistent = ONLINE_RUNTIME.OnlineCausalEncoder(
+            trajectory.actor,
+            trajectory.deck,
+            config,
+            incremental=True,
+            persistent_tensors=True,
+        )
+        for decision_index, decision in enumerate(trajectory.decisions):
+            expected = reference.encode(decision.observation)
+            actual = persistent.encode(decision.observation)
+            self.assertEqual(actual.keys(), expected.keys())
+            for name in expected:
+                with self.subTest(decision=decision_index, name=name):
+                    self.assertEqual(actual[name].dtype, expected[name].dtype)
+                    self.assertEqual(actual[name].shape, expected[name].shape)
+                    self.assertTrue(torch.equal(actual[name], expected[name]))
+        stats = persistent.tensor_bank.stats.snapshot()
+        self.assertEqual(stats["collates"], len(trajectory.decisions))
+        self.assertGreater(stats["slot_hits"], 0)
+
     def test_export_is_self_contained_and_preserves_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -167,6 +193,7 @@ class DeploymentTests(unittest.TestCase):
             self.assertTrue((output / "strategy/features/layers.py").is_file())
             self.assertTrue((output / "strategy/features/incremental.py").is_file())
             self.assertTrue((output / "strategy/features/fragments.py").is_file())
+            self.assertTrue((output / "strategy/features/tensor_bank.py").is_file())
             self.assertTrue((output / "strategy/model/policy.py").is_file())
             self.assertFalse(any(path.is_symlink() for path in output.rglob("*")))
             portable = torch.load(
