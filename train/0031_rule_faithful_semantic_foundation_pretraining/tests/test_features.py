@@ -11,9 +11,11 @@ import unittest
 BASE = "train.0031_rule_faithful_semantic_foundation_pretraining"
 PROTOTYPES = importlib.import_module(f"{BASE}.domain.prototypes")
 COMPILER = importlib.import_module(f"{BASE}.features.compiler")
+LAYERS = importlib.import_module(f"{BASE}.features.layers")
 FIELDS = importlib.import_module(f"{BASE}.contracts.fields")
 STATE = importlib.import_module(f"{BASE}.knowledge.state")
 MODEL = importlib.import_module(f"{BASE}.model")
+BENCHMARK = importlib.import_module(f"{BASE}.benchmark_incremental_features")
 
 
 def _pokemon(card_id: int, *, player: int, serial: int, hp: int,
@@ -73,6 +75,39 @@ class CanonicalFeatureTests(unittest.TestCase):
         cls.prototypes = PROTOTYPES.PrototypeIndex.load(
             Path(f"{BASE.replace('.', '/')}/assets/official_public_prototypes_v1.json")
         )
+
+    def test_layered_compiler_preserves_complete_python_record(self) -> None:
+        decisions = 0
+        first_cards = None
+        for trajectory in BENCHMARK.load_parity_trajectories():
+            knowledge = STATE.CausalKnowledge(trajectory.actor, trajectory.deck)
+            for decision in trajectory.decisions:
+                snapshot = knowledge.consume(decision.observation, decision.event_cursor)
+                row = decision.row()
+                expected = COMPILER.compile_canonical_row(row, snapshot, self.prototypes)
+                cards = LAYERS.compile_card_layer(row, snapshot, self.prototypes)
+                actual = LAYERS.assemble_canonical_record(
+                    row,
+                    cards,
+                    LAYERS.compile_resource_layer(row, snapshot),
+                    LAYERS.compile_event_layer(row, snapshot, cards),
+                    LAYERS.compile_option_layer(row, snapshot, self.prototypes, cards),
+                    LAYERS.compile_global_layer(row, snapshot),
+                )
+                self.assertEqual(actual, expected)
+                self.assertEqual(
+                    COMPILER.compile_canonical_layers(row, snapshot, self.prototypes),
+                    expected,
+                )
+                first_cards = first_cards or cards
+                decisions += 1
+        self.assertEqual(decisions, 35)
+        self.assertIsNotNone(first_cards)
+        cards = first_cards
+        self.assertIsInstance(cards.cat, tuple)
+        self.assertIsInstance(cards.cat[0], tuple)
+        with self.assertRaises(TypeError):
+            cards.serial_locations[10] = 99
 
     def test_team_rocket_energy_preserves_physical_and_engine_semantics(self) -> None:
         row, snapshot = _row()

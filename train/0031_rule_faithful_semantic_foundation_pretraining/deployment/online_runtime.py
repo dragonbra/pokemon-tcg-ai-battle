@@ -10,6 +10,7 @@ from typing import Any
 from ..domain.prototypes import PrototypeIndex
 from ..features.collate import collate_canonical_records
 from ..features.compiler import compile_canonical_row
+from ..features.incremental import IncrementalCanonicalCompiler
 from ..knowledge.state import CausalKnowledge
 from ..model.config import ModelConfig
 
@@ -36,6 +37,8 @@ class OnlineCausalEncoder:
         actor: int,
         registered_deck: Sequence[int],
         config: ModelConfig,
+        *,
+        incremental: bool = False,
     ) -> None:
         if actor not in (0, 1):
             raise ValueError("actor must be 0 or 1")
@@ -47,8 +50,12 @@ class OnlineCausalEncoder:
         public_path, engine_path = _prototype_paths()
         self.prototypes = PrototypeIndex.load(public_path, engine_path)
         self.knowledge = CausalKnowledge(actor, self.deck)
+        self.incremental = bool(incremental)
+        self.incremental_compiler = (
+            IncrementalCanonicalCompiler(self.prototypes) if self.incremental else None
+        )
 
-    def encode(self, observation: Mapping[str, Any]):
+    def encode_record(self, observation: Mapping[str, Any]) -> dict[str, Any]:
         current = observation.get("current")
         select = observation.get("select")
         if not isinstance(current, Mapping) or current.get("yourIndex") != self.actor:
@@ -80,8 +87,13 @@ class OnlineCausalEncoder:
             "deck_manifest": {"counts": sorted(Counter(self.deck).items())},
         }
         snapshot = self.knowledge.consume(observation)
-        record = compile_canonical_row(row, snapshot, self.prototypes)
-        return collate_canonical_records([record])
+        if self.incremental:
+            assert self.incremental_compiler is not None
+            return self.incremental_compiler.compile(row, snapshot)
+        return compile_canonical_row(row, snapshot, self.prototypes)
+
+    def encode(self, observation: Mapping[str, Any]):
+        return collate_canonical_records([self.encode_record(observation)])
 
 
 __all__ = ["OnlineCausalEncoder"]

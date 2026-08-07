@@ -18,6 +18,7 @@ BASE = "train.0031_rule_faithful_semantic_foundation_pretraining"
 MODEL = importlib.import_module(f"{BASE}.model")
 PROTOTYPES = importlib.import_module(f"{BASE}.domain.prototypes")
 INFERENCE = importlib.import_module(f"{BASE}.deployment.inference")
+ONLINE_RUNTIME = importlib.import_module(f"{BASE}.deployment.online_runtime")
 EXPORT = importlib.import_module(f"{BASE}.export_candidate")
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -97,6 +98,40 @@ class DeploymentTests(unittest.TestCase):
             self.assertFalse(policy.requires_source_id)
             self.assertTrue(policy.fail_closed_inference_errors)
 
+    def test_incremental_online_record_matches_full_rebuild(self) -> None:
+        row, deck = _first_raw_row()
+        observation = row["actor_observation"]
+        actor = int(observation["current"]["yourIndex"])
+        config = MODEL.ModelConfig(
+            d_model=64,
+            heads=4,
+            state_layers=1,
+            event_layers=1,
+            option_layers=1,
+            dropout=0.0,
+        )
+        full = ONLINE_RUNTIME.OnlineCausalEncoder(
+            actor, deck, config, incremental=False
+        )
+        incremental = ONLINE_RUNTIME.OnlineCausalEncoder(
+            actor, deck, config, incremental=True
+        )
+
+        full_record = full.encode_record(observation)
+        incremental_record = incremental.encode_record(observation)
+
+        self.assertEqual(incremental_record, full_record)
+        full_batch = importlib.import_module(f"{BASE}.features.collate").collate_canonical_records(
+            [full_record]
+        )
+        incremental_batch = importlib.import_module(
+            f"{BASE}.features.collate"
+        ).collate_canonical_records([incremental_record])
+        self.assertEqual(set(incremental_batch), set(full_batch))
+        for name in sorted(full_batch):
+            with self.subTest(name=name):
+                self.assertTrue(torch.equal(incremental_batch[name], full_batch[name]))
+
     def test_export_is_self_contained_and_preserves_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -123,6 +158,8 @@ class DeploymentTests(unittest.TestCase):
             self.assertEqual(len((output / "deck.csv").read_text().splitlines()), 60)
             self.assertTrue((output / "strategy/inference.py").is_file())
             self.assertTrue((output / "strategy/online_runtime.py").is_file())
+            self.assertTrue((output / "strategy/features/layers.py").is_file())
+            self.assertTrue((output / "strategy/features/incremental.py").is_file())
             self.assertTrue((output / "strategy/model/policy.py").is_file())
             self.assertFalse(any(path.is_symlink() for path in output.rglob("*")))
             portable = torch.load(

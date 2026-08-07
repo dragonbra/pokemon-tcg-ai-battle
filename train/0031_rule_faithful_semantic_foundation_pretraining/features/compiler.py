@@ -526,4 +526,25 @@ def compile_canonical_row(
     }
 
 
-__all__ = ["compile_canonical_row"]
+def compile_canonical_layers(
+    row: Mapping[str, Any], snapshot: CausalSnapshot, prototypes: PrototypeIndex
+) -> dict[str, Any]:
+    """Compile through the explicit research layers without changing the hot path."""
+    from .layers import (
+        assemble_canonical_record,
+        compile_card_layer,
+        compile_event_layer,
+        compile_global_layer,
+        compile_option_layer,
+        compile_resource_layer,
+    )
+
+    cards = compile_card_layer(row, snapshot, prototypes)
+    resources = compile_resource_layer(row, snapshot)
+    events = compile_event_layer(row, snapshot, cards)
+    options = compile_option_layer(row, snapshot, prototypes, cards)
+    globals_ = compile_global_layer(row, snapshot)
+    return assemble_canonical_record(row, cards, resources, events, options, globals_)
+
+
+__all__ = ["compile_canonical_layers", "compile_canonical_row"]
