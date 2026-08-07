@@ -1,6 +1,6 @@
 # 0035 Lifetime-Aware Feature Compiler
 
-Status: **V1 implementation and semantic audit complete; performance admission failed, so the optimized compiler remains opt-in.**
+Status: **V2 semantic audit and paired benchmark complete; median and p95 both improve, but the optimized compiler remains opt-in because the absolute admission target is not met.**
 
 ## Scope and evidence boundary
 
@@ -58,6 +58,10 @@ Turn-scoped does not mean all once-per-turn flags are frozen. `turnActionCount`,
 
 Cards use stable `(kind, serial)` entity keys and placement overlays. Unattached leaf rows have a guarded raw-equality fast path; Pokémon attachment trees use a complete consumed-field projection. Same-object mutation, primitive type changes, `cardId` aliases, child ownership and slot bounds retain stateless semantics. Absolute canonical indexes are not reused across layouts: parent and cross-family relations are rebased after the current layout is known. Duplicate positive serials fail closed to the stateless compiler.
 
+V2 tested moving versions to a decoded-observation session boundary. Exact whole-layer versions were semantically valid, but they did not reduce work: only 10 of 525 decisions could reuse a complete CardLayer, and zone hits were dominated by empty/small zones while dirty zones still required entity traversal and a second assembly pass. The connected V2 path therefore does not retain that duplicate scan. The prototype and lifecycle tests remain as audit evidence in `features/observation_versions.py`; online inference still uses the simpler fragment path.
+
+The admitted V2 implementation improvement replaces Python-recursive card projections with a protocol-5 binary commitment produced by the standard-library C implementation. It is type exact (`True`, `1`, and `1.0` remain distinct), covers the complete raw card tree conservatively, and therefore may cause harmless extra misses but cannot hide a consumed-field change. This reduces change-detection cost without adding a second observation traversal or changing the Engine representation.
+
 Events use the existing bounded 64-row causal window. Immutable type/payload/state columns are encoded only when a strictly increasing source event is appended; age is updated from the current newest event. Event source/target/before/after relations are resolved against the current card index map and patched when a referenced serial moves.
 
 An independently tested resource prototype preserves battle-static card-ID order and initial counts, with age separated from dynamic cores. It is not connected to V1: its median improved 23.3%, but p95 regressed 36.1%, so the admission rule rejected it.
@@ -88,10 +92,12 @@ The original full-path baseline was 0.127 ms knowledge, 0.580 ms compiler, 0.454
 
 The final V1 paired/interleaved run used seven repetitions of 5,000 chronological decisions after 1,000 warmup decisions. Across-repetition medians were: compiler `0.574 -> 0.430 ms` (-25.1%), total feature pipeline `1.166 -> 1.069 ms` (-8.3%), and wall throughput `813.9 -> 826.7 decisions/s` (+1.6%). Compiler p95 regressed from `0.820` to `0.934 ms` (+14.0%). The artifact is `.tmp/0035_feature_compiler/paired_v2_option_7x5000.json` and is intentionally untracked diagnostic evidence.
 
+The final V2 paired/interleaved run used seven repetitions of 10,000 chronological decisions after 1,000 warmup decisions. Across-repetition medians were: compiler `0.591 -> 0.437 ms` (-26.0%), compiler p95 `0.950 -> 0.910 ms` (-4.3%), total feature pipeline `1.219 -> 1.069 ms` (-12.3%), and wall throughput `734.2 -> 769.9 decisions/s` (+4.9%). Thus V2 fixes the V1 tail-regression failure, but still misses the absolute `<=0.25 ms`, relative `>=50%`, and end-to-end `>=10%` admission targets. The artifact is `.tmp/0035_feature_compiler/type_exact_commitment_v2_7x10000.json`.
+
 Admission requires exact Python-record and all-39-tensor parity, zero shadow/logit/action mismatches, compiler median no more than 0.25 ms and at least 50% below paired full rebuild, no p95 feature regression, 128/128 official-engine completion with zero errors, at least 10% N16E8 throughput gain, and no more than 3% N16E1 regression. Until those gates pass, deployment defaults to the stateless path.
 
 ## Current and next stage
 
-V1 completed self-contained lineage, 35-decision golden commitments, 525-decision multi-trajectory record/tensor parity, card/event fragment caching, option semantic caching, fail-closed fallback, and paired benchmarking. All 83 project tests pass. The optimized compiler is deliberately not exported or enabled by default because it missed the median, p95 and end-to-end admission gates.
+V2 retains the V1 self-contained lineage, 35-decision golden commitments, 525-decision multi-trajectory record/tensor parity, card/event fragment caching, option semantic caching and fail-closed fallback. The optimized compiler is deliberately not exported or enabled by default because it still misses the absolute median and end-to-end admission gates, even though its p95 now improves.
 
 The next implementation stage must eliminate whole-card-layer traversal/materialization rather than add more recursive signatures. It should introduce observation-boundary structural sharing or zone-version tokens, then add periodic shadow parity and run checkpoint logit/action plus equal-contract N16E1/N16E8 official-engine profiles. V1 creates no training checkpoint or W&B run.

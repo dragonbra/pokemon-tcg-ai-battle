@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+import pickle
 from types import MappingProxyType
 from typing import Any
 
@@ -100,19 +101,18 @@ def _direct_card_projection(value: Any) -> tuple[Any, ...]:
 def _card_projection(value: Any) -> tuple[Any, ...]:
     """Return the exact bounded semantic state of one root card entity."""
 
-    direct = _direct_card_projection(value)
     if not isinstance(value, Mapping):
-        return direct
-    return (
-        direct,
-        tuple(_direct_card_projection(item) for item in _items(value.get("energyCards"))),
-        tuple(
-            (item if isinstance(item, int) and not isinstance(item, bool) else None)
-            for item in _items(value.get("energies"))
-        ),
-        tuple(_direct_card_projection(item) for item in _items(value.get("tools"))),
-        tuple(_direct_card_projection(item) for item in _items(value.get("preEvolution"))),
-    )
+        return _direct_card_projection(value)
+    try:
+        # Protocol 5 is implemented in C for ordinary JSON dict/list trees and
+        # preserves primitive types.  It is a conservative superset of the
+        # consumed fields: unrelated input changes may miss, but can never
+        # produce stale canonical semantics.
+        return ("pickle5", pickle.dumps(value, protocol=5))
+    except Exception as error:
+        raise TypeError(
+            f"card mapping cannot be committed safely: {type(error).__name__}"
+        ) from error
 
 
 def _same_nested_primitive_types(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
@@ -414,10 +414,14 @@ class CardFragmentCompiler:
                 zone=ZONE["stadium"], slot=slot, kind=6,
             ), (-1, 7, slot))
         for slot, raw in enumerate(_items(current.get("looking"))):
-            append(self._fragment(raw, actor=actor, owner=1, zone=ZONE["looking"], slot=slot, kind=7), (actor, 12, slot))
+            append(self._fragment(
+                raw, actor=actor, owner=1, zone=ZONE["looking"], slot=slot, kind=7,
+            ), (actor, 12, slot))
         deck_items = _items(select.get("deck"))
         for slot, raw in enumerate(deck_items):
-            append(self._fragment(raw, actor=actor, owner=1, zone=ZONE["select_deck"], slot=slot, kind=1), (actor, 1, slot))
+            append(self._fragment(
+                raw, actor=actor, owner=1, zone=ZONE["select_deck"], slot=slot, kind=1,
+            ), (actor, 1, slot))
         if not deck_items and snapshot.deck_order_known:
             for slot, known in enumerate(snapshot.known_self_deck_order):
                 if known.serial not in serial_locations:

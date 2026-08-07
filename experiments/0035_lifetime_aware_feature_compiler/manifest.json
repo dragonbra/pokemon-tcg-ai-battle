@@ -2,7 +2,7 @@
   "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0035_lifetime_aware_feature_compiler",
   "objective": "Preserve the 0031 actor semantics while reducing online canonical feature materialization through battle-, turn-, and action-lifetime ownership.",
-  "status": "v1_complete_performance_not_admitted",
+  "status": "v2_complete_performance_not_admitted",
   "created_at": "2026-08-08T00:00:00+08:00",
   "paths": {
     "implementation": "train/0035_lifetime_aware_feature_compiler",
@@ -84,9 +84,41 @@
       "official-engine N16E1/N16E8 admission was not run for a compiler that failed microbenchmark gates"
     ]
   },
+  "v2_paired_result": {
+    "artifact": ".tmp/0035_feature_compiler/type_exact_commitment_v2_7x10000.json",
+    "repetitions": 7,
+    "decisions_per_repetition": 10000,
+    "warmup_decisions": 1000,
+    "full_compiler_median_ms": 0.591334,
+    "incremental_compiler_median_ms": 0.4373135,
+    "compiler_relative_reduction": 0.2604627841456774,
+    "full_compiler_p95_ms": 0.9503,
+    "incremental_compiler_p95_ms": 0.90975,
+    "compiler_p95_relative_change": -0.04267073555719256,
+    "full_total_median_ms": 1.2186955,
+    "incremental_total_median_ms": 1.0688595,
+    "total_relative_reduction": 0.12294785695032096,
+    "full_decisions_per_second": 734.1927759559505,
+    "incremental_decisions_per_second": 769.9089244368075,
+    "throughput_relative_gain": 0.0486468263520477,
+    "record_and_39_tensor_parity_decisions": 560,
+    "fallbacks_on_audited_trajectories": 0,
+    "admitted": false,
+    "rejection_reasons": [
+      "compiler median exceeds 0.25 ms and reduction is below 50%",
+      "end-to-end throughput gain is below 10%",
+      "official-engine N16E1/N16E8 admission was not run after prerequisite microbenchmark failure"
+    ]
+  },
   "formal_versions": [
     {
       "version": "V1_lifetime_aware_feature_compiler",
+      "kind": "runtime_optimization",
+      "state": "complete_not_admitted",
+      "training_performed": false
+    },
+    {
+      "version": "V2_type_exact_card_commitment",
       "kind": "runtime_optimization",
       "state": "complete_not_admitted",
       "training_performed": false

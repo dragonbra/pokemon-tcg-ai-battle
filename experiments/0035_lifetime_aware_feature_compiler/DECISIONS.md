@@ -18,3 +18,11 @@
 - Reject whole EventLayer reuse. The audited chronology produced zero segment hits because either the event window or card-relation layout changed every decision, so its key construction was pure overhead.
 - Record the final seven-by-5,000 paired result: compiler median 0.574 to 0.430 ms (-25.1%), total feature median 1.166 to 1.069 ms (-8.3%), decisions/s 813.9 to 826.7 (+1.6%), while compiler p95 regressed 0.820 to 0.934 ms (+14.0%).
 - Mark V1 performance admission as failed and retain `incremental=False` in the online runtime/export path. Do not spend the next iteration adding more per-entity recursive signatures; the next useful boundary is observation/zone structural sharing that avoids whole-card-layer traversal and assembly.
+
+## 2026-08-08: V2 version-boundary experiment and type-exact commitment
+
+- Implement and test an `ObservationVersionTracker` prototype after JSON decoding. Whole CardLayer reuse occurred on only 10/525 audited decisions. Zone-level reuse reported many hits, but profiling showed they were dominated by empty/small zones; dirty zones still performed entity traversal and a second assembly pass. The connected version/zone path measured compiler median/p95 `0.549/1.240 ms` against full `0.588/0.952 ms`, so it was rejected and removed from online/benchmark execution.
+- Reject a second `serial -> raw entity` dirty scan for the same reason: it duplicated the card traversal already performed by the compiler and measured `0.479/1.022 ms`, still worse than the simpler V1 incremental path.
+- Replace Python-recursive card projections with the standard-library protocol-5 binary commitment. It preserves primitive types, includes the complete raw card tree conservatively, requires no additional dependency, and fails closed for unsupported mappings.
+- Final V2 7x10,000 paired result: compiler median `0.591 -> 0.437 ms` (-26.0%), compiler p95 `0.950 -> 0.910 ms` (-4.3%), total feature median `1.219 -> 1.069 ms` (-12.3%), throughput `734.2 -> 769.9 decisions/s` (+4.9%). This fixes V1's tail regression but does not satisfy the absolute/relative admission gates.
+- Keep `incremental=False`. Do not run N16E1/N16E8 admission for a compiler that still fails its prerequisite microbenchmark. A future step-change requires native producer dirty versions or direct tensor-segment persistence, not another Python observation scan.
