@@ -223,6 +223,12 @@ class EvaluationWorkerTests(unittest.TestCase):
         start_failure = "    raise RuntimeError('battle start boom')\n" if start_error else ""
         select_failure = "    raise SystemExit('battle select exit')\n" if select_system_exit else ""
         select_index_failure = "    raise IndexError('invalid selected action')\n" if select_index_error else ""
+        select_index_guard = (
+            "    if STEP > 0:\n"
+            "        raise IndexError('invalid selected action')\n"
+            if select_index_error
+            else ""
+        )
         finish_failure = "    raise RuntimeError('battle finish boom')\n" if finish_error else ""
         return (
             "import json\n"
@@ -230,27 +236,36 @@ class EvaluationWorkerTests(unittest.TestCase):
             f"{import_failure}"
             "PACKAGE_ROOT = Path(__file__).resolve().parents[1]\n"
             "STEP = 0\n"
+            "FIRST_PLAYER = -1\n"
             "DECK0 = []\n"
             "DECK1 = []\n"
             "ACTIONS = []\n\n"
             "def _observation(result=-1):\n"
             "    return {\n"
-            "        'current': {'turn': STEP, 'yourIndex': STEP % 2, 'result': result},\n"
-            "        'select': None if result != -1 else {'type': 'choose', 'option': [0]},\n"
+            "        'current': {'turn': STEP, 'yourIndex': (0 if STEP == 0 else "
+            "(FIRST_PLAYER if STEP % 2 == 1 else 1 - FIRST_PLAYER)), "
+            "'firstPlayer': FIRST_PLAYER, 'result': result},\n"
+            "        'select': None if result != -1 else "
+            "({'type': 9, 'context': 41, 'minCount': 1, 'maxCount': 1, "
+            "'option': [{'type': 1}, {'type': 2}]} if STEP == 0 else "
+            "{'type': 'choose', 'context': 0, 'option': [0]}),\n"
             "    }\n\n"
             "def battle_start(deck0, deck1):\n"
-            "    global STEP, DECK0, DECK1, ACTIONS\n"
+            "    global STEP, FIRST_PLAYER, DECK0, DECK1, ACTIONS\n"
             f"{start_failure}"
             "    STEP = 0\n"
+            "    FIRST_PLAYER = -1\n"
             "    DECK0 = list(deck0)\n"
             "    DECK1 = list(deck1)\n"
             "    ACTIONS = []\n"
             "    return _observation(), {'started': True}\n\n"
             "def battle_select(select_list):\n"
-            "    global STEP\n"
+            "    global STEP, FIRST_PLAYER\n"
             f"{select_failure}"
-            f"{select_index_failure}"
+            f"{select_index_guard}"
             "    ACTIONS.append(list(select_list))\n"
+            "    if STEP == 0:\n"
+            "        FIRST_PLAYER = 0 if select_list == [0] else 1\n"
             "    STEP += 1\n"
             "    if STEP >= 3:\n"
             "        result = 0 if DECK0 and DECK0[0] == 7 else 1\n"
@@ -298,7 +313,7 @@ class EvaluationWorkerTests(unittest.TestCase):
         self.assertEqual(result.error_kind, None)
         self.assertIsNotNone(result.performance)
         performance = result.performance or {}
-        self.assertEqual(performance["agent_calls"], 3)
+        self.assertEqual(performance["agent_calls"], 2)
         self.assertEqual(performance["engine_select_calls"], 3)
         for key in (
             "worker_wall_seconds",
@@ -309,14 +324,17 @@ class EvaluationWorkerTests(unittest.TestCase):
             self.assertGreaterEqual(performance[key], 0.0)
         self.assertEqual((request.candidate.root / "battle_finish_count.txt").read_text(), "1")
 
-    def test_winner_is_normalized_when_candidate_is_player_one(self) -> None:
+    def test_candidate_stays_player_zero_when_forced_to_go_second(self) -> None:
         request = self.make_request(candidate_first=False)
 
         result = run_game(request, self.root / "trace-second.json")
 
         self.assertEqual(result.winner, 0)
-        self.assertEqual(result.candidate_physical_index, 1)
+        self.assertEqual(result.candidate_physical_index, 0)
         self.assertEqual(result.status, "finished")
+        payload = json.loads((self.root / "trace-second.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["trace"][0]["action"], [1])
+        self.assertEqual(payload["trace"][0]["forced_by_harness"], "first_player")
         self.assertEqual((request.candidate.root / "battle_finish_count.txt").read_text(), "1")
 
     def test_candidate_agent_exception_becomes_candidate_error_result(self) -> None:
@@ -561,7 +579,7 @@ class EvaluationWorkerTests(unittest.TestCase):
         self.assertNotIn(candidate.root.resolve(), opponent_import_roots)
         self.assertEqual(
             (candidate.root / "helper_values.txt").read_text(encoding="utf-8").splitlines(),
-            ["candidate-helper/candidate-helper", "candidate-helper/candidate-helper"],
+            ["candidate-helper/candidate-helper"],
         )
         self.assertEqual(
             (opponent.root / "helper_values.txt").read_text(encoding="utf-8").splitlines(),
@@ -580,7 +598,7 @@ class EvaluationWorkerTests(unittest.TestCase):
         self.assertFalse((opponent.root / "helpers" / "__init__.py").exists())
         self.assertEqual(
             (candidate.root / "namespace_helper_values.txt").read_text(encoding="utf-8").splitlines(),
-            ["candidate-helper/candidate-helper", "candidate-helper/candidate-helper"],
+            ["candidate-helper/candidate-helper"],
         )
         self.assertEqual(
             (opponent.root / "namespace_helper_values.txt").read_text(encoding="utf-8").splitlines(),
@@ -613,10 +631,10 @@ class EvaluationWorkerTests(unittest.TestCase):
         payload = json.loads(result_path.read_text(encoding="utf-8"))
         result = GameResult(**{**payload, "trace_path": Path(payload["trace_path"])})
         self.assertEqual(result.winner, 0)
-        self.assertEqual(result.candidate_physical_index, 1)
+        self.assertEqual(result.candidate_physical_index, 0)
         self.assertTrue(trace_path.is_file())
         self.assertEqual(payload["trace_path"], str(trace_path))
-        self.assertEqual(payload["performance"]["agent_calls"], 3)
+        self.assertEqual(payload["performance"]["agent_calls"], 2)
         trace = json.loads(trace_path.read_text(encoding="utf-8"))
         self.assertEqual(trace["result"], payload)
 

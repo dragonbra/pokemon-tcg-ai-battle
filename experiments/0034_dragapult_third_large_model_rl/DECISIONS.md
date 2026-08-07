@@ -58,6 +58,10 @@ V6 adds a 256-game update-0 greedy baseline. Every periodic greedy probe uses th
 
 V6 `V6_exact007_0023_selection_lambda095` launched with 500 updates, 32 workers, 256 games per update, evaluation every ten updates and W&B run ID `0034-v6-exact007-0023-selection-lambda095`. The update-0 exact-007 greedy baseline completed 256/256 official-engine games with zero error at 146-110-0 (57.03%): 59.38% first-seat and 54.69% second-seat.
 
+## 2026-08-08 — V7 seeded paired official-engine contract (not launched)
+
+The next code-level version is `V7_seeded_paired_official_engine`; no V7 run directory, W&B run, checkpoint or strength result has been created. The official source remains untouched. Versioned runtime `engine/build/seeded_official/0001/libcg.so` exposes deterministic battle and Search initialization and records the official-source, adapter, compiler and library hashes. Each update deterministically samples 128 unique engine seeds and 128 opponent slots from the frozen 256-slot distribution. Every seed emits two Episodes with fixed physical deck slots and opposite first-player choices, for 256 Episodes per update. The pair shares engine and Search seeds; focal policy sampling uses a distinct per-Episode generator so CUDA batching order does not redefine its RNG stream. This is paired environment randomness only and does not claim action-indexed CRN after trajectories diverge.
+
 Update 1 then completed 256/256 stochastic on-policy games with zero error at 119-137-0 (46.48%). PPO used four epochs and 112 minibatches over 28,517 decisions, preserved the frozen representation hash and saved model-only checkpoint 1. This sampled rollout is not comparable to the greedy update-0 strength result; the first paired strength comparison is the fixed-seed greedy probe at update 10.
 
 ## 2026-08-07: Stop V6 manually after update 123

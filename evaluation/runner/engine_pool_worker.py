@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import ctypes
 import json
+import os
 import sys
 import threading
 import time
@@ -47,7 +48,9 @@ class _PointerBattle:
         observation["search_begin_input"] = search_input
         return observation
 
-    def start(self, deck0: list[int], deck1: list[int]) -> dict[str, Any] | None:
+    def start(
+        self, deck0: list[int], deck1: list[int], *, engine_seed: int | None = None
+    ) -> dict[str, Any] | None:
         if self._pointer is not None:
             raise RuntimeError("battle has already started")
         if len(deck0) != 60 or len(deck1) != 60:
@@ -55,7 +58,10 @@ class _PointerBattle:
         cards = deck0 + deck1
         argument = (ctypes.c_int * len(cards))(*cards)
         with self._library_lock:
-            start_data = self._library.BattleStart(argument)
+            if engine_seed is None:
+                start_data = self._library.BattleStart(argument)
+            else:
+                start_data = self._library.BattleStartSeeded(argument, engine_seed)
         self._pointer = start_data.battlePtr
         if self._pointer is None or self._pointer == 0:
             return None
@@ -118,12 +124,8 @@ def _run_pointer_game(
     agent_ns = 0
     agent_calls = 0
     engine_select_calls = 0
-    candidate_physical_index = 0 if request.candidate_first else 1
-    physical_packages = (
-        (request.candidate, request.opponent)
-        if request.candidate_first
-        else (request.opponent, request.candidate)
-    )
+    candidate_physical_index = 0
+    physical_packages = (request.candidate, request.opponent)
     trace: list[dict[str, Any]] = []
     payload: dict[str, Any] = {
         "run_id": request.run_id,
@@ -156,6 +158,7 @@ def _run_pointer_game(
             observation = battle.start(
                 physical_packages[0].deck,
                 physical_packages[1].deck,
+                engine_seed=request.seed if request.engine_library is not None else None,
             )
         finally:
             engine_start_ns += time.perf_counter_ns() - started_ns
@@ -216,14 +219,23 @@ def _run_pointer_game(
                     )
                     break
                 current_player = int(current.get("yourIndex", 0))
+                select = observation.get("select") or {}
+                forced_first_player = select.get("context") == 41
                 selected_agent = (
                     candidate_agent
                     if current_player == candidate_physical_index
                     else opponent_agent
                 )
-                agent_started_ns = time.perf_counter_ns()
                 try:
-                    action = selected_agent(observation)
+                    if forced_first_player:
+                        action = [0] if request.candidate_first else [1]
+                    else:
+                        agent_started_ns = time.perf_counter_ns()
+                        try:
+                            action = selected_agent(observation)
+                        finally:
+                            agent_ns += time.perf_counter_ns() - agent_started_ns
+                            agent_calls += 1
                 except BaseException as exc:
                     error_side = (
                         "candidate_error"
@@ -248,18 +260,16 @@ def _run_pointer_game(
                         error=_exception_text(exc),
                     )
                     break
-                finally:
-                    agent_ns += time.perf_counter_ns() - agent_started_ns
-                    agent_calls += 1
                 selection_count += 1
-                trace.append(
-                    {
-                        "step": step,
-                        "state": summary,
-                        "observation": observation,
-                        "action": action,
-                    }
-                )
+                trace_entry = {
+                    "step": step,
+                    "state": summary,
+                    "observation": observation,
+                    "action": action,
+                }
+                if forced_first_player:
+                    trace_entry["forced_by_harness"] = "first_player"
+                trace.append(trace_entry)
                 selected_ns = time.perf_counter_ns()
                 try:
                     observation = battle.select(action)
@@ -286,6 +296,14 @@ def _run_pointer_game(
                 finally:
                     engine_select_ns += time.perf_counter_ns() - selected_ns
                     engine_select_calls += 1
+                if forced_first_player:
+                    actual_first = (observation.get("current") or {}).get("firstPlayer")
+                    expected_first = 0 if request.candidate_first else 1
+                    if actual_first != expected_first:
+                        raise RuntimeError(
+                            "official engine did not honor forced first player: "
+                            f"expected {expected_first}, got {actual_first}"
+                        )
                 physical_winner = (observation.get("current") or {}).get("result")
                 if isinstance(physical_winner, int) and physical_winner >= 0:
                     trace.append(
@@ -419,6 +437,13 @@ def _request_from_payload(payload: dict[str, Any]) -> GameRequest:
         visualize=bool(payload["visualize"]),
         engine_turn_draw_limit=int(payload.get("engine_turn_draw_limit", 0)),
         seed=int(payload.get("seed", 0)),
+        policy_seed=int(payload.get("policy_seed", payload.get("seed", 0))),
+        search_seed=int(payload.get("search_seed", payload.get("seed", 0))),
+        engine_library=(
+            Path(payload["engine_library"])
+            if payload.get("engine_library") is not None
+            else None
+        ),
         arbitrary_legal_actions=bool(payload.get("arbitrary_legal_actions", False)),
     )
 
@@ -435,7 +460,18 @@ def main(argv: list[str] | None = None) -> int:
     ]
     if not jobs:
         raise ValueError("engine pool request has no jobs")
+    engine_library = jobs[0][0].engine_library
+    if engine_library is not None:
+        if any(request.engine_library != engine_library for request, _ in jobs):
+            raise ValueError("engine pool jobs use different engine libraries")
+        os.environ["PTCG_CG_LIBRARY"] = str(engine_library.resolve())
     game_module = _load_game_api_with_runtime(jobs[0][0].candidate.root)
+    if engine_library is not None:
+        game_module.lib.BattleStartSeeded.restype = game_module.lib.BattleStart.restype
+        game_module.lib.BattleStartSeeded.argtypes = [
+            ctypes.POINTER(ctypes.c_int),
+            ctypes.c_ulonglong,
+        ]
     candidate_socket = str(payload["candidate_inference_socket"])
     opponent_socket = str(payload["opponent_inference_socket"])
 

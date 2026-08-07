@@ -35,6 +35,7 @@ def _decode(
     values: Tensor,
     *,
     greedy: bool,
+    generators: list[torch.Generator] | None = None,
 ) -> list[SampledAction]:
     decoder = head.action_decoder
     batch_size, option_count, _ = options.shape
@@ -55,7 +56,23 @@ def _decode(
         active = ~finished & lengths.lt(maximum)
         logits = decoder.logits(batch, options, state)
         distribution = Categorical(logits=logits.float())
-        token = logits.argmax(dim=1) if greedy else distribution.sample()
+        if greedy:
+            token = logits.argmax(dim=1)
+        elif generators is None:
+            token = distribution.sample()
+        else:
+            if len(generators) != batch_size:
+                raise ValueError("one sampling generator is required per batch row")
+            token = torch.stack(
+                [
+                    torch.multinomial(
+                        distribution.probs[row],
+                        1,
+                        generator=generators[row],
+                    ).squeeze(0)
+                    for row in range(batch_size)
+                ]
+            )
         total_log_prob += torch.where(active, distribution.log_prob(token), 0.0)
         total_entropy += torch.where(active, distribution.entropy(), 0.0)
         choosing_stop = active & token.eq(option_count)
@@ -80,10 +97,23 @@ def _decode(
     ]
 
 
-def sample_actions(model: SemanticActorCritic, features: dict[str, Tensor]) -> list[SampledAction]:
+def sample_actions(
+    model: SemanticActorCritic,
+    features: dict[str, Tensor],
+    *,
+    generators: list[torch.Generator] | None = None,
+) -> list[SampledAction]:
     with torch.inference_mode():
         batch, summary, options, values = model.encode(features)
-        return _decode(model.head, batch, summary, options, values, greedy=False)
+        return _decode(
+            model.head,
+            batch,
+            summary,
+            options,
+            values,
+            greedy=False,
+            generators=generators,
+        )
 
 
 def greedy_actions(model: SemanticActorCritic, features: dict[str, Tensor]) -> list[SampledAction]:

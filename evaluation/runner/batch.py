@@ -12,7 +12,7 @@ from collections import Counter
 from contextlib import contextmanager
 from collections.abc import Iterator
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -26,6 +26,7 @@ from evaluation.packages.loader import SubmissionPackage
 from evaluation.reporting import ReportData, json_ready, write_evaluation_index, write_report
 from evaluation.reporting.index import write_report_file_atomic
 from evaluation.runner.models import GameRequest, GameResult
+from evaluation.runtime.seeded import build_seeded_runtime
 from evaluation.traces.store import TraceStore
 from rl_environment.runs import project_version_paths
 
@@ -99,6 +100,9 @@ class BatchConfig:
     inference_forced_action_shortcut: bool = False
     arbitrary_legal_actions: bool = False
     engine_pool_size: int = 1
+    seeded_engine: bool = True
+    engine_library: Path | None = None
+    seeded_runtime_manifest: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -214,6 +218,18 @@ def run_batch(config: BatchConfig) -> BatchResult:
             config.opponent_inference_root / "main.py"
         ).resolve():
             raise ValueError("shared policy inference candidate entrypoint mismatch")
+
+    if config.seeded_engine:
+        runtime = build_seeded_runtime()
+        if config.engine_library is not None and (
+            config.engine_library.resolve() != runtime.library_path.resolve()
+        ):
+            raise ValueError("engine_library does not match the current seeded runtime build")
+        config = replace(
+            config,
+            engine_library=runtime.library_path,
+            seeded_runtime_manifest=runtime.json_payload(),
+        )
 
     run_id = f"run-{uuid.uuid4().hex}"
     explicit_report_path = config.report_path.resolve() if config.report_path else None
@@ -493,22 +509,34 @@ def _game_jobs(
         for game_number in range(1, game_count + 1):
             global_game_number += 1
             game_id = f"{opponent.name}-{game_number:03d}"
+            pair_number = (game_number + 1) // 2
             request = GameRequest(
                 run_id=run_id,
                 game_id=game_id,
                 candidate=config.candidate,
                 opponent=opponent,
-                candidate_first=(
-                    global_game_number % 2 == 1
-                    if config.games_by_opponent is not None
-                    else game_number % 2 == 1
-                ),
+                candidate_first=global_game_number % 2 == 1,
                 max_steps=config.max_steps,
                 engine_turn_draw_limit=config.engine_turn_draw_limit,
                 visualize=config.visualize,
                 seed=_stable_game_seed(
-                    config.seed, config.candidate.name, opponent.name, game_number
+                    config.seed, config.candidate.name, opponent.name, pair_number
                 ),
+                policy_seed=_stable_named_seed(
+                    config.seed,
+                    "policy",
+                    config.candidate.name,
+                    opponent.name,
+                    game_number,
+                ),
+                search_seed=_stable_named_seed(
+                    config.seed,
+                    "search",
+                    config.candidate.name,
+                    opponent.name,
+                    pair_number,
+                ),
+                engine_library=config.engine_library,
                 arbitrary_legal_actions=config.arbitrary_legal_actions,
             )
             jobs.append((request, store.temp_path(game_id)))
@@ -520,7 +548,20 @@ def _stable_game_seed(base_seed: int, candidate: str, opponent: str, game_number
     digest = hashlib.sha256(
         f"{base_seed}:{candidate}:{opponent}:{game_number}".encode("utf-8")
     ).digest()
-    return int.from_bytes(digest[:8], "big") & 0x7FFFFFFF
+    return (int.from_bytes(digest[:8], "big") & 0x7FFFFFFF) or 1
+
+
+def _stable_named_seed(
+    base_seed: int,
+    namespace: str,
+    candidate: str,
+    opponent: str,
+    number: int,
+) -> int:
+    digest = hashlib.sha256(
+        f"{base_seed}:{namespace}:{candidate}:{opponent}:{number}".encode("utf-8")
+    ).digest()
+    return (int.from_bytes(digest[:8], "big") & 0x7FFFFFFF) or 1
 
 
 def _candidate_socket_path() -> Path:
@@ -1020,6 +1061,11 @@ def _request_payload(request: GameRequest, trace_path: Path) -> dict[str, object
         "engine_turn_draw_limit": request.engine_turn_draw_limit,
         "visualize": request.visualize,
         "seed": request.seed,
+        "policy_seed": request.policy_seed,
+        "search_seed": request.search_seed,
+        "engine_library": (
+            str(request.engine_library) if request.engine_library is not None else None
+        ),
         "arbitrary_legal_actions": request.arbitrary_legal_actions,
         "trace_path": str(trace_path),
     }
@@ -1042,7 +1088,7 @@ def _worker_crash_result(request: GameRequest, trace_path: Path, error: str) -> 
         game_id=request.game_id,
         opponent=request.opponent.name,
         candidate_first=request.candidate_first,
-        candidate_physical_index=0 if request.candidate_first else 1,
+        candidate_physical_index=0,
         finished=False,
         winner=None,
         status="worker_crash",
@@ -1344,9 +1390,15 @@ def _manifest(
         ),
         "opponent_schedule_id": config.opponent_schedule_id,
         "seed": config.seed,
-        "seed_policy": "sha256(base_seed:candidate:opponent:game_number)",
+        "seed_policy": {
+            "engine": "sha256(base_seed:candidate:opponent:pair_number)",
+            "search": "sha256(base_seed:search:candidate:opponent:pair_number)",
+            "policy": "sha256(base_seed:policy:candidate:opponent:game_number)",
+        },
         "engine_rng_contract": (
-            "python_numpy_torch_only; official engine internal RNG is not exposed by runtime"
+            "seeded_official_engine_abi_v1; fixed physical deck slots; paired engine seed"
+            if config.seeded_engine
+            else "legacy package runtime; engine RNG is not controlled"
         ),
         "workers": actual_workers,
         "requested_workers": config.workers,
@@ -1427,11 +1479,7 @@ def _manifest(
             if config.engine_turn_draw_limit > 0
             else 0
         ),
-        "swap_policy": (
-            "alternate_candidate_first_globally"
-            if config.games_by_opponent is not None
-            else "alternate_candidate_first"
-        ),
+        "swap_policy": "fixed_physical_slots_force_first_player_paired",
         "plugins": list(metric_ids),
         "metric_profile": profile.manifest(),
         "presentation_errors": list(presentation_errors),
@@ -1439,6 +1487,8 @@ def _manifest(
         "engine_runtime": {
             "cg_tree_hash": config.candidate.cg_manifest.get("tree_hash"),
             "native_files": config.candidate.cg_manifest.get("native_files", []),
+            "seeded": config.seeded_engine,
+            "seeded_runtime": config.seeded_runtime_manifest,
         },
         "started_at": started_at,
         "finished_at": finished_at,

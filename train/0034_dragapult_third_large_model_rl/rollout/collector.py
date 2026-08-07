@@ -26,6 +26,7 @@ class _Live:
     process: mp.Process
     focal_encoder: OnlineCausalEncoder
     opponent_encoder: OnlineCausalEncoder
+    policy_generator: torch.Generator
     decisions: list[TrajectoryDecision] = field(default_factory=list)
     last_decision: dict[str, object] | None = None
     last_action: tuple[int, ...] | None = None
@@ -76,7 +77,9 @@ class FullSemanticRolloutCollector:
         )
         process.start()
         child.close()
-        focal_actor = 0 if job.focal_first else 1
+        focal_actor = 0
+        generator = torch.Generator(device=self.device)
+        generator.manual_seed(job.policy_seed or job.seed)
         return _Live(
             job=job,
             connection=parent,
@@ -85,8 +88,9 @@ class FullSemanticRolloutCollector:
                 focal_actor, job.focal_deck, self.model.actor.config
             ),
             opponent_encoder=OnlineCausalEncoder(
-                1 - focal_actor, job.opponent_deck, self.opponent.config
+                1, job.opponent_deck, self.opponent.config
             ),
+            policy_generator=generator,
         )
 
     @staticmethod
@@ -125,7 +129,15 @@ class FullSemanticRolloutCollector:
         encoded = time.perf_counter()
         batch = move_batch(collate_feature_batches(rows), self.device)
         prepared = time.perf_counter()
-        actions = sample_actions(self.model, batch) if self.mode == "sample" else greedy_actions(self.model, batch)
+        actions = (
+            sample_actions(
+                self.model,
+                batch,
+                generators=[item.policy_generator for item, _ in requests],
+            )
+            if self.mode == "sample"
+            else greedy_actions(self.model, batch)
+        )
         inferred = time.perf_counter()
         self.focal_encode_seconds += encoded - started
         self.focal_collate_move_seconds += prepared - encoded

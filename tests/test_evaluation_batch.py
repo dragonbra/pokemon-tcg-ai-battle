@@ -225,6 +225,7 @@ class BatchRunnerTests(unittest.TestCase):
             plugin_ids=(),
             keep_temp=False,
             worker_timeout_seconds=worker_timeout_seconds,
+            seeded_engine=False,
         )
 
     def test_default_batch_metric_registry_includes_all_core_plugins(self) -> None:
@@ -485,7 +486,10 @@ class OverridePlugin:
         self.assertEqual(manifest["candidate"]["package_hash"], "candidate-package-hash")
         self.assertEqual(manifest["opponents"][0]["deck_hash"], "opponent-deck-hash")
         self.assertEqual(manifest["games"], 5)
-        self.assertEqual(manifest["swap_policy"], "alternate_candidate_first")
+        self.assertEqual(
+            manifest["swap_policy"],
+            "fixed_physical_slots_force_first_player_paired",
+        )
         self.assertEqual(manifest["plugins"], list(CORE_METRIC_IDS))
         self.assertEqual(
             manifest["engine_runtime"]["cg_tree_hash"],
@@ -528,6 +532,22 @@ class OverridePlugin:
             jobs[0][0].seed,
             _stable_game_seed(22022, "candidate", "opponent-a", 1),
         )
+
+    def test_adjacent_seats_share_engine_seed_and_keep_distinct_policy_seeds(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        config = self.make_config(candidate, (opponent,), games=4)
+        store = TraceStore(self.root / "paired-temp", self.root / "paired-report")
+
+        jobs = _game_jobs(config, "run-paired", store)
+        requests = [request for request, _ in jobs]
+
+        self.assertEqual([request.candidate_first for request in requests], [True, False] * 2)
+        self.assertEqual(requests[0].seed, requests[1].seed)
+        self.assertEqual(requests[2].seed, requests[3].seed)
+        self.assertNotEqual(requests[0].seed, requests[2].seed)
+        self.assertNotEqual(requests[0].policy_seed, requests[1].policy_seed)
+        self.assertTrue(all(request.search_seed > 0 for request in requests))
 
     def test_variable_opponent_counts_are_validated_before_workers(self) -> None:
         candidate = self.make_package("candidate", 7)

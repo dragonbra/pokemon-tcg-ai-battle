@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import random
 import signal
+import ctypes
 from collections import defaultdict
 from multiprocessing.connection import Connection
 from typing import Any
@@ -42,13 +43,9 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
     os.environ.setdefault("OMP_NUM_THREADS", "1")
     os.environ.setdefault("MKL_NUM_THREADS", "1")
     os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-    random.seed(job.seed)
-    focal_index = 0 if job.focal_first else 1
-    decks = (
-        (job.focal_deck, job.opponent_deck)
-        if job.focal_first
-        else (job.opponent_deck, job.focal_deck)
-    )
+    random.seed(job.policy_seed or job.seed)
+    focal_index = 0
+    decks = (job.focal_deck, job.opponent_deck)
     game = None
     selections = 0
     final_turn = None
@@ -68,7 +65,18 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
         )
     try:
         _clear_cg_modules()
+        if job.engine_library is not None:
+            os.environ["PTCG_CG_LIBRARY"] = str(job.engine_library.resolve())
         game = _load_game_api_with_runtime(job.runtime_root)
+        if job.engine_library is not None:
+            configure = getattr(getattr(game, "lib", None), "ConfigureSeeds", None)
+            if configure is None:
+                raise RuntimeError("seeded engine runtime has no ConfigureSeeds symbol")
+            configure.restype = ctypes.c_int
+            configure.argtypes = [ctypes.c_ulonglong, ctypes.c_ulonglong]
+            error = int(configure(job.seed, job.search_seed))
+            if error != 0:
+                raise RuntimeError(f"seeded engine configuration failed: {error}")
         observation, _ = game.battle_start(list(decks[0]), list(decks[1]))
         if observation is None:
             connection.send(_result(
@@ -103,6 +111,19 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
             if turn_actor != (final_turn, actor):
                 turn_actor = (final_turn, actor)
                 repeated_actions.clear()
+            selection = observation.get("select") or {}
+            if selection.get("context") == 41:
+                action = [0] if job.focal_first else [1]
+                selections += 1
+                observation = game.battle_select(action)
+                actual_first = (observation.get("current") or {}).get("firstPlayer")
+                expected_first = 0 if job.focal_first else 1
+                if actual_first != expected_first:
+                    raise RuntimeError(
+                        "official engine did not honor forced first player: "
+                        f"expected {expected_first}, got {actual_first}"
+                    )
+                continue
             connection.send({
                 "kind": "decision",
                 "role": "focal" if actor == focal_index else "opponent",

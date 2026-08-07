@@ -1,4 +1,4 @@
-"""Formal full-0031 decoder PPO over the Frozen-0806 256-game schedule."""
+"""Formal full-0031 decoder PPO over paired Frozen-0806 seed scenarios."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from typing import Any
 import torch
 
 from rl_environment.logging import TrainingLogger
+from evaluation.runtime.seeded import build_seeded_runtime
 
 from ..league import load_frozen_catalog
 from ..parity import assert_large_model_0806_runtime_parity, collect_official_observations
@@ -31,7 +32,7 @@ from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0034_dragapult_third_large_model_rl"
 WANDB_DISPLAY_PREFIX = "0034 · dragapult_third_large_model_rl"
-FORMAL_VERSION = "V6_exact007_0023_selection_lambda095"
+FORMAL_VERSION = "V7_seeded_paired_official_engine"
 SOURCE_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -143,25 +144,58 @@ def build_jobs(
     if count < 2 or count % 2:
         raise ValueError("job count must be positive and seat-balanced")
     fixed_slots = [opponent for opponent in catalog for _ in range(opponent.games)]
-    full_repeats = count // 256 if count >= 256 and count % 256 == 0 else 0
-    selected = fixed_slots * full_repeats if full_repeats else fixed_slots[:count]
+    scenario_count = count // 2
+    update_offset = 0 if greedy else source_policy_update * 1_000_003
+    full_repeats = (
+        scenario_count // 256
+        if scenario_count >= 256 and scenario_count % 256 == 0
+        else 0
+    )
+    if full_repeats:
+        selected = fixed_slots * full_repeats
+        engine_seeds = [
+            ((seed + update_offset + index) & 0x7FFFFFFF) or 1
+            for index in range(scenario_count)
+        ]
+    else:
+        scenario_rng = random.Random(seed + update_offset)
+        selected = [
+            fixed_slots[index]
+            for index in scenario_rng.sample(range(len(fixed_slots)), scenario_count)
+        ]
+        engine_seeds = scenario_rng.sample(range(1, 0x80000000), scenario_count)
     jobs: list[RolloutJob] = []
     deck = focal_deck()
     root = runtime_root()
-    for index, opponent in enumerate(selected):
-        jobs.append(
-            RolloutJob(
-                game_id=("eval" if greedy else "rollout")
-                + f"-u{source_policy_update:04d}-{index:04d}",
-                opponent_id=opponent.deck_id,
-                focal_first=index % 2 == 0,
-                seed=seed + (0 if greedy else source_policy_update * 1_000_003) + index,
-                source_policy_update=source_policy_update,
-                focal_deck=deck,
-                opponent_deck=opponent.deck,
-                runtime_root=root,
+    runtime = build_seeded_runtime()
+    for pair_index, (opponent, engine_seed) in enumerate(
+        zip(selected, engine_seeds, strict=True)
+    ):
+        search_seed = (
+            (engine_seed + 900_000_007 + update_offset) & 0x7FFFFFFF
+        ) or 1
+        for seat_index, focal_first in enumerate((True, False)):
+            game_index = pair_index * 2 + seat_index
+            jobs.append(
+                RolloutJob(
+                    game_id=("eval" if greedy else "rollout")
+                    + f"-u{source_policy_update:04d}-{game_index:04d}",
+                    opponent_id=opponent.deck_id,
+                    focal_first=focal_first,
+                    seed=engine_seed,
+                    source_policy_update=source_policy_update,
+                    focal_deck=deck,
+                    opponent_deck=opponent.deck,
+                    runtime_root=root,
+                    policy_seed=(
+                        (seed + 1_700_000_009 + update_offset + game_index)
+                        & 0x7FFFFFFF
+                    )
+                    or 1,
+                    search_seed=search_seed,
+                    engine_library=runtime.library_path,
+                )
             )
-        )
     if full_repeats and len({job.opponent_id for job in jobs}) != 55:
         raise RuntimeError("formal schedule omitted a Frozen opponent")
     if len(jobs) != count:
@@ -301,7 +335,8 @@ def run_gate(
         "schema": "0034_full_semantic_official_cpu_gate_v1",
         "passed": True,
         "games": games,
-        "all_51_both_seats": games >= 102 and games % 102 == 0,
+        "paired_seed_scenarios": games // 2,
+        "paired_seats": games % 2 == 0,
         "ppo_update": run_ppo,
         "credit_clock": credit_clock,
         "gae_lambda": gae_lambda,
@@ -374,14 +409,23 @@ def run(config: RunConfig) -> dict[str, Any]:
             "project": "0023_mega_lopunny_ex_mega_froslass_ex_002_league_training",
             "version": "V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league",
             "config": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league/artifact/training_config.json",
-            "intentional_difference": "256 Frozen-0806 games per update instead of 0023's 512 games",
+            "intentional_difference": (
+                "128 sampled engine seeds, each evaluated in both seats, "
+                "for 256 Episodes per update"
+            ),
         },
         "opponent_count": 55,
         "opponent_games_per_batch": 256,
         "opponent_policy": "0806_large_model_pretrained_immutable",
         "opponent_policy_sha256": _sha256(SOURCE_CHECKPOINT),
         "opponent_schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
-        "official_engine": "cpu_cg_runtime",
+        "official_engine": "seeded_official_engine_abi_v1_runtime_0001",
+        "rollout_seed_contract": {
+            "sampled_engine_seeds": config.games_per_update // 2,
+            "episodes_per_seed": 2,
+            "fixed_physical_deck_slots": True,
+            "only_seat_is_swapped_within_pair": True,
+        },
         "trainable_contract": ["actor.action_decoder.*", "value_head.*"],
         "checkpoint_retention": "all",
         "reward": "terminal_only_minus_one_zero_plus_one",

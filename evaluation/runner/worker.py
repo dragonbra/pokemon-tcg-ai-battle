@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import ctypes
 import importlib.util
 import json
 import os
@@ -332,13 +333,9 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
     agent_ns = 0
     agent_calls = 0
     engine_select_calls = 0
-    random.seed(request.seed)
-    candidate_physical_index = 0 if request.candidate_first else 1
-    physical_packages = (
-        (request.candidate, request.opponent)
-        if request.candidate_first
-        else (request.opponent, request.candidate)
-    )
+    random.seed(request.policy_seed or request.seed)
+    candidate_physical_index = 0
+    physical_packages = (request.candidate, request.opponent)
 
     trace: list[dict[str, Any]] = []
     selection_count = 0
@@ -361,6 +358,7 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
     parent_cg_modules = {
         name: module for name, module in sys.modules.items() if name == "cg" or name.startswith("cg.")
     }
+    previous_engine_library = os.environ.get("PTCG_CG_LIBRARY")
 
     try:
         if request.max_steps <= 0:
@@ -368,8 +366,20 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
 
         phase = "compatibility"
         assert_cg_compatible(request.candidate, request.opponent)
+        if request.engine_library is not None:
+            os.environ["PTCG_CG_LIBRARY"] = str(request.engine_library.resolve())
         phase = "load"
         game_module, candidate_agent, opponent_agent = _load_agents(request)
+        if request.engine_library is not None:
+            engine_library = getattr(game_module, "lib", None)
+            configure = getattr(engine_library, "ConfigureSeeds", None)
+            if configure is None:
+                raise RuntimeError("seeded engine runtime has no ConfigureSeeds symbol")
+            configure.restype = ctypes.c_int
+            configure.argtypes = [ctypes.c_ulonglong, ctypes.c_ulonglong]
+            configured = int(configure(request.seed, request.search_seed))
+            if configured != 0:
+                raise RuntimeError(f"seeded engine configuration failed: {configured}")
         phase = "start"
         start_attempted = True
         engine_started_ns = time.perf_counter_ns()
@@ -440,14 +450,19 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     break
 
                 current_player = int(current.get("yourIndex", 0))
+                select = observation.get("select") or {}
+                forced_first_player = select.get("context") == 41
                 selected_agent = candidate_agent if current_player == candidate_physical_index else opponent_agent
                 try:
-                    agent_started_ns = time.perf_counter_ns()
-                    try:
-                        action = selected_agent(observation)
-                    finally:
-                        agent_ns += time.perf_counter_ns() - agent_started_ns
-                        agent_calls += 1
+                    if forced_first_player:
+                        action = [0] if request.candidate_first else [1]
+                    else:
+                        agent_started_ns = time.perf_counter_ns()
+                        try:
+                            action = selected_agent(observation)
+                        finally:
+                            agent_ns += time.perf_counter_ns() - agent_started_ns
+                            agent_calls += 1
                 except BaseException as exc:
                     error_side = (
                         "candidate_error"
@@ -474,14 +489,15 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     break
 
                 selection_count += 1
-                trace.append(
-                    {
-                        "step": step,
-                        "state": summary,
-                        "observation": observation,
-                        "action": action,
-                    }
-                )
+                trace_entry = {
+                    "step": step,
+                    "state": summary,
+                    "observation": observation,
+                    "action": action,
+                }
+                if forced_first_player:
+                    trace_entry["forced_by_harness"] = "first_player"
+                trace.append(trace_entry)
                 try:
                     engine_selected_ns = time.perf_counter_ns()
                     try:
@@ -489,6 +505,14 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     finally:
                         engine_select_ns += time.perf_counter_ns() - engine_selected_ns
                         engine_select_calls += 1
+                    if forced_first_player:
+                        actual_first = (observation.get("current") or {}).get("firstPlayer")
+                        expected_first = 0 if request.candidate_first else 1
+                        if actual_first != expected_first:
+                            raise RuntimeError(
+                                "official engine did not honor forced first player: "
+                                f"expected {expected_first}, got {actual_first}"
+                            )
                 except IndexError as exc:
                     error_side = (
                         "candidate_error"
@@ -604,6 +628,10 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
             _clear_cg_modules()
             sys.modules.update(parent_cg_modules)
             os.chdir(parent_cwd)
+            if previous_engine_library is None:
+                os.environ.pop("PTCG_CG_LIBRARY", None)
+            else:
+                os.environ["PTCG_CG_LIBRARY"] = previous_engine_library
     return result
 
 
@@ -630,6 +658,13 @@ def _request_from_payload(payload: dict[str, Any]) -> tuple[GameRequest, Path]:
         engine_turn_draw_limit=int(payload.get("engine_turn_draw_limit", 0)),
         visualize=bool(payload["visualize"]),
         seed=int(payload.get("seed", 0)),
+        policy_seed=int(payload.get("policy_seed", payload.get("seed", 0))),
+        search_seed=int(payload.get("search_seed", payload.get("seed", 0))),
+        engine_library=(
+            Path(payload["engine_library"])
+            if payload.get("engine_library") is not None
+            else None
+        ),
         arbitrary_legal_actions=bool(payload.get("arbitrary_legal_actions", False)),
     )
     return request, Path(payload["trace_path"])

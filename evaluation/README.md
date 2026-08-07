@@ -22,6 +22,15 @@ CPU worker 只执行未修改的 official engine 状态转移。Frozen 模式默
 `--candidate-device` 与 `--opponent-device` 显式选择 GPU；缺少双边共享 GPU inference 时 fail
 closed。
 
+本地 evaluation 默认先从未改动的 `engine/source/` 构建并锁定
+`engine/build/seeded_official/0001/libcg.so`，再把该绝对路径传给每个 worker；manifest 内的
+source、adapter、compiler 和 library hash 用于审计 `0001` 的实际内容。candidate 始终占物理 player 0，opponent 始终占 player 1；harness
+只在官方 `IS_FIRST` 选择上强制先后手，不交换 deck 槽位。每个 matchup 的相邻两局组成一对，
+共享 engine seed 和 Search seed，仅交换先后手；policy seed 按单局独立派生。报告 manifest
+记录 official source、adapter、动态库 hash、ABI、三套 seed 公式和换手合同。相同 runtime hash、
+两套 exact deck、三套 seed 与确定性策略动作会产生相同 trace；随机策略还必须使用记录的
+policy RNG 流。该保证是本地评测合同，不扩展到 Kaggle 托管 runtime。
+
 标准 checkpoint 验收使用 `--opponents all --games 10`，即 49×10=490 局、每套先后手各 5 局。
 48×2=96 局只用于快速 diagnostic。旧异构 Kaggle-derived pool 保留在 `arena/opponents/`，通过
 全局参数 `--pool opponents` 显式选择，只作为 secondary external-generalization evidence。
@@ -161,5 +170,6 @@ post_ko_relay、run_away_draw 和 library_pressure。
 trace。`--keep-temp` 仅用于调试，不能把临时文件当成长期资料；若同时需要可视化帧，显式
 增加 `--visualize`。正式长期复盘仍优先使用 Kaggle 官方 episode/replay。
 
-该框架在报告中记录 package hash、cg hash、参数和结果，但不承诺位级或完全
-随机过程复现；本地运行也不能替代 Kaggle 的正式策略评估。
+该框架在报告中记录 package hash、cg hash、seeded runtime hash、参数和结果。新 seeded
+runtime 合同承诺在相同平台/build、相同完整输入和相同动作序列下复现本地 engine trace；它不
+声称跨编译器位级一致，也不能替代 Kaggle 的正式策略评估。

@@ -5,9 +5,6 @@ import json
 from pathlib import Path
 import re
 import unittest
-from collections import Counter
-
-
 runtime = importlib.import_module(
     "train.0034_dragapult_third_large_model_rl.training.runtime"
 )
@@ -78,16 +75,19 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(sum(item.games for item in catalog), 256)
         self.assertTrue(all(len(item.deck) == 60 for item in catalog))
 
-    def test_formal_rollout_reuses_schedule_and_balances_seats_globally(self) -> None:
-        catalog = league.load_frozen_catalog()
+    def test_formal_rollout_samples_128_seeds_and_swaps_seats(self) -> None:
         jobs = full_runner.build_jobs(source_policy_update=0, seed=123, count=256)
 
         self.assertEqual(len(jobs), 256)
         self.assertEqual(sum(job.focal_first for job in jobs), 128)
-        self.assertEqual(
-            Counter(job.opponent_id for job in jobs),
-            Counter({item.deck_id: item.games for item in catalog}),
-        )
+        self.assertEqual(len({job.seed for job in jobs}), 128)
+        for first, second in zip(jobs[::2], jobs[1::2], strict=True):
+            self.assertTrue(first.focal_first)
+            self.assertFalse(second.focal_first)
+            self.assertEqual(first.seed, second.seed)
+            self.assertEqual(first.search_seed, second.search_seed)
+            self.assertEqual(first.opponent_deck, second.opponent_deck)
+            self.assertNotEqual(first.policy_seed, second.policy_seed)
 
     def test_full_semantic_focal_deck_is_exact_frozen_007(self) -> None:
         frozen_007 = next(

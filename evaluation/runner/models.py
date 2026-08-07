@@ -18,6 +18,9 @@ class GameRequest:
     visualize: bool
     engine_turn_draw_limit: int = 0
     seed: int = 0
+    policy_seed: int = 0
+    search_seed: int = 0
+    engine_library: Path | None = None
     arbitrary_legal_actions: bool = False
 
 
