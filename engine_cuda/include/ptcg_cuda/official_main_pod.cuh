@@ -902,6 +902,7 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_main_after_play_effect(
             OfficialArea::kPlaying,
             0,
             OfficialArea::kTrash,
+            false,
             false);
     }
     state->flow_flags &= static_cast<std::uint8_t>(
@@ -1572,6 +1573,7 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
                 OfficialArea::kHand,
                 static_cast<std::uint16_t>(selected.params[1]),
                 OfficialArea::kTool,
+                false,
                 false);
             OfficialCardStatePod* attached = official_pod_card(state, moved);
             target = official_pod_card(state, target_ref);
@@ -1579,6 +1581,14 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
                 return OfficialMainResult::kError;
             }
             attached->attach_move_counter = target->move_counter;
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kAttach,
+                player,
+                attached->card_id,
+                moved.index,
+                target->card_id,
+                target_ref.index);
             const std::int32_t play_id = attach_master->values[kCardPlayId];
             if (play_id > 0 && (state->continual_state & 1U) == 0) {
                 const OfficialSkillRule* skill = official_skill_rule(
@@ -1626,6 +1636,7 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
             OfficialArea::kHand,
             static_cast<std::uint16_t>(selected.params[1]),
             OfficialArea::kEnergy,
+            false,
             false);
         OfficialCardStatePod* attached = official_pod_card(state, moved);
         target = official_pod_card(state, target_ref);
@@ -1633,6 +1644,14 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
             return OfficialMainResult::kError;
         }
         attached->attach_move_counter = target->move_counter;
+        official_semantic_history_append(
+            state,
+            OfficialSemanticLogType::kAttach,
+            player,
+            attached->card_id,
+            moved.index,
+            target->card_id,
+            target_ref.index);
         state->turn_state |= kOfficialEnergyPlayedFlag;
         if (!official_pull_trigger(
                 state,
@@ -1790,6 +1809,12 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
             return OfficialMainResult::kError;
         }
         const std::int32_t card_type = master->values[kCardType];
+        official_semantic_history_append(
+            state,
+            OfficialSemanticLogType::kPlay,
+            player,
+            card->card_id,
+            ref.index);
         if (card_type == 0
             && master->values[kCardEvolutionType] == 1
             && ps.bench.count < official_main_bench_capacity(ps)) {
@@ -1799,6 +1824,7 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
                 OfficialArea::kHand,
                 static_cast<std::uint16_t>(hand_index),
                 OfficialArea::kBench,
+                false,
                 false);
             // Official MoveCard refreshes continual effects before emitting
             // ToBenchMyTurn and HandToBench.  AbilityPlay cards such as Meowth
@@ -1849,6 +1875,7 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
                     OfficialArea::kHand,
                     static_cast<std::uint16_t>(hand_index),
                     OfficialArea::kBench,
+                    false,
                     false);
                 if (!official_pod_ok(state)) return OfficialMainResult::kError;
                 return official_main_begin_refresh(state, rules);
@@ -1860,6 +1887,7 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
                 OfficialArea::kHand,
                 static_cast<std::uint16_t>(hand_index),
                 OfficialArea::kPlaying,
+                false,
                 false);
             if (!official_pod_ok(state)) return OfficialMainResult::kError;
             const OfficialSkillRule* play_skill = official_skill_rule(
@@ -2006,6 +2034,7 @@ PTCG_OFFICIAL_MAIN_HD inline OfficialMainResult official_apply_main_action(
                 OfficialArea::kHand,
                 static_cast<std::uint16_t>(hand_index),
                 OfficialArea::kStadium,
+                false,
                 false);
         } else {
             official_pod_fail(

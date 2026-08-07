@@ -155,6 +155,13 @@ PTCG_OFFICIAL_CORE_HD inline const OfficialCardStatePod* official_pod_card(
     return &state->cards[ref.index];
 }
 
+PTCG_OFFICIAL_CORE_HD inline std::int32_t official_pod_card_id_or_zero(
+    const OfficialStatePod* state,
+    OfficialCardRefPod ref) {
+    const OfficialCardStatePod* card = official_pod_card(state, ref);
+    return card == nullptr ? 0 : card->card_id;
+}
+
 PTCG_OFFICIAL_CORE_HD inline OfficialAreaRefPod official_pod_area_ref(
     OfficialStatePod* state,
     OfficialCardRefPod ref) {
@@ -382,7 +389,9 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_card(
     OfficialArea from_area,
     std::uint16_t from_index,
     OfficialArea to_area,
-    bool reverse = false) {
+    bool reverse = false,
+    bool log_semantic_move = true,
+    std::int32_t open_type = 0) {
     OfficialCardRefPod ref = official_pod_remove_zone_card(state, player, from_area, from_index);
     if (!official_pod_ok(state)) return {};
     if (!official_pod_push_zone_card(state, player, to_area, ref)) return {};
@@ -390,6 +399,29 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_card(
         ? OfficialArea::kDeck
         : to_area;
     official_pod_card_moved(state, ref, stored_area, reverse);
+    if (log_semantic_move) {
+        const OfficialCardStatePod* moved = official_pod_card(state, ref);
+        if (reverse || moved == nullptr || moved->card_id == 0) {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kMoveCardReverse,
+                player,
+                moved == nullptr ? 0 : moved->card_id,
+                ref.index,
+                static_cast<std::int32_t>(from_area),
+                static_cast<std::int32_t>(stored_area));
+        } else {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kMoveCard,
+                player,
+                moved->card_id,
+                ref.index,
+                static_cast<std::int32_t>(from_area),
+                static_cast<std::int32_t>(stored_area),
+                open_type);
+        }
+    }
     if (from_area == OfficialArea::kStadium) {
         state->last_stadium_player = static_cast<std::int8_t>(player);
     } else if (from_area == OfficialArea::kPrize
@@ -455,7 +487,9 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_ref(
     OfficialStatePod* state,
     OfficialCardRefPod ref,
     OfficialArea to_area,
-    bool reverse = false) {
+    bool reverse = false,
+    bool log_semantic_move = true,
+    std::int32_t open_type = 0) {
     OfficialCardStatePod* card = official_pod_card(state, ref);
     if (card == nullptr) return {};
     const std::int32_t player = card->player;
@@ -469,7 +503,9 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_ref(
         from_area,
         static_cast<std::uint16_t>(index),
         to_area,
-        reverse);
+        reverse,
+        log_semantic_move,
+        open_type);
 }
 
 template <std::size_t Capacity>
@@ -502,7 +538,8 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_ref_complete(
     OfficialCardRefPod ref,
     OfficialArea to_area,
     bool reverse = false,
-    bool with_attachments = false) {
+    bool with_attachments = false,
+    std::int32_t open_type = 0) {
     OfficialCardStatePod* card = official_pod_card(state, ref);
     if (card == nullptr) return {};
     const OfficialArea from_area = static_cast<OfficialArea>(card->area);
@@ -511,7 +548,8 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_ref_complete(
     const bool leaves_in_play =
         (from_area == OfficialArea::kActive && to_area != OfficialArea::kBench)
         || (from_area == OfficialArea::kBench && to_area != OfficialArea::kActive);
-    const OfficialCardRefPod moved = official_pod_move_ref(state, ref, to_area, reverse);
+    const OfficialCardRefPod moved = official_pod_move_ref(
+        state, ref, to_area, reverse, true, open_type);
     if (!official_pod_ok(state) || !leaves_in_play) return moved;
 
     OfficialPlayerStatePod* ps = &state->players[player];
@@ -572,6 +610,14 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_switch_active(
     }
     const OfficialCardRefPod active = ps->active.values[0];
     const OfficialCardRefPod bench = ps->bench.values[bench_index];
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kSwitch,
+        player,
+        official_pod_card_id_or_zero(state, active),
+        active.index,
+        official_pod_card_id_or_zero(state, bench),
+        bench.index);
     ps->active.values[0] = bench;
     ps->bench.values[bench_index] = active;
     official_pod_clear_special_conditions(state, player);
@@ -616,13 +662,20 @@ PTCG_OFFICIAL_CORE_HD inline void official_pod_shuffle(
 
 PTCG_OFFICIAL_CORE_HD inline void official_pod_shuffle_deck(
     OfficialStatePod* state,
-    std::int32_t player) {
+    std::int32_t player,
+    bool log_semantic_shuffle = true) {
     if (player < 0 || player > 1) {
         official_pod_fail(state, OfficialPodError::kInvalidPlayer, player);
         return;
     }
     OfficialPlayerStatePod* ps = &state->players[player];
     official_pod_shuffle(ps->deck.values, ps->deck.count, &state->rng);
+    if (log_semantic_shuffle) {
+        official_semantic_history_append(
+            state,
+            OfficialSemanticLogType::kShuffle,
+            player);
+    }
     if (ps->deck.count > 0) official_pod_mark_changed(state);
 }
 
@@ -638,17 +691,38 @@ PTCG_OFFICIAL_CORE_HD inline std::int32_t official_pod_draw(
     std::int32_t drawn = 0;
     while (drawn < requested && ps->deck.count > 0 && official_pod_ok(state)) {
         const std::uint16_t top = static_cast<std::uint16_t>(ps->deck.count - 1);
-        official_pod_move_card(
-            state, player, OfficialArea::kDeck, top, OfficialArea::kHand, false);
+        const OfficialCardRefPod ref = official_pod_move_card(
+            state,
+            player,
+            OfficialArea::kDeck,
+            top,
+            OfficialArea::kHand,
+            false,
+            false);
+        if (official_pod_ok(state)) {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kDraw,
+                player,
+                official_pod_card_id_or_zero(state, ref),
+                ref.index);
+        }
         ++drawn;
     }
     if (drawn > 0) official_pod_mark_changed(state);
     return drawn;
 }
 
-PTCG_OFFICIAL_CORE_HD inline bool official_pod_coin(OfficialStatePod* state) {
+PTCG_OFFICIAL_CORE_HD inline bool official_pod_coin(
+    OfficialStatePod* state,
+    std::int32_t player) {
     const bool head = (official_mt19937_next(&state->rng) % 2U) == 0U;
     if (head) ++state->coin_head_count;
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kCoin,
+        player,
+        head ? 1 : 0);
     return head;
 }
 
@@ -672,9 +746,21 @@ PTCG_OFFICIAL_CORE_HD inline std::int32_t official_pod_add_damage(
     OfficialStatePod* state,
     const OfficialRulePackView& rules,
     OfficialCardRefPod ref,
-    std::int32_t damage) {
+    std::int32_t damage,
+    bool put_damage_counter = false) {
     OfficialCardStatePod* card = official_pod_card(state, ref);
-    if (card == nullptr || damage <= 0) return 0;
+    if (card == nullptr) return 0;
+    if (damage <= 0) {
+        official_semantic_history_append(
+            state,
+            OfficialSemanticLogType::kHpChange,
+            card->player,
+            card->card_id,
+            ref.index,
+            0,
+            put_damage_counter ? 1 : 0);
+        return 0;
+    }
     const std::int32_t before = card->damage;
     const std::int32_t max_hp = official_pod_max_hp(state, rules, ref);
     card->damage += damage;
@@ -682,6 +768,14 @@ PTCG_OFFICIAL_CORE_HD inline std::int32_t official_pod_add_damage(
         card->damage = max_hp;
         official_pod_set_card_runtime_flag(card, kCardKo);
     }
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kHpChange,
+        card->player,
+        card->card_id,
+        ref.index,
+        -damage,
+        put_damage_counter ? 1 : 0);
     return card->damage - before;
 }
 
@@ -691,7 +785,7 @@ PTCG_OFFICIAL_CORE_HD inline std::int32_t official_pod_heal(
     std::int32_t amount,
     bool record_turn_heal = false) {
     OfficialCardStatePod* card = official_pod_card(state, ref);
-    if (card == nullptr || amount <= 0) return 0;
+    if (card == nullptr || amount < 0) return 0;
     const std::int32_t healed = amount < card->damage ? amount : card->damage;
     card->damage -= healed;
     if (card->damage == 0) card->runtime_flags &= ~static_cast<std::uint64_t>(kCardKo);
@@ -705,6 +799,14 @@ PTCG_OFFICIAL_CORE_HD inline std::int32_t official_pod_heal(
                 OfficialPodError::kTurnRecordOverflow);
         }
     }
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kHpChange,
+        card->player,
+        card->card_id,
+        ref.index,
+        healed,
+        0);
     return healed;
 }
 
@@ -774,6 +876,13 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_poison(
             *active, OfficialBadStatus::kNone)) return false;
     OfficialPlayerStatePod* ps = &state->players[player];
     if (official_pod_poison_counter(*ps) == counters) return false;
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kPoisoned,
+        player,
+        0,
+        active->card_id,
+        state->players[player].active.values[0].index);
     official_pod_set_poison_counter(ps, counters);
     official_pod_mark_changed(state);
     return true;
@@ -787,6 +896,13 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_burn(
             *active, OfficialBadStatus::kNone)) return false;
     OfficialPlayerStatePod* ps = &state->players[player];
     if (official_pod_burned(*ps)) return false;
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kBurned,
+        player,
+        0,
+        active->card_id,
+        state->players[player].active.values[0].index);
     official_pod_set_burned(ps, true);
     official_pod_mark_changed(state);
     return true;
@@ -800,6 +916,19 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_set_status(
     if (active == nullptr || official_pod_blocks_special_condition(*active, status)) return false;
     OfficialPlayerStatePod* ps = &state->players[player];
     if (official_pod_bad_status(*ps) == status) return false;
+    OfficialSemanticLogType log_type = OfficialSemanticLogType::kAsleep;
+    if (status == OfficialBadStatus::kParalyzed) {
+        log_type = OfficialSemanticLogType::kParalyzed;
+    } else if (status == OfficialBadStatus::kConfused) {
+        log_type = OfficialSemanticLogType::kConfused;
+    }
+    official_semantic_history_append(
+        state,
+        log_type,
+        player,
+        0,
+        active->card_id,
+        state->players[player].active.values[0].index);
     official_pod_set_bad_status(ps, status);
     official_pod_mark_changed(state);
     return true;
@@ -814,6 +943,43 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_clear_special_conditions(
     }
     OfficialPlayerStatePod* ps = &state->players[player];
     const bool changed = ps->active_state != 0;
+    const OfficialCardRefPod active_ref = ps->active.count > 0
+        ? ps->active.values[0]
+        : OfficialCardRefPod{};
+    const OfficialCardStatePod* active = ps->active.count > 0
+        ? official_pod_card(state, active_ref)
+        : nullptr;
+    if (active != nullptr) {
+        const OfficialBadStatus status = official_pod_bad_status(*ps);
+        if (status != OfficialBadStatus::kNone) {
+            OfficialSemanticLogType log_type = OfficialSemanticLogType::kAsleep;
+            if (status == OfficialBadStatus::kParalyzed) {
+                log_type = OfficialSemanticLogType::kParalyzed;
+            } else if (status == OfficialBadStatus::kConfused) {
+                log_type = OfficialSemanticLogType::kConfused;
+            }
+            official_semantic_history_append(
+                state, log_type, player, 1, active->card_id, active_ref.index);
+        }
+        if (official_pod_poison_counter(*ps) > 0) {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kPoisoned,
+                player,
+                1,
+                active->card_id,
+                active_ref.index);
+        }
+        if (official_pod_burned(*ps)) {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kBurned,
+                player,
+                1,
+                active->card_id,
+                active_ref.index);
+        }
+    }
     ps->active_state = 0;
     // Official ClearSpecialCondition mutates the player's status fields without
     // touching State::changed. Effect callers that expose this as an instant
@@ -833,6 +999,11 @@ PTCG_OFFICIAL_CORE_HD inline void official_pod_set_result(
         state->game_result = static_cast<std::uint8_t>(OfficialGameResult::kDraw);
     }
     state->finish_reason = static_cast<std::uint8_t>(reason);
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kResult,
+        state->game_result,
+        static_cast<std::int32_t>(reason));
 }
 
 PTCG_OFFICIAL_CORE_HD inline bool official_pod_finish_check(OfficialStatePod* state) {

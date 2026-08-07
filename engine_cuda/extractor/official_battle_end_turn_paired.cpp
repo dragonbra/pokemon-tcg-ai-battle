@@ -176,10 +176,11 @@ void initialize_official_battle(
     ApiData* battle,
     const std::vector<std::uint16_t>& deck0,
     const std::vector<std::uint16_t>& deck1,
-    std::uint64_t seed) {
+    std::uint64_t seed,
+    bool record_log = false) {
     GameConfig config{};
     config.seed = static_cast<std::uint32_t>(seed);
-    config.recordLog = false;
+    config.recordLog = record_log;
     config.deviceRand = false;
     for (std::size_t index = 0; index < kDeckSize; ++index) {
         config.decks[0].cards[index] = deck0[index];
@@ -1096,9 +1097,11 @@ BattleReplayStats run_seed(
     const OfficialRulePackView& rules,
     std::uint64_t seed,
     std::uint32_t decision_limit,
-    BattleReplayPolicy policy) {
+    BattleReplayPolicy policy,
+    std::ostream* trace_output = nullptr) {
     ApiData official;
-    initialize_official_battle(&official, deck0, deck1, seed);
+    initialize_official_battle(
+        &official, deck0, deck1, seed, trace_output != nullptr);
     const std::uint64_t setup_rng_draws = count_rng_draws(seed, official.game.rng);
     OfficialStatePod pod{};
     OfficialBridgeResult bridge = bridge_official_state(
@@ -1114,10 +1117,28 @@ BattleReplayStats run_seed(
 
     BattleReplayStats stats{};
     BattleReplayDriverState driver{};
+    std::array<int, 2> trace_log_index{};
     while (!official.state.isFinish()) {
         if (stats.decisions >= decision_limit) {
             throw std::runtime_error(
                 "decision limit exceeded for seed=" + std::to_string(seed));
+        }
+        std::string actor_observation;
+        if (trace_output != nullptr) {
+            const int actor = official.state.selectPlayer;
+            if (actor < 0 || actor >= static_cast<int>(trace_log_index.size())) {
+                throw std::runtime_error("semantic trace has invalid actor");
+            }
+            const int log_start = trace_log_index[actor];
+            trace_log_index[actor] = static_cast<int>(official.state.logs.size());
+            official.jsonBuilder.clear();
+            ToJsonApi(
+                official.state,
+                official.jsonBuilder,
+                log_start);
+            const auto& json = official.jsonBuilder.buf;
+            actor_observation.assign(
+                reinterpret_cast<const char*>(json.data()), json.size());
         }
         int official_index = -1;
         bool basic_play = false;
@@ -1257,6 +1278,18 @@ BattleReplayStats run_seed(
         }
         if (is_coverage_policy(policy)) {
             record_coverage_choice(official.state, coverage_choice, &stats);
+        }
+        if (trace_output != nullptr) {
+            *trace_output
+                << "{\"seed\":" << seed
+                << ",\"decision\":" << stats.decisions
+                << ",\"actor_observation\":" << actor_observation
+                << ",\"ordered_action\":[";
+            for (std::size_t index = 0; index < official_selected.size(); ++index) {
+                if (index != 0) *trace_output << ',';
+                *trace_output << official_selected[index];
+            }
+            *trace_output << "]}\n";
         }
         const std::string action = selected_action_sequence(pod, official_selected);
         const int official_error = ApiSelect(
@@ -1414,6 +1447,7 @@ int main(int argc, char** argv) {
         std::string rules_path;
         std::string deck0_path;
         std::string deck1_path;
+        std::string trace_jsonl_path;
         std::uint64_t seed_start = 1;
         std::uint64_t seed_count = 1;
         std::uint32_t decision_limit = 256;
@@ -1426,6 +1460,7 @@ int main(int argc, char** argv) {
             if (argument == "--rules") rules_path = argv[++index];
             else if (argument == "--deck0") deck0_path = argv[++index];
             else if (argument == "--deck1") deck1_path = argv[++index];
+            else if (argument == "--trace-jsonl") trace_jsonl_path = argv[++index];
             else if (argument == "--seed-start") {
                 seed_start = std::stoull(argv[++index]);
             } else if (argument == "--seed-count") {
@@ -1451,6 +1486,14 @@ int main(int argc, char** argv) {
             rule_bytes.data());
         const std::vector<std::uint16_t> deck0 = read_deck(deck0_path);
         const std::vector<std::uint16_t> deck1 = read_deck(deck1_path);
+        std::ofstream trace_jsonl;
+        if (!trace_jsonl_path.empty()) {
+            trace_jsonl.open(trace_jsonl_path, std::ios::binary | std::ios::trunc);
+            if (!trace_jsonl) {
+                throw std::runtime_error(
+                    "cannot open semantic trace: " + trace_jsonl_path);
+            }
+        }
         std::uint64_t total_decisions = 0;
         std::uint64_t total_basic_plays = 0;
         std::uint64_t total_basic_energy_attaches = 0;
@@ -1479,7 +1522,8 @@ int main(int argc, char** argv) {
                 rules,
                 seed_start + offset,
                 decision_limit,
-                policy);
+                policy,
+                trace_jsonl.is_open() ? &trace_jsonl : nullptr);
             total_decisions += stats.decisions;
             total_basic_plays += stats.basic_plays;
             total_basic_energy_attaches += stats.basic_energy_attaches;
@@ -1549,6 +1593,8 @@ int main(int argc, char** argv) {
             << ",\"draws\":" << total_draws
             << ",\"unfinished_battles\":" << total_unfinished
             << ",\"outcome_mismatches\":0"
+            << ",\"semantic_trace_records\":"
+            << (trace_jsonl.is_open() ? total_decisions : 0)
             << ",\"state_abi\":" << kOfficialStateAbiVersion
             << ",\"state_bytes\":" << sizeof(OfficialStatePod)
             << ",\"canonical_byte_mismatches\":0}\n";

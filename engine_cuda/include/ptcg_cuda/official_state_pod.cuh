@@ -5,6 +5,7 @@
 #include <type_traits>
 
 #include "ptcg_cuda/official_rng.cuh"
+#include "ptcg_cuda/official_semantic_history.cuh"
 
 #if defined(__CUDACC__)
 #define PTCG_OFFICIAL_HD __host__ __device__
@@ -422,7 +423,10 @@ struct alignas(64) OfficialStatePod {
     OfficialPodList<OfficialCardRefPod, 2> playing{};
     OfficialPodList<OfficialCardRefPod, 9> check_list{};
     OfficialPlayerStatePod players[2]{};
-    std::int32_t log_index[2]{};
+    union {
+        std::int32_t log_index[2];
+        OfficialSemanticHistoryDeviceView* semantic_history;
+    };
     OfficialCardStatePod cards[kOfficialCardCapacity]{};
 
     OfficialPodList<OfficialSelectOptionPod, kOfficialOptionCapacity> options{};
@@ -447,6 +451,319 @@ struct alignas(64) OfficialStatePod {
     OfficialBranchCoveragePod branch_coverage{};
 #endif
 };
+
+PTCG_OFFICIAL_HD inline bool official_semantic_history_enabled(
+    const OfficialStatePod* state) {
+    return state != nullptr
+        && (state->abi_version & kOfficialSemanticHistoryEnabled) != 0;
+}
+
+PTCG_OFFICIAL_HD inline OfficialSemanticHistoryDeviceView*
+official_semantic_history_view(OfficialStatePod* state) {
+    if (!official_semantic_history_enabled(state)) return nullptr;
+    return state->semantic_history;
+}
+
+PTCG_OFFICIAL_HD inline void official_semantic_history_bind(
+    OfficialStatePod* state,
+    OfficialSemanticHistoryDeviceView* view) {
+    if (state == nullptr) return;
+    state->semantic_history = view;
+    state->abi_version = official_state_abi_base(state->abi_version)
+        | kOfficialSemanticHistoryEnabled;
+}
+
+PTCG_OFFICIAL_HD inline std::uint32_t official_semantic_history_lane(
+    const OfficialSemanticHistoryDeviceView* view,
+    const OfficialStatePod* state) {
+    if (view == nullptr || state == nullptr || view->states_base == nullptr) {
+        return 0;
+    }
+    return static_cast<std::uint32_t>(state - view->states_base);
+}
+
+PTCG_OFFICIAL_HD inline std::size_t official_semantic_history_slot_offset(
+    const OfficialSemanticHistoryDeviceView* view,
+    std::uint32_t lane,
+    std::uint32_t slot) {
+    return (static_cast<std::size_t>(lane) * view->capacity) + slot;
+}
+
+PTCG_OFFICIAL_HD inline std::size_t official_semantic_actor_offset(
+    std::uint32_t lane,
+    std::uint32_t actor) {
+    return static_cast<std::size_t>(lane) * 2U + actor;
+}
+
+PTCG_OFFICIAL_HD inline std::size_t official_semantic_serial_offset(
+    std::uint32_t lane,
+    std::uint32_t actor,
+    std::uint32_t serial) {
+    return (official_semantic_actor_offset(lane, actor)
+        * kOfficialSemanticSerialCapacity) + serial;
+}
+
+PTCG_OFFICIAL_HD inline void official_semantic_history_clear_lane(
+    OfficialStatePod* state) {
+    OfficialSemanticHistoryDeviceView* view = official_semantic_history_view(state);
+    if (view == nullptr) return;
+    const std::uint32_t lane = official_semantic_history_lane(view, state);
+    if (lane >= view->batch_size) return;
+    view->total_count[lane] = 0;
+    view->write_index[lane] = 0;
+    for (std::uint32_t actor = 0; actor < 2; ++actor) {
+        const std::size_t actor_offset = official_semantic_actor_offset(
+            lane, actor);
+        view->deck_membership_known[actor_offset] = 0;
+        view->prize_membership_known[actor_offset] = 0;
+        view->deck_order_known[actor_offset] = 0;
+        view->deck_source_event[actor_offset] = 0;
+        view->prize_source_event[actor_offset] = 0;
+        view->unknown_opponent_hand[actor_offset] = 0;
+        view->possible_hand_lower[actor_offset] = 0;
+        view->possible_hand_upper[actor_offset] = 0;
+        for (std::uint32_t serial = 0;
+             serial < kOfficialSemanticSerialCapacity;
+             ++serial) {
+            const std::size_t serial_offset = official_semantic_serial_offset(
+                lane, actor, serial);
+            view->known_opponent_hand[serial_offset] = 0;
+            view->possible_opponent_hand[serial_offset] = 0;
+            view->remembered_opponent_cards[serial_offset] = 0;
+        }
+    }
+    for (std::uint32_t slot = 0; slot < view->capacity; ++slot) {
+        const std::size_t offset = official_semantic_history_slot_offset(
+            view,
+            lane,
+            slot);
+        view->log_type[offset] = 0;
+        view->param_count[offset] = 0;
+        for (std::uint32_t index = 0;
+             index < kOfficialSemanticHistoryParamCapacity;
+             ++index) {
+            view->params[
+                offset * kOfficialSemanticHistoryParamCapacity + index] = 0;
+        }
+    }
+}
+
+PTCG_OFFICIAL_HD inline bool official_semantic_move_visible(
+    std::int32_t player,
+    std::int32_t observer,
+    std::int32_t open_type) {
+    return open_type == 0
+        || (open_type == 1 && player == observer)
+        || (open_type == 3 && observer == 0)
+        || (open_type == 4 && observer == 1);
+}
+
+PTCG_OFFICIAL_HD inline bool official_semantic_move_visible_for_observer(
+    std::int32_t player,
+    std::int32_t observer,
+    std::int32_t from_area,
+    std::int32_t to_area,
+    std::int32_t open_type) {
+    if (player != observer
+        && (from_area == static_cast<std::int32_t>(OfficialArea::kPrize)
+            || to_area == static_cast<std::int32_t>(OfficialArea::kPrize))) {
+        return false;
+    }
+    return official_semantic_move_visible(player, observer, open_type);
+}
+
+PTCG_OFFICIAL_HD inline void official_semantic_history_append_raw(
+    OfficialStatePod* state,
+    OfficialSemanticLogType type,
+    std::uint8_t param_count,
+    const std::int32_t* params) {
+    OfficialSemanticHistoryDeviceView* view = official_semantic_history_view(state);
+    if (view == nullptr || params == nullptr || view->capacity == 0) return;
+    const std::uint32_t lane = official_semantic_history_lane(view, state);
+    if (lane >= view->batch_size) return;
+    const std::uint64_t event_index = view->total_count[lane];
+    if (param_count >= 1 && params[0] >= 0 && params[0] <= 1) {
+        const std::uint32_t player = static_cast<std::uint32_t>(params[0]);
+        const std::size_t player_offset = official_semantic_actor_offset(
+            lane, player);
+        if (type == OfficialSemanticLogType::kShuffle) {
+            view->deck_order_known[player_offset] = 0;
+        } else if (type == OfficialSemanticLogType::kDraw && param_count >= 3) {
+            if (view->deck_membership_known[player_offset] != 0) {
+                view->deck_source_event[player_offset] = event_index;
+            }
+        } else if ((type == OfficialSemanticLogType::kMoveCard
+                || type == OfficialSemanticLogType::kMoveCardReverse)
+            && param_count >= 5) {
+            const std::int32_t from_area = params[3];
+            const std::int32_t to_area = params[4];
+            const bool visible_to_owner =
+                type == OfficialSemanticLogType::kMoveCard
+                    ? official_semantic_move_visible(
+                        params[0], params[0], param_count >= 6 ? params[5] : 0)
+                    : to_area != static_cast<std::int32_t>(OfficialArea::kPrize);
+            const bool touches_deck =
+                from_area == static_cast<std::int32_t>(OfficialArea::kDeck)
+                || to_area == static_cast<std::int32_t>(OfficialArea::kDeck);
+            const bool touches_prize =
+                from_area == static_cast<std::int32_t>(OfficialArea::kPrize)
+                || to_area == static_cast<std::int32_t>(OfficialArea::kPrize);
+            if (!visible_to_owner) {
+                if (touches_deck) {
+                    view->deck_membership_known[player_offset] = 0;
+                    view->deck_order_known[player_offset] = 0;
+                }
+                if (touches_prize) {
+                    view->prize_membership_known[player_offset] = 0;
+                }
+            } else {
+                if (touches_deck
+                    && view->deck_membership_known[player_offset] != 0) {
+                    view->deck_source_event[player_offset] = event_index;
+                }
+                if (to_area == static_cast<std::int32_t>(OfficialArea::kDeck)) {
+                    view->deck_order_known[player_offset] = 0;
+                }
+                if (touches_prize
+                    && view->prize_membership_known[player_offset] != 0) {
+                    view->prize_source_event[player_offset] = event_index;
+                }
+            }
+        }
+
+        const std::uint32_t observer = 1U - player;
+        const std::size_t observer_offset = official_semantic_actor_offset(
+            lane, observer);
+        const bool move_visible = type == OfficialSemanticLogType::kMoveCard
+            ? official_semantic_move_visible_for_observer(
+                player, static_cast<std::int32_t>(observer),
+                param_count >= 4 ? params[3] : -1,
+                param_count >= 5 ? params[4] : -1,
+                param_count >= 6 ? params[5] : 0)
+            : false;
+        // CausalKnowledge remembers every actor-visible log carrying the
+        // canonical cardId/serial pair, not only MoveCard rows.  The status
+        // rows use the API's isRecover placeholder before cardId/serial.
+        std::int32_t memory_serial = 0;
+        bool memory_identity = false;
+        if ((type == OfficialSemanticLogType::kMoveCard && move_visible
+                || type == OfficialSemanticLogType::kPlay
+                || type == OfficialSemanticLogType::kAttach
+                || type == OfficialSemanticLogType::kEvolve
+                || type == OfficialSemanticLogType::kDevolve
+                || type == OfficialSemanticLogType::kMoveAttached
+                || type == OfficialSemanticLogType::kAttack
+                || type == OfficialSemanticLogType::kHpChange)
+            && param_count >= 3) {
+            memory_serial = params[2];
+            memory_identity = true;
+        } else if ((type == OfficialSemanticLogType::kPoisoned
+                || type == OfficialSemanticLogType::kBurned
+                || type == OfficialSemanticLogType::kAsleep
+                || type == OfficialSemanticLogType::kParalyzed
+                || type == OfficialSemanticLogType::kConfused)
+            && param_count >= 4) {
+            memory_serial = params[3];
+            memory_identity = true;
+        }
+        if (memory_identity
+            && memory_serial > 0
+            && memory_serial < static_cast<std::int32_t>(
+                kOfficialSemanticSerialCapacity)) {
+            view->remembered_opponent_cards[
+                official_semantic_serial_offset(
+                    lane, observer, static_cast<std::uint32_t>(memory_serial))] = 1;
+        }
+        if (type == OfficialSemanticLogType::kDraw
+            || type == OfficialSemanticLogType::kDrawReverse) {
+            ++view->unknown_opponent_hand[observer_offset];
+        } else if (type == OfficialSemanticLogType::kMoveCard
+            && param_count >= 5 && move_visible) {
+            const std::int32_t serial = params[2];
+            const std::int32_t from_area = params[3];
+            const std::int32_t to_area = params[4];
+            if (serial > 0
+                && serial < static_cast<std::int32_t>(
+                    kOfficialSemanticSerialCapacity)) {
+                const std::size_t memory = official_semantic_serial_offset(
+                    lane, observer, static_cast<std::uint32_t>(serial));
+                if (from_area == static_cast<std::int32_t>(OfficialArea::kHand)) {
+                    if (view->known_opponent_hand[memory] != 0) {
+                        view->known_opponent_hand[memory] = 0;
+                    } else if (view->possible_opponent_hand[memory] != 0) {
+                        view->possible_opponent_hand[memory] = 0;
+                        if (view->possible_hand_lower[observer_offset] > 0) {
+                            --view->possible_hand_lower[observer_offset];
+                        }
+                        if (view->possible_hand_upper[observer_offset] > 0) {
+                            --view->possible_hand_upper[observer_offset];
+                        }
+                    } else if (view->unknown_opponent_hand[observer_offset] > 0) {
+                        --view->unknown_opponent_hand[observer_offset];
+                    }
+                }
+                if (to_area == static_cast<std::int32_t>(OfficialArea::kHand)) {
+                    view->known_opponent_hand[memory] = 1;
+                    view->possible_opponent_hand[memory] = 0;
+                }
+            }
+        } else if ((type == OfficialSemanticLogType::kMoveCard
+                || type == OfficialSemanticLogType::kMoveCardReverse)
+            && param_count >= 5) {
+            const std::int32_t from_area = params[3];
+            const std::int32_t to_area = params[4];
+            if (from_area == static_cast<std::int32_t>(OfficialArea::kHand)) {
+                std::uint32_t known_count = 0;
+                for (std::uint32_t serial = 1;
+                     serial < kOfficialSemanticSerialCapacity;
+                     ++serial) {
+                    const std::size_t memory = official_semantic_serial_offset(
+                        lane, observer, serial);
+                    if (view->known_opponent_hand[memory] == 0) continue;
+                    view->known_opponent_hand[memory] = 0;
+                    view->possible_opponent_hand[memory] = 1;
+                    ++known_count;
+                }
+                view->possible_hand_lower[observer_offset] =
+                    static_cast<std::uint16_t>(
+                        view->possible_hand_lower[observer_offset] + known_count);
+                view->possible_hand_upper[observer_offset] =
+                    static_cast<std::uint16_t>(
+                        view->possible_hand_upper[observer_offset] + known_count);
+                if (view->possible_hand_lower[observer_offset] > 0) {
+                    --view->possible_hand_lower[observer_offset];
+                }
+                if (view->unknown_opponent_hand[observer_offset] > 0) {
+                    --view->unknown_opponent_hand[observer_offset];
+                } else if (view->possible_hand_upper[observer_offset] > 0) {
+                    --view->possible_hand_upper[observer_offset];
+                }
+            }
+            if (to_area == static_cast<std::int32_t>(OfficialArea::kHand)) {
+                ++view->unknown_opponent_hand[observer_offset];
+            }
+        }
+    }
+    const std::uint32_t slot = view->write_index[lane] % view->capacity;
+    const std::size_t offset = official_semantic_history_slot_offset(
+        view,
+        lane,
+        slot);
+    view->log_type[offset] = static_cast<std::uint8_t>(type);
+    const std::uint8_t bounded_param_count =
+        param_count > kOfficialSemanticHistoryParamCapacity
+            ? static_cast<std::uint8_t>(kOfficialSemanticHistoryParamCapacity)
+            : param_count;
+    view->param_count[offset] = bounded_param_count;
+    for (std::uint32_t index = 0;
+         index < kOfficialSemanticHistoryParamCapacity;
+         ++index) {
+        view->params[offset * kOfficialSemanticHistoryParamCapacity + index] =
+            index < bounded_param_count ? params[index] : 0;
+    }
+    view->write_index[lane] = (slot + 1U) % view->capacity;
+    ++view->total_count[lane];
+}
 
 #if defined(PTCG_OFFICIAL_BRANCH_COVERAGE)
 PTCG_OFFICIAL_HD inline void official_mark_branch_coverage(

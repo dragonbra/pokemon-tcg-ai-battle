@@ -652,6 +652,10 @@ PTCG_OFFICIAL_TURN_HD inline OfficialTurnFlowResult official_finish_turn_start(
     state->turn_histories[1] = state->turn_histories[0];
     state->turn_histories[0] = OfficialTurnHistoryPod{};
     const std::int32_t active_player = official_active_player(*state);
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kTurnStart,
+        active_player);
     official_card_turn_start_zone(state, state->stadium, active_player);
     const std::int32_t order[2] = {state->first_player, 1 - state->first_player};
     for (int ordinal = 0; ordinal < 2; ++ordinal) {
@@ -807,6 +811,10 @@ PTCG_OFFICIAL_TURN_HD inline OfficialTurnFlowResult official_begin_turn_end(
     }
     if (official_pod_finish_check(state)) return OfficialTurnFlowResult::kComplete;
     const std::int32_t active_player = official_active_player(*state);
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kTurnEnd,
+        active_player);
     if (!official_queue_turn_end_triggers(state, rules, active_player)) {
         return OfficialTurnFlowResult::kError;
     }

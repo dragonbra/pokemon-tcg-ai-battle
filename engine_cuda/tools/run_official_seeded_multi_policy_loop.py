@@ -42,6 +42,10 @@ from ptcg_cuda_engine.policy_pool import (  # noqa: E402
     MAX_POLICIES,
     PolicyPoolManifest,
 )
+from ptcg_cuda_engine.semantic0031_bridge import (  # noqa: E402
+    Semantic0031DeviceAdapter,
+    load_semantic0031_package,
+)
 from pure_policy_model_v1 import load_policy_checkpoint  # noqa: E402
 from run_official_seeded_reset_paired import read_deck  # noqa: E402
 
@@ -75,6 +79,7 @@ ERROR_NAMES = {
 }
 SUPPORTED_CODECS = {
     "foundation_0020_codec_v1",
+    "semantic0031_codec_v2",
     "policy_codec_v1",
     "idonly_codec_v1",
     "marnie_prize_codec_v4",
@@ -363,7 +368,12 @@ def load_adapters(
         effective_math_mode = overrides.get(policy_name, math_mode)
         directory = (WORKSPACE_ROOT / str(row["directory"])).resolve()
         checkpoint = (directory / str(row["checkpoint"])).resolve()
-        deck_path = directory / "deck.csv"
+        declared_deck = row.get("deck")
+        deck_path = (
+            (WORKSPACE_ROOT / str(declared_deck)).resolve()
+            if declared_deck is not None
+            else directory / "deck.csv"
+        )
         for required in (checkpoint, deck_path):
             if not required.is_file():
                 raise FileNotFoundError(required)
@@ -418,6 +428,32 @@ def load_adapters(
             adapter = StaticBatchFieldsDeviceAdapter(
                 adapter,
                 foundation_r15_static_fields(deck, device),
+            )
+        elif codec == "semantic0031_codec_v2":
+            if effective_math_mode in {"bf16", "fp16"}:
+                raise ValueError("semantic0031_codec_v2 keeps the foundation model in FP32/TF32")
+            cache_key = (codec, adapter_name, str(checkpoint), effective_math_mode)
+            cached = model_cache.get(cache_key)
+            if cached is None:
+                package = load_semantic0031_package(
+                    directory,
+                    device=device,
+                    trusted_directory=True,
+                    checkpoint_override=checkpoint,
+                )
+                config = package.config
+                model = package.model
+                prepare_model(model, effective_math_mode)
+                model_cache[cache_key] = (package, config)
+                loader_stats["model_instances_loaded"] += 1
+            else:
+                package, config = cached
+                model = package.model
+                loader_stats["model_cache_hits"] += 1
+            adapter = Semantic0031DeviceAdapter(
+                model,
+                deck,
+                max_select=min(64, max_select),
             )
         elif codec in {"idonly_codec_v1", "marnie_prize_codec_v4"}:
             source = directory / "idonly_policy.py"
@@ -816,6 +852,7 @@ def main() -> int:
                 encoded_by_codec,
                 acting_policy_ids,
                 ready,
+                engine=engine,
                 policy_profile=policy_profile,
             ),
         )

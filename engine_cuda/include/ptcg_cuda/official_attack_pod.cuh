@@ -813,7 +813,11 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_enter_select
     }
     if ((attack->flags & kAttackCopyEnemyCoin) != 0) {
         state->coin_head_count = 0;
-        if (!official_pod_coin(state)) return official_attack_after_body(state, rules);
+        const OfficialCardStatePod* attacker = official_pod_card(state, state->attacker);
+        if (attacker == nullptr
+            || !official_pod_coin(state, attacker->player)) {
+            return official_attack_after_body(state, rules);
+        }
     }
     return official_attack_prepare_special(state, rules);
 }
@@ -853,6 +857,13 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_begin_attack(
     state->attack_flow_flags = 0;
 
     const OfficialCardStatePod* attacker = official_pod_card(state, attacker_ref);
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kAttack,
+        attacker->player,
+        attacker->card_id,
+        attacker_ref.index,
+        attack_id);
     const std::uint8_t turn_flags = official_attack_this_turn_flags(*attacker);
     std::int32_t required_heads = 0;
     if ((turn_flags & (1U << 5U)) != 0) required_heads = 2;
@@ -860,7 +871,7 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_begin_attack(
     if (required_heads > 0) {
         state->coin_head_count = 0;
         for (std::int32_t index = 0; index < required_heads; ++index) {
-            official_pod_coin(state);
+            official_pod_coin(state, attacker->player);
         }
         if (state->coin_head_count < required_heads) {
             return official_attack_after_body(state, rules);
@@ -871,7 +882,7 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_begin_attack(
         && state->players[attacker->player].active.count > 0
         && state->players[attacker->player].active.values[0] == attacker_ref) {
         state->coin_head_count = 0;
-        if (!official_pod_coin(state)) {
+        if (!official_pod_coin(state, attacker->player)) {
             official_pod_add_damage(state, rules, attacker_ref, 30);
             return official_attack_after_body(state, rules);
         }
@@ -1028,6 +1039,13 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_resume_attack(
         return OfficialAttackResult::kError;
     }
     state->current_attack_id = selected_attack_id;
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kAttack,
+        attacker->player,
+        attacker->card_id,
+        state->attacker.index,
+        selected_attack_id);
     if (!official_attack_state_condition(
             state, rules, *attacker, *selected_attack, immediate_source_id)) {
         return official_attack_after_body(state, rules);
@@ -1072,6 +1090,13 @@ official_resume_regular_attack_selection(
     official_clear_effect_selection(state);
     state->current_attack_id = selected.params[0];
     state->source_attack_id = source_attack_id;
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kAttack,
+        attacker->player,
+        attacker->card_id,
+        state->attacker.index,
+        selected.params[0]);
     if (!official_attack_state_condition(
             state, rules, *attacker, *attack, source_attack_id)) {
         return official_attack_after_body(state, rules);

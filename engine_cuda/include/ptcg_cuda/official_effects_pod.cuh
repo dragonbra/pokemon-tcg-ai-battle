@@ -143,7 +143,7 @@ PTCG_OFFICIAL_EFFECT_HD inline std::int32_t official_effect_roll_coins(
     std::int32_t count) {
     state->coin_head_count = 0;
     for (std::int32_t index = 0; index < count; ++index) {
-        official_pod_coin(state);
+        official_pod_coin(state, state->effect_state.ability.use_player);
     }
     return state->coin_head_count;
 }
@@ -151,7 +151,8 @@ PTCG_OFFICIAL_EFFECT_HD inline std::int32_t official_effect_roll_coins(
 PTCG_OFFICIAL_EFFECT_HD inline std::int32_t official_effect_roll_until_tail(
     OfficialStatePod* state) {
     state->coin_head_count = 0;
-    while (state->coin_head_count < 4096 && official_pod_coin(state)) {}
+    while (state->coin_head_count < 4096
+        && official_pod_coin(state, state->effect_state.ability.use_player)) {}
     if (state->coin_head_count == 4096) {
         official_pod_fail(state, OfficialPodError::kInterpreterBudget, 4096);
     }
@@ -678,13 +679,14 @@ PTCG_OFFICIAL_EFFECT_HD inline void official_effect_move_targets(
     OfficialStatePod* state,
     OfficialArea destination,
     bool reverse,
-    bool with_attachments) {
+    bool with_attachments,
+    std::int32_t open_type = 0) {
     for (std::uint16_t index = 0; index < state->targets.count && official_pod_ok(state); ++index) {
         const OfficialAreaRefPod target = state->targets.values[index];
         if (!official_pod_area_ref_valid(state, target)) continue;
         official_pod_mark_changed(state);
         official_pod_move_ref_complete(
-            state, target.card, destination, reverse, with_attachments);
+            state, target.card, destination, reverse, with_attachments, open_type);
     }
 }
 
@@ -740,16 +742,48 @@ PTCG_OFFICIAL_EFFECT_HD inline bool official_effect_attach_card(
         return false;
     }
     const std::int32_t attach_counter = target->move_counter;
+    const std::int32_t player = attached->player;
+    const std::int32_t attached_card_id = attached->card_id;
+    const std::int32_t target_card_id = target->card_id;
     const OfficialArea destination = master->values[kCardType] == 2
         ? OfficialArea::kTool : OfficialArea::kEnergy;
-    official_pod_move_ref(state, attach_ref, destination, false);
+    official_pod_move_ref(state, attach_ref, destination, false, false);
     attached = official_pod_card(state, attach_ref);
     if (attached != nullptr && official_pod_ok(state)) {
         attached->attach_move_counter = attach_counter;
+        official_semantic_history_append(
+            state,
+            OfficialSemanticLogType::kAttach,
+            player,
+            attached_card_id,
+            attach_ref.index,
+            target_card_id,
+            target_ref.index);
         if (target_area == OfficialArea::kActive) state->attach_active = 1;
         return true;
     }
     return false;
+}
+
+PTCG_OFFICIAL_EFFECT_HD inline void official_effect_log_move_attached(
+    OfficialStatePod* state,
+    OfficialCardRefPod attached_ref,
+    OfficialCardRefPod target_ref) {
+    const OfficialCardStatePod* attached = official_pod_card(state, attached_ref);
+    const OfficialCardStatePod* target = official_pod_card(state, target_ref);
+    if (attached == nullptr || target == nullptr) return;
+    OfficialCardRefPod before_ref{};
+    official_find_attached_pokemon(*state, *attached, &before_ref);
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kMoveAttached,
+        target->player,
+        attached->card_id,
+        attached_ref.index,
+        official_pod_card_id_or_zero(state, before_ref),
+        before_ref.index,
+        target->card_id,
+        target_ref.index);
 }
 
 PTCG_OFFICIAL_EFFECT_HD inline bool official_effect_evolve_card(
@@ -774,6 +808,14 @@ PTCG_OFFICIAL_EFFECT_HD inline bool official_effect_evolve_card(
 
     const std::int32_t move_counter = in_play->move_counter;
     const std::int32_t damage = in_play->damage;
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kEvolve,
+        evolution->player,
+        evolution->card_id,
+        evolution_ref.index,
+        in_play->card_id,
+        in_play_ref.index);
     official_pod_remove_zone_card(
         state,
         evolution->player,
@@ -857,6 +899,15 @@ PTCG_OFFICIAL_EFFECT_HD inline bool official_effect_devolve_card(
     const std::int32_t move_counter = current->move_counter;
     const std::int32_t damage = current->damage;
     const std::int32_t player_index = current->player;
+    const OfficialCardStatePod* pre_card = official_pod_card(state, pre_ref);
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kDevolve,
+        player_index,
+        pre_card == nullptr ? 0 : pre_card->card_id,
+        pre_ref.index,
+        current->card_id,
+        current_ref.index);
 
     official_pod_remove_zone_card(
         state,
@@ -909,6 +960,14 @@ PTCG_OFFICIAL_EFFECT_HD inline bool official_effect_transform_card(
     if (after_index < 0 || before_index < 0) return false;
     const std::uint32_t active_state = state->players[before->player].active_state;
     const std::int32_t after_card_id = after->card_id;
+    official_semantic_history_append(
+        state,
+        OfficialSemanticLogType::kChange,
+        before->player,
+        before->card_id,
+        before_ref.index,
+        after_card_id,
+        after_ref.index);
     official_pod_remove_zone_card(
         state, after->player, after_area, static_cast<std::uint16_t>(after_index));
     *after = *before;
@@ -1018,7 +1077,7 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
             official_effect_move_targets(state, OfficialArea::kHand, false, false);
             break;
         case OfficialEffectTypeId::kToHandReverse:
-            official_effect_move_targets(state, OfficialArea::kHand, false, false);
+            official_effect_move_targets(state, OfficialArea::kHand, false, false, 1);
             break;
         case OfficialEffectTypeId::kToHandWithAttach:
             official_effect_move_targets(state, OfficialArea::kHand, false, true);
@@ -1034,11 +1093,23 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
             break;
         case OfficialEffectTypeId::kToDeckReverse:
         case OfficialEffectTypeId::kLookToDeckReverse:
-            official_effect_move_targets(state, OfficialArea::kDeck, false, false);
+            official_effect_move_targets(
+                state,
+                OfficialArea::kDeck,
+                false,
+                false,
+                type == OfficialEffectTypeId::kLookToDeckReverse
+                    ? state->effect_state.ability.use_player + 3
+                    : 1);
             break;
         case OfficialEffectTypeId::kToDeckAndShuffle:
         case OfficialEffectTypeId::kToDeckReverseAndShuffle: {
-            official_effect_move_targets(state, OfficialArea::kDeck, false, false);
+            official_effect_move_targets(
+                state,
+                OfficialArea::kDeck,
+                false,
+                false,
+                type == OfficialEffectTypeId::kToDeckReverseAndShuffle ? 1 : 0);
             const std::uint8_t mask = official_effect_player_mask(state, rules, effect);
             for (int ordinal = 0; ordinal < 2; ++ordinal) {
                 const int player = official_effect_target_player(*state, mask, ordinal);
@@ -1051,12 +1122,12 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
             official_effect_move_targets(state, OfficialArea::kDeckBottom, false, false);
             break;
         case OfficialEffectTypeId::kToDeckBottomReverse:
-            official_effect_move_targets(state, OfficialArea::kDeckBottom, false, false);
+            official_effect_move_targets(state, OfficialArea::kDeckBottom, false, false, 1);
             break;
         case OfficialEffectTypeId::kToDeckBottomClose:
             official_pod_shuffle(
                 state->targets.values, state->targets.count, &state->rng);
-            official_effect_move_targets(state, OfficialArea::kDeckBottom, false, false);
+            official_effect_move_targets(state, OfficialArea::kDeckBottom, false, false, 2);
             break;
         case OfficialEffectTypeId::kToActiveAndTrashActive:
             if (state->targets.count == 1
@@ -1142,13 +1213,21 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                         == OfficialEffectTypeId::kLookDeckBottom
                         ? 0
                         : static_cast<std::uint16_t>(state->players[player].deck.count - 1);
+                    const std::int32_t open_type =
+                        type == OfficialEffectTypeId::kLookDeckReverse
+                        ? 2
+                        : (state->looking_player == 2
+                            ? 0
+                            : static_cast<std::int32_t>(state->looking_player) + 3);
                     official_pod_move_card(
                         state,
                         player,
                         OfficialArea::kDeck,
                         deck_index,
                         OfficialArea::kLooking,
-                        type == OfficialEffectTypeId::kLookDeckReverse);
+                        type == OfficialEffectTypeId::kLookDeckReverse,
+                        true,
+                        open_type);
                 }
             }
             break;
@@ -1177,7 +1256,8 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                         state,
                         rules,
                         target.card,
-                        damage);
+                        damage,
+                        true);
                 }
             }
             break;
@@ -1214,7 +1294,8 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                 if (!official_effect_blocks_damage_counter(
                         state, rules, target.card)) {
                     if (damage > 0) official_pod_mark_changed(state);
-                    official_pod_add_damage(state, rules, target.card, damage);
+                    official_pod_add_damage(
+                        state, rules, target.card, damage, true);
                 }
             }
             break;
@@ -1532,6 +1613,10 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                     OfficialCardStatePod* energy = official_pod_card(
                         state, state->selected_list.values[index]);
                     if (energy != nullptr) {
+                        official_effect_log_move_attached(
+                            state,
+                            state->selected_list.values[index],
+                            target.card);
                         energy->attach_move_counter = target_card->move_counter;
                         official_pod_mark_changed(state);
                     }
@@ -1558,6 +1643,8 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                         OfficialCardStatePod* energy = official_pod_card(state, attached);
                         OfficialCardStatePod* target_card = official_pod_card(state, target.card);
                         if (energy != nullptr && target_card != nullptr) {
+                            official_effect_log_move_attached(
+                                state, attached, target.card);
                             energy->attach_move_counter = target_card->move_counter;
                             official_pod_mark_changed(state);
                         }

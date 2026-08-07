@@ -274,6 +274,41 @@ RTX 3060/Windows Docker 建议使用 `--nvcc-threads 1` 控制主机内存峰值
 `state_mismatches=0`、`status_mismatches=0`、`outcome_mismatches=0`、
 `unfinished_battles=0`。本次报告包含 `draws=13`，与官方 CPU 引擎逐场一致。
 
+补充 Frozen51 镜像与随机策略门禁时，先生成 51 个镜像 case：
+
+```powershell
+python engine_cuda/tools/run_0022_deck40_official_parity.py `
+  --deck-root evaluation/arena/frozen `
+  --pair-mode mirrors `
+  --seed-start 2026080701 `
+  --seed-count 3 `
+  --decision-limit 512 `
+  --policy coverage-random-legal `
+  --skip-setup `
+  --skip-battle `
+  --output .tmp/evaluation/frozen51_mirrors_random_s2026080701_n3/manifest_summary.json
+```
+
+再使用对应的 `frozen51_mirrors_s2026080701_3/manifest.json` 运行 persistent
+Docker CUDA 矩阵：
+
+```powershell
+python engine_cuda/tools/run_official_battle_ordered_matrix_cuda.py `
+  --manifest engine_cuda/generated/private/official_3aaeaa92/frozen51_mirrors_s2026080701_3/manifest.json `
+  --seed-start 2026080701 `
+  --seed-count 3 `
+  --decision-limit 512 `
+  --policy coverage-random-legal `
+  --persistent-container `
+  --nvcc-threads 4 `
+  --image pytorch/pytorch:2.10.0-cuda13.0-cudnn9-devel `
+  --output .tmp/evaluation/frozen51_mirrors_random_s2026080701_n3/matrix.json
+```
+
+本次结果为 153 局、31,350 decisions，`state_mismatches=0`、
+`status_mismatches=0`、`outcome_mismatches=0`、`unfinished_battles=0`，其中 2 局为
+官方平局。该矩阵仍是有限 seed/policy 证据，新增牌组必须先经过同一 fail-closed audit。
+
 生成可提交的 Frozen51 支持摘要（原始 matrix artifact 仍保持 Git ignore）：
 
 ```powershell
@@ -322,7 +357,75 @@ PPO 可以只优化 learner decoder/value head，并让所有 ready lanes 共享
 encoder super-batch forward。对手与 learner 通过 `policy_id`/static deck fields 分行注入；
 不要为每个 opponent 复制完整 foundation model。
 
-## 10. 常见问题
+共享同一 semantic foundation package 时，pool row 可用相对仓库根目录的 `deck` 字段显式
+指定每个 policy 的 60-card deck；未提供时才回退到该 package 自己的 `deck.csv`。这样模型
+权重只加载一次，而引擎 reset 与 deck/static fields 仍按每个 policy 独立注入。
+
+## 10. 0031 semantic compact 模型桥接
+
+桥接入口是：
+
+```python
+import torch
+
+from ptcg_cuda_engine.semantic0031_bridge import (
+    Semantic0031DeviceAdapter,
+    load_semantic0031_package,
+)
+
+device = torch.device("cuda:0")
+package = load_semantic0031_package(
+    "bc_models/0031_mega_lopunny_ex_mega_froslass_pt0805_compact_fp16.tar.gz",
+    device,
+    checkpoint_override=(
+        "bc_models/semantic0031_0806_shared_prototype_fp32.pt"
+    ),
+)
+adapter = Semantic0031DeviceAdapter(package.model, package.deck)
+```
+
+加载器会先验证 archive SHA-256、checkpoint SHA-256、checkpoint schema、参数量、
+规范化 exact-deck hash 和 prototype 内容承诺，然后才导入包内代码。checkpoint 的 FP16
+仅是存储格式；运行时按原合同恢复为 FP32。RTX 上可开启 TF32 matmul，不要把模型权重改成
+FP16 后再声称与原模型数值合同相同。
+
+0806 的 `0031_compact_shared_prototype_fp32_v1` checkpoint 只保存一份 canonical
+prototype encoder；加载时把 state/option prototype 恢复为同一组参数别名，运行时仍是 FP32。
+
+完整 Docker CUDA gate：
+
+```powershell
+docker run --rm --gpus all `
+  -v "${PWD}:/workspace" `
+  -w /workspace `
+  pytorch/pytorch:2.10.0-cuda13.0-cudnn9-devel `
+  python engine_cuda/tools/run_0031_semantic_cuda_smoke.py `
+    --checkpoint bc_models/semantic0031_0806_shared_prototype_fp32.pt `
+    --batch 8 `
+    --warmup 2 `
+    --steps 256 `
+    --verify-option-cache
+```
+
+2026-08-06 的 RTX 3060 Laptop 验证结果为：31 局完成、1,186 次 learner model
+decisions、862 次 GPU first-legal opponent decisions、0 fallback、0 engine error、0
+minimum-selection overflow；总吞吐 99.29 decisions/s，终局吞吐 1.50 games/s，PyTorch
+峰值 allocated/reserved 约 291.4/842.0 MiB。`option_cache_reference_max_abs=0`，说明常驻
+prototype relation cache 与模型原始 materialized relation 计算在该真实 batch 上一致。
+
+独立的 `semantic0031_codec_v2` 从 `OfficialDeviceArena` 只编码实际 routed ready lanes；
+padding 和空 cohort 不再进入 codec 或 shared-foundation forward。它已提供逐卡 serial、
+option context/effect-card 关系和 64 条 arena-owned SoA causal history；24 种官方
+日志类型都有 CUDA hook 与张量字段映射。兼容用的 `policy_codec_v1_to_semantic0031_v2` 仍保持
+legal option 行号不变，并把源 codec 没有携带的事实标成 `UNKNOWN` 或 false mask。
+
+2026-08-07 的固定 seed/action CPU canonical lockstep 已覆盖完整 180-decision trace：整数、
+float、mask、relation 张量 exact，CUDA state error 为 0；FP32 logits 最大绝对误差为
+`7.152557373046875e-06`，容差失败和 greedy action 分叉均为 0。64-event causal ring 在
+156 个 wrap 后 decision 上继续保持一致，累计事件数最高为 344。该结果是有限轨迹证据，
+不等于穷举未来卡组、全部 seed 或全部随机策略路径。
+
+## 11. 常见问题
 
 ### 找不到 private rule pack
 

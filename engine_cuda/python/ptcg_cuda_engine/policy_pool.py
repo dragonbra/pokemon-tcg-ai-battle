@@ -553,6 +553,7 @@ class GPUResidentPolicyPool:
         acting_policy_ids: Any,
         ready_mask: Any,
         *,
+        engine: Any | None = None,
         policy_profile: dict[str, Any] | None = None,
     ) -> DeviceActionBatch:
         import torch
@@ -611,13 +612,68 @@ class GPUResidentPolicyPool:
             }
             for group in shared_groups:
                 codec = group[0].codec
-                if codec not in encoded_by_codec:
-                    raise KeyError(f"missing device codec batch: {codec}")
                 adapters = [self.adapters[policy.policy_id] for policy in group]
                 info = _static_shared_adapter_info(adapters[0])
                 if info is None:
                     raise ValueError("shared policy group lost its shared adapter info")
                 _key, adapter, _fields = info
+                semantic0031_v2_method = getattr(adapter, "act_device_semantic0031_v2", None)
+                if semantic0031_v2_method is None and codec not in encoded_by_codec:
+                    raise KeyError(f"missing device codec batch: {codec}")
+                if semantic0031_v2_method is not None:
+                    if engine is None:
+                        raise ValueError("semantic0031 v2 shared policy group requires engine")
+                    lane_parts = []
+                    for policy in group:
+                        route = routes[policy.policy_id]
+                        valid = route_mask[policy.policy_id]
+                        lane_parts.append(route[valid])
+                    lane_indices = torch.cat(lane_parts, dim=0).long()
+                    if lane_indices.numel() == 0:
+                        continue
+                    cohort = engine.encode_semantic0031_v2_lanes(lane_indices.contiguous())
+                    cohort["_route_mask"] = torch.ones_like(lane_indices, dtype=torch.bool)
+                    group_name = f"shared:{codec}:{len(group)}"
+                    started = start_profile()
+                    proposed, proposed_lengths = semantic0031_v2_method(cohort)
+                    stop_profile("adapter_wall_ms", group_name, started)
+                    action_min_count = cohort.get("action_min_count", cohort["min_count"])
+                    action_max_count = cohort.get("action_max_count", cohort["max_count"])
+                    started = start_profile()
+                    if getattr(adapter, "outputs_normalized", False):
+                        normalized, normalized_lengths = extend_normalized_actions_device(
+                            proposed,
+                            proposed_lengths,
+                            cohort["option_mask"],
+                            action_min_count,
+                            action_max_count,
+                            max_select=self.max_select,
+                        )
+                    else:
+                        normalized, normalized_lengths = normalize_actions_device(
+                            proposed,
+                            proposed_lengths,
+                            cohort["option_mask"],
+                            action_min_count,
+                            action_max_count,
+                            max_select=self.max_select,
+                        )
+                    stop_profile("postprocess_wall_ms", group_name, started)
+                    started = start_profile()
+                    output.scatter_(
+                        0,
+                        lane_indices.view(-1, 1).expand(-1, self.max_select),
+                        normalized,
+                    )
+                    lengths.scatter_(
+                        0,
+                        lane_indices,
+                        normalized_lengths,
+                    )
+                    stop_profile("scatter_wall_ms", group_name, started)
+                    add_profile_call(group_name)
+                    continue
+
                 super_route = torch.arange(
                     batch_size,
                     dtype=torch.long,
@@ -710,17 +766,34 @@ class GPUResidentPolicyPool:
             for policy in self.manifest.policies:
                 if policy.policy_id in shared_policy_ids:
                     continue
-                if policy.codec not in encoded_by_codec:
+                adapter = self.adapters[policy.policy_id]
+                semantic0031_v2_method = getattr(adapter, "act_device_semantic0031_v2", None)
+                if semantic0031_v2_method is None and policy.codec not in encoded_by_codec:
                     raise KeyError(f"missing device codec batch: {policy.codec}")
                 route = routes[policy.policy_id]
                 valid = route_mask[policy.policy_id]
-                cohort = _gather_device_batch(
-                    encoded_by_codec[policy.codec], route, batch_size
-                )
-                cohort["_route_mask"] = valid
-                adapter = self.adapters[policy.policy_id]
+                if semantic0031_v2_method is not None:
+                    if engine is None:
+                        raise ValueError("semantic0031 v2 policy requires engine")
+                    cohort_route = route[valid].long()
+                    if cohort_route.numel() == 0:
+                        continue
+                    cohort = engine.encode_semantic0031_v2_lanes(
+                        cohort_route.contiguous()
+                    )
+                    cohort_valid = torch.ones_like(cohort_route, dtype=torch.bool)
+                else:
+                    cohort = _gather_device_batch(
+                        encoded_by_codec[policy.codec], route, batch_size
+                    )
+                    cohort_route = route
+                    cohort_valid = valid
+                cohort["_route_mask"] = cohort_valid
                 started = start_profile()
-                proposed, proposed_lengths = adapter.act_device(cohort)
+                if semantic0031_v2_method is not None:
+                    proposed, proposed_lengths = semantic0031_v2_method(cohort)
+                else:
+                    proposed, proposed_lengths = adapter.act_device(cohort)
                 stop_profile("adapter_wall_ms", policy.name, started)
                 action_min_count = cohort.get("action_min_count", cohort["min_count"])
                 action_max_count = cohort.get("action_max_count", cohort["max_count"])
@@ -745,8 +818,16 @@ class GPUResidentPolicyPool:
                     )
                 stop_profile("postprocess_wall_ms", policy.name, started)
                 started = start_profile()
-                destinations = torch.where(valid, route, sink)
-                values = torch.where(valid.view(-1, 1), normalized, torch.full_like(normalized, -1))
+                destinations = torch.where(
+                    cohort_valid,
+                    cohort_route,
+                    torch.full_like(cohort_route, batch_size),
+                )
+                values = torch.where(
+                    cohort_valid.view(-1, 1),
+                    normalized,
+                    torch.full_like(normalized, -1),
+                )
                 output.scatter_(
                     0,
                     destinations.view(-1, 1).expand(-1, self.max_select),
@@ -755,7 +836,11 @@ class GPUResidentPolicyPool:
                 lengths.scatter_(
                     0,
                     destinations,
-                    torch.where(valid, normalized_lengths, torch.zeros_like(normalized_lengths)),
+                    torch.where(
+                        cohort_valid,
+                        normalized_lengths,
+                        torch.zeros_like(normalized_lengths),
+                    ),
                 )
                 stop_profile("scatter_wall_ms", policy.name, started)
                 add_profile_call(policy.name)

@@ -95,7 +95,19 @@ PTCG_OFFICIAL_RESOLVER_HD inline bool official_apply_special_condition_checkup(
             official_pod_add_damage(state, rules, ps.active.values[0], damage);
         }
         state->coin_head_count = 0;
-        if (official_pod_coin(state)) {
+        if (official_pod_coin(state, player)) {
+            const OfficialCardRefPod active_ref = ps.active.values[0];
+            const OfficialCardStatePod* active_card = official_pod_card(
+                state, active_ref);
+            if (active_card != nullptr) {
+                official_semantic_history_append(
+                    state,
+                    OfficialSemanticLogType::kBurned,
+                    player,
+                    1,
+                    active_card->card_id,
+                    active_ref.index);
+            }
             official_pod_set_burned(&ps, false);
             official_pod_mark_changed(state);
         }
@@ -108,7 +120,19 @@ PTCG_OFFICIAL_RESOLVER_HD inline bool official_apply_special_condition_checkup(
         OfficialPlayerStatePod& ps = state->players[player];
         if (official_pod_bad_status(ps) != OfficialBadStatus::kAsleep) continue;
         state->coin_head_count = 0;
-        if (official_pod_coin(state)) {
+        if (official_pod_coin(state, player)) {
+            const OfficialCardRefPod active_ref = ps.active.values[0];
+            const OfficialCardStatePod* active_card = official_pod_card(
+                state, active_ref);
+            if (active_card != nullptr) {
+                official_semantic_history_append(
+                    state,
+                    OfficialSemanticLogType::kAsleep,
+                    player,
+                    1,
+                    active_card->card_id,
+                    active_ref.index);
+            }
             official_pod_set_bad_status(&ps, OfficialBadStatus::kNone);
             official_pod_mark_changed(state);
         }
@@ -118,6 +142,17 @@ PTCG_OFFICIAL_RESOLVER_HD inline bool official_apply_special_condition_checkup(
     if (active >= 0 && active <= 1 && state->players[active].active.count > 0
         && official_pod_bad_status(state->players[active])
             == OfficialBadStatus::kParalyzed) {
+        const OfficialCardRefPod active_ref = state->players[active].active.values[0];
+        const OfficialCardStatePod* active_card = official_pod_card(state, active_ref);
+        if (active_card != nullptr) {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kParalyzed,
+                active,
+                1,
+                active_card->card_id,
+                active_ref.index);
+        }
         official_pod_set_bad_status(
             &state->players[active], OfficialBadStatus::kNone);
         official_pod_mark_changed(state);

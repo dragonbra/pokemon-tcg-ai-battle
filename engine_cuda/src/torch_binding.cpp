@@ -295,6 +295,10 @@ public:
         reset_seeded_impl(decks, seeds, nullptr, false);
     }
 
+    void reset_seeded_first_min_semantic(torch::Tensor decks, torch::Tensor seeds) {
+        reset_seeded_impl(decks, seeds, nullptr, false, true);
+    }
+
     void reset_seeded_first_min_masked(
         torch::Tensor decks,
         torch::Tensor seeds,
@@ -302,8 +306,19 @@ public:
         reset_seeded_impl(decks, seeds, &lane_mask, false);
     }
 
+    void reset_seeded_first_min_semantic_masked(
+        torch::Tensor decks,
+        torch::Tensor seeds,
+        torch::Tensor lane_mask) {
+        reset_seeded_impl(decks, seeds, &lane_mask, false, true);
+    }
+
     void reset_seeded_interactive(torch::Tensor decks, torch::Tensor seeds) {
         reset_seeded_impl(decks, seeds, nullptr, true);
+    }
+
+    void reset_seeded_interactive_semantic(torch::Tensor decks, torch::Tensor seeds) {
+        reset_seeded_impl(decks, seeds, nullptr, true, true);
     }
 
     void reset_seeded_interactive_masked(
@@ -311,6 +326,13 @@ public:
         torch::Tensor seeds,
         torch::Tensor lane_mask) {
         reset_seeded_impl(decks, seeds, &lane_mask, true);
+    }
+
+    void reset_seeded_interactive_semantic_masked(
+        torch::Tensor decks,
+        torch::Tensor seeds,
+        torch::Tensor lane_mask) {
+        reset_seeded_impl(decks, seeds, &lane_mask, true, true);
     }
 
     void classify() {
@@ -447,6 +469,129 @@ public:
         };
     }
 
+    std::unordered_map<std::string, torch::Tensor> encode_semantic0031_v2_lanes(
+        torch::Tensor lane_indices) {
+        if (!lane_indices.is_cuda() || lane_indices.get_device() != device_index_
+            || !lane_indices.is_contiguous() || lane_indices.dim() != 1
+            || (lane_indices.scalar_type() != torch::kInt32
+                && lane_indices.scalar_type() != torch::kInt64)) {
+            throw std::invalid_argument(
+                "semantic0031 v2 lane_indices must be contiguous CUDA int32/int64[ready]");
+        }
+        const auto ready = lane_indices.size(0);
+        if (ready < 0 || ready > 0xFFFFFFFFLL) {
+            throw std::invalid_argument("semantic0031 v2 ready lane count is invalid");
+        }
+        c10::cuda::CUDAGuard guard(device_index_);
+        const auto long_options = torch::TensorOptions()
+            .dtype(torch::kInt64)
+            .device(torch::Device(torch::kCUDA, device_index_));
+        const auto float_options = torch::TensorOptions()
+            .dtype(torch::kFloat32)
+            .device(torch::Device(torch::kCUDA, device_index_));
+        const auto byte_options = torch::TensorOptions()
+            .dtype(torch::kUInt8)
+            .device(torch::Device(torch::kCUDA, device_index_));
+
+        std::unordered_map<std::string, torch::Tensor> result{
+            {"global_cat", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031GlobalCatWidth)}, long_options)},
+            {"global_num", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031GlobalNumWidth)}, float_options)},
+            {"global_state", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031GlobalNumWidth)}, long_options)},
+            {"card_cat", torch::empty({ready, 128, static_cast<std::int64_t>(engine::kSemantic0031CardCatWidth)}, long_options)},
+            {"card_num", torch::empty({ready, 128, static_cast<std::int64_t>(engine::kSemantic0031CardNumWidth)}, float_options)},
+            {"card_state", torch::empty({ready, 128, static_cast<std::int64_t>(engine::kSemantic0031CardNumWidth)}, long_options)},
+            {"card_parent", torch::empty({ready, 128}, long_options)},
+            {"card_mask", torch::empty({ready, 128}, byte_options)},
+            {"resource_cat", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031ResourceCapacity), static_cast<std::int64_t>(engine::kSemantic0031ResourceCatWidth)}, long_options)},
+            {"resource_num", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031ResourceCapacity), static_cast<std::int64_t>(engine::kSemantic0031ResourceNumWidth)}, float_options)},
+            {"resource_state", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031ResourceCapacity), static_cast<std::int64_t>(engine::kSemantic0031ResourceNumWidth)}, long_options)},
+            {"resource_mask", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031ResourceCapacity)}, byte_options)},
+            {"event_cat", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity), static_cast<std::int64_t>(engine::kSemantic0031EventCatWidth)}, long_options)},
+            {"event_num", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity), static_cast<std::int64_t>(engine::kSemantic0031EventNumWidth)}, float_options)},
+            {"event_state", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity), static_cast<std::int64_t>(engine::kSemantic0031EventNumWidth)}, long_options)},
+            {"event_mask", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity)}, byte_options)},
+            {"event_source", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity)}, long_options)},
+            {"event_target", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity)}, long_options)},
+            {"event_before", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity)}, long_options)},
+            {"event_after", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031EventCapacity)}, long_options)},
+            {"option_cat", torch::empty({ready, 128, static_cast<std::int64_t>(engine::kSemantic0031OptionCatWidth)}, long_options)},
+            {"option_num", torch::empty({ready, 128, static_cast<std::int64_t>(engine::kSemantic0031OptionNumWidth)}, float_options)},
+            {"option_state", torch::empty({ready, 128, static_cast<std::int64_t>(engine::kSemantic0031OptionNumWidth)}, long_options)},
+            {"option_mask", torch::empty({ready, 128}, byte_options)},
+            {"option_source", torch::empty({ready, 128}, long_options)},
+            {"option_target", torch::empty({ready, 128}, long_options)},
+            {"option_context", torch::empty({ready, 128}, long_options)},
+            {"option_effect_card", torch::empty({ready, 128}, long_options)},
+            {"option_skill_id", torch::zeros({ready, 1}, long_options)},
+            {"option_skill_role", torch::zeros({ready, 1}, long_options)},
+            {"option_skill_parent", torch::zeros({ready, 1}, long_options)},
+            {"option_skill_mask", torch::zeros({ready, 1}, byte_options)},
+            {"option_effect_id", torch::zeros({ready, 1}, long_options)},
+            {"option_effect_role", torch::zeros({ready, 1}, long_options)},
+            {"option_effect_parent", torch::zeros({ready, 1}, long_options)},
+            {"option_effect_mask", torch::zeros({ready, 1}, byte_options)},
+            {"min_count", torch::empty({ready}, long_options)},
+            {"max_count", torch::empty({ready}, long_options)},
+            {"targets", torch::empty({ready, 1}, long_options)},
+        };
+
+        engine::OfficialSemantic0031CodecBuffers output{};
+        output.global_cat = result["global_cat"].data_ptr<std::int64_t>();
+        output.global_num = result["global_num"].data_ptr<float>();
+        output.global_state = result["global_state"].data_ptr<std::int64_t>();
+        output.card_cat = result["card_cat"].data_ptr<std::int64_t>();
+        output.card_num = result["card_num"].data_ptr<float>();
+        output.card_state = result["card_state"].data_ptr<std::int64_t>();
+        output.card_parent = result["card_parent"].data_ptr<std::int64_t>();
+        output.card_mask = result["card_mask"].data_ptr<std::uint8_t>();
+        output.resource_cat = result["resource_cat"].data_ptr<std::int64_t>();
+        output.resource_num = result["resource_num"].data_ptr<float>();
+        output.resource_state = result["resource_state"].data_ptr<std::int64_t>();
+        output.resource_mask = result["resource_mask"].data_ptr<std::uint8_t>();
+        output.event_cat = result["event_cat"].data_ptr<std::int64_t>();
+        output.event_num = result["event_num"].data_ptr<float>();
+        output.event_state = result["event_state"].data_ptr<std::int64_t>();
+        output.event_mask = result["event_mask"].data_ptr<std::uint8_t>();
+        output.event_source = result["event_source"].data_ptr<std::int64_t>();
+        output.event_target = result["event_target"].data_ptr<std::int64_t>();
+        output.event_before = result["event_before"].data_ptr<std::int64_t>();
+        output.event_after = result["event_after"].data_ptr<std::int64_t>();
+        output.option_cat = result["option_cat"].data_ptr<std::int64_t>();
+        output.option_num = result["option_num"].data_ptr<float>();
+        output.option_state = result["option_state"].data_ptr<std::int64_t>();
+        output.option_mask = result["option_mask"].data_ptr<std::uint8_t>();
+        output.option_source = result["option_source"].data_ptr<std::int64_t>();
+        output.option_target = result["option_target"].data_ptr<std::int64_t>();
+        output.option_context = result["option_context"].data_ptr<std::int64_t>();
+        output.option_effect_card = result["option_effect_card"].data_ptr<std::int64_t>();
+        output.min_count = result["min_count"].data_ptr<std::int64_t>();
+        output.max_count = result["max_count"].data_ptr<std::int64_t>();
+        output.targets = result["targets"].data_ptr<std::int64_t>();
+
+        const cudaStream_t stream =
+            at::cuda::getCurrentCUDAStream(device_index_).stream();
+        if (lane_indices.scalar_type() == torch::kInt32) {
+            check_cuda(
+                engine::encode_official_semantic0031_codec_v2_i32_async(
+                    &arena_,
+                    lane_indices.data_ptr<std::int32_t>(),
+                    static_cast<std::uint32_t>(ready),
+                    output,
+                    stream),
+                "encode_official_semantic0031_codec_v2_i32_async");
+        } else {
+            check_cuda(
+                engine::encode_official_semantic0031_codec_v2_i64_async(
+                    &arena_,
+                    lane_indices.data_ptr<std::int64_t>(),
+                    static_cast<std::uint32_t>(ready),
+                    output,
+                    stream),
+                "encode_official_semantic0031_codec_v2_i64_async");
+        }
+        return result;
+    }
+
     torch::Tensor state_bytes() const {
         return view(
             arena_.states,
@@ -485,6 +630,62 @@ public:
             });
     }
 
+    std::unordered_map<std::string, torch::Tensor> semantic_history_raw() const {
+        const auto batch = static_cast<std::int64_t>(arena_.config.batch_size);
+        const auto capacity =
+            static_cast<std::int64_t>(engine::kOfficialSemanticHistoryCapacity);
+        const auto param_capacity = static_cast<std::int64_t>(
+            engine::kOfficialSemanticHistoryParamCapacity);
+        const auto serial_capacity = static_cast<std::int64_t>(
+            engine::kOfficialSemanticSerialCapacity);
+        return {
+            {"total_count", view_typed(
+                arena_.semantic_history_total_count,
+                {batch},
+                torch::kInt64)},
+            {"write_index", view_typed(
+                arena_.semantic_history_write_index,
+                {batch},
+                torch::kInt32)},
+            {"log_type", view_typed(
+                arena_.semantic_history_log_type,
+                {batch, capacity},
+                torch::kUInt8)},
+            {"param_count", view_typed(
+                arena_.semantic_history_param_count,
+                {batch, capacity},
+                torch::kUInt8)},
+            {"params", view_typed(
+                arena_.semantic_history_params,
+                {batch, capacity, param_capacity},
+                torch::kInt32)},
+            {"known_opponent_hand", view_typed(
+                arena_.semantic_known_opponent_hand,
+                {batch, 2, serial_capacity},
+                torch::kUInt8)},
+            {"possible_opponent_hand", view_typed(
+                arena_.semantic_possible_opponent_hand,
+                {batch, 2, serial_capacity},
+                torch::kUInt8)},
+            {"remembered_opponent_cards", view_typed(
+                arena_.semantic_remembered_opponent_cards,
+                {batch, 2, serial_capacity},
+                torch::kUInt8)},
+            {"unknown_opponent_hand", view_typed(
+                arena_.semantic_unknown_opponent_hand,
+                {batch, 2},
+                torch::kInt16)},
+            {"possible_hand_lower", view_typed(
+                arena_.semantic_possible_hand_lower,
+                {batch, 2},
+                torch::kInt16)},
+            {"possible_hand_upper", view_typed(
+                arena_.semantic_possible_hand_upper,
+                {batch, 2},
+                torch::kInt16)},
+        };
+    }
+
     std::int64_t allocated_bytes() const {
         return static_cast<std::int64_t>(arena_.allocated_bytes);
     }
@@ -502,7 +703,8 @@ private:
         const torch::Tensor& decks,
         const torch::Tensor& seeds,
         const torch::Tensor* lane_mask,
-        bool interactive) {
+        bool interactive,
+        bool semantic = false) {
         const auto batch = static_cast<std::int64_t>(arena_.config.batch_size);
         if (!decks.is_cuda() || decks.get_device() != device_index_
             || !decks.is_contiguous()
@@ -537,39 +739,75 @@ private:
             at::cuda::getCurrentCUDAStream(device_index_).stream();
         cudaError_t status = cudaErrorInvalidValue;
         if (decks.scalar_type() == torch::kInt32) {
-            status = interactive
-                ? engine::reset_official_states_seeded_interactive_i32_async(
-                    &arena_,
-                    decks.data_ptr<std::int32_t>(),
-                    seeds.data_ptr<std::int64_t>(),
-                    mask_pointer,
-                    stream)
-                : engine::reset_official_states_seeded_first_min_i32_async(
-                    &arena_,
-                    decks.data_ptr<std::int32_t>(),
-                    seeds.data_ptr<std::int64_t>(),
-                    mask_pointer,
-                    stream);
+            if (interactive) {
+                status = semantic
+                    ? engine::reset_official_states_seeded_interactive_semantic_i32_async(
+                        &arena_,
+                        decks.data_ptr<std::int32_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream)
+                    : engine::reset_official_states_seeded_interactive_i32_async(
+                        &arena_,
+                        decks.data_ptr<std::int32_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream);
+            } else {
+                status = semantic
+                    ? engine::reset_official_states_seeded_first_min_semantic_i32_async(
+                        &arena_,
+                        decks.data_ptr<std::int32_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream)
+                    : engine::reset_official_states_seeded_first_min_i32_async(
+                        &arena_,
+                        decks.data_ptr<std::int32_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream);
+            }
         } else {
-            status = interactive
-                ? engine::reset_official_states_seeded_interactive_i64_async(
-                    &arena_,
-                    decks.data_ptr<std::int64_t>(),
-                    seeds.data_ptr<std::int64_t>(),
-                    mask_pointer,
-                    stream)
-                : engine::reset_official_states_seeded_first_min_i64_async(
-                    &arena_,
-                    decks.data_ptr<std::int64_t>(),
-                    seeds.data_ptr<std::int64_t>(),
-                    mask_pointer,
-                    stream);
+            if (interactive) {
+                status = semantic
+                    ? engine::reset_official_states_seeded_interactive_semantic_i64_async(
+                        &arena_,
+                        decks.data_ptr<std::int64_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream)
+                    : engine::reset_official_states_seeded_interactive_i64_async(
+                        &arena_,
+                        decks.data_ptr<std::int64_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream);
+            } else {
+                status = semantic
+                    ? engine::reset_official_states_seeded_first_min_semantic_i64_async(
+                        &arena_,
+                        decks.data_ptr<std::int64_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream)
+                    : engine::reset_official_states_seeded_first_min_i64_async(
+                        &arena_,
+                        decks.data_ptr<std::int64_t>(),
+                        seeds.data_ptr<std::int64_t>(),
+                        mask_pointer,
+                        stream);
+            }
         }
         check_cuda(
             status,
             interactive
-                ? "reset_official_states_seeded_interactive_async"
-                : "reset_official_states_seeded_first_min_async");
+                ? (semantic
+                    ? "reset_official_states_seeded_interactive_semantic_async"
+                    : "reset_official_states_seeded_interactive_async")
+                : (semantic
+                    ? "reset_official_states_seeded_first_min_semantic_async"
+                    : "reset_official_states_seeded_first_min_async"));
     }
 
     torch::Tensor view(void* pointer, std::vector<std::int64_t> sizes) const {
@@ -633,12 +871,24 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
         .def("reset_states", &OfficialCudaEngine::reset_states)
         .def("reset_seeded_first_min", &OfficialCudaEngine::reset_seeded_first_min)
         .def(
+            "reset_seeded_first_min_semantic",
+            &OfficialCudaEngine::reset_seeded_first_min_semantic)
+        .def(
             "reset_seeded_first_min_masked",
             &OfficialCudaEngine::reset_seeded_first_min_masked)
+        .def(
+            "reset_seeded_first_min_semantic_masked",
+            &OfficialCudaEngine::reset_seeded_first_min_semantic_masked)
         .def("reset_seeded_interactive", &OfficialCudaEngine::reset_seeded_interactive)
+        .def(
+            "reset_seeded_interactive_semantic",
+            &OfficialCudaEngine::reset_seeded_interactive_semantic)
         .def(
             "reset_seeded_interactive_masked",
             &OfficialCudaEngine::reset_seeded_interactive_masked)
+        .def(
+            "reset_seeded_interactive_semantic_masked",
+            &OfficialCudaEngine::reset_seeded_interactive_semantic_masked)
         .def("classify", &OfficialCudaEngine::classify)
         .def("advance_to_decision", &OfficialCudaEngine::advance_to_decision)
         .def("pack_actions", &OfficialCudaEngine::pack_actions)
@@ -648,10 +898,14 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
             "apply_packed_setup_actions",
             &OfficialCudaEngine::apply_packed_setup_actions)
         .def("encode_policy_v1", &OfficialCudaEngine::encode_policy_v1)
+        .def(
+            "encode_semantic0031_v2_lanes",
+            &OfficialCudaEngine::encode_semantic0031_v2_lanes)
         .def("state_bytes", &OfficialCudaEngine::state_bytes)
         .def("statuses", &OfficialCudaEngine::statuses)
         .def("game_results", &OfficialCudaEngine::game_results)
         .def("action_bytes", &OfficialCudaEngine::action_bytes)
+        .def("semantic_history_raw", &OfficialCudaEngine::semantic_history_raw)
         .def_property_readonly("allocated_bytes", &OfficialCudaEngine::allocated_bytes)
         .def_property_readonly("batch_size", &OfficialCudaEngine::batch_size)
         .def_property_readonly("rule_pack_bytes", &OfficialCudaEngine::rule_pack_bytes);

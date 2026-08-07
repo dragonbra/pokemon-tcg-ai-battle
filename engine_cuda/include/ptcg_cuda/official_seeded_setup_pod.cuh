@@ -93,6 +93,10 @@ PTCG_OFFICIAL_SETUP_STATE_HD inline void official_seeded_reset_state(
     OfficialStatePod* state,
     std::uint64_t episode_id,
     std::uint64_t seed) {
+    const bool semantic_history_was_enabled =
+        official_semantic_history_enabled(state);
+    OfficialSemanticHistoryDeviceView* semantic_history =
+        semantic_history_was_enabled ? official_semantic_history_view(state) : nullptr;
 #if defined(__CUDA_ARCH__)
     // `*state = OfficialStatePod{}` can make nvcc materialize the complete
     // 119,936-byte aggregate on each thread stack.  Zero the resident global
@@ -120,6 +124,10 @@ PTCG_OFFICIAL_SETUP_STATE_HD inline void official_seeded_reset_state(
 #else
     official_pod_reset(state, episode_id, seed);
 #endif
+    if (semantic_history != nullptr) {
+        official_semantic_history_bind(state, semantic_history);
+        official_semantic_history_clear_lane(state);
+    }
 }
 
 template <typename DeckT>
@@ -170,7 +178,8 @@ PTCG_OFFICIAL_SETUP_STATE_HD inline void official_seeded_initialize_decks(
             card.area = static_cast<std::uint8_t>(OfficialArea::kDeck);
             ps.deck.values[kOfficialSeededDeckSize - source - 1] = {card_index};
         }
-        official_pod_shuffle_deck(state, player);
+        // The official API does not expose the initial pre-deal shuffle in logs.
+        official_pod_shuffle_deck(state, player, false);
     }
 }
 
@@ -260,6 +269,11 @@ PTCG_OFFICIAL_SETUP_STATE_HD inline bool official_seeded_reset_until_ready(
         const OfficialSeededSetupPresence presence = official_seeded_setup_presence(
             state, rules, player);
         if (!official_pod_ok(state)) return false;
+        official_semantic_history_append(
+            state,
+            OfficialSemanticLogType::kHasBasicPokemon,
+            player,
+            presence.basic ? 1 : 0);
         // first-min chooses Yes for the doll-only mulligan decision, so the
         // canonical path is ready only when a real Basic is in hand.
         if (presence.basic) {
@@ -306,6 +320,10 @@ PTCG_OFFICIAL_SETUP_STATE_HD inline bool official_seeded_setup_first_min_state(
         const OfficialSeededSetupPresence p1 = official_seeded_setup_presence(
             state, rules, 1);
         if (!official_pod_ok(state)) return false;
+        official_semantic_history_append(
+            state, OfficialSemanticLogType::kHasBasicPokemon, 0, p0.basic ? 1 : 0);
+        official_semantic_history_append(
+            state, OfficialSemanticLogType::kHasBasicPokemon, 1, p1.basic ? 1 : 0);
         const bool mulligan0 = !p0.basic;
         const bool mulligan1 = !p1.basic;
         state->mulligan_mask = static_cast<std::uint8_t>(mulligan0)

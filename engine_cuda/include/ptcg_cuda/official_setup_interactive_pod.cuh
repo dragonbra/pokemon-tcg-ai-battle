@@ -250,10 +250,14 @@ PTCG_OFFICIAL_SETUP_VM_HD inline bool official_setup_pre_active(
         state, rules, player);
     if (!official_pod_ok(state)) return false;
     if (presence.basic) {
+        official_semantic_history_append(
+            state, OfficialSemanticLogType::kHasBasicPokemon, player, 1);
         official_setup_set_mulligan(state, player, false);
         return true;
     }
     if (!presence.doll) {
+        official_semantic_history_append(
+            state, OfficialSemanticLogType::kHasBasicPokemon, player, 0);
         official_setup_set_mulligan(state, player, true);
         return true;
     }
@@ -760,6 +764,11 @@ PTCG_OFFICIAL_SETUP_VM_HD inline OfficialFlowStatus official_setup_apply_action(
         case OfficialContinuationId::kSelectedMulligan: {
             bool yes = false;
             if (!official_setup_selected_yes(state, &yes)) break;
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kHasBasicPokemon,
+                call.frame.args[0],
+                yes ? 0 : 1);
             official_setup_set_mulligan(state, call.frame.args[0], yes);
             official_setup_clear_selection(state);
             complete = true;

@@ -338,6 +338,155 @@ class TorchPolicyPoolTest(unittest.TestCase):
         self.assertEqual(result.lengths.tolist(), [20])
         self.assertEqual(result.indices[0, :20].tolist(), list(range(20)))
 
+    def test_pool_semantic0031_fast_path_materializes_only_routed_lanes(self) -> None:
+        class Semantic0031EngineStub:
+            def __init__(self) -> None:
+                self.calls = 0
+                self.lane_indices = None
+
+            def encode_semantic0031_v2_lanes(self, lane_indices):
+                self.calls += 1
+                self.lane_indices = lane_indices.detach().clone()
+                row_count = lane_indices.shape[0]
+                device = lane_indices.device
+                return {
+                    "lane_id": lane_indices.long(),
+                    "option_mask": torch.ones(row_count, 8, dtype=torch.bool, device=device),
+                    "min_count": torch.ones(row_count, dtype=torch.long, device=device),
+                    "max_count": torch.ones(row_count, dtype=torch.long, device=device),
+                }
+
+        class Semantic0031AdapterStub:
+            outputs_normalized = True
+
+            def __init__(self) -> None:
+                self.calls = 0
+                self.route_mask = None
+
+            @property
+            def shared_batch_key(self):
+                return ("semantic0031_codec_v2", "shared_model", 64)
+
+            @property
+            def shared_static_fields(self):
+                return {}
+
+            def act_device_semantic0031_v2(self, batch):
+                self.calls += 1
+                self.route_mask = batch["_route_mask"].detach().clone()
+                proposed = batch["lane_id"].remainder(8).view(-1, 1)
+                lengths = torch.ones(proposed.shape[0], dtype=torch.long, device=proposed.device)
+                return proposed, lengths
+
+        policies = [
+            {
+                "policy_id": policy_id,
+                "name": f"semantic_policy_{policy_id}",
+                "deck": f"deck_{policy_id}",
+                "checkpoint": "unused.pt",
+                "adapter": "semantic0031",
+                "codec": "semantic0031_codec_v2",
+                "frozen": True,
+            }
+            for policy_id in range(2)
+        ]
+        manifest = PolicyPoolManifest.from_dict(
+            {
+                "name": "semantic0031_fast_path_pool",
+                "max_policies": MAX_POLICIES,
+                "policies": policies,
+            }
+        )
+        adapter = Semantic0031AdapterStub()
+        engine = Semantic0031EngineStub()
+        pool = GPUResidentPolicyPool(
+            manifest,
+            {0: adapter, 1: adapter},
+            capacity=3,
+            max_select=4,
+        )
+        acting_policy_ids = torch.tensor([0, 1, 0, 1, 0, 1, 1], dtype=torch.long, device="cuda")
+        ready = torch.tensor([1, 1, 0, 1, 1, 0, 1], dtype=torch.bool, device="cuda")
+
+        result = pool.act(
+            {},
+            acting_policy_ids,
+            ready,
+            engine=engine,
+        )
+
+        self.assertEqual(engine.calls, 1)
+        self.assertEqual(adapter.calls, 1)
+        self.assertEqual(engine.lane_indices.tolist(), [0, 4, 1, 3, 6])
+        self.assertEqual(adapter.route_mask.tolist(), [True, True, True, True, True])
+        self.assertEqual(result.lengths.tolist(), [1, 1, 0, 1, 1, 0, 1])
+        self.assertEqual(result.indices[:, 0].tolist(), [0, 1, -1, 3, 4, -1, 6])
+
+    def test_pool_single_semantic0031_fast_path_compacts_and_skips_empty_routes(self) -> None:
+        class Semantic0031EngineStub:
+            def __init__(self) -> None:
+                self.lane_indices = []
+
+            def encode_semantic0031_v2_lanes(self, lane_indices):
+                self.lane_indices.append(lane_indices.detach().clone())
+                row_count = lane_indices.shape[0]
+                device = lane_indices.device
+                return {
+                    "lane_id": lane_indices.long(),
+                    "option_mask": torch.ones(row_count, 8, dtype=torch.bool, device=device),
+                    "min_count": torch.ones(row_count, dtype=torch.long, device=device),
+                    "max_count": torch.ones(row_count, dtype=torch.long, device=device),
+                }
+
+        class Semantic0031AdapterStub:
+            outputs_normalized = True
+
+            def __init__(self) -> None:
+                self.calls = 0
+                self.route_masks = []
+
+            def act_device_semantic0031_v2(self, batch):
+                self.calls += 1
+                self.route_masks.append(batch["_route_mask"].detach().clone())
+                proposed = batch["lane_id"].remainder(8).view(-1, 1)
+                lengths = torch.ones(proposed.shape[0], dtype=torch.long, device=proposed.device)
+                return proposed, lengths
+
+        policies = [
+            {
+                "policy_id": policy_id,
+                "name": f"semantic_policy_{policy_id}",
+                "deck": f"deck_{policy_id}",
+                "checkpoint": "unused.pt",
+                "adapter": "semantic0031",
+                "codec": "semantic0031_codec_v2",
+                "frozen": True,
+            }
+            for policy_id in range(2)
+        ]
+        manifest = PolicyPoolManifest.from_dict(
+            {
+                "name": "single_semantic0031_fast_path_pool",
+                "max_policies": MAX_POLICIES,
+                "policies": policies,
+            }
+        )
+        adapters = {0: Semantic0031AdapterStub(), 1: Semantic0031AdapterStub()}
+        engine = Semantic0031EngineStub()
+        pool = GPUResidentPolicyPool(manifest, adapters, capacity=4, max_select=4)
+        acting_policy_ids = torch.tensor([0, 1, 0, 1, 0, 1], dtype=torch.long, device="cuda")
+        ready = torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.bool, device="cuda")
+
+        result = pool.act({}, acting_policy_ids, ready, engine=engine)
+
+        self.assertEqual(len(engine.lane_indices), 1)
+        self.assertEqual(engine.lane_indices[0].tolist(), [0, 4])
+        self.assertEqual(adapters[0].calls, 1)
+        self.assertEqual(adapters[0].route_masks[0].tolist(), [True, True])
+        self.assertEqual(adapters[1].calls, 0)
+        self.assertEqual(result.lengths.tolist(), [1, 0, 0, 0, 1, 0])
+        self.assertEqual(result.indices[:, 0].tolist(), [0, -1, -1, -1, 4, -1])
+
 
 if __name__ == "__main__":
     unittest.main()

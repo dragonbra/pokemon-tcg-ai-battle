@@ -322,9 +322,33 @@ PTCG_OFFICIAL_REFRESH_HD inline void official_clear_blocked_special_conditions(
         if ((active->runtime_flags & kCardNoSpecialCondition) != 0) {
             official_pod_clear_special_conditions(state, player);
         } else if ((active->runtime_flags & kCardNoSleepParalyzeConfuse) != 0) {
+            const OfficialBadStatus status = official_pod_bad_status(
+                state->players[player]);
+            if (status != OfficialBadStatus::kNone) {
+                OfficialSemanticLogType type = OfficialSemanticLogType::kAsleep;
+                if (status == OfficialBadStatus::kParalyzed) {
+                    type = OfficialSemanticLogType::kParalyzed;
+                } else if (status == OfficialBadStatus::kConfused) {
+                    type = OfficialSemanticLogType::kConfused;
+                }
+                official_semantic_history_append(
+                    state,
+                    type,
+                    player,
+                    1,
+                    active->card_id,
+                    state->players[player].active.values[0].index);
+            }
             official_pod_set_bad_status(&state->players[player], OfficialBadStatus::kNone);
         } else if ((active->runtime_flags & kCardNoSleep) != 0
             && official_pod_bad_status(state->players[player]) == OfficialBadStatus::kAsleep) {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kAsleep,
+                player,
+                1,
+                active->card_id,
+                state->players[player].active.values[0].index);
             official_pod_set_bad_status(&state->players[player], OfficialBadStatus::kNone);
         }
     }

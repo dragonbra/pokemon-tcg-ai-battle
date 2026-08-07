@@ -707,7 +707,9 @@ PTCG_OFFICIAL_KO_HD inline OfficialKnockoutResult official_resume_knockout(
         }
         if (yes) {
             state->coin_head_count = 0;
-            if (official_pod_coin(state)) state->pending_prize_count[player] = 1;
+            if (official_pod_coin(state, player)) {
+                state->pending_prize_count[player] = 1;
+            }
         }
         official_clear_effect_selection(state);
         if (state->pending_prize_count[player] > 0) {

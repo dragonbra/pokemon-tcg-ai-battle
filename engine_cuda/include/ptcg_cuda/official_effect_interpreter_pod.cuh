@@ -1620,6 +1620,17 @@ official_apply_effect_action(
             OfficialCardStatePod* card = official_pod_card(state, target);
             if (card != nullptr) card->damage += damage;
         }
+        const OfficialCardStatePod* card = official_pod_card(state, target);
+        if (card != nullptr) {
+            official_semantic_history_append(
+                state,
+                OfficialSemanticLogType::kHpChange,
+                card->player,
+                card->card_id,
+                target.index,
+                -damage,
+                1);
+        }
         --state->remain_damage_counter;
         if (state->remain_damage_counter <= 0) {
             state->remain_damage_counter = 0;

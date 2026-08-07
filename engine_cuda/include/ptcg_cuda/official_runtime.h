@@ -30,12 +30,77 @@ struct OfficialRuntimeConfig {
     std::size_t device_stack_bytes = kOfficialMinimumDeviceStackBytes;
 };
 
+constexpr std::size_t kSemantic0031ReadyCapacity = 128;
+constexpr std::size_t kSemantic0031ResourceCapacity = 64;
+constexpr std::size_t kSemantic0031EventCapacity = kOfficialSemanticHistoryCapacity;
+constexpr std::size_t kSemantic0031GlobalCatWidth = 12;
+constexpr std::size_t kSemantic0031GlobalNumWidth = 24;
+constexpr std::size_t kSemantic0031CardCatWidth = 9;
+constexpr std::size_t kSemantic0031CardNumWidth = 7;
+constexpr std::size_t kSemantic0031ResourceCatWidth = 4;
+constexpr std::size_t kSemantic0031ResourceNumWidth = 15;
+constexpr std::size_t kSemantic0031EventCatWidth = 31;
+constexpr std::size_t kSemantic0031EventNumWidth = 4;
+constexpr std::size_t kSemantic0031OptionCatWidth = 19;
+constexpr std::size_t kSemantic0031OptionNumWidth = 2;
+
+struct OfficialSemantic0031CodecBuffers {
+    std::int64_t* global_cat = nullptr;
+    float* global_num = nullptr;
+    std::int64_t* global_state = nullptr;
+    std::int64_t* card_cat = nullptr;
+    float* card_num = nullptr;
+    std::int64_t* card_state = nullptr;
+    std::int64_t* card_parent = nullptr;
+    std::uint8_t* card_mask = nullptr;
+    std::int64_t* resource_cat = nullptr;
+    float* resource_num = nullptr;
+    std::int64_t* resource_state = nullptr;
+    std::uint8_t* resource_mask = nullptr;
+    std::int64_t* event_cat = nullptr;
+    float* event_num = nullptr;
+    std::int64_t* event_state = nullptr;
+    std::uint8_t* event_mask = nullptr;
+    std::int64_t* event_source = nullptr;
+    std::int64_t* event_target = nullptr;
+    std::int64_t* event_before = nullptr;
+    std::int64_t* event_after = nullptr;
+    std::int64_t* option_cat = nullptr;
+    float* option_num = nullptr;
+    std::int64_t* option_state = nullptr;
+    std::uint8_t* option_mask = nullptr;
+    std::int64_t* option_source = nullptr;
+    std::int64_t* option_target = nullptr;
+    std::int64_t* option_context = nullptr;
+    std::int64_t* option_effect_card = nullptr;
+    std::int64_t* min_count = nullptr;
+    std::int64_t* max_count = nullptr;
+    std::int64_t* targets = nullptr;
+};
+
 struct OfficialDeviceArena {
     OfficialRuntimeConfig config{};
     OfficialStatePod* states = nullptr;
     std::uint8_t* rule_pack = nullptr;
     OfficialActionPod* actions = nullptr;
     std::uint8_t* statuses = nullptr;
+    std::uint64_t* semantic_history_total_count = nullptr;
+    std::uint32_t* semantic_history_write_index = nullptr;
+    std::uint8_t* semantic_history_log_type = nullptr;
+    std::uint8_t* semantic_history_param_count = nullptr;
+    std::int32_t* semantic_history_params = nullptr;
+    std::uint8_t* semantic_deck_membership_known = nullptr;
+    std::uint8_t* semantic_prize_membership_known = nullptr;
+    std::uint8_t* semantic_deck_order_known = nullptr;
+    std::uint64_t* semantic_deck_source_event = nullptr;
+    std::uint64_t* semantic_prize_source_event = nullptr;
+    std::uint8_t* semantic_known_opponent_hand = nullptr;
+    std::uint8_t* semantic_possible_opponent_hand = nullptr;
+    std::uint8_t* semantic_remembered_opponent_cards = nullptr;
+    std::uint16_t* semantic_unknown_opponent_hand = nullptr;
+    std::uint16_t* semantic_possible_hand_lower = nullptr;
+    std::uint16_t* semantic_possible_hand_upper = nullptr;
+    OfficialSemanticHistoryDeviceView* semantic_history_view = nullptr;
     PolicyCodecBuffers codec{};
     std::size_t allocated_bytes = 0;
     std::size_t device_stack_bytes = 0;
@@ -75,6 +140,20 @@ cudaError_t reset_official_states_seeded_first_min_i64_async(
     const std::uint8_t* lane_mask,
     cudaStream_t stream);
 
+cudaError_t reset_official_states_seeded_first_min_semantic_i32_async(
+    OfficialDeviceArena* arena,
+    const std::int32_t* decks,
+    const std::int64_t* seeds,
+    const std::uint8_t* lane_mask,
+    cudaStream_t stream);
+
+cudaError_t reset_official_states_seeded_first_min_semantic_i64_async(
+    OfficialDeviceArena* arena,
+    const std::int64_t* decks,
+    const std::int64_t* seeds,
+    const std::uint8_t* lane_mask,
+    cudaStream_t stream);
+
 // Initialize real setup decisions on device and stop at IsFirst.  Subsequent
 // setup choices use the same resident action/apply path as battle decisions.
 cudaError_t reset_official_states_seeded_interactive_i32_async(
@@ -85,6 +164,20 @@ cudaError_t reset_official_states_seeded_interactive_i32_async(
     cudaStream_t stream);
 
 cudaError_t reset_official_states_seeded_interactive_i64_async(
+    OfficialDeviceArena* arena,
+    const std::int64_t* decks,
+    const std::int64_t* seeds,
+    const std::uint8_t* lane_mask,
+    cudaStream_t stream);
+
+cudaError_t reset_official_states_seeded_interactive_semantic_i32_async(
+    OfficialDeviceArena* arena,
+    const std::int32_t* decks,
+    const std::int64_t* seeds,
+    const std::uint8_t* lane_mask,
+    cudaStream_t stream);
+
+cudaError_t reset_official_states_seeded_interactive_semantic_i64_async(
     OfficialDeviceArena* arena,
     const std::int64_t* decks,
     const std::int64_t* seeds,
@@ -120,6 +213,20 @@ cudaError_t apply_official_packed_setup_actions_async(
 
 cudaError_t encode_official_policy_codec_v1_async(
     OfficialDeviceArena* arena,
+    cudaStream_t stream);
+
+cudaError_t encode_official_semantic0031_codec_v2_i32_async(
+    OfficialDeviceArena* arena,
+    const std::int32_t* lane_indices,
+    std::uint32_t lane_count,
+    OfficialSemantic0031CodecBuffers output,
+    cudaStream_t stream);
+
+cudaError_t encode_official_semantic0031_codec_v2_i64_async(
+    OfficialDeviceArena* arena,
+    const std::int64_t* lane_indices,
+    std::uint32_t lane_count,
+    OfficialSemantic0031CodecBuffers output,
     cudaStream_t stream);
 
 // Packs policy-decoder output into the resident action POD without a host
