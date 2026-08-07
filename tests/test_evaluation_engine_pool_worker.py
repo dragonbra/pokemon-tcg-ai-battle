@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import ctypes
 import json
+from collections import Counter
+import subprocess
+import sys
 import tempfile
 import threading
 import unittest
@@ -9,7 +12,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from evaluation.packages.loader import SubmissionPackage
-from evaluation.runner.engine_pool_worker import _PointerBattle, run_pool_games
+from evaluation.runner.engine_pool_worker import (
+    _PointerBattle,
+    _RemotePolicyChannelPool,
+    run_pool_games,
+)
 from evaluation.runner.models import GameRequest
 
 
@@ -70,6 +77,153 @@ def _package(root: Path, name: str, card: int) -> SubmissionPackage:
 
 
 class EvaluationEnginePoolWorkerTests(unittest.TestCase):
+    def test_profiled_channel_records_ipc_stages_and_client_timestamp(self) -> None:
+        class Connection:
+            def __init__(self):
+                self.sent = []
+
+            def send(self, payload):
+                self.sent.append(payload)
+
+            def recv(self):
+                return {"ok": True, "action": [3]}
+
+            def close(self):
+                pass
+
+        connection = Connection()
+        pool = _RemotePolicyChannelPool(
+            "/unused",
+            "candidate",
+            channel_count=1,
+            profile=True,
+            connection_factory=lambda _path: connection,
+        )
+        timing = Counter()
+
+        action = pool.call("game-a:candidate", {"select": {}}, [1] * 60, timing)
+
+        self.assertEqual(action, [3])
+        self.assertIsInstance(connection.sent[0]["_profile_client_send_ns"], int)
+        self.assertEqual(timing["ipc_calls"], 1)
+        self.assertGreaterEqual(timing["ipc_roundtrip_seconds"], 0.0)
+        self.assertGreaterEqual(timing["ipc_send_seconds"], 0.0)
+
+    def test_worker_local_compiler_does_not_import_torch(self) -> None:
+        policy_root = (
+            Path(__file__).resolve().parents[1]
+            / "evaluation/arena/frozen_pools/0806_kaggle_top100_plus_v1"
+            / "policies/policy_0806"
+        )
+        source = """
+import sys
+from pathlib import Path
+from evaluation.runner.engine_pool_worker import _WorkerLocalCompilerFactory
+factory = _WorkerLocalCompilerFactory(
+    Path(sys.argv[1]),
+    {"max_options": 128, "max_action_steps": 64},
+)
+assert "torch" not in sys.modules
+assert factory._prototypes is not None
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", source, str(policy_root)],
+            cwd=Path(__file__).resolve().parents[1],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_0035_incremental_worker_compiler_is_torch_free_and_record_exact(self) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        policy_root = (
+            repository
+            / "evaluation/arena/frozen_pools/0806_kaggle_top100_plus_v1"
+            / "policies/policy_0806"
+        )
+        fixture = (
+            repository
+            / "train/0035_lifetime_aware_feature_compiler/tests/fixtures"
+            / "incremental_feature_trajectory.json.gz"
+        )
+        source = r"""
+import gzip
+import json
+import sys
+from pathlib import Path
+from evaluation.runner.engine_pool_worker import _WorkerLocalCompilerFactory
+
+policy_root = Path(sys.argv[1])
+with gzip.open(sys.argv[2], "rt", encoding="utf-8") as handle:
+    trajectory = json.load(handle)["trajectories"][0]
+deck = [
+    card_id
+    for card_id, count in trajectory["deck_manifest"]["counts"]
+    for _ in range(count)
+]
+config = {"max_options": 1024, "max_action_steps": 64}
+stateless = _WorkerLocalCompilerFactory(policy_root, config).create(
+    trajectory["actor"], deck
+)
+incremental = _WorkerLocalCompilerFactory(
+    policy_root, config, backend="0035_incremental"
+).create(trajectory["actor"], deck)
+for decision in trajectory["decisions"]:
+    observation = decision["actor_observation"]
+    assert incremental.encode_record(observation) == stateless.encode_record(observation)
+assert "torch" not in sys.modules
+"""
+        result = subprocess.run(
+            [sys.executable, "-c", source, str(policy_root), str(fixture)],
+            cwd=repository,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_channel_pool_reuses_connections_with_explicit_sessions(self) -> None:
+        class Connection:
+            def __init__(self):
+                self.sent = []
+
+            def send(self, payload):
+                self.sent.append(payload)
+
+            def recv(self):
+                if self.sent[-1].get("command") == "close_session":
+                    return {"ok": True}
+                return {"ok": True, "action": [len(self.sent)]}
+
+            def close(self):
+                self.sent.append({"command": "connection_closed"})
+
+        connections = [Connection(), Connection()]
+        pool = _RemotePolicyChannelPool(
+            "/unused",
+            "candidate",
+            channel_count=2,
+            connection_factory=lambda _path: connections.pop(0),
+        )
+
+        first = pool.call("game-a:candidate", {"select": {}}, [1] * 60)
+        second = pool.call("game-b:candidate", {"select": {}}, [2] * 60)
+        pool.close_session("game-a:candidate")
+        pool.close()
+
+        self.assertEqual(first, [1])
+        self.assertEqual(second, [1])
+        sent = [row for connection in pool._connections for row in connection.sent]
+        request_sessions = [row["session_id"] for row in sent if "observation" in row]
+        self.assertEqual(request_sessions, ["game-a:candidate", "game-b:candidate"])
+        self.assertEqual(
+            [row for row in sent if row.get("command") == "close_session"],
+            [{"command": "close_session", "session_id": "game-a:candidate"}],
+        )
+
     def test_pointer_battles_keep_independent_state_and_finish_once(self) -> None:
         library = _FakeEngineLibrary()
         lock = threading.Lock()

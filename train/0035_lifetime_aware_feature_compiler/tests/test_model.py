@@ -88,6 +88,26 @@ class ModelTests(unittest.TestCase):
             {"builds": 1, "hits": 2, "invalidations": 0},
         )
 
+    def test_precomputed_event_lookup_embeddings_preserve_exact_logits(self) -> None:
+        prototype_memory = self.model.prepare_prototype_cache()
+        with torch.inference_mode():
+            categorical = self.model.state_encoder.event_cat(self.batch.event_cat)
+            prototype = prototype_memory.card(self.batch.event_cat[..., 2])
+            cached = self.model.deterministic_action_tensors(
+                self.batch, (categorical, prototype)
+            )
+            reference = self.model.deterministic_action_tensors(self.batch)
+        self.assertTrue(torch.equal(cached.sequences, reference.sequences))
+        self.assertTrue(torch.equal(cached.lengths, reference.lengths))
+        self.assertTrue(torch.equal(cached.legal, reference.legal))
+        cached_state = self.model.encode_state(
+            self.batch, (categorical, prototype)
+        )
+        reference_state = self.model.encode_state(self.batch)
+        torch.testing.assert_close(
+            cached_state.tokens, reference_state.tokens, rtol=0.0, atol=0.0
+        )
+
     def test_device_dtype_and_state_load_invalidate_prototype_cache(self) -> None:
         with torch.inference_mode():
             self.model(self.batch)

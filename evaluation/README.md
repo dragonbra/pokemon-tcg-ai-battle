@@ -69,6 +69,60 @@ legacy CPU 吞吐基准，
 Frozen 双边 GPU dynamic batching 已进入正式 CLI；报告 manifest 分别记录 candidate/opponent
 inference mode、device、batch 参数，以及 Frozen pool/catalog/policy hash。
 
+`--engine-pool-size E` 是吞吐诊断用的实验路径：保留 `N` 个 OS worker，每个 worker 同时拥有
+最多 `E` 个独立 official-engine battle pointer。它不改变正式评测默认的 `E=1` 逐局进程隔离
+合同。`E>1` 时，每局/每方仍有独立 causal inference session，但物理 AF_UNIX 连接按
+`min(E, 8)`/role 封顶并复用，避免扩大 E 时让 resident inference server 的连接线程无界增长。
+pool subprocess timeout 按该 worker 承担的总游戏数计算，不会因为 E 增大、wave 数减少而反向
+缩短。报告分别记录 `engine_pool_size`、`engine_inference_channels_per_role`、OS worker 数和最大
+live environment 数；这些字段只描述吞吐合同，不构成策略强度证据。
+
+`--worker-local-compiler` 进一步把每个 causal session 的纯 Python feature compiler 绑定到
+持有 official-engine observation 的 OS worker；worker 只把 canonical record 与最小
+`current/select` 控制字段发给 resident GPU server。worker 不导入 PyTorch、不执行 collate 或
+H2D；统一的 `collate -> H2D -> FP16 model` 仍只在 GPU server 内按跨 worker batch 执行。
+Policy-0806 的 256-game 本机吞吐校准中，N16E6、batch 128、1 ms 达到 557.45 selections/s，
+256/256 completed、0 error，和 2 ms 的 555.49 selections/s 属于同一噪声带；E6 具有更低
+请求延迟和 RSS，因此是当前吞吐诊断推荐点。正式评测默认仍保持 E=1 隔离合同。
+
+`--worker-compiler-backend 0035_incremental` 可在上述 worker-local 路径中实验性启用 0035
+lifetime-aware 增量 canonical compiler。它仍然只在 engine worker 中输出 raw record，不把
+PyTorch、tensor bank、collate 或 H2D 移入 worker。35-decision 因果轨迹已验证与 0806 stateless
+record 逐字段一致；官方引擎 4-game smoke 为 4/4、0 error。N16E6/B128/1ms 的相邻 256-game
+对照为 546.16 vs 541.04 selections/s，约 +0.9%，但早先 stateless 同合同曾达到 557.45/s，说明
+该差异落在运行噪声内。单次 compile 均值仅从 1.280 ms 降至 1.254 ms（约 2.0%），不足以改变
+整体漏斗，因此默认仍为 `policy_stateless`；该 backend 只作为后续 compiler 优化的 admission
+入口，不影响训练 checkpoint 或最终策略 package。
+
+当前正式吞吐选择是 `--worker-local-compiler --worker-compiler-backend policy_stateless`，不是
+增量 backend。相邻的 Policy-0806 N16E16/B64/2ms、128-game official-engine 对照中，中央
+stateless 为 342.22 selections/s、65.72 s，worker-local stateless 为 528.77 selections/s、
+42.52 s，即吞吐 +54.5%、wall -35.3%；两者均为 128/128 completed、0 error。server 的
+prepare-record 阶段从 65.51 降至 0.20 ms/batch，确认收益来自消除中央 compiler 漏斗。
+worker-local incremental 在同合同下为 525.77 selections/s，比 stateless 低 0.57%，因此不作为
+当前推荐值。所有 optional compiler/tensor cache 保持关闭时，仍走原始 stateless canonical
+语义；普通 evaluation 默认也没有改变。
+
+`inference_profile` 还会记录闭环推理的分段时间：worker 连接等待、pickle/socket send、response
+wait，server ingress、queue wait、batch coalesce、CPU collate、H2D、model、decode、handler wakeup
+和 response send。该观测默认关闭，时间戳只用于吞吐诊断。Policy-0806 的
+N16E6/B128/1ms、256-game profile 显示：mean batch 67.93，58.1% 的 batch 至少达到 90% 的
+96-live-environment 上限，只有 15.9% 不超过 8；因此主要问题不是请求供给不足。每 batch 的
+CPU collate 为 24.84 ms、GPU model 为 21.06 ms、H2D GPU time 仅 1.45 ms，而 GPU model
+累计只占 83.17 秒 wall 的 16.7%。worker send 平均 0.318 ms，但 worker timestamp 到 server
+完成接收/反序列化平均为 21.45 ms，另有约 10.05 ms handler wakeup；这指向中央 Python
+connection-thread fan-in、pickle/object materialization 和 GIL/dispatch handoff，而非 AF_UNIX
+字节复制或 PCIe 带宽。下一项优化应优先验证分片 ingress/collate pipeline，不能再通过单纯增加
+E 或启用 pinned H2D 推断收益。
+
+`--async-h2d` 是保留用于诊断的 opt-in resident-server 实验路径：它使用容量为 1 的
+collate/transfer/compute 队列、三槽 grow-only pinned buffer、选择性大 tensor pin、独立 CUDA
+transfer stream 和 cohort 门槛。它不进入 candidate package，也不改变模型、feature 或 action。
+Policy-0806 的同合同 64-game 对照中，同步 N16E4/B128/1ms 为 479.58 selections/s，async 为
+432.80 selections/s（慢 9.8%）；256-game 全量 pin 初版也只有 199.04 selections/s。因此本机
+0806 默认必须保持 async H2D 关闭。该结果说明当前小模型的多字段 pin/copy 与闭环碎批成本高于
+可重叠的 H2D 时间；只有后续模型/record 显著增大时才应重新校准。
+
 需要 V8 setup/relay 语义指标时使用内置的 `auto_iteration_v8_setup_relay` profile
 （保留该名称作为兼容 ID），当前为 `revision 7`：
 

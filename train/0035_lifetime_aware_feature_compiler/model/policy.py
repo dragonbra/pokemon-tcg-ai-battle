@@ -115,9 +115,15 @@ class SemanticPolicy(nn.Module):
             return batch
         return DecisionBatch.from_mapping(batch)
 
-    def encode_state(self, batch: DecisionBatch | Mapping[str, Tensor]) -> EncodedState:
+    def encode_state(
+        self,
+        batch: DecisionBatch | Mapping[str, Tensor],
+        event_static_components: tuple[Tensor, Tensor] | None = None,
+    ) -> EncodedState:
         validated = self.validate_batch(batch)
-        return self.state_encoder(validated, self.prototype_memory())
+        return self.state_encoder(
+            validated, self.prototype_memory(), event_static_components
+        )
 
     def encode_options(self, batch: DecisionBatch, state: EncodedState) -> Tensor:
         return self.option_encoder(
@@ -135,10 +141,13 @@ class SemanticPolicy(nn.Module):
     def encode(
         self,
         batch: DecisionBatch | Mapping[str, Tensor],
+        event_static_components: tuple[Tensor, Tensor] | None = None,
     ) -> tuple[DecisionBatch, EncodedState, Tensor]:
         validated = self.validate_batch(batch)
         prototype_memory = self.prototype_memory()
-        state = self.state_encoder(validated, prototype_memory)
+        state = self.state_encoder(
+            validated, prototype_memory, event_static_components
+        )
         options = self.option_encoder(validated, state, prototype_memory)
         return validated, state, options
 
@@ -188,8 +197,9 @@ class SemanticPolicy(nn.Module):
     def deterministic_action_tensors(
         self,
         batch: DecisionBatch | Mapping[str, Tensor],
+        event_static_components: tuple[Tensor, Tensor] | None = None,
     ) -> GreedyActions:
-        batch, state, options = self.encode(batch)
+        batch, state, options = self.encode(batch, event_static_components)
         return self.action_decoder.greedy(batch, options, state.summary)
 
     def greedy_action(self, batch: DecisionBatch | Mapping[str, Tensor]) -> list[int]:

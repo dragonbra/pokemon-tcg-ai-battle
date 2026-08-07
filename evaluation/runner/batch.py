@@ -100,6 +100,11 @@ class BatchConfig:
     inference_forced_action_shortcut: bool = False
     arbitrary_legal_actions: bool = False
     engine_pool_size: int = 1
+    compiler_workers: int = 1
+    worker_local_compiler: bool = False
+    worker_compiler_backend: str = "policy_stateless"
+    async_h2d: bool = False
+    resident_tensor_cache: bool = False
     seeded_engine: bool = True
     engine_library: Path | None = None
     seeded_runtime_manifest: dict[str, object] | None = None
@@ -127,6 +132,31 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("workers must be at least one")
     if config.engine_pool_size < 1:
         raise ValueError("engine_pool_size must be at least one")
+    if config.compiler_workers < 1:
+        raise ValueError("compiler_workers must be at least one")
+    if config.worker_local_compiler and config.engine_pool_size <= 1:
+        raise ValueError("worker_local_compiler requires engine_pool_size greater than one")
+    if config.worker_local_compiler and config.compiler_workers != 1:
+        raise ValueError("worker_local_compiler cannot use server compiler workers")
+    if config.worker_compiler_backend not in {"policy_stateless", "0035_incremental"}:
+        raise ValueError("unsupported worker_compiler_backend")
+    if (
+        config.worker_compiler_backend != "policy_stateless"
+        and not config.worker_local_compiler
+    ):
+        raise ValueError("non-default worker compiler backend requires worker_local_compiler")
+    if config.async_h2d and config.candidate_inference_socket is None and (
+        not str(config.candidate_inference_device).startswith("cuda")
+        or not str(config.opponent_inference_device).startswith("cuda")
+    ):
+        raise ValueError("async_h2d requires CUDA resident inference for both policies")
+    if config.resident_tensor_cache and config.async_h2d:
+        raise ValueError("resident_tensor_cache cannot use async_h2d")
+    if config.resident_tensor_cache and config.candidate_inference_socket is None and (
+        config.candidate_inference_device is None
+        or config.opponent_inference_device is None
+    ):
+        raise ValueError("resident_tensor_cache requires resident inference for both policies")
     if config.worker_crash_retries < 0:
         raise ValueError("worker_crash_retries cannot be negative")
     if config.games_by_opponent is not None and (
@@ -305,6 +335,11 @@ def run_batch(config: BatchConfig) -> BatchResult:
             "workers": actual_workers,
             "worker_processes": actual_workers,
             "engine_pool_size": config.engine_pool_size,
+            "compiler_workers": config.compiler_workers,
+            "worker_local_compiler": config.worker_local_compiler,
+            "engine_inference_channels_per_role": (
+                min(config.engine_pool_size, 8) if config.engine_pool_size > 1 else None
+            ),
             "max_live_environments": min(
                 len(jobs), actual_workers * config.engine_pool_size
             ),
@@ -587,6 +622,9 @@ def _policy_inference_servers(
         inference_dtype=config.candidate_inference_dtype,
         profile=config.inference_profile,
         forced_action_shortcut=config.inference_forced_action_shortcut,
+        compiler_workers=config.compiler_workers,
+        async_h2d=config.async_h2d,
+        resident_tensor_cache=config.resident_tensor_cache,
     ) as candidate_socket:
         if config.share_policy_inference_server:
             yield candidate_socket, candidate_socket
@@ -601,6 +639,9 @@ def _policy_inference_servers(
             inference_dtype=config.opponent_inference_dtype,
             profile=config.inference_profile,
             forced_action_shortcut=config.inference_forced_action_shortcut,
+            compiler_workers=config.compiler_workers,
+            async_h2d=config.async_h2d,
+            resident_tensor_cache=config.resident_tensor_cache,
         ) as opponent_socket:
             yield candidate_socket, opponent_socket
 
@@ -617,6 +658,9 @@ def _policy_inference_server(
     inference_dtype: str = "fp32",
     profile: bool = False,
     forced_action_shortcut: bool = False,
+    compiler_workers: int = 1,
+    async_h2d: bool = False,
+    resident_tensor_cache: bool = False,
 ) -> Iterator[Path | None]:
     if root is None or device is None:
         yield None
@@ -641,11 +685,17 @@ def _policy_inference_server(
             str(ability_repeat_limit),
             "--inference-dtype",
             inference_dtype,
+            "--compiler-workers",
+            str(compiler_workers),
         ]
     if profile:
         command.append("--profile")
     if forced_action_shortcut:
         command.append("--forced-action-shortcut")
+    if async_h2d:
+        command.append("--async-h2d")
+    if resident_tensor_cache:
+        command.append("--resident-tensor-cache")
     process = subprocess.Popen(
         command,
         cwd=Path(__file__).resolve().parents[2],
@@ -753,6 +803,11 @@ def _partition_pool_jobs(
     return groups
 
 
+def _allow_serial_pool_crash_retry(config: BatchConfig) -> bool:
+    """Never let a worker-local benchmark silently change compiler topology."""
+    return not config.worker_local_compiler
+
+
 def _run_pool_workers(
     config: BatchConfig,
     jobs: list[tuple[GameRequest, Path]],
@@ -774,6 +829,9 @@ def _run_pool_workers(
                 config.worker_timeout_seconds,
                 config.worker_cpu_threads,
                 config.engine_pool_size,
+                config.worker_local_compiler,
+                config.worker_compiler_backend,
+                config.inference_profile,
                 candidate_inference_socket,
                 opponent_inference_socket,
             )
@@ -784,7 +842,7 @@ def _run_pool_workers(
             for (index, (request, trace_path)), result in zip(
                 group, results, strict=True
             ):
-                if result.error_kind == "worker_crash":
+                if result.error_kind == "worker_crash" and _allow_serial_pool_crash_retry(config):
                     result = _run_worker_with_retries(
                         config.worker_crash_retries,
                         request,
@@ -809,6 +867,9 @@ def _run_pool_worker_group(
     timeout_seconds: float,
     cpu_threads: int | None,
     pool_size: int,
+    worker_local_compiler: bool,
+    worker_compiler_backend: str,
+    inference_profile: bool,
     candidate_inference_socket: Path,
     opponent_inference_socket: Path,
 ) -> list[GameResult]:
@@ -818,6 +879,10 @@ def _run_pool_worker_group(
         json.dumps(
             {
                 "pool_size": pool_size,
+                "inference_channels_per_role": min(pool_size, 8),
+                "worker_local_compiler": worker_local_compiler,
+                "worker_compiler_backend": worker_compiler_backend,
+                "inference_profile": inference_profile,
                 "candidate_inference_socket": str(candidate_inference_socket),
                 "opponent_inference_socket": str(opponent_inference_socket),
                 "jobs": [
@@ -849,7 +914,10 @@ def _run_pool_worker_group(
                 "NUMEXPR_NUM_THREADS": thread_count,
             }
         )
-    waves = max(1, (len(indexed_jobs) + pool_size - 1) // pool_size)
+    pool_timeout_seconds = _pool_worker_timeout(
+        timeout_seconds,
+        group_size=len(indexed_jobs),
+    )
     requests = [request for _index, (request, _trace) in indexed_jobs]
     traces = [trace for _index, (_request, trace) in indexed_jobs]
     try:
@@ -866,14 +934,14 @@ def _run_pool_worker_group(
             capture_output=True,
             text=True,
             check=False,
-            timeout=timeout_seconds * waves,
+            timeout=pool_timeout_seconds,
         )
     except subprocess.TimeoutExpired:
         return [
             _worker_crash_result(
                 request,
                 trace,
-                f"engine pool worker timed out after {timeout_seconds * waves:g} seconds",
+                f"engine pool worker timed out after {pool_timeout_seconds:g} seconds",
             )
             for request, trace in zip(requests, traces, strict=True)
         ]
@@ -923,6 +991,13 @@ def _run_pool_worker_group(
             _worker_crash_result(request, trace, f"invalid engine pool result: {exc}")
             for request, trace in zip(requests, traces, strict=True)
         ]
+
+
+def _pool_worker_timeout(per_game_timeout_seconds: float, *, group_size: int) -> float:
+    """Keep the timeout budget monotonic as E increases and waves decrease."""
+    if group_size < 1:
+        raise ValueError("engine pool group_size must be at least one")
+    return per_game_timeout_seconds * group_size
 
 
 def _run_worker_with_retries(
@@ -1404,6 +1479,14 @@ def _manifest(
         "requested_workers": config.workers,
         "worker_processes": actual_workers,
         "engine_pool_size": config.engine_pool_size,
+        "compiler_workers": config.compiler_workers,
+        "worker_local_compiler": config.worker_local_compiler,
+        "worker_compiler_backend": config.worker_compiler_backend,
+        "async_h2d": config.async_h2d,
+        "resident_tensor_cache": config.resident_tensor_cache,
+        "engine_inference_channels_per_role": (
+            min(config.engine_pool_size, 8) if config.engine_pool_size > 1 else None
+        ),
         "max_live_environments": min(
             (
                 sum(config.games_by_opponent)
@@ -1436,6 +1519,11 @@ def _manifest(
             "dtype": config.candidate_inference_dtype,
             "profile": config.inference_profile,
             "forced_action_shortcut": config.inference_forced_action_shortcut,
+            "compiler_workers": config.compiler_workers,
+            "worker_local_compiler": config.worker_local_compiler,
+            "worker_compiler_backend": config.worker_compiler_backend,
+            "async_h2d": config.async_h2d,
+            "resident_tensor_cache": config.resident_tensor_cache,
         },
         "opponent_pool": {
             "pool_id": config.opponent_pool_id,
@@ -1465,6 +1553,11 @@ def _manifest(
             "dtype": config.opponent_inference_dtype,
             "profile": config.inference_profile,
             "forced_action_shortcut": config.inference_forced_action_shortcut,
+            "compiler_workers": config.compiler_workers,
+            "worker_local_compiler": config.worker_local_compiler,
+            "worker_compiler_backend": config.worker_compiler_backend,
+            "async_h2d": config.async_h2d,
+            "resident_tensor_cache": config.resident_tensor_cache,
         },
         "shared_policy_inference_process": config.share_policy_inference_server,
         "arbitrary_legal_actions": config.arbitrary_legal_actions,

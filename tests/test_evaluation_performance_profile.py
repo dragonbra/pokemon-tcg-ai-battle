@@ -8,6 +8,7 @@ from evaluation.performance_profile import (
     _ProcessTreeRssMonitor,
     _workload,
     aggregate_worker_performance,
+    derive_pipeline_diagnostics,
 )
 
 
@@ -66,6 +67,45 @@ class EvaluationPerformanceProfileTest(unittest.TestCase):
         result = aggregate_worker_performance((), wall_seconds=1.0, workers=1)
         self.assertEqual(result["games"], 0)
         self.assertEqual(result["engine_seconds_per_selection"], 0.0)
+
+    def test_pipeline_diagnostics_separates_batch_and_request_costs(self) -> None:
+        inference = {
+            "batches": 2,
+            "mean_batch_size": 3.0,
+            "batch_histogram": {"2": 1, "4": 1},
+            "counters": {"batches_deadline": 2},
+            "request_latency_ms": {"count": 6, "total": 60.0},
+            "latency_ms": {
+                "ipc_ingress": {"mean": 2.0},
+                "handler_wakeup": {"mean": 3.0},
+                "queue_wait": {"mean": 4.0},
+            },
+            "seconds": {
+                "batch_cycle_seconds": 0.2,
+                "inference_dispatch_seconds": 0.1,
+                "dispatch_profile_bookkeeping_seconds": 0.01,
+                "gpu_model_seconds": 0.04,
+                "collate_cpu_seconds": 0.02,
+                "h2d_gpu_seconds": 0.01,
+                "ipc_egress_send_seconds": 0.03,
+            },
+        }
+        worker = {
+            "ipc_calls": 6,
+            "compiler_seconds": 0.006,
+            "ipc_roundtrip_seconds": 0.12,
+        }
+
+        result = derive_pipeline_diagnostics(
+            inference, worker, wall_seconds=1.0, max_live_environments=4
+        )
+
+        self.assertEqual(result["batching"]["deadline_fraction"], 1.0)
+        self.assertEqual(result["per_request_ms"]["compiler"], 1.0)
+        self.assertEqual(result["per_request_ms"]["server_request_mean"], 10.0)
+        self.assertAlmostEqual(
+            result["dispatch_handoff_residual"]["milliseconds_per_batch"], 45.0
+        )
 
 
 if __name__ == "__main__":

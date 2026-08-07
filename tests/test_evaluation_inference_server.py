@@ -15,19 +15,232 @@ from evaluation.runner.inference_server import (
     _InferenceProfile,
     _InferenceRequest,
     _apply_ability_repeat_guard,
+    _canonical_record_batching,
     _collate_raw_records_equivalent,
     _inject_source_id_if_required,
     _normalize_request_deck,
+    _PinnedBatchPool,
+    PolicyServer,
     _resolve_inference_dtype,
     _stack_batches,
     _forced_action,
     _install_static_loader_cache,
     _install_raw_record_batching,
+    _handle_connection,
 )
 from evaluation.runner.worker import _remote_policy_agent
 
 
 class CandidateInferenceServerTest(unittest.TestCase):
+    def test_resident_tensor_batch_matches_existing_server_collation(self) -> None:
+        event_cache = importlib.import_module(
+            "train.0035_lifetime_aware_feature_compiler.deployment.event_embedding_cache"
+        )
+        session_cache = importlib.import_module(
+            "train.0035_lifetime_aware_feature_compiler.deployment.session_tensor_cache"
+        )
+        collate = importlib.import_module(
+            "train.0035_lifetime_aware_feature_compiler.features.collate"
+        )
+        records = [
+            self._canonical_record(
+                {"card": 2, "resource": 3, "event": 1, "option": 2, "skill": 1, "effect": 3},
+                [1],
+            ),
+            self._canonical_record(
+                {"card": 4, "resource": 1, "event": 3, "option": 5, "skill": 4, "effect": 1},
+                [2, 0],
+            ),
+        ]
+        for record in records:
+            record["actor"]["event_cat"] = [
+                [0] * len(row) for row in record["actor"]["event_cat"]
+            ]
+            record["_runtime_event_source_ids"] = tuple(
+                range(len(record["actor"]["event_cat"]))
+            )
+        requests = [
+            _InferenceRequest(
+                f"session-{index}",
+                {"current": {"yourIndex": index}, "select": {}},
+                tuple(range(1, 61)),
+            )
+            for index in range(2)
+        ]
+        server = object.__new__(PolicyServer)
+        model_module = importlib.import_module(
+            "train.0035_lifetime_aware_feature_compiler.model"
+        )
+        domain_module = importlib.import_module(
+            "train.0035_lifetime_aware_feature_compiler.domain"
+        )
+        model = model_module.SemanticPolicy(
+            model_module.ModelConfig(
+                d_model=32,
+                heads=4,
+                state_layers=1,
+                event_layers=1,
+                option_layers=1,
+                max_card_id=2048,
+                max_attack_id=2048,
+                max_skill_id=512,
+                max_effect_id=4096,
+            ),
+            domain_module.PrototypeIndex.empty(),
+        ).eval()
+        server._resident_tensor_store = event_cache.EventEmbeddingStore(
+            model, max_sessions=4
+        )
+        server._resident_tensor_key_type = session_cache.SessionTensorKey
+        server._session_tensor_keys = {}
+        server._profile = _InferenceProfile(enabled=True)
+        server._raw_record_collator = collate.collate_canonical_records
+        server._model_dtype = torch.float32
+        server._device = torch.device("cpu")
+
+        actual = server._collate_resident(requests, records)
+        components = actual.pop("_runtime_event_static_components")
+        expected = _collate_raw_records_equivalent(
+            collate.collate_canonical_records, records
+        )
+        self.assertEqual(set(actual), set(expected))
+        for name in expected:
+            with self.subTest(name=name):
+                self.assertEqual(actual[name].dtype, expected[name].dtype)
+                self.assertEqual(actual[name].shape, expected[name].shape)
+                if name != "event_cat":
+                    self.assertTrue(torch.equal(actual[name], expected[name]))
+        self.assertEqual(len(components), 2)
+        self.assertEqual(components[0].shape[:2], expected["event_mask"].shape)
+        self.assertEqual(components[1].shape, components[0].shape)
+
+    @unittest.skipUnless(torch.cuda.is_available(), "CUDA pinned memory is unavailable")
+    def test_pinned_batch_pool_reuses_capacity_and_skips_small_tensors(self) -> None:
+        pool = _PinnedBatchPool(torch, slots=1, minimum_pinned_bytes=32)
+        small = torch.arange(2, dtype=torch.long)
+        large = torch.arange(16, dtype=torch.float32).reshape(4, 4)
+
+        slot, first = pool.copy({"small": small, "large": large})
+        first_pointer = first["large"].data_ptr()
+        self.assertIs(first["small"], small)
+        self.assertTrue(first["large"].is_pinned())
+        self.assertTrue(torch.equal(first["large"], large))
+        pool.release(slot)
+
+        replacement = torch.full((2, 4), 7.0)
+        slot, second = pool.copy({"small": small, "large": replacement})
+        self.assertEqual(second["large"].data_ptr(), first_pointer)
+        self.assertEqual(tuple(second["large"].shape), (2, 4))
+        self.assertTrue(torch.equal(second["large"], replacement))
+        pool.release(slot)
+
+    def test_connection_routes_explicit_sessions_and_closes_them_on_command(self) -> None:
+        class Server:
+            def __init__(self):
+                self.calls = []
+                self.closed = []
+
+            def call(self, session_id, observation, deck, record=None, **_timing):
+                self.calls.append((session_id, observation, deck))
+                return [7]
+
+            def close_session(self, session_id):
+                self.closed.append(session_id)
+
+            def record_response_send(self, _nanoseconds):
+                pass
+
+        class Connection:
+            def __init__(self):
+                self.requests = iter(
+                    (
+                        {"session_id": "game-a:candidate", "observation": {"select": {}}, "deck": [1] * 60},
+                        {"command": "close_session", "session_id": "game-a:candidate"},
+                    )
+                )
+                self.responses = []
+
+            def recv(self):
+                try:
+                    return next(self.requests)
+                except StopIteration as exc:
+                    raise EOFError from exc
+
+            def send(self, payload):
+                self.responses.append(payload)
+
+            def close(self):
+                pass
+
+        server = Server()
+        connection = Connection()
+
+        _handle_connection(server, connection)
+
+        self.assertEqual(server.calls[0][0], "game-a:candidate")
+        self.assertEqual(server.closed[0], "game-a:candidate")
+        self.assertEqual(len(server.closed), 2)
+        self.assertEqual(connection.responses, [{"ok": True, "action": [7]}, {"ok": True}])
+
+    def test_compiler_contract_command_returns_server_contract(self) -> None:
+        class Server:
+            def compiler_contract(self):
+                return {"supported": True, "record_contract": "canonical_raw_record_v1"}
+
+            def close_session(self, _session_id):
+                pass
+
+        class Connection:
+            def __init__(self):
+                self.first = True
+                self.responses = []
+
+            def recv(self):
+                if self.first:
+                    self.first = False
+                    return {"command": "compiler_contract"}
+                raise EOFError
+
+            def send(self, payload):
+                self.responses.append(payload)
+
+            def close(self):
+                pass
+
+        connection = Connection()
+        _handle_connection(Server(), connection)
+        self.assertEqual(
+            connection.responses,
+            [{"ok": True, "contract": {"supported": True, "record_contract": "canonical_raw_record_v1"}}],
+        )
+
+    def test_connection_rejects_empty_explicit_session_id(self) -> None:
+        class Server:
+            def close_session(self, _session_id):
+                pass
+
+        class Connection:
+            def __init__(self):
+                self.responses = []
+
+            def recv(self):
+                if self.responses:
+                    raise EOFError
+                return {"session_id": "", "observation": {"select": {}}}
+
+            def send(self, payload):
+                self.responses.append(payload)
+
+            def close(self):
+                pass
+
+        connection = Connection()
+
+        _handle_connection(Server(), connection)
+
+        self.assertEqual(connection.responses[0]["ok"], False)
+        self.assertIn("session_id", connection.responses[0]["error"])
+
     @staticmethod
     def _canonical_record(lengths: dict[str, int], action: list[int]) -> dict:
         fields = importlib.import_module(
@@ -84,6 +297,28 @@ class CandidateInferenceServerTest(unittest.TestCase):
         self.assertEqual(second, 2)
         self.assertEqual(combined["values"].tolist(), [1, 2])
         self.assertEqual(len(calls), 1)
+
+    def test_explicit_record_encoder_avoids_collator_monkeypatch(self) -> None:
+        def collate(records):
+            return {"records": list(records)}
+
+        module_name = "tests._fake_explicit_record_online_runtime"
+        module = type(sys)(module_name)
+        module.collate_canonical_records = collate
+        encoder_type = type(
+            "Encoder",
+            (),
+            {"__module__": module_name, "encode_record": lambda self, value: value},
+        )
+        canonical = type("Canonical", (), {"requires_source_id": False})()
+        with patch.dict(sys.modules, {module_name: module}):
+            batch_collator, direct = _canonical_record_batching(
+                encoder_type, canonical
+            )
+
+        self.assertTrue(direct)
+        self.assertIs(batch_collator, collate)
+        self.assertIs(module.collate_canonical_records, collate)
 
     def test_canonical_batch_collation_is_exactly_equivalent_to_old_stack(self) -> None:
         collate_module = importlib.import_module(
@@ -154,6 +389,10 @@ class CandidateInferenceServerTest(unittest.TestCase):
         profile.add_seconds("feature_encode_seconds", 0.25)
         profile.record_batch(2)
         profile.record_batch(4)
+        profile.record_latency_ms("queue_wait", 1.0)
+        profile.record_latency_ms("queue_wait", 3.0)
+        profile.record_batch_ready(1_000_000)
+        profile.record_batch_ready(4_000_000)
         request = _InferenceRequest("session", {"select": {}}, tuple(range(1, 61)))
         profile.finish_request(request)
 
@@ -165,6 +404,11 @@ class CandidateInferenceServerTest(unittest.TestCase):
         self.assertEqual(snapshot["batches"], 2)
         self.assertEqual(snapshot["mean_batch_size"], 3.0)
         self.assertGreaterEqual(snapshot["request_latency_ms"]["p50"], 0.0)
+        self.assertEqual(snapshot["latency_ms"]["queue_wait"]["count"], 2)
+        self.assertEqual(snapshot["latency_ms"]["queue_wait"]["mean"], 2.0)
+        self.assertEqual(snapshot["latency_ms"]["queue_wait"]["p95"], 1.0)
+        self.assertEqual(snapshot["latency_ms"]["batch_ready_interval"]["count"], 1)
+        self.assertEqual(snapshot["latency_ms"]["batch_ready_interval"]["mean"], 3.0)
 
     def test_forced_action_requires_exactly_one_required_option(self) -> None:
         required = {

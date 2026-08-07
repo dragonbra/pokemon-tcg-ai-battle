@@ -21,9 +21,11 @@ from evaluation.runner.batch import (
     _deck_card_category,
     _finalize_formal_report,
     _game_jobs,
+    _allow_serial_pool_crash_retry,
     _metric_refs,
     _manifest_package,
     _partition_pool_jobs,
+    _pool_worker_timeout,
     _validate_formal_destination,
     _write_evaluation_backlink_atomic,
     _metric_registry,
@@ -271,6 +273,51 @@ class BatchRunnerTests(unittest.TestCase):
                 )
             )
 
+    def test_worker_local_compiler_requires_engine_pool_and_serial_gpu_compiler(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        base = self.make_config(candidate, (opponent,), games=2)
+        with self.assertRaisesRegex(ValueError, "engine_pool_size"):
+            run_batch(replace(base, worker_local_compiler=True))
+        with self.assertRaisesRegex(ValueError, "server compiler"):
+            run_batch(
+                replace(
+                    base,
+                    engine_pool_size=2,
+                    compiler_workers=2,
+                    worker_local_compiler=True,
+                )
+            )
+
+    def test_worker_compiler_backend_requires_supported_worker_local_mode(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        base = self.make_config(candidate, (opponent,), games=2)
+        with self.assertRaisesRegex(ValueError, "unsupported worker_compiler_backend"):
+            run_batch(replace(base, worker_compiler_backend="unknown"))
+        with self.assertRaisesRegex(ValueError, "requires worker_local_compiler"):
+            run_batch(replace(base, worker_compiler_backend="0035_incremental"))
+
+    def test_async_h2d_requires_cuda_resident_inference(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        base = self.make_config(candidate, (opponent,), games=2)
+
+        with self.assertRaisesRegex(ValueError, "CUDA resident inference"):
+            run_batch(replace(base, async_h2d=True))
+
+    def test_worker_local_compiler_crash_cannot_fall_back_to_serial_topology(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        base = self.make_config(candidate, (opponent,), games=2)
+
+        self.assertTrue(_allow_serial_pool_crash_retry(base))
+        self.assertFalse(
+            _allow_serial_pool_crash_retry(
+                replace(base, engine_pool_size=2, worker_local_compiler=True)
+            )
+        )
+
     def test_pool_partition_keeps_n_processes_and_stable_job_order(self) -> None:
         jobs = [(f"request-{index}", f"trace-{index}") for index in range(10)]
         groups = _partition_pool_jobs(jobs, workers=3)
@@ -283,6 +330,9 @@ class BatchRunnerTests(unittest.TestCase):
             for index, job in group
         )
         self.assertEqual([job for _, job in flattened], jobs)
+
+    def test_pool_timeout_does_not_shrink_when_engine_pool_grows(self) -> None:
+        self.assertEqual(_pool_worker_timeout(90.0, group_size=16), 1440.0)
 
     def test_metric_refs_include_lightweight_payload_and_denominators(self) -> None:
         metric = GameMetric(

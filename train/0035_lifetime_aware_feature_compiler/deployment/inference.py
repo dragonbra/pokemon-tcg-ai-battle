@@ -139,6 +139,17 @@ class PortableSemanticPolicy:
     ) -> OnlineCausalEncoder:
         return OnlineCausalEncoder(actor, deck or self.deck, self.config)
 
+    def new_session_tensor_bank(
+        self, actor: int, deck: Sequence[int] | None = None
+    ) -> OnlineCausalEncoder:
+        """Create one chronological encoder that emits exact tensor deltas."""
+        return OnlineCausalEncoder(
+            actor,
+            deck or self.deck,
+            self.config,
+            persistent_tensors=True,
+        )
+
     def select(self, observation: dict[str, Any]) -> list[int]:
         actor = (observation.get("current") or {}).get("yourIndex")
         if actor not in (0, 1):

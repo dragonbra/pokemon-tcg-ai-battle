@@ -1,6 +1,6 @@
 # 0035 Lifetime-Aware Feature Compiler
 
-Status: **V4 model-static prototype GPU cache implemented, exact, and admitted for inference/frozen-prototype RL; equal-contract official-engine N16E16 throughput improves 6.0%.**
+Status: **V5 worker-local stateless compilation admitted for evaluation throughput; equal-contract official-engine N16E16 throughput improves 54.5% over central stateless compilation, while the compiler and actor semantics remain unchanged.**
 
 ## Scope and evidence boundary
 
@@ -83,6 +83,12 @@ The default 2,049 card + 2,049 attack + 513 skill + 4,097 effect rows at width 3
 
 Training semantics are explicit. If any prototype-encoder parameter requires gradients, train mode bypasses the cache and executes an autograd-connected `encode_all()` on every forward. If all prototype parameters are frozen, train mode may reuse the ordinary detached cache while downstream Transformer, LoRA and decoder parameters continue receiving gradients. This matches the intended RL boundary without silently freezing a trainable prototype path.
 
+## Worker-local stateless compiler topology
+
+V5 changes evaluation scheduling, not feature semantics. With `worker_local_compiler=true` and `worker_compiler_backend=policy_stateless`, each OS process that owns official-engine battles also owns one ordinary causal encoder per battle side. It consumes the same decoded observation and invokes the unchanged stateless canonical compiler locally. Only the canonical record and minimal `current/select` control fields cross the resident-inference socket; PyTorch import, collation, H2D, the model and decoding remain centralized in the GPU server.
+
+This removes the single central Python compiler stage between parallel Engine workers and batched GPU inference. Session IDs, actor/deck identity and chronology remain isolated, compiler failures fail closed, and the server never silently falls back to the old serial topology. The incremental backend and session/event tensor experiments are not selected: the admitted V5 contract is explicitly `policy_stateless`, so disabling every optional incremental/tensor-cache flag yields the same canonical records, 39 tensors, logits and actions as the original stateless path.
+
 ## Dirty graph and safety
 
 ```text
@@ -117,10 +123,12 @@ The V4 CUDA component benchmark used the real 56,352,322-parameter checkpoint, F
 
 The strict official-engine ablation used two packages exported from the same 0035 source/checkpoint; the uncached package changes only `prototype_memory()` to recompute every forward. Each arm ran three 128-game N16E16 profiles with batch 64, 2 ms wait and FP16. All 768 games completed with zero errors. Across-run medians were: GPU model `20.572 -> 17.411 ms/batch` (-15.4%), model wall `22.383 -> 18.961 ms/batch` (-15.3%), total wall `67.068 -> 63.279 s` (-5.6%), and official-engine selections/s `335.35 -> 355.47` (+6.0%). The six artifacts are `.tmp/0035_lifetime_aware_feature_compiler/prototype_ablation_uncached_n16e16_r{1,2,3}.json` and `prototype_cache_official_cached_n16e16{,_r2,_r3}.json`.
 
+The V5 adjacent official-engine comparison used the same Policy-0806 checkpoint/deck, N16E16, batch 64, 2 ms wait and FP16. Central stateless compilation completed 128/128 games with zero errors at `342.22 selections/s` and `65.72 s` wall; worker-local stateless compilation completed 128/128 with zero errors at `528.77 selections/s` and `42.52 s` wall. This is `+54.5%` throughput and `-35.3%` wall time. Server `prepare_records` fell from `65.51` to `0.20 ms/batch`, directly confirming removal of the central compiler funnel. A worker-local incremental arm reached `525.77 selections/s`, 0.57% below stateless, so V5 deliberately selects stateless. The artifacts are `.tmp/0035_lifetime_aware_feature_compiler/central_stateless_n16e16_b64_r2.json`, `worker_local_stateless_n16e16_b64_r1.json`, and `worker_local_incremental_n16e16_b64_r1.json`.
+
 Admission requires exact Python-record and all-39-tensor parity, zero shadow/logit/action mismatches, compiler median no more than 0.25 ms and at least 50% below paired full rebuild, no p95 feature regression, 128/128 official-engine completion with zero errors, at least 10% N16E8 throughput gain, and no more than 3% N16E1 regression. Until those gates pass, deployment defaults to the stateless path.
 
 ## Current and next stage
 
-V4 retains the self-contained lineage and unchanged actor/model/action contracts. Prototype caching is automatic whenever its weights are semantically frozen, including ordinary inference and future frozen-prototype LoRA/decoder fine-tuning. The cached memory is intentionally rebuilt after checkpoint/device/dtype changes and omitted from serialized state. Candidate export carries this behavior without new assets or checkpoint fields. The complete 0035 suite passes 104/104 tests.
+V5 retains the self-contained lineage and unchanged actor/model/action contracts. Prototype caching remains automatic whenever its weights are semantically frozen. Evaluation throughput now uses worker-local stateless compilation when explicitly requested; ordinary evaluation defaults remain unchanged, and no incremental or resident tensor cache is required. The full evaluation test suite passes 295/295 tests.
 
-The next implementation stage is deck-static GPU resource bases, followed by compiler-owned dirty slot/range tokens so per-decision H2D contains only dynamic residuals. V4 creates no training checkpoint or W&B run.
+The next scheduling stage can address central collation/IPC handoff without changing compiler semantics. Deck-static GPU resource bases and compiler-owned dirty ranges remain research directions rather than admitted runtime defaults. V5 creates no training checkpoint or W&B run.

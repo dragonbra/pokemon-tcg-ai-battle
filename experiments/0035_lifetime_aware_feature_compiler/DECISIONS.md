@@ -42,3 +42,11 @@
 - Record exact cached/uncached deterministic action commitments and the 7x100 batch-64 CUDA result: forward median `13.111 -> 10.801 ms` (-17.6%), p95 `33.660 -> 29.380 ms` (-12.7%), modeled throughput `4,881 -> 5,925 decisions/s` (+21.4%).
 - Reject the first official comparison as a formal ablation because its uncached arm used the older 0031 package and therefore changed the compiler together with the cache. Re-run with two packages exported from the same 0035 source/checkpoint, changing only `prototype_memory()`.
 - In the strict three-run-per-arm 128-game N16E16 ablation, all 768 games finished with zero errors. Median GPU model time fell `20.572 -> 17.411 ms/batch` (-15.4%); wall fell `67.068 -> 63.279 s` (-5.6%); selections/s rose `335.35 -> 355.47` (+6.0%). Admit automatic prototype caching for semantically frozen inference/prototype parameters.
+
+## 2026-08-08: V5 move the unchanged stateless compiler into Engine workers
+
+- Preserve the stateless canonical compiler as the selected semantic authority. Do not enable the 0035 incremental compiler, persistent tensor bank, or event/session cache in the admitted evaluation path.
+- Bind one causal encoder per battle side to the OS worker that owns the official-engine pointer. Send canonical records to the resident GPU server and keep PyTorch, collate, H2D, model forward and decode centralized.
+- Require explicit `worker_local_compiler`; preserve ordinary evaluation defaults. Fail closed on compiler/contract failure and never silently fall back to the serial server compiler.
+- In the adjacent 128-game N16E16/B64/2ms/FP16 official-engine comparison, central stateless completed 128/128 with zero errors at `342.22 selections/s` and `65.72 s`; worker-local stateless completed 128/128 with zero errors at `528.77 selections/s` and `42.52 s`. Admit the topology change: throughput +54.5%, wall -35.3%, and server prepare-record time `65.51 -> 0.20 ms/batch`.
+- Reject worker-local incremental as the selected backend: its `525.77 selections/s` was 0.57% below stateless under the same contract. This version changes scheduling only and performs no training.

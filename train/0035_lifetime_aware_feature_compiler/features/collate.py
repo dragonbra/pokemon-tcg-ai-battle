@@ -83,6 +83,7 @@ def collate_canonical_records(
     records: Sequence[Mapping[str, Any]],
     *,
     bucket_padding: BucketPadding | None = None,
+    omit_event: bool = False,
 ) -> dict[str, Tensor]:
     if not records:
         raise ValueError("cannot collate an empty canonical batch")
@@ -120,6 +121,8 @@ def collate_canonical_records(
             ("option", "option_cat"),
             ("effect", "option_effect_id"),
         ):
+            if omit_event and family == "event":
+                continue
             padded_lengths[family] = bucket_padding.upper_bound(
                 family, max(1, max(len(row[actor_key]) for row in actors))
             )
@@ -135,6 +138,8 @@ def collate_canonical_records(
         ("event", WIDTHS.event_cat, WIDTHS.event_num),
         ("option", WIDTHS.option_cat, WIDTHS.option_num),
     ):
+        if omit_event and prefix == "event":
+            continue
         batch[f"{prefix}_cat"], batch[f"{prefix}_mask"] = _pad_rows(
             [row[f"{prefix}_cat"] for row in actors],
             cat_width,
@@ -155,6 +160,8 @@ def collate_canonical_records(
         ("event", WIDTHS.event_state),
         ("option", WIDTHS.option_state),
     ):
+        if omit_event and prefix == "event":
+            continue
         batch[f"{prefix}_state"], state_mask = _pad_rows(
             [row[f"{prefix}_state"] for row in actors],
             width,
@@ -169,6 +176,8 @@ def collate_canonical_records(
         "event_source", "event_target", "event_before", "event_after",
         "option_source", "option_target", "option_context", "option_effect_card",
     ):
+        if omit_event and name.startswith("event_"):
+            continue
         family = "card" if name == "card_parent" else "event" if name.startswith("event_") else "option"
         batch[name], mask = _pad_values(
             [row[name] for row in actors],

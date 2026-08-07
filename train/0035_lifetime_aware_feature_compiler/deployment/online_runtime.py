@@ -12,7 +12,7 @@ from ..domain.prototypes import PrototypeIndex
 from ..features.collate import collate_canonical_records
 from ..features.compiler import compile_canonical_row
 from ..features.incremental import IncrementalCanonicalCompiler
-from ..features.tensor_bank import PersistentTensorBank
+from ..features.tensor_bank import PersistentTensorBank, TensorDelta
 from ..knowledge.state import CausalKnowledge
 from ..model.config import ModelConfig
 
@@ -64,6 +64,7 @@ class OnlineCausalEncoder:
         self.incremental_compiler = IncrementalCanonicalCompiler(self.prototypes)
         self.persistent_tensors = bool(persistent_tensors)
         self.tensor_bank = PersistentTensorBank()
+        self.last_event_source_ids: tuple[int, ...] = ()
 
     def encode_record(self, observation: Mapping[str, Any]) -> dict[str, Any]:
         current = observation.get("current")
@@ -97,6 +98,9 @@ class OnlineCausalEncoder:
             "deck_manifest": self.deck_manifest,
         }
         snapshot = self.knowledge.consume(observation)
+        self.last_event_source_ids = tuple(
+            event.source_event for event in snapshot.recent_events
+        )
         if self.incremental:
             return self.incremental_compiler.compile(row, snapshot)
         return compile_canonical_row(row, snapshot, self.prototypes)
@@ -106,6 +110,12 @@ class OnlineCausalEncoder:
         if self.persistent_tensors:
             return self.tensor_bank.collate(record)
         return collate_canonical_records([record])
+
+    def encode_delta(self, observation: Mapping[str, Any]) -> TensorDelta:
+        """Compile one decision and expose only tensor rows changed this session."""
+        if not self.persistent_tensors:
+            raise RuntimeError("tensor delta encoding requires persistent_tensors=True")
+        return self.tensor_bank.collate_delta(self.encode_record(observation))
 
 
 __all__ = ["OnlineCausalEncoder"]

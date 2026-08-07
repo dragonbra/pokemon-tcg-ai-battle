@@ -162,6 +162,41 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(stats["collates"], len(trajectory.decisions))
         self.assertGreater(stats["slot_hits"], 0)
 
+    def test_session_tensor_delta_capability_matches_reference(self) -> None:
+        trajectory = BENCHMARK.load_parity_trajectories()[0]
+        config = MODEL.ModelConfig(d_model=64, heads=4, dropout=0.0)
+        encoder = ONLINE_RUNTIME.OnlineCausalEncoder(
+            trajectory.actor,
+            trajectory.deck,
+            config,
+            persistent_tensors=True,
+        )
+        collator = importlib.import_module(f"{BASE}.features.collate")
+        for decision_index, decision in enumerate(trajectory.decisions):
+            delta = encoder.encode_delta(decision.observation)
+            reference_encoder = ONLINE_RUNTIME.OnlineCausalEncoder(
+                trajectory.actor, trajectory.deck, config
+            )
+            for replay in trajectory.decisions[: decision_index + 1]:
+                expected = reference_encoder.encode(replay.observation)
+            self.assertEqual(set(delta.tensors), set(expected))
+            for name in expected:
+                with self.subTest(decision=decision_index, name=name):
+                    self.assertTrue(torch.equal(delta.tensors[name], expected[name]))
+        self.assertTrue(delta.patches)
+
+    def test_policy_creates_session_owned_tensor_bank(self) -> None:
+        row, _ = _first_raw_row()
+        with tempfile.TemporaryDirectory() as directory:
+            checkpoint, deck = self._checkpoint(Path(directory))
+            policy = INFERENCE.PortableSemanticPolicy.from_checkpoint(checkpoint, deck)
+            actor = int(row["actor_observation"]["current"]["yourIndex"])
+            encoder = policy.new_session_tensor_bank(actor)
+            self.assertTrue(encoder.persistent_tensors)
+            delta = encoder.encode_delta(row["actor_observation"])
+            self.assertTrue(delta.full_reseed)
+            self.assertEqual(len(delta.tensors), 39)
+
     def test_export_is_self_contained_and_preserves_provenance(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -200,6 +235,9 @@ class DeploymentTests(unittest.TestCase):
             self.assertTrue((output / "strategy/features/incremental.py").is_file())
             self.assertTrue((output / "strategy/features/fragments.py").is_file())
             self.assertTrue((output / "strategy/features/tensor_bank.py").is_file())
+            self.assertTrue(
+                (output / "strategy/deployment/session_tensor_cache.py").is_file()
+            )
             self.assertTrue((output / "strategy/model/policy.py").is_file())
             self.assertFalse(any(path.is_symlink() for path in output.rglob("*")))
             portable = torch.load(

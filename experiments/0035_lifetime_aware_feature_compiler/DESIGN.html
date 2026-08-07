@@ -8,7 +8,7 @@
 </head>
 <body>
 <h1>0035 Lifetime-Aware Feature Compiler</h1>
-<p class="status"><strong>状态：</strong>V4 model-static prototype GPU cache 已实现并准入；严格 N16E16 official-engine 吞吐提升 6.0%。</p>
+<p class="status"><strong>状态：</strong>V5 worker-local stateless compilation 已准入 evaluation 吞吐路径；严格 N16E16 official-engine 相对中央 stateless compiler 吞吐提升 54.5%，actor 语义不变。</p>
 <h2>范围与证据边界</h2>
 <p>0035 是 0031 的自包含、语义保持 runtime fork。官方规则来自项目规则调研，具体 observation/log 来自未修改的官方 Engine；battle/turn/action 生命周期与 dirty graph 是 0035 工程策略。Engine 仍通过 <code>GetBattleData</code> 返回内存 JSON 字节，Python 解码为 mapping；不修改 <code>engine/source/</code>、ABI 或 JSON 格式。</p>
 <h2>Lineage 与不变合同</h2>
@@ -42,6 +42,9 @@
 <h2>Model-static prototype GPU cache</h2>
 <p>V4 不再在每个 forward 重复执行全部 card/attack/skill/effect 的 <code>encode_all()</code>。Eval mode 在当前 device/dtype 上首次构建后常驻复用；默认 FP16 cache 为 5,573,120 bytes，RTX 5080 首次构建约 2.12 ms。cache 是非 checkpoint runtime attribute，device/dtype 变化与 <code>load_state_dict</code> 会失效。</p>
 <p>若任何 prototype 参数可训练，train mode 每次执行带 autograd 的实时编码；若 prototype 参数全部冻结，则 train mode 也可复用 detached cache，同时 Transformer/LoRA/Decoder 继续获得梯度。</p>
+<h2>Worker-local stateless compiler</h2>
+<p>V5 只改变 evaluation 调度拓扑。启用 <code>worker_local_compiler</code> 并选择 <code>policy_stateless</code> 后，持有 official-engine battle 的 OS worker 为每个 session/side 维护普通 causal encoder，并在本地调用未经增量化的 stateless canonical compiler。worker 只发送 canonical record 与最小 <code>current/select</code> 控制字段；PyTorch、collate、H2D、模型和 decoder 仍统一位于 resident GPU server。</p>
+<p>这消除了并行 Engine 与 batched GPU 之间的单一 Python compiler 漏斗。session、actor、deck 和 chronology 继续隔离，compiler crash 会 fail closed，不会静默退回串行拓扑。V5 不选择 incremental、persistent tensor 或 event/session cache；关闭全部可选 cache 时，canonical record、39 tensors、logits 与 action 仍是同一 stateless 语义。</p>
 <p>Resource age-split 原型仅独立验证，未接入 V1：median 改善 23.3%，但 p95 回退 36.1%。周期 shadow mode 也是下一阶段要求，V1 不声称已经实现。</p>
 <pre>zone/layout → affected cards → card index map → event/option relations
 card scalar → one dynamic card fragment
@@ -58,8 +61,9 @@ unknown/ambiguous → full rebuild and reseed</pre>
 <p>V3 full-vs-persistent 最终门禁同样为 7 × 10,000（1,000 warmup）：full compiler/collate/total 为 <code>0.579/0.448/1.178 ms</code>，persistent 为 <code>0.422/0.411/0.993 ms</code>；total median -15.7%，total p95 <code>1.831 → 1.672 ms</code>（-8.7%），throughput <code>792.0 → 900.4 decisions/s</code>（+13.7%）。固定 incremental compiler 的 tensor-only paired run 显示 collate median <code>0.457 → 0.420 ms</code>（-8.1%）、collate p95 <code>1.033 → 0.743 ms</code>（-28.0%）、total median <code>1.076 → 1.015 ms</code>（-5.7%），证明 tensor persistence 有独立收益。</p>
 <p>V4 真实 checkpoint、FP16、batch 64 的 7×100 alternating CUDA benchmark：forward median <code>13.111 → 10.801 ms</code>（-17.6%），p95 <code>33.660 → 29.380 ms</code>（-12.7%），modeled throughput <code>4,881 → 5,925 decisions/s</code>（+21.4%），action tensor commitment 完全一致。</p>
 <p>严格 official-engine 消融使用同一 0035 source/checkpoint 导出的 cached/uncached packages，每 arm 三次 128-game N16E16。768/768 完成、0 error；median GPU model <code>20.572 → 17.411 ms/batch</code>（-15.4%），wall <code>67.068 → 63.279 s</code>（-5.6%），selections/s <code>335.35 → 355.47</code>（+6.0%）。</p>
+<p>V5 相邻 official-engine 对照使用同一 Policy-0806 checkpoint/deck、N16E16、batch 64、2 ms、FP16。中央 stateless 为 128/128、0 error、<code>342.22 selections/s</code>、<code>65.72 s</code>；worker-local stateless 为 128/128、0 error、<code>528.77 selections/s</code>、<code>42.52 s</code>，即吞吐 +54.5%、wall -35.3%。server <code>prepare_records</code> 从 <code>65.51</code> 降至 <code>0.20 ms/batch</code>。worker-local incremental 为 <code>525.77 selections/s</code>，比 stateless 低 0.57%，因此正式选择 stateless。</p>
 <p>准入要求：record 与 39 tensors 精确 parity；shadow/logit/action 0 mismatch；compiler ≤0.25 ms 且至少快 50%；128/128 official-engine、0 error；N16E8 至少 +10%；N16E1 不回退超过 3%。通过前默认使用 stateless full path。</p>
 <h2>阶段</h2>
-<p>V4 自动缓存语义冻结的 prototype memory，不改变 actor/model/action 合同或 checkpoint；完整 0035 suite 为 104/104。下一阶段是 deck-static GPU resource base，再让 compiler 输出 dirty ranges，使 H2D 只传动态 residual。V4 不产生训练 checkpoint 或 W&amp;B run。</p>
+<p>V5 不改变 actor/model/action 合同或 checkpoint；worker-local stateless 仅在显式开启时改变 evaluation 拓扑，普通默认行为不变。evaluation 全量测试为 295/295。下一阶段可继续处理中央 collate/IPC handoff；deck-static GPU base 与 dirty ranges 仍是研究方向。V5 不产生训练 checkpoint 或 W&amp;B run。</p>
 </body>
 </html>

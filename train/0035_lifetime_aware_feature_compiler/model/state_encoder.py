@@ -92,6 +92,7 @@ class StateEncoder(nn.Module):
         self,
         batch: DecisionBatch,
         prototype_memory: PrototypeEmbeddings | None = None,
+        event_static_components: tuple[Tensor, Tensor] | None = None,
     ) -> EncodedState:
         prototype_memory = prototype_memory or self.prototypes.encode_all()
         global_token = self.global_cat(batch.global_cat) + self.global_num(batch.global_num, batch.global_state)
@@ -118,10 +119,27 @@ class StateEncoder(nn.Module):
             + prototype_memory.card(batch.resource_cat[..., 0])
             + self.segment.weight[3]
         )
+        if event_static_components is None:
+            event_categorical = self.event_cat(batch.event_cat)
+            event_prototype = prototype_memory.card(batch.event_cat[..., 2])
+        else:
+            event_categorical, event_prototype = event_static_components
+            expected = (*batch.event_mask.shape, self.segment.embedding_dim)
+            if (
+                tuple(event_categorical.shape) != expected
+                or tuple(event_prototype.shape) != expected
+                or event_categorical.device != batch.event_num.device
+                or event_prototype.device != batch.event_num.device
+                or event_categorical.dtype != batch.event_num.dtype
+                or event_prototype.dtype != batch.event_num.dtype
+            ):
+                raise ValueError("cached event embeddings do not match the decision batch")
+        # Keep the original addition order exactly.  The two cached terms only
+        # replace their lookup operations; numeric fields remain decision-dynamic.
         events = (
-            self.event_cat(batch.event_cat)
+            event_categorical
             + self.event_num(batch.event_num, batch.event_state)
-            + prototype_memory.card(batch.event_cat[..., 2])
+            + event_prototype
             + self.segment.weight[4]
         )
         if self.architecture == "joint":

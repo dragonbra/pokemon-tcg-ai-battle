@@ -188,6 +188,38 @@
     "checkpoint_state_unchanged": true,
     "admitted": true
   },
+  "v5_worker_local_stateless_result": {
+    "contract": {
+      "checkpoint_policy": "Policy-0806",
+      "games_per_arm": 128,
+      "workers": 16,
+      "engine_pool_size": 16,
+      "batch_size": 64,
+      "batch_wait_ms": 2,
+      "dtype": "fp16",
+      "compiler_backend": "policy_stateless"
+    },
+    "central_artifact": ".tmp/0035_lifetime_aware_feature_compiler/central_stateless_n16e16_b64_r2.json",
+    "worker_local_artifact": ".tmp/0035_lifetime_aware_feature_compiler/worker_local_stateless_n16e16_b64_r1.json",
+    "incremental_comparison_artifact": ".tmp/0035_lifetime_aware_feature_compiler/worker_local_incremental_n16e16_b64_r1.json",
+    "completed_games": 256,
+    "errors": 0,
+    "central_selections_per_second": 342.2219736,
+    "worker_local_selections_per_second": 528.7708618,
+    "throughput_relative_gain": 0.545095668,
+    "central_wall_seconds": 65.7205,
+    "worker_local_wall_seconds": 42.5156,
+    "wall_relative_reduction": 0.353083,
+    "central_prepare_records_ms_per_batch": 65.513,
+    "worker_local_prepare_records_ms_per_batch": 0.202,
+    "worker_local_incremental_selections_per_second": 525.7670115,
+    "incremental_relative_to_stateless": -0.00568082,
+    "actor_schema_unchanged": true,
+    "model_checkpoint_action_contract_unchanged": true,
+    "optional_incremental_and_tensor_caches_enabled": false,
+    "ordinary_evaluation_default_unchanged": true,
+    "admitted": true
+  },
   "formal_versions": [
     {
       "version": "V1_lifetime_aware_feature_compiler",
@@ -210,6 +242,12 @@
     {
       "version": "V4_prototype_gpu_cache",
       "kind": "runtime_optimization",
+      "state": "complete_admitted",
+      "training_performed": false
+    },
+    {
+      "version": "V5_worker_local_stateless_compiler",
+      "kind": "evaluation_runtime_optimization",
       "state": "complete_admitted",
       "training_performed": false
     }

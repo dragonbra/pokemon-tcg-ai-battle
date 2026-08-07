@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import inspect
 import queue
@@ -15,6 +16,8 @@ from dataclasses import dataclass, field
 from multiprocessing.connection import Listener
 from pathlib import Path
 from typing import Any
+
+from evaluation.runner.compiler_pool import CompilerPool
 
 
 @dataclass
@@ -128,6 +131,17 @@ def _install_raw_record_batching(encoder_type: type, policy: Any):
     return collator
 
 
+def _canonical_record_batching(encoder_type: type, policy: Any) -> tuple[Any, bool]:
+    """Prefer an explicit record API and retain the legacy shim as fallback."""
+    if getattr(policy, "requires_source_id", True):
+        return None, False
+    module = sys.modules.get(encoder_type.__module__)
+    collator = getattr(module, "collate_canonical_records", None) if module else None
+    if callable(getattr(encoder_type, "encode_record", None)) and callable(collator):
+        return collator, True
+    return _install_raw_record_batching(encoder_type, policy), False
+
+
 def _collate_raw_records_equivalent(
     collator: Any, records: list[dict[str, Any]]
 ) -> dict[str, Any]:
@@ -154,7 +168,14 @@ class PolicyServer:
         inference_dtype: str = "fp32",
         profile: bool = False,
         forced_action_shortcut: bool = False,
+        compiler_workers: int = 1,
+        async_h2d: bool = False,
+        resident_tensor_cache: bool = False,
     ) -> None:
+        if compiler_workers < 1:
+            raise ValueError("compiler_workers must be at least one")
+        if compiler_workers > 1 and forced_action_shortcut:
+            raise ValueError("parallel compiler workers do not support forced-action shortcut")
         self._candidate_root = candidate_root.resolve()
         if str(self._candidate_root) not in sys.path:
             sys.path.insert(0, str(self._candidate_root))
@@ -176,28 +197,106 @@ class PolicyServer:
         self._device = torch.device(device)
         if self._device.type == "cuda" and not torch.cuda.is_available():
             raise RuntimeError(f"CUDA device requested but unavailable: {device}")
+        if async_h2d and self._device.type != "cuda":
+            raise ValueError("async_h2d requires a CUDA inference device")
+        if async_h2d and resident_tensor_cache:
+            raise ValueError("resident_tensor_cache cannot use the async H2D path")
         dtype = _resolve_inference_dtype(torch, inference_dtype, self._device)
         self._policy.model = self._policy.model.to(
             device=self._device,
             dtype=dtype,
         ).eval()
         self._policy.runtime_dtype = dtype
+        self._model_dtype = next(
+            (
+                parameter.dtype
+                for parameter in self._policy.model.parameters()
+                if parameter.dtype.is_floating_point
+            ),
+            None,
+        )
         self._torch = torch
         self._encoder_type = OnlineCausalEncoder
         self._legal_fallback = legal_fallback
         self._batch_size = batch_size
         self._batch_wait_seconds = batch_wait_ms / 1000.0
         self._requests: queue.Queue[_InferenceRequest] = queue.Queue()
+        self._async_h2d = bool(async_h2d and self._device.type == "cuda")
+        self._resident_tensor_cache_enabled = bool(resident_tensor_cache)
+        self._async_coalesce_seconds = max(self._batch_wait_seconds, 0.025)
+        self._async_min_batch_size = min(self._batch_size, max(2, self._batch_size // 2))
         self._default_deck = _normalize_request_deck(None, tuple(self._policy.deck))
         self._encoders: dict[str, tuple[tuple[int, ...], Any]] = {}
         self._ability_guards: dict[str, _AbilityRepeatGuard] = {}
         self._ability_repeat_limit = ability_repeat_limit
         self._profile = _InferenceProfile(enabled=profile)
         _install_static_loader_cache(self._encoder_type)
-        self._raw_record_collator = _install_raw_record_batching(
+        self._raw_record_collator, self._encode_records_directly = _canonical_record_batching(
             self._encoder_type, self._policy
         )
+        self._resident_tensor_store = None
+        self._resident_tensor_key_type = None
+        self._session_tensor_keys: dict[str, Any] = {}
+        if self._resident_tensor_cache_enabled:
+            if self._raw_record_collator is None or getattr(
+                self._policy, "requires_source_id", True
+            ):
+                raise ValueError(
+                    "resident tensor cache requires canonical raw-record inference"
+                )
+            from strategy.deployment.event_embedding_cache import EventEmbeddingStore
+            from strategy.deployment.session_tensor_cache import SessionTensorKey
+
+            self._resident_tensor_key_type = SessionTensorKey
+            self._resident_tensor_store = EventEmbeddingStore(self._policy.model)
         self._forced_action_shortcut = forced_action_shortcut
+        self._compiler_pool: CompilerPool | None = None
+        if compiler_workers > 1:
+            if self._raw_record_collator is None or getattr(
+                self._policy, "requires_source_id", True
+            ):
+                raise ValueError(
+                    "parallel compiler workers require a canonical persona-free policy"
+                )
+            config_payload = (
+                self._policy.config.to_dict()
+                if callable(getattr(self._policy.config, "to_dict", None))
+                else dict(vars(self._policy.config))
+            )
+            self._compiler_pool = CompilerPool(
+                self._candidate_root,
+                config_payload,
+                compiler_workers,
+            )
+        self._closed = threading.Event()
+        self._pipeline_stop = object()
+        self._prepared_batches: queue.Queue[Any] | None = None
+        self._transferred_batches: queue.Queue[Any] | None = None
+        self._transfer_stream = None
+        self._transfer_thread: threading.Thread | None = None
+        self._compute_thread: threading.Thread | None = None
+        self._pinned_pool: _PinnedBatchPool | None = None
+        if self._async_h2d:
+            self._prepared_batches = queue.Queue(maxsize=1)
+            self._transferred_batches = queue.Queue(maxsize=1)
+            self._transfer_stream = self._torch.cuda.Stream(device=self._device)
+            self._pinned_pool = _PinnedBatchPool(
+                self._torch,
+                slots=3,
+                minimum_pinned_bytes=64 * 1024,
+            )
+            self._transfer_thread = threading.Thread(
+                target=self._transfer_loop,
+                name="evaluation-inference-h2d",
+                daemon=True,
+            )
+            self._compute_thread = threading.Thread(
+                target=self._compute_loop,
+                name="evaluation-inference-compute",
+                daemon=True,
+            )
+            self._transfer_thread.start()
+            self._compute_thread.start()
         self._thread = threading.Thread(target=self._dispatch, daemon=True)
         self._thread.start()
 
@@ -206,34 +305,189 @@ class PolicyServer:
         session_id: str,
         observation: dict[str, Any],
         deck: Any = None,
+        record: dict[str, Any] | None = None,
+        *,
+        client_send_ns: int | None = None,
+        ingress_received_ns: int | None = None,
     ) -> Any:
+        if (
+            self._profile.enabled
+            and type(client_send_ns) is int
+            and type(ingress_received_ns) is int
+            and ingress_received_ns >= client_send_ns
+        ):
+            self._profile.record_latency_ms(
+                "ipc_ingress",
+                (ingress_received_ns - client_send_ns) / 1e6,
+            )
         request = _InferenceRequest(
             session_id,
             observation,
             _normalize_request_deck(deck, self._default_deck),
+            record=record,
         )
         self._requests.put(request)
         request.ready.wait()
+        returned_ns = time.perf_counter_ns()
+        if request.completed_ns is not None:
+            self._profile.record_latency_ms(
+                "handler_wakeup",
+                (returned_ns - request.completed_ns) / 1e6,
+            )
         if request.error is not None:
             raise request.error
         return request.action
 
+    def record_response_send(self, nanoseconds: int) -> None:
+        self._profile.add_concurrent_time("ipc_egress_send_seconds", nanoseconds)
+
     def close_session(self, session_id: str) -> None:
         self._encoders.pop(session_id, None)
         self._ability_guards.pop(session_id, None)
+        tensor_key = self._session_tensor_keys.pop(session_id, None)
+        if tensor_key is not None and self._resident_tensor_store is not None:
+            self._resident_tensor_store.close_session(tensor_key)
+        if self._compiler_pool is not None:
+            self._compiler_pool.close_session(session_id)
+
+    def close(self) -> None:
+        if self._closed.is_set():
+            return
+        self._closed.set()
+        if self._prepared_batches is not None:
+            self._prepared_batches.put(self._pipeline_stop)
+        if self._transfer_thread is not None:
+            self._transfer_thread.join(timeout=10)
+        if self._compute_thread is not None:
+            self._compute_thread.join(timeout=10)
+        if self._compiler_pool is not None:
+            self._compiler_pool.close()
+
+    def compiler_contract(self) -> dict[str, Any]:
+        supported = self._raw_record_collator is not None and not getattr(
+            self._policy, "requires_source_id", True
+        )
+        config = (
+            self._policy.config.to_dict()
+            if callable(getattr(self._policy.config, "to_dict", None))
+            else dict(vars(self._policy.config))
+        )
+        return {
+            "supported": supported,
+            "config": config,
+            "record_contract": "canonical_raw_record_v1",
+            "async_h2d": self._async_h2d,
+            "resident_tensor_cache": self._resident_tensor_cache_enabled,
+        }
 
     def profile_snapshot(self) -> dict[str, Any]:
-        return self._profile.snapshot()
+        payload = self._profile.snapshot()
+        payload["compiler"] = (
+            self._compiler_pool.profile_snapshot()
+            if self._compiler_pool is not None
+            else {"workers": 1, "mode": "serial_in_process"}
+        )
+        if self._resident_tensor_store is not None:
+            payload["resident_tensor_cache"] = self._resident_tensor_store.stats()
+        return payload
 
     def reset_profile(self) -> None:
         self._profile.reset()
+        if self._compiler_pool is not None:
+            self._compiler_pool.reset_profile()
+        if self._resident_tensor_store is not None:
+            self._resident_tensor_store.reset_stats()
+
+    @staticmethod
+    def _deck_sha256(deck: tuple[int, ...]) -> str:
+        encoded = ",".join(str(identity) for identity in sorted(deck)).encode("ascii")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def _collate_resident(
+        self,
+        active_requests: list[_InferenceRequest],
+        encoded: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        if self._resident_tensor_store is None:
+            raise RuntimeError("resident tensor cache is not initialized")
+        if len(active_requests) != len(encoded):
+            raise RuntimeError("resident tensor request/record count mismatch")
+        keys: list[Any] = []
+        source_events: list[tuple[int, ...]] = []
+        update_started_ns = time.perf_counter_ns()
+        for request, record in zip(active_requests, encoded, strict=True):
+            current = request.observation.get("current") or {}
+            actor = current.get("yourIndex")
+            key = self._resident_tensor_key_type(
+                request.session_id,
+                actor,
+                self._deck_sha256(request.deck),
+            )
+            previous_key = self._session_tensor_keys.get(request.session_id)
+            if previous_key is not None and previous_key != key:
+                raise RuntimeError("resident tensor session identity changed")
+            identities = record.get("_runtime_event_source_ids")
+            if not isinstance(identities, tuple):
+                raise RuntimeError("resident event cache has no source-event identities")
+            self._session_tensor_keys[request.session_id] = key
+            source_events.append(identities)
+            keys.append(key)
+        event_batch, event_static_components = self._resident_tensor_store.update_batch(
+            keys, encoded, source_events
+        )
+        self._profile.add_time(
+            "resident_delta_apply_seconds", time.perf_counter_ns() - update_started_ns
+        )
+        batch_started_ns = time.perf_counter_ns()
+        dynamic_batch = self._raw_record_collator(encoded, omit_event=True)
+        targets = dynamic_batch.get("targets")
+        if targets is not None:
+            for index, record in enumerate(encoded):
+                actor = record["actor"]
+                action = record["target"]["ordered_action"]
+                targets[index, len(action)] = len(actor["option_cat"])
+        if self._model_dtype is not None:
+            dynamic_batch = {
+                name: value.to(dtype=self._model_dtype)
+                if value.dtype.is_floating_point else value
+                for name, value in dynamic_batch.items()
+            }
+        dynamic_batch = {
+            name: value.to(
+                self._device,
+                non_blocking=self._device.type == "cuda",
+            )
+            for name, value in dynamic_batch.items()
+        }
+        batch = {**dynamic_batch, **event_batch}
+        batch["_runtime_event_static_components"] = event_static_components
+        self._profile.add_time(
+            "resident_batch_assembly_seconds", time.perf_counter_ns() - batch_started_ns
+        )
+        return batch
 
     def _dispatch(self) -> None:
         while True:
+            idle_started_ns = time.perf_counter_ns()
             first = self._requests.get()
+            first_dequeued_ns = time.perf_counter_ns()
+            self._profile.add_time(
+                "dispatch_idle_wait_seconds", first_dequeued_ns - idle_started_ns
+            )
             requests = [first]
-            deadline = time.monotonic() + self._batch_wait_seconds
+            deadline = time.monotonic() + (
+                self._async_coalesce_seconds
+                if self._async_h2d
+                else self._batch_wait_seconds
+            )
             while len(requests) < self._batch_size:
+                if self._async_h2d and len(requests) >= self._async_min_batch_size:
+                    while len(requests) < self._batch_size:
+                        try:
+                            requests.append(self._requests.get_nowait())
+                        except queue.Empty:
+                            break
+                    break
                 remaining = deadline - time.monotonic()
                 if remaining <= 0:
                     break
@@ -241,14 +495,42 @@ class PolicyServer:
                     requests.append(self._requests.get(timeout=remaining))
                 except queue.Empty:
                     break
+            batch_ready_ns = time.perf_counter_ns()
+            self._profile.add_time(
+                "batch_coalesce_seconds", batch_ready_ns - first_dequeued_ns
+            )
+            self._profile.increment(
+                "batches_full" if len(requests) >= self._batch_size else "batches_deadline"
+            )
+            self._profile.record_latencies_ms(
+                "queue_wait",
+                [
+                    (batch_ready_ns - request.enqueued_ns) / 1e6
+                    for request in requests
+                ],
+            )
+            self._profile.record_batch_ready(batch_ready_ns)
+            bookkeeping_finished_ns = time.perf_counter_ns()
+            self._profile.add_time(
+                "dispatch_profile_bookkeeping_seconds",
+                bookkeeping_finished_ns - batch_ready_ns,
+            )
             try:
-                self._infer(requests)
+                if self._async_h2d:
+                    self._prepare_async(requests)
+                else:
+                    self._infer(requests)
             except BaseException as exc:
-                for request in requests:
-                    request.error = exc
-                    request.ready.set()
+                self._fail_requests(requests, exc)
+            finally:
+                self._profile.add_time(
+                    "batch_cycle_seconds",
+                    time.perf_counter_ns() - batch_ready_ns,
+                )
 
-    def _infer(self, requests: list[_InferenceRequest]) -> None:
+    def _prepare_records(
+        self, requests: list[_InferenceRequest]
+    ) -> tuple[int, list[dict[str, Any]], list[_InferenceRequest]] | None:
         inference_started_ns = time.perf_counter_ns()
         model_requests = [
             request for request in requests if request.observation.get("select") is not None
@@ -264,6 +546,7 @@ class PolicyServer:
 
         encoded: list[dict[str, Any]] = []
         active_requests: list[_InferenceRequest] = []
+        parallel_requests: list[dict[str, Any]] = []
         for request in model_requests:
             observation = request.observation
             current = observation.get("current") or {}
@@ -278,6 +561,39 @@ class PolicyServer:
             ):
                 request.action = self._legal_fallback(observation)
                 request.ready.set()
+                continue
+            if request.record is not None:
+                if self._resident_tensor_store is not None:
+                    raise RuntimeError(
+                        "resident event cache requires in-process causal encoder metadata"
+                    )
+                if self._raw_record_collator is None or getattr(
+                    self._policy, "requires_source_id", True
+                ):
+                    raise RuntimeError(
+                        "compiled inference request requires canonical persona-free policy"
+                    )
+                if not isinstance(request.record.get("actor"), dict) or not isinstance(
+                    request.record.get("target"), dict
+                ):
+                    raise RuntimeError("compiled inference request has invalid canonical record")
+                encoded.append(request.record)
+                active_requests.append(request)
+                continue
+            if self._compiler_pool is not None:
+                if self._resident_tensor_store is not None:
+                    raise RuntimeError(
+                        "resident event cache cannot use worker-local compiler state"
+                    )
+                parallel_requests.append(
+                    {
+                        "session_id": request.session_id,
+                        "actor": actor,
+                        "deck": request.deck,
+                        "observation": observation,
+                    }
+                )
+                active_requests.append(request)
                 continue
             cached = self._encoders.get(request.session_id)
             encoder = cached[1] if cached is not None and cached[0] == request.deck else None
@@ -303,7 +619,18 @@ class PolicyServer:
                 continue
             try:
                 encode_started_ns = time.perf_counter_ns()
-                row = encoder.encode(observation)
+                row = (
+                    encoder.encode_record(observation)
+                    if self._encode_records_directly
+                    else encoder.encode(observation)
+                )
+                if self._resident_tensor_store is not None:
+                    source_ids = getattr(encoder, "last_event_source_ids", None)
+                    if not isinstance(source_ids, tuple):
+                        raise RuntimeError(
+                            "causal encoder does not expose source-event identities"
+                        )
+                    row["_runtime_event_source_ids"] = source_ids
             except (IndexError, RuntimeError, ValueError):
                 self._encoders.pop(request.session_id, None)
                 if getattr(self._policy, "fail_closed_inference_errors", False):
@@ -319,41 +646,195 @@ class PolicyServer:
                 _inject_source_id_if_required(self._torch, row, self._policy)
             encoded.append(row)
             active_requests.append(request)
+        if parallel_requests:
+            encode_started_ns = time.perf_counter_ns()
+            encoded.extend(self._compiler_pool.encode(parallel_requests))
+            self._profile.add_time(
+                "feature_encode_seconds", time.perf_counter_ns() - encode_started_ns
+            )
         if not encoded:
-            return
-
-        collate_started_ns = time.perf_counter_ns()
-        if self._raw_record_collator is None:
-            batch = _stack_batches(self._torch, encoded, self._device)
-        else:
-            batch = {
-                name: value.to(
-                    self._device,
-                    non_blocking=self._device.type == "cuda",
-                )
-                for name, value in _collate_raw_records_equivalent(
-                    self._raw_record_collator, encoded
-                ).items()
-            }
-        if self._profile.enabled and self._device.type == "cuda":
-            self._torch.cuda.synchronize(self._device)
+            return None
         self._profile.add_time(
-            "collate_h2d_seconds", time.perf_counter_ns() - collate_started_ns
+            "prepare_records_seconds", time.perf_counter_ns() - inference_started_ns
+        )
+        return inference_started_ns, encoded, active_requests
+
+    def _collate_cpu(self, encoded: list[dict[str, Any]]) -> dict[str, Any]:
+        if self._raw_record_collator is None:
+            batch = _stack_batches(self._torch, encoded, self._torch.device("cpu"))
+        else:
+            batch = _collate_raw_records_equivalent(
+                self._raw_record_collator, encoded
+            )
+        if self._model_dtype is not None:
+            batch = {
+                name: value.to(dtype=self._model_dtype)
+                if value.dtype.is_floating_point
+                else value
+                for name, value in batch.items()
+            }
+        return batch
+
+    def _prepare_async(self, requests: list[_InferenceRequest]) -> None:
+        prepared = self._prepare_records(requests)
+        if prepared is None:
+            return
+        inference_started_ns, encoded, active_requests = prepared
+        collate_started_ns = time.perf_counter_ns()
+        assert self._pinned_pool is not None
+        slot, host_batch = self._pinned_pool.copy(self._collate_cpu(encoded))
+        self._profile.add_time(
+            "collate_pin_seconds", time.perf_counter_ns() - collate_started_ns
+        )
+        item = _PreparedInference(
+            requests=active_requests,
+            host_batch=host_batch,
+            inference_started_ns=inference_started_ns,
+            pinned_slot=slot,
+        )
+        assert self._prepared_batches is not None
+        queue_started_ns = time.perf_counter_ns()
+        self._prepared_batches.put(item)
+        self._profile.add_time(
+            "prepared_queue_wait_seconds", time.perf_counter_ns() - queue_started_ns
+        )
+
+    def _transfer_loop(self) -> None:
+        assert self._prepared_batches is not None
+        assert self._transferred_batches is not None
+        assert self._transfer_stream is not None
+        while True:
+            item = self._prepared_batches.get()
+            if item is self._pipeline_stop:
+                self._transferred_batches.put(self._pipeline_stop)
+                return
+            try:
+                enqueue_started_ns = time.perf_counter_ns()
+                h2d_start = self._torch.cuda.Event(enable_timing=True)
+                h2d_end = self._torch.cuda.Event(enable_timing=True)
+                with self._torch.cuda.stream(self._transfer_stream):
+                    h2d_start.record(self._transfer_stream)
+                    device_batch = {
+                        name: value.to(self._device, non_blocking=True)
+                        for name, value in item.host_batch.items()
+                    }
+                    h2d_end.record(self._transfer_stream)
+                self._profile.add_time(
+                    "h2d_enqueue_seconds", time.perf_counter_ns() - enqueue_started_ns
+                )
+                self._transferred_batches.put(
+                    _TransferredInference(
+                        prepared=item,
+                        device_batch=device_batch,
+                        h2d_start=h2d_start,
+                        h2d_end=h2d_end,
+                    )
+                )
+            except BaseException as exc:
+                self._profile.increment("async_stage_errors")
+                self._fail_requests(item.requests, exc)
+                assert self._pinned_pool is not None
+                self._pinned_pool.release(item.pinned_slot)
+
+    def _compute_loop(self) -> None:
+        assert self._transferred_batches is not None
+        while True:
+            item = self._transferred_batches.get()
+            if item is self._pipeline_stop:
+                return
+            try:
+                compute_stream = self._torch.cuda.current_stream(self._device)
+                compute_stream.wait_event(item.h2d_end)
+                self._run_model(
+                    item.prepared.requests,
+                    item.device_batch,
+                    item.prepared.inference_started_ns,
+                    h2d_events=(item.h2d_start, item.h2d_end),
+                )
+            except BaseException as exc:
+                self._profile.increment("async_stage_errors")
+                self._fail_requests(item.prepared.requests, exc)
+            finally:
+                assert self._pinned_pool is not None
+                self._pinned_pool.release(item.prepared.pinned_slot)
+
+    def _infer(self, requests: list[_InferenceRequest]) -> None:
+        prepared = self._prepare_records(requests)
+        if prepared is None:
+            return
+        inference_started_ns, encoded, active_requests = prepared
+
+        combined_started_ns = time.perf_counter_ns()
+        collate_started_ns = combined_started_ns
+        if self._resident_tensor_store is not None:
+            batch = self._collate_resident(active_requests, encoded)
+        elif self._raw_record_collator is None:
+            batch = _stack_batches(
+                self._torch, encoded, self._torch.device("cpu")
+            )
+        else:
+            batch = _collate_raw_records_equivalent(
+                self._raw_record_collator, encoded
+            )
+        collate_finished_ns = time.perf_counter_ns()
+        self._profile.add_time(
+            "collate_cpu_seconds", collate_finished_ns - collate_started_ns
+        )
+        if self._resident_tensor_store is not None:
+            self._profile.add_time(
+                "collate_h2d_seconds", collate_finished_ns - combined_started_ns
+            )
+            self._run_model(active_requests, batch, inference_started_ns)
+            return
+        h2d_started_ns = time.perf_counter_ns()
+        h2d_start = h2d_end = None
+        if self._profile.enabled and self._device.type == "cuda":
+            h2d_start = self._torch.cuda.Event(enable_timing=True)
+            h2d_end = self._torch.cuda.Event(enable_timing=True)
+            h2d_start.record()
+        batch = {
+            name: value.to(
+                self._device,
+                non_blocking=self._device.type == "cuda",
+            )
+            for name, value in batch.items()
+        }
+        if h2d_end is not None:
+            h2d_end.record()
+            h2d_end.synchronize()
+            self._profile.add_seconds(
+                "h2d_gpu_seconds", h2d_start.elapsed_time(h2d_end) / 1000.0
+            )
+        h2d_finished_ns = time.perf_counter_ns()
+        self._profile.add_time(
+            "h2d_wall_seconds", h2d_finished_ns - h2d_started_ns
+        )
+        self._profile.add_time(
+            "collate_h2d_seconds", h2d_finished_ns - combined_started_ns
         )
         # Shared inference bypasses the candidate's single-row ``select`` path.
         # Align floating inputs with the loaded model while preserving categorical
         # indices and masks as integer tensors.
-        model_dtype = next(
-            (parameter.dtype for parameter in self._policy.model.parameters()
-             if parameter.dtype.is_floating_point),
-            None,
-        )
-        if model_dtype is not None:
+        if self._model_dtype is not None:
+            dtype_started_ns = time.perf_counter_ns()
             batch = {
-                name: value.to(dtype=model_dtype)
+                name: value.to(dtype=self._model_dtype)
                 if value.dtype.is_floating_point else value
                 for name, value in batch.items()
             }
+            self._profile.add_time(
+                "dtype_cast_wall_seconds", time.perf_counter_ns() - dtype_started_ns
+            )
+        self._run_model(active_requests, batch, inference_started_ns)
+
+    def _run_model(
+        self,
+        active_requests: list[_InferenceRequest],
+        batch: dict[str, Any],
+        inference_started_ns: int,
+        *,
+        h2d_events: tuple[Any, Any] | None = None,
+    ) -> None:
         model_started_ns = time.perf_counter_ns()
         cuda_start = cuda_end = None
         if self._profile.enabled and self._device.type == "cuda":
@@ -361,11 +842,21 @@ class PolicyServer:
             cuda_end = self._torch.cuda.Event(enable_timing=True)
             cuda_start.record()
         with self._torch.inference_mode():
-            result = self._policy.model.deterministic_action_tensors(batch)
+            event_static_components = batch.pop(
+                "_runtime_event_static_components", None
+            )
+            result = self._policy.model.deterministic_action_tensors(
+                batch, event_static_components
+            )
         if cuda_end is not None:
             cuda_end.record()
             cuda_end.synchronize()
             self._profile.add_seconds("gpu_model_seconds", cuda_start.elapsed_time(cuda_end) / 1000.0)
+        if h2d_events is not None:
+            self._profile.add_seconds(
+                "h2d_gpu_seconds",
+                h2d_events[0].elapsed_time(h2d_events[1]) / 1000.0,
+            )
         self._profile.add_time("model_wall_seconds", time.perf_counter_ns() - model_started_ns)
         decode_started_ns = time.perf_counter_ns()
         sequences = result.sequences.cpu().tolist()
@@ -386,6 +877,7 @@ class PolicyServer:
             request.action = _apply_ability_repeat_guard(
                 request.observation, action, guard
             )
+            request.completed_ns = time.perf_counter_ns()
             request.ready.set()
             self._profile.finish_request(request)
         self._profile.add_time("d2h_decode_seconds", time.perf_counter_ns() - decode_started_ns)
@@ -393,6 +885,16 @@ class PolicyServer:
         self._profile.add_time(
             "inference_dispatch_seconds", time.perf_counter_ns() - inference_started_ns
         )
+
+    @staticmethod
+    def _fail_requests(
+        requests: list[_InferenceRequest], exc: BaseException
+    ) -> None:
+        for request in requests:
+            if request.ready.is_set():
+                continue
+            request.error = exc
+            request.ready.set()
 
 
 def _stack_batches(torch: Any, rows: list[dict[str, Any]], device: Any) -> dict[str, Any]:
@@ -422,6 +924,70 @@ def _stack_batches(torch: Any, rows: list[dict[str, Any]], device: Any) -> dict[
             combined[slices] = tensor[0]
         batch[key] = combined.to(device, non_blocking=device.type == "cuda")
     return batch
+
+
+class _PinnedBatchPool:
+    """Bounded grow-only pinned buffers whose views live through async H2D."""
+
+    def __init__(
+        self,
+        torch: Any,
+        *,
+        slots: int,
+        minimum_pinned_bytes: int = 0,
+    ) -> None:
+        if slots < 1:
+            raise ValueError("pinned batch pool requires at least one slot")
+        self._torch = torch
+        self._minimum_pinned_bytes = minimum_pinned_bytes
+        self._available: queue.Queue[int] = queue.Queue(maxsize=slots)
+        self._buffers: list[dict[str, Any]] = [{} for _ in range(slots)]
+        for index in range(slots):
+            self._available.put(index)
+
+    def copy(self, batch: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+        slot = self._available.get()
+        try:
+            buffers = self._buffers[slot]
+            output: dict[str, Any] = {}
+            for name, value in batch.items():
+                if value.device.type != "cpu":
+                    raise ValueError("only CPU tensors can enter the pinned H2D pipeline")
+                if value.numel() * value.element_size() < self._minimum_pinned_bytes:
+                    output[name] = value
+                    continue
+                buffer = buffers.get(name)
+                capacity = tuple(value.shape)
+                if buffer is not None:
+                    if buffer.dtype != value.dtype or buffer.ndim != value.ndim:
+                        buffer = None
+                    else:
+                        capacity = tuple(
+                            max(buffer.size(axis), value.size(axis))
+                            for axis in range(value.ndim)
+                        )
+                        if tuple(buffer.shape) != capacity:
+                            buffer = None
+                if buffer is None:
+                    buffer = self._torch.empty(
+                        capacity,
+                        dtype=value.dtype,
+                        device="cpu",
+                        pin_memory=True,
+                    )
+                    buffers[name] = buffer
+                view = buffer[
+                    tuple(slice(0, value.size(axis)) for axis in range(value.ndim))
+                ]
+                view.copy_(value)
+                output[name] = view
+            return slot, output
+        except BaseException:
+            self._available.put(slot)
+            raise
+
+    def release(self, slot: int) -> None:
+        self._available.put(slot)
 
 
 def _inject_source_id_if_required(torch: Any, row: dict[str, Any], policy: Any) -> None:
@@ -455,10 +1021,28 @@ class _InferenceRequest:
     session_id: str
     observation: dict[str, Any]
     deck: tuple[int, ...]
+    record: dict[str, Any] | None = None
     action: Any = None
     error: BaseException | None = None
     ready: threading.Event = field(default_factory=threading.Event)
     enqueued_ns: int = field(default_factory=time.perf_counter_ns)
+    completed_ns: int | None = None
+
+
+@dataclass
+class _PreparedInference:
+    requests: list[_InferenceRequest]
+    host_batch: dict[str, Any]
+    inference_started_ns: int
+    pinned_slot: int
+
+
+@dataclass
+class _TransferredInference:
+    prepared: _PreparedInference
+    device_batch: dict[str, Any]
+    h2d_start: Any
+    h2d_end: Any
 
 
 @dataclass
@@ -468,11 +1052,19 @@ class _InferenceProfile:
     seconds: Counter[str] = field(default_factory=Counter)
     batch_sizes: Counter[int] = field(default_factory=Counter)
     request_latencies_ms: list[float] = field(default_factory=list)
-    lock: threading.Lock = field(default_factory=threading.Lock)
+    latency_samples_ms: dict[str, list[float]] = field(default_factory=dict)
+    last_batch_ready_ns: int | None = None
+    counters_lock: threading.Lock = field(default_factory=threading.Lock)
+    seconds_lock: threading.Lock = field(default_factory=threading.Lock)
+    concurrent_seconds_lock: threading.Lock = field(default_factory=threading.Lock)
+    latency_lock: threading.Lock = field(default_factory=threading.Lock)
+    request_lock: threading.Lock = field(default_factory=threading.Lock)
+    concurrent_seconds: Counter[str] = field(default_factory=Counter)
+    completed_requests: int = 0
 
     def increment(self, name: str, value: int = 1) -> None:
         if self.enabled:
-            with self.lock:
+            with self.counters_lock:
                 self.counters[name] += value
 
     def add_time(self, name: str, nanoseconds: int) -> None:
@@ -480,51 +1072,113 @@ class _InferenceProfile:
 
     def add_seconds(self, name: str, value: float) -> None:
         if self.enabled:
-            with self.lock:
+            with self.seconds_lock:
                 self.seconds[name] += float(value)
+
+    def add_concurrent_time(self, name: str, nanoseconds: int) -> None:
+        if self.enabled:
+            with self.concurrent_seconds_lock:
+                self.concurrent_seconds[name] += nanoseconds / 1e9
 
     def record_batch(self, size: int) -> None:
         if self.enabled:
-            with self.lock:
+            with self.counters_lock:
                 self.batch_sizes[int(size)] += 1
+
+    def record_latency_ms(self, name: str, value: float) -> None:
+        self.record_latencies_ms(name, [value])
+
+    def record_latencies_ms(self, name: str, values: list[float]) -> None:
+        if self.enabled and values:
+            with self.latency_lock:
+                self.latency_samples_ms.setdefault(name, []).extend(
+                    float(value) for value in values
+                )
+
+    def record_batch_ready(self, ready_ns: int) -> None:
+        if self.enabled:
+            with self.latency_lock:
+                if self.last_batch_ready_ns is not None:
+                    self.latency_samples_ms.setdefault(
+                        "batch_ready_interval", []
+                    ).append((ready_ns - self.last_batch_ready_ns) / 1e6)
+                self.last_batch_ready_ns = ready_ns
 
     def finish_request(self, request: _InferenceRequest) -> None:
         if self.enabled:
             latency = (time.perf_counter_ns() - request.enqueued_ns) / 1e6
-            with self.lock:
-                self.counters["completed_requests"] += 1
+            with self.request_lock:
+                self.completed_requests += 1
                 self.request_latencies_ms.append(latency)
 
     def snapshot(self) -> dict[str, Any]:
-        with self.lock:
-            latencies = sorted(self.request_latencies_ms)
-            requests = int(self.counters.get("completed_requests", 0))
-            batches = sum(self.batch_sizes.values())
-            weighted = sum(size * count for size, count in self.batch_sizes.items())
-            return {
-                "enabled": self.enabled,
-                "counters": dict(sorted(self.counters.items())),
-                "seconds": dict(sorted(self.seconds.items())),
-                "batch_histogram": {
-                    str(size): count for size, count in sorted(self.batch_sizes.items())
-                },
-                "batches": batches,
-                "mean_batch_size": weighted / batches if batches else 0.0,
-                "request_latency_ms": {
-                    "count": requests,
-                    "total": sum(latencies),
-                    "p50": _percentile(latencies, 0.50),
-                    "p95": _percentile(latencies, 0.95),
-                    "p99": _percentile(latencies, 0.99),
-                },
+        with self.counters_lock:
+            counters = dict(self.counters)
+            batch_sizes = dict(self.batch_sizes)
+        with self.seconds_lock:
+            seconds = Counter(self.seconds)
+        with self.concurrent_seconds_lock:
+            seconds.update(self.concurrent_seconds)
+        with self.latency_lock:
+            latency_samples = {
+                name: list(values)
+                for name, values in self.latency_samples_ms.items()
             }
+        with self.request_lock:
+            latencies = sorted(self.request_latencies_ms)
+            requests = self.completed_requests
+        counters["completed_requests"] = requests
+        batches = sum(batch_sizes.values())
+        weighted = sum(size * count for size, count in batch_sizes.items())
+        latency_payload = {
+            name: _latency_summary(values)
+            for name, values in sorted(latency_samples.items())
+        }
+        return {
+            "enabled": self.enabled,
+            "counters": dict(sorted(counters.items())),
+            "seconds": dict(sorted(seconds.items())),
+            "batch_histogram": {
+                str(size): count for size, count in sorted(batch_sizes.items())
+            },
+            "batches": batches,
+            "mean_batch_size": weighted / batches if batches else 0.0,
+            "request_latency_ms": {
+                "count": requests,
+                "total": sum(latencies),
+                "p50": _percentile(latencies, 0.50),
+                "p95": _percentile(latencies, 0.95),
+                "p99": _percentile(latencies, 0.99),
+            },
+            "latency_ms": latency_payload,
+        }
 
     def reset(self) -> None:
-        with self.lock:
+        with self.counters_lock:
             self.counters.clear()
-            self.seconds.clear()
             self.batch_sizes.clear()
+        with self.seconds_lock:
+            self.seconds.clear()
+        with self.concurrent_seconds_lock:
+            self.concurrent_seconds.clear()
+        with self.latency_lock:
+            self.latency_samples_ms.clear()
+            self.last_batch_ready_ns = None
+        with self.request_lock:
             self.request_latencies_ms.clear()
+            self.completed_requests = 0
+
+
+def _latency_summary(values: list[float]) -> dict[str, float | int]:
+    ordered = sorted(values)
+    return {
+        "count": len(ordered),
+        "total": sum(ordered),
+        "mean": sum(ordered) / len(ordered) if ordered else 0.0,
+        "p50": _percentile(ordered, 0.50),
+        "p95": _percentile(ordered, 0.95),
+        "p99": _percentile(ordered, 0.99),
+    }
 
 
 def _percentile(values: list[float], quantile: float) -> float:
@@ -544,6 +1198,9 @@ def serve(
     inference_dtype: str = "fp32",
     profile: bool = False,
     forced_action_shortcut: bool = False,
+    compiler_workers: int = 1,
+    async_h2d: bool = False,
+    resident_tensor_cache: bool = False,
 ) -> None:
     socket_path.unlink(missing_ok=True)
     server = PolicyServer(
@@ -555,6 +1212,9 @@ def serve(
         inference_dtype,
         profile,
         forced_action_shortcut,
+        compiler_workers,
+        async_h2d,
+        resident_tensor_cache,
     )
     listener = Listener(str(socket_path), family="AF_UNIX")
     try:
@@ -568,14 +1228,16 @@ def serve(
             thread.start()
     finally:
         listener.close()
+        server.close()
         socket_path.unlink(missing_ok=True)
 
 
 def _handle_connection(server: PolicyServer, connection: Any) -> None:
-    session_id = uuid.uuid4().hex
+    implicit_session_id = uuid.uuid4().hex
     try:
         while True:
             request = connection.recv()
+            ingress_received_ns = time.perf_counter_ns()
             if isinstance(request, dict) and request.get("command") == "profile":
                 connection.send({"ok": True, "profile": server.profile_snapshot()})
                 continue
@@ -583,10 +1245,35 @@ def _handle_connection(server: PolicyServer, connection: Any) -> None:
                 server.reset_profile()
                 connection.send({"ok": True})
                 continue
+            if isinstance(request, dict) and request.get("command") == "compiler_contract":
+                connection.send({"ok": True, "contract": server.compiler_contract()})
+                continue
+            if isinstance(request, dict) and request.get("command") == "close_session":
+                session_id = _explicit_session_id(request)
+                server.close_session(session_id)
+                connection.send({"ok": True})
+                continue
             if not isinstance(request, dict) or not isinstance(request.get("observation"), dict):
                 raise RuntimeError("invalid inference request")
-            action = server.call(session_id, request["observation"], request.get("deck"))
+            session_id = (
+                _explicit_session_id(request)
+                if "session_id" in request
+                else implicit_session_id
+            )
+            record = request.get("record")
+            if record is not None and not isinstance(record, dict):
+                raise RuntimeError("compiled inference record must be an object")
+            action = server.call(
+                session_id,
+                request["observation"],
+                request.get("deck"),
+                record,
+                client_send_ns=request.get("_profile_client_send_ns"),
+                ingress_received_ns=ingress_received_ns,
+            )
+            response_started_ns = time.perf_counter_ns()
             connection.send({"ok": True, "action": action})
+            server.record_response_send(time.perf_counter_ns() - response_started_ns)
     except (EOFError, OSError):
         pass
     except BaseException as exc:
@@ -595,8 +1282,15 @@ def _handle_connection(server: PolicyServer, connection: Any) -> None:
         except OSError:
             pass
     finally:
-        server.close_session(session_id)
+        server.close_session(implicit_session_id)
         connection.close()
+
+
+def _explicit_session_id(request: dict[str, Any]) -> str:
+    session_id = request.get("session_id")
+    if not isinstance(session_id, str) or not session_id or len(session_id) > 256:
+        raise RuntimeError("explicit inference session_id must contain 1..256 characters")
+    return session_id
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -610,6 +1304,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--inference-dtype", choices=("fp32", "fp16"), default="fp32")
     parser.add_argument("--profile", action="store_true")
     parser.add_argument("--forced-action-shortcut", action="store_true")
+    parser.add_argument("--compiler-workers", type=int, default=1)
+    parser.add_argument("--async-h2d", action="store_true")
+    parser.add_argument("--resident-tensor-cache", action="store_true")
     args = parser.parse_args(argv)
     serve(
         args.candidate,
@@ -621,6 +1318,9 @@ def main(argv: list[str] | None = None) -> int:
         args.inference_dtype,
         args.profile,
         args.forced_action_shortcut,
+        args.compiler_workers,
+        args.async_h2d,
+        args.resident_tensor_cache,
     )
     return 0
 
