@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import random
 import signal
+from collections import defaultdict
 from multiprocessing.connection import Connection
 from typing import Any
 
@@ -51,6 +52,20 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
     game = None
     selections = 0
     final_turn = None
+    repeated_actions: dict[
+        tuple[int, int, int, object, tuple[tuple[tuple[str, object], ...], ...], tuple[int, ...]],
+        int,
+    ] = defaultdict(int)
+    turn_actor: tuple[int, int] | None = None
+
+    def option_identity(option: dict[str, Any]) -> tuple[tuple[str, object], ...]:
+        return tuple(
+            sorted(
+                (key, value)
+                for key, value in option.items()
+                if isinstance(value, (int, str, bool, type(None)))
+            )
+        )
     try:
         _clear_cg_modules()
         game = _load_game_api_with_runtime(job.runtime_root)
@@ -72,9 +87,22 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
                     selections=selections, final_turn=final_turn,
                 ))
                 return
+            if (
+                job.full_round_draw_limit > 0
+                and isinstance(final_turn, int)
+                and (final_turn + 1) // 2 >= job.full_round_draw_limit
+            ):
+                connection.send(_result(
+                    job, valid=True, reward=0.0, status="turn_limit_draw", error=None,
+                    selections=selections, final_turn=final_turn,
+                ))
+                return
             actor = int(current.get("yourIndex", -1))
             if actor not in (0, 1):
                 raise RuntimeError(f"engine returned invalid current player: {actor}")
+            if turn_actor != (final_turn, actor):
+                turn_actor = (final_turn, actor)
+                repeated_actions.clear()
             connection.send({
                 "kind": "decision",
                 "role": "focal" if actor == focal_index else "opponent",
@@ -85,6 +113,46 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
             response = connection.recv()
             if not isinstance(response, dict) or response.get("kind") != "action":
                 raise RuntimeError("collector returned an invalid action response")
+            action = response.get("action")
+            selection = observation.get("select") or {}
+            options = selection.get("option") or []
+            if (
+                job.ability_repeat_limit > 0
+                and isinstance(action, list)
+                and all(isinstance(value, int) for value in action)
+            ):
+                option_fingerprints = tuple(
+                    option_identity(option)
+                    for option in options
+                    if isinstance(option, dict)
+                )
+                context = selection.get("context")
+                try:
+                    hash(context)
+                except TypeError:
+                    context = repr(context)
+                key = (
+                    int(final_turn),
+                    actor,
+                    int(selection.get("type", -1)),
+                    context,
+                    option_fingerprints,
+                    tuple(action),
+                )
+                repeated_actions[key] += 1
+                if repeated_actions[key] > job.ability_repeat_limit:
+                    focal_reward = -1.0 if actor == focal_index else 1.0
+                    status = (
+                        "ability_repeat_forfeit"
+                        if selection.get("type") == 0
+                        else "repeated_selection_forfeit"
+                    )
+                    connection.send(_result(
+                        job, valid=True, reward=focal_reward,
+                        status=status, error=None,
+                        selections=selections, final_turn=final_turn,
+                    ))
+                    return
             selections += 1
             observation = game.battle_select(response.get("action"))
         connection.send(_result(

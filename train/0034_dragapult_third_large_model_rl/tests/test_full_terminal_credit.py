@@ -48,10 +48,13 @@ class FullTerminalCreditTest(unittest.TestCase):
             self.assertAlmostEqual(float(batch.episode_weight[0]), 1.0 / steps)
             self.assertAlmostEqual(float(batch.episode_weight[-1]), 1.0 / steps)
 
-    def test_ppo_rejects_discounted_credit_configuration(self) -> None:
+    def test_ppo_defaults_restore_0023_selection_credit_configuration(self) -> None:
         ppo = importlib.import_module(f"{PROJECT}.training.ppo_full_semantic")
         self.assertEqual(ppo.PPOConfig().gamma, 1.0)
-        self.assertEqual(ppo.PPOConfig().gae_lambda, 1.0)
+        self.assertEqual(ppo.PPOConfig().gae_lambda, 0.95)
+        self.assertEqual(ppo.PPOConfig().credit_clock, "selection")
+        self.assertEqual(ppo.PPOConfig().batch_size, 1024)
+        self.assertEqual(ppo.PPOConfig().epochs, 4)
 
     def test_turn_clock_decays_only_across_official_turn_boundaries(self) -> None:
         batch_module = importlib.import_module(f"{PROJECT}.training.batch_full_semantic")
@@ -72,6 +75,16 @@ class FullTerminalCreditTest(unittest.TestCase):
             [episode], gamma=1.0, gae_lambda=0.97, credit_clock="selection"
         )
         expected = [0.97**4, 0.97**3, 0.97**2, 0.97, 1.0]
+        for actual, target in zip(batch.gae_return.tolist(), expected, strict=True):
+            self.assertAlmostEqual(actual, target, places=6)
+
+    def test_selection_clock_lambda095_matches_0023_credit(self) -> None:
+        batch_module = importlib.import_module(f"{PROJECT}.training.batch_full_semantic")
+        episode = self._episode(5, 1.0, [1, 1, 3, 3, 5], zero_values=True)
+        batch = batch_module.prepare_episodes(
+            [episode], gamma=1.0, gae_lambda=0.95, credit_clock="selection"
+        )
+        expected = [0.95**4, 0.95**3, 0.95**2, 0.95, 1.0]
         for actual, target in zip(batch.gae_return.tolist(), expected, strict=True):
             self.assertAlmostEqual(actual, target, places=6)
 

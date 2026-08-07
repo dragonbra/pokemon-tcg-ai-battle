@@ -1,14 +1,14 @@
 {
   "schema_version": "ptcg_experiment_project_v1",
   "project_id": "0034_dragapult_third_large_model_rl",
-  "objective": "Initialize the selected full-semantic PPO design from Policy-0806 and train against the fixed 256-game Frozen-0806 distribution using Policy-0019 opponents.",
-  "deck": "Dragapult Third PTCG Club exact 60-card list; file SHA-256 5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2.",
+  "objective": "Initialize the selected full-semantic PPO design from Policy-0806 and train against the fixed 256-game Frozen-0806 distribution using Policy-0806 pretrained frozen opponents.",
+  "deck": "Frozen-0806 deck 007 dragapult_ex_07bedfffbfad; exact-deck SHA-256 07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725.",
   "expert_source": "0031 V2 full-winners best-validation-loss Epoch 11 / step 141878 is initialization provenance; source/team identity is actor-invisible.",
   "dataset_contract": "No BC dataset is consumed by 0034 PPO; every update uses fresh on-policy official-engine Episodes and never reuses a rollout buffer.",
   "engine_revision": "Unmodified official CPU engine supplies observations, legal actions and terminal outcomes; CUDA is used only for semantic-policy inference and PPO optimization.",
-  "opponent_pool_snapshot": "Frozen-0806 pool 0806_kaggle_top100_plus_v1: 55 unique exact decks, fixed 256 integer slots, schedule SHA-256 16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c, immutable 0019 Epoch 13 opponents, and global 128/128 focal-seat alternation.",
-  "status": "initialized",
-  "experiment_status": "v2_user_stopped_at_update1",
+  "opponent_pool_snapshot": "Frozen-0806 pool 0806_kaggle_top100_plus_v1: 55 unique exact decks, fixed 256 integer slots, schedule SHA-256 16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c, immutable Policy-0806 pretrained opponents, and global 128/128 focal-seat alternation.",
+  "status": "user_stopped",
+  "experiment_status": "v6_user_stopped_at_update_123",
   "created_at": "2026-08-06T23:41:33+08:00",
   "paths": {
     "training": "train/0034_dragapult_third_large_model_rl",
@@ -46,9 +46,29 @@
       "version": "V2_turn_clock_lambda097_200u",
       "state": "user_stopped",
       "kind": "selected_v6_design_200_update_ppo"
+    },
+    {
+      "version": "V3_frozen0806_256u_decoder_only",
+      "state": "user_stopped_before_update_1",
+      "kind": "aborted_wrong_policy0019_opponent_contract"
+    },
+    {
+      "version": "V4_policy0806_frozen_256g_500u",
+      "state": "failed",
+      "kind": "policy0806_frozen_256_game_500_update_ppo_step_limit"
+    },
+    {
+      "version": "V5_policy0806_frozen_256g_500u_termination_guard",
+      "state": "user_stopped",
+      "kind": "policy0806_frozen_256_game_500_update_ppo_termination_guard"
+    },
+    {
+      "version": "V6_exact007_0023_selection_lambda095",
+      "state": "user_stopped",
+      "kind": "exact007_policy0806_frozen_0023_selection_clock_ppo"
     }
   ],
-  "planned_training_version": "next_version_after_v2_frozen0806_256",
+  "planned_training_version": null,
   "active_training_version": null,
   "zero_shot_baseline": {
     "version": "V1_large_model_zero_shot_frozen0019",
@@ -62,7 +82,7 @@
     "unfinished": 0,
     "win_rate": 0.503921568627451
   },
-  "active_training": {
+  "historical_training_v2": {
     "version": "V2_turn_clock_lambda097_200u",
     "started_at": "2026-08-06T23:59:41+08:00",
     "updates": 200,
@@ -89,6 +109,75 @@
       "errors": 0,
       "sampled_rollout_win_rate": 0.47058823529411764,
       "behavior_kl": 0.0000022151401978331727,
+      "representation_unchanged": true
+    }
+  },
+  "historical_training_v5": {
+    "version": "V5_policy0806_frozen_256g_500u_termination_guard",
+    "pid": 133140,
+    "updates": 500,
+    "games_per_update": 256,
+    "opponent_policy": "0806_large_model_pretrained_immutable",
+    "termination_contract": {
+      "ability_repeat_limit": 8,
+      "full_round_draw_limit": 50
+    },
+    "workers": 32,
+    "gae_lambda": 0.97,
+    "credit_clock": "turn",
+    "loss_weighting": "episode_equal_decisions",
+    "eval_every": 10,
+    "wandb_run_id": "0034-v5-policy0806-frozen-256g-500u-termination-guard",
+    "state": "user_stopped",
+    "latest_complete_update": 76,
+    "stop_reason": "User requested reset after flat sampled rollout and declining greedy probes."
+  },
+  "historical_training_v6": {
+    "version": "V6_exact007_0023_selection_lambda095",
+    "pid": 533308,
+    "updates": 500,
+    "games_per_update": 256,
+    "optimization_minibatch_decisions": 1024,
+    "ppo_epochs": 4,
+    "opponent_policy": "0806_large_model_pretrained_immutable",
+    "termination_contract": {
+      "ability_repeat_limit": 8,
+      "full_round_draw_limit": 50
+    },
+    "workers": 32,
+    "gae_lambda": 0.95,
+    "credit_clock": "selection",
+    "loss_weighting": "episode_equal_decisions",
+    "eval_every": 10,
+    "fixed_probe_seed_schedule": true,
+    "wandb_run_id": "0034-v6-exact007-0023-selection-lambda095",
+    "state": "user_stopped",
+    "latest_complete_update": 123,
+    "stopped_at": "2026-08-07T23:34:55+08:00",
+    "stop_reason": "User manually stopped the training process after update 123.",
+    "wandb_remote_state": "crashed",
+    "update_0_greedy_baseline": {
+      "games": 256,
+      "wins": 146,
+      "losses": 110,
+      "draws": 0,
+      "errors": 0,
+      "win_rate": 0.5703125,
+      "first_win_rate": 0.59375,
+      "second_win_rate": 0.546875
+    },
+    "first_completed_update": {
+      "checkpoint_update": 1,
+      "rollout_source_policy_update": 0,
+      "episodes": 256,
+      "decisions": 28517,
+      "wins": 119,
+      "losses": 137,
+      "draws": 0,
+      "errors": 0,
+      "sampled_rollout_win_rate": 0.46484375,
+      "ppo_epochs_completed": 4,
+      "ppo_minibatches_completed": 112,
       "representation_unchanged": true
     }
   }

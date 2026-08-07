@@ -25,15 +25,18 @@ from ..rollout import FullSemanticRolloutCollector, RolloutJob
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .storage_full_semantic import save_model_only
+from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0034_dragapult_third_large_model_rl"
 WANDB_DISPLAY_PREFIX = "0034 · dragapult_third_large_model_rl"
-FORMAL_VERSION = "V2_turn_clock_lambda097_200u"
+FORMAL_VERSION = "V6_exact007_0023_selection_lambda095"
 SOURCE_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
-FOCAL_DECK_PATH = ROOT / "train" / PROJECT / "league/decks/dragapult_third_ptcg_club/deck.csv"
+FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
+FOCAL_EXACT_DECK_SHA256 = "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
+FOCAL_DECK_PATH = ROOT / "train" / PROJECT / "league/decks" / FOCAL_DECK_ID / "deck.csv"
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +50,7 @@ class RunConfig:
     games_per_update: int = 256
     eval_every: int = 10
     wandb_mode: str = "online"
-    ppo: PPOConfig = PPOConfig(gae_lambda=0.97, credit_clock="turn")
+    ppo: PPOConfig = PPOConfig()
 
     def validate(self) -> None:
         if re.fullmatch(r"V[1-9]\d*_[a-z0-9]+(?:_[a-z0-9]+)*", self.version) is None:
@@ -114,6 +117,11 @@ def focal_deck() -> tuple[int, ...]:
     cards = tuple(int(line) for line in FOCAL_DECK_PATH.read_text().splitlines())
     if len(cards) != 60 or any(card <= 0 for card in cards):
         raise ValueError("0034 focal deck is not exact 60")
+    manifest = json.loads(FOCAL_DECK_PATH.with_name("manifest.json").read_text())
+    if manifest.get("deck_id") != FOCAL_DECK_ID:
+        raise ValueError("0034 focal deck ID does not match Frozen 007")
+    if manifest.get("exact_deck_sha256") != FOCAL_EXACT_DECK_SHA256:
+        raise ValueError("0034 focal deck hash does not match Frozen 007")
     return cards
 
 
@@ -147,7 +155,7 @@ def build_jobs(
                 + f"-u{source_policy_update:04d}-{index:04d}",
                 opponent_id=opponent.deck_id,
                 focal_first=index % 2 == 0,
-                seed=seed + source_policy_update * 1_000_003 + index,
+                seed=seed + (0 if greedy else source_policy_update * 1_000_003) + index,
                 source_policy_update=source_policy_update,
                 focal_deck=deck,
                 opponent_deck=opponent.deck,
@@ -200,8 +208,8 @@ def _opponent_snapshot() -> dict[str, Any]:
         "seat_contract": "global_fixed_schedule_alternation_128_each_seat",
         "pool_id": "0806_kaggle_top100_plus_v1",
         "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
-        "policy": "0019_epoch13_immutable_foundation",
-        "policy_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb",
+        "policy": "0806_large_model_pretrained_immutable",
+        "policy_sha256": _sha256(SOURCE_CHECKPOINT),
         "opponents": [
             {
                 "deck_id": item.deck_id,
@@ -234,6 +242,13 @@ def _run_parity(model, output: Path) -> dict[str, Any]:
     )
 
 
+def load_frozen_opponent(device: torch.device):
+    policy = PortableSemanticPolicy.from_checkpoint(SOURCE_CHECKPOINT, focal_deck())
+    actor = policy.model.to(device).eval()
+    actor.requires_grad_(False)
+    return actor
+
+
 def run_gate(
     *,
     output: Path,
@@ -249,11 +264,12 @@ def run_gate(
 ) -> dict[str, Any]:
     device = torch.device(device_name)
     model, identity = load_actor_critic(SOURCE_CHECKPOINT, focal_deck(), device)
+    opponent = load_frozen_opponent(device)
     parity = _run_parity(model, output.parent / "large_model_0806_runtime_parity.json")
     representation = model.representation_sha256()
     decoder_before = model.decoder_sha256()
     collector = FullSemanticRolloutCollector(
-        model, device=device, workers=workers, mode=mode, coalesce_ms=coalesce_ms
+        model, opponent, device=device, workers=workers, mode=mode, coalesce_ms=coalesce_ms
     )
     started = time.perf_counter()
     episodes = collector.collect(
@@ -333,7 +349,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_NAME": f"{WANDB_DISPLAY_PREFIX} · {config.version}",
             "WANDB_RUN_GROUP": PROJECT,
             "WANDB_TAGS": (
-                "0034,full_semantic,official_cpu,ppo,dragapult_third_ptcg_club,"
+                "0034,full_semantic,official_cpu,ppo,frozen_007,"
                 + config.ppo.credit_clock
                 + "_clock"
             ),
@@ -352,8 +368,18 @@ def run(config: RunConfig) -> dict[str, Any]:
         "source_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
         "actor": "exact_0031_semantic_policy_no_reduction",
+        "focal_deck_id": FOCAL_DECK_ID,
+        "focal_exact_deck_sha256": FOCAL_EXACT_DECK_SHA256,
+        "ppo_setting_source": {
+            "project": "0023_mega_lopunny_ex_mega_froslass_ex_002_league_training",
+            "version": "V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league",
+            "config": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league/artifact/training_config.json",
+            "intentional_difference": "256 Frozen-0806 games per update instead of 0023's 512 games",
+        },
         "opponent_count": 55,
         "opponent_games_per_batch": 256,
+        "opponent_policy": "0806_large_model_pretrained_immutable",
+        "opponent_policy_sha256": _sha256(SOURCE_CHECKPOINT),
         "opponent_schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
         "official_engine": "cpu_cg_runtime",
         "trainable_contract": ["actor.action_decoder.*", "value_head.*"],
@@ -367,6 +393,12 @@ def run(config: RunConfig) -> dict[str, Any]:
             "boundary_lambda": config.ppo.gae_lambda,
         },
         "episode_weighting": config.ppo.loss_weighting,
+        "termination_contract": {
+            "ability_repeat_limit": 8,
+            "ability_repeat_action": "opponent_win",
+            "full_round_draw_limit": 50,
+            "engine_turn_limit": 99,
+        },
     }
     _atomic_json(paths["artifact"] / "training_config.json", config_payload)
     _atomic_json(paths["artifact"] / "opponent_snapshot.json", _opponent_snapshot())
@@ -386,6 +418,7 @@ def run(config: RunConfig) -> dict[str, Any]:
     cumulative_decisions = 0
     try:
         model, identity = load_actor_critic(SOURCE_CHECKPOINT, focal_deck(), device)
+        opponent = load_frozen_opponent(device)
         parity = _run_parity(model, paths["artifact"] / "large_model_0806_runtime_parity.json")
         if not parity["passed"]:
             raise RuntimeError("Large Model 0806 runtime parity did not pass")
@@ -419,10 +452,39 @@ def run(config: RunConfig) -> dict[str, Any]:
         with TrainingLogger(
             paths["artifact"] / "training_metrics.jsonl", paths["tensorboard"]
         ) as logger:
+            baseline_evaluator = FullSemanticRolloutCollector(
+                model,
+                opponent,
+                device=device,
+                workers=config.workers,
+                mode="greedy",
+                coalesce_ms=config.coalesce_ms,
+            )
+            baseline_started = time.perf_counter()
+            baseline = baseline_evaluator.collect(
+                build_jobs(
+                    source_policy_update=0,
+                    seed=config.seed + 70_000_000,
+                    count=256,
+                    greedy=True,
+                )
+            )
+            logger.log(
+                0,
+                {
+                    "trainer/update": 0,
+                    "checkpoint/update": 0,
+                    "eval/checkpoint_update": 0,
+                    "eval/wall_seconds": time.perf_counter() - baseline_started,
+                    "representation/sha256_unchanged": 1.0,
+                    **_episode_metrics(baseline, "eval"),
+                },
+            )
             for update in range(1, config.updates + 1):
                 source_update = update - 1
                 collector = FullSemanticRolloutCollector(
                     model,
+                    opponent,
                     device=device,
                     workers=config.workers,
                     mode="sample",
@@ -488,6 +550,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                 if update % config.eval_every == 0:
                     evaluator = FullSemanticRolloutCollector(
                         model,
+                        opponent,
                         device=device,
                         workers=config.workers,
                         mode="greedy",
@@ -563,8 +626,8 @@ def main() -> int:
     parser.add_argument("--coalesce-ms", type=float, default=5.0)
     parser.add_argument("--games-per-update", type=int, choices=(256, 512), default=256)
     parser.add_argument("--eval-every", type=int, default=10)
-    parser.add_argument("--gae-lambda", type=float, default=0.97)
-    parser.add_argument("--credit-clock", choices=("selection", "turn"), default="turn")
+    parser.add_argument("--gae-lambda", type=float, default=0.95)
+    parser.add_argument("--credit-clock", choices=("selection", "turn"), default="selection")
     parser.add_argument(
         "--loss-weighting",
         choices=("episode_equal_decisions", "episode_equal_turns"),

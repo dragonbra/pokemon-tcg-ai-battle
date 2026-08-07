@@ -23,6 +23,8 @@ class RolloutJob:
     opponent_deck: tuple[int, ...]
     runtime_root: Path
     max_steps: int = 1_000
+    ability_repeat_limit: int = 8
+    full_round_draw_limit: int = 50
 
 
 @dataclass(frozen=True)

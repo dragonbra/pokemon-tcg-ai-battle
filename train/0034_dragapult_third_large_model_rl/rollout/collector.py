@@ -9,13 +9,12 @@ from multiprocessing.connection import Connection, wait
 from typing import Literal
 
 import torch
+from torch import nn
 
-from ..opponents import load_foundation
-from ..opponents.online_runtime import OnlineCausalEncoder as OpponentEncoder
 from ..policy.action_distribution import greedy_actions, sample_actions
 from ..policy.actor_critic import SemanticActorCritic
 from ..policy.batching import collate_feature_batches, cpu_batch, move_batch
-from ..semantic_policy.deployment.online_runtime import OnlineCausalEncoder as FocalEncoder
+from ..semantic_policy.deployment.online_runtime import OnlineCausalEncoder
 from .protocol import EpisodeTrajectory, RolloutJob, TrajectoryDecision
 from .worker import run_engine_episode
 
@@ -25,17 +24,19 @@ class _Live:
     job: RolloutJob
     connection: Connection
     process: mp.Process
-    focal_encoder: FocalEncoder
-    opponent_encoder: OpponentEncoder
+    focal_encoder: OnlineCausalEncoder
+    opponent_encoder: OnlineCausalEncoder
     decisions: list[TrajectoryDecision] = field(default_factory=list)
     last_decision: dict[str, object] | None = None
     last_action: tuple[int, ...] | None = None
+    recent_actions: list[dict[str, object]] = field(default_factory=list)
 
 
 class FullSemanticRolloutCollector:
     def __init__(
         self,
         model: SemanticActorCritic,
+        opponent: nn.Module,
         *,
         device: torch.device,
         workers: int = 8,
@@ -46,13 +47,13 @@ class FullSemanticRolloutCollector:
         if workers < 1 or coalesce_ms < 0 or timeout_seconds <= 0:
             raise ValueError("invalid collector configuration")
         self.model = model.eval()
+        self.opponent = opponent.eval().requires_grad_(False)
         self.device = device
         self.workers = workers
         self.mode = mode
         self.coalesce_seconds = coalesce_ms / 1000.0
         self.timeout_seconds = timeout_seconds
         self.context = mp.get_context("spawn")
-        self.opponent, self.opponent_identity = load_foundation(device, eval_mode=True)
         self.inference_batches = 0
         self.inference_requests = 0
         self.focal_requests = 0
@@ -80,8 +81,10 @@ class FullSemanticRolloutCollector:
             job=job,
             connection=parent,
             process=process,
-            focal_encoder=FocalEncoder(focal_actor, job.focal_deck, self.model.actor.config),
-            opponent_encoder=OpponentEncoder(
+            focal_encoder=OnlineCausalEncoder(
+                focal_actor, job.focal_deck, self.model.actor.config
+            ),
+            opponent_encoder=OnlineCausalEncoder(
                 1 - focal_actor, job.opponent_deck, self.opponent.config
             ),
         )
@@ -103,10 +106,12 @@ class FullSemanticRolloutCollector:
                 f"{detail}; game_id={item.job.game_id}; opponent={item.job.opponent_id}; "
                 f"focal_first={item.job.focal_first}; seed={item.job.seed}; "
                 f"worker_exitcode={exitcode}; last_decision={item.last_decision!r}; "
-                f"last_action={item.last_action!r}"
+                f"last_action={item.last_action!r}; recent_actions={item.recent_actions!r}"
             )
         episode.diagnostics = {
             "engine_selections": int(message.get("engine_selections", 0)),
+            "termination_status": message.get("status"),
+            "termination_error": message.get("error"),
             "source_policy_update": item.job.source_policy_update,
             "worker_exitcode": exitcode,
             "last_decision": item.last_decision,
@@ -153,7 +158,7 @@ class FullSemanticRolloutCollector:
         with torch.inference_mode():
             decoded = self.opponent.deterministic_action_tensors(batch)
         if not bool(decoded.legal.all()):
-            raise RuntimeError("Frozen 0019 opponent produced an illegal action")
+            raise RuntimeError("Frozen Policy-0806 opponent produced an illegal action")
         actions = [
             tuple(int(value) for value in decoded.sequences[index, : decoded.lengths[index]].tolist())
             for index in range(len(requests))
@@ -215,6 +220,15 @@ class FullSemanticRolloutCollector:
                             "option_count": len(options),
                             "min_count": selection.get("minCount"),
                             "max_count": selection.get("maxCount"),
+                            "options": [
+                                {
+                                    key: option.get(key)
+                                    for key in ("type", "id", "card", "skill", "source", "target")
+                                    if key in option
+                                }
+                                for option in options
+                                if isinstance(option, dict)
+                            ],
                         }
                         request = (item, observation)
                         (focal if message.get("role") == "focal" else opponent).append(request)
@@ -245,6 +259,10 @@ class FullSemanticRolloutCollector:
                     self.inference_seconds += elapsed
                     for item, action in routed:
                         item.last_action = action
+                        item.recent_actions.append(
+                            {"decision": item.last_decision, "action": action}
+                        )
+                        del item.recent_actions[:-12]
                         item.connection.send({"kind": "action", "action": list(action)})
                 fill()
         finally:

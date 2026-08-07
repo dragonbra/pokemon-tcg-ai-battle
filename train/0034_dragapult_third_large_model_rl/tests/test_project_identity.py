@@ -89,6 +89,52 @@ class ProjectIdentityTest(unittest.TestCase):
             Counter({item.deck_id: item.games for item in catalog}),
         )
 
+    def test_full_semantic_focal_deck_is_exact_frozen_007(self) -> None:
+        frozen_007 = next(
+            item for item in league.load_frozen_catalog()
+            if item.deck_id == "dragapult_ex_07bedfffbfad"
+        )
+
+        self.assertEqual(full_runner.FOCAL_DECK_ID, frozen_007.deck_id)
+        self.assertEqual(full_runner.focal_deck(), frozen_007.deck)
+        self.assertEqual(
+            full_runner.FOCAL_EXACT_DECK_SHA256,
+            "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+        )
+
+    def test_formal_run_restores_0023_ppo_settings(self) -> None:
+        config = full_runner.RunConfig()
+
+        self.assertEqual(config.games_per_update, 256)
+        self.assertEqual(config.ppo.credit_clock, "selection")
+        self.assertEqual(config.ppo.gae_lambda, 0.95)
+        self.assertEqual(config.ppo.batch_size, 1024)
+        self.assertEqual(config.ppo.epochs, 4)
+
+    def test_greedy_probe_seed_schedule_is_checkpoint_independent(self) -> None:
+        update_0 = full_runner.build_jobs(
+            source_policy_update=0, seed=123, count=256, greedy=True
+        )
+        update_10 = full_runner.build_jobs(
+            source_policy_update=10, seed=123, count=256, greedy=True
+        )
+        sampled_0 = full_runner.build_jobs(source_policy_update=0, seed=123, count=256)
+        sampled_10 = full_runner.build_jobs(source_policy_update=10, seed=123, count=256)
+
+        paired_0 = [
+            (job.seed, job.focal_first, job.opponent_id, job.opponent_deck)
+            for job in update_0
+        ]
+        paired_10 = [
+            (job.seed, job.focal_first, job.opponent_id, job.opponent_deck)
+            for job in update_10
+        ]
+        self.assertEqual(paired_0, paired_10)
+        self.assertNotEqual(
+            [job.seed for job in sampled_0],
+            [job.seed for job in sampled_10],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

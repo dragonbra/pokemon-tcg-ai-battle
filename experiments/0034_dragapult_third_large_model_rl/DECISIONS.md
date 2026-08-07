@@ -29,3 +29,37 @@ Update 1 completed from source policy update 0 with 204/204 Episodes, 96-108-0 s
 ## 2026-08-07: Stop V2 at update 1 by user request
 
 The user stopped V2 at 00:06:55 +08:00 to verify another important issue. The tmux session, watchdog, trainer and rollout workers were terminated, and a W&B stop request was issued. The latest complete state is update 1 with 204 Episodes and 21,590 decisions. Model-only checkpoints 0 and 1, canonical JSONL, TensorBoard and W&B history are retained. V2 is `user_stopped`, not completed, and must not be reported as a 200-update result.
+
+## 2026-08-07: Abort V3 and correct the opponent policy
+
+V3 was launched with the 500-update target and fixed 256-game Frozen-0806 schedule, but its collector still routed opponents through the historical Policy-0019 foundation. The user corrected the contract before the first PPO update. V3 was terminated at update 0 with only the initialization checkpoint retained; it is `user_stopped_before_update_1` and must not be compared as a training result. The next version uses an independent frozen copy of the Policy-0806 pretrained checkpoint for all 55 opponents, with per-deck online encoders and no opponent parameter updates.
+
+## 2026-08-07: Launch V4 with Policy-0806 frozen opponents
+
+V4 `V4_policy0806_frozen_256g_500u` launched after a fresh official-engine PPO gate passed full 39-key parity, 4/4 completed Episodes, zero errors, frozen-representation integrity and decoder change. It starts from the immutable Policy-0806 checkpoint with a fresh optimizer; a separate Policy-0806 actor copy remains frozen for every opponent inference. Each update uses the exact 55-deck, 256-slot schedule and V4 targets 500 updates with a full 256-game greedy probe every ten updates.
+
+## 2026-08-07: Add uniform rollout termination contract and launch V5
+
+V4's first 256-game batch reached a nonterminal repeated selection at engine turn 10 and hit the 1,000-selection safety limit. This was an environment termination defect, not evidence about policy strength. The fixed contract now treats the ninth identical selection-chain action within one turn/player as an opponent win, and `ceil(engine_turn / 2) >= 50` as a draw. A synthetic official-worker harness verified both outcomes. V5 `V5_policy0806_frozen_256g_500u_termination_guard` launched with the same Policy-0806 frozen opponents, 256-game schedule and 500-update target after the corrected gate passed.
+
+## 2026-08-07: Stop V5 after actor-strength regression
+
+The user stopped V5 after update 76. All model-only checkpoints 0-76, canonical metrics, TensorBoard and W&B history remain. Sampled rollout win rate stayed near one third without a positive trend, while the periodic greedy probe declined from 127-129-0 (49.61%) at update 10 to 105-150-1 (41.02%) at update 70. PPO reward and policy-loss signs were audited and no reversal defect was found. The critic improved while the actor drifted from its reference, so V5 is retained as negative evidence rather than continued on the assumption that a longer run will reverse the trend. The old greedy probes also changed engine seeds with checkpoint update; they are trend evidence but not strict paired comparisons.
+
+## 2026-08-07: Restart exact 007 with the audited 0023 PPO setting
+
+V6 changes the focal deck to Frozen-0806 number 007, `dragapult_ex_07bedfffbfad`, exact-deck SHA-256 `07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725`. It restarts from the immutable Policy-0806 checkpoint with a fresh optimizer and does not continue V5 weights.
+
+The optimization setting is restored from 0023 V2: selection clock, `gae_lambda=0.95`, four PPO epochs and minibatch 1024. Actor/value learning rates, clipping, entropy, reference KL, target behavior KL, gamma, Episode-equal decision weighting and gradient clipping already match and remain unchanged. The user-defined rollout unit remains exactly 256 official-engine games from the Frozen-0806 distribution; 1024 is the decision-token optimization minibatch, not the number of games. Policy-0806 opponents, the 55-deck schedule, repeat-forfeit rule and 50-full-round draw rule remain unchanged.
+
+V6 adds a 256-game update-0 greedy baseline. Every periodic greedy probe uses the same engine seeds, seats, opponents, exact decks and order regardless of checkpoint update. This fixes the V5 comparison defect without affecting on-policy training seeds, which continue to vary by source-policy update.
+
+## 2026-08-07: Launch V6 and establish the paired update-0 baseline
+
+V6 `V6_exact007_0023_selection_lambda095` launched with 500 updates, 32 workers, 256 games per update, evaluation every ten updates and W&B run ID `0034-v6-exact007-0023-selection-lambda095`. The update-0 exact-007 greedy baseline completed 256/256 official-engine games with zero error at 146-110-0 (57.03%): 59.38% first-seat and 54.69% second-seat.
+
+Update 1 then completed 256/256 stochastic on-policy games with zero error at 119-137-0 (46.48%). PPO used four epochs and 112 minibatches over 28,517 decisions, preserved the frozen representation hash and saved model-only checkpoint 1. This sampled rollout is not comparable to the greedy update-0 strength result; the first paired strength comparison is the fixed-seed greedy probe at update 10.
+
+## 2026-08-07: Stop V6 manually after update 123
+
+The user manually stopped the V6 training process after update 123. The latest complete local model-only checkpoint and canonical metric row are both update 123, covering 31,488 Episodes and 3,440,480 focal decisions. The W&B remote run is marked `crashed` because the process was terminated manually; its remote history was checked and also reaches `trainer/update=123`, `checkpoint/update=123`, 31,488 Episodes and 3,440,480 decisions. V6 is therefore retained as `user_stopped`, not completed and not an active 500-update run.

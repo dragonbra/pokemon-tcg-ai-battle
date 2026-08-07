@@ -15,11 +15,11 @@ from .batch_full_semantic import PreparedBatch, training_batch_metrics
 @dataclass(frozen=True, slots=True)
 class PPOConfig:
     gamma: float = 1.0
-    gae_lambda: float = 1.0
+    gae_lambda: float = 0.95
     credit_clock: str = "selection"
     loss_weighting: str = "episode_equal_decisions"
-    epochs: int = 2
-    batch_size: int = 512
+    epochs: int = 4
+    batch_size: int = 1024
     actor_learning_rate: float = 1.0e-5
     value_learning_rate: float = 1.0e-4
     weight_decay: float = 0.0
