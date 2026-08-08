@@ -31,8 +31,8 @@ from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0037_dragapult_value_initialized_rl"
-WANDB_DISPLAY_PREFIX = "0037 · value_initialized_turn_clock_seeded512"
-FORMAL_VERSION = "V1_value_initialized_turn_clock_seeded512"
+WANDB_DISPLAY_PREFIX = "0037 · engine_pool_prototype_cache_seeded512"
+FORMAL_VERSION = "V2_engine_pool_prototype_cache_seeded512"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -44,7 +44,9 @@ FOCAL_DECK_PATH = ROOT / "train" / PROJECT / "league/decks" / FOCAL_DECK_ID / "d
 class RunConfig:
     version: str = FORMAL_VERSION
     updates: int = 200
-    workers: int = 24
+    worker_processes: int = 16
+    engines_per_worker: int = 8
+    inference_channels_per_role: int = 8
     coalesce_ms: float = 5.0
     device: str = "cuda:0"
     seed: int = 330031001
@@ -56,8 +58,18 @@ class RunConfig:
     def validate(self) -> None:
         if re.fullmatch(r"V[1-9]\d*_[a-z0-9]+(?:_[a-z0-9]+)*", self.version) is None:
             raise ValueError("version must match V<n>_<ascii_snake_case>")
-        if min(self.updates, self.workers, self.eval_every) < 1 or self.coalesce_ms < 0:
-            raise ValueError("updates, workers, and eval_every must be positive")
+        if min(
+            self.updates,
+            self.worker_processes,
+            self.engines_per_worker,
+            self.inference_channels_per_role,
+            self.eval_every,
+        ) < 1 or self.coalesce_ms < 0:
+            raise ValueError("updates, rollout topology, and eval_every must be positive")
+        if self.inference_channels_per_role > self.engines_per_worker:
+            raise ValueError(
+                "inference_channels_per_role cannot exceed engines_per_worker"
+            )
         if self.games_per_update not in {256, 512}:
             raise ValueError("games_per_update must be 256 or 512 Frozen-0806 games")
         if self.wandb_mode not in {"online", "offline"}:
@@ -315,7 +327,9 @@ def run_gate(
     *,
     output: Path,
     games: int,
-    workers: int,
+    worker_processes: int,
+    engines_per_worker: int = 1,
+    inference_channels_per_role: int = 1,
     run_ppo: bool,
     device_name: str = "cuda:0",
     mode: str = "sample",
@@ -331,7 +345,14 @@ def run_gate(
     representation = model.representation_sha256()
     decoder_before = model.decoder_sha256()
     collector = FullSemanticRolloutCollector(
-        model, opponent, device=device, workers=workers, mode=mode, coalesce_ms=coalesce_ms
+        model,
+        opponent,
+        device=device,
+        worker_processes=worker_processes,
+        engines_per_worker=engines_per_worker,
+        inference_channels_per_role=inference_channels_per_role,
+        mode=mode,
+        coalesce_ms=coalesce_ms,
     )
     started = time.perf_counter()
     episodes = collector.collect(
@@ -370,6 +391,11 @@ def run_gate(
         "gae_lambda": gae_lambda,
         "loss_weighting": loss_weighting,
         "rollout_seconds": rollout_seconds,
+        "rollout_topology": {
+            "worker_processes": worker_processes,
+            "engines_per_worker": engines_per_worker,
+            "inference_channels_per_role": inference_channels_per_role,
+        },
         "ppo_seconds": ppo_seconds,
         "source_identity": asdict(identity),
         "parity": parity,
@@ -453,6 +479,14 @@ def run(config: RunConfig) -> dict[str, Any]:
             "episodes_per_seed": 2,
             "fixed_physical_deck_slots": True,
             "only_seat_is_swapped_within_pair": True,
+        },
+        "rollout_topology": {
+            "worker_processes": config.worker_processes,
+            "engines_per_worker": config.engines_per_worker,
+            "inference_channels_per_role": config.inference_channels_per_role,
+            "worker_local_compiler": True,
+            "worker_compiler_backend": "policy_stateless",
+            "prototype_gpu_cache": True,
         },
         "trainable_contract": [
             "actor.action_decoder.*",
@@ -550,7 +584,9 @@ def run(config: RunConfig) -> dict[str, Any]:
                 model,
                 opponent,
                 device=device,
-                workers=config.workers,
+                worker_processes=config.worker_processes,
+                engines_per_worker=config.engines_per_worker,
+                inference_channels_per_role=config.inference_channels_per_role,
                 mode="greedy",
                 coalesce_ms=config.coalesce_ms,
             )
@@ -586,7 +622,9 @@ def run(config: RunConfig) -> dict[str, Any]:
                     model,
                     opponent,
                     device=device,
-                    workers=config.workers,
+                    worker_processes=config.worker_processes,
+                    engines_per_worker=config.engines_per_worker,
+                    inference_channels_per_role=config.inference_channels_per_role,
                     mode="sample",
                     coalesce_ms=config.coalesce_ms,
                 )
@@ -659,7 +697,9 @@ def run(config: RunConfig) -> dict[str, Any]:
                         model,
                         opponent,
                         device=device,
-                        workers=config.workers,
+                        worker_processes=config.worker_processes,
+                        engines_per_worker=config.engines_per_worker,
+                        inference_channels_per_role=config.inference_channels_per_role,
                         mode="greedy",
                         coalesce_ms=config.coalesce_ms,
                     )
@@ -731,11 +771,16 @@ def main() -> int:
     parser.add_argument("--gate-output", type=Path)
     parser.add_argument("--gate-games", type=int, default=4)
     parser.add_argument("--gate-workers", type=int, default=2)
+    parser.add_argument("--gate-engines-per-worker", type=int, default=1)
+    parser.add_argument("--gate-inference-channels-per-role", type=int, default=1)
     parser.add_argument("--gate-coalesce-ms", type=float, default=5.0)
+    parser.add_argument("--gate-mode", choices=("sample", "greedy"), default="sample")
     parser.add_argument("--gate-ppo", action="store_true")
     parser.add_argument("--version", default=FORMAL_VERSION)
     parser.add_argument("--updates", type=int, default=200)
-    parser.add_argument("--workers", type=int, default=24)
+    parser.add_argument("--worker-processes", type=int, default=16)
+    parser.add_argument("--engines-per-worker", type=int, default=8)
+    parser.add_argument("--inference-channels-per-role", type=int, default=8)
     parser.add_argument("--coalesce-ms", type=float, default=5.0)
     parser.add_argument("--games-per-update", type=int, choices=(512,), default=512)
     parser.add_argument("--eval-every", type=int, default=10)
@@ -752,8 +797,11 @@ def main() -> int:
         report = run_gate(
             output=args.gate_output,
             games=args.gate_games,
-            workers=args.gate_workers,
+            worker_processes=args.gate_workers,
+            engines_per_worker=args.gate_engines_per_worker,
+            inference_channels_per_role=args.gate_inference_channels_per_role,
             run_ppo=args.gate_ppo,
+            mode=args.gate_mode,
             coalesce_ms=args.gate_coalesce_ms,
             gae_lambda=args.gae_lambda,
             credit_clock=args.credit_clock,
@@ -765,7 +813,9 @@ def main() -> int:
         RunConfig(
             version=args.version,
             updates=args.updates,
-            workers=args.workers,
+            worker_processes=args.worker_processes,
+            engines_per_worker=args.engines_per_worker,
+            inference_channels_per_role=args.inference_channels_per_role,
             coalesce_ms=args.coalesce_ms,
             games_per_update=args.games_per_update,
             eval_every=args.eval_every,

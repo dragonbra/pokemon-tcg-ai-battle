@@ -165,7 +165,7 @@ def assert_large_model_0806_runtime_parity(
                 f"update-0 greedy action mismatch at decision {decision_index}"
             )
     report = {
-        "schema": "0034_large_model_0806_full_semantic_runtime_parity_v1",
+        "schema": "0037_large_model_0806_full_semantic_runtime_parity_v1",
         "passed": True,
         "actor_schema": SCHEMA_VERSION,
         "observations": len(observations),

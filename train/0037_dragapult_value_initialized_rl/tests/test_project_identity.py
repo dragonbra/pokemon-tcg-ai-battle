@@ -65,10 +65,7 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(exporter._repo_relative(relative), relative)
 
     def test_wandb_display_name_keeps_project_prefix(self) -> None:
-        self.assertEqual(
-            full_runner.WANDB_DISPLAY_PREFIX,
-            "0037 · value_initialized_turn_clock_seeded512",
-        )
+        self.assertTrue(full_runner.WANDB_DISPLAY_PREFIX.startswith("0037"))
 
     def test_selected_0036_value_checkpoint_identity(self) -> None:
         self.assertEqual(
@@ -124,6 +121,17 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.ppo.gae_lambda, 0.95)
         self.assertEqual(config.ppo.batch_size, 1024)
         self.assertEqual(config.ppo.epochs, 4)
+        self.assertEqual(config.version, "V2_engine_pool_prototype_cache_seeded512")
+        self.assertEqual(config.worker_processes, 16)
+        self.assertEqual(config.engines_per_worker, 8)
+        self.assertEqual(config.inference_channels_per_role, 8)
+
+    def test_rollout_topology_rejects_invalid_channel_count(self) -> None:
+        with self.assertRaisesRegex(ValueError, "inference_channels_per_role"):
+            full_runner.RunConfig(
+                engines_per_worker=4,
+                inference_channels_per_role=5,
+            ).validate()
 
     def test_greedy_probe_seed_schedule_is_checkpoint_independent(self) -> None:
         update_0 = full_runner.build_jobs(

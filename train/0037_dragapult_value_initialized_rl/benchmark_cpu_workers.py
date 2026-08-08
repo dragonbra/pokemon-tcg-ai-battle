@@ -11,11 +11,20 @@ import sys
 from .training.run_full_semantic import run_gate
 
 
-def _row(report: dict, workers: int, games: int, coalesce_ms: float) -> dict:
+def _row(
+    report: dict,
+    worker_processes: int,
+    engines_per_worker: int,
+    inference_channels_per_role: int,
+    games: int,
+    coalesce_ms: float,
+) -> dict:
     wall = float(report["rollout_seconds"])
     metrics = report["metrics"]
     return {
-        "workers": workers,
+        "worker_processes": worker_processes,
+        "engines_per_worker": engines_per_worker,
+        "inference_channels_per_role": inference_channels_per_role,
         "coalesce_ms": coalesce_ms,
         "games": games,
         "wall_seconds": wall,
@@ -30,7 +39,9 @@ def _row(report: dict, workers: int, games: int, coalesce_ms: float) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--workers", type=int, nargs="+", default=(8, 12, 16, 24))
+    parser.add_argument("--workers", type=int, nargs="+", default=(8, 16, 32))
+    parser.add_argument("--engines-per-worker", type=int, default=1)
+    parser.add_argument("--inference-channels-per-role", type=int, default=1)
     parser.add_argument("--games", type=int, default=24)
     parser.add_argument("--coalesce-ms", type=float, default=0.5)
     parser.add_argument("--output", type=Path, required=True)
@@ -43,12 +54,21 @@ def main() -> int:
         report = run_gate(
             output=args.output,
             games=args.games,
-            workers=args.workers[0],
+            worker_processes=args.workers[0],
+            engines_per_worker=args.engines_per_worker,
+            inference_channels_per_role=args.inference_channels_per_role,
             run_ppo=False,
             mode="greedy",
             coalesce_ms=args.coalesce_ms,
         )
-        print(json.dumps(_row(report, args.workers[0], args.games, args.coalesce_ms), sort_keys=True))
+        print(json.dumps(_row(
+            report,
+            args.workers[0],
+            args.engines_per_worker,
+            args.inference_channels_per_role,
+            args.games,
+            args.coalesce_ms,
+        ), sort_keys=True))
         return 0
 
     rows = []
@@ -64,6 +84,10 @@ def main() -> int:
                 str(workers),
                 "--games",
                 str(args.games),
+                "--engines-per-worker",
+                str(args.engines_per_worker),
+                "--inference-channels-per-role",
+                str(args.inference_channels_per_role),
                 "--coalesce-ms",
                 str(args.coalesce_ms),
                 "--output",
@@ -71,13 +95,20 @@ def main() -> int:
             ],
             check=True,
         )
-        row = _row(json.loads(report_path.read_text()), workers, args.games, args.coalesce_ms)
+        row = _row(
+            json.loads(report_path.read_text()),
+            workers,
+            args.engines_per_worker,
+            args.inference_channels_per_role,
+            args.games,
+            args.coalesce_ms,
+        )
         rows.append(row)
         print(json.dumps(row, sort_keys=True), flush=True)
     valid = [row for row in rows if row["error_games"] == 0]
     selected = max(valid, key=lambda row: row["games_per_second"])
     payload = {
-        "schema": "0034_full_semantic_cpu_worker_benchmark_v1",
+        "schema": "0037_rl_engine_pool_benchmark_v2",
         "fixed_games": args.games,
         "rows": rows,
         "selected_workers": selected["workers"],

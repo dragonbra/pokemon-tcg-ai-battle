@@ -28,7 +28,9 @@ official observation
              -> query 0 scalar logit -> V(s) in [-1,1]
 ```
 
-The auxiliary opponent-archetype and final-diff heads from supervised training remain frozen provenance tensors and are not evaluated or optimized during PPO. Frozen Encoder hashes are checked before and after every update. V1 trainable parameters are only `actor.action_decoder.*`, Value queries/blocks/final norm and `heads.value.*`.
+The auxiliary opponent-archetype and final-diff heads from supervised training remain frozen provenance tensors and are not evaluated or optimized during PPO. Frozen Encoder hashes are checked before and after every update. V2 trainable parameters are only `actor.action_decoder.*`, Value queries/blocks/final norm and `heads.value.*`.
+
+The semantic policy caches the model-static card/attack/skill/effect prototype embeddings once after checkpoint/device/dtype placement. The cache is detached derived GPU state, is absent from `state_dict`, and is invalidated by `_apply` and `load_state_dict`. If prototype parameters ever become trainable, train mode bypasses the cache; current frozen-prototype PPO safely reuses it while decoder/value gradients remain live.
 
 ## Rollout and variance-reduction contract
 
@@ -48,12 +50,14 @@ PPO uses four epochs, decision minibatch 1024, actor LR `1e-5`, critic LR `1e-4`
 
 ## Runtime, logging and artifacts
 
-Seeded runtime 0002 has official-source SHA-256 `c3f00d...f9f2` and library SHA-256 `549a0c...53e6`; `engine/source/` remains untouched. Engine-owning workers compile causal stateless records locally, while collation, CUDA inference and stochastic decoding remain centralized. The 0035 incremental compiler is not enabled.
+Seeded runtime 0002 has official-source SHA-256 `c3f00d...f9f2` and library SHA-256 `549a0c...53e6`; `engine/source/` remains untouched. V2 uses N16E8/I8: 16 spawned worker processes, up to 8 independent official battle pointers per process, and 8 bounded inference channels per role. One per-process library lock protects official ABI calls; while one battle waits for centralized CUDA inference, other sessions in that worker may compile or progress. Every battle side owns independent causal compiler state. The 0035 incremental compiler is not enabled; the admitted stateless worker compiler is used.
 
-Formal V1 is `V1_value_initialized_turn_clock_seeded512`. Canonical JSONL writes before TensorBoard and W&B online mirror to private `dragon_bra/pokemon-tcg-policy-learning`; display names begin `0037`. Each update saves an atomic model-only decoder/critic checkpoint and retains all checkpoints. Optimizer, scheduler, scaler, RNG, rollout and replay are excluded.
+Strict fixed-greedy seeded-512 topology trials used identical 95,214 official selections. N16E8/I8 at 5 ms ran in `190.420` and `191.264 s`, median `2.683 games/s`, with median process-tree RSS `15.74 GiB`. N8E16/I8 ran in `195.831` and `195.696 s`, median `2.615 games/s`, with `11.08 GiB`; it is the low-memory fallback. V1's N32E1/per-game-spawn fixed baseline took `417.389 s`, so selected V2 wall is 54.3% lower. Benchmark artifacts are under `.tmp/evaluation/0037_rl_pool_benchmark/` and are local, reproducible, disposable evidence rather than tracked training data.
+
+V1 `V1_value_initialized_turn_clock_seeded512` is retained as failed because it omitted the engine pool and prototype cache; it produced only checkpoint-0 fixed evaluation evidence. Corrected formal V2 is `V2_engine_pool_prototype_cache_seeded512`. Canonical JSONL writes before TensorBoard and W&B online mirror to private `dragon_bra/pokemon-tcg-policy-learning`; display names begin `0037`. Each update saves an atomic model-only decoder/critic checkpoint and retains all checkpoints. Optimizer, scheduler, scaler, RNG, rollout and replay are excluded.
 
 `rollout/*` describes the stochastic source policy `checkpoint/update=k-1`; `checkpoint/update=k` is produced afterward. Fixed greedy `eval/*` is the checkpoint validation curve. Only a separate zero-error official-engine frozen evaluation can support a policy-strength conclusion.
 
 ## Current and next stage
 
-V1 is running after actor logit/action parity, exact 0036 critic tensor parity, worker-local feature parity, paired schedule audit, a finite official-engine PPO canary, unchanged Encoder hash and clean W&B startup. The online run is `0037-v1-value-initialized-turn-clock-seeded512`. Later versions may test partial Encoder unfreezing/LoRA or Value-guided action search; neither is part of V1.
+V2 is ready to launch after actor logit/action parity, exact 0036 critic tensor parity, worker-local feature parity, prototype-cache lifecycle tests, paired schedule audit, repeated seeded-512 topology trials and a finite pooled official-engine PPO canary. The canary's behavior replay MAE is `3.576e-6`, explained variance `0.5197`, and Encoder hash is unchanged. Later versions may test partial Encoder unfreezing/LoRA or Value-guided action search; neither is part of V2.

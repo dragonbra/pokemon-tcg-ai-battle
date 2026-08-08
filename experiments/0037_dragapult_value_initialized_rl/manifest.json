@@ -1,6 +1,6 @@
 {
   "project_id": "0037_dragapult_value_initialized_rl",
-  "status": "v1_running",
+  "status": "v2_ready_to_launch",
   "focal_deck": {
     "deck_id": "dragapult_ex_07bedfffbfad",
     "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
@@ -25,6 +25,24 @@
     "checkpoint_retention": "all",
     "wandb_project": "dragon_bra/pokemon-tcg-policy-learning",
     "wandb_run_id": "0037-v1-value-initialized-turn-clock-seeded512",
-    "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0037-v1-value-initialized-turn-clock-seeded512"
+    "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0037-v1-value-initialized-turn-clock-seeded512",
+    "state": "failed_incomplete_runtime_contract",
+    "fixed_eval_wall_seconds": 417.388612322
+  },
+  "v2": {
+    "version": "V2_engine_pool_prototype_cache_seeded512",
+    "worker_processes": 16,
+    "engines_per_worker": 8,
+    "inference_channels_per_role": 8,
+    "coalesce_ms": 5.0,
+    "prototype_gpu_cache": true,
+    "worker_local_compiler": "policy_stateless",
+    "episodes_per_update": 512,
+    "checkpoint_retention": "all",
+    "seeded512_median_wall_seconds": 190.8419202615005,
+    "seeded512_median_games_per_second": 2.68284871216153,
+    "ppo_canary_explained_variance": 0.5197435617446899,
+    "ppo_canary_behavior_replay_mae": 3.5762786865234375e-06,
+    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning"
   }
 }
