@@ -6,7 +6,7 @@ from typing import Any
 
 
 class DeviceRepeatForfeitGuard:
-    """Forfeit a lane after 20 identical singleton choices in one actor-turn."""
+    """Forfeit after one actor starts 20 choices with the same option."""
 
     def __init__(
         self,
@@ -36,6 +36,19 @@ class DeviceRepeatForfeitGuard:
             (batch_size,), -1, dtype=torch.int64, device=self.device
         )
 
+    def reset(self, lane_mask: Any) -> None:
+        """Clear repeat history for lanes assigned to a new Episode."""
+
+        import torch
+
+        mask = lane_mask.bool().view(-1)
+        if mask.shape != (self.batch_size,):
+            raise ValueError("repeat guard reset mask has incompatible shape")
+        self.keys.masked_fill_(mask[:, None, None], 0)
+        self.counts.masked_fill_(mask[:, None], 0)
+        self.turn.masked_fill_(mask, -1)
+        self.actor.masked_fill_(mask, -1)
+
     def observe(
         self,
         *,
@@ -59,7 +72,7 @@ class DeviceRepeatForfeitGuard:
             raise ValueError("repeat guard received incompatible option/action tensors")
         turn = turn.long().view(self.batch_size)
         actor = actor.long().view(self.batch_size)
-        changed = turn.ne(self.turn) | actor.ne(self.actor)
+        changed = actor.ne(self.actor)
         self.counts.masked_fill_(changed[:, None], 0)
         self.turn.copy_(turn)
         self.actor.copy_(actor)
@@ -73,7 +86,7 @@ class DeviceRepeatForfeitGuard:
         ).squeeze(1).long()
         eligible = (
             ready.bool().view(self.batch_size)
-            & lengths.long().view(self.batch_size).eq(1)
+            & lengths.long().view(self.batch_size).ge(1)
             & valid_index
         )
         select_kind = selection_type.long().view(self.batch_size)

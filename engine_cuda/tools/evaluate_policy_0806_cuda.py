@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import html
 import json
@@ -31,6 +32,7 @@ TEMP_ROOT = ROOT / ".tmp/evaluation/policy_0806_cuda_seeded512"
 EVALUATION_SEED = 341_512_806
 EXPECTED_DECKS = 55
 EXPECTED_GAMES = 512
+CUDA_BATCH_SIZE = 128
 POLICY_SHA256 = "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
 
 
@@ -128,8 +130,118 @@ def _schedule_path(number: str) -> Path:
     return TEMP_ROOT / "schedules" / f"{number}.json"
 
 
+def resolve_candidate_deck_path(candidate: Any, deck_root: Path = POOL_ROOT / "decks") -> Path:
+    from evaluation.frozen_0806 import exact_deck_sha256
+
+    number = str(candidate.package_manifest["frozen_deck_number"])
+    matches = sorted(path for path in deck_root.glob(f"{number}_*") if path.is_dir())
+    if len(matches) != 1:
+        raise RuntimeError(f"Frozen deck {number} does not resolve to exactly one directory")
+    deck_path = matches[0] / "deck.csv"
+    cards = tuple(
+        int(value)
+        for value in deck_path.read_text(encoding="ascii").splitlines()
+        if value.strip()
+    )
+    expected_cards = tuple(int(value) for value in candidate.deck)
+    expected_hash = str(candidate.package_manifest["exact_deck_sha256"])
+    if cards != expected_cards or exact_deck_sha256(cards) != expected_hash:
+        raise RuntimeError(f"Frozen deck {number} failed exact-deck identity validation")
+    return deck_path
+
+
+def merge_cuda_chunk_results(
+    chunks: Iterable[dict[str, Any]], *, expected_games: int
+) -> dict[str, Any]:
+    ordered = sorted(chunks, key=lambda item: int(item["schedule"]["schedule_offset"]))
+    if not ordered:
+        raise ValueError("at least one CUDA chunk is required")
+    cursor = 0
+    game_results: list[int] = []
+    terminal_hashes: list[str] = []
+    forfeits: list[int] = []
+    wall_seconds = gpu_seconds = 0.0
+    routed_rows = completed_games = errors = 0
+    peak_allocated = peak_reserved = 0
+    for chunk in ordered:
+        collector = chunk["collector"]
+        schedule = chunk["schedule"]
+        offset = int(schedule["schedule_offset"])
+        games = int(collector["games"])
+        results = list(chunk["determinism"]["game_results"])
+        if (
+            chunk.get("passed") is not True
+            or offset != cursor
+            or games != len(results)
+            or int(collector["completed_games"]) != games
+            or int(collector["errors"]) != 0
+        ):
+            raise ValueError("CUDA chunks are incomplete or non-contiguous")
+        cursor += games
+        completed_games += int(collector["completed_games"])
+        errors += int(collector["errors"])
+        wall_seconds += float(collector["wall_seconds"])
+        gpu_seconds += float(collector["gpu_seconds"])
+        routed_rows += int(collector["routed_ready_rows"])
+        game_results.extend(int(value) for value in results)
+        terminal_hashes.append(str(chunk["determinism"]["terminal_state_sha256"]))
+        forfeits.extend(
+            int(value)
+            for value in chunk["progress_guard"]["forfeit_schedule_indices"]
+        )
+        peak_allocated = max(
+            peak_allocated, int(chunk["memory"]["torch_peak_allocated_bytes"])
+        )
+        peak_reserved = max(
+            peak_reserved, int(chunk["memory"]["torch_peak_reserved_bytes"])
+        )
+    if cursor != expected_games:
+        raise ValueError(f"CUDA chunks cover {cursor}, expected {expected_games}")
+    merged = copy.deepcopy(ordered[0])
+    merged["schema_version"] = "cuda_semantic0031_rollout_chunked_v1"
+    merged["collector"].update(
+        {
+            "games": expected_games,
+            "completed_games": completed_games,
+            "errors": errors,
+            "wall_seconds": wall_seconds,
+            "gpu_seconds": gpu_seconds,
+            "games_per_second_wall": expected_games / wall_seconds,
+            "games_per_second_gpu": expected_games / gpu_seconds,
+            "routed_ready_rows": routed_rows,
+            "chunk_count": len(ordered),
+            "cuda_batch_size": max(int(item["collector"]["games"]) for item in ordered),
+        }
+    )
+    encoded_results = json.dumps(game_results, separators=(",", ":")).encode("ascii")
+    encoded_terminal = json.dumps(terminal_hashes, separators=(",", ":")).encode(
+        "ascii"
+    )
+    merged["determinism"].update(
+        {
+            "game_results": game_results,
+            "game_results_sha256": hashlib.sha256(encoded_results).hexdigest(),
+            "terminal_state_sha256": hashlib.sha256(encoded_terminal).hexdigest(),
+            "terminal_state_chunk_sha256": terminal_hashes,
+        }
+    )
+    merged["progress_guard"]["forfeit_schedule_indices"] = sorted(forfeits)
+    merged["progress_guard"]["forfeit_count"] = len(forfeits)
+    merged["schedule"].update(
+        {"schedule_offset": 0, "used_jobs": expected_games}
+    )
+    merged["memory"].update(
+        {
+            "torch_peak_allocated_bytes": peak_allocated,
+            "torch_peak_reserved_bytes": peak_reserved,
+        }
+    )
+    return merged
+
+
 def _run_one(catalog: Any, candidate: Any) -> dict[str, Any]:
     number = str(candidate.package_manifest["frozen_deck_number"])
+    focal_deck_path = resolve_candidate_deck_path(candidate)
     result_path = _result_path(number)
     schedule_path = _schedule_path(number)
     schedule = build_cuda_schedule(
@@ -142,44 +254,55 @@ def _run_one(catalog: Any, candidate: Any) -> dict[str, Any]:
     if not result_path.is_file():
         log_path = TEMP_ROOT / "logs" / f"{number}.log"
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        command = [
-            sys.executable,
-            str(BENCHMARK),
-            "--actor-mode",
-            "0806",
-            "--actor-package",
-            str(POLICY_ROOT),
-            "--opponent-model",
-            str(POLICY_MODEL),
-            "--focal-deck",
-            str(candidate.root / "deck.csv"),
-            "--deck-root",
-            str(POOL_ROOT / "decks"),
-            "--schedule",
-            str(schedule_path),
-            "--game-limit",
-            str(EXPECTED_GAMES),
-            "--check-interval",
-            "8",
-            "--routing-mode",
-            "dense_masked",
-            "--ability-repeat-limit",
-            "20",
-            "--output",
-            str(result_path),
-        ]
+        chunks = []
         with log_path.open("w", encoding="utf-8") as log:
-            completed = subprocess.run(
-                command,
-                cwd=ROOT,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                check=False,
-            )
-        if completed.returncode != 0:
-            raise RuntimeError(
-                f"CUDA evaluation failed for deck {number}; see {log_path}"
-            )
+            for offset in range(0, EXPECTED_GAMES, CUDA_BATCH_SIZE):
+                chunk_path = TEMP_ROOT / "chunks" / number / f"{offset:03d}.json"
+                command = [
+                    sys.executable,
+                    str(BENCHMARK),
+                    "--actor-mode",
+                    "0806",
+                    "--actor-package",
+                    str(POLICY_ROOT),
+                    "--opponent-model",
+                    str(POLICY_MODEL),
+                    "--focal-deck",
+                    str(focal_deck_path),
+                    "--deck-root",
+                    str(POOL_ROOT / "decks"),
+                    "--schedule",
+                    str(schedule_path),
+                    "--schedule-offset",
+                    str(offset),
+                    "--game-limit",
+                    str(min(CUDA_BATCH_SIZE, EXPECTED_GAMES - offset)),
+                    "--check-interval",
+                    "8",
+                    "--routing-mode",
+                    "dense_masked",
+                    "--ability-repeat-limit",
+                    "20",
+                    "--output",
+                    str(chunk_path),
+                ]
+                completed = subprocess.run(
+                    command,
+                    cwd=ROOT,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    check=False,
+                )
+                if completed.returncode != 0:
+                    raise RuntimeError(
+                        f"CUDA evaluation failed for deck {number} chunk {offset}; "
+                        f"see {log_path}"
+                    )
+                chunks.append(json.loads(chunk_path.read_text(encoding="utf-8")))
+        _atomic_json(
+            result_path,
+            merge_cuda_chunk_results(chunks, expected_games=EXPECTED_GAMES),
+        )
     result = json.loads(result_path.read_text(encoding="utf-8"))
     if (
         result.get("passed") is not True
@@ -227,10 +350,18 @@ def _summary(catalog: Any, candidate: Any, result: dict[str, Any]) -> dict[str, 
         row[outcome] += 1
     if wins + losses + draws != EXPECTED_GAMES:
         raise RuntimeError(f"deck {number} outcome total is invalid")
+    schedule_entry = next(
+        entry for entry in catalog.pool.schedule if entry.deck_id == candidate.name
+    )
     return {
         "deck_number": number,
         "deck_id": candidate.name,
         "display_name": candidate.display_name,
+        "representative_cards": list(candidate.representative_cards),
+        "schedule_games": int(schedule_entry.games),
+        "best_rank": int(schedule_entry.best_rank),
+        "observed_players": int(schedule_entry.observed_players),
+        "segment": str(schedule_entry.segment),
         "exact_deck_sha256": candidate.package_manifest["exact_deck_sha256"],
         "schedule_sha256": schedule["schedule_sha256"],
         "games": EXPECTED_GAMES,
@@ -253,7 +384,7 @@ def _summary(catalog: Any, candidate: Any, result: dict[str, Any]) -> dict[str, 
 
 
 def _card_rows(candidate: Any) -> str:
-    from evaluation.cards import load_card_catalog
+    from evaluation.cards import card_image_url, load_card_catalog
 
     cards = load_card_catalog(ROOT / "data/official/EN_Card_Data.csv")
     rows = []
@@ -261,26 +392,51 @@ def _card_rows(candidate: Any) -> str:
         Counter(candidate.deck).items(),
         key=lambda item: (cards[item[0]]["name"], item[0]),
     ):
+        card = cards[card_id]
+        image_url = card_image_url(card["expansion"], card["collection_number"])
+        image = (
+            f'<img class="card-thumb" src="{html.escape(image_url, quote=True)}" '
+            f'alt="{html.escape(card["name"], quote=True)}" loading="lazy">'
+            if image_url
+            else ""
+        )
         rows.append(
-            f"<tr><td>{card_id}</td><td>{html.escape(cards[card_id]['name'])}</td>"
-            f"<td>{count}</td></tr>"
+            f"<tr><td>{image}</td><td>{card_id}</td>"
+            f"<td>{html.escape(card['name'])}<small>{html.escape(card['expansion'])} "
+            f"{html.escape(card['collection_number'])}</small></td><td>{count}</td></tr>"
         )
     return "".join(rows)
 
 
 def _report_html(catalog: Any, candidate: Any, summary: dict[str, Any]) -> str:
-    opponents = {item.name: item for item in catalog.opponents}
     matchup_rows = []
+    matchup_bars = []
     for opponent in sorted(
         catalog.opponents,
         key=lambda item: int(item.package_manifest["frozen_deck_number"]),
     ):
         row = summary["by_opponent"][opponent.name]
         rate = row["wins"] / row["games"] if row["games"] else 0.0
+        images = "".join(
+            f'<img class="opponent-thumb" src="{html.escape(str(card["image_url"]), quote=True)}" '
+            f'alt="{html.escape(str(card["name"]), quote=True)}" loading="lazy">'
+            for card in opponent.representative_cards
+        )
+        identity = (
+            f'<span class="deck-number">{opponent.package_manifest["frozen_deck_number"]}</span>'
+            f'<span class="opponent-thumbnails">{images}</span>'
+            f'<span class="opponent-name">{html.escape(opponent.display_name or opponent.name)}</span>'
+        )
+        matchup_bars.append(
+            f'<div class="chart-row"><div class="opponent-identity">{identity}</div>'
+            f'<div class="bar-track"><span class="bar" style="width:{rate:.4%}"></span></div>'
+            f'<div class="chart-result"><span class="chart-rate">{rate:.1%}</span>'
+            f'<span class="chart-record">{row["wins"]}-{row["losses"]}-{row["draws"]}</span></div></div>'
+        )
         matchup_rows.append(
-            "<tr>"
-            f"<td>{opponent.package_manifest['frozen_deck_number']}</td>"
-            f"<td>{html.escape(opponent.display_name or opponent.name)}</td>"
+            f'<tr><td>{opponent.package_manifest["frozen_deck_number"]}</td>'
+            f'<td><div class="opponent-identity"><span class="opponent-thumbnails">{images}</span>'
+            f'<span>{html.escape(opponent.display_name or opponent.name)}</span></div></td>'
             f"<td>{row['games']}</td><td>{row['wins']}</td>"
             f"<td>{row['losses']}</td><td>{row['draws']}</td>"
             f"<td>{rate:.2%}</td></tr>"
@@ -304,17 +460,21 @@ def _report_html(catalog: Any, candidate: Any, summary: dict[str, Any]) -> str:
         },
         ensure_ascii=False,
     ).replace("</", "<\\/")
-    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>{summary['deck_number']} · {html.escape(summary['display_name'])} · CUDA Seeded-512</title>
-<style>body{{font:14px/1.5 system-ui;max-width:1280px;margin:28px auto;padding:0 18px;color:#17231f;background:#f4f7f5}}h1,h2{{margin:.4em 0}}section{{background:#fff;border:1px solid #d8e2dd;margin:16px 0;padding:18px}}.stats{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}}.stat{{background:#eaf2ee;padding:12px}}.stat b{{display:block;font-size:22px}}table{{width:100%;border-collapse:collapse}}th,td{{padding:7px 9px;border-bottom:1px solid #dfe6e2;text-align:right}}th:nth-child(2),td:nth-child(2){{text-align:left}}code{{font-size:11px}}.warn{{border-left:4px solid #b67a22}}@media(max-width:700px){{.stats{{grid-template-columns:1fr 1fr}}}}</style></head><body>
-<h1>{summary['deck_number']} · {html.escape(summary['display_name'])}</h1>
-<p>Policy-0806 CUDA engine zero-shot · fixed seed {EVALUATION_SEED} · 512 games · 256 first / 256 second</p>
-<section class="warn"><strong>证据边界：</strong>这是 CUDA engine 评测；在 CUDA/official CPU parity 完成前，不作为旧 official-CPU 合同的可替代证据。</section>
-<section><div class="stats"><div class="stat"><b>{summary['wins']}-{summary['losses']}-{summary['draws']}</b>W-L-D</div><div class="stat"><b>{summary['win_rate']:.2%}</b>胜率</div><div class="stat"><b>{summary['first']['wins']}/{summary['first']['games']}</b>先手胜局</div><div class="stat"><b>{summary['second']['wins']}/{summary['second']['games']}</b>后手胜局</div><div class="stat"><b>{summary['wall_seconds']:.1f}s</b>{summary['games_per_second']:.2f} games/s</div></div></section>
-<section><h2>我的卡组构成</h2><table><thead><tr><th>Card ID</th><th>卡牌</th><th>数量</th></tr></thead><tbody>{_card_rows(candidate)}</tbody></table></section>
-<section><h2>对 001–055 实际对局</h2><table><thead><tr><th>编号</th><th>对手卡组</th><th>对局</th><th>胜</th><th>负</th><th>平</th><th>胜率</th></tr></thead><tbody>{''.join(matchup_rows)}</tbody></table></section>
-<section><p>Policy <code>{POLICY_SHA256}</code> · schedule <code>{summary['schedule_sha256']}</code> · result <code>{summary['game_results_sha256']}</code> · progress-guard forfeits {len(summary['progress_guard_forfeits'])}</p></section>
-<script type="application/json" id="report-data">{embedded}</script></body></html>"""
+    return f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{summary['deck_number']} · {html.escape(summary['display_name'])} · Policy-0806 CUDA Seeded-512</title><style>
+:root{{--bg:#f3f7f5;--surface:#fff;--soft:#f7faf8;--ink:#172b25;--muted:#60736c;--line:#dce7e2;--brand:#217a58;--dark:#14563d;--warn:#a66a18}}
+*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,"PingFang SC",sans-serif}}main{{max-width:1240px;margin:auto;padding:36px 28px 64px}}
+.hero{{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;padding:30px 32px;border-radius:8px;color:#fff;background:var(--dark)}}.eyebrow{{margin:0 0 6px;color:#c8eadb;font-size:12px;font-weight:700;letter-spacing:.12em}}.back{{color:#d8eee5;text-decoration:none;font-weight:700}}h1{{margin:4px 0 0;font-size:32px;line-height:1.2}}h2{{margin:0 0 6px;font-size:20px}}section{{margin:18px 0;padding:22px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}}
+.summary{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}}.card{{min-height:92px;padding:15px 16px;border:1px solid var(--line);border-radius:11px;background:#fff}}.label,small{{display:block;color:var(--muted);font-size:12px}}.value{{margin-top:5px;font-size:23px;font-weight:750}}.warn{{border-left:4px solid var(--warn)}}
+.matchup-chart{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 20px;margin-top:14px;font-size:12px}}.chart-row{{display:grid;grid-template-columns:minmax(210px,270px) 1fr 125px;gap:8px;align-items:center;padding:4px 5px;border-radius:6px}}.chart-row:hover{{background:var(--soft)}}.opponent-identity{{display:flex;align-items:center;min-width:0;gap:7px}}.deck-number{{min-width:34px;padding:2px 5px;border:1px solid #b8cec4;border-radius:4px;background:#edf6f1;color:var(--dark);font-weight:800;text-align:center}}.opponent-thumbnails{{display:flex;padding-left:3px}}.opponent-thumb{{width:29px;height:38px;margin-left:-3px;object-fit:cover;border:1px solid #bdccc5;border-radius:4px;background:#e6eee9}}.opponent-name{{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}.bar-track{{height:7px;overflow:hidden;border-radius:999px;background:#e4ece8}}.bar{{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2a8d65,#54b184)}}.chart-result{{text-align:right}}.chart-rate{{font-weight:800}}.chart-record{{margin-left:5px;color:var(--muted);font-size:11px}}
+table{{width:100%;min-width:820px;margin-top:14px;border-collapse:collapse}}th,td{{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}}th{{background:var(--soft);color:#496159;font-size:12px}}th:nth-child(2),td:nth-child(2){{text-align:left}}tr:hover td{{background:#fbfdfc}}.card-thumb{{width:46px;height:64px;object-fit:cover;border-radius:5px}}code{{font-size:11px;overflow-wrap:anywhere}}@media(max-width:780px){{main{{padding:18px 12px}}.hero{{padding:22px 18px}}.matchup-chart{{grid-template-columns:1fr}}}}
+</style></head><body><main><div class="hero"><div><a class="back" href="../index.html">← 返回 Policy-0806 总览</a><p class="eyebrow">CUDA ENGINE · SEEDED-512 · DECK {summary['deck_number']}</p><h1>{html.escape(summary['display_name'])}</h1></div><div>4×128 CUDA lanes<br>{summary['games_per_second']:.2f} games/s</div></div>
+<section class="warn"><strong>证据边界：</strong>CUDA engine zero-shot；在 CUDA/official CPU parity 完成前，不替代旧 official-CPU 强度合同。actor 与 opponent 均为同一 Policy-0806 checkpoint。</section>
+<section class="summary"><div class="card"><span class="label">W-L-D</span><div class="value">{summary['wins']}-{summary['losses']}-{summary['draws']}</div></div><div class="card"><span class="label">总体胜率</span><div class="value">{summary['win_rate']:.2%}</div></div><div class="card"><span class="label">先攻</span><div class="value">{summary['first']['wins']}/{summary['first']['games']}</div><small>{summary['first']['wins']/summary['first']['games']:.2%}</small></div><div class="card"><span class="label">后攻</span><div class="value">{summary['second']['wins']}/{summary['second']['games']}</div><small>{summary['second']['wins']/summary['second']['games']:.2%}</small></div><div class="card"><span class="label">耗时</span><div class="value">{summary['wall_seconds']:.1f}s</div><small>{summary['games_per_second']:.2f} games/s</small></div><div class="card"><span class="label">循环判负</span><div class="value">{len(summary['progress_guard_forfeits'])}</div><small>同 Ability 第 20 次</small></div></section>
+<section><h2>对 001–055 的表现</h2><p class="label">实际对局数按 Frozen-0806 频率分布；每个 engine seed 交换一次先后手。</p><div class="matchup-chart">{''.join(matchup_bars)}</div><table><thead><tr><th>编号</th><th>对手卡组</th><th>对局</th><th>胜</th><th>负</th><th>平</th><th>胜率</th></tr></thead><tbody>{''.join(matchup_rows)}</tbody></table></section>
+<section><h2>我的 exact 60-card deck</h2><table><thead><tr><th>卡图</th><th>Card ID</th><th>卡牌</th><th>数量</th></tr></thead><tbody>{_card_rows(candidate)}</tbody></table></section>
+<section><h2>可复现合同</h2><p>Seed <code>{EVALUATION_SEED}</code> · Policy <code>{POLICY_SHA256}</code> · schedule <code>{summary['schedule_sha256']}</code> · result <code>{summary['game_results_sha256']}</code></p></section>
+<script type="application/json" id="report-data">{embedded}</script></main></body></html>"""
 
 
 def _refresh(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
@@ -337,22 +497,42 @@ def _refresh(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
     for candidate in candidates:
         number = str(candidate.package_manifest["frozen_deck_number"])
         record = by_number.get(number)
+        schedule_entry = next(
+            entry for entry in catalog.pool.schedule if entry.deck_id == candidate.name
+        )
+        images = "".join(
+            f'<img src="{html.escape(str(card["image_url"]), quote=True)}" '
+            f'alt="{html.escape(str(card["name"]), quote=True)}" loading="lazy">'
+            for card in candidate.representative_cards
+        )
         if record is None:
-            cells = "<td>-</td><td>-</td><td>-</td><td>待评测</td>"
-            title = html.escape(candidate.display_name or candidate.name)
+            result_cells = "<td>-</td><td>-</td><td>-</td><td>-</td><td>待评测</td>"
+            title = f'<span>{html.escape(candidate.display_name or candidate.name)}</span>'
         else:
-            cells = (
+            first_rate = record["first"]["wins"] / record["first"]["games"]
+            second_rate = record["second"]["wins"] / record["second"]["games"]
+            result_cells = (
                 f"<td>{record['wins']}-{record['losses']}-{record['draws']}</td>"
-                f"<td>{record['win_rate']:.2%}</td>"
-                f"<td>{record['wall_seconds']:.1f}s</td><td>完成</td>"
+                f"<td class=\"strong\">{record['win_rate']:.2%}</td>"
+                f"<td>{first_rate:.2%}<small>{record['first']['wins']}-{record['first']['losses']}-{record['first']['draws']}</small></td>"
+                f"<td>{second_rate:.2%}<small>{record['second']['wins']}-{record['second']['losses']}-{record['second']['draws']}</small></td>"
+                f"<td>{record['wall_seconds']:.1f}s<small>{record['games_per_second']:.2f} games/s</small></td>"
             )
             title = (
                 f"<a href=\"{record['report']}\">"
                 f"{html.escape(candidate.display_name or candidate.name)}</a>"
             )
-        rows.append(f"<tr><td>{number}</td><td>{title}</td>{cells}</tr>")
+        rows.append(
+            f'<tr><td class="number">{number}</td><td><div class="deck"><span class="art">{images}</span>'
+            f'<span>{title}<small>频率 {schedule_entry.games}/256 · 最佳名次 {schedule_entry.best_rank} · '
+            f'{schedule_entry.observed_players} 人</small></span></div></td>{result_cells}</tr>'
+        )
     total_games = sum(record["games"] for record in records)
-    index = f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>Policy-0806 CUDA Seeded-512</title><style>body{{font:14px/1.5 system-ui;max-width:1200px;margin:30px auto;padding:0 18px}}table{{width:100%;border-collapse:collapse}}th,td{{padding:8px;border-bottom:1px solid #ddd;text-align:right}}th:nth-child(2),td:nth-child(2){{text-align:left}}a{{color:#176b4d;font-weight:700}}</style></head><body><h1>Policy-0806 · CUDA Seeded-512</h1><p>{len(records)}/55 decks · {total_games:,}/28,160 games · seed {EVALUATION_SEED}</p><p><strong>证据边界：</strong>CUDA engine zero-shot；尚不替代 official CPU strength contract。</p><table><thead><tr><th>编号</th><th>卡组</th><th>W-L-D</th><th>胜率</th><th>耗时</th><th>状态</th></tr></thead><tbody>{''.join(rows)}</tbody></table></body></html>"""
+    total_seconds = sum(record["wall_seconds"] for record in records)
+    index = f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Policy-0806 CUDA Seeded-512 · Frozen-0806 卡组强度</title><style>
+:root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}header{{padding:28px max(20px,calc((100vw - 1500px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px}}header p{{max-width:1050px;margin:7px 0 0;color:#cfe1da}}main{{max-width:1500px;margin:auto;padding:20px}}.stats{{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:#fff}}.stat{{padding:15px 18px;border-right:1px solid var(--line)}}.stat:last-child{{border:0}}.stat b{{display:block;font-size:23px}}.stat span,small{{display:block;color:var(--muted)}}.tools{{display:flex;gap:10px;margin:18px 0}}input{{width:min(420px,100%);padding:9px 11px;border:1px solid #b9c9c1;border-radius:4px}}.table{{overflow:auto;border:1px solid var(--line);background:#fff}}table{{width:100%;min-width:1100px;border-collapse:collapse}}th,td{{padding:10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}}th{{position:sticky;top:0;background:#e9f0ec;color:#486158;font-size:12px}}th:nth-child(2),td:nth-child(2){{text-align:left}}tr:hover td{{background:#f8fbf9}}a{{color:var(--green);font-weight:700;text-decoration:none}}.deck{{display:flex;align-items:center;gap:10px}}.art{{display:flex;width:68px}}.art img{{width:38px;height:53px;margin-right:-8px;border:1px solid #c9d5cf;border-radius:3px;object-fit:cover;background:#e4ebe7}}.strong{{font-size:16px;font-weight:750}}.number{{font-size:16px;font-weight:850;color:var(--green)}}.contract{{margin-top:16px;padding:14px 16px;border-left:4px solid var(--green);background:#fff;color:var(--muted)}}@media(max-width:760px){{.stats{{grid-template-columns:1fr 1fr}}header{{padding:22px 16px}}main{{padding:14px}}}}</style></head><body>
+<header><h1>Policy-0806 · CUDA Seeded-512</h1><p>55 套 exact deck 均加载同一 Policy-0806 checkpoint，对战相同的两个 256 局固定单元；seed {EVALUATION_SEED}，先后手各 256。CUDA/official CPU parity 完成前，本页不替代旧 official-CPU 强度合同。</p></header><main><div class="stats"><div class="stat"><b>{len(records)}/55</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>CUDA 对局</span></div><div class="stat"><b>{sum(r['wins'] for r in records):,}</b><span>Policy-0806 胜局</span></div><div class="stat"><b>{total_seconds/60:.1f}m</b><span>累计 wall time</span></div></div>
+<div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div><div class="table"><table><thead><tr><th>编号</th><th>卡组 / 512 局报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>耗时</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div><div class="contract">4×128 CUDA lanes · repeat-forfeit 20 · Policy <code>{POLICY_SHA256}</code></div><script>const q=document.querySelector('#search'),b=document.querySelector('tbody');q.addEventListener('input',()=>{{const s=q.value.toLowerCase();for(const r of b.rows)r.hidden=!r.innerText.toLowerCase().includes(s)}});</script></main></body></html>"""
     manifest = {
         "schema": "policy_0806_cuda_seeded512_index_v1",
         "evidence_boundary": "cuda_engine_not_official_cpu_parity",
@@ -363,7 +543,7 @@ def _refresh(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
         "published_decks": len(records),
         "published_games": total_games,
         "complete": len(records) == EXPECTED_DECKS,
-        "lane_topology": "static_512",
+        "lane_topology": "4x128_sequential_cuda",
         "progress_guard_repeat_limit": 20,
         "reports": records,
     }

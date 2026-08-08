@@ -414,6 +414,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--profile-components", action="store_true")
     parser.add_argument("--ability-repeat-limit", type=int, default=20)
+    parser.add_argument("--diagnostic-schedule-index", type=int)
     parser.add_argument("--device-index", type=int, default=0)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
@@ -652,6 +653,12 @@ def main() -> int:
     errors = 0
     routed_rows = 0
     component_events: list[tuple[str, Any, Any]] = []
+    diagnostic_rows: list[dict[str, Any]] = []
+    diagnostic_lane = None
+    if args.diagnostic_schedule_index is not None:
+        candidate_lane = args.diagnostic_schedule_index - args.schedule_offset
+        if 0 <= candidate_lane < total:
+            diagnostic_lane = candidate_lane
 
     def component_start() -> Any | None:
         if not args.profile_components:
@@ -772,6 +779,30 @@ def main() -> int:
                     lengths.index_copy_(0, opponent_indices, opponent_lengths)
                 component_end("two_decoders", component)
             routed_rows += int(ready.sum().item())
+            if diagnostic_lane is not None and bool(ready[diagnostic_lane].item()):
+                action_length = int(lengths[diagnostic_lane].item())
+                action_row = actions[diagnostic_lane, :action_length].cpu().tolist()
+                first = int(action_row[0]) if action_row else -1
+                selected = []
+                if 0 <= first < semantic["option_cat"].shape[1]:
+                    selected = [
+                        int(value)
+                        for value in semantic["option_cat"][diagnostic_lane, first]
+                        .cpu()
+                        .tolist()
+                    ]
+                diagnostic_rows.append(
+                    {
+                        "decision": step + 1,
+                        "turn": int(semantic["global_num"][diagnostic_lane, 0].item()),
+                        "actor": int(actor[diagnostic_lane].item()),
+                        "selection_type": int(
+                            semantic["global_cat"][diagnostic_lane, 0].item()
+                        ),
+                        "actions": [int(value) for value in action_row],
+                        "selected_option": selected,
+                    }
+                )
             new_forfeits = repeat_guard.observe(
                 option_cat=semantic["option_cat"],
                 selection_type=semantic["global_cat"][:, 0],
@@ -850,6 +881,7 @@ def main() -> int:
                     "decisions": decisions,
                     "schedule_offset": args.schedule_offset,
                     "failures": failures,
+                    "diagnostic_rows": diagnostic_rows[-512:],
                 },
                 indent=2,
                 sort_keys=True,
@@ -936,7 +968,7 @@ def main() -> int:
             "draws": total - focal_wins - focal_losses,
         },
         "progress_guard": {
-            "kind": "same_turn_identical_single_option_repeat_forfeit",
+            "kind": "same_actor_identical_leading_option_repeat_forfeit",
             "ability_repeat_limit": args.ability_repeat_limit,
             "trigger": "repeat_count_greater_than_or_equal_to_limit",
             "forfeit_count": len(loop_forfeit_indices),

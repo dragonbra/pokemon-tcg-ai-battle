@@ -37,13 +37,29 @@ class DeviceRepeatForfeitGuardTest(unittest.TestCase):
             self.assertFalse(guard.observe(**decision).item())
         self.assertTrue(guard.observe(**decision).item())
 
-    def test_different_ability_and_new_turn_have_independent_counts(self) -> None:
+    def test_different_ability_has_an_independent_count(self) -> None:
         guard = DeviceRepeatForfeitGuard(batch_size=1, limit=20, device="cpu")
         for _ in range(19):
             guard.observe(**_decision(serial=7, turn=4))
 
         self.assertFalse(guard.observe(**_decision(serial=8, turn=4)).item())
-        self.assertFalse(guard.observe(**_decision(serial=7, turn=5)).item())
+
+    def test_same_ability_accumulates_across_turns(self) -> None:
+        guard = DeviceRepeatForfeitGuard(batch_size=1, limit=20, device="cpu")
+        for turn in range(4, 23):
+            self.assertFalse(guard.observe(**_decision(serial=7, turn=turn)).item())
+
+        self.assertTrue(guard.observe(**_decision(serial=7, turn=23)).item())
+
+    def test_multitoken_ability_choice_is_still_counted(self) -> None:
+        guard = DeviceRepeatForfeitGuard(batch_size=1, limit=20, device="cpu")
+        decision = _decision()
+        decision["actions"] = torch.tensor([[0, 1]])
+        decision["lengths"] = torch.tensor([2])
+
+        for _ in range(19):
+            self.assertFalse(guard.observe(**decision).item())
+        self.assertTrue(guard.observe(**decision).item())
 
     def test_forfeit_writes_opponent_win_and_terminal_status(self) -> None:
         class Engine:
@@ -65,6 +81,21 @@ class DeviceRepeatForfeitGuardTest(unittest.TestCase):
 
         self.assertEqual(engine.results.tolist(), [2, 1, 0])
         self.assertEqual(engine.states.tolist(), [2, 2, 1])
+
+    def test_lane_reset_clears_only_reused_episode_state(self) -> None:
+        guard = DeviceRepeatForfeitGuard(batch_size=2, limit=3, device="cpu")
+        first = _decision()
+        paired = {
+            name: value.expand(2, *value.shape[1:]).clone()
+            for name, value in first.items()
+        }
+        guard.observe(**paired)
+        guard.observe(**paired)
+
+        guard.reset(torch.tensor([True, False]))
+        forfeits = guard.observe(**paired)
+
+        self.assertEqual(forfeits.tolist(), [False, True])
 
 
 if __name__ == "__main__":
