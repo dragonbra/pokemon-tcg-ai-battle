@@ -1,0 +1,18 @@
+{
+  "schema_version": "0038_frozen_exception_audit_v1",
+  "frozen_panel_version": "0038_frozen_2048_v1",
+  "version": "V3_update0_chance_boundary_fallback",
+  "games": 2048,
+  "errors": 0,
+  "fallbacks": 14,
+  "fallback_reasons": {
+    "phantom_target_count_above_v1_limit": 12,
+    "phantom_chance_boundary_before_allocation": 2
+  },
+  "trajectory_contract": "all 14 fallback episodes complete official play but are excluded from normal macro PPO samples",
+  "chance_boundary_evidence": "both chance fallbacks were confused Dragapult Phantom Dive attacks; the official coin result occurs before context-14 allocation callbacks",
+  "v2_to_v3_environment_schedule_equal": true,
+  "v2_to_v3_changed_seeds": [38205634, 38206129],
+  "v3_checkpoint_sha256": "d572c8673fcf16c39fb17d8d261bec6578885a69c227e579bc4e6f616bb22820",
+  "v3_results_sha256": "2d5f2e7c2092d811bd34ff52a4fa819445cad5f0594e07a46108144cfb25ed77"
+}

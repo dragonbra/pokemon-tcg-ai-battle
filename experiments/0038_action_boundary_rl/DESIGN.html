@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>0038 Action Boundary RL</title>
+<style>body{max-width:1050px;margin:40px auto;padding:0 24px;font:16px/1.65 system-ui;color:#172033}h1,h2{color:#102a43}code,pre{background:#f3f6fa;border-radius:6px}code{padding:.1em .3em}pre{padding:14px;overflow:auto}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd6e0;padding:8px;text-align:left}.callout{border-left:4px solid #2563eb;background:#eff6ff;padding:12px 16px}</style></head>
+<body><h1>0038 Action Boundary RL</h1>
+<p class="callout">权威细节与字段合同同步保存在 <code>DESIGN.md</code>。实现、数据准备、124 项测试、短 smoke 与 2,048 局 update-0 Frozen evaluation 已完成；未授权正式 50/200-update 训练。</p>
+<h2>目标</h2><p>让 RL timestep 对齐完整游戏动作，而非官方 UI callback。官方 engine 源码、ABI、observation、option index 和每次返回的 <code>list[int]</code> 均保持不变。</p>
+<h2>零样本来源</h2><table><tr><th>组件</th><th>来源/状态</th></tr><tr><td>State/Option Encoder + Root Decoder</td><td>Policy-0806 epoch 11；Encoder 冻结、Decoder 全量训练</td></tr><tr><td>Value head</td><td>0036 V2 epoch 5 pre-RL，Query 0 仍为终局胜负</td></tr><tr><td>Last Option LoRA</td><td>Q/V r4/a8，fresh zero-delta；拒绝 V5/update checkpoint</td></tr><tr><td>Allocation head</td><td>Zero-Shot legacy sequential teacher 的 official-engine 标签做短 BC</td></tr><tr><td>GRU</td><td>request-local，不跨官方 callback 保存 hidden</td></tr></table>
+<h2>DecisionGate</h2><p>Gate 位于 observation consumption 后、tensor compilation 前。分类为 TERMINAL、LEGAL_EMPTY_PASS、MASK_ERROR、FORCED、STRATEGIC，并记录 chance/information/priority boundary。只有唯一 canonical completion 且不存在 STOP/cancel/decline/pass 才 shortcut；forced 仍消费 knowledge/history/event，但不调用 Transformer、GRU、Value 或服务。</p>
+<h2>Phantom Dive</h2><pre>DragapultDamageAllocation {
+  target_ids: stable (player_index, serial, card_id, initial_bench_slot)
+  counters: [x1, ... xn], xi &gt;= 0, sum = 6
+}</pre>
+<p>分配数为 <code>C(n+5,6)=C(n+5,n-1)</code>；n=1..5 时为 1、7、28、84、210。原需求里的 <code>C(n+5,5)</code> 与指定计数不一致，0038 采用与弱组合和指定计数一致的公式。</p>
+<pre>log P(complete action)
+= log P(root action)
++ log P(allocation | state, Phantom Dive)</pre>
+<p>Root softmax 完全不因 allocation 数量改变。conditional head 复用同一次 state/cards/root-option embeddings，并以共享 target MLP + permutation-invariant sum pooling 评分。</p>
+<p>第一版只支持 <code>1≤n≤5</code>。扩展 Bench 导致 <code>n&gt;5</code> 时安全回退 legacy sequential callbacks，并把 macro PPO 样本标为 invalid。</p>
+<p>混乱状态会在 root commit 后、allocation 前揭示硬币结果，因此属于真实 chance boundary。v2 adapter 不跨该边界预提交 allocation，而是完成 official game、回退 legacy 参数链并使该局 macro PPO 样本无效。</p>
+<h2>官方协议</h2><p>MacroPlanner 在 root request 生成完整分配；PendingMacroTransaction 以 battle ID 隔离；OfficialProtocolExecutor 在六个 callback 中消费 observation、校验 actor/context/remain/effect/legal set、按 serial 重新定位，然后仍返回单个 primitive index。任何漂移均 fail closed 并使 rollout 样本无效。</p>
+<h2>Trajectory 与 PPO</h2><p>EngineEventTrace 保留所有 primitive event。PolicyTrajectory 只保存真实决策边界，joint old logprob 为 root 与 parameter logprob 之和。内部 callback 不产生 Value 样本，不进入 policy/entropy/KL/clip，也不增加 gamma/lambda。terminal 在 chain 中发生时归入上一个真实 transition 且 next value 为 0。</p>
+<pre>delta = reward_acc + discount_acc * next_value - value
+advantage = delta + discount_acc * lambda * next_advantage</pre>
+<h2>模块化目标</h2><p><code>V_win</code> 与终局 ±1 不变；<code>V_prize</code> 使用 Query 3 sidecar，own-turn clock 下独立计算并单独标准化 <code>A_prize</code>。Opponent Meta 只读取公开 state/history，true deck ID 只作 label，预测经 detach 与 zero conditioner 进入 Action summary。Tempo 第一版只记录公开 attack opportunity、第二己方回合攻击和 streak，不启用 reward/loss。预设为 BASE、PRIZE、META、PRIZE_META、INTEGRATED。</p>
+<h2>Rollout 与诊断频率</h2><p>games/workers/envs/inference/queue/minibatch/accumulation/epochs/optimizer steps 均配置化。扩容必须显式选择 <code>fixed_epochs</code> 或优先的 <code>fixed_optimizer_budget</code>；accelerated backend 在切换前必须通过完整 official parity。每 update 只写聚合 scalar；Frozen 指标离线聚合；梯度/cosine/margin/calibration 只在 update 0/5/10/之后每 10 次的固定小 batch。</p>
+<h2>Frozen 2,048</h2><p><code>0038_frozen_2048_v1</code> 固定为 8×256、2,048 个全局唯一 seed、先后手各 1,024，并保存逐局 paired 结果。所有 checkpoint 共用相同 opponent/seat/greedy/engine/protocol；报告 Wilson CI、paired flips、McNemar、matchup 与 shard 方差。该规模用于约 2pp 的方向和稳定性判断，小差异不能自动宣称显著。</p>
+<h2>Checkpoint 与阶段</h2><p>公共基线为 <code>V3_update0_chance_boundary_fallback</code>，PPO updates=0，official adapter 为 <code>0038_official_primitive_adapter_v2_chance_fallback</code>。schema 为 <code>0038_model_only_checkpoint_v1</code>，禁止 optimizer、scheduler、RNG、rollout 与 replay。</p>
+<p>固定 2,048 局结果为 1308-739-1，Wilson 95% CI 61.76%–65.92%，0 error、14 safe fallback。Meta 全面板指标因已有 logits 的容器聚合错误未发布；代码已修正，未为统计额外重跑模型。</p>
+<p>正式 PPO 入口仍 fail closed。人工批准后预留严格递增的 <code>V4_integrated_fresh_rl</code>，从 V3 common update-0 加载并默认使用 <code>INTEGRATED</code> preset；稀疏梯度诊断仅在 update 0/5/10/之后每 10 updates 复用同一固定小型 minibatch。</p>
+<p>新旧 entropy、KL 与 clip fraction 的分母不同，不可与 V5 历史曲线横向比较。</p>
+</body></html>

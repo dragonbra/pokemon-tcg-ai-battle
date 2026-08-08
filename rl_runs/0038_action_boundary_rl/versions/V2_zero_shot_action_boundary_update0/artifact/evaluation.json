@@ -1,0 +1,8 @@
+{
+  "report": "experiments/0038_action_boundary_rl/evaluation/V2_zero_shot_action_boundary_update0.html",
+  "report_sha256": "fbf1cc2d539f85f6d140a80fac02da35c78ef71d7c02d9d44003b034676c9bf6",
+  "results": "rl_runs/0038_action_boundary_rl/versions/V2_zero_shot_action_boundary_update0/artifact/frozen_update0_2048_results.json",
+  "results_sha256": "c3c83c3dcc6325b27c502f59098f1ae3e695fdeddc0cc0024d716d3629609ab4",
+  "schema_version": "0038_evaluation_link_v1",
+  "version": "V2_zero_shot_action_boundary_update0"
+}

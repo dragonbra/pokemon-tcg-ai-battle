@@ -1,0 +1,130 @@
+{
+  "comparisons": [
+    "macro primitive sequence == legacy canonical primitive sequence",
+    "final official observation and search/RNG state exact equality",
+    "reversed-order alias final official state exact equality",
+    "actor/turn/phase/priority/legal/reward/terminal/winner/deck-visible state"
+  ],
+  "expected_allocation_counts": [
+    1,
+    7,
+    28,
+    84,
+    210
+  ],
+  "parity_failures": 322,
+  "results": [
+    {
+      "alias_state_failures": 0,
+      "allocations": 1,
+      "first_alias_diff_paths": [],
+      "first_alias_serialized_diff": {},
+      "first_macro_diff_paths": [],
+      "first_macro_serialized_diff": {},
+      "macro_action_failures": 0,
+      "macro_state_failures": 0,
+      "n": 1,
+      "parity_failures": 0
+    },
+    {
+      "alias_state_failures": 0,
+      "allocations": 7,
+      "first_alias_diff_paths": [],
+      "first_alias_serialized_diff": {},
+      "first_macro_diff_paths": [],
+      "first_macro_serialized_diff": {},
+      "macro_action_failures": 0,
+      "macro_state_failures": 0,
+      "n": 2,
+      "parity_failures": 0
+    },
+    {
+      "alias_state_failures": 25,
+      "allocations": 28,
+      "first_alias_diff_paths": [
+        "/search_begin_input:value"
+      ],
+      "first_alias_serialized_diff": {
+        "different_bytes_in_overlap": 2,
+        "first_different_byte": 22303,
+        "last_different_byte": 22304,
+        "left_bytes": 22377,
+        "right_bytes": 22377
+      },
+      "first_macro_diff_paths": [
+        "/search_begin_input:value"
+      ],
+      "first_macro_serialized_diff": {
+        "different_bytes_in_overlap": 2,
+        "first_different_byte": 22303,
+        "last_different_byte": 22304,
+        "left_bytes": 22377,
+        "right_bytes": 22377
+      },
+      "macro_action_failures": 0,
+      "macro_state_failures": 24,
+      "n": 3,
+      "parity_failures": 49
+    },
+    {
+      "alias_state_failures": 45,
+      "allocations": 84,
+      "first_alias_diff_paths": [
+        "/search_begin_input:value"
+      ],
+      "first_alias_serialized_diff": {
+        "different_bytes_in_overlap": 1,
+        "first_different_byte": 22267,
+        "last_different_byte": 22267,
+        "left_bytes": 22337,
+        "right_bytes": 22337
+      },
+      "first_macro_diff_paths": [
+        "/search_begin_input:value"
+      ],
+      "first_macro_serialized_diff": {
+        "different_bytes_in_overlap": 2,
+        "first_different_byte": 22267,
+        "last_different_byte": 22268,
+        "left_bytes": 22337,
+        "right_bytes": 22337
+      },
+      "macro_action_failures": 0,
+      "macro_state_failures": 54,
+      "n": 4,
+      "parity_failures": 99
+    },
+    {
+      "alias_state_failures": 79,
+      "allocations": 210,
+      "first_alias_diff_paths": [
+        "/search_begin_input:value"
+      ],
+      "first_alias_serialized_diff": {
+        "different_bytes_in_overlap": 1,
+        "first_different_byte": 22307,
+        "last_different_byte": 22307,
+        "left_bytes": 22377,
+        "right_bytes": 22377
+      },
+      "first_macro_diff_paths": [
+        "/search_begin_input:value"
+      ],
+      "first_macro_serialized_diff": {
+        "different_bytes_in_overlap": 1,
+        "first_different_byte": 22307,
+        "last_different_byte": 22307,
+        "left_bytes": 22377,
+        "right_bytes": 22377
+      },
+      "macro_action_failures": 0,
+      "macro_state_failures": 95,
+      "n": 5,
+      "parity_failures": 174
+    }
+  ],
+  "schema_version": "0038_official_phantom_parity_v1",
+  "search_errors": 0,
+  "search_games": 64,
+  "total_allocations": 330
+}

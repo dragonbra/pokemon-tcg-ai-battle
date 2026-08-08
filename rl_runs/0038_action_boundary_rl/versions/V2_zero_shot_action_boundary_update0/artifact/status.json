@@ -1,0 +1,6 @@
+{
+  "checkpoint_sha256": "1129ae426ac7ee8dceb79e63abcbb657c0df7c562ca8f32c28c8d331175f7a92",
+  "ppo_updates": 0,
+  "status": "update0_ready",
+  "wandb": "not_applicable_data_preparation"
+}

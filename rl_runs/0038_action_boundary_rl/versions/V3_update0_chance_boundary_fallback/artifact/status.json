@@ -1,0 +1,14 @@
+{
+  "checkpoint_sha256": "d572c8673fcf16c39fb17d8d261bec6578885a69c227e579bc4e6f616bb22820",
+  "ppo_updates": 0,
+  "frozen_evaluation": {
+    "completion_rate": 1.0,
+    "errors": 0,
+    "fallbacks": 14,
+    "games": 2048,
+    "win_rate": 0.638671875
+  },
+  "status": "update0_evaluated_waiting_for_user_confirmation",
+  "supersedes": "V2_zero_shot_action_boundary_update0",
+  "wandb": "not_applicable_contract_fix"
+}

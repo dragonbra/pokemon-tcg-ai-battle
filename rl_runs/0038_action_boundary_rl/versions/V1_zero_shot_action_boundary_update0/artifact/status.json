@@ -1,0 +1,8 @@
+{
+  "checkpoint_update": 0,
+  "error": "ValueError: relative dataset CLI path was not normalized before report rendering",
+  "ppo_updates": 0,
+  "state": "failed_after_checkpoint_before_report",
+  "superseded_by": "V2_zero_shot_action_boundary_update0",
+  "wandb": "not_applicable_data_preparation"
+}

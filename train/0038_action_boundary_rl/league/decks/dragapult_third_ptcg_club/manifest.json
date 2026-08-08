@@ -1,0 +1,11 @@
+{
+  "deck_display_name": "Dragapult Third PTCG Club",
+  "deck_id": "dragapult_third_ptcg_club",
+  "deck_file_sha256": "5db1e0d52fc723e8b2f688d76f780715fd726171f4d804f1d4d55673ba9b0ac2",
+  "deck_multiset_sha256": "f0314f941a872d37dcbaf70371eb576945cc78dbd9aebb8896fbea5e6d8777eb",
+  "provided_by": "user",
+  "schema_version": "0034_focal_deck_v2",
+  "source_label": "current highest-ranked Dragapult player Third PTCG Club",
+  "team_name": "Third PTCG Club",
+  "total_cards": 60
+}

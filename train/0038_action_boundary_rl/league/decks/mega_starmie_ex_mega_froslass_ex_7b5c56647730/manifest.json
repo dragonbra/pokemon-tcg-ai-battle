@@ -1,0 +1,22 @@
+{
+  "archetype": "Mega Starmie ex / Mega Froslass ex",
+  "deck_id": "mega_starmie_ex_mega_froslass_ex_7b5c56647730",
+  "exact_deck_sha256": "7b5c566477305e7b732b05d3232206fa6686f2c1c734aff1fe305df126012293",
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "provenance": {
+    "binding_counts": {
+      "submission_date_exact_score_mismatch": 1
+    },
+    "segment": "potential_101_500",
+    "selection_rank": 204,
+    "source_ranks": [
+      204
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    1031,
+    861
+  ],
+  "schema_version": "evaluation_frozen_0806_deck_v1"
+}
