@@ -29,6 +29,10 @@ from evaluation.runner.models import GameRequest, GameResult
 from evaluation.runtime.seeded import build_seeded_runtime
 from evaluation.traces.store import TraceStore
 from rl_environment.runs import project_version_paths
+from evaluation.frozen_0806_contract import (
+    FROZEN_0806_EVALUATION_UNITS,
+    evaluation_game_seed,
+)
 
 
 _INITIALIZED_MANIFEST_FIELDS = (
@@ -108,6 +112,7 @@ class BatchConfig:
     seeded_engine: bool = True
     engine_library: Path | None = None
     seeded_runtime_manifest: dict[str, object] | None = None
+    independent_engine_seeds: bool = False
 
 
 @dataclass(frozen=True)
@@ -541,22 +546,54 @@ def _game_jobs(
     counts = config.games_by_opponent or (config.games_per_opponent,) * len(config.opponents)
     global_game_number = 0
     for opponent, game_count in zip(config.opponents, counts, strict=True):
+        if config.independent_engine_seeds and game_count % FROZEN_0806_EVALUATION_UNITS:
+            raise ValueError("Frozen-0806 independent schedule must contain eight replicas")
+        base_slots = game_count // FROZEN_0806_EVALUATION_UNITS
         for game_number in range(1, game_count + 1):
             global_game_number += 1
             game_id = f"{opponent.name}-{game_number:03d}"
-            pair_number = (game_number + 1) // 2
+            if config.independent_engine_seeds:
+                replica = (game_number - 1) // base_slots
+                slot = (game_number - 1) % base_slots
+                candidate_first = replica % 2 == 0
+                engine_seed = evaluation_game_seed(
+                    evaluation_seed=config.seed,
+                    focal_identity=config.candidate.name,
+                    opponent_identity=opponent.name,
+                    slot=slot,
+                    replica=replica,
+                )
+                search_seed = evaluation_game_seed(
+                    evaluation_seed=config.seed,
+                    focal_identity=config.candidate.name,
+                    opponent_identity=opponent.name,
+                    slot=slot,
+                    replica=replica,
+                    namespace="search",
+                )
+            else:
+                seed_number = (game_number + 1) // 2
+                candidate_first = global_game_number % 2 == 1
+                engine_seed = _stable_game_seed(
+                    config.seed, config.candidate.name, opponent.name, seed_number
+                )
+                search_seed = _stable_named_seed(
+                    config.seed,
+                    "search",
+                    config.candidate.name,
+                    opponent.name,
+                    seed_number,
+                )
             request = GameRequest(
                 run_id=run_id,
                 game_id=game_id,
                 candidate=config.candidate,
                 opponent=opponent,
-                candidate_first=global_game_number % 2 == 1,
+                candidate_first=candidate_first,
                 max_steps=config.max_steps,
                 engine_turn_draw_limit=config.engine_turn_draw_limit,
                 visualize=config.visualize,
-                seed=_stable_game_seed(
-                    config.seed, config.candidate.name, opponent.name, pair_number
-                ),
+                seed=engine_seed,
                 policy_seed=_stable_named_seed(
                     config.seed,
                     "policy",
@@ -564,13 +601,7 @@ def _game_jobs(
                     opponent.name,
                     game_number,
                 ),
-                search_seed=_stable_named_seed(
-                    config.seed,
-                    "search",
-                    config.candidate.name,
-                    opponent.name,
-                    pair_number,
-                ),
+                search_seed=search_seed,
                 engine_library=config.engine_library,
                 arbitrary_legal_actions=config.arbitrary_legal_actions,
             )

@@ -350,32 +350,6 @@ def assert_last_option_qv_only(left: Any, right: Any) -> None:
         )
 
 
-def branched_option_outputs(
-    actor_adapter: Any,
-    opponent_adapter: Any,
-    batch: Any,
-    state: Any,
-) -> tuple[Any, Any]:
-    actor_decoder = actor_adapter.model.option_encoder.cross_attention_transformer
-    opponent_decoder = opponent_adapter.model.option_encoder.cross_attention_transformer
-    if len(actor_decoder.layers) != 2 or len(opponent_decoder.layers) != 2:
-        raise RuntimeError("0037 shared Option path requires exactly two decoder blocks")
-    options = actor_adapter._encode_option_inputs(batch, state)
-    masks = {
-        "tgt_key_padding_mask": ~batch.option_mask,
-        "memory_key_padding_mask": ~state.mask,
-    }
-    shared = actor_decoder.layers[0](options, state.tokens, **masks)
-    actor = actor_decoder.layers[1](shared, state.tokens, **masks)
-    opponent = opponent_decoder.layers[1](shared, state.tokens, **masks)
-    if actor_decoder.norm is not None:
-        actor = actor_decoder.norm(actor)
-    if opponent_decoder.norm is not None:
-        opponent = opponent_decoder.norm(opponent)
-    mask = batch.option_mask.unsqueeze(-1)
-    return actor * mask, opponent * mask
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Benchmark complete CUDA games for 0037 deck-007 Update32."
@@ -528,6 +502,7 @@ def main() -> int:
         semantic0031_greedy_decode_device,
         semantic0031_v2_ready_batch,
     )
+    from ptcg_cuda_engine.semantic0031_router import branched_option_outputs
 
     if not torch.cuda.is_available():
         raise SystemExit("CUDA is unavailable")
@@ -695,8 +670,15 @@ def main() -> int:
                 actor_options = actor_adapter._encode_options(validated, state)
                 opponent_options = actor_options
             else:
+                opponent_transformer = (
+                    opponent_adapter.model.option_encoder.cross_attention_transformer
+                )
                 actor_options, opponent_options = branched_option_outputs(
-                    actor_adapter, opponent_adapter, validated, state
+                    actor_adapter,
+                    opponent_transformer.layers[1],
+                    opponent_transformer.norm,
+                    validated,
+                    state,
                 )
             component_end("shared_and_branched_encoder", component)
             actor = semantic["global_cat"][:, 3].long() - 1

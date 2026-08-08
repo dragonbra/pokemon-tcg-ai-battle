@@ -599,6 +599,29 @@ class OverridePlugin:
         self.assertNotEqual(requests[0].policy_seed, requests[1].policy_seed)
         self.assertTrue(all(request.search_seed > 0 for request in requests))
 
+    def test_independent_seed_contract_keeps_seats_balanced_without_seed_pairing(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        config = replace(
+            self.make_config(candidate, (opponent,), games=16),
+            independent_engine_seeds=True,
+        )
+        store = TraceStore(self.root / "independent-temp", self.root / "independent-report")
+
+        requests = [request for request, _ in _game_jobs(config, "run-independent", store)]
+
+        self.assertEqual(
+            [request.candidate_first for request in requests],
+            [True, True, False, False] * 4,
+        )
+        self.assertEqual(len({request.seed for request in requests}), 16)
+        self.assertEqual(len({request.search_seed for request in requests}), 16)
+        for slot in range(2):
+            replicas = requests[slot::2]
+            self.assertEqual(len(replicas), 8)
+            self.assertEqual(sum(request.candidate_first for request in replicas), 4)
+            self.assertEqual(len({request.seed for request in replicas}), 8)
+
     def test_variable_opponent_counts_are_validated_before_workers(self) -> None:
         candidate = self.make_package("candidate", 7)
         opponents = (

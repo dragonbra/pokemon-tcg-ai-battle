@@ -34,18 +34,19 @@ source、adapter、compiler 和 library hash 用于审计 `0002` 的实际内容
 policy RNG 流。该保证是本地评测合同，不扩展到 Kaggle 托管 runtime。
 
 Frozen-0806 的不可变 schedule 是一个 256 局最小单位。现阶段标准 checkpoint 强度评测固定运行
-两个单位，即 512 局；CLI 在 `--pool frozen` 时忽略 legacy `--games` 数量参数。两单位使用独立于
-RL 的固定 evaluation seed `341512806`，合计 256 局先手、256 局后手和 256 对共享 engine/Search
-seed 的换手场景。报告 manifest 必须记录 `games=512`、展开后的 per-opponent counts、evaluation
-seed、合同 schedule hash 和 seeded runtime hash；只有 512/512 finished、0 error、0 unfinished
+八个单位，即 2,048 局；CLI 在 `--pool frozen` 时忽略 legacy `--games` 数量参数。八个单位使用独立于
+RL 的固定 evaluation seed `341512806`；每个固定 slot 生成八个独立 engine/Search seed，并严格安排
+四次先手、四次后手，合计 1,024 局先手、1,024 局后手。报告 manifest 必须记录 `games=2048`、
+展开后的 per-opponent counts、evaluation seed、合同 schedule hash 和 seeded runtime hash；只有
+2,048/2,048 finished、0 error、0 unfinished
 才能作为同合同策略强度证据。旧异构 Kaggle-derived pool 保留在 `arena/opponents/`，通过全局参数
 `--pool opponents` 显式选择，只作为 secondary external-generalization evidence。
 
 2026-08-07 启动的 Policy-0806 全池评测仍是旧 256 局合同，目前在
 `arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1/` 保留 25/55 份报告；对应未发布运行与
 中断日志保留在 `.tmp/evaluation/frozen_0806_full/`。这些资产是历史、未完成证据，不删除、不覆盖，
-也不得与新的 seeded 512 报告拼接或冒充完整评测。后续用户要求新的 Frozen-0806 评测时，默认从
-512 局合同创建独立 run；是否专门继续旧 256 局批次必须另行明确指定。
+也不得与历史 seeded-512 或新的 seeded-2048 报告拼接或冒充完整评测。后续用户要求新的
+Frozen-0806 评测时，默认从 2,048 局合同创建独立 run；是否专门继续旧 256/512 局批次必须另行明确指定。
 
 `run` 也支持 `--control PACKAGE`（只在报告中展示对比）、调试用 `--visualize` / `--keep-temp`、
 `--max-steps N` 和可重复的 `--metric-module MODULE[:Class]`。默认不生成可视化帧。每次 CLI
@@ -242,12 +243,12 @@ runtime 合同承诺在相同平台/build、相同完整输入和相同动作序
 
 ## Seeded checkpoint 比较最低合同
 
-同一卡组的 checkpoint 筛选默认至少使用 512 局，而不是把单个 256 局 rollout/probe 当作提交
-依据。512 局由冻结的 256-slot 对手权重整体翻倍，并组织成 256 个 matched engine-seed pair；
-每一对固定 candidate/opponent 物理槽位、共享 engine/Search seed，并强制相反先后手。所有待比
+同一卡组的 checkpoint 筛选默认使用 2,048 局，而不是把单个 256/512 局 rollout/probe 当作提交
+依据。2,048 局由冻结的 256-slot 对手 schedule 重复八次；每个 slot 使用八个独立
+engine/Search seed，并在八次 replica 中强制四次先手、四次后手。所有待比
 checkpoint 必须复用完全相同的 request schedule SHA-256。evaluation base seed 使用独立 namespace，
 不得复用 PPO rollout 的 update seed window。
 
-该合同改善 checkpoint 间的 common-random-number 比较，但不是“512 局必然足够”的统计保证；
+该合同改善 checkpoint 间的 common-random-number 比较，但不是“2,048 局必然足够”的统计保证；
 轨迹在策略首次选择不同时就会分叉，配对 seed 不能令之后的随机调用保持动作索引级一致。提交或
 策略强度结论仍必须同时报告 W-L-D、先后手、区间、逐场景翻转和 official-engine 0-error 护栏。

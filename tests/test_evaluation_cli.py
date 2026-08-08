@@ -70,9 +70,9 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertEqual(args.worker_cpu_threads, 1)
         self.assertEqual(args.engine_pool_size, 1)
 
-    def test_frozen_run_uses_seeded_512_evaluation_contract(self) -> None:
+    def test_frozen_run_uses_seeded_2048_evaluation_contract(self) -> None:
         catalog = load_frozen_0806_runtime_catalog(opponent_policy_label="0806")
-        result = SimpleNamespace(run_id="run-frozen-seeded-512")
+        result = SimpleNamespace(run_id="run-frozen-seeded-2048")
         args = cli._parser().parse_args(
             [
                 "run",
@@ -81,7 +81,7 @@ class EvaluationCliTests(unittest.TestCase):
                 "--opponents",
                 "all",
                 "--output",
-                str(Path.cwd() / ".tmp" / "evaluation" / "cli-frozen-512-test"),
+                str(Path.cwd() / ".tmp" / "evaluation" / "cli-frozen-2048-test"),
             ]
         )
         with (
@@ -103,7 +103,8 @@ class EvaluationCliTests(unittest.TestCase):
         )
         expected_counts = evaluation_counts(catalog.pool.schedule)
         self.assertEqual(config.games_by_opponent, expected_counts)
-        self.assertEqual(sum(config.games_by_opponent or ()), 512)
+        self.assertEqual(sum(config.games_by_opponent or ()), 2048)
+        self.assertTrue(config.independent_engine_seeds)
         self.assertEqual(config.seed, FROZEN_0806_EVALUATION_SEED)
         self.assertTrue(config.seeded_engine)
         self.assertEqual(

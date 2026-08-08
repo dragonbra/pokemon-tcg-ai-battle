@@ -56,7 +56,7 @@ class SeededCheckpointSeriesTest(unittest.TestCase):
             self.assertEqual(arms[-1].prior_evidence, "sampled_rollout_context")
             self.assertEqual(arms[-1].source_policy_update, 122)
 
-    def test_schedule_is_512_seed_paired_games(self) -> None:
+    def test_schedule_is_2048_independent_seed_games(self) -> None:
         catalog = load_frozen_0806_runtime_catalog(opponent_policy_label="0806")
         config = comparison_config(catalog, output_root=Path("/tmp/unused"))
         with tempfile.TemporaryDirectory() as temporary:
@@ -68,22 +68,17 @@ class SeededCheckpointSeriesTest(unittest.TestCase):
             finally:
                 store.cleanup()
 
-        self.assertEqual(len(jobs), 512)
-        self.assertEqual(sum(config.games_by_opponent or ()), 512)
-        self.assertEqual(commitment["engine_seed_pairs"], 256)
-        self.assertEqual(commitment["candidate_first"], 256)
-        self.assertEqual(commitment["candidate_second"], 256)
-        grouped: dict[tuple[str, int], list[bool]] = {}
-        for request, _ in jobs:
-            grouped.setdefault((request.opponent.name, request.seed), []).append(
-                request.candidate_first
-            )
-        self.assertTrue(all(sorted(seats) == [False, True] for seats in grouped.values()))
+        self.assertEqual(len(jobs), 2048)
+        self.assertEqual(sum(config.games_by_opponent or ()), 2048)
+        self.assertEqual(commitment["engine_seed_pairs"], 2048)
+        self.assertEqual(commitment["candidate_first"], 1024)
+        self.assertEqual(commitment["candidate_second"], 1024)
+        self.assertEqual(len({request.seed for request, _ in jobs}), 2048)
 
     def test_wilson_interval_contains_observed_rate(self) -> None:
-        low, high = wilson_interval(320, 512)
-        self.assertLess(low, 320 / 512)
-        self.assertGreater(high, 320 / 512)
+        low, high = wilson_interval(1280, 2048)
+        self.assertLess(low, 1280 / 2048)
+        self.assertGreater(high, 1280 / 2048)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ from evaluation.frozen_0806_contract import (
     FROZEN_0806_EVALUATION_UNITS,
     FROZEN_0806_UNIT_GAMES,
     evaluation_counts,
+    evaluation_game_seed,
     evaluation_schedule_id,
 )
 
@@ -19,14 +20,27 @@ class Entry:
 
 
 class Frozen0806EvaluationContractTests(unittest.TestCase):
-    def test_two_fixed_units_produce_512_games(self) -> None:
+    def test_game_seed_is_backend_independent_and_namespaced(self) -> None:
+        arguments = {
+            "focal_identity": "candidate",
+            "opponent_identity": "opponent",
+            "slot": 3,
+            "replica": 5,
+        }
+        engine = evaluation_game_seed(**arguments)
+
+        self.assertEqual(engine, evaluation_game_seed(**arguments))
+        self.assertNotEqual(engine, evaluation_game_seed(**arguments, namespace="search"))
+        self.assertNotEqual(engine, evaluation_game_seed(**{**arguments, "replica": 6}))
+
+    def test_eight_fixed_units_produce_2048_games(self) -> None:
         self.assertEqual(FROZEN_0806_UNIT_GAMES, 256)
-        self.assertEqual(FROZEN_0806_EVALUATION_UNITS, 2)
-        self.assertEqual(FROZEN_0806_EVALUATION_GAMES, 512)
+        self.assertEqual(FROZEN_0806_EVALUATION_UNITS, 8)
+        self.assertEqual(FROZEN_0806_EVALUATION_GAMES, 2048)
         self.assertEqual(FROZEN_0806_EVALUATION_SEED, 341_512_806)
         self.assertEqual(
             evaluation_counts((Entry(3), Entry(251), Entry(2))),
-            (6, 502, 4),
+            (24, 2008, 16),
         )
 
     def test_schedule_identity_is_stable_and_contract_specific(self) -> None:

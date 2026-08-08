@@ -524,6 +524,7 @@ def _run(args: argparse.Namespace) -> str:
                 else None
             ),
             seed=(FROZEN_0806_EVALUATION_SEED if frozen_0806 is not None else 22022),
+            independent_engine_seeds=frozen_0806 is not None,
         )
     )
     return result.run_id

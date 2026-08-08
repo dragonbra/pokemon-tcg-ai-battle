@@ -18,11 +18,21 @@ import torch
 
 from rl_environment.logging import TrainingLogger
 from evaluation.runtime.seeded import build_seeded_runtime
+from evaluation.frozen_0806_contract import (
+    FROZEN_0806_EVALUATION_GAMES,
+    FROZEN_0806_EVALUATION_SEED,
+    FROZEN_0806_EVALUATION_UNITS,
+    evaluation_game_seed,
+)
 
 from ..league import load_frozen_catalog
 from ..parity import assert_large_model_0806_runtime_parity, collect_official_observations
 from ..policy import AdaptationConfig, load_actor_critic
-from ..rollout import FullSemanticRolloutCollector, RolloutJob
+from ..rollout import (
+    CudaFullSemanticRolloutCollector,
+    FullSemanticRolloutCollector,
+    RolloutJob,
+)
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .storage_full_semantic import save_model_only
@@ -51,6 +61,12 @@ class RunConfig:
     device: str = "cuda:0"
     seed: int = 330031001
     games_per_update: int = 512
+    eval_games: int = FROZEN_0806_EVALUATION_GAMES
+    collector_backend: str = "cuda_resident"
+    cuda_lane_count: int = 256
+    cuda_check_interval: int = 8
+    cuda_rules_path: str = ".tmp/cuda_0032_rules/official_rules.bin"
+    cuda_extension_dir: str = ".tmp/engine_cuda_benchmark/build_sm120_staged"
     eval_every: int = 5
     adaptation_arm: str = "lora"
     wandb_mode: str = "online"
@@ -73,6 +89,12 @@ class RunConfig:
             )
         if self.games_per_update not in {256, 512}:
             raise ValueError("games_per_update must be 256 or 512 Frozen-0806 games")
+        if self.eval_games != FROZEN_0806_EVALUATION_GAMES:
+            raise ValueError("Frozen-0806 greedy evaluation must contain 2048 games")
+        if self.collector_backend not in {"cuda_resident", "cpu_pool"}:
+            raise ValueError("collector_backend must be cuda_resident or cpu_pool")
+        if min(self.cuda_lane_count, self.cuda_check_interval) < 1:
+            raise ValueError("CUDA resident topology must be positive")
         if self.wandb_mode not in {"online", "offline"}:
             raise ValueError("invalid W&B mode")
         if self.adaptation_arm not in {"lora", "lora_layernorm"}:
@@ -190,8 +212,64 @@ def build_jobs(
     if count < 2 or count % 2:
         raise ValueError("job count must be positive and seat-balanced")
     fixed_slots = [opponent for opponent in catalog for _ in range(opponent.games)]
+    deck = focal_deck()
+    root = runtime_root()
+    runtime = build_seeded_runtime()
+    if greedy:
+        if count != FROZEN_0806_EVALUATION_GAMES:
+            raise ValueError("fixed Frozen-0806 greedy evaluation requires 2048 games")
+        jobs: list[RolloutJob] = []
+        for replica in range(FROZEN_0806_EVALUATION_UNITS):
+            opponent_slots: dict[str, int] = {}
+            for slot_index, opponent in enumerate(fixed_slots):
+                opponent_slot = opponent_slots.get(opponent.deck_id, 0)
+                opponent_slots[opponent.deck_id] = opponent_slot + 1
+                engine_seed = evaluation_game_seed(
+                    focal_identity=FOCAL_DECK_ID,
+                    opponent_identity=opponent.deck_id,
+                    slot=opponent_slot,
+                    replica=replica,
+                )
+                search_seed = evaluation_game_seed(
+                    focal_identity=FOCAL_DECK_ID,
+                    opponent_identity=opponent.deck_id,
+                    slot=opponent_slot,
+                    replica=replica,
+                    namespace="search",
+                )
+                game_index = replica * len(fixed_slots) + slot_index
+                focal_first = replica % 2 == 0
+                jobs.append(
+                    RolloutJob(
+                        game_id=f"eval-u{source_policy_update:04d}-{game_index:04d}",
+                        opponent_id=opponent.deck_id,
+                        focal_first=focal_first,
+                        seed=engine_seed,
+                        source_policy_update=source_policy_update,
+                        focal_deck=deck,
+                        opponent_deck=opponent.deck,
+                        runtime_root=root,
+                        policy_seed=(
+                            evaluation_game_seed(
+                                focal_identity=FOCAL_DECK_ID,
+                                opponent_identity=opponent.deck_id,
+                                slot=opponent_slot,
+                                replica=replica,
+                                namespace="policy",
+                            )
+                        ),
+                        search_seed=search_seed,
+                        engine_library=runtime.library_path,
+                    )
+                )
+        if (
+            len(jobs) != FROZEN_0806_EVALUATION_GAMES
+            or len({job.opponent_id for job in jobs}) != 55
+        ):
+            raise RuntimeError("fixed Frozen-0806 evaluation schedule is incomplete")
+        return jobs
     scenario_count = count // 2
-    update_offset = 0 if greedy else source_policy_update * 1_000_003
+    update_offset = source_policy_update * 1_000_003
     if scenario_count > len(fixed_slots):
         raise ValueError("0037 cannot sample more than the 256 committed scenario slots")
     scenario_rng = random.Random(seed + update_offset)
@@ -201,9 +279,6 @@ def build_jobs(
     ]
     engine_seeds = scenario_rng.sample(range(1, 0x80000000), scenario_count)
     jobs: list[RolloutJob] = []
-    deck = focal_deck()
-    root = runtime_root()
-    runtime = build_seeded_runtime()
     for pair_index, (opponent, engine_seed) in enumerate(
         zip(selected, engine_seeds, strict=True)
     ):
@@ -214,8 +289,7 @@ def build_jobs(
             game_index = pair_index * 2 + seat_index
             jobs.append(
                 RolloutJob(
-                    game_id=("eval" if greedy else "rollout")
-                    + f"-u{source_policy_update:04d}-{game_index:04d}",
+                    game_id=f"rollout-u{source_policy_update:04d}-{game_index:04d}",
                     opponent_id=opponent.deck_id,
                     focal_first=focal_first,
                     seed=engine_seed,
@@ -371,6 +445,37 @@ def load_frozen_opponent(device: torch.device):
     return actor
 
 
+def build_collector(
+    model: Any,
+    opponent: Any,
+    config: RunConfig,
+    *,
+    device: torch.device,
+    mode: str,
+):
+    if config.collector_backend == "cuda_resident":
+        return CudaFullSemanticRolloutCollector(
+            model,
+            opponent,
+            device=device,
+            rules_path=ROOT / config.cuda_rules_path,
+            extension_dir=ROOT / config.cuda_extension_dir,
+            lane_count=config.cuda_lane_count,
+            mode=mode,
+            check_interval=config.cuda_check_interval,
+        )
+    return FullSemanticRolloutCollector(
+        model,
+        opponent,
+        device=device,
+        worker_processes=config.worker_processes,
+        engines_per_worker=config.engines_per_worker,
+        inference_channels_per_role=config.inference_channels_per_role,
+        mode=mode,
+        coalesce_ms=config.coalesce_ms,
+    )
+
+
 def run_gate(
     *,
     output: Path,
@@ -498,7 +603,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_NAME": f"{WANDB_DISPLAY_PREFIX} · {config.version}",
             "WANDB_RUN_GROUP": PROJECT,
             "WANDB_TAGS": (
-                "0037,value_initialized,official_cpu,ppo,frozen_007,seeded512,"
+                "0037,value_initialized,official_cuda,ppo,frozen_007,eval_seeded2048,"
                 + config.ppo.credit_clock
                 + "_clock"
             ),
@@ -510,7 +615,7 @@ def run(config: RunConfig) -> dict[str, Any]:
         if not getattr(wandb.Api(), "api_key", None):
             raise RuntimeError("W&B online authentication is unavailable")
     config_payload = {
-        "schema": "0037_value_initialized_seeded512_ppo_config_v1",
+        "schema": "0037_value_initialized_cuda_rollout_seeded2048_eval_config_v2",
         "project_id": PROJECT,
         **asdict(config),
         "source_checkpoint": str(SOURCE_CHECKPOINT.relative_to(ROOT)),
@@ -530,23 +635,38 @@ def run(config: RunConfig) -> dict[str, Any]:
         },
         "opponent_count": 55,
         "opponent_games_per_batch": 512,
+        "frozen_greedy_evaluation_games": config.eval_games,
         "opponent_policy": "0806_large_model_pretrained_immutable",
         "opponent_policy_sha256": _sha256(SOURCE_CHECKPOINT),
         "opponent_schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
-        "official_engine": "seeded_official_engine_abi_v1_runtime_0002",
+        "official_engine": "cuda_official_engine_pod_abi_v7",
         "rollout_seed_contract": {
             "sampled_engine_seeds": config.games_per_update // 2,
             "episodes_per_seed": 2,
             "fixed_physical_deck_slots": True,
             "only_seat_is_swapped_within_pair": True,
         },
+        "frozen_evaluation_seed_contract": {
+            "games": config.eval_games,
+            "evaluation_seed": FROZEN_0806_EVALUATION_SEED,
+            "base_slots": 256,
+            "independent_seed_replicas": FROZEN_0806_EVALUATION_UNITS,
+            "candidate_first": 1024,
+            "candidate_second": 1024,
+            "checkpoint_independent": True,
+        },
         "rollout_topology": {
-            "worker_processes": config.worker_processes,
-            "engines_per_worker": config.engines_per_worker,
-            "inference_channels_per_role": config.inference_channels_per_role,
-            "worker_local_compiler": True,
-            "worker_compiler_backend": "policy_stateless",
-            "prototype_gpu_cache": True,
+            "backend": config.collector_backend,
+            "cuda_lane_count": config.cuda_lane_count,
+            "cuda_check_interval": config.cuda_check_interval,
+            "masked_lane_refill": config.collector_backend == "cuda_resident",
+            "gpu_semantic_compiler": config.collector_backend == "cuda_resident",
+            "shared_state_and_first_option_block": config.collector_backend == "cuda_resident",
+            "cpu_fallback": {
+                "worker_processes": config.worker_processes,
+                "engines_per_worker": config.engines_per_worker,
+                "inference_channels_per_role": config.inference_channels_per_role,
+            },
         },
         "trainable_contract": [
             "actor.action_decoder.*",
@@ -652,25 +772,22 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "rollout/source_policy_update": 0,
                 }
             )
-            baseline_evaluator = FullSemanticRolloutCollector(
+            baseline_evaluator = build_collector(
                 model,
                 opponent,
+                config,
                 device=device,
-                worker_processes=config.worker_processes,
-                engines_per_worker=config.engines_per_worker,
-                inference_channels_per_role=config.inference_channels_per_role,
                 mode="greedy",
-                coalesce_ms=config.coalesce_ms,
             )
             baseline_started = time.perf_counter()
             baseline_jobs = build_jobs(
                 source_policy_update=0,
-                seed=config.seed + 70_000_000,
-                count=512,
+                seed=FROZEN_0806_EVALUATION_SEED,
+                count=config.eval_games,
                 greedy=True,
             )
             _atomic_json(
-                paths["artifact"] / "schedules/eval_fixed_seeded512.json",
+                paths["artifact"] / "schedules/eval_fixed_seeded2048.json",
                 _schedule_payload(
                     baseline_jobs,
                     source_checkpoint_sha256=identity.checkpoint_sha256,
@@ -690,15 +807,12 @@ def run(config: RunConfig) -> dict[str, Any]:
             )
             for update in range(1, config.updates + 1):
                 source_update = update - 1
-                collector = FullSemanticRolloutCollector(
+                collector = build_collector(
                     model,
                     opponent,
+                    config,
                     device=device,
-                    worker_processes=config.worker_processes,
-                    engines_per_worker=config.engines_per_worker,
-                    inference_channels_per_role=config.inference_channels_per_role,
                     mode="sample",
-                    coalesce_ms=config.coalesce_ms,
                 )
                 rollout_started = time.perf_counter()
                 rollout_jobs = build_jobs(
@@ -764,28 +878,25 @@ def run(config: RunConfig) -> dict[str, Any]:
                     **ppo_metrics,
                 }
                 if update % config.eval_every == 0:
-                    evaluator = FullSemanticRolloutCollector(
+                    evaluator = build_collector(
                         model,
                         opponent,
+                        config,
                         device=device,
-                        worker_processes=config.worker_processes,
-                        engines_per_worker=config.engines_per_worker,
-                        inference_channels_per_role=config.inference_channels_per_role,
                         mode="greedy",
-                        coalesce_ms=config.coalesce_ms,
                     )
                     eval_started = time.perf_counter()
                     evaluation_jobs = build_jobs(
                         source_policy_update=update,
-                        seed=config.seed + 70_000_000,
-                        count=512,
+                        seed=FROZEN_0806_EVALUATION_SEED,
+                        count=config.eval_games,
                         greedy=True,
                     )
                     if _schedule_payload(
                         evaluation_jobs,
                         source_checkpoint_sha256=identity.checkpoint_sha256,
                     )["environment_sha256"] != json.loads(
-                        (paths["artifact"] / "schedules/eval_fixed_seeded512.json").read_text()
+                        (paths["artifact"] / "schedules/eval_fixed_seeded2048.json").read_text()
                     )["environment_sha256"]:
                         raise RuntimeError("fixed evaluation schedule changed across checkpoints")
                     evaluation = evaluator.collect(evaluation_jobs)

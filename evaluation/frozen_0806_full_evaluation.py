@@ -48,8 +48,8 @@ OUTPUT_ROOT = (
 LEGACY_OUTPUT_ROOT = (
     ROOT / "evaluation/arena/combat_mat/frozen/0806_kaggle_top100_plus_v1"
 )
-TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded512_full"
-BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded512_benchmark"
+TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded2048_full"
+BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded2048_benchmark"
 EXPECTED_DECKS = 55
 EXPECTED_GAMES = FROZEN_0806_EVALUATION_GAMES
 EXPECTED_FIRST = EXPECTED_GAMES // 2
@@ -58,10 +58,10 @@ DEFAULT_SEED = FROZEN_0806_EVALUATION_SEED
 LEGACY_POLICY_0806_OUTPUT_ROOT = (
     ROOT / "evaluation/arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1"
 )
-POLICY_0806_SEEDED512_OUTPUT_ROOT = (
+POLICY_0806_SEEDED2048_OUTPUT_ROOT = (
     ROOT
     / "evaluation/arena/combat_mat/policy_0806"
-    / "0806_kaggle_top100_plus_v1_seeded_512_v1"
+    / "0806_kaggle_top100_plus_v1_seeded_2048_v2"
 )
 
 
@@ -85,7 +85,7 @@ POLICY_0806_TARGET = FrozenEvaluationTarget(
     key="0806",
     label="Policy-0806",
     policy_sha256=POLICY_0806_SHA256,
-    output_root=POLICY_0806_SEEDED512_OUTPUT_ROOT,
+    output_root=POLICY_0806_SEEDED2048_OUTPUT_ROOT,
 )
 
 
@@ -405,6 +405,7 @@ def _batch_config(
         inference_ability_repeat_limit=20,
         engine_turn_draw_limit=100,
         engine_pool_size=engine_pool_size,
+        independent_engine_seeds=True,
     )
 
 
@@ -533,7 +534,7 @@ def _index_html(
     total_seconds = sum(record["wall_time_seconds"] for record in records)
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{target.label} Seeded-512 Report · Frozen-0806 卡组强度</title><style>
+<title>{target.label} Seeded-2048 Report · Frozen-0806 卡组强度</title><style>
 :root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d;--red:#a54343}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}
 header{{padding:28px max(20px,calc((100vw - 1500px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px;letter-spacing:0}}header p{{max-width:980px;margin:7px 0 0;color:#cfe1da}}
@@ -546,10 +547,10 @@ th{{position:sticky;top:0;background:#e9f0ec;color:#486158;font-size:12px;cursor
 .number{{font-size:16px;font-weight:850;color:var(--green);font-variant-numeric:tabular-nums}}.done{{color:var(--green)}}.pending{{color:#8a6b28}}
 .contract{{margin-top:16px;padding:14px 16px;border-left:4px solid var(--green);background:#fff;color:var(--muted)}}
 @media(max-width:760px){{.stats{{grid-template-columns:1fr 1fr}}.stat:nth-child(2){{border-right:0}}header{{padding:22px 16px}}main{{padding:14px}}}}
-</style></head><body><header><h1>{target.label} Seeded-512 Report</h1><p>55 套 exact deck 均加载 Policy-0806，对战相同的两个 256 局固定单元，共 512 局；evaluation seed 固定为 {DEFAULT_SEED}，先后手各 256 局。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
+</style></head><body><header><h1>{target.label} Seeded-2048 Report</h1><p>55 套 exact deck 均加载 Policy-0806，对战相同的八个 256 局固定单元，共 2,048 局；每个 slot 使用八个独立 seed replica，evaluation seed 固定为 {DEFAULT_SEED}，先后手各 1,024 局。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
 <div class="stats"><div class="stat"><b>{len(records)}/{EXPECTED_DECKS}</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>正式对局</span></div><div class="stat"><b>{sum(r['wins'] for r in records):,}</b><span>Policy-0806 胜局</span></div><div class="stat"><b>{total_seconds/3600:.2f}h</b><span>累计 wall time</span></div></div>
 <div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div>
-<div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 512 局报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
+<div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 2,048 局报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
 <div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · seed <code>{DEFAULT_SEED}</code> · Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{evaluation_schedule_id(catalog.pool.manifest['schedule_sha256'])}</code> · Candidate Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
 <script>
 const q=document.querySelector('#search'),body=document.querySelector('tbody');
@@ -634,8 +635,10 @@ def refresh_index(
         ROOT / "evaluation/arena/combat_mat/policy_0806/index.html",
         '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
         '<title>Policy-0806 Reports</title><body><h1>Policy-0806 Reports</h1><ul>'
+        '<li><a href="0806_kaggle_top100_plus_v1_seeded_2048_v2/index.html">'
+        'Seeded-2048 v2（当前正式合同）</a></li>'
         '<li><a href="0806_kaggle_top100_plus_v1_seeded_512_v1/index.html">'
-        'Seeded-512 v1（当前正式合同）</a></li>'
+        'Seeded-512 v1（历史合同）</a></li>'
         '<li><a href="0806_kaggle_top100_plus_v1/index.html">'
         '2026-08-07 legacy 256（25/55，中断资产）</a></li></ul></body></html>\n',
     )

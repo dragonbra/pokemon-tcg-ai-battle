@@ -124,6 +124,7 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.version, "V5_last_option_qv_lora_r4_eval5_50u")
         self.assertEqual(config.updates, 50)
         self.assertEqual(config.eval_every, 5)
+        self.assertEqual(config.eval_games, 2048)
         self.assertEqual(config.adaptation_arm, "lora")
         self.assertEqual(config.worker_processes, 16)
         self.assertEqual(config.engines_per_worker, 8)
@@ -138,10 +139,10 @@ class ProjectIdentityTest(unittest.TestCase):
 
     def test_greedy_probe_seed_schedule_is_checkpoint_independent(self) -> None:
         update_0 = full_runner.build_jobs(
-            source_policy_update=0, seed=123, count=512, greedy=True
+            source_policy_update=0, seed=123, count=2048, greedy=True
         )
         update_10 = full_runner.build_jobs(
-            source_policy_update=10, seed=123, count=512, greedy=True
+            source_policy_update=10, seed=123, count=2048, greedy=True
         )
         sampled_0 = full_runner.build_jobs(source_policy_update=0, seed=123, count=512)
         sampled_10 = full_runner.build_jobs(source_policy_update=10, seed=123, count=512)
@@ -155,6 +156,8 @@ class ProjectIdentityTest(unittest.TestCase):
             for job in update_10
         ]
         self.assertEqual(paired_0, paired_10)
+        self.assertEqual(sum(job.focal_first for job in update_0), 1024)
+        self.assertEqual(len({job.seed for job in update_0}), 2048)
         self.assertNotEqual(
             [job.seed for job in sampled_0],
             [job.seed for job in sampled_10],

@@ -1467,16 +1467,20 @@ def semantic0031_v2_ready_batch(
     return output
 
 
-def semantic0031_greedy_decode_device(
+def semantic0031_decode_device(
     action_decoder: Any,
     batch: Any,
     options: Any,
     state_summary: Any,
     *,
     max_select: int,
+    greedy: bool,
     route_mask: Any | None = None,
-) -> tuple[Any, Any]:
-    """Fixed-shape ordered greedy decode with no device-to-host decisions."""
+    compute_stats: bool = True,
+    sampling_seeds: Any | None = None,
+    sampling_counters: Any | None = None,
+) -> dict[str, Any]:
+    """Fixed-shape ordered decode with actions and statistics kept on device."""
 
     import math
     import torch
@@ -1493,9 +1497,17 @@ def semantic0031_greedy_decode_device(
     available = option_mask.clone()
     actions = torch.full((batch_size, max_select), -1, dtype=torch.long, device=options.device)
     lengths = torch.zeros(batch_size, dtype=torch.long, device=options.device)
+    stopped = torch.zeros(batch_size, dtype=torch.bool, device=options.device)
+    logprob = torch.zeros(batch_size, dtype=torch.float32, device=options.device)
+    entropy = torch.zeros_like(logprob)
     maximum = batch.max_count.long().view(batch_size).clamp(min=0, max=max_select)
     minimum = batch.min_count.long().view(batch_size).clamp(min=0, max=max_select)
     active = route_mask & maximum.gt(0)
+    if not greedy:
+        if sampling_seeds is None or sampling_counters is None:
+            raise ValueError("stochastic CUDA decode requires per-row seeds and counters")
+        sampling_seeds = sampling_seeds.long().view(batch_size)
+        sampling_counters = sampling_counters.long().view(batch_size)
 
     for step in range(max_select):
         pointer = (action_decoder.query(hidden).unsqueeze(1) * option_keys).sum(-1) / math.sqrt(
@@ -1507,8 +1519,29 @@ def semantic0031_greedy_decode_device(
         )
         stop = action_decoder.stop(hidden).squeeze(-1)
         stop = stop.masked_fill(~(active & lengths.ge(minimum)), torch.finfo(stop.dtype).min)
-        choice = torch.cat((pointer, stop.unsqueeze(1)), dim=1).argmax(dim=1)
+        logits = torch.cat((pointer, stop.unsqueeze(1)), dim=1)
+        logits = torch.where(route_mask[:, None], logits, torch.zeros_like(logits))
+        distribution = None
+        if not greedy or compute_stats:
+            distribution = torch.distributions.Categorical(logits=logits.float())
+        if greedy:
+            choice = logits.argmax(dim=1)
+        else:
+            modulus = 2_147_483_647
+            key = torch.remainder(sampling_seeds, modulus)
+            key = torch.remainder(
+                key + sampling_counters * 1_000_003 + (step + 1) * 9_176, modulus
+            )
+            for _ in range(3):
+                key = torch.remainder(key * 48_271, modulus)
+            uniform = (key.to(torch.float64) + 0.5) / modulus
+            cumulative = torch.softmax(logits.float(), dim=1).double().cumsum(dim=1)
+            choice = cumulative.ge(uniform.unsqueeze(1)).long().argmax(dim=1)
+        if compute_stats:
+            logprob += torch.where(active, distribution.log_prob(choice), 0.0)
+            entropy += torch.where(active, distribution.entropy(), 0.0)
         chosen_valid = active & choice.lt(option_count)
+        stopped |= active & choice.eq(option_count)
         safe = choice.clamp(min=0, max=max(0, option_count - 1))
         actions[:, step] = torch.where(chosen_valid, safe, torch.full_like(safe, -1))
         chosen_mask = torch.nn.functional.one_hot(safe, num_classes=option_count).bool()
@@ -1520,7 +1553,59 @@ def semantic0031_greedy_decode_device(
         hidden = torch.where(chosen_valid.unsqueeze(-1), candidate_hidden, hidden)
         lengths = lengths + chosen_valid.long()
         active = chosen_valid & lengths.lt(maximum) & route_mask
-    return actions, lengths
+    return {
+        "actions": actions,
+        "lengths": lengths,
+        "stopped": stopped,
+        "logprob": logprob,
+        "entropy": entropy,
+    }
+
+
+def semantic0031_greedy_decode_device(
+    action_decoder: Any,
+    batch: Any,
+    options: Any,
+    state_summary: Any,
+    *,
+    max_select: int,
+    route_mask: Any | None = None,
+) -> tuple[Any, Any]:
+    """Compatibility wrapper for fixed-shape ordered greedy decoding."""
+
+    decoded = semantic0031_decode_device(
+        action_decoder,
+        batch,
+        options,
+        state_summary,
+        max_select=max_select,
+        greedy=True,
+        route_mask=route_mask,
+        compute_stats=False,
+    )
+    return decoded["actions"], decoded["lengths"]
+
+
+def semantic0031_mean_pool_by_parent_device(
+    values: Any,
+    one_based_parent: Any,
+    mask: Any,
+    parent_count: int,
+) -> Any:
+    """Match the canonical explicit-relation pooling without prototype inference."""
+
+    batch, _, width = values.shape
+    output = values.new_zeros((batch, parent_count, width))
+    counts = values.new_zeros((batch, parent_count, 1))
+    valid = mask & one_based_parent.gt(0) & one_based_parent.le(parent_count)
+    index = (one_based_parent - 1).clamp(min=0, max=max(0, parent_count - 1))
+    output.scatter_add_(
+        1,
+        index.unsqueeze(-1).expand(-1, -1, width),
+        values * valid.unsqueeze(-1),
+    )
+    counts.scatter_add_(1, index.unsqueeze(-1), valid.unsqueeze(-1).to(values.dtype))
+    return output / counts.clamp_min(1.0)
 
 
 class Semantic0031DeviceAdapter:
@@ -1556,14 +1641,6 @@ class Semantic0031DeviceAdapter:
         self._static_fields = semantic0031_static_fields(registered_deck, self.device)
         with torch.inference_mode():
             self.prototype_memory = model.prototype_encoder.encode_all()
-            (
-                self._card_skill_sum,
-                self._card_skill_count,
-                self._card_effect_sum,
-                self._card_effect_count,
-                self._attack_effect_sum,
-                self._attack_effect_count,
-            ) = self._build_relation_cache()
 
     @property
     def shared_batch_key(self) -> tuple[str, int, int]:
@@ -1572,56 +1649,6 @@ class Semantic0031DeviceAdapter:
     @property
     def shared_static_fields(self) -> Mapping[str, Any]:
         return self._static_fields
-
-    def _build_relation_cache(self) -> tuple[Any, Any, Any, Any, Any, Any]:
-        prototype = self.model.prototype_encoder
-        option_encoder = self.model.option_encoder
-        card_skill_ids = prototype.card_skill_table.long()
-        card_count = card_skill_ids.shape[0]
-        width = self.model.config.d_model
-        skill_sum = self.prototype_memory.skills.new_zeros((3, card_count, width))
-        skill_count = self.prototype_memory.skills.new_zeros((card_count,))
-        for slot in range(card_skill_ids.shape[1]):
-            identities = card_skill_ids[:, slot]
-            valid = identities.gt(0)
-            skill_count += valid.to(skill_count.dtype)
-            for relation in range(3):
-                role = relation * 3 + slot + 1
-                encoded = self.prototype_memory.skills[identities]
-                encoded = encoded + option_encoder.skill_role.weight[role]
-                skill_sum[relation] += encoded * valid.unsqueeze(-1)
-
-        card_effect_sum = self.prototype_memory.effects.new_zeros((card_count, width))
-        card_effect_count = self.prototype_memory.effects.new_zeros((card_count,))
-        for skill_slot in range(card_skill_ids.shape[1]):
-            skill_ids = card_skill_ids[:, skill_slot]
-            for effect_slot in range(prototype.skill_effect_table.shape[1]):
-                effect_ids = prototype.skill_effect_table[skill_ids, effect_slot].long()
-                valid = skill_ids.gt(0) & effect_ids.gt(0)
-                encoded = self.prototype_memory.effects[effect_ids]
-                encoded = encoded + option_encoder.effect_role.weight[1]
-                card_effect_sum += encoded * valid.unsqueeze(-1)
-                card_effect_count += valid.to(card_effect_count.dtype)
-
-        attack_effect_ids = prototype.attack_effect_table.long()
-        attack_count = attack_effect_ids.shape[0]
-        attack_effect_sum = self.prototype_memory.effects.new_zeros((attack_count, width))
-        attack_effect_count = self.prototype_memory.effects.new_zeros((attack_count,))
-        for effect_slot in range(attack_effect_ids.shape[1]):
-            effect_ids = attack_effect_ids[:, effect_slot]
-            valid = effect_ids.gt(0)
-            encoded = self.prototype_memory.effects[effect_ids]
-            encoded = encoded + option_encoder.effect_role.weight[2]
-            attack_effect_sum += encoded * valid.unsqueeze(-1)
-            attack_effect_count += valid.to(attack_effect_count.dtype)
-        return (
-            skill_sum,
-            skill_count,
-            card_effect_sum,
-            card_effect_count,
-            attack_effect_sum,
-            attack_effect_count,
-        )
 
     def _encode_option_inputs(self, batch: Any, state: Any) -> Any:
         option_encoder = self.model.option_encoder
@@ -1640,22 +1667,26 @@ class Semantic0031DeviceAdapter:
             state.gather_cards(batch.option_effect_card)
         )
 
-        card_columns = (5, 11, 12)
-        skill_total = options.new_zeros(options.shape)
-        skill_count = options.new_zeros(options.shape[:2])
-        effect_total = options.new_zeros(options.shape)
-        effect_count = options.new_zeros(options.shape[:2])
-        for relation, column in enumerate(card_columns):
-            identities = option_cat[..., column]
-            skill_total += self._card_skill_sum[relation][identities]
-            skill_count += self._card_skill_count[identities]
-            effect_total += self._card_effect_sum[identities]
-            effect_count += self._card_effect_count[identities]
-        attack_ids = option_cat[..., 7]
-        effect_total += self._attack_effect_sum[attack_ids]
-        effect_count += self._attack_effect_count[attack_ids]
-        skill_context = skill_total / skill_count.clamp_min(1).unsqueeze(-1)
-        effect_context = effect_total / effect_count.clamp_min(1).unsqueeze(-1)
+        skill_tokens = (
+            self.prototype_memory.skills[batch.option_skill_id]
+            + option_encoder.skill_role(batch.option_skill_role)
+        )
+        skill_context = semantic0031_mean_pool_by_parent_device(
+            skill_tokens,
+            batch.option_skill_parent,
+            batch.option_skill_mask,
+            batch.option_count,
+        )
+        effect_tokens = (
+            self.prototype_memory.effects[batch.option_effect_id]
+            + option_encoder.effect_role(batch.option_effect_role)
+        )
+        effect_context = semantic0031_mean_pool_by_parent_device(
+            effect_tokens,
+            batch.option_effect_parent,
+            batch.option_effect_mask,
+            batch.option_count,
+        )
         options = option_encoder.input_norm(
             options
             + option_encoder.skill_relation(skill_context)
@@ -1752,6 +1783,7 @@ __all__ = [
     "inspect_semantic0031_archive",
     "load_semantic0031_package",
     "policy_codec_v1_to_semantic0031_v2",
+    "semantic0031_decode_device",
     "semantic0031_greedy_decode_device",
     "semantic0031_static_fields",
     "semantic0031_v2_ready_batch",

@@ -23,7 +23,7 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.catalog = load_frozen_0806_runtime_catalog()
 
-    def test_schedule_is_exactly_seeded_512_and_seat_balanced(self) -> None:
+    def test_schedule_is_exactly_seeded_2048_and_seat_balanced(self) -> None:
         counts = _schedule_counts(self.catalog)
         self.assertEqual(len(counts), 55)
         self.assertEqual(sum(counts), EXPECTED_GAMES)
@@ -34,15 +34,15 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
         order = _turn_order(games)
         self.assertEqual(order["first"]["games"], EXPECTED_FIRST)
         self.assertEqual(order["second"]["games"], EXPECTED_SECOND)
-        self.assertEqual(EXPECTED_GAMES, 512)
-        self.assertEqual(EXPECTED_FIRST, 256)
-        self.assertEqual(EXPECTED_SECOND, 256)
+        self.assertEqual(EXPECTED_GAMES, 2048)
+        self.assertEqual(EXPECTED_FIRST, 1024)
+        self.assertEqual(EXPECTED_SECOND, 1024)
 
-    def test_policy_0806_seeded512_output_is_independent_from_legacy(self) -> None:
+    def test_policy_0806_seeded2048_output_is_independent_from_legacy(self) -> None:
         self.assertNotEqual(POLICY_0806_TARGET.output_root, LEGACY_POLICY_0806_OUTPUT_ROOT)
         self.assertEqual(
             POLICY_0806_TARGET.output_root.name,
-            "0806_kaggle_top100_plus_v1_seeded_512_v1",
+            "0806_kaggle_top100_plus_v1_seeded_2048_v2",
         )
         self.assertEqual(
             LEGACY_POLICY_0806_OUTPUT_ROOT.name,

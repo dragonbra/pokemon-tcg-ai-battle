@@ -87,7 +87,7 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
         self.assertEqual(merged["progress_guard"]["forfeit_schedule_indices"], [2])
         self.assertEqual(merged["memory"]["torch_peak_reserved_bytes"], 202)
 
-    def test_schedule_is_paired_seeded_and_seat_balanced(self) -> None:
+    def test_schedule_has_eight_independent_seed_replicas_and_balanced_seats(self) -> None:
         schedule = build_cuda_schedule(
             focal_deck_id="candidate_a",
             entries=(Entry("opponent_a", 2), Entry("opponent_b", 1)),
@@ -95,15 +95,17 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
         )
 
         jobs = schedule["jobs"]
-        self.assertEqual(len(jobs), 6)
-        self.assertEqual(sum(job["focal_first"] for job in jobs), 3)
-        for offset in range(0, len(jobs), 2):
-            first, second = jobs[offset : offset + 2]
-            self.assertTrue(first["focal_first"])
-            self.assertFalse(second["focal_first"])
-            self.assertEqual(first["opponent_id"], second["opponent_id"])
-            self.assertEqual(first["engine_seed"], second["engine_seed"])
-            self.assertEqual(first["search_seed"], second["search_seed"])
+        self.assertEqual(len(jobs), 24)
+        self.assertEqual(sum(job["focal_first"] for job in jobs), 12)
+        grouped: dict[tuple[str, int], list[dict]] = {}
+        for job in jobs:
+            grouped.setdefault((job["opponent_id"], job["slot"]), []).append(job)
+        self.assertEqual(len(grouped), 3)
+        for replicas in grouped.values():
+            self.assertEqual(len(replicas), 8)
+            self.assertEqual(len({job["engine_seed"] for job in replicas}), 8)
+            self.assertEqual(len({job["search_seed"] for job in replicas}), 8)
+            self.assertEqual(sum(job["focal_first"] for job in replicas), 4)
 
     def test_schedule_changes_with_focal_identity_but_is_reproducible(self) -> None:
         entries = (Entry("opponent_a", 1),)
