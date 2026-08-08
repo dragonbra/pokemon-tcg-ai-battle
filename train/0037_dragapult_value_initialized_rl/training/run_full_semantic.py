@@ -95,6 +95,37 @@ def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     temporary.replace(path)
 
 
+def _record_training_schedule(path: Path, payload: dict[str, Any]) -> None:
+    """Keep all update schedules in one atomic, auditable version-level JSON."""
+    rows = payload.get("jobs") or []
+    updates = {int(row["source_policy_update"]) for row in rows}
+    if len(updates) != 1:
+        raise ValueError("training schedule must contain exactly one source-policy update")
+    source_update = updates.pop()
+    if path.is_file():
+        aggregate = json.loads(path.read_text())
+        if aggregate.get("schema") != "0037_seeded512_training_schedules_v1":
+            raise ValueError("unexpected aggregate training schedule schema")
+    else:
+        aggregate = {
+            "schema": "0037_seeded512_training_schedules_v1",
+            "schedules": [],
+        }
+    schedules = aggregate.get("schedules")
+    if not isinstance(schedules, list):
+        raise ValueError("aggregate training schedules must be a list")
+    existing = {
+        int(item["source_policy_update"])
+        for item in schedules
+        if isinstance(item, dict) and "source_policy_update" in item
+    }
+    if source_update in existing:
+        raise FileExistsError(f"training schedule update {source_update} already exists")
+    schedules.append({"source_policy_update": source_update, **payload})
+    schedules.sort(key=lambda item: int(item["source_policy_update"]))
+    _atomic_json(path, aggregate)
+
+
 def _merge_status(path: Path, payload: dict[str, Any]) -> None:
     existing = json.loads(path.read_text()) if path.is_file() else {}
     _atomic_json(path, {**existing, **payload})
@@ -675,9 +706,8 @@ def run(config: RunConfig) -> dict[str, Any]:
                     seed=config.seed,
                     count=config.games_per_update,
                 )
-                _atomic_json(
-                    paths["artifact"]
-                    / f"schedules/train_update_{source_update:06d}.json",
+                _record_training_schedule(
+                    paths["artifact"] / "schedules/train_schedules.json",
                     _schedule_payload(
                         rollout_jobs,
                         source_checkpoint_sha256=identity.checkpoint_sha256,

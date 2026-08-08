@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import importlib
+import json
 from dataclasses import replace
 from pathlib import Path
+import tempfile
 import unittest
 
 import torch
@@ -12,6 +14,27 @@ batch = importlib.import_module("train.0037_dragapult_value_initialized_rl.train
 
 
 class RolloutBatchTest(unittest.TestCase):
+    def test_training_schedules_are_aggregated_without_overwrite(self) -> None:
+        run = importlib.import_module(
+            "train.0037_dragapult_value_initialized_rl.training.run_full_semantic"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "train_schedules.json"
+            for update in (0, 1):
+                payload = {
+                    "schema": "0037_seeded512_rollout_schedule_v1",
+                    "jobs": [{"source_policy_update": update}],
+                    "schedule_sha256": str(update),
+                }
+                run._record_training_schedule(path, payload)
+            aggregate = json.loads(path.read_text())
+            self.assertEqual(
+                [row["source_policy_update"] for row in aggregate["schedules"]],
+                [0, 1],
+            )
+            with self.assertRaises(FileExistsError):
+                run._record_training_schedule(path, payload)
+
     def test_result_reward_contract(self) -> None:
         self.assertEqual(batch.result_reward(1), 1.0)
         self.assertEqual(batch.result_reward(2), -1.0)

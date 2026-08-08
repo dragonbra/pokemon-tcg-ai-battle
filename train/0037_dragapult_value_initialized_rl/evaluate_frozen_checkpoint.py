@@ -13,7 +13,7 @@ from typing import Any
 
 import torch
 
-from .policy import load_actor_critic
+from .policy import AdaptationConfig, load_actor_critic
 from .training.run_full_semantic import (
     PROJECT,
     SOURCE_CHECKPOINT,
@@ -23,10 +23,12 @@ from .training.run_full_semantic import (
     focal_deck,
     load_frozen_opponent,
 )
+from .training.storage_full_semantic import load_adapted_model_only
 
 
 ROOT = Path(__file__).resolve().parents[2]
-CHECKPOINT_SCHEMA = "0037_value_initialized_decoder_critic_model_only_v1"
+CHECKPOINT_SCHEMA_V1 = "0037_value_initialized_decoder_critic_model_only_v1"
+CHECKPOINT_SCHEMA_V2 = "0037_value_initialized_adapted_model_only_v2"
 ENVIRONMENT_FIELDS = (
     "opponent_id",
     "focal_first",
@@ -81,34 +83,59 @@ def assert_fixed_environment(jobs: list[Any], baseline_schedule: Path) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def checkpoint_adaptation(checkpoint: Path, expected_update: int) -> AdaptationConfig:
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    if payload.get("update") != expected_update:
+        raise ValueError(
+            f"checkpoint update mismatch: {payload.get('update')} != {expected_update}"
+        )
+    schema = payload.get("schema_version")
+    if schema == CHECKPOINT_SCHEMA_V1:
+        return AdaptationConfig()
+    if schema != CHECKPOINT_SCHEMA_V2:
+        raise ValueError(f"unexpected 0037 checkpoint schema: {schema!r}")
+    config = payload.get("adaptation") or {}
+    return AdaptationConfig(
+        lora=bool(config.get("lora")),
+        layernorm_tuning=bool(config.get("layernorm_tuning")),
+        rank=int(config.get("rank", 4)),
+        alpha=float(config.get("alpha", 8.0)),
+        option_block=int(config.get("option_block", 1)),
+    )
+
+
 def load_checkpoint(model: Any, checkpoint: Path, expected_update: int) -> dict[str, Any]:
     digest = _sha256(checkpoint)
     sidecar = checkpoint.with_suffix(checkpoint.suffix + ".sha256")
     if not sidecar.is_file() or sidecar.read_text().strip() != digest:
         raise ValueError("checkpoint SHA-256 sidecar mismatch")
     payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
-    if payload.get("schema_version") != CHECKPOINT_SCHEMA:
+    schema = payload.get("schema_version")
+    if schema not in {CHECKPOINT_SCHEMA_V1, CHECKPOINT_SCHEMA_V2}:
         raise ValueError("unexpected 0037 checkpoint schema")
     if payload.get("update") != expected_update:
         raise ValueError(
             f"checkpoint update mismatch: {payload.get('update')} != {expected_update}"
         )
-    state = payload.get("state_dict") or {}
-    decoder = {
-        name.removeprefix("action_decoder."): value
-        for name, value in state.items()
-        if name.startswith("action_decoder.")
-    }
-    critic = {
-        name.removeprefix("value_head."): value
-        for name, value in state.items()
-        if name.startswith("value_head.")
-    }
-    if len(decoder) + len(critic) != len(state) or not decoder or not critic:
-        raise ValueError("checkpoint contains unexpected or incomplete model state")
     representation = model.representation_sha256()
-    model.actor.action_decoder.load_state_dict(decoder, strict=True)
-    model.value_head.load_state_dict(critic, strict=True)
+    if schema == CHECKPOINT_SCHEMA_V2:
+        load_adapted_model_only(model, checkpoint)
+    else:
+        state = payload.get("state_dict") or {}
+        decoder = {
+            name.removeprefix("action_decoder."): value
+            for name, value in state.items()
+            if name.startswith("action_decoder.")
+        }
+        critic = {
+            name.removeprefix("value_head."): value
+            for name, value in state.items()
+            if name.startswith("value_head.")
+        }
+        if len(decoder) + len(critic) != len(state) or not decoder or not critic:
+            raise ValueError("checkpoint contains unexpected or incomplete model state")
+        model.actor.action_decoder.load_state_dict(decoder, strict=True)
+        model.value_head.load_state_dict(critic, strict=True)
     if model.representation_sha256() != representation:
         raise RuntimeError("checkpoint load changed frozen actor representation")
     model.eval()
@@ -144,7 +171,13 @@ def run(
     coalesce_ms: float = 5.0,
 ) -> dict[str, Any]:
     device = torch.device(device_name)
-    model, source_identity = load_actor_critic(SOURCE_CHECKPOINT, focal_deck(), device)
+    adaptation = checkpoint_adaptation(checkpoint, update)
+    model, source_identity = load_actor_critic(
+        SOURCE_CHECKPOINT,
+        focal_deck(),
+        device,
+        adaptation=adaptation,
+    )
     checkpoint_identity = load_checkpoint(model, checkpoint, update)
     opponent = load_frozen_opponent(device)
     jobs = build_jobs(
@@ -205,6 +238,8 @@ def run(
                 "opponent_id": episode.job.opponent_id,
                 "focal_first": episode.job.focal_first,
                 "engine_seed": episode.job.seed,
+                "search_seed": episode.job.search_seed,
+                "policy_seed": episode.job.policy_seed,
                 "reward": episode.reward,
                 "turns": episode.turns,
                 "decisions": len(episode.decisions),
