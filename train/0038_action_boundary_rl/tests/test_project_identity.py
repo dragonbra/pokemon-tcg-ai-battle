@@ -127,7 +127,9 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.ppo.gae_lambda, 0.95)
         self.assertEqual(config.ppo.batch_size, 1024)
         self.assertEqual(config.ppo.epochs, 4)
-        self.assertEqual(config.version, "V8_repeat_guard_turn_limit_cuda_fresh_rl")
+        self.assertEqual(
+            config.version, "V9_turn_scoped_guard_bounded_trajectory_fresh_rl"
+        )
         self.assertIsNone(config.updates)
         self.assertEqual(config.eval_every, 5)
         self.assertEqual(config.adaptation_arm, "lora")

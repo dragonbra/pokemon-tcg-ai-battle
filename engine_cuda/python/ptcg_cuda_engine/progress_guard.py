@@ -70,6 +70,12 @@ class DeviceRepeatForfeitGuard:
             raise ValueError("repeat guard received incompatible option/action tensors")
         turn = turn.long().view(self.batch_size)
         actor = actor.long().view(self.batch_size)
+        # The guard detects a policy-created loop inside one engine turn.  A
+        # later turn is real game progress: once-per-turn Abilities may be used
+        # again and must never accumulate toward a whole-game forfeit.
+        changed_turn = self.turn.ge(0) & self.turn.ne(turn)
+        self.keys.masked_fill_(changed_turn[:, None, None, None], 0)
+        self.counts.masked_fill_(changed_turn[:, None, None], 0)
         self.turn.copy_(turn)
         valid_actor = actor.ge(0) & actor.lt(2)
         safe_actor = actor.clamp(min=0, max=1)

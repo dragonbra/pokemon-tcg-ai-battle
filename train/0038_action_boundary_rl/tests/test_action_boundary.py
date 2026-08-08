@@ -146,10 +146,25 @@ class PolicyTrajectoryTests(unittest.TestCase):
             PolicyTransition({}, action, -0.1, 0.0, -0.1, 0.4, 1.0, 0.99,
                              None, 0.0, True, (7, 9)),
         ]
-        targets = compound_gae(transitions, gae_lambda=0.95)
+        targets = compound_gae(transitions, gae_lambda=0.95, credit_clock="selection")
         # Six internal selects occupy event span 0:7, but only one lambda factor exists.
         expected_last = 1.0 - 0.4
         expected_first = (0.99 * 0.4 - 0.1) + 0.99 * 0.95 * expected_last
+        self.assertAlmostEqual(float(targets.advantages[0]), expected_first, places=6)
+
+    def test_turn_clock_does_not_apply_lambda_within_one_turn(self):
+        action = CanonicalMacroAction("root", (2,), False, {})
+        transitions = [
+            PolicyTransition({}, action, -0.2, 0.0, -0.2, 0.1, 0.0, 1.0,
+                             {}, 0.4, False, (0, 1), metadata={"turn": 4}),
+            PolicyTransition({}, action, -0.1, 0.0, -0.1, 0.4, 1.0, 1.0,
+                             None, 0.0, True, (1, 2), metadata={"turn": 4}),
+        ]
+
+        targets = compound_gae(transitions, gae_lambda=0.95, credit_clock="turn")
+
+        expected_last = 1.0 - 0.4
+        expected_first = (0.4 - 0.1) + expected_last
         self.assertAlmostEqual(float(targets.advantages[0]), expected_first, places=6)
 
     def test_policy_statistics_ignore_non_strategic_rows_and_old_logprob_is_frozen(self):

@@ -91,6 +91,45 @@ class CudaCollectorTerminationContractTest(unittest.TestCase):
         finally:
             collector.CudaFullSemanticRolloutCollector = original
 
+    def test_fixed_budget_is_sampled_across_the_rollout(self) -> None:
+        original = collector.CudaFullSemanticRolloutCollector
+
+        class FakeCollector:
+            captured = []
+
+            def __init__(self, *_args, **kwargs) -> None:
+                self.captured.append(kwargs.get("record_job_indices"))
+
+            def collect(self, _jobs):
+                return []
+
+            def metrics(self):
+                return {}
+
+        collector.CudaFullSemanticRolloutCollector = FakeCollector
+        try:
+            chunked = collector.ChunkedCudaRolloutCollector(
+                None, None, rollout_batch_size=2,
+                trajectory_games_per_update=2,
+                record_trajectory=True,
+            )
+            chunked.collect([_job(str(index)) for index in range(4)])
+            self.assertEqual(sum(len(item) for item in FakeCollector.captured), 2)
+            self.assertEqual(len(FakeCollector.captured), 2)
+        finally:
+            collector.CudaFullSemanticRolloutCollector = original
+
+    def test_trajectory_sampling_is_balanced_across_frequency_units(self) -> None:
+        jobs = [_job(str(index)) for index in range(2048)]
+        selected = collector._trajectory_job_indices(jobs, 512)
+        self.assertEqual(len(selected), 512)
+        self.assertEqual(
+            [sum(start <= index < start + 256 for index in selected)
+             for start in range(0, 2048, 256)],
+            [64] * 8,
+        )
+        self.assertEqual(selected, collector._trajectory_job_indices(jobs, 512))
+
 
 if __name__ == "__main__":
     unittest.main()

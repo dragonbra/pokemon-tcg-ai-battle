@@ -73,8 +73,12 @@ Forced/macro 内部 callback 不产生 Value 样本，不进入 policy loss、en
 
 ```text
 delta_t = accumulated_reward_t + accumulated_discount_t * next_value_t - value_t
-A_t = delta_t + accumulated_discount_t * lambda * A_(t+1)
+lambda_t = 1                         if next strategic action is in the same turn
+           configured GAE lambda     if the transition crosses a real turn boundary
+A_t = delta_t + accumulated_discount_t * lambda_t * A_(t+1)
 ```
+
+`credit_clock=turn` 与 0037 合同一致。V8 曾错误地在每个 strategic action 之间应用 `lambda=0.95`，使 return standard deviation 从约 0.90 人为压到 0.65，并制造异常偏低的 Value loss；该路径已由固定 same-turn trace 回归测试封死。
 
 terminal 时 `next_value=0`。entropy/KL/clip 的分母仅为 valid strategic transition；因此不可与 V5 历史曲线直接横向比较。
 
@@ -95,6 +99,8 @@ rollout 配置不再假设固定 512 局或固定 decision 数。`engine_backend
 V4 使用 `accelerated:cuda_resident`：兼容规则 blob 与 CUDA state machine 驻留 GPU，Agent 仍执行同一 0038 DecisionGate、hierarchical Phantom allocation 和 primitive-select 合同。CUDA collector 只把真实 decision boundary 写入 `PolicyTrajectory`；公开奖赏数和状态位等 allocation 条件特征随 macro action 保存，用于精确重放 joint old-logprob，不引入隐藏字段。任何 actor、目标、计数、chance 或 transaction 漂移都标记 invalid/fallback 并排除 PPO。
 
 扩容有两种显式模式：`fixed_epochs` 会随样本增加 optimizer steps；默认优先 `fixed_optimizer_budget`，固定每 update optimizer steps，通过 effective minibatch、累积或抽样吸收更多 rollout。切换模式必须由用户确认，不能连带静默改变 LR、epochs、effective batch 或 advantage normalization 范围。
+
+V9 的 `fixed_optimizer_budget` 每 update 仍执行全部 2,048 场 stochastic game，但不再为不会进入该 update 固定优化预算的全部对局缓存大块 feature。每个 256-slot frequency unit 用版本化 SHA-256 priority 确定性抽取 64 局，八个 unit 共保留 512 条完整 EpisodeTrajectory；其余对局仍用于真实环境结果、循环/截断与吞吐统计。约 44k valid strategic transitions 足够固定的 `32 × 1024` optimizer budget。`fixed_epochs` 强制保存全部 rollout trajectory，不能使用此抽样。该上限将 update-1 实测 staged payload 从 8.94 GB 降到 2.286 GB，进程 peak RSS 从 16.24 GB 降到 5.81 GB；manifest/checkpoint 必须记录抽样合同、rollout games、trajectory games、valid transitions 和 optimizer samples。
 
 指标分三档：每 update 只聚合已有 forward 的低成本 scalar 与七阶段 wall time；Frozen point 从已有 2,048 局逐局结果离线聚合；梯度范数/cosine、allocation margin 和详细 calibration 只在固定小 minibatch 的 update 0/5/10/之后每 10 次运行。exhaustive parity、hidden leakage、RNG/state A/B 和 fault injection 仅在测试/CI。
 
@@ -118,4 +124,8 @@ CUDA resident Action Boundary、吞吐 benchmark 与真实 CUDA rollout→PPO re
 
 防挂死截断合同从 `V8_repeat_guard_turn_limit_cuda_fresh_rl` 开始作为新正式语义。`RolloutJob.full_round_draw_limit=50` 是 CPU/official wrapper 与 CUDA resident scheduler 的单一来源；CUDA 在 official turn index 99 进入 scheduler-owned terminal draw。这不是官方胜利条件，而是项目截断语义。截断局保留为有效 Episode，无 winner、reward 0；PolicyTrajectory 将累计 reward 0 归入最后真实决策，设 `done=true` 与 `next_value=0`，并在 Episode diagnostics/W&B update scalar 中分别保留 `turn_limit_draw` 和 `rollout/cuda_turn_limit_draws`。resident batch 混用不同 limit 或 limit 为负数时 fail closed。
 
-V7 在首批 stochastic rollout 暴露了 Mega Venusaur/Meganium 的重复 Ability 链：repeat guard 虽然按 actor 累计，但 key 包含会随 legal-option 排列变化的 option index，导致同一 Ability 被拆成多个计数，最终进入 mandatory-empty mask error。V7 在 PPO update 前 fail closed，只保留 update-0 baseline `1094-954-0`（53.42%）。V8 的 repeat key 使用 actor 分区与稳定 semantic identity（selection kind、option type、source card/context/effect/serial），排除 option index 和目标排列；同一 actor 第 20 次选择同一 Ability 时直接判该 actor 负。exact failure seed 已验证为 turn 15 `repeat_forfeit`，512-game stochastic 回放为 512 valid、0 error、69 repeat forfeits。
+V7 在首批 stochastic rollout 暴露了 Mega Venusaur/Meganium 的重复 Ability 链：repeat guard 虽然按 actor 累计，但 key 包含会随 legal-option 排列变化的 option index，导致同一 Ability 被拆成多个计数，最终进入 mandatory-empty mask error。V7 在 PPO update 前 fail closed，只保留 update-0 baseline `1094-954-0`（53.42%）。
+
+V8 将 key 改为 stable semantic identity，却错误地跨整局累计相同 Ability。它在 canonical 2,048 update-0 触发 242 次判负，只得到 `1005-1043-0`（49.07%）；随后完成一次 PPO update，但该版本因 Zero-Shot parity 失败及 8.94 GB trajectory/16.24 GB RSS 内存失控而判为无效，不得续训或作为收益证据。
+
+V9 的 repeat guard 仍按 actor 和 stable identity 识别同一 Ability、忽略 option index/目标排列，但在 official turn 变化时清空计数：只惩罚同一回合内 20 次无进展循环，正常跨回合 Ability 使用不会累计。canonical 2,048 A/B 中，legacy sequential 从错误 guard 的 `1003-1045` 恢复为 `1178-870`（57.52%，13 forfeits）；forced-only wrapper 与 legacy 完全同记录，完整 Phantom macro 为 `1162-886`（56.74%，12 forfeits），与旧 007 `1174-874`（57.32%）差 0.58pp。新正式版本为 `V9_turn_scoped_guard_bounded_trajectory_fresh_rl`，必须重新从公共 PPO-update-0 初始化。

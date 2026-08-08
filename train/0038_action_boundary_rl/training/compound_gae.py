@@ -18,11 +18,22 @@ class CompoundTargets:
     value_mask: Tensor
 
 
-def compound_gae(transitions: list[PolicyTransition], *, gae_lambda: float) -> CompoundTargets:
+def compound_gae(
+    transitions: list[PolicyTransition], *, gae_lambda: float,
+    credit_clock: str = "selection",
+) -> CompoundTargets:
     if not transitions:
         raise ValueError("compound GAE requires at least one transition")
     if not 0.0 < gae_lambda <= 1.0:
         raise ValueError("gae_lambda must be in (0, 1]")
+    if credit_clock not in {"selection", "turn"}:
+        raise ValueError(f"unsupported credit clock: {credit_clock}")
+    turns = [item.metadata.get("turn") for item in transitions]
+    if credit_clock == "turn" and any(
+        isinstance(turn, bool) or not isinstance(turn, int) or turn < 0
+        for turn in turns
+    ):
+        raise ValueError("turn clock requires nonnegative transition turn metadata")
     advantages = [0.0] * len(transitions)
     continuation = 0.0
     for index in range(len(transitions) - 1, -1, -1):
@@ -33,10 +44,20 @@ def compound_gae(transitions: list[PolicyTransition], *, gae_lambda: float) -> C
             + transition.accumulated_discount * bootstrap
             - transition.pre_action_value
         )
-        advantages[index] = delta + (
-            0.0 if transition.done else
-            transition.accumulated_discount * gae_lambda * continuation
-        )
+        if transition.done:
+            continuation_weight = 0.0
+        else:
+            lambda_weight = (
+                gae_lambda
+                if (
+                    credit_clock == "selection"
+                    or index + 1 == len(transitions)
+                    or turns[index] != turns[index + 1]
+                )
+                else 1.0
+            )
+            continuation_weight = transition.accumulated_discount * lambda_weight
+        advantages[index] = delta + continuation_weight * continuation
         continuation = advantages[index]
     advantage = torch.tensor(advantages, dtype=torch.float32)
     values = torch.tensor([item.pre_action_value for item in transitions], dtype=torch.float32)

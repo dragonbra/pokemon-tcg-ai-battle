@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 import sys
 import time
@@ -83,6 +84,34 @@ def _termination_status(
     return "terminal"
 
 
+def _trajectory_job_indices(
+    jobs: list[RolloutJob], budget: int | None
+) -> frozenset[int]:
+    """Uniform deterministic episode sample, stratified over 256-game units."""
+
+    if budget is None or budget >= len(jobs):
+        return frozenset(range(len(jobs)))
+    if budget < 0:
+        raise ValueError("trajectory game budget cannot be negative")
+    units = [range(start, min(start + 256, len(jobs))) for start in range(0, len(jobs), 256)]
+    base, remainder = divmod(budget, len(units))
+    selected: set[int] = set()
+    for unit_index, unit in enumerate(units):
+        quota = base + int(unit_index < remainder)
+        if quota > len(unit):
+            raise ValueError("trajectory budget cannot be stratified over rollout units")
+        ranked = sorted(
+            unit,
+            key=lambda index: hashlib.sha256(
+                f"{jobs[index].source_policy_update}:{jobs[index].game_id}".encode()
+            ).digest(),
+        )
+        selected.update(ranked[:quota])
+    if len(selected) != budget:
+        raise RuntimeError("trajectory sampling did not produce the configured budget")
+    return frozenset(selected)
+
+
 class CudaFullSemanticRolloutCollector:
     """Collect true strategic boundaries while the official clone stays on GPU."""
 
@@ -101,6 +130,7 @@ class CudaFullSemanticRolloutCollector:
         check_interval: int = 8,
         ability_repeat_limit: int = 20,
         record_trajectory: bool = True,
+        record_job_indices: set[int] | frozenset[int] | None = None,
     ) -> None:
         if device.type != "cuda" or lane_count < 1:
             raise ValueError("0038 CUDA collector requires CUDA and positive lanes")
@@ -126,6 +156,10 @@ class CudaFullSemanticRolloutCollector:
         self.check_interval = int(check_interval)
         self.ability_repeat_limit = int(ability_repeat_limit)
         self.record_trajectory = bool(record_trajectory)
+        self.record_job_indices = (
+            None if record_job_indices is None
+            else frozenset(int(index) for index in record_job_indices)
+        )
         self._metrics: dict[str, float] = {}
 
     def collect(self, jobs: list[RolloutJob]) -> list[EpisodeTrajectory]:
@@ -139,6 +173,10 @@ class CudaFullSemanticRolloutCollector:
             raise ValueError("resident batch must use one behavior-policy update")
         if any(job.action_boundary_mode != "enabled" for job in jobs):
             raise ValueError("0038 CUDA PPO only accepts the enabled action contract")
+        if self.record_job_indices is not None and any(
+            index < 0 or index >= len(jobs) for index in self.record_job_indices
+        ):
+            raise ValueError("trajectory job index is outside the resident batch")
 
         resident_jobs = _resident_jobs(jobs)
         engine_turn_draw_limit = _engine_turn_draw_limit(jobs)
@@ -163,6 +201,14 @@ class CudaFullSemanticRolloutCollector:
         expected = tuple(sorted(self.model.actor.expected_batch_keys))
         staged: list[_Staged] = []
         staged_bytes = 0
+        captured_jobs = torch.ones(
+            len(jobs), dtype=torch.bool, device=self.device
+        ) if self.record_job_indices is None else torch.tensor(
+            [index in self.record_job_indices for index in range(len(jobs))],
+            dtype=torch.bool,
+            device=self.device,
+        )
+        capture_trajectory = self.record_trajectory and bool(captured_jobs.any())
 
         def value_fn(validated: Any, state: Any, options: torch.Tensor) -> dict[str, torch.Tensor]:
             value, auxiliary = self.model.value_and_aux_from_encoded(validated, state, options)
@@ -170,7 +216,9 @@ class CudaFullSemanticRolloutCollector:
 
         def sink(**payload: Any) -> None:
             nonlocal staged_bytes
-            route = payload["focal_route"].bool()
+            route = payload["focal_route"].bool() & captured_jobs.index_select(
+                0, payload["lane_job"].long()
+            )
             rows = route.nonzero(as_tuple=False).flatten()
             semantic = payload["semantic"]
             routed = payload["routed"]
@@ -227,8 +275,8 @@ class CudaFullSemanticRolloutCollector:
             ability_repeat_limit=self.ability_repeat_limit,
             engine_turn_draw_limit=engine_turn_draw_limit,
             focal_greedy=self.mode == "greedy",
-            focal_value_fn=value_fn if self.record_trajectory else None,
-            focal_decision_sink=sink if self.record_trajectory else None,
+            focal_value_fn=value_fn if capture_trajectory else None,
+            focal_decision_sink=sink if capture_trajectory else None,
             compact_prefixes=True,
             action_adapter=boundary,
         )
@@ -354,12 +402,11 @@ class CudaFullSemanticRolloutCollector:
                         "cuda_resident": True,
                     },
                 ))
+            episode.decisions.clear()
 
         adapter_metrics = result.action_adapter_metrics
-        focal_decisions = (
-            sum(len(episode.decisions) for episode in episodes)
-            if self.record_trajectory else int(adapter_metrics.get("strategic_decisions", 0))
-        )
+        focal_decisions = int(adapter_metrics.get("strategic_decisions", 0))
+        stored_decisions = sum(len(episode.policy_transitions) for episode in episodes)
         total_seconds = hot_seconds + materialize_seconds
         self._metrics = {
             "rollout/inference_batches": float(result.decisions),
@@ -378,6 +425,10 @@ class CudaFullSemanticRolloutCollector:
             "rollout/cuda_repeat_forfeits": float(len(forfeits)),
             "rollout/cuda_turn_limit_draws": float(len(turn_limit_draws)),
             "rollout/cuda_staged_trajectory_bytes": float(staged_bytes),
+            "rollout/cuda_trajectory_games": float(sum(
+                bool(episode.policy_transitions) for episode in episodes
+            )),
+            "rollout/cuda_stored_policy_transitions": float(stored_decisions),
             "rollout/cuda_peak_allocated_bytes": float(hot_allocated),
             "rollout/cuda_peak_reserved_bytes": float(hot_reserved),
             "rollout/forced_shortcuts": float(adapter_metrics.get("forced_shortcuts", 0)),
@@ -398,23 +449,47 @@ class ChunkedCudaRolloutCollector:
     """Bound trajectory staging memory without changing the rollout contract."""
 
     def __init__(self, model: nn.Module, opponent: nn.Module, *, rollout_batch_size: int,
+                 trajectory_games_per_update: int | None = None,
                  **collector_kwargs: Any) -> None:
         if rollout_batch_size < 1:
             raise ValueError("rollout_batch_size must be positive")
         self.model = model
         self.opponent = opponent
         self.rollout_batch_size = int(rollout_batch_size)
+        self.trajectory_games_per_update = (
+            None if trajectory_games_per_update is None
+            else int(trajectory_games_per_update)
+        )
         self.collector_kwargs = collector_kwargs
         self._metrics: dict[str, float] = {}
 
     def collect(self, jobs: list[RolloutJob]) -> list[EpisodeTrajectory]:
+        if (
+            self.trajectory_games_per_update is not None
+            and not 0 <= self.trajectory_games_per_update <= len(jobs)
+        ):
+            raise ValueError("trajectory game budget must fit inside the rollout")
         episodes: list[EpisodeTrajectory] = []
         chunks: list[dict[str, float]] = []
+        selected_jobs = _trajectory_job_indices(
+            jobs,
+            self.trajectory_games_per_update
+            if self.collector_kwargs.get("record_trajectory", True)
+            else 0,
+        )
         started = time.perf_counter()
         for begin in range(0, len(jobs), self.rollout_batch_size):
             chunk_started = time.perf_counter()
+            kwargs = dict(self.collector_kwargs)
+            if kwargs.get("record_trajectory", True) and self.trajectory_games_per_update is not None:
+                stop = min(begin + self.rollout_batch_size, len(jobs))
+                kwargs["record_job_indices"] = {
+                    global_index - begin
+                    for global_index in range(begin, stop)
+                    if global_index in selected_jobs
+                }
             collector = CudaFullSemanticRolloutCollector(
-                self.model, self.opponent, **self.collector_kwargs
+                self.model, self.opponent, **kwargs
             )
             episodes.extend(collector.collect(jobs[begin : begin + self.rollout_batch_size]))
             chunks.append(collector.metrics())
@@ -434,7 +509,8 @@ class ChunkedCudaRolloutCollector:
             "rollout/cuda_hot_loop_seconds", "rollout/cuda_materialize_seconds",
             "rollout/cuda_refill_events", "rollout/cuda_repeat_forfeits",
             "rollout/cuda_turn_limit_draws",
-            "rollout/cuda_staged_trajectory_bytes", "rollout/forced_shortcuts",
+            "rollout/cuda_staged_trajectory_bytes", "rollout/cuda_trajectory_games",
+            "rollout/cuda_stored_policy_transitions", "rollout/forced_shortcuts",
             "rollout/macro_actions", "rollout/macro_callbacks", "rollout/invalid_macros",
         }
         maxima = {
@@ -463,4 +539,7 @@ class ChunkedCudaRolloutCollector:
         return dict(self._metrics)
 
 
-__all__ = ["ChunkedCudaRolloutCollector", "CudaFullSemanticRolloutCollector"]
+__all__ = [
+    "ChunkedCudaRolloutCollector", "CudaFullSemanticRolloutCollector",
+    "_trajectory_job_indices",
+]

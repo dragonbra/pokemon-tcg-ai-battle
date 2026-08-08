@@ -47,12 +47,20 @@ class DeviceRepeatForfeitGuardTest(unittest.TestCase):
 
         self.assertFalse(guard.observe(**_decision(serial=8, turn=4)).item())
 
-    def test_same_ability_accumulates_across_turns(self) -> None:
+    def test_same_ability_does_not_accumulate_across_turns(self) -> None:
         guard = DeviceRepeatForfeitGuard(batch_size=1, limit=20, device="cpu")
         for turn in range(4, 23):
             self.assertFalse(guard.observe(**_decision(serial=7, turn=turn)).item())
 
-        self.assertTrue(guard.observe(**_decision(serial=7, turn=23)).item())
+        self.assertFalse(guard.observe(**_decision(serial=7, turn=23)).item())
+
+    def test_new_turn_resets_an_incomplete_same_turn_loop(self) -> None:
+        guard = DeviceRepeatForfeitGuard(batch_size=1, limit=3, device="cpu")
+        self.assertFalse(guard.observe(**_decision(turn=4)).item())
+        self.assertFalse(guard.observe(**_decision(turn=4)).item())
+        self.assertFalse(guard.observe(**_decision(turn=5)).item())
+        self.assertFalse(guard.observe(**_decision(turn=5)).item())
+        self.assertTrue(guard.observe(**_decision(turn=5)).item())
 
     def test_each_actor_keeps_its_count_when_the_other_actor_selects(self) -> None:
         guard = DeviceRepeatForfeitGuard(batch_size=1, limit=20, device="cpu")

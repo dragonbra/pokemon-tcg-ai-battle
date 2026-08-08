@@ -7,7 +7,7 @@ CUDA 接入完成后，请基于 `0038_action_boundary_rl` 启动今晚的正式
 实验命名：
 
 ```text
-V8_repeat_guard_turn_limit_cuda_fresh_rl
+V9_turn_scoped_guard_bounded_trajectory_fresh_rl
 ```
 
 必须从公共起点开始：
@@ -181,9 +181,9 @@ checkpoint_every = 1
 
 要求：
 
-- 每个 update 使用新采集的完整 on-policy trajectory。
+- 每个 update 只使用本次新采集、未跨 update 复用的 on-policy EpisodeTrajectory；进入 PPO 的每局 trajectory 必须完整到 terminal。
 - old logprob、old value、GAE 和 return 在 rollout 后冻结。
-- rollout 增大后，从完整样本池均匀采样 optimizer minibatch。
+- fixed optimizer budget 下先按下述分层规则形成有界 on-policy EpisodeTrajectory 池，再从该池均匀采样 optimizer minibatch；不得只取 rollout 前缀。
 - 不因为 rollout 变大而隐式增加 optimizer step 数量。
 - 不硬编码旧的 512 games/update 假设。
 
@@ -393,4 +393,4 @@ CUDA 接入及 smoke 通过后，请先输出一份简短 launch manifest：
 - 正式启动命令；
 - 预估 games/hour；正式 run 的完成时间由用户手动停止决定。
 
-用户已确认启动 `V8_repeat_guard_turn_limit_cuda_fresh_rl`。V8 继承 canonical Frozen/rollout 合同，将 50 个完整回合显式映射为 CUDA engine turn index 99 的 scheduler-owned terminal draw：`reward=0`、`done=true`、`next_value=0`。同一 actor 第 20 次重复同一 Ability 时直接判该 actor 负；repeat key 只使用稳定 Ability 身份，不包含会随 legal-option 排列变化的 option index。这些规则是项目防挂死合同，不是官方宝可梦 TCG 胜利条件。V4–V7 均保留为不可续写的审计记录；V7 只有 canonical update-0 baseline，没有 PPO update。
+用户已确认修复后启动 `V9_turn_scoped_guard_bounded_trajectory_fresh_rl`。V9 继承 canonical Frozen/rollout 合同，将 50 个完整回合映射为 CUDA engine turn index 99 的 scheduler-owned terminal draw：`reward=0`、`done=true`、`next_value=0`。repeat key 使用 actor + stable Ability identity，不包含 option index/目标排列；只在同一 official turn 内累计，第 20 次判 acting player 负，turn 变化必须重置。`credit_clock=turn` 下同回合 strategic action 的 lambda 为 1，只有跨真实 turn 才应用配置 lambda。fixed optimizer budget 仍完整 rollout 2,048 场并记录全部 outcome；为限制 host RAM，只从每个 256-slot frequency unit 确定性均匀抽取 64 局，合计保留 512 条完整 EpisodeTrajectory 供 PPO 使用，其余对局不缓存高维 feature。采样规则和实际 retained transitions 都写入 manifest/metrics；这不是保留前两个 unit，也不会改变 2,048 局 rollout 的 opponent/先后手分布。V8 因跨整局 repeat 累计、Zero-Shot parity 失败和 host-memory 失控而不可续写；V4–V8 均保留审计记录。

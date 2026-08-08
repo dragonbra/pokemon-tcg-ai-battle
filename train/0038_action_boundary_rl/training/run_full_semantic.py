@@ -52,7 +52,7 @@ from ..integrated.presets import PRESETS, preset
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V8_repeat_guard_turn_limit_cuda_fresh_rl"
+FORMAL_VERSION = "V9_turn_scoped_guard_bounded_trajectory_fresh_rl"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -82,6 +82,7 @@ class RunConfig:
     engine_backend: str = "accelerated:cuda_resident"
     cuda_lane_count: int = 256
     rollout_batch_size: int = 512
+    trajectory_games_per_update: int = 512
     inference_batch_size: int = 64
     max_inflight_requests: int = 256
     rollout_queue_depth: int = 512
@@ -130,6 +131,15 @@ class RunConfig:
                self.optimizer_steps_per_update, self.ppo_gradient_accumulation,
                self.cuda_lane_count, self.rollout_batch_size) < 1:
             raise ValueError("capacity settings must be positive")
+        if not 1 <= self.trajectory_games_per_update <= self.games_per_update:
+            raise ValueError(
+                "trajectory_games_per_update must fit inside the rollout"
+            )
+        if (
+            self.optimization_mode == "fixed_epochs"
+            and self.trajectory_games_per_update != self.games_per_update
+        ):
+            raise ValueError("fixed_epochs must retain every rollout trajectory")
         if (self.ppo.batch_size != self.ppo_minibatch_size
                 or self.ppo.epochs != self.ppo_epochs
                 or self.ppo.gradient_accumulation != self.ppo_gradient_accumulation
@@ -271,6 +281,9 @@ def build_collector(model, opponent, config: RunConfig, *, mode: str,
             model,
             opponent,
             rollout_batch_size=config.rollout_batch_size,
+            trajectory_games_per_update=(
+                config.trajectory_games_per_update if record_trajectory else None
+            ),
             device=torch.device(config.device),
             rules_path=CUDA_RULES,
             extension_dir=CUDA_EXTENSION,
@@ -392,10 +405,16 @@ def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
         f"{prefix}/win_rate": wins / games,
         f"{prefix}/first_win_rate": sum(ep.reward == 1.0 for ep in first) / len(first),
         f"{prefix}/second_win_rate": sum(ep.reward == 1.0 for ep in second) / len(second),
-        f"{prefix}/decisions": float(sum(len(ep.decisions) for ep in episodes)),
+        f"{prefix}/decisions": float(sum(
+            int(ep.diagnostics.get("strategic_decisions", len(ep.decisions)))
+            for ep in episodes
+        )),
         f"{prefix}/policy_transitions": float(
             sum(len(ep.policy_transitions) for ep in episodes)
         ),
+        f"{prefix}/trajectory_episodes": float(sum(
+            bool(ep.policy_transitions) for ep in episodes
+        )),
         f"{prefix}/engine_selections": float(
             sum(int(ep.diagnostics.get("engine_selections", 0)) for ep in episodes)
         ),
@@ -775,6 +794,8 @@ def run(config: RunConfig) -> dict[str, Any]:
             "unique_engine_seeds": config.games_per_update,
             "exact_environment_slot_counts_per_unit": True,
             "seat_balanced_per_unit": True,
+            "trajectory_games_per_update": config.trajectory_games_per_update,
+            "trajectory_sampling": "uniform deterministic episodes; stratified across every 256-slot unit",
         },
         "frozen_evaluation_contract": {
             "contract_id": CANONICAL_CONTRACT_ID,
@@ -849,12 +870,13 @@ def run(config: RunConfig) -> dict[str, Any]:
         "termination_contract": {
             "ability_repeat_limit": 20,
             "ability_repeat_action": "opponent_win",
-            "ability_repeat_key_version": "stable_semantic_identity_v2",
+            "ability_repeat_key_version": "turn_scoped_stable_semantic_identity_v3",
             "ability_repeat_key_fields": [
                 "actor", "selection_kind", "option_type", "source_card",
                 "context_card", "effect_card", "source_serial",
             ],
             "ability_repeat_key_excludes": ["option_index", "target_order"],
+            "ability_repeat_counter_reset": "official_turn_change",
             "full_round_draw_limit": DEFAULT_FULL_ROUND_DRAW_LIMIT,
             "engine_turn_limit": 2 * DEFAULT_FULL_ROUND_DRAW_LIMIT - 1,
             "turn_limit_result": "terminal_draw_reward_zero",
@@ -1186,6 +1208,7 @@ def main() -> int:
     )
     parser.add_argument("--cuda-lane-count", type=int, default=256)
     parser.add_argument("--rollout-batch-size", type=int, default=512)
+    parser.add_argument("--trajectory-games-per-update", type=int, default=512)
     parser.add_argument("--ppo-minibatch-size", type=int, default=1024)
     parser.add_argument("--ppo-gradient-accumulation", type=int, default=1)
     parser.add_argument("--ppo-epochs", type=int, default=4)
@@ -1238,6 +1261,7 @@ def main() -> int:
             engine_backend=args.engine_backend,
             cuda_lane_count=args.cuda_lane_count,
             rollout_batch_size=args.rollout_batch_size,
+            trajectory_games_per_update=args.trajectory_games_per_update,
             ppo_minibatch_size=args.ppo_minibatch_size,
             ppo_gradient_accumulation=args.ppo_gradient_accumulation,
             ppo_epochs=args.ppo_epochs,

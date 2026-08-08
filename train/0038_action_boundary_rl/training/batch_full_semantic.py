@@ -110,6 +110,7 @@ def prepare_episodes(
     valid = [
         episode for episode in episodes
         if episode.valid and episode.reward is not None
+        and (episode.policy_transitions or episode.decisions)
         and (
             not episode.policy_transitions
             or all(transition.valid for transition in episode.policy_transitions)
@@ -162,11 +163,17 @@ def prepare_episodes(
             continue
         if use_compound:
             records = episode.policy_transitions
-            targets = compound_gae(records, gae_lambda=gae_lambda)
+            targets = compound_gae(
+                records, gae_lambda=gae_lambda, credit_clock=credit_clock
+            )
             ep_advantages = targets.advantages.tolist()
             ep_returns = targets.returns.tolist()
             record_turns = [item.metadata.get("turn") for item in records]
-            ep_boundaries = max(0, len(records) - 1)
+            ep_boundaries = sum(
+                1
+                for left, right in zip(record_turns, record_turns[1:])
+                if credit_clock == "selection" or left != right
+            )
             first_credit = gae_lambda**ep_boundaries
             prize_prediction = torch.tensor([
                 float(item.metadata.get("pre_action_prize_value", 0.0)) for item in records

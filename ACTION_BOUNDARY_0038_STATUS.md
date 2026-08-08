@@ -2,7 +2,7 @@
 
 日期：2026-08-09
 
-0038 第一版、CUDA 接入、50 完整回合截断与稳定 Ability 重复判负已适配。V7 在首批 stochastic rollout 发现 repeat key 包含 option index 导致计数拆分，于 PPO update 前 fail closed；exact seed 修复与 512-game stochastic 回放均已通过。用户已授权从新版本 V8 重新启动。
+0038 第一版、CUDA 接入与 50 完整回合截断已适配。V8 暴露两项启动阻塞：repeat guard 跨整局累计正常 Ability，破坏 Zero-Shot parity；完整 2,048 局 feature trajectory 占用 8.94 GB、进程 RSS 达 16.24 GB。V8 已停止并判为无效实验。
 
 - 未修改官方 `engine/source/`、ABI、observation schema 或 `select` 返回协议。
 - 使用 Zero-Shot Policy-0806 与 pre-RL Value 初始化；未加载 V5/RL-updated 权重。
@@ -11,10 +11,16 @@
 - allocation head 使用 1,024 场 official game、3,134 条 Zero-Shot teacher 标签完成 BC warm start。
 - 公共 update-0 为 `V3_update0_chance_boundary_fallback`，PPO updates = 0。
 - 历史 V3 均匀面板结果 `1308-739-1` 仅作旧证据，不再作为全局 Frozen 可比基线。
-- 124/124 unit/property tests 通过；短 INTEGRATED PPO smoke 通过。
+- Value Network 确认加载 0036 V2 epoch-5 pre-RL 权重（SHA-256 `e88b2f...e36360`）；V8 的异常低 Value loss 来自 compound GAE 错误按 action 而非 turn 应用 lambda，现已修正。
+- repeat guard 现在只累计同一 actor、同一 official turn 内的 stable Ability identity；跨回合自动重置。
+- canonical 2,048 A/B：legacy sequential `1178-870`（57.52%）；forced-only 完全一致；完整 macro `1162-886`（56.74%），旧 007 为 57.32%。
+- 2,048-game stochastic + GAE + 32-step PPO smoke 通过：512 trajectory games、44,052 valid transitions、Value loss 0.520、return std 0.896、EV 0.300、behavior logprob MAE `6.2e-6`。
+- 内存 smoke：staged trajectory 2.286 GB，peak RSS 5.81 GB；旧 V8 分别为 8.94 GB/16.24 GB。
+- 2,048 局仍全部真实运行；固定优化预算从八个 256-slot 单元中各确定性抽取 64 局，合计保留 512 条完整 EpisodeTrajectory，其余只保留轻量 outcome，不会偏取前两个 unit。
 - rollout 数量、backend、并行度、inference batch 和 PPO optimizer budget 已配置化；默认扩容模式为 `fixed_optimizer_budget`。
 - V4 在首个 PPO update 前 fail closed，没有产生 update-1 model checkpoint；失败原因是使用了均匀 opponent 面板且 sparse-diagnostic predicate 未导入。
 - `V6_canonical_frozen_cuda_fresh_rl` 已应用户要求在首个 rollout 期间人工中止，等待 50 回合终止合同完成。它只保留 canonical update-0 baseline（1162/2048，56.74%），`checkpoint_update=0`，没有任何 PPO update。下一次启动必须使用新的严格递增版本，不得续写 V6。rollout 每 256 局精确复现环境 opponent 频率；update-0 与每 5 updates 严格复用全局 `frozen_0806_seeded_2048_v2`（seed `341512806`、007 schedule SHA `98b58b...ce9`）。
-- V7 只保留 update-0 baseline `1094-954-0`（53.42%），`checkpoint_update=0`，没有 PPO update，不得续写。修复后 Mega Venusaur/Meganium exact job 在 turn 15 正确变为 `repeat_forfeit`；首个 512-game stochastic shard 回放为 512 valid、0 error、69 repeat forfeits。0 turn-limit draws。新正式版本为 `V8_repeat_guard_turn_limit_cuda_fresh_rl`。
+- V7 只保留 update-0 baseline `1094-954-0`（53.42%），没有 PPO update。V8 update-0 为错误 guard 下的 `1005-1043-0`（49.07%），虽产生 update-1 checkpoint，但因 parity/内存失败不得续写或比较。
+- 新正式版本为 `V9_turn_scoped_guard_bounded_trajectory_fresh_rl`；仍从公共 V3 PPO-update-0 起步，重新初始化 optimizer/RNG/buffer。
 
 详细设计见 [`experiments/0038_action_boundary_rl/DESIGN.md`](experiments/0038_action_boundary_rl/DESIGN.md)，update-0 评估见 [`V3 report`](experiments/0038_action_boundary_rl/evaluation/V3_update0_chance_boundary_fallback.html)。
