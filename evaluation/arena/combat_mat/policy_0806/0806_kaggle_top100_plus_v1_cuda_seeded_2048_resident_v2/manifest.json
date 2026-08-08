@@ -375,7 +375,7 @@
       ],
       "refill_events": 162,
       "report": "reports/001_marnie_s_grimmsnarl_ex_froslass.html",
-      "report_sha256": "d892ace46cacc3ea0cb404e6bc6d23c0d756127fefb20bcf6a4572dc58a5262e",
+      "report_sha256": "34464f01d525e473bf30729f997c2139b41bd0fcc5cdc5b06367c7d8a7e2b387",
       "representative_cards": [
         {
           "card_id": 648,
@@ -398,6 +398,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "1fac897221d36327e2b2ec50d23873ff12560da0621a9bb1d653345db4839d4c",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 104.02804533199924,
       "win_rate": 0.5478515625,
       "wins": 1122
@@ -773,7 +775,7 @@
       ],
       "refill_events": 137,
       "report": "reports/002_alakazam_dudunsparce.html",
-      "report_sha256": "149f3145917ea3450905d6b1cfbfe08abce282cb4f4f2f8cf4af5e4967bac059",
+      "report_sha256": "c2daa719e344865b2cb46f00386f33ea382e110589684671d5c6f853dd1e5289",
       "representative_cards": [
         {
           "card_id": 743,
@@ -796,6 +798,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "dab38ee328eaa0e35dad303c1dd97c610066a780b3feababe7f6f3a781417424",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 93.18544781300079,
       "win_rate": 0.6015625,
       "wins": 1232
@@ -1172,7 +1176,7 @@
       ],
       "refill_events": 156,
       "report": "reports/003_mega_lopunny_ex_mega_froslass_ex.html",
-      "report_sha256": "4eb9675221839b8ca1e4ada295b8be9c4c123e04d21af010021ea0a6147eb2a9",
+      "report_sha256": "7c3e9d625e480b7e9c2774b26980f5577a72dfb9ea285af1d49d799a1ad1c739",
       "representative_cards": [
         {
           "card_id": 849,
@@ -1195,6 +1199,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "9a77d086a8aee4939598b86338bc32512c790f41f265642c1a6ffa13e612ddd8",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 196.08194734300014,
       "win_rate": 0.607421875,
       "wins": 1244
@@ -1575,7 +1581,7 @@
       ],
       "refill_events": 158,
       "report": "reports/004_mega_lopunny_ex_mega_froslass_ex.html",
-      "report_sha256": "35c5bd3cdf4dbc095c04685fdfd4811441e4e72d4b275904e1c82e1a4966b74f",
+      "report_sha256": "1b0cbc32c78950e9b9280f10b8f6a331e56f2b1a2c8346665879f41d87a13778",
       "representative_cards": [
         {
           "card_id": 849,
@@ -1593,6 +1599,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "10a32c0d8c993b25cd20bb8a06c6e3ad627a7147e20143cc173bc07da5f98bc4",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 105.15495457399993,
       "win_rate": 0.61669921875,
       "wins": 1263
@@ -1960,7 +1968,7 @@
       ],
       "refill_events": 158,
       "report": "reports/005_marnie_s_grimmsnarl_ex_froslass.html",
-      "report_sha256": "045043154ed9289faa65e7c2bd7800a9a9e00100754f0438b64b70b724e23f43",
+      "report_sha256": "3bc05b24cf965027e40ccdf6281810cfa0ae40d4b8eda01263c868540ee83fbb",
       "representative_cards": [
         {
           "card_id": 648,
@@ -1983,6 +1991,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "325e231a0b3f82e45b2f6eeebb81973458d34157aca3fb3aea6e1b0c1f453f59",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 101.82537000100092,
       "win_rate": 0.46630859375,
       "wins": 955
@@ -2349,7 +2359,7 @@
       ],
       "refill_events": 123,
       "report": "reports/006_teal_mask_ogerpon_ex_hero_s_cape.html",
-      "report_sha256": "323776e6bd0fbb75131ec4e492d71587c10d4166041bdbcf4b498b1f8d973167",
+      "report_sha256": "c921ecff8f673c5dd50d488125a2ca59839d83242c20f05dae3b03b8fcce1860",
       "representative_cards": [
         {
           "card_id": 96,
@@ -2372,6 +2382,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "476369b17e00e9ed77e0b3e0c4fb9a10c732b3ad51767b46e8640ff011632bc2",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 79.86774900799901,
       "win_rate": 0.4765625,
       "wins": 976
@@ -2748,7 +2760,7 @@
       ],
       "refill_events": 167,
       "report": "reports/007_dragapult_ex.html",
-      "report_sha256": "22b9d64c58d1e06d2868b2dedc9c67b232dd44bf185d9772eeb93aa146fc6caa",
+      "report_sha256": "11f29ee5aa7853c98d8f88155f03840b36aea84cf64d7369952e98d1871bb2d3",
       "representative_cards": [
         {
           "card_id": 121,
@@ -2766,6 +2778,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "26cc88c4c17c1627a5855bef2b83392eb391579d91e5cfaf60195659c8f90074",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 94.14690058199994,
       "win_rate": 0.5732421875,
       "wins": 1174
@@ -3141,7 +3155,7 @@
       ],
       "refill_events": 133,
       "report": "reports/008_teal_mask_ogerpon_ex_hero_s_cape.html",
-      "report_sha256": "69021e8fad82f3a670327f2e2be8dbb454754b9c375eae9e461b36e64b91d6cc",
+      "report_sha256": "606b0a4069f6ba9377c9d7febcc14c1ffe8fb9320801efc47e81da8999b05691",
       "representative_cards": [
         {
           "card_id": 96,
@@ -3164,6 +3178,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "cebc7c48a6811c7a04453970ea169b3ae1218119b1dec39d60c96c68a8b16a14",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 83.64093743100057,
       "win_rate": 0.47509765625,
       "wins": 973
@@ -3540,7 +3556,7 @@
       ],
       "refill_events": 131,
       "report": "reports/009_mega_lucario_ex_solrock.html",
-      "report_sha256": "b826732e3961c83fab9af0deb242655cb896260c9981d150aef23b8793820bc0",
+      "report_sha256": "292aa4e1da4eaccd4a2b4d234b9da3bb4acf060f05a3126fecc8b0316c4b5695",
       "representative_cards": [
         {
           "card_id": 678,
@@ -3563,6 +3579,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "ba5df71a8e08eaf4cba1b7d432ffad46677d2c2e2e8f393a31e0989f4f8d13a2",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 76.42043697199915,
       "win_rate": 0.55810546875,
       "wins": 1143
@@ -3930,7 +3948,7 @@
       ],
       "refill_events": 139,
       "report": "reports/010_festival_lead_dipplin.html",
-      "report_sha256": "bf53f1d2540d6d21dbd345120094b29b721529ba04abace0959176079e90707b",
+      "report_sha256": "22baf23295024610bab50a376ed0dfaec9471e07763265619fd1d76b0bf9e1d4",
       "representative_cards": [
         {
           "card_id": 93,
@@ -3948,6 +3966,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "17af3c130c30bafbbb49028a4f25c39b7e2708e820167db9255e3e36a5610b8a",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 86.86353907000012,
       "win_rate": 0.5390625,
       "wins": 1104
@@ -4324,7 +4344,7 @@
       ],
       "refill_events": 126,
       "report": "reports/011_mega_kangaskhan_ex_crustle.html",
-      "report_sha256": "f9bcfafbaad8b2d56ce16c244f07774159a40a8507c739535e561ea250fdf3f3",
+      "report_sha256": "347220be45f591ec731a9fc0aae7efc0747d4c62b06a62dd310d5fd018de7c29",
       "representative_cards": [
         {
           "card_id": 756,
@@ -4347,6 +4367,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "86bff7b6031eb58c62c9d9c1e7831b59a7381bf3504c5d81ed802742f309dbbb",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 79.84518728600051,
       "win_rate": 0.43798828125,
       "wins": 897
@@ -4728,7 +4750,7 @@
       ],
       "refill_events": 155,
       "report": "reports/012_mega_lopunny_ex_mega_froslass_ex.html",
-      "report_sha256": "b7ff36156fb1dbd49212e44cba47d2d7e73318a546a7451dcb2e3ddd68a3e0c9",
+      "report_sha256": "047428e91d27fe26a863bbb204d00bec23a672fe5507313a710e760feff44091",
       "representative_cards": [
         {
           "card_id": 849,
@@ -4746,6 +4768,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "7edb76b81817e2004767a98349af116eb3e276d8ce1808a4f89c9f3537be9326",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 88.6971473679987,
       "win_rate": 0.51904296875,
       "wins": 1063
@@ -5114,7 +5138,7 @@
       ],
       "refill_events": 137,
       "report": "reports/013_cynthia_s_garchomp_ex_roserade.html",
-      "report_sha256": "0ca55137d77ec429b29425a703e7cbff365cd8cd077cde8d0a483cc80c7e41f6",
+      "report_sha256": "16a3f70e968344a2f785e4c5432cfb5bc7dbdf5feaab1cbbfed5c0ee335922ae",
       "representative_cards": [
         {
           "card_id": 381,
@@ -5132,6 +5156,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "7e68c10541d02bf6a1fbc58be452623571888972394c40977c8cbe0eda8b949b",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 82.10442945999966,
       "win_rate": 0.51318359375,
       "wins": 1051
@@ -5512,7 +5538,7 @@
       ],
       "refill_events": 133,
       "report": "reports/014_mega_kangaskhan_ex_crustle.html",
-      "report_sha256": "94c60c793cb1d4e6cc8061433bc79dc32d09bc2d862399338b89d19e3f0d50ca",
+      "report_sha256": "acf1c3ddf3bcef2d5bd27bb6c0b513341e5784e89048f3c7e7de5c44c7380413",
       "representative_cards": [
         {
           "card_id": 756,
@@ -5535,6 +5561,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "84e396c5ba822187d7f0e1907485c1892533f640ff474c50f926a6ba3007a5ed",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 81.44860659799997,
       "win_rate": 0.49560546875,
       "wins": 1015
@@ -5910,7 +5938,7 @@
       ],
       "refill_events": 136,
       "report": "reports/015_wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex.html",
-      "report_sha256": "57418d35a9da62fb2931ce79efed386689ade8d59b2dfc09f461073c30a76afd",
+      "report_sha256": "a2f918a402ab421b282c4007ba2684061f6657fa6d6b93c52b8f9a06accf20c6",
       "representative_cards": [
         {
           "card_id": 108,
@@ -5933,6 +5961,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "270e39ab8e467a6c61f451d1166d1031facfb13a1f80d1e8b3b3b49b4170f9bf",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 94.11604332000024,
       "win_rate": 0.22802734375,
       "wins": 467
@@ -6310,7 +6340,7 @@
       ],
       "refill_events": 122,
       "report": "reports/016_slowking_toolbox.html",
-      "report_sha256": "b3648e2e3eac84e785fd80875f0e25fe0dfde7c1c892966bcc1905828161751c",
+      "report_sha256": "926ce7505b7589da5a19fa36b1b80ebd6c873154b0dcad0d128f3d4cc46b434f",
       "representative_cards": [
         {
           "card_id": 163,
@@ -6328,6 +6358,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "d16e51768627479b86a2fccf53891d9c8ad526bfc1e8a72a21e4b23c7b54c792",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 79.18192095499944,
       "win_rate": 0.2197265625,
       "wins": 450
@@ -6695,7 +6727,7 @@
       ],
       "refill_events": 166,
       "report": "reports/017_marnie_s_grimmsnarl_ex_froslass.html",
-      "report_sha256": "25d4d1bcd8a0a486db1afdb3e1d2eaa3f21e65772b18df1c6fa7126db2f39272",
+      "report_sha256": "caeb77682f778e4979f3f7bdc05aafb26e6374864633bf277434bb2829d2c62b",
       "representative_cards": [
         {
           "card_id": 648,
@@ -6718,6 +6750,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "4dbc87747a7accbe6de1e3d4d0279862214f91bae7e1ad01c6cdfc93dd024fad",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 131.9250615510009,
       "win_rate": 0.5224609375,
       "wins": 1070
@@ -7093,7 +7127,7 @@
       ],
       "refill_events": 167,
       "report": "reports/018_dragapult_ex.html",
-      "report_sha256": "ead640a0758695dd431393117f262ed9557abf833f91176bdf558b20a9d6a3e4",
+      "report_sha256": "58bb3c703798961dc92dc690057a18d4290d00be940488d6ab6ca238297aca70",
       "representative_cards": [
         {
           "card_id": 121,
@@ -7111,6 +7145,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "124903d510ef0c499097fb0a5c89d8541ee6995727eca4c78ca89d90e8cc6026",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 107.37955612600126,
       "win_rate": 0.49658203125,
       "wins": 1017
@@ -7486,7 +7522,7 @@
       ],
       "refill_events": 147,
       "report": "reports/019_barbaracle_cornerstone_mask_ogerpon_ex.html",
-      "report_sha256": "b103b9a77f5e784806e76d0cc1e0d125eb9ab25f9b1e264d5fe4a92d918a66d0",
+      "report_sha256": "1736b3ecf6e237c85395535745858a99930c97f227ec397d80e0c951c9904bda",
       "representative_cards": [
         {
           "card_id": 1052,
@@ -7509,6 +7545,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "889d3af6a98fcb8a6322c4ce1d3e524a97cb986ab5df7388dda49129b192a859",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 101.03960880100021,
       "win_rate": 0.48095703125,
       "wins": 985
@@ -8439,7 +8477,7 @@
       ],
       "refill_events": 128,
       "report": "reports/020_mega_venusaur_ex_meganium.html",
-      "report_sha256": "a6c3d673558917dae960ccee25d54617d315d17bd27f6ccf40ea86e5b9c27c4e",
+      "report_sha256": "410fc1fd92848bdd9114403c3fc4499ce4ffbe73a54096de35e41093ca51d861",
       "representative_cards": [
         {
           "card_id": 652,
@@ -8462,6 +8500,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "683d0081605f22bc6b08b3d14e12dd37830990a568015fb7722e759b66e8869d",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 83.916748646001,
       "win_rate": 0.35791015625,
       "wins": 733
@@ -8850,7 +8890,7 @@
       ],
       "refill_events": 147,
       "report": "reports/021_team_rocket_s_mewtwo_ex_spidops.html",
-      "report_sha256": "d283e397800d82f88ae41432ccb80b6ae4153a4f77fe4f0d849c3da14a5e6a19",
+      "report_sha256": "1accb77b49df93740c23baede10c1b1e6db73ff4445e9932c06511cf69ff10a1",
       "representative_cards": [
         {
           "card_id": 431,
@@ -8868,6 +8908,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "b262b2c65fa65d1c87ffa3f82cb0110a710c176c48cb4ed546cab8f0177a4208",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 111.63627278899912,
       "win_rate": 0.39697265625,
       "wins": 813
@@ -9243,7 +9285,7 @@
       ],
       "refill_events": 153,
       "report": "reports/022_mega_lopunny_ex_mega_froslass_ex.html",
-      "report_sha256": "5ab65eb9833e23d71c05027937c6ffb9d1d8076bd59a5e676b96734f022e4cb1",
+      "report_sha256": "c56d011095103278e967c64e99be16582d4e470c7c85f763afea7bd99b2de579",
       "representative_cards": [
         {
           "card_id": 849,
@@ -9261,6 +9303,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "22b877a27415b4a22cab2931e09582e493e3470add096f2532f7f1e3839beaf1",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 106.79513581299943,
       "win_rate": 0.53515625,
       "wins": 1096
@@ -9633,7 +9677,7 @@
       ],
       "refill_events": 121,
       "report": "reports/023_hydrapple_ex_meganium.html",
-      "report_sha256": "b2819da4e3d156a305eed134ef4e459dec42bfc5e3c3b16403237ce917b88aee",
+      "report_sha256": "bd9f7620d30991f654b534639f40cbaefd53a87c7922951f68ddfe9e3e0b985c",
       "representative_cards": [
         {
           "card_id": 150,
@@ -9656,6 +9700,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "209fc826366319d0bc264513d72dbe88d211171623ef3c69f53987e8e4afe5dd",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 80.62869546099864,
       "win_rate": 0.29052734375,
       "wins": 595
@@ -10089,7 +10135,7 @@
       ],
       "refill_events": 139,
       "report": "reports/024_crustle_cornerstone_mask_ogerpon_ex.html",
-      "report_sha256": "1beb12a294f0f8a342d93d53248c86122b797443906b358925b99ba5d03ca36a",
+      "report_sha256": "3bc8c7e9ec487715ed1e0c8e980f219140211bea33562ea4148dcc33bb82cd50",
       "representative_cards": [
         {
           "card_id": 345,
@@ -10112,6 +10158,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "699ecee4846cc6dd279a697102dfb94cd642e985e55d35f460186f66f8847ecf",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 109.7422240169999,
       "win_rate": 0.39453125,
       "wins": 808
@@ -10486,7 +10534,7 @@
       ],
       "refill_events": 137,
       "report": "reports/025_mega_lopunny_ex_mega_froslass_ex.html",
-      "report_sha256": "6c71f27a63433543693544b3dbc915d8378743bc17ada5566c5127d8502c50e5",
+      "report_sha256": "98ab0e02e7878829a2aed98c4643258b36fb59b7f602aa2349ad898597e8f150",
       "representative_cards": [
         {
           "card_id": 849,
@@ -10504,6 +10552,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "10fd1600bf915a74b01e8da848ba83a0bb4d34bf42b5283626966591cbcea003",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 92.41732942999988,
       "win_rate": 0.3388671875,
       "wins": 694
@@ -11464,7 +11514,7 @@
       ],
       "refill_events": 138,
       "report": "reports/026_mega_kangaskhan_ex_crustle.html",
-      "report_sha256": "88b9d7487b76f4809cbe69332e2f17a69b6e5dd22722590f0f05138988d3435e",
+      "report_sha256": "b8fbfaf6aeebb4865db5ab25e8833f1f997a6daf31a6f6dc12319df021a93c14",
       "representative_cards": [
         {
           "card_id": 756,
@@ -11482,6 +11532,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "024bcad1165be86700842ce0c455a082904b5923ff96d44f2c37179c88b41aad",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 84.64725334299874,
       "win_rate": 0.4453125,
       "wins": 912
@@ -11852,7 +11904,7 @@
       ],
       "refill_events": 133,
       "report": "reports/027_mega_kangaskhan_ex_crustle.html",
-      "report_sha256": "4005fc7896db64ed5d1fc4e00f9523ec439cd479544085a8dc9a540385d3711c",
+      "report_sha256": "a0431aecea80584fa56c75da7533a95e49b6827852900f6166f61c3b0f2d33d0",
       "representative_cards": [
         {
           "card_id": 756,
@@ -11870,6 +11922,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "23bc54200558c6f44053ba63dfa859259a68370f489695297f6799521502dce9",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 77.44635105000089,
       "win_rate": 0.2353515625,
       "wins": 482
@@ -12263,7 +12317,7 @@
       ],
       "refill_events": 161,
       "report": "reports/028_mega_lopunny_ex_mega_froslass_ex.html",
-      "report_sha256": "0490e07f67bd9e71bd0c3c6ad6eab76b844710fe15304b091752092ec970ec87",
+      "report_sha256": "312534da2f1eff49c78b2bc4e63a9b3b672511aaa5c1aa27f7851e260c730cad",
       "representative_cards": [
         {
           "card_id": 849,
@@ -12281,6 +12335,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "453eba6614388b9a32a3398984cac75d9dca6fff193b0cf180c13393cf029b39",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 94.03499026399913,
       "win_rate": 0.5048828125,
       "wins": 1034
@@ -12656,7 +12712,7 @@
       ],
       "refill_events": 139,
       "report": "reports/029_teal_mask_ogerpon_ex_hero_s_cape.html",
-      "report_sha256": "41ee040de2e906f1981e81ce33e203557ddf3c652a73bd594f6b42ef5cd85d29",
+      "report_sha256": "895c85e438a63a85d89c927cf5e84e3646a4f23647ba540695536d80043a3458",
       "representative_cards": [
         {
           "card_id": 96,
@@ -12679,6 +12735,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "e56ee9bb206644468b803c7356fa7b25ab5cfc956e6cdfc56ea4657f41294f01",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 90.1913151560002,
       "win_rate": 0.45654296875,
       "wins": 935
@@ -13063,7 +13121,7 @@
       ],
       "refill_events": 130,
       "report": "reports/030_mega_kangaskhan_ex_crustle.html",
-      "report_sha256": "cd0b9ca65b8dc3423fc2ac5a3f62c4da87f43b9e5d9167491325f86efee8fa4a",
+      "report_sha256": "0a76f0b8c1480362c96bc8c134134cbb45d3e82f4ace158ac7bca2990f0a2be6",
       "representative_cards": [
         {
           "card_id": 756,
@@ -13086,6 +13144,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "c604a563a99efae7c6faf52b8468dbcb7fd23991acd806a8bac9e51b64f25cca",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 74.48037923500124,
       "win_rate": 0.4619140625,
       "wins": 946
@@ -13455,7 +13515,7 @@
       ],
       "refill_events": 161,
       "report": "reports/031_marnie_s_grimmsnarl_ex_froslass.html",
-      "report_sha256": "badcb11098743960e2094fd78124055180e8ae200591e2b5b084885c8da4b581",
+      "report_sha256": "45d7d07186b2421f02051adc1ee3139dfbbec63acf29d6ebe7a584a727e7d7ba",
       "representative_cards": [
         {
           "card_id": 648,
@@ -13478,6 +13538,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "a34c2ab3d25741e2f6634cf2e37023faa03b8fd0a5c56068bc6f1af87b6c0737",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 91.48366361699846,
       "win_rate": 0.55517578125,
       "wins": 1137
@@ -13858,7 +13920,7 @@
       ],
       "refill_events": 138,
       "report": "reports/032_mega_lopunny_ex_mega_froslass_ex.html",
-      "report_sha256": "06d371bb69fa469637537fdaa396e46b33d88dfc6d65b25b474db25f6aca15dc",
+      "report_sha256": "7454cc758e26fc6807e3fa01a9e6fea80144fbd0b6cbfae13cbc043eead165df",
       "representative_cards": [
         {
           "card_id": 849,
@@ -13876,6 +13938,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "a3f4346573259a02275596d9414bab3d740fae57df36fdff52963ba1a90196d5",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 81.57501729599971,
       "win_rate": 0.3291015625,
       "wins": 674
@@ -14249,7 +14313,7 @@
       ],
       "refill_events": 132,
       "report": "reports/033_mega_kangaskhan_ex_crustle.html",
-      "report_sha256": "1ccad4a2242916553a2e62972d111cc32ffd99e64805a7e1c07d7c932cb5ae57",
+      "report_sha256": "afb7f1a83300916fdc17818e39be66cf1cf05dd885f74af92294853c80ab08c2",
       "representative_cards": [
         {
           "card_id": 756,
@@ -14272,6 +14336,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "24532c1250b5d37b8ee3551a64880625397bc5dacff6727c4a542f81c8c0e2e1",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 76.01226456299992,
       "win_rate": 0.48486328125,
       "wins": 993
@@ -14660,7 +14726,7 @@
       ],
       "refill_events": 148,
       "report": "reports/034_alakazam_dudunsparce.html",
-      "report_sha256": "fd7ea68f0e481627143f3a5ec1990fec9e12216b71eb6642969406f5629b85bc",
+      "report_sha256": "184dc89d36104099e8ee6d50419087b7e2c26a089d8551590875b3656c79663a",
       "representative_cards": [
         {
           "card_id": 743,
@@ -14683,6 +14749,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "bb8f4eedc2da51b3931f128151f050b6bde72cd62b06b82165f63b0b33734bdd",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 92.48675278600058,
       "win_rate": 0.51708984375,
       "wins": 1059
@@ -15071,7 +15139,7 @@
       ],
       "refill_events": 130,
       "report": "reports/035_mega_kangaskhan_ex_crustle.html",
-      "report_sha256": "5ccdf38a068d68599d1ebf789a3e5447d4fa502fd187dc42cf9153042b7f45da",
+      "report_sha256": "7bbe03473125d5be2c9d9be323385c7f619acd24d00c03b7b72ea6b4006e4e05",
       "representative_cards": [
         {
           "card_id": 756,
@@ -15094,6 +15162,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "689a594d3be58dab517e7d77aceb306bacdce461807c66b3e3b6908bc24fb4d7",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 77.69867413800057,
       "win_rate": 0.4951171875,
       "wins": 1014
@@ -15464,7 +15534,7 @@
       ],
       "refill_events": 129,
       "report": "reports/036_teal_mask_ogerpon_ex_hero_s_cape.html",
-      "report_sha256": "9938e67370735a7312ac184f0754242efc9be75fa754513357a27953733c021d",
+      "report_sha256": "2559dde99f0bce4a922fea719c3b857c24a6aafbbceab05d47a0b27ca733233e",
       "representative_cards": [
         {
           "card_id": 96,
@@ -15487,6 +15557,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "85f5d1e93bf3bb0b7f93f31d580aabd52d82ce3f27f903f1a9bf662927d80e4c",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 73.42760197200005,
       "win_rate": 0.46875,
       "wins": 960
@@ -15860,7 +15932,7 @@
       ],
       "refill_events": 165,
       "report": "reports/037_marnie_s_grimmsnarl_ex_froslass.html",
-      "report_sha256": "989a40cc39bd0a99c10192833fddbafa2812a325daa584c9cf01c0ade42414aa",
+      "report_sha256": "ab545f14ebcd40cd7bae88bea8011bdd00f36a620b4d86313baa84b6ce7a42dd",
       "representative_cards": [
         {
           "card_id": 648,
@@ -15883,6 +15955,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "8606a7385a8643bc17af9cdfcf93ae1ae881dd237586a4b36418bc153575fb2f",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 88.18655109199972,
       "win_rate": 0.498046875,
       "wins": 1020
@@ -16326,7 +16400,7 @@
       ],
       "refill_events": 139,
       "report": "reports/038_crustle_cornerstone_mask_ogerpon_ex.html",
-      "report_sha256": "313afcff72f1c2f6c370cfdc54a4846321475f2183c68d04c1d3ba141c143f3d",
+      "report_sha256": "3c6c347a3cf47b6cffabc8ad09605a50265b7cc39ce90f17f33f00233e407045",
       "representative_cards": [
         {
           "card_id": 345,
@@ -16349,6 +16423,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "40ccfd62fd33cc8db51fd21fb8ed09df6671fa77686f3135cd2f1cbf70a0afdc",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 98.08120213800066,
       "win_rate": 0.39453125,
       "wins": 808
@@ -16745,7 +16821,7 @@
       ],
       "refill_events": 147,
       "report": "reports/039_alakazam_dudunsparce.html",
-      "report_sha256": "7a55cd6ae5b5f4b37a9cb4172c887847b75c120426199ce97581b2f72a00b61b",
+      "report_sha256": "21a79b3d77c5149cc8fb67da47fbb87316837a891f50d3c7292360c44268c3f7",
       "representative_cards": [
         {
           "card_id": 743,
@@ -16768,6 +16844,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "0055f043623d573c26966c8664e446ada631ac4159f2cf846ff22b413b3cfad8",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 91.83663702500053,
       "win_rate": 0.5908203125,
       "wins": 1210
@@ -17168,7 +17246,7 @@
       ],
       "refill_events": 148,
       "report": "reports/040_alakazam_dudunsparce.html",
-      "report_sha256": "0164ae885fd885b27ae0d244e71b6b9a1d23600f166a90b78c293a8ab9c932eb",
+      "report_sha256": "48bd7ffc0d7ffbafd0c22ddf12c4a082ab03cd7136dc8dd5e811871859448a4a",
       "representative_cards": [
         {
           "card_id": 743,
@@ -17191,6 +17269,8 @@
       },
       "segment": "top100",
       "terminal_state_sha256": "d329775e4e757dfbef39fa3cba2abaec08d6e92540bd18342ab3386aac654297",
+      "turn_limit_draw_contract": false,
+      "turn_limit_draws": [],
       "wall_seconds": 103.15019037900129,
       "win_rate": 0.4677734375,
       "wins": 958

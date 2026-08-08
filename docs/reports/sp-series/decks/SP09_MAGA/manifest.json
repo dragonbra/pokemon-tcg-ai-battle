@@ -1,0 +1,16 @@
+{
+  "schema_version": "temporary_zero_shot_deck_v2",
+  "deck_id": "SP09_MAGA",
+  "display_name": "SP09_MAGA - Alakazam / Dudunsparce / Shaymin",
+  "exact_deck_sha256": "0db458f92d7473cae2081dbe054baf503829da5efa5146a43cc4d8fec8b047cb",
+  "cards": 60,
+  "pokemon_cards": 18,
+  "trainer_cards": 35,
+  "energy_cards": 7,
+  "candidate_policy": "Policy-0806",
+  "opponent_policy": "Policy-0806",
+  "opponent_pool_id": "0806_kaggle_top100_plus_v1",
+  "scheduled_games": 2048,
+  "runtime_dtype": "fp32",
+  "temporary": true
+}

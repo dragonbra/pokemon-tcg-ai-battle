@@ -188,6 +188,14 @@
         "first": {"wins": 80, "losses": 47, "draws": 1},
         "second": {"wins": 62, "losses": 65, "draws": 1}
       }]
+    },
+    {
+      "deck_id": "SP09_MAGA",
+      "exact_deck_sha256": "0db458f92d7473cae2081dbe054baf503829da5efa5146a43cc4d8fec8b047cb",
+      "deck": "decks/SP09_MAGA/deck.csv",
+      "deck_manifest": "decks/SP09_MAGA/manifest.json",
+      "key_counts": {"Alakazam": 3, "Dudunsparce": 2, "Shaymin": 1, "Boss's Orders": 3, "Xerosic's Machinations": 3, "Battle Cage": 3, "Enhanced Hammer": 4, "Wondrous Patch": 0},
+      "runs": []
     }
   ]
 }
