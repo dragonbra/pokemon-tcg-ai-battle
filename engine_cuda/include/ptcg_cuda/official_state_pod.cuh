@@ -15,7 +15,7 @@
 
 namespace ptcg::cuda_engine {
 
-constexpr std::uint32_t kOfficialStateAbiVersion = 6;
+constexpr std::uint32_t kOfficialStateAbiVersion = 7;
 constexpr std::size_t kOfficialCardCapacity = 128;
 constexpr std::size_t kOfficialDeckCapacity = 61;
 constexpr std::size_t kOfficialBenchCapacity = 8;
@@ -24,7 +24,11 @@ constexpr std::size_t kOfficialListCapacity = 128;
 constexpr std::size_t kOfficialEffectFrameCapacity = 256;
 constexpr std::size_t kOfficialContinuationCapacity = 256;
 constexpr std::size_t kOfficialTriggerCapacity = 128;
-constexpr std::size_t kOfficialTurnRecordCapacity = 128;
+// Long legal Item/Ability chains can exceed the former 128-record budget
+// within one official turn.  Treating that bounded bookkeeping list as an
+// engine error invalidates otherwise legal full-pool rollouts; 512 keeps the
+// turn-local condition history lossless while retaining a fixed POD layout.
+constexpr std::size_t kOfficialTurnRecordCapacity = 512;
 constexpr std::size_t kOfficialEffectRefScratchCapacity = 4096;
 #if defined(PTCG_OFFICIAL_BRANCH_COVERAGE)
 constexpr std::size_t kOfficialBranchCoverageEffectCapacity = 4096;
@@ -800,7 +804,7 @@ PTCG_OFFICIAL_HD inline void official_mark_effect_condition(
 
 static_assert(std::is_trivially_copyable_v<OfficialStatePod>);
 #if !defined(PTCG_OFFICIAL_BRANCH_COVERAGE)
-static_assert(sizeof(OfficialStatePod) == 119936, "OfficialStatePod ABI v6 changed");
+static_assert(sizeof(OfficialStatePod) == 124544, "OfficialStatePod ABI v7 changed");
 #endif
 static_assert(sizeof(OfficialStatePod) <= 131072, "official state exceeded 128 KiB");
 

@@ -393,8 +393,17 @@ def ppo_update_device(
                 name: value.index_select(0, indices) for name, value in batch.items()
             }
             encoded = model.encode(minibatch)
-            logprob, value = model.evaluate_targets_from_encoding(minibatch, encoded)
-            entropy = model.target_entropy_from_encoding(minibatch, encoded)
+            if hasattr(model, "evaluate_targets_with_entropy_from_encoding"):
+                logprob, entropy, value = (
+                    model.evaluate_targets_with_entropy_from_encoding(
+                        minibatch, encoded
+                    )
+                )
+            else:
+                logprob, value = model.evaluate_targets_from_encoding(
+                    minibatch, encoded
+                )
+                entropy = model.target_entropy_from_encoding(minibatch, encoded)
             old = old_logprob.index_select(0, indices).to(dtype=logprob.dtype)
             advantage = advantages.index_select(0, indices).to(dtype=logprob.dtype)
             target_return = returns.index_select(0, indices).to(dtype=value.dtype)

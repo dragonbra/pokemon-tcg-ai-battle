@@ -13,6 +13,10 @@ constexpr std::uint32_t kMaxContinuationFrames = 256;
 constexpr std::uint32_t kMaxDelayedEffects = 32;
 constexpr std::uint32_t kMaxCounters = 32;
 constexpr std::uint32_t kMaxCodecEntities = 128;
+// The semantic0031 schema expands attached cards and resolved Energy units
+// into separate ragged card tokens.  Its audited training buckets support 160
+// rows, while the legacy POD-native codec remains fixed at 128.
+constexpr std::uint32_t kMaxSemantic0031CardEntities = 160;
 constexpr std::uint32_t kMaxCodecOptions = 80;
 constexpr std::uint32_t kInterpreterBudget = 64;
 

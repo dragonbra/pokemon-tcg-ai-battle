@@ -761,6 +761,60 @@ std::string in_play_sequence(const OfficialStatePod& state) {
     return output.str();
 }
 
+std::string card_debug_sequence(
+    const OfficialStatePod& state,
+    OfficialCardRefPod ref) {
+    if (ref.index >= kOfficialCardCapacity) return "invalid";
+    const OfficialCardStatePod& card = state.cards[ref.index];
+    std::ostringstream output;
+    output << ref.index
+        << ":card=" << card.card_id
+        << ":player=" << static_cast<int>(card.player)
+        << ":area=" << static_cast<int>(card.area)
+        << ":pre_area=" << static_cast<int>(card.pre_area)
+        << ":move=" << card.move_counter
+        << ":attach=" << card.attach_move_counter
+        << ":damage=" << card.damage
+        << ":runtime=" << card.runtime_flags
+        << ":this=" << card.this_turn[0] << "," << card.this_turn[1]
+        << "," << card.this_turn[2] << "," << card.this_turn[3]
+        << ":next=" << card.next_turn[0] << "," << card.next_turn[1]
+        << "," << card.next_turn[2] << "," << card.next_turn[3]
+        << ":enemy=" << card.this_turn_enemy << "," << card.next_turn_enemy
+        << ":cannot_non_active=" << card.cannot_use_attack_id_non_active
+        << ":ability_used=" << card.ability_used_count;
+    return output.str();
+}
+
+template <std::size_t Capacity>
+std::string card_ref_list_debug_sequence(
+    const OfficialStatePod& state,
+    const OfficialPodList<OfficialCardRefPod, Capacity>& values) {
+    std::ostringstream output;
+    for (std::uint16_t index = 0; index < values.count; ++index) {
+        if (index != 0) output << ';';
+        output << index << ':' << card_debug_sequence(state, values.values[index]);
+    }
+    return output.str();
+}
+
+std::string player_debug_sequence(
+    const OfficialStatePod& state,
+    std::int32_t player) {
+    if (player < 0 || player > 1) return "invalid";
+    const OfficialPlayerStatePod& ps = state.players[player];
+    std::ostringstream output;
+    output << "active=" << card_ref_list_debug_sequence(state, ps.active)
+        << ":bench=" << card_ref_list_debug_sequence(state, ps.bench)
+        << ":pre_evolution=" << card_ref_list_debug_sequence(
+            state, ps.pre_evolution)
+        << ":energy=" << card_ref_list_debug_sequence(state, ps.energy)
+        << ":tool=" << card_ref_list_debug_sequence(state, ps.tool)
+        << ":this_turn=" << ps.this_turn
+        << ":continual=" << ps.continual_state;
+    return output.str();
+}
+
 template <typename T, std::size_t Capacity>
 void canonicalize_list(OfficialPodList<T, Capacity>* list) {
     for (std::size_t index = list->count; index < Capacity; ++index) {
@@ -1055,6 +1109,14 @@ void require_state_equal(
         + ".pod_options=" + option_sequence(pod_canonical)
         + ".official_in_play=" + in_play_sequence(official_canonical)
         + ".pod_in_play=" + in_play_sequence(pod_canonical)
+        + ".official_player0_debug="
+        + player_debug_sequence(official_canonical, 0)
+        + ".pod_player0_debug="
+        + player_debug_sequence(pod_canonical, 0)
+        + ".official_player1_debug="
+        + player_debug_sequence(official_canonical, 1)
+        + ".pod_player1_debug="
+        + player_debug_sequence(pod_canonical, 1)
         + ".official_continuations="
         + std::to_string(official.continuations.count)
         + ".pod_continuations=" + std::to_string(pod.continuations.count)

@@ -13,7 +13,7 @@ Every decision uses `0031_rule_faithful_semantic_decision_v2` with all 39 actor 
 | Family | Ragged tensors | Contents |
 |---|---|---|
 | Global | `[B,12]` categorical; `[B,24]` numeric and state | turn, selection, zones and visible game facts |
-| Card | `[B,C,9]` categorical; `[B,C,7]` numeric and state | instances, zones, HP, attachment and resolved Energy facts |
+| Card | `[B,C<=160,9]` categorical; `[B,C<=160,7]` numeric and state | instances, zones, HP, attachment and resolved Energy facts |
 | Resource | `[B,R,4]` categorical; `[B,R,15]` numeric and state | exact-deck ledger and known/bounded zone counts |
 | Event | `[B,E,31]` categorical; `[B,E,4]` numeric and state | chronological official logs and typed relations |
 | Option | `[B,O,19]` categorical; `[B,O,2]` numeric and state | every legal option, source, target, context and prototype facts |
@@ -21,6 +21,8 @@ Every decision uses `0031_rule_faithful_semantic_decision_v2` with all 39 actor 
 | Selection | `[B]` minimum and maximum | ordered unique legal-option pointer sequence plus stop |
 
 Each game/player owns independent causal knowledge: registered deck, visible and possible hand, resource ledger, chronological events and card-instance history. Immutable prototype tables are the only shared read-only state. A missing key, tensor mismatch, illegal selection, worker error or incomplete Episode fails closed.
+
+The CUDA semantic0031 codec reserves 160 ragged card rows, matching the largest audited training bucket. This is intentionally separate from the legacy POD-native codec's fixed 128-entity ABI: legal late-game states can exceed 128 semantic rows after attached cards and resolved Energy units are expanded. Rows 129-160 prevent observation collection from incorrectly converting such a legal state into an engine error; masked padding remains actor-invisible.
 
 ## Network and trainable boundary
 
@@ -33,6 +35,8 @@ Only `actor.action_decoder.*` (1,027,202 parameters) and a separate critic (103,
 Net reward is only the official terminal result: win `+1`, draw `0`, loss `-1`; all intermediate rewards are zero. There is no Prize, damage, attack or setup shaping. `gamma=1.0`. V6 restores the audited 0023 selection-clock credit assignment: every adjacent focal decision applies lambda `0.95`, including decisions in the same official turn. Each Episode receives total loss mass one, split equally over its focal decisions (`episode_equal_decisions`). This temporal-credit rule is a project optimization choice, not an official TCG rule.
 
 PPO uses four epochs, minibatch 1024, decoder LR `1e-5`, critic LR `1e-4`, clip ratio `0.1`, value coefficient `0.5`, entropy `0.01`, reference-decoder KL `0.02`, target behavior KL `0.02`, max gradient norm `0.5` and zero weight decay. These match 0023 V2. V7 samples 128 engine seeds and evaluates each in both seats, producing 256 Episodes per update. Behavior log probability must replay with mean absolute error at most `1e-4` before an update.
+
+The resident CUDA implementation keeps rollout feature tensors, ordered action targets, complete-Episode filtering, terminal reward construction, GAE, Episode-equal weights, advantage normalization and PPO minibatch indexing on the source CUDA device. Only scalar monitoring fields and model-only checkpoints cross to CPU. Terminal lanes are reset in place to disjoint deterministic seeds during collection rather than waiting for the batch. This is a runtime-residency optimization only: it does not change the feature schema, action sequence, reward, credit rule, loss or checkpoint boundary, and it is not evidence that V7 has been launched.
 
 ## Opponents, schedule and evidence
 

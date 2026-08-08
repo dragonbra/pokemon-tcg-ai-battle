@@ -68,7 +68,7 @@ class PPOTrainer:
         first_logprob_mae: float | None = None
         self.model.eval()
         for epoch in range(cfg.epochs):
-            order = torch.randperm(batch.decisions)
+            order = torch.randperm(batch.decisions, device=self.device)
             for start in range(0, batch.decisions, cfg.minibatch_size):
                 indices = order[start : start + cfg.minibatch_size]
                 features = self._features(batch, indices)

@@ -10,7 +10,17 @@
 namespace ptcg::cuda_engine {
 namespace {
 
-constexpr std::uint32_t kOfficialThreads = 128;
+#ifndef PTCG_CUDA_OFFICIAL_THREADS
+#define PTCG_CUDA_OFFICIAL_THREADS 128
+#endif
+
+static_assert(
+    PTCG_CUDA_OFFICIAL_THREADS > 0 && PTCG_CUDA_OFFICIAL_THREADS <= 1024,
+    "PTCG_CUDA_OFFICIAL_THREADS must be in [1, 1024]");
+// Each lane runs a long, dependent game-state program. Small blocks create
+// enough independent warps to hide that latency at rollout batch sizes; the
+// CMake cache variable retains a hardware-specific escape hatch.
+constexpr std::uint32_t kOfficialThreads = PTCG_CUDA_OFFICIAL_THREADS;
 constexpr std::uint32_t kMaxOfficialCodecOptions = kOfficialOptionCapacity;
 
 constexpr std::uint32_t official_blocks(std::uint32_t count) {
@@ -1105,11 +1115,11 @@ __device__ bool semantic0031_add_card_entity(
     if (output_index != nullptr) *output_index = -1;
     const OfficialCardStatePod* card = official_codec_card(state, ref);
     if (card == nullptr || (hide_reverse && card->reverse != 0)) return true;
-    if (*card_count >= static_cast<std::int32_t>(kMaxCodecEntities)) {
+    if (*card_count >= static_cast<std::int32_t>(kMaxSemantic0031CardEntities)) {
         official_pod_fail(
             state,
             OfficialPodError::kEffectScratchOverflow,
-            static_cast<std::int32_t>(kMaxCodecEntities));
+            static_cast<std::int32_t>(kMaxSemantic0031CardEntities));
         return false;
     }
     const bool is_pokemon = kind == kPolicyKindPokemon;
@@ -1238,11 +1248,11 @@ __device__ bool semantic0031_add_resolved_energy_units(
         const OfficialEnergyInfoPod info = official_energy_info(
             *state, rules, energy_ref, pokemon_ref);
         for (std::int32_t unit = 0; unit < info.count; ++unit) {
-            if (*card_count >= static_cast<std::int32_t>(kMaxCodecEntities)) {
+            if (*card_count >= static_cast<std::int32_t>(kMaxSemantic0031CardEntities)) {
                 official_pod_fail(
                     state,
                     OfficialPodError::kEffectScratchOverflow,
-                    static_cast<std::int32_t>(kMaxCodecEntities));
+                    static_cast<std::int32_t>(kMaxSemantic0031CardEntities));
                 return false;
             }
             const std::int32_t entity = (*card_count)++;
@@ -1313,15 +1323,15 @@ __device__ void semantic0031_zero_row(
     std::int64_t* global_state =
         output.global_state + row * kSemantic0031GlobalNumWidth;
     std::int64_t* card_cat =
-        output.card_cat + row * kMaxCodecEntities * kSemantic0031CardCatWidth;
+        output.card_cat + row * kMaxSemantic0031CardEntities * kSemantic0031CardCatWidth;
     float* card_num =
-        output.card_num + row * kMaxCodecEntities * kSemantic0031CardNumWidth;
+        output.card_num + row * kMaxSemantic0031CardEntities * kSemantic0031CardNumWidth;
     std::int64_t* card_state =
-        output.card_state + row * kMaxCodecEntities * kSemantic0031CardNumWidth;
+        output.card_state + row * kMaxSemantic0031CardEntities * kSemantic0031CardNumWidth;
     std::int64_t* card_parent =
-        output.card_parent + row * kMaxCodecEntities;
+        output.card_parent + row * kMaxSemantic0031CardEntities;
     std::uint8_t* card_mask =
-        output.card_mask + row * kMaxCodecEntities;
+        output.card_mask + row * kMaxSemantic0031CardEntities;
     std::int64_t* resource_cat =
         output.resource_cat + row * kSemantic0031ResourceCapacity * kSemantic0031ResourceCatWidth;
     float* resource_num =
@@ -1370,14 +1380,14 @@ __device__ void semantic0031_zero_row(
         global_num[index] = 0.0F;
         global_state[index] = 0;
     }
-    for (std::uint32_t index = 0; index < kMaxCodecEntities; ++index) {
+    for (std::uint32_t index = 0; index < kMaxSemantic0031CardEntities; ++index) {
         card_parent[index] = 0;
         card_mask[index] = 0;
     }
-    for (std::uint32_t index = 0; index < kMaxCodecEntities * kSemantic0031CardCatWidth; ++index) {
+    for (std::uint32_t index = 0; index < kMaxSemantic0031CardEntities * kSemantic0031CardCatWidth; ++index) {
         card_cat[index] = 0;
     }
-    for (std::uint32_t index = 0; index < kMaxCodecEntities * kSemantic0031CardNumWidth; ++index) {
+    for (std::uint32_t index = 0; index < kMaxSemantic0031CardEntities * kSemantic0031CardNumWidth; ++index) {
         card_num[index] = 0.0F;
         card_state[index] = 0;
     }
@@ -1607,15 +1617,15 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
     std::int64_t* global_state =
         output.global_state + row * kSemantic0031GlobalNumWidth;
     std::int64_t* card_cat =
-        output.card_cat + row * kMaxCodecEntities * kSemantic0031CardCatWidth;
+        output.card_cat + row * kMaxSemantic0031CardEntities * kSemantic0031CardCatWidth;
     float* card_num =
-        output.card_num + row * kMaxCodecEntities * kSemantic0031CardNumWidth;
+        output.card_num + row * kMaxSemantic0031CardEntities * kSemantic0031CardNumWidth;
     std::int64_t* card_state =
-        output.card_state + row * kMaxCodecEntities * kSemantic0031CardNumWidth;
+        output.card_state + row * kMaxSemantic0031CardEntities * kSemantic0031CardNumWidth;
     std::int64_t* card_parent =
-        output.card_parent + row * kMaxCodecEntities;
+        output.card_parent + row * kMaxSemantic0031CardEntities;
     std::uint8_t* card_mask =
-        output.card_mask + row * kMaxCodecEntities;
+        output.card_mask + row * kMaxSemantic0031CardEntities;
     std::int64_t* resource_cat =
         output.resource_cat + row * kSemantic0031ResourceCapacity * kSemantic0031ResourceCatWidth;
     float* resource_num =
@@ -1787,10 +1797,10 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
         global_state[20] = kSemanticFieldUnknown;
     }
 
-    std::int16_t location_players[kMaxCodecEntities]{};
-    std::int16_t location_areas[kMaxCodecEntities]{};
-    std::int16_t location_slots[kMaxCodecEntities]{};
-    for (std::uint32_t index = 0; index < kMaxCodecEntities; ++index) {
+    std::int16_t location_players[kMaxSemantic0031CardEntities]{};
+    std::int16_t location_areas[kMaxSemantic0031CardEntities]{};
+    std::int16_t location_slots[kMaxSemantic0031CardEntities]{};
+    for (std::uint32_t index = 0; index < kMaxSemantic0031CardEntities; ++index) {
         location_players[index] = -99;
         location_areas[index] = -99;
         location_slots[index] = -99;

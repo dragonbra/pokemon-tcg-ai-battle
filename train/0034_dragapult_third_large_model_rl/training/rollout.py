@@ -194,7 +194,6 @@ class ResidentRolloutCollector:
                 self.engine.apply_packed_actions()
         torch.cuda.synchronize(device)
         elapsed = time.perf_counter() - started
-        stacked = {name: value.cpu() for name, value in storage.items()}
         statuses = self.engine.statuses()
         error_count = int(statuses.eq(ERROR).long().sum().item())
         illegal_count = int(illegal.item())
@@ -203,7 +202,7 @@ class ResidentRolloutCollector:
                 f"official CUDA rollout failed: errors={error_count} illegal={illegal_count}"
             )
         batch = prepare_complete_episodes(
-            stacked, source_policy_update=source_policy_update
+            storage, source_policy_update=source_policy_update
         )
         # Incomplete trajectories are intentionally excluded. Advance every lane
         # to a disjoint deterministic seed window so they are not replayed next update.
