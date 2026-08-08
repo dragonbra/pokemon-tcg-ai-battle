@@ -31,8 +31,8 @@ from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0037_dragapult_value_initialized_rl"
-WANDB_DISPLAY_PREFIX = "0037 · lora_r8 · eval5 · 50u"
-FORMAL_VERSION = "V4_lora_r8_eval5_50u"
+WANDB_DISPLAY_PREFIX = "0037 · last_option_qv_lora_r4 · eval5 · 50u"
+FORMAL_VERSION = "V5_last_option_qv_lora_r4_eval5_50u"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -519,8 +519,8 @@ def run(config: RunConfig) -> dict[str, Any]:
         },
         "trainable_contract": [
             "actor.action_decoder.*",
-            "actor.state_encoder.board_encoder.layers.{0,1,3}.*.parametrizations.*.{a,b}",
-            "actor.{state_encoder,option_encoder}.*LayerNorm.{weight,bias} (setting 2 only)",
+            "actor.option_encoder.cross_attention_transformer.layers.1.{self_attn,multihead_attn}.in_proj Q/V LoRA",
+            "actor.option_encoder.cross_attention_transformer.norm.{weight,bias} (setting 2 only)",
             "value_head.queries",
             "value_head.blocks.*",
             "value_head.final_norm.*",

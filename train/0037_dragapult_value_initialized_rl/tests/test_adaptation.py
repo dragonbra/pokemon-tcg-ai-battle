@@ -29,17 +29,23 @@ class AdaptationTest(unittest.TestCase):
             ),
         )[0]
 
-    def test_lora_targets_first_two_and_last_board_layers(self) -> None:
+    def test_lora_targets_only_last_option_block_q_and_v(self) -> None:
         model = self._load(False)
         inventory = model.adaptation_inventory
-        self.assertEqual(inventory["board_layers"], [0, 1, 3])
-        self.assertEqual(inventory["adapter_parameters"], 107_520)
+        self.assertEqual(inventory["option_block"], 1)
+        self.assertEqual(inventory["attention_targets"], ["self_attn.qv", "cross_attn.qv"])
+        self.assertEqual(inventory["adapter_parameters"], 10_240)
         self.assertEqual(inventory["layernorm_parameters"], 0)
         names = [name for name, value in model.named_parameters() if value.requires_grad]
-        self.assertFalse(any("board_encoder.layers.2" in name for name in names))
+        adapter_names = [name for name in names if ".parametrizations." in name]
+        self.assertTrue(adapter_names)
+        self.assertTrue(all("cross_attention_transformer.layers.1" in name for name in adapter_names))
+        self.assertTrue(all("in_proj_weight" in name for name in adapter_names))
+        self.assertFalse(any("out_proj" in name or "linear1" in name or "linear2" in name for name in adapter_names))
+        self.assertFalse(any("board_encoder" in name and ".parametrizations." in name for name in names))
         self.assertFalse(any("prototype_encoder" in name for name in names))
         for name, value in model.named_parameters():
-            if ".parametrizations." in name and name.endswith(".b"):
+            if ".parametrizations." in name and name.endswith((".q_b", ".v_b")):
                 self.assertTrue(torch.count_nonzero(value) == 0, name)
 
         parity = importlib.import_module(f"{PROJECT}.parity")
@@ -51,12 +57,16 @@ class AdaptationTest(unittest.TestCase):
         for name, value in base.actor.state_dict().items():
             self.assertTrue(torch.equal(adapted_base[name], value), name)
 
-    def test_layernorm_arm_excludes_shared_prototype_encoder(self) -> None:
+    def test_layernorm_arm_tunes_only_option_output_norm(self) -> None:
         model = self._load(True)
-        self.assertEqual(model.adaptation_inventory["layernorm_parameters"], 12_160)
+        self.assertEqual(model.adaptation_inventory["layernorm_parameters"], 640)
         names = [name for name, value in model.named_parameters() if value.requires_grad]
-        self.assertTrue(any("state_encoder" in name and "norm" in name for name in names))
-        self.assertTrue(any("option_encoder" in name and "norm" in name for name in names))
+        norm_names = model.adaptation_inventory["layernorm_parameter_names"]
+        self.assertEqual(norm_names, [
+            "option_encoder.cross_attention_transformer.norm.weight",
+            "option_encoder.cross_attention_transformer.norm.bias",
+        ])
+        self.assertFalse(any("state_encoder" in name and value.requires_grad for name, value in model.named_parameters()))
         self.assertFalse(any("prototype_encoder" in name for name in names))
 
     def test_adapted_checkpoint_contains_only_trainable_tensors(self) -> None:

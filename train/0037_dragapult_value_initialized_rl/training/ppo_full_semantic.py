@@ -70,7 +70,7 @@ class PPOTrainer:
             name: value.detach().clone()
             for name, value in model.actor.named_parameters()
             if value.requires_grad and ".parametrizations." in name
-            and name.endswith((".a", ".b"))
+            and not name.endswith(".original")
         }
         adapter_ids = {id(value) for value in adapter_parameters(model.actor)}
         decoder_ids = {id(value) for value in model.actor.action_decoder.parameters()}

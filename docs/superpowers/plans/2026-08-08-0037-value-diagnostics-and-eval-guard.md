@@ -4,7 +4,7 @@
 
 **Goal:** Run two fair 50-update 0037 PPO experiments with focal-only Encoder LoRA, optional LayerNorm tuning, fixed Frozen-0806 greedy evaluation every five updates, and Value diagnostics by official-engine game phase and terminal outcome.
 
-**Architecture:** Keep the official-engine rollout, PPO target, and N16E8 runtime unchanged. Add low-rank weight parametrizations to focal board-Encoder layers 0, 1 and 3 while the independently loaded Frozen opponent remains untouched; the second arm additionally tunes focal state/option LayerNorm affine parameters. Separate schedule provenance identity from the environment-only frozen-evaluation commitment, then compute read-only diagnostics from the already prepared on-policy batch so monitoring adds no extra Encoder pass.
+**Architecture:** Keep the official-engine rollout, PPO target, and N16E8 runtime unchanged. Add Q/V-only low-rank parametrizations to self/cross attention in the final focal Option TransformerDecoder block while the independently loaded Frozen opponent remains untouched; the second arm additionally tunes only the Option stack output LayerNorm. Separate schedule provenance identity from the environment-only frozen-evaluation commitment, then compute read-only diagnostics from the already prepared on-policy batch.
 
 **Tech Stack:** Python 3.11, PyTorch, unittest, canonical JSONL, TensorBoard, W&B online, official seeded engine runtime.
 
@@ -96,11 +96,11 @@ Assert LoRA-only trainable names are decoder, critic, and adapter parameters; La
 
 - [ ] **Step 2: Implement low-rank parametrizations**
 
-For `state_encoder.board_encoder.layers[0,1,3]`, add rank-8, alpha-16 additive low-rank parametrizations to `self_attn.in_proj_weight`, `self_attn.out_proj.weight`, `linear1.weight`, and `linear2.weight`. Initialize the output factor to zero so both arms exactly reproduce source logits at update 0.
+For `option_encoder.cross_attention_transformer.layers[1]`, add rank-4, alpha-8 LoRA only to Q and V rows of merged `in_proj_weight` in `self_attn` and `multihead_attn`. Keep K, attention output and FFN frozen. Initialize Q/V output factors to zero so both arms exactly reproduce source logits at update 0.
 
 - [ ] **Step 3: Implement optional LayerNorm tuning**
 
-When enabled, mark weight and bias trainable for every `nn.LayerNorm` below `state_encoder` and `option_encoder`, excluding `prototype_encoder`, decoder, and Value modules.
+When enabled, mark only `option_encoder.cross_attention_transformer.norm.{weight,bias}` trainable.
 
 - [ ] **Step 4: Extend optimizer and checkpoint contracts**
 
@@ -120,7 +120,7 @@ Run: `python3 -m unittest -v train.0037_dragapult_value_initialized_rl.tests.tes
 
 **Interfaces:**
 - Consumes: Task 1 guard and Task 2 metrics.
-- Produces: immutable `V4_lora_r8_eval5_50u` and `V5_lora_r8_layernorm_eval5_50u` artifacts with distinct W&B runs; V3 is retained as a zero-update launcher failure.
+- Produces: immutable `V5_last_option_qv_lora_r4_eval5_50u` and `V6_last_option_qv_lora_r4_outnorm_eval5_50u` artifacts with distinct W&B runs; V3/V4 failures remain retained.
 
 - [ ] **Step 1: Write/update contract assertions**
 
@@ -128,7 +128,7 @@ Assert default `updates == 50`, `eval_every == 5`, distinct arm identifiers, and
 
 - [ ] **Step 2: Configure V3**
 
-Expose an explicit experiment arm argument. Use versions `V4_lora_r8_eval5_50u` and `V5_lora_r8_layernorm_eval5_50u`, W&B display prefixes beginning with `0037`, fixed greedy evaluation cadence five, budget 50 updates, and exact diagnostic/adaptation contracts in `training_config.json`.
+Expose an explicit experiment arm argument. Use versions `V5_last_option_qv_lora_r4_eval5_50u` and `V6_last_option_qv_lora_r4_outnorm_eval5_50u`, W&B display prefixes beginning with `0037`, fixed greedy evaluation cadence five, budget 50 updates, and exact diagnostic/adaptation contracts in `training_config.json`.
 
 - [ ] **Step 3: Update both authoritative design documents**
 
@@ -141,8 +141,8 @@ Run: `python3 -m unittest discover -v train/0037_dragapult_value_initialized_rl/
 ### Task 5: Smoke and sequential formal launch
 
 **Files:**
-- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V4_lora_r8_eval5_50u/*`
-- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V5_lora_r8_layernorm_eval5_50u/*`
+- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V5_last_option_qv_lora_r4_eval5_50u/*`
+- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V6_last_option_qv_lora_r4_outnorm_eval5_50u/*`
 
 **Interfaces:**
 - Consumes: tested V3 code and unchanged source checkpoints.
@@ -154,11 +154,11 @@ Use a disposable `.tmp/evaluation/0037_v3_diagnostics_smoke/` output and a small
 
 - [ ] **Step 2: Verify fresh version paths**
 
-Confirm V3 and V4 artifact, checkpoint, TensorBoard, W&B, and formal evaluation paths are unused.
+Confirm V5 and V6 artifact, checkpoint, TensorBoard, W&B, and formal evaluation paths are unused.
 
 - [ ] **Step 3: Launch the formal V3 process**
 
-Start a fail-closed sequential launcher: V3 LoRA-only first, then V4 LoRA+LayerNorm only if V3 exits successfully. Both use W&B online, N16E8/I8, 5 ms coalescing, and independent logs/PIDs.
+Start a fail-closed sequential launcher: V5 Option Q/V LoRA first, then V6 Option Q/V LoRA + output LayerNorm only if V5 exits successfully. Both use W&B online, N16E8/I8 and 5 ms coalescing.
 
 - [ ] **Step 4: Inspect initialization evidence**
 

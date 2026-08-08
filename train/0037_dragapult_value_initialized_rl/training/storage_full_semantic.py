@@ -67,7 +67,7 @@ def save_model_only(
             "layernorm_tuning": model.adaptation_config.layernorm_tuning,
             "rank": model.adaptation_config.rank,
             "alpha": model.adaptation_config.alpha,
-            "board_layers": model.adaptation_config.board_layers,
+            "option_block": model.adaptation_config.option_block,
         },
         "metadata": metadata,
     }

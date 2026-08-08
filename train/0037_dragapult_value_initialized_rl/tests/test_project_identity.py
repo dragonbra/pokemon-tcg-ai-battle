@@ -121,7 +121,7 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.ppo.gae_lambda, 0.95)
         self.assertEqual(config.ppo.batch_size, 1024)
         self.assertEqual(config.ppo.epochs, 4)
-        self.assertEqual(config.version, "V4_lora_r8_eval5_50u")
+        self.assertEqual(config.version, "V5_last_option_qv_lora_r4_eval5_50u")
         self.assertEqual(config.updates, 50)
         self.assertEqual(config.eval_every, 5)
         self.assertEqual(config.adaptation_arm, "lora")
