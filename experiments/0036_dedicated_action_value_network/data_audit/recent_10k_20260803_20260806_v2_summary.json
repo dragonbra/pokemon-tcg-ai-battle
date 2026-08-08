@@ -1,0 +1,48 @@
+{
+  "catalog_file_bytes": 17200448,
+  "catalog_sha256": "4228c7e2d3c57d24c8cc1094764c80306590160a753dbb6e5ae279cd5d0d9374",
+  "date_counts": {
+    "2026-08-03": 2500,
+    "2026-08-04": 2500,
+    "2026-08-05": 2500,
+    "2026-08-06": 2500
+  },
+  "final_diff_trajectory_counts": {
+    "-6": 2570,
+    "-5": 1645,
+    "-4": 1899,
+    "-3": 1642,
+    "-2": 1415,
+    "-1": 829,
+    "1": 829,
+    "2": 1415,
+    "3": 1642,
+    "4": 1899,
+    "5": 1645,
+    "6": 2570
+  },
+  "qualified_before_selection": {
+    "2026-08-03": 2853,
+    "2026-08-04": 2992,
+    "2026-08-05": 2938,
+    "2026-08-06": 2886
+  },
+  "rejected_episode_reasons": {
+    "not_completed_two_player_terminal": 28,
+    "not_unique_win_and_loss": 13,
+    "terminal_player_perspectives_disagree_on_prize_counts": 7192
+  },
+  "schema_version": "0036_recent_10k_audit_summary_v1",
+  "selected_episodes": 10000,
+  "split": {
+    "train_episodes": 9000,
+    "validation_archetype_classes": 15,
+    "validation_episodes": 1000
+  },
+  "status": "verified",
+  "trajectories": {
+    "loss": 10000,
+    "total": 20000,
+    "win": 10000
+  }
+}

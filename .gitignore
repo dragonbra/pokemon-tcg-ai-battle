@@ -54,6 +54,7 @@ archive/submission/dist/*.tar.gz
 
 # Nested runtime assets for 0013+ projects are local and reproducible.
 /rl_runs/*/dataset/
+/rl_runs/*/datasets/
 /rl_runs/*/versions/*/checkpoint/
 /rl_runs/*/versions/*/wandb/
 /rl_runs/*/versions/*/tensorboard/

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>0036 Dedicated Action Value Network</title>
+<style>body{max-width:1080px;margin:36px auto;padding:0 24px;font:16px/1.65 system-ui;color:#18202a}h1,h2{line-height:1.25}code,pre{background:#f3f5f7;border-radius:6px}code{padding:.1em .3em}pre{padding:16px;overflow:auto}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd3da;padding:8px;text-align:left}th{background:#eef2f5}.status{padding:12px 16px;background:#fff4cc;border-left:4px solid #d89b00}</style></head>
+<body><h1>0036 Dedicated Action Value Network</h1>
+<p class="status"><strong>当前状态：</strong>正式多龙数据及 mmap tensor cache 已完成并验证。V1 在 epoch 1 完成前暴露 gzip/JSON I/O 瓶颈并按要求中止；首个生产目标改为 V2 完整 latent-query critic。尚无离线质量或 RL 强度结论。</p>
+<h2>目标与证据边界</h2><p>冻结 0031 friend-0806 epoch-11 的语义 Encoder（56,352,322 参数；checkpoint SHA-256 <code>0ca395…df8</code>），只训练专用 Value head。通用胜利与回合规则来自项目规则调研；具体 observation 与终局来自未修改的 official engine Episode；标签、权重和网络结构是 0036 的实验假设。</p>
+<h2>action 级数据合同</h2><p>正式 small dataset 选择 10,000 个至少一方注册卡组含 Dragapult ex（card ID 121）的唯一 Episode，只监督符合条件的多龙玩家视角。多龙镜像仍只占一个 Episode 配额，但会产生两条焦点轨迹，且整局不得跨 split。</p>
+<p>扫描所有本地已获取、且不晚于 Frozen-0806 端点的官方日归档，不截断早期日期。每个有候选局的日期至少保留一局；其余配额按“25% 日期均匀 + 75% 近期指数权重”分配，近期权重半衰期为 7 天，候选不足的日期会把配额回流。日期内按稳定 SHA 排序，禁止复制 Episode。此前 08-03..06 的通用双方视角 10k corpus（commitment <code>4228c7…d9374</code>）仅保留为本地、Git-ignored 的流水线证据，不进入正式 V1–V5。</p>
+<p>最终 catalog 覆盖 2026-07-08..08-06 连续 30 天，恰好 10,000 个唯一 Episode，按整局切为 9,000/1,000；共有 10,155 条多龙视角轨迹，其中 exact 007 为 1,951 条、validation 为 190 条，胜负 5,338/4,817。通过确定性的同日期整局交换，validation 覆盖 15/15 类。catalog commitment 为 <code>4e8148…a1d47</code>。</p>
+<p>正式 action 数据含 1,061,249 条真实 pre-action callback：train 954,942、validation 106,307，分为 260 个 gzip shard，约 1.1 GB。全部 shard hash、行数、label 范围与 10,155 条轨迹权重均通过 verifier；validation 的稀有 class 8 有 125 条 action 样本。全量数据位于 Git-ignored 的 <code>rl_runs/0036.../datasets/</code>。</p>
+<p>epoch 循环不再实时解压 JSON。一次性转换得到 260 个、合计 17,223,219,032 bytes 的紧凑 tensor shards：类别/整数用 int16，Encoder 数值输入用 float16，mask 用 bool，监督 value 与 episode weight 保持 float32；取 batch 后恢复原 long/float32/bool 合同。训练以 <code>weights_only + mmap</code> 打开 shard，逐 epoch 确定性打乱 shard 与行，pin memory，并以深度 2 有界预取。100-batch 完整 latent-query 实测为 0.2402 秒/batch、数据等待占比 2.21%，不再让 gzip/JSON 成为 GPU 主瓶颈。</p>
+<table><thead><tr><th>标签</th><th>shape</th><th>语义</th></tr></thead><tbody><tr><td>value_target</td><td>[B]</td><td>当前行动者最终胜负 0/1</td></tr><tr><td>archetype_target</td><td>[B]</td><td>14 个 Meta 主轴 + Other</td></tr><tr><td>final_diff_target</td><td>[B]</td><td>-6..+6 的最终奖赏卡差，编码为 0..12</td></tr><tr><td>episode_weight</td><td>[B]</td><td>1 / 该行动者本局真实 action callback 数</td></tr><tr><td>is_exact_007</td><td>[B]</td><td>完整 60-card multiset 是否等于 Frozen-0806 exact 007；仅用于指标切片</td></tr></tbody></table>
+<p>每次非注册的真实 <code>agent(observation)</code> 回调在动作前产生一条样本；自动 engine step、回合边界和 pointer decoder 子 token 都不产生样本。胜者剩余奖赏卡按 0 计，败者实际剩余数决定 final diff 幅度。</p>
+<h2>张量与网络</h2><p>沿用 39-key causal actor schema。冻结 Encoder 输出 <code>state.tokens [B,S,320]</code>、<code>state.summary [B,320]</code>、mask 以及 legal-option tokens <code>[B,O,320]</code>。</p>
+<pre>39 actor tensors -> frozen Encoder
+  -> raw pooled MLP / pretrained-summary MLP / latent query trunk
+  -> 8 learned queries, 2 x cross-attn + self-attn + FFN
+  -> value [B], archetype [B,15], final diff [B,13]</pre>
+<h2>Loss 与实验顺序</h2><p><code>L = BCE_value + lambda_class * CE_archetype + lambda_diff * CE_final_diff</code>。手牌预测关闭，非零权重会 fail closed。V1 raw-pool MLP 是保留的 I/O 失败预检记录，没有完成 epoch。按生产优先级，V2 首先训练 latent-query + 牌组分类 + final diff（两个辅助权重均为 0.1）；summary MLP、latent Value only、latent + 牌组分类以及优化后的 raw-pool baseline 均使用后续新版本。</p>
+<p>checkpoint 按 exact-007 validation 的 episode-weighted Value BCE 优先、全体多龙 validation Value BCE 次优进行字典序选择；Brier、ECE、AUROC、分类准确率和 diff MAE 仅作为诊断护栏。exact-007 身份绝不进入 forward。</p>
+<h2>训练、产物与 RL 边界</h2><p>每 epoch 只有一次 train 更新 pass 和一次完整固定模型 validation。V2 先独占运行 30 epochs；成功后按 fail-closed 队列依次运行 V3 optimized raw-pool、V4 summary MLP、V5 latent Value-only、V6 latent + archetype，各 20 epochs。全部逐 epoch 保留 model-only checkpoint，并按 exact-007 Value BCE 选择 best；禁止 optimizer/RNG/replay state。指标按 canonical JSONL、TensorBoard、W&amp;B online 的顺序记录，W&amp;B 名称以 0036 开头。</p>
+<p>离线 critic 拟合的是 replay behavior policy 的胜率，进入 PPO 后仍需 on-policy 校准。<code>V(next)-V(current)</code> 可用于 GAE/诊断，但不自动成为环境 reward。策略强度只能由 official engine 冻结评测证明。</p>
+<p>完整权威细节与字段表见同目录 <a href="DESIGN.md">DESIGN.md</a>，决策记录见 <a href="DECISIONS.md">DECISIONS.md</a>。</p></body></html>

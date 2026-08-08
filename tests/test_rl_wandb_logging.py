@@ -195,6 +195,26 @@ class WandbLoggingTests(unittest.TestCase):
         self.assertEqual(sink.records, [record])
         self.assertTrue(sink.closed)
 
+    def test_logger_can_eagerly_initialize_wandb_without_writing_metric_row(self) -> None:
+        with TemporaryDirectory() as directory:
+            jsonl_path = Path(directory) / "metrics.jsonl"
+            sink = InspectingSink(jsonl_path)
+            with patch(
+                "rl_environment.wandb_logging.create_wandb_sink_from_environment",
+                return_value=sink,
+            ) as factory:
+                logger = TrainingLogger(jsonl_path)
+                logger.initialize_wandb({"trainer/epoch": 0, "value/lifecycle/initialized": 1})
+                logger.close()
+
+            factory.assert_called_once_with(
+                jsonl_path,
+                {"trainer/epoch": 0, "value/lifecycle/initialized": 1},
+            )
+            self.assertEqual(jsonl_path.read_text(encoding="utf-8"), "")
+            self.assertEqual(sink.records, [])
+            self.assertTrue(sink.closed)
+
     def test_wandb_failure_does_not_lose_canonical_record(self) -> None:
         with TemporaryDirectory() as directory:
             jsonl_path = Path(directory) / "metrics.jsonl"

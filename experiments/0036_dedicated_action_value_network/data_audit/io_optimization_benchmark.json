@@ -1,0 +1,21 @@
+{
+  "benchmark_scope": "100 training batches with frozen encoder and full latent-query value head",
+  "cache_build_seconds": 273.054199856997,
+  "cache_content_sha256": "02e6651e1bf98262837c65b07e568ace6a79be4b77b682619e20c8dd5f3fb236",
+  "cache_payload_bytes": 17223219032,
+  "cache_reference_file_sha256": "13a5dc1d1827d38e8390e1c17b875b3313f84cee294862f404677227fb4318c1",
+  "data_wait_fraction": 0.022068265338141314,
+  "data_wait_seconds": 0.529985325934831,
+  "decisions": 102400,
+  "decisions_per_second": 4263.8734697789405,
+  "elapsed_seconds": 24.015722025003925,
+  "gpu_max_allocated_gib": 4.7407002449035645,
+  "old_gzip_json_average_seconds_per_batch": 1.10,
+  "old_gzip_json_shard_boundary_spike_seconds": 2.8,
+  "schema_version": "0036_io_optimization_benchmark_v1",
+  "seconds_per_batch": 0.24015722025003924,
+  "source_manifest_sha256": "24cd4d89bd89d0dae0f0fd71281a40e8cf6142e7dc41811f3819e39011fe44ef",
+  "status": "performance_gate_passed",
+  "steps": 100,
+  "trainable_parameters": 3407389
+}

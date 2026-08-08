@@ -1,0 +1,89 @@
+{
+  "created_date": "2026-08-08",
+  "superseded_generic_dataset_catalog": {
+    "failed_split_audit": "data_audit/recent_10k_20260803_20260806.json",
+    "path": "data_audit/recent_10k_20260803_20260806_v2.json",
+    "sha256": "4228c7e2d3c57d24c8cc1094764c80306590160a753dbb6e5ae279cd5d0d9374",
+    "selected_episodes": 10000,
+    "train_episodes": 9000,
+    "validation_archetype_classes": 15,
+    "validation_episodes": 1000
+  },
+  "engine_source_modified": false,
+  "project_id": "0036_dedicated_action_value_network",
+  "runtime_dependencies": [
+    "rl_environment.logging"
+  ],
+  "schema_version": "0036_experiment_manifest_v1",
+  "source_checkpoint": {
+    "path": "rl_runs/0036_dedicated_action_value_network/source/friend_0806_epoch11/model.pt",
+    "sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
+  },
+  "focal_deck": {
+    "deck_id": "dragapult_ex_07bedfffbfad",
+    "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+    "focal_card_id": 121,
+    "selection_semantics": "only_player_perspectives_whose_registered_deck_contains_dragapult_ex"
+  },
+  "focal_dataset_contract": {
+    "target_unique_episodes": 10000,
+    "date_coverage": "all_available_dates_with_eligible_episodes",
+    "uniform_date_fraction": 0.25,
+    "recency_fraction": 0.75,
+    "recency_half_life_days": 7.0,
+    "duplicate_episodes_allowed": false
+  },
+  "focal_dataset_catalog": {
+    "path": "data_audit/dragapult_focal_all_dates_weighted_exact10k.json",
+    "sha256": "4e8148e672079ef5fc0c6ef65ffa1ae6340886b1cb65d9696dff082dd9da1d47",
+    "first_date": "2026-07-08",
+    "last_date": "2026-08-06",
+    "date_count": 30,
+    "selected_episodes": 10000,
+    "train_episodes": 9000,
+    "validation_episodes": 1000,
+    "focal_trajectories": 10155,
+    "exact_007_focal_trajectories": 1951,
+    "validation_exact_007_focal_trajectories": 190,
+    "validation_archetype_classes": 15
+  },
+  "focal_action_dataset": {
+    "local_path": "rl_runs/0036_dedicated_action_value_network/datasets/dragapult_focal_all_dates_weighted_exact10k",
+    "git_ignored": true,
+    "manifest_sha256": "24cd4d89bd89d0dae0f0fd71281a40e8cf6142e7dc41811f3819e39011fe44ef",
+    "verification_report": "data_audit/dragapult_focal_action_dataset_verification.json",
+    "verification_report_sha256": "c5e27d6a5585e46e9c3d2c62cf1dcab0508e035f5e51f4ec975e0718f3084ba3",
+    "episodes": 10000,
+    "decisions": 1061249,
+    "train_decisions": 954942,
+    "validation_decisions": 106307,
+    "shards": 260,
+    "bytes_human": "1.1G",
+    "validation_archetype_classes": 15
+  },
+  "materialized_tensor_dataset": {
+    "local_path": "rl_runs/0036_dedicated_action_value_network/datasets/dragapult_focal_all_dates_weighted_exact10k_tensor_v1",
+    "git_ignored": true,
+    "schema_version": "0036_materialized_value_dataset_v1",
+    "content_sha256": "02e6651e1bf98262837c65b07e568ace6a79be4b77b682619e20c8dd5f3fb236",
+    "reference_file_sha256": "13a5dc1d1827d38e8390e1c17b875b3313f84cee294862f404677227fb4318c1",
+    "source_manifest_sha256": "24cd4d89bd89d0dae0f0fd71281a40e8cf6142e7dc41811f3819e39011fe44ef",
+    "shards": 260,
+    "payload_bytes": 17223219032,
+    "train_decisions": 954942,
+    "validation_decisions": 106307,
+    "prefetch_depth": 2,
+    "performance_audit": "data_audit/io_optimization_benchmark.json"
+  },
+  "failed_versions": [
+    {
+      "version": "V1_raw_pool_mlp",
+      "reason": "user-requested stop before epoch 1 after gzip/json input bottleneck was confirmed",
+      "completed_epochs": 0,
+      "checkpoints": 0
+    }
+  ],
+  "next_formal_version": "V2_latent_value_archetype_diff",
+  "status": "io_performance_gate_passed_v2_full_critic_pending",
+  "training_package": "train/0036_dedicated_action_value_network"
+}

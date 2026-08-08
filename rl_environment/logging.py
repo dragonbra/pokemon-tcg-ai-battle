@@ -62,6 +62,11 @@ class TrainingLogger:
         self._wandb_sink = create_wandb_sink_from_environment(self.jsonl_path, metrics)
         self._wandb_resolved = True
 
+    def initialize_wandb(self, metrics: dict[str, Any] | None = None) -> None:
+        """Eagerly create a formal run so system telemetry is visible immediately."""
+        self._resolve_wandb_sink(metrics or {})
+        self._persist_wandb_status()
+
     def log(
         self,
         step: int,
