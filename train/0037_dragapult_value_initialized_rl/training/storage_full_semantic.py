@@ -38,21 +38,37 @@ def save_model_only(
 ) -> str:
     if update < 0:
         raise ValueError("checkpoint update must be nonnegative")
-    state = {
-        **{
+    if model.adaptation_config.lora:
+        state = {
+            name: value.detach().cpu()
+            for name, value in model.named_parameters()
+            if value.requires_grad
+        }
+        schema = "0037_value_initialized_adapted_model_only_v2"
+    else:
+        state = {
+            **{
             f"action_decoder.{name}": value.detach().cpu()
             for name, value in model.actor.action_decoder.state_dict().items()
-        },
-        **{
+            },
+            **{
             f"value_head.{name}": value.detach().cpu()
             for name, value in model.value_head.state_dict().items()
-        },
-    }
+            },
+        }
+        schema = "0037_value_initialized_decoder_critic_model_only_v1"
     payload = {
-        "schema_version": "0037_value_initialized_decoder_critic_model_only_v1",
+        "schema_version": schema,
         "update": update,
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
         "state_dict": state,
+        "adaptation": {
+            "lora": model.adaptation_config.lora,
+            "layernorm_tuning": model.adaptation_config.layernorm_tuning,
+            "rank": model.adaptation_config.rank,
+            "alpha": model.adaptation_config.alpha,
+            "board_layers": model.adaptation_config.board_layers,
+        },
         "metadata": metadata,
     }
     if FORBIDDEN_KEYS & set(payload):
@@ -69,4 +85,19 @@ def save_model_only(
     return digest
 
 
-__all__ = ["FORBIDDEN_KEYS", "save_model_only"]
+def load_adapted_model_only(model: SemanticActorCritic, path: Path) -> dict[str, Any]:
+    payload = torch.load(path, map_location="cpu", weights_only=True)
+    if payload.get("schema_version") != "0037_value_initialized_adapted_model_only_v2":
+        raise ValueError("unexpected adapted checkpoint schema")
+    current = dict(model.named_parameters())
+    state = payload.get("state_dict") or {}
+    expected = {name for name, value in current.items() if value.requires_grad}
+    if set(state) != expected:
+        raise ValueError("adapted checkpoint trainable inventory mismatch")
+    with torch.no_grad():
+        for name, value in state.items():
+            current[name].copy_(value.to(current[name].device, current[name].dtype))
+    return payload
+
+
+__all__ = ["FORBIDDEN_KEYS", "load_adapted_model_only", "save_model_only"]

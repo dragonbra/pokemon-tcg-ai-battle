@@ -104,6 +104,20 @@ def _load_evaluated_runtime(candidate_root: Path):
     )
 
 
+def _base_actor_state(state: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    """Canonicalize parametrized LoRA state back to immutable source tensor keys."""
+    canonical: dict[str, torch.Tensor] = {}
+    for name, value in state.items():
+        if ".parametrizations." not in name:
+            canonical[name] = value
+            continue
+        if not name.endswith(".original"):
+            continue
+        prefix, parameter = name.split(".parametrizations.", 1)
+        canonical[f"{prefix}.{parameter.removesuffix('.original')}"] = value
+    return canonical
+
+
 def assert_large_model_0806_runtime_parity(
     *,
     observations: Sequence[dict[str, Any]],
@@ -120,7 +134,7 @@ def assert_large_model_0806_runtime_parity(
     package_policy = package_policy_type.from_checkpoint(checkpoint, deck)
     package_encoder = package_encoder_type(actor_index, deck, package_policy.config)
     package_model = package_policy.model.to(model.device).eval()
-    local_state = model.actor.state_dict()
+    local_state = _base_actor_state(model.actor.state_dict())
     package_state = package_model.state_dict()
     if set(local_state) != set(package_state) or any(
         not torch.equal(local_state[name], package_state[name]) for name in local_state

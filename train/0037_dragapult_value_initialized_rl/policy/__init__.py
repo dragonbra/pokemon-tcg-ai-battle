@@ -1,6 +1,7 @@
 """Exact Large Model 0806 SemanticPolicy actor-critic interfaces."""
 
 from .actor_critic import SemanticActorCritic, SourceIdentity, load_actor_critic
+from .adaptation import AdaptationConfig
 from .action_distribution import (
     ActionEvaluation,
     SampledAction,
@@ -12,6 +13,7 @@ from .action_distribution import (
 
 __all__ = [
     "ActionEvaluation",
+    "AdaptationConfig",
     "SampledAction",
     "SemanticActorCritic",
     "SourceIdentity",

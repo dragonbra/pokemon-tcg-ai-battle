@@ -21,7 +21,7 @@ from evaluation.runtime.seeded import build_seeded_runtime
 
 from ..league import load_frozen_catalog
 from ..parity import assert_large_model_0806_runtime_parity, collect_official_observations
-from ..policy import load_actor_critic
+from ..policy import AdaptationConfig, load_actor_critic
 from ..rollout import FullSemanticRolloutCollector, RolloutJob
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
@@ -31,8 +31,8 @@ from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0037_dragapult_value_initialized_rl"
-WANDB_DISPLAY_PREFIX = "0037 · engine_pool_prototype_cache_seeded512"
-FORMAL_VERSION = "V2_engine_pool_prototype_cache_seeded512"
+WANDB_DISPLAY_PREFIX = "0037 · lora_r8 · eval5 · 50u"
+FORMAL_VERSION = "V3_lora_r8_eval5_50u"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -43,7 +43,7 @@ FOCAL_DECK_PATH = ROOT / "train" / PROJECT / "league/decks" / FOCAL_DECK_ID / "d
 @dataclass(frozen=True, slots=True)
 class RunConfig:
     version: str = FORMAL_VERSION
-    updates: int = 200
+    updates: int = 50
     worker_processes: int = 16
     engines_per_worker: int = 8
     inference_channels_per_role: int = 8
@@ -51,7 +51,8 @@ class RunConfig:
     device: str = "cuda:0"
     seed: int = 330031001
     games_per_update: int = 512
-    eval_every: int = 10
+    eval_every: int = 5
+    adaptation_arm: str = "lora"
     wandb_mode: str = "online"
     ppo: PPOConfig = PPOConfig()
 
@@ -74,6 +75,8 @@ class RunConfig:
             raise ValueError("games_per_update must be 256 or 512 Frozen-0806 games")
         if self.wandb_mode not in {"online", "offline"}:
             raise ValueError("invalid W&B mode")
+        if self.adaptation_arm not in {"lora", "lora_layernorm"}:
+            raise ValueError("invalid adaptation arm")
         self.ppo.validate()
 
 
@@ -263,14 +266,28 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
         for job in jobs
     ]
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("ascii")
+    environment_sha256 = _environment_schedule_sha256(jobs)
     return {
         "schema": "0037_seeded512_rollout_schedule_v1",
         "episodes": len(rows),
         "seed_pairs": len(rows) // 2,
         "source_checkpoint_sha256": source_checkpoint_sha256,
         "schedule_sha256": hashlib.sha256(encoded).hexdigest(),
+        "environment_sha256": environment_sha256,
         "jobs": rows,
     }
+
+
+def _environment_schedule_sha256(jobs: list[RolloutJob]) -> str:
+    rows = [{
+        "opponent_id": job.opponent_id,
+        "focal_first": job.focal_first,
+        "engine_seed": job.seed,
+        "search_seed": job.search_seed,
+        "policy_seed": job.policy_seed,
+    } for job in jobs]
+    encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("ascii")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _opponent_snapshot() -> dict[str, Any]:
@@ -337,9 +354,15 @@ def run_gate(
     gae_lambda: float = 0.95,
     credit_clock: str = "turn",
     loss_weighting: str = "episode_equal_decisions",
+    adaptation_arm: str = "lora",
 ) -> dict[str, Any]:
     device = torch.device(device_name)
-    model, identity = load_actor_critic(SOURCE_CHECKPOINT, focal_deck(), device)
+    adaptation = AdaptationConfig(
+        lora=True, layernorm_tuning=adaptation_arm == "lora_layernorm"
+    )
+    model, identity = load_actor_critic(
+        SOURCE_CHECKPOINT, focal_deck(), device, adaptation=adaptation
+    )
     opponent = load_frozen_opponent(device)
     parity = _run_parity(model, output.parent / "large_model_0806_runtime_parity.json")
     representation = model.representation_sha256()
@@ -390,6 +413,8 @@ def run_gate(
         "credit_clock": credit_clock,
         "gae_lambda": gae_lambda,
         "loss_weighting": loss_weighting,
+        "adaptation": asdict(adaptation),
+        "adaptation_inventory": model.adaptation_inventory,
         "rollout_seconds": rollout_seconds,
         "rollout_topology": {
             "worker_processes": worker_processes,
@@ -418,6 +443,10 @@ def run_gate(
 
 def run(config: RunConfig) -> dict[str, Any]:
     config.validate()
+    adaptation = AdaptationConfig(
+        lora=True,
+        layernorm_tuning=config.adaptation_arm == "lora_layernorm",
+    )
     paths = assert_fresh_version(config.version)
     for name in ("artifact", "checkpoint", "tensorboard", "wandb"):
         paths[name].mkdir(parents=True, exist_ok=False)
@@ -433,7 +462,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_MODE": config.wandb_mode,
             "WANDB_ENTITY": "dragon_bra",
             "WANDB_PROJECT": "pokemon-tcg-policy-learning",
-            "WANDB_JOB_TYPE": "ppo_decoder_only",
+            "WANDB_JOB_TYPE": "ppo_decoder_value_encoder_adapter",
             "WANDB_RUN_ID": run_id,
             "WANDB_NAME": f"{WANDB_DISPLAY_PREFIX} · {config.version}",
             "WANDB_RUN_GROUP": PROJECT,
@@ -490,6 +519,8 @@ def run(config: RunConfig) -> dict[str, Any]:
         },
         "trainable_contract": [
             "actor.action_decoder.*",
+            "actor.state_encoder.board_encoder.layers.{0,1,3}.*.parametrizations.*.{a,b}",
+            "actor.{state_encoder,option_encoder}.*LayerNorm.{weight,bias} (setting 2 only)",
             "value_head.queries",
             "value_head.blocks.*",
             "value_head.final_norm.*",
@@ -505,6 +536,14 @@ def run(config: RunConfig) -> dict[str, Any]:
             "auxiliary_heads_in_ppo": False,
         },
         "checkpoint_retention": "all",
+        "adaptation": asdict(adaptation),
+        "value_diagnostics": {
+            "source": "on_policy_rollout_old_value",
+            "absolute_turn_bins": ["00_03", "04_07", "08_11", "12_plus"],
+            "remaining_turn_bins": ["00_01", "02_03", "04_plus"],
+            "outcomes": ["focal_win", "focal_loss", "draw"],
+            "targets": ["gae_return", "terminal_outcome"],
+        },
         "reward": "terminal_only_minus_one_zero_plus_one",
         "temporal_credit": {
             "gamma": config.ppo.gamma,
@@ -538,7 +577,9 @@ def run(config: RunConfig) -> dict[str, Any]:
     cumulative_episodes = 0
     cumulative_decisions = 0
     try:
-        model, identity = load_actor_critic(SOURCE_CHECKPOINT, focal_deck(), device)
+        model, identity = load_actor_critic(
+            SOURCE_CHECKPOINT, focal_deck(), device, adaptation=adaptation
+        )
         opponent = load_frozen_opponent(device)
         parity = _run_parity(model, paths["artifact"] / "large_model_0806_runtime_parity.json")
         if not parity["passed"]:
@@ -713,9 +754,9 @@ def run(config: RunConfig) -> dict[str, Any]:
                     if _schedule_payload(
                         evaluation_jobs,
                         source_checkpoint_sha256=identity.checkpoint_sha256,
-                    )["schedule_sha256"] != json.loads(
+                    )["environment_sha256"] != json.loads(
                         (paths["artifact"] / "schedules/eval_fixed_seeded512.json").read_text()
-                    )["schedule_sha256"]:
+                    )["environment_sha256"]:
                         raise RuntimeError("fixed evaluation schedule changed across checkpoints")
                     evaluation = evaluator.collect(evaluation_jobs)
                     metrics.update(_episode_metrics(evaluation, "eval"))
@@ -777,13 +818,16 @@ def main() -> int:
     parser.add_argument("--gate-mode", choices=("sample", "greedy"), default="sample")
     parser.add_argument("--gate-ppo", action="store_true")
     parser.add_argument("--version", default=FORMAL_VERSION)
-    parser.add_argument("--updates", type=int, default=200)
+    parser.add_argument("--updates", type=int, default=50)
     parser.add_argument("--worker-processes", type=int, default=16)
     parser.add_argument("--engines-per-worker", type=int, default=8)
     parser.add_argument("--inference-channels-per-role", type=int, default=8)
     parser.add_argument("--coalesce-ms", type=float, default=5.0)
     parser.add_argument("--games-per-update", type=int, choices=(512,), default=512)
-    parser.add_argument("--eval-every", type=int, default=10)
+    parser.add_argument("--eval-every", type=int, default=5)
+    parser.add_argument(
+        "--adaptation-arm", choices=("lora", "lora_layernorm"), default="lora"
+    )
     parser.add_argument("--gae-lambda", type=float, default=0.95)
     parser.add_argument("--credit-clock", choices=("turn",), default="turn")
     parser.add_argument(
@@ -806,6 +850,7 @@ def main() -> int:
             gae_lambda=args.gae_lambda,
             credit_clock=args.credit_clock,
             loss_weighting=args.loss_weighting,
+            adaptation_arm=args.adaptation_arm,
         )
         print(json.dumps(report, indent=2, sort_keys=True))
         return 0
@@ -819,6 +864,7 @@ def main() -> int:
             coalesce_ms=args.coalesce_ms,
             games_per_update=args.games_per_update,
             eval_every=args.eval_every,
+            adaptation_arm=args.adaptation_arm,
             wandb_mode=args.wandb_mode,
             ppo=PPOConfig(
                 gae_lambda=args.gae_lambda,

@@ -24,6 +24,7 @@ class PreparedBatch:
     episode_weight: Tensor
     episode_index: Tensor
     turns: Tensor
+    terminal_turns: Tensor
     candidate_first: Tensor
     opponents: tuple[str, ...]
     source_policy_update: int
@@ -111,6 +112,7 @@ def prepare_episodes(
     weights: list[float] = []
     episode_indices: list[int] = []
     turns: list[int] = []
+    terminal_turns: list[int] = []
     candidate_first: list[bool] = []
     opponents: list[str] = []
     semantic_boundaries = 0
@@ -157,6 +159,9 @@ def prepare_episodes(
             weights.append(weight)
             episode_indices.append(episode_index)
             turns.append(decision.turn if decision.turn is not None else -1)
+            if decision.turn is not None and decision.turn > episode.turns:
+                raise ValueError("decision turn exceeds terminal engine turn")
+            terminal_turns.append(episode.turns)
             candidate_first.append(episode.job.focal_first)
             opponents.append(episode.job.opponent_id)
     if not features:
@@ -187,6 +192,7 @@ def prepare_episodes(
         episode_weight=episode_weight,
         episode_index=torch.tensor(episode_indices, dtype=torch.long),
         turns=torch.tensor(turns, dtype=torch.long),
+        terminal_turns=torch.tensor(terminal_turns, dtype=torch.long),
         candidate_first=torch.tensor(candidate_first, dtype=torch.bool),
         opponents=tuple(opponents),
         source_policy_update=next(iter(updates)),
@@ -217,7 +223,7 @@ def training_batch_metrics(batch: PreparedBatch) -> dict[str, float]:
         1.0 - residual_variance / return_variance,
         torch.zeros_like(return_variance),
     )
-    return {
+    result = {
         "ppo/advantage_mean": float(advantage_mean),
         "ppo/advantage_std": float(advantage_variance.sqrt()),
         "ppo/return_mean": float(return_mean),
@@ -235,6 +241,75 @@ def training_batch_metrics(batch: PreparedBatch) -> dict[str, float]:
             batch.loss_weighting == "episode_equal_turns"
         ),
     }
+    result.update(value_diagnostic_metrics(batch))
+    return result
 
 
-__all__ = ["PreparedBatch", "prepare_episodes", "training_batch_metrics"]
+def value_diagnostic_metrics(batch: PreparedBatch) -> dict[str, float]:
+    """Audit rollout Value predictions without an additional Encoder pass."""
+    turns = batch.turns
+    remaining = batch.terminal_turns - turns
+    win = batch.terminal_return == 1.0
+    loss = batch.terminal_return == -1.0
+    draw = batch.terminal_return == 0.0
+    opening = turns <= 3
+    near_terminal = remaining <= 1
+    groups = {
+        "all": torch.ones_like(turns, dtype=torch.bool),
+        "turn_00_03": opening,
+        "turn_04_07": (turns >= 4) & (turns <= 7),
+        "turn_08_11": (turns >= 8) & (turns <= 11),
+        "turn_12_plus": turns >= 12,
+        "remaining_00_01": near_terminal,
+        "remaining_02_03": (remaining >= 2) & (remaining <= 3),
+        "remaining_04_plus": remaining >= 4,
+        "focal_win": win,
+        "focal_loss": loss,
+        "draw": draw,
+        "focal_win_opening": win & opening,
+        "focal_win_near_terminal": win & near_terminal,
+        "focal_loss_opening": loss & opening,
+        "focal_loss_near_terminal": loss & near_terminal,
+    }
+
+    def weighted_moments(values: Tensor, weights: Tensor) -> tuple[Tensor, Tensor]:
+        weights = weights / weights.sum()
+        mean = (values * weights).sum()
+        variance = ((values - mean).square() * weights).sum()
+        return mean, variance
+
+    metrics: dict[str, float] = {}
+    for name, mask in groups.items():
+        prefix = f"value_diag/{name}"
+        count = int(mask.sum())
+        metrics[f"{prefix}/decisions"] = float(count)
+        if count == 0:
+            continue
+        weights = batch.episode_weight[mask]
+        value = batch.old_value[mask]
+        gae = batch.gae_return[mask]
+        terminal = batch.terminal_return[mask]
+        value_mean, value_variance = weighted_moments(value, weights)
+        gae_mean, gae_variance = weighted_moments(gae, weights)
+        terminal_mean, terminal_variance = weighted_moments(terminal, weights)
+        gae_residual = gae - value
+        terminal_residual = terminal - value
+        _, gae_residual_variance = weighted_moments(gae_residual, weights)
+        terminal_bias, terminal_residual_variance = weighted_moments(terminal_residual, weights)
+        metrics.update({
+            f"{prefix}/value_mean": float(value_mean),
+            f"{prefix}/value_std": float(value_variance.sqrt()),
+            f"{prefix}/gae_target_mean": float(gae_mean),
+            f"{prefix}/terminal_target_mean": float(terminal_mean),
+            f"{prefix}/terminal_residual_mean": float(terminal_bias),
+            f"{prefix}/explained_variance_gae": float(
+                1.0 - gae_residual_variance / gae_variance
+            ) if float(gae_variance) > 1e-8 else 0.0,
+            f"{prefix}/explained_variance_terminal": float(
+                1.0 - terminal_residual_variance / terminal_variance
+            ) if float(terminal_variance) > 1e-8 else 0.0,
+        })
+    return metrics
+
+
+__all__ = ["PreparedBatch", "prepare_episodes", "training_batch_metrics", "value_diagnostic_metrics"]

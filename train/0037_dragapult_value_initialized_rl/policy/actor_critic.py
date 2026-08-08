@@ -12,6 +12,7 @@ from torch import Tensor, nn
 
 from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 from .value_network import LatentQueryValueHead
+from .adaptation import AdaptationConfig, apply_focal_adaptation
 
 
 EXPECTED_SOURCE_SHA256 = "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
@@ -38,6 +39,22 @@ def _module_sha256(module: nn.Module, *, exclude_decoder: bool = False) -> str:
     for name, value in sorted(module.state_dict().items()):
         if exclude_decoder and name.startswith("action_decoder."):
             continue
+        digest.update(name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(value.detach().cpu().contiguous().numpy().tobytes())
+    return digest.hexdigest()
+
+
+def _frozen_module_sha256(module: nn.Module) -> str:
+    digest = hashlib.sha256()
+    rows = [
+        (name, value) for name, value in module.named_parameters()
+        if not value.requires_grad and not name.startswith("action_decoder.")
+    ] + [
+        (name, value) for name, value in module.named_buffers()
+        if not name.startswith("action_decoder.")
+    ]
+    for name, value in sorted(rows):
         digest.update(name.encode("utf-8"))
         digest.update(b"\0")
         digest.update(value.detach().cpu().contiguous().numpy().tobytes())
@@ -94,10 +111,13 @@ class DecoderPolicyHead(nn.Module):
 class SemanticActorCritic(nn.Module):
     """Preserve every original actor tensor and train only the original decoder."""
 
-    def __init__(self, actor: nn.Module, value_head: LatentQueryValueHead) -> None:
+    def __init__(self, actor: nn.Module, value_head: LatentQueryValueHead,
+                 adaptation: AdaptationConfig = AdaptationConfig()) -> None:
         super().__init__()
         self.actor = actor
         self.value_head = value_head
+        self.adaptation_config = adaptation
+        self.adaptation_inventory: dict[str, object] = {}
         self.freeze_representation()
 
     @property
@@ -127,6 +147,7 @@ class SemanticActorCritic(nn.Module):
         self.value_head.blocks.requires_grad_(True)
         self.value_head.final_norm.requires_grad_(True)
         self.value_head.heads.value.requires_grad_(True)
+        self.adaptation_inventory = apply_focal_adaptation(self.actor, self.adaptation_config)
 
     def assert_trainable_contract(self) -> None:
         names = tuple(name for name, value in self.named_parameters() if value.requires_grad)
@@ -134,12 +155,18 @@ class SemanticActorCritic(nn.Module):
             name for name in names
             if not name.startswith("actor.action_decoder.")
             and not name.startswith("value_head.")
+            and ".parametrizations." not in name
+            and not (
+                self.adaptation_config.layernorm_tuning
+                and name.startswith(("actor.state_encoder.", "actor.option_encoder."))
+                and name.endswith((".weight", ".bias"))
+            )
         ]
         if invalid or not any(name.startswith("actor.action_decoder.") for name in names):
             raise RuntimeError(f"invalid full-semantic trainable boundary: {invalid[:5]}")
 
     def representation_sha256(self) -> str:
-        return _module_sha256(self.actor, exclude_decoder=True)
+        return _frozen_module_sha256(self.actor)
 
     def decoder_sha256(self) -> str:
         return _module_sha256(self.actor.action_decoder)
@@ -150,6 +177,7 @@ def load_actor_critic(
     deck: tuple[int, ...],
     device: str | torch.device = "cpu",
     value_checkpoint: Path = DEFAULT_VALUE_CHECKPOINT,
+    adaptation: AdaptationConfig = AdaptationConfig(),
 ) -> tuple[SemanticActorCritic, SourceIdentity]:
     digest = _sha256(checkpoint)
     if digest != EXPECTED_SOURCE_SHA256:
@@ -173,7 +201,7 @@ def load_actor_critic(
         actor_parameter_count=parameter_count,
         actor_tensor_count=len(payload["state_dict"]),
     )
-    model = SemanticActorCritic(actor, load_value_head(value_checkpoint, actor)).to(device).eval()
+    model = SemanticActorCritic(actor, load_value_head(value_checkpoint, actor), adaptation).to(device).eval()
     model.assert_trainable_contract()
     return model, identity
 

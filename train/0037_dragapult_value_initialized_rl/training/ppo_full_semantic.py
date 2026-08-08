@@ -10,6 +10,7 @@ from ..policy.action_distribution import evaluate_actions_encoded
 from ..policy.actor_critic import DecoderPolicyHead, SemanticActorCritic
 from ..policy.batching import collate_feature_batches, move_batch
 from .batch_full_semantic import PreparedBatch, training_batch_metrics
+from ..policy.adaptation import adapter_parameters, tuned_layernorm_parameters
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,8 +66,21 @@ class PPOTrainer:
             name: tensor.detach().clone()
             for name, tensor in model.actor.action_decoder.named_parameters()
         }
-        self.optimizer = torch.optim.AdamW(
-            [
+        self.adapter_initial = {
+            name: value.detach().clone()
+            for name, value in model.actor.named_parameters()
+            if value.requires_grad and ".parametrizations." in name
+            and name.endswith((".a", ".b"))
+        }
+        adapter_ids = {id(value) for value in adapter_parameters(model.actor)}
+        decoder_ids = {id(value) for value in model.actor.action_decoder.parameters()}
+        self.layernorm_initial = {
+            name: value.detach().clone()
+            for name, value in model.actor.named_parameters()
+            if value.requires_grad and id(value) not in adapter_ids
+            and id(value) not in decoder_ids
+        }
+        groups = [
                 {
                     "params": model.actor.action_decoder.parameters(),
                     "lr": config.actor_learning_rate,
@@ -79,7 +93,15 @@ class PPOTrainer:
                     ],
                     "lr": config.value_learning_rate,
                 },
-            ],
+            ]
+        adapters = adapter_parameters(model.actor)
+        norms = tuned_layernorm_parameters(model.actor)
+        if adapters:
+            groups.append({"params": adapters, "lr": model.adaptation_config.adapter_learning_rate})
+        if norms:
+            groups.append({"params": norms, "lr": model.adaptation_config.layernorm_learning_rate})
+        self.optimizer = torch.optim.AdamW(
+            groups,
             weight_decay=config.weight_decay,
         )
 
@@ -87,6 +109,19 @@ class PPOTrainer:
         difference = torch.zeros((), device=self.device, dtype=torch.float64)
         scale = torch.zeros((), device=self.device, dtype=torch.float64)
         current = dict(self.model.actor.action_decoder.named_parameters())
+        for name, source in baseline.items():
+            value = current[name].detach().double()
+            source = source.to(self.device).double()
+            difference += (value - source).square().sum()
+            scale += source.square().sum()
+        return float((difference.sqrt() / scale.sqrt().clamp_min(1e-12)).item())
+
+    def _actor_group_relative_l2(self, baseline: dict[str, torch.Tensor]) -> float:
+        if not baseline:
+            return 0.0
+        difference = torch.zeros((), device=self.device, dtype=torch.float64)
+        scale = torch.zeros((), device=self.device, dtype=torch.float64)
+        current = dict(self.model.actor.named_parameters())
         for name, source in baseline.items():
             value = current[name].detach().double()
             source = source.to(self.device).double()
@@ -106,7 +141,6 @@ class PPOTrainer:
             raise ValueError("prepared batch credit contract does not match PPO config")
         if self.model.representation_sha256() != self.initial_representation_sha256:
             raise RuntimeError("frozen Large Model 0806 representation changed before PPO")
-        behavior = DecoderPolicyHead.copy_from(self.model)
         behavior_parameters = {
             name: tensor.detach().clone()
             for name, tensor in self.model.actor.action_decoder.named_parameters()
@@ -118,6 +152,30 @@ class PPOTrainer:
         rejected_kl = 0.0
         preupdate_mae_max = 0.0
         self.model.eval()
+        with torch.no_grad():
+            for start in range(0, batch.decisions, self.config.batch_size):
+                indices = torch.arange(start, min(start + self.config.batch_size, batch.decisions))
+                features = move_batch(
+                    collate_feature_batches([batch.features[int(index)] for index in indices]),
+                    self.device,
+                )
+                sequences = batch.sequences[indices].to(self.device)
+                lengths = batch.lengths[indices].to(self.device)
+                stopped = batch.stopped[indices].to(self.device)
+                rollout_log_prob = batch.rollout_log_prob[indices].to(self.device)
+                validated, state, options, current_value = self.model.encode(features)
+                replay = evaluate_actions_encoded(
+                    self.model.head, validated, state.summary, options,
+                    sequences, lengths, stopped, current_value,
+                )
+                preupdate_mae_max = max(
+                    preupdate_mae_max,
+                    float((rollout_log_prob - replay.log_prob).abs().max()),
+                )
+        if preupdate_mae_max > self.config.behavior_logprob_mae_limit:
+            raise RuntimeError(
+                f"behavior log-prob parity failed: {preupdate_mae_max}"
+            )
         for epoch in range(self.config.epochs):
             order = torch.randperm(batch.decisions)
             epoch_kls: list[float] = []
@@ -135,23 +193,12 @@ class PPOTrainer:
                 returns = batch.gae_return[indices].to(self.device)
                 weights = batch.episode_weight[indices].to(self.device)
                 weights = weights / weights.sum()
+                validated, state, options, current_value = self.model.encode(features)
                 with torch.no_grad():
-                    validated, state, options, _ = self.model.encode(features)
-                    behavior_eval = evaluate_actions_encoded(
-                        behavior, validated, state.summary, options, sequences, lengths, stopped,
-                        torch.zeros_like(returns),
-                    )
                     reference_eval = evaluate_actions_encoded(
                         self.reference, validated, state.summary, options, sequences, lengths, stopped,
                         torch.zeros_like(returns),
                     )
-                preupdate_mae = float((rollout_log_prob - behavior_eval.log_prob).abs().max())
-                preupdate_mae_max = max(preupdate_mae_max, preupdate_mae)
-                if preupdate_mae > self.config.behavior_logprob_mae_limit:
-                    raise RuntimeError(
-                        f"behavior log-prob parity failed: {preupdate_mae}"
-                    )
-                current_value = self.model.value_from_encoded(validated, state, options)
                 evaluated = evaluate_actions_encoded(
                     self.model.head,
                     validated,
@@ -162,7 +209,7 @@ class PPOTrainer:
                     stopped,
                     current_value,
                 )
-                old_log_prob = behavior_eval.log_prob
+                old_log_prob = rollout_log_prob
                 log_ratio = evaluated.log_prob - old_log_prob
                 ratio = log_ratio.exp()
                 approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
@@ -234,6 +281,8 @@ class PPOTrainer:
                 "ppo/decisions": float(batch.decisions),
                 "ppo/actor_relative_l2_vs_behavior": self._relative_l2(behavior_parameters),
                 "ppo/actor_relative_l2_vs_reference": self._relative_l2(self.reference_parameters),
+                "ppo/encoder_lora_relative_l2_vs_initial": self._actor_group_relative_l2(self.adapter_initial),
+                "ppo/encoder_layernorm_relative_l2_vs_initial": self._actor_group_relative_l2(self.layernorm_initial),
                 "ppo/gamma": self.config.gamma,
                 "ppo/gae_lambda": self.config.gae_lambda,
                 "ppo/credit_clock_turn_config": float(

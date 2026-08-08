@@ -140,6 +140,24 @@ class FullTerminalCreditTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "loss_weighting"):
             ppo.PPOConfig(loss_weighting="selection_count_bias").validate()
 
+    def test_value_diagnostics_split_turn_distance_and_winner(self) -> None:
+        batch_module = importlib.import_module(f"{PROJECT}.training.batch_full_semantic")
+        win = self._episode(4, 1.0, [1, 3, 7, 9])
+        loss = self._episode(4, -1.0, [1, 5, 7, 9])
+        win.turns = 9
+        loss.turns = 9
+        batch = batch_module.prepare_episodes(
+            [win, loss], gamma=1.0, gae_lambda=0.95, credit_clock="turn"
+        )
+        metrics = batch_module.value_diagnostic_metrics(batch)
+        self.assertEqual(metrics["value_diag/all/decisions"], 8.0)
+        self.assertEqual(metrics["value_diag/turn_00_03/decisions"], 3.0)
+        self.assertEqual(metrics["value_diag/remaining_00_01/decisions"], 2.0)
+        self.assertEqual(metrics["value_diag/focal_win/decisions"], 4.0)
+        self.assertEqual(metrics["value_diag/focal_loss/decisions"], 4.0)
+        self.assertIn("value_diag/focal_win/value_mean", metrics)
+        self.assertIn("value_diag/all/explained_variance_terminal", metrics)
+
 
 if __name__ == "__main__":
     unittest.main()
