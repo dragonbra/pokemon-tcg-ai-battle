@@ -46,6 +46,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-decisions", type=int, default=8192)
     parser.add_argument("--check-interval", type=int, default=8)
     parser.add_argument("--ability-repeat-limit", type=int, default=20)
+    parser.add_argument("--engine-turn-draw-limit", type=int, default=100)
     parser.add_argument("--device-index", type=int, default=0)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--terminal-states-output", type=Path)
@@ -118,6 +119,7 @@ def main() -> int:
         max_decisions=args.max_decisions,
         check_interval=args.check_interval,
         ability_repeat_limit=args.ability_repeat_limit,
+        engine_turn_draw_limit=args.engine_turn_draw_limit,
     )
     focal_wins = sum(
         (job.focal_player == 0 and game_result == 1)
@@ -159,6 +161,17 @@ def main() -> int:
             "forfeit_count": len(result.forfeit_schedule_indices),
             "forfeit_schedule_indices": list(result.forfeit_schedule_indices),
             "kind": "same_actor_identical_leading_option_repeat_forfeit",
+            "engine_turn_draw_limit": args.engine_turn_draw_limit,
+            "full_round_draw_limit": (
+                args.engine_turn_draw_limit // 2
+                if args.engine_turn_draw_limit > 0 else 0
+            ),
+            "turn_limit_draw_count": len(
+                result.turn_limit_draw_schedule_indices
+            ),
+            "turn_limit_draw_schedule_indices": list(
+                result.turn_limit_draw_schedule_indices
+            ),
         },
         "models": json_ready(provenance),
         "schedule": {

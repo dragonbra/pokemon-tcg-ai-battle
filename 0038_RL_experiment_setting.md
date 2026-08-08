@@ -7,7 +7,7 @@ CUDA 接入完成后，请基于 `0038_action_boundary_rl` 启动今晚的正式
 实验命名：
 
 ```text
-V7_turn_limit_cuda_fresh_rl
+V8_repeat_guard_turn_limit_cuda_fresh_rl
 ```
 
 必须从公共起点开始：
@@ -393,4 +393,4 @@ CUDA 接入及 smoke 通过后，请先输出一份简短 launch manifest：
 - 正式启动命令；
 - 预估 games/hour；正式 run 的完成时间由用户手动停止决定。
 
-只有在用户再次明确确认后才启动 `V7_turn_limit_cuda_fresh_rl`。V7 继承 canonical Frozen/rollout 合同，并将 50 个完整回合显式映射为 CUDA engine turn index 99 的 scheduler-owned terminal draw：`reward=0`、`done=true`、`next_value=0`。该规则是项目防挂死截断合同，不是官方宝可梦 TCG 胜利条件。V4、V5 和 V6 均保留为不可续写的审计记录；V6 只有 canonical update-0 baseline，没有 PPO update。
+用户已确认启动 `V8_repeat_guard_turn_limit_cuda_fresh_rl`。V8 继承 canonical Frozen/rollout 合同，将 50 个完整回合显式映射为 CUDA engine turn index 99 的 scheduler-owned terminal draw：`reward=0`、`done=true`、`next_value=0`。同一 actor 第 20 次重复同一 Ability 时直接判该 actor 负；repeat key 只使用稳定 Ability 身份，不包含会随 legal-option 排列变化的 option index。这些规则是项目防挂死合同，不是官方宝可梦 TCG 胜利条件。V4–V7 均保留为不可续写的审计记录；V7 只有 canonical update-0 baseline，没有 PPO update。

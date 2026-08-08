@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+import inspect
 import unittest
 
 import torch
 
-from ptcg_cuda_engine.semantic0031_resident import ResidentJob, ResidentLaneQueue
+from ptcg_cuda_engine.semantic0031_resident import (
+    ResidentJob,
+    ResidentLaneQueue,
+    apply_turn_limit_draws,
+    run_resident_greedy_jobs,
+)
 
 
 def _jobs(count: int) -> tuple[ResidentJob, ...]:
@@ -64,6 +70,31 @@ class ResidentLaneQueueTest(unittest.TestCase):
             )
 
         self.assertEqual(seen, [(100, 0), (100, 1), (101, 0), (101, 1)])
+
+
+class ResidentTurnLimitTest(unittest.TestCase):
+    def test_default_contract_is_fifty_full_rounds(self) -> None:
+        parameter = inspect.signature(run_resident_greedy_jobs).parameters[
+            "engine_turn_draw_limit"
+        ]
+        self.assertEqual(parameter.default, 100)
+
+    def test_turn_limit_marks_only_selected_lanes_as_terminal_draws(self) -> None:
+        class FakeEngine:
+            def __init__(self) -> None:
+                self._statuses = torch.tensor([1, 1, 2], dtype=torch.uint8)
+                self._results = torch.tensor([2, 1, 2], dtype=torch.uint8)
+
+            def statuses(self):
+                return self._statuses
+
+            def game_results(self):
+                return self._results
+
+        engine = FakeEngine()
+        apply_turn_limit_draws(engine, torch.tensor([True, False, False]))
+        self.assertEqual(engine.statuses().tolist(), [2, 1, 2])
+        self.assertEqual(engine.game_results().tolist(), [0, 1, 2])
 
 
 if __name__ == "__main__":

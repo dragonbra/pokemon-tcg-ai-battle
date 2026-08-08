@@ -24,15 +24,14 @@ class DeviceRepeatForfeitGuard:
         self.limit = int(limit)
         self.device = torch.device(device)
         self.keys = torch.zeros(
-            (batch_size, slot_capacity, 20), dtype=torch.int64, device=self.device
+            (batch_size, 2, slot_capacity, 6),
+            dtype=torch.int64,
+            device=self.device,
         )
         self.counts = torch.zeros(
-            (batch_size, slot_capacity), dtype=torch.int16, device=self.device
+            (batch_size, 2, slot_capacity), dtype=torch.int16, device=self.device
         )
         self.turn = torch.full(
-            (batch_size,), -1, dtype=torch.int64, device=self.device
-        )
-        self.actor = torch.full(
             (batch_size,), -1, dtype=torch.int64, device=self.device
         )
 
@@ -44,10 +43,9 @@ class DeviceRepeatForfeitGuard:
         mask = lane_mask.bool().view(-1)
         if mask.shape != (self.batch_size,):
             raise ValueError("repeat guard reset mask has incompatible shape")
-        self.keys.masked_fill_(mask[:, None, None], 0)
-        self.counts.masked_fill_(mask[:, None], 0)
+        self.keys.masked_fill_(mask[:, None, None, None], 0)
+        self.counts.masked_fill_(mask[:, None, None], 0)
         self.turn.masked_fill_(mask, -1)
-        self.actor.masked_fill_(mask, -1)
 
     def observe(
         self,
@@ -72,10 +70,9 @@ class DeviceRepeatForfeitGuard:
             raise ValueError("repeat guard received incompatible option/action tensors")
         turn = turn.long().view(self.batch_size)
         actor = actor.long().view(self.batch_size)
-        changed = actor.ne(self.actor)
-        self.counts.masked_fill_(changed[:, None], 0)
         self.turn.copy_(turn)
-        self.actor.copy_(actor)
+        valid_actor = actor.ge(0) & actor.lt(2)
+        safe_actor = actor.clamp(min=0, max=1)
 
         first = actions[:, 0].long()
         option_count = option_cat.shape[1]
@@ -88,25 +85,35 @@ class DeviceRepeatForfeitGuard:
             ready.bool().view(self.batch_size)
             & lengths.long().view(self.batch_size).ge(1)
             & valid_index
+            & valid_actor
         )
         select_kind = selection_type.long().view(self.batch_size)
 
-        key = torch.cat(
-            (selected[:, :19], select_kind[:, None]), dim=1
-        )
-        matches = self.keys.eq(key[:, None, :]).all(dim=2) & eligible[:, None]
-        empty = self.counts.eq(0)
+        # Canonicalize the selected Ability by stable semantic identity.  The
+        # raw option row also contains presentation-order and target fields;
+        # including those would split one repeatedly selected Ability whenever
+        # the legal-option ordering changes between callbacks.
+        identity = selected[:, (0, 5, 11, 12, 18)]
+        key = torch.cat((identity, select_kind[:, None]), dim=1)
+        rows = torch.arange(self.batch_size, device=self.device)
+        actor_keys = self.keys[rows, safe_actor]
+        actor_counts = self.counts[rows, safe_actor]
+        matches = actor_keys.eq(key[:, None, :]).all(dim=2) & eligible[:, None]
+        empty = actor_counts.eq(0)
         has_match = matches.any(dim=1)
         has_empty = empty.any(dim=1)
         match_slot = matches.long().argmax(dim=1)
         empty_slot = empty.long().argmax(dim=1)
         slot = torch.where(has_match, match_slot, empty_slot)
         tracked = eligible & (has_match | has_empty)
-        rows = torch.arange(self.batch_size, device=self.device)
-        previous = self.counts[rows, slot].long()
+        previous = actor_counts[rows, slot].long()
         updated = previous + tracked.long()
-        self.keys[rows[tracked], slot[tracked], :] = key[tracked]
-        self.counts[rows[tracked], slot[tracked]] = updated[tracked].to(torch.int16)
+        self.keys[
+            rows[tracked], safe_actor[tracked], slot[tracked], :
+        ] = key[tracked]
+        self.counts[
+            rows[tracked], safe_actor[tracked], slot[tracked]
+        ] = updated[tracked].to(torch.int16)
         return tracked & updated.ge(self.limit)
 
 

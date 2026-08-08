@@ -52,7 +52,7 @@ from ..integrated.presets import PRESETS, preset
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V7_turn_limit_cuda_fresh_rl"
+FORMAL_VERSION = "V8_repeat_guard_turn_limit_cuda_fresh_rl"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -62,6 +62,9 @@ CUDA_RULES = ROOT / ".tmp/cuda_0032_rules/official_rules.bin"
 CUDA_EXTENSION = ROOT / ".tmp/engine_cuda_benchmark/build_sm120_staged"
 CUDA_RESIDENT_SOURCE = (
     ROOT / "engine_cuda/python/ptcg_cuda_engine/semantic0031_resident.py"
+)
+CUDA_PROGRESS_GUARD_SOURCE = (
+    ROOT / "engine_cuda/python/ptcg_cuda_engine/progress_guard.py"
 )
 
 
@@ -757,6 +760,12 @@ def run(config: RunConfig) -> dict[str, Any]:
             "cuda_resident_source": str(CUDA_RESIDENT_SOURCE.relative_to(ROOT)),
             "cuda_resident_source_sha256": _sha256(CUDA_RESIDENT_SOURCE)
             if config.engine_backend == "accelerated:cuda_resident" else None,
+            "cuda_progress_guard_source": str(
+                CUDA_PROGRESS_GUARD_SOURCE.relative_to(ROOT)
+            ),
+            "cuda_progress_guard_source_sha256": _sha256(
+                CUDA_PROGRESS_GUARD_SOURCE
+            ) if config.engine_backend == "accelerated:cuda_resident" else None,
             "lane_count": config.cuda_lane_count,
             "trajectory_chunk_games": config.rollout_batch_size,
         },
@@ -840,6 +849,12 @@ def run(config: RunConfig) -> dict[str, Any]:
         "termination_contract": {
             "ability_repeat_limit": 20,
             "ability_repeat_action": "opponent_win",
+            "ability_repeat_key_version": "stable_semantic_identity_v2",
+            "ability_repeat_key_fields": [
+                "actor", "selection_kind", "option_type", "source_card",
+                "context_card", "effect_card", "source_serial",
+            ],
+            "ability_repeat_key_excludes": ["option_index", "target_order"],
             "full_round_draw_limit": DEFAULT_FULL_ROUND_DRAW_LIMIT,
             "engine_turn_limit": 2 * DEFAULT_FULL_ROUND_DRAW_LIMIT - 1,
             "turn_limit_result": "terminal_draw_reward_zero",

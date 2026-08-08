@@ -10,18 +10,21 @@ from ptcg_cuda_engine.progress_guard import (
 )
 
 
-def _decision(*, serial: int = 7, turn: int = 4) -> dict[str, torch.Tensor]:
+def _decision(
+    *, serial: int = 7, turn: int = 4, actor: int = 1,
+    option_position: int = 0,
+) -> dict[str, torch.Tensor]:
     option_cat = torch.zeros((1, 2, 19), dtype=torch.long)
     option_cat[0, 0, 0] = 10  # Ability action.
     option_cat[0, 0, 5] = 652
     option_cat[0, 0, 12] = 652
-    option_cat[0, 0, 13] = 3
+    option_cat[0, 0, 13] = option_position + 1
     option_cat[0, 0, 18] = serial
     return {
         "option_cat": option_cat,
         "selection_type": torch.tensor([0]),
         "turn": torch.tensor([turn]),
-        "actor": torch.tensor([1]),
+        "actor": torch.tensor([actor]),
         "actions": torch.tensor([[0]]),
         "lengths": torch.tensor([1]),
         "ready": torch.tensor([True]),
@@ -50,6 +53,23 @@ class DeviceRepeatForfeitGuardTest(unittest.TestCase):
             self.assertFalse(guard.observe(**_decision(serial=7, turn=turn)).item())
 
         self.assertTrue(guard.observe(**_decision(serial=7, turn=23)).item())
+
+    def test_each_actor_keeps_its_count_when_the_other_actor_selects(self) -> None:
+        guard = DeviceRepeatForfeitGuard(batch_size=1, limit=20, device="cpu")
+        for _ in range(19):
+            self.assertFalse(guard.observe(**_decision(actor=1)).item())
+        self.assertFalse(guard.observe(**_decision(actor=0)).item())
+        self.assertTrue(guard.observe(**_decision(actor=1)).item())
+
+    def test_same_ability_survives_option_order_changes(self) -> None:
+        guard = DeviceRepeatForfeitGuard(batch_size=1, limit=2, device="cpu")
+
+        self.assertFalse(
+            guard.observe(**_decision(option_position=0)).item()
+        )
+        self.assertTrue(
+            guard.observe(**_decision(option_position=7)).item()
+        )
 
     def test_multitoken_ability_choice_is_still_counted(self) -> None:
         guard = DeviceRepeatForfeitGuard(batch_size=1, limit=20, device="cpu")

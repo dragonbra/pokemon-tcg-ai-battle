@@ -167,6 +167,22 @@ class ResidentLaneQueue:
         return LaneRefill(refill_lanes, refill_jobs, lanes[refill_count:])
 
 
+def apply_turn_limit_draws(engine: Any, draw_mask: Any) -> None:
+    """Mark selected resident lanes terminal with the canonical draw result."""
+
+    import torch
+
+    mask = draw_mask.bool().view(-1)
+    statuses = engine.statuses()
+    results = engine.game_results()
+    if mask.shape != statuses.shape or results.shape != statuses.shape:
+        raise ValueError("turn-limit mask and engine result tensors disagree")
+    results.copy_(torch.where(mask, torch.zeros_like(results), results))
+    statuses.copy_(
+        torch.where(mask, torch.full_like(statuses, 2), statuses)
+    )
+
+
 _PREFIX_FAMILIES = {
     "card": ("card_cat", "card_num", "card_state", "card_mask", "card_parent"),
     "resource": ("resource_cat", "resource_num", "resource_state", "resource_mask"),
@@ -221,6 +237,7 @@ class ResidentRunResult:
     game_results: tuple[int, ...]
     terminal_state_bytes: bytes
     forfeit_schedule_indices: tuple[int, ...]
+    turn_limit_draw_schedule_indices: tuple[int, ...]
     terminal_turns: tuple[int, ...]
     engine_selections: tuple[int, ...]
     terminal_prize_counts: tuple[tuple[int, int], ...]
@@ -246,6 +263,7 @@ def run_resident_greedy_jobs(
     max_decisions: int = 8192,
     check_interval: int = 8,
     ability_repeat_limit: int = 20,
+    engine_turn_draw_limit: int = 100,
     focal_greedy: bool = True,
     focal_value_fn: Any | None = None,
     focal_decision_sink: Any | None = None,
@@ -259,6 +277,8 @@ def run_resident_greedy_jobs(
 
     if min(lane_count, max_select, max_decisions, check_interval) < 1:
         raise ValueError("resident rollout dimensions must be positive")
+    if engine_turn_draw_limit < 0:
+        raise ValueError("engine_turn_draw_limit cannot be negative")
     device = torch.device(device)
     queue = ResidentLaneQueue(jobs, lane_count=lane_count, device=device)
     job_decks = torch.tensor(
@@ -279,7 +299,11 @@ def run_resident_greedy_jobs(
     lane_policy_seeds = torch.zeros(lane_count, dtype=torch.int64, device=device)
     lane_focal_decisions = torch.zeros(lane_count, dtype=torch.int64, device=device)
     lane_forfeit = torch.zeros(lane_count, dtype=torch.bool, device=device)
+    lane_turn_limit_draw = torch.zeros(lane_count, dtype=torch.bool, device=device)
     completed_forfeit = torch.zeros(len(jobs), dtype=torch.bool, device=device)
+    completed_turn_limit_draw = torch.zeros(
+        len(jobs), dtype=torch.bool, device=device
+    )
     completed_turns = torch.zeros(len(jobs), dtype=torch.int32, device=device)
     completed_selections = torch.zeros(len(jobs), dtype=torch.int32, device=device)
     completed_prizes = torch.zeros((len(jobs), 2), dtype=torch.int16, device=device)
@@ -313,6 +337,7 @@ def run_resident_greedy_jobs(
         )
         lane_focal_decisions.index_fill_(0, refill.lane_indices, 0)
         lane_forfeit.index_fill_(0, refill.lane_indices, False)
+        lane_turn_limit_draw.index_fill_(0, refill.lane_indices, False)
         lane_turn.index_fill_(0, refill.lane_indices, 0)
         lane_selections.index_fill_(0, refill.lane_indices, 0)
         reset_mask = torch.zeros(lane_count, dtype=torch.bool, device=device)
@@ -344,7 +369,18 @@ def run_resident_greedy_jobs(
         for step in range(max_decisions):
             statuses = engine.statuses()
             active_lanes = queue.lane_job.ge(0)
-            ready = statuses.eq(1) & active_lanes
+            lane_turn.copy_(engine.turns())
+            turn_limit_draws = (
+                active_lanes
+                & ~statuses.eq(2)
+                & lane_turn.ge(engine_turn_draw_limit)
+                if engine_turn_draw_limit > 0
+                else torch.zeros_like(active_lanes)
+            )
+            lane_turn_limit_draw |= turn_limit_draws
+            apply_turn_limit_draws(engine, turn_limit_draws)
+            ready = statuses.eq(1) & active_lanes & ~turn_limit_draws
+            force_terminal_check = bool(turn_limit_draws.any().item())
             semantic = semantic0031_v2_ready_batch(
                 engine.encode_semantic0031_v2_lanes(lanes),
                 max_action_steps=max_select,
@@ -356,7 +392,6 @@ def run_resident_greedy_jobs(
             # official state field so a supporter play cannot silently swap the
             # focal and opponent policies.
             actor = engine.decision_actors().long()
-            lane_turn.copy_(semantic["global_num"][:, 0].to(dtype=torch.int32))
             focal_route = ready & actor.eq(lane_focal)
             opponent_route = ready & ~focal_route
             action_width = max(
@@ -496,15 +531,46 @@ def run_resident_greedy_jobs(
             engine.pack_actions(actions, lengths)
             engine.apply_packed_actions()
             engine.advance_to_decision()
+            # Result value 0 is both the engine's non-terminal sentinel and the
+            # scheduler's draw value.  Advance reclassifies it as running, so the
+            # scheduler-owned terminal status must be restored before collection.
+            apply_turn_limit_draws(engine, turn_limit_draws)
             decisions = step + 1
 
-            if decisions % check_interval != 0:
+            if decisions % check_interval != 0 and not force_terminal_check:
                 continue
             checked = engine.statuses()
             active_errors = checked.eq(3) & queue.lane_job.ge(0)
             if bool(active_errors.any().item()):
-                error_lanes = active_errors.nonzero(as_tuple=False).flatten().cpu().tolist()
-                raise RuntimeError(f"resident CUDA engine errors in lanes {error_lanes}")
+                error_rows = active_errors.nonzero(as_tuple=False).flatten()
+                error_lanes = error_rows.cpu().tolist()
+                error_lengths = lengths.index_select(0, error_rows).long().cpu().tolist()
+                error_actions = actions.index_select(0, error_rows).long().cpu()
+                diagnostic = []
+                for offset, lane in enumerate(error_lanes):
+                    action_length = int(error_lengths[offset])
+                    diagnostic.append({
+                        "lane": int(lane),
+                        "schedule_index": int(queue.lane_job[lane].item()),
+                        "turn": int(engine.turns()[lane].item()),
+                        "actor": int(actor[lane].item()),
+                        "selection_type": int(
+                            semantic["global_cat"][lane, 0].item()
+                        ),
+                        "selection_context": int(
+                            semantic["global_cat"][lane, 1].item()
+                        ),
+                        "min_count": int(semantic["min_count"][lane].item()),
+                        "max_count": int(semantic["max_count"][lane].item()),
+                        "option_count": int(
+                            semantic["option_mask"][lane].long().sum().item()
+                        ),
+                        "repeat_forfeit": bool(new_forfeits[lane].item()),
+                        "action": error_actions[offset, :action_length].tolist(),
+                    })
+                raise RuntimeError(
+                    f"resident CUDA engine errors: {diagnostic}"
+                )
             terminal = checked.eq(2) & queue.lane_job.ge(0)
             terminal_lanes = terminal.nonzero(as_tuple=False).flatten()
             if terminal_lanes.numel():
@@ -521,6 +587,11 @@ def run_resident_greedy_jobs(
                 )
                 completed_forfeit.index_copy_(
                     0, completed_jobs, lane_forfeit.index_select(0, terminal_lanes)
+                )
+                completed_turn_limit_draw.index_copy_(
+                    0,
+                    completed_jobs,
+                    lane_turn_limit_draw.index_select(0, terminal_lanes),
                 )
                 completed_turns.index_copy_(
                     0, completed_jobs, lane_turn.index_select(0, terminal_lanes)
@@ -540,8 +611,33 @@ def run_resident_greedy_jobs(
             if completed == len(jobs):
                 break
         else:
+            active = queue.lane_job.ge(0)
+            active_rows = active.nonzero(as_tuple=False).flatten()
+            diagnostic = {
+                "jobs": queue.lane_job.index_select(0, active_rows).cpu().tolist(),
+                "turns": engine.turns().index_select(0, active_rows).cpu().tolist(),
+                "lane_turns": lane_turn.index_select(0, active_rows).cpu().tolist(),
+                "draw_mask": turn_limit_draws
+                .index_select(0, active_rows)
+                .cpu()
+                .tolist(),
+                "draw_limit": engine_turn_draw_limit,
+                "actors": engine.decision_actors()
+                .index_select(0, active_rows)
+                .cpu()
+                .tolist(),
+                "selections": lane_selections
+                .index_select(0, active_rows)
+                .cpu()
+                .tolist(),
+                "repeat_max": guard.counts.amax(dim=(1, 2))
+                .index_select(0, active_rows)
+                .cpu()
+                .tolist(),
+            }
             raise RuntimeError(
-                f"resident rollout exhausted {max_decisions} decisions at {completed}/{len(jobs)}"
+                f"resident rollout exhausted {max_decisions} decisions at "
+                f"{completed}/{len(jobs)}; active={diagnostic}"
             )
 
     ended.record()
@@ -553,11 +649,19 @@ def run_resident_greedy_jobs(
         int(value)
         for value in completed_forfeit.nonzero(as_tuple=False).flatten().cpu().tolist()
     )
+    turn_limit_draw_indices = tuple(
+        int(value)
+        for value in completed_turn_limit_draw.nonzero(as_tuple=False)
+        .flatten()
+        .cpu()
+        .tolist()
+    )
     terminal_bytes = terminal_states.contiguous().cpu().numpy().tobytes()
     return ResidentRunResult(
         game_results=game_results,
         terminal_state_bytes=terminal_bytes,
         forfeit_schedule_indices=forfeit_indices,
+        turn_limit_draw_schedule_indices=turn_limit_draw_indices,
         terminal_turns=tuple(int(value) for value in completed_turns.cpu().tolist()),
         engine_selections=tuple(
             int(value) for value in completed_selections.cpu().tolist()
@@ -585,6 +689,7 @@ __all__ = [
     "ResidentJob",
     "ResidentLaneQueue",
     "ResidentRunResult",
+    "apply_turn_limit_draws",
     "compact_semantic_prefixes",
     "merge_resident_actions",
     "run_resident_greedy_jobs",
