@@ -55,6 +55,9 @@ FOCAL_EXACT_DECK_SHA256 = "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37
 FOCAL_DECK_PATH = ROOT / "train" / PROJECT / "league/decks" / FOCAL_DECK_ID / "deck.csv"
 CUDA_RULES = ROOT / ".tmp/cuda_0032_rules/official_rules.bin"
 CUDA_EXTENSION = ROOT / ".tmp/engine_cuda_benchmark/build_sm120_staged"
+CUDA_RESIDENT_SOURCE = (
+    ROOT / "engine_cuda/python/ptcg_cuda_engine/semantic0031_resident.py"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -742,6 +745,9 @@ def run(config: RunConfig) -> dict[str, Any]:
             if config.engine_backend == "accelerated:cuda_resident" else None,
             "cuda_extension": str((CUDA_EXTENSION / "_ptcg_cuda.so").relative_to(ROOT)),
             "cuda_extension_sha256": _sha256(CUDA_EXTENSION / "_ptcg_cuda.so")
+            if config.engine_backend == "accelerated:cuda_resident" else None,
+            "cuda_resident_source": str(CUDA_RESIDENT_SOURCE.relative_to(ROOT)),
+            "cuda_resident_source_sha256": _sha256(CUDA_RESIDENT_SOURCE)
             if config.engine_backend == "accelerated:cuda_resident" else None,
             "lane_count": config.cuda_lane_count,
             "trajectory_chunk_games": config.rollout_batch_size,

@@ -349,6 +349,9 @@ class CudaFullSemanticRolloutCollector:
             "rollout/cuda_lane_count": float(min(self.lane_count, len(jobs))),
             "rollout/cuda_refill_events": float(result.refill_events),
             "rollout/cuda_repeat_forfeits": float(len(forfeits)),
+            "rollout/cuda_turn_limit_draws": float(
+                len(getattr(result, "turn_limit_draw_schedule_indices", ()))
+            ),
             "rollout/cuda_staged_trajectory_bytes": float(staged_bytes),
             "rollout/cuda_peak_allocated_bytes": float(hot_allocated),
             "rollout/cuda_peak_reserved_bytes": float(hot_reserved),
