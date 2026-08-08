@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 
@@ -164,16 +165,51 @@ def docker_image_id(image: str) -> str:
     return completed.stdout.strip()
 
 
+def deck_csv_sha256(deck_csv: Path) -> str:
+    card_ids = [line.strip() for line in deck_csv.read_text(encoding="utf-8").splitlines()]
+    card_ids = [card_id for card_id in card_ids if card_id]
+    if len(card_ids) != 60:
+        raise RuntimeError(f"deck must contain exactly 60 card IDs: {deck_csv}")
+    canonical_ids = [str(card_id) for card_id in sorted(int(card_id) for card_id in card_ids)]
+    return hashlib.sha256(",".join(canonical_ids).encode("utf-8")).hexdigest()
+
+
+def load_manifest_deck_plugins(root: Path, rows: list[Any]) -> list[Any]:
+    plugins: list[Any] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise RuntimeError("deck catalog row must be an object")
+        deck_id = str(row.get("deck_id", ""))
+        if not deck_id:
+            raise RuntimeError("deck catalog row is missing deck_id")
+        deck_dir = root / deck_id
+        deck_csv = deck_dir / "deck.csv"
+        if not deck_csv.is_file():
+            raise RuntimeError(f"deck.csv is missing for {deck_id}: {deck_csv}")
+        plugins.append(
+            SimpleNamespace(
+                deck_id=deck_id,
+                root=deck_dir,
+                deck_sha256=deck_csv_sha256(deck_csv),
+            )
+        )
+    return plugins
+
+
 def load_decks(deck_root: Path) -> tuple[list[Any], dict[str, Any]]:
-    sys.path.insert(0, str(WORKSPACE_ROOT))
-    decks_module = importlib.import_module("train.0022_league_training.decks")
     root = deck_root.resolve()
-    plugins = list(decks_module.load_deck_plugins(root))
     catalog_path = root / "manifest.json"
     if not catalog_path.is_file():
         raise RuntimeError(f"0022 deck40 catalog manifest is missing: {catalog_path}")
     catalog: dict[str, Any] = json.loads(catalog_path.read_text(encoding="utf-8"))
     rows = catalog.get("decks")
+    plugins: list[Any]
+    if isinstance(rows, list):
+        plugins = load_manifest_deck_plugins(root, rows)
+    else:
+        sys.path.insert(0, str(WORKSPACE_ROOT))
+        decks_module = importlib.import_module("train.0022_league_training.decks")
+        plugins = list(decks_module.load_deck_plugins(root))
     if not isinstance(rows, list):
         if catalog.get("schema_version") == "evaluation_frozen_arena_v1":
             if int(catalog.get("deck_count", -1)) != len(plugins):

@@ -9,6 +9,21 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_ARCHITECTURES "86" CACHE STRING "CUDA architectures to build")
+set(
+    PTCG_CUDA_OFFICIAL_THREADS
+    "2"
+    CACHE STRING
+    "CUDA threads per block for one-thread-per-environment official kernels"
+)
+if(NOT PTCG_CUDA_OFFICIAL_THREADS MATCHES "^[0-9]+$")
+    message(FATAL_ERROR "PTCG_CUDA_OFFICIAL_THREADS must be an integer in [1, 1024]")
+endif()
+if(
+    PTCG_CUDA_OFFICIAL_THREADS LESS 1
+    OR PTCG_CUDA_OFFICIAL_THREADS GREATER 1024
+)
+    message(FATAL_ERROR "PTCG_CUDA_OFFICIAL_THREADS must be an integer in [1, 1024]")
+endif()
 
 option(PTCG_CUDA_BUILD_BENCHMARK "Build the standalone CUDA smoke benchmark" ON)
 option(PTCG_CUDA_BUILD_TORCH "Build the optional PyTorch extension" OFF)
@@ -19,6 +34,10 @@ add_library(ptcg_cuda_engine STATIC
 )
 target_include_directories(ptcg_cuda_engine PUBLIC include)
 target_link_libraries(ptcg_cuda_engine PUBLIC CUDA::cudart)
+target_compile_definitions(
+    ptcg_cuda_engine
+    PRIVATE PTCG_CUDA_OFFICIAL_THREADS=${PTCG_CUDA_OFFICIAL_THREADS}
+)
 target_compile_options(ptcg_cuda_engine PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr --use_fast_math>
 )

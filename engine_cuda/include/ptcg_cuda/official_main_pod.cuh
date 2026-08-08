@@ -61,6 +61,9 @@ constexpr std::uint32_t kOfficialCardCanEvolveAppearTurnBit =
 constexpr std::uint32_t kOfficialCardCanEvolveGrassAppearTurnBit =
     static_cast<std::uint32_t>(OfficialEffectTypeId::kCanEvolveGrassAppearTurn)
     - static_cast<std::uint32_t>(OfficialEffectTypeId::kNoAbility) - 1U;
+constexpr std::uint32_t kOfficialCardCanUsePreEvolutionAttackBit =
+    static_cast<std::uint32_t>(OfficialEffectTypeId::kCanUsePreEvolutionAttack)
+    - static_cast<std::uint32_t>(OfficialEffectTypeId::kNoAbility) - 1U;
 constexpr std::uint32_t kOfficialCardRainbowDnaBit =
     static_cast<std::uint32_t>(OfficialEffectTypeId::kRainbowDna)
     - static_cast<std::uint32_t>(OfficialEffectTypeId::kNoAbility) - 1U;
@@ -87,25 +90,18 @@ official_main_continue_retreat_after_triggers(
     OfficialStatePod* state,
     const OfficialRulePackView& rules);
 
-PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options(
+PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options_from_master(
     OfficialStatePod* state,
     const OfficialRulePackView& rules,
     OfficialCardRefPod attacker_ref,
+    const OfficialCardRule& master,
     std::int32_t bench_index) {
     const OfficialCardStatePod* attacker = official_pod_card(state, attacker_ref);
-    const OfficialCardRule* master = attacker == nullptr ? nullptr : official_card_rule(
-        rules, static_cast<std::uint32_t>(attacker->card_id));
-    if (master == nullptr) {
-        official_pod_fail(
-            state,
-            OfficialPodError::kRulePackBounds,
-            attacker == nullptr ? 0 : attacker->card_id);
-        return false;
-    }
+    if (attacker == nullptr || attacker->player < 0 || attacker->player > 1) return false;
     std::int32_t offset = 0;
     std::int32_t count = 0;
     if (!official_attack_card_attack_range(
-            state, rules, *master, &offset, &count)) {
+            state, rules, master, &offset, &count)) {
         return false;
     }
     const std::int32_t player = attacker->player;
@@ -148,6 +144,22 @@ PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options(
             option.params[1] = 0;
             option.params[2] = static_cast<std::int16_t>(bench_index);
             option.option_equiv = static_cast<std::uint16_t>(attack_id);
+            bool duplicate = false;
+            for (std::uint16_t option_index = 0;
+                 option_index < state->options.count;
+                 ++option_index) {
+                const OfficialSelectOptionPod& existing =
+                    state->options.values[option_index];
+                if (existing.type == static_cast<std::uint8_t>(
+                        OfficialSelectOptionTypeId::kAttack)
+                    && existing.params[0] == option.params[0]
+                    && existing.params[1] == option.params[1]
+                    && existing.params[2] == option.params[2]) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (duplicate) continue;
             if (!official_pod_push(
                     state, &state->options, option,
                     OfficialPodError::kOptionOverflow)) {
@@ -244,12 +256,73 @@ PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options(
                 option.params[1] = static_cast<std::int16_t>(attack_id);
                 option.params[2] = static_cast<std::int16_t>(bench_index);
                 option.option_equiv = static_cast<std::uint16_t>(copied_attack_id);
+                bool duplicate = false;
+                for (std::uint16_t option_index = 0;
+                     option_index < state->options.count;
+                     ++option_index) {
+                    const OfficialSelectOptionPod& existing =
+                        state->options.values[option_index];
+                    if (existing.type == static_cast<std::uint8_t>(
+                            OfficialSelectOptionTypeId::kAttack)
+                        && existing.params[0] == option.params[0]
+                        && existing.params[1] == option.params[1]
+                        && existing.params[2] == option.params[2]) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (duplicate) continue;
                 if (!official_pod_push(
                         state, &state->options, option,
                         OfficialPodError::kOptionOverflow)) {
                     return false;
                 }
             }
+        }
+    }
+    return true;
+}
+
+PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options(
+    OfficialStatePod* state,
+    const OfficialRulePackView& rules,
+    OfficialCardRefPod attacker_ref,
+    std::int32_t bench_index) {
+    const OfficialCardStatePod* attacker = official_pod_card(state, attacker_ref);
+    const OfficialCardRule* master = attacker == nullptr ? nullptr : official_card_rule(
+        rules, static_cast<std::uint32_t>(attacker->card_id));
+    if (master == nullptr) {
+        official_pod_fail(
+            state,
+            OfficialPodError::kRulePackBounds,
+            attacker == nullptr ? 0 : attacker->card_id);
+        return false;
+    }
+    if (!official_main_add_attack_options_from_master(
+            state, rules, attacker_ref, *master, bench_index)) {
+        return false;
+    }
+    if (!official_continual_flag(*attacker, kOfficialCardCanUsePreEvolutionAttackBit)
+        || attacker->player < 0 || attacker->player > 1) {
+        return true;
+    }
+    const OfficialPlayerStatePod& player = state->players[attacker->player];
+    for (std::uint16_t index = 0; index < player.pre_evolution.count; ++index) {
+        const OfficialCardRefPod previous_ref = player.pre_evolution.values[index];
+        const OfficialCardStatePod* previous = official_pod_card(state, previous_ref);
+        if (previous == nullptr
+            || previous->attach_move_counter != attacker->move_counter) {
+            continue;
+        }
+        const OfficialCardRule* previous_master = official_card_rule(
+            rules, static_cast<std::uint32_t>(previous->card_id));
+        if (previous_master == nullptr) {
+            official_pod_fail(state, OfficialPodError::kRulePackBounds, previous->card_id);
+            return false;
+        }
+        if (!official_main_add_attack_options_from_master(
+                state, rules, attacker_ref, *previous_master, bench_index)) {
+            return false;
         }
     }
     return true;

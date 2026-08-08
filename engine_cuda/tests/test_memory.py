@@ -27,7 +27,7 @@ class MemoryEstimateTest(unittest.TestCase):
         self.assertLess(small.engine_operational_bytes / GIB, 1.0)
         self.assertGreater(large.engine_operational_bytes / GIB, 2.6)
         self.assertLess(large.engine_operational_bytes / GIB, 3.2)
-        self.assertEqual(small.assumptions["state_contract"], "OfficialStatePod ABI v6")
+        self.assertEqual(small.assumptions["state_contract"], "OfficialStatePod ABI v7")
 
     def test_full_example_pool_fits_32_gib_estimate(self) -> None:
         estimate = estimate_memory(16384, self.manifest, workspace_root=WORKSPACE_ROOT)
