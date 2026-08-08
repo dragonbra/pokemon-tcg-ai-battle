@@ -1623,7 +1623,7 @@ class Semantic0031DeviceAdapter:
             attack_effect_count,
         )
 
-    def _encode_options(self, batch: Any, state: Any) -> Any:
+    def _encode_option_inputs(self, batch: Any, state: Any) -> Any:
         option_encoder = self.model.option_encoder
         option_cat = batch.option_cat
         options = option_encoder.categorical(option_cat)
@@ -1661,6 +1661,11 @@ class Semantic0031DeviceAdapter:
             + option_encoder.skill_relation(skill_context)
             + option_encoder.effect_relation(effect_context)
         )
+        return options
+
+    def _encode_options(self, batch: Any, state: Any) -> Any:
+        option_encoder = self.model.option_encoder
+        options = self._encode_option_inputs(batch, state)
         encoded = option_encoder.cross_attention_transformer(
             tgt=options,
             memory=state.tokens,
