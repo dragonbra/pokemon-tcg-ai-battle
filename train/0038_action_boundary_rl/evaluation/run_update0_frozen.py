@@ -21,7 +21,13 @@ from ..initialization import COMMON_UPDATE0_CHECKPOINT, build_preset_from_common
 from ..integrated.opponent_meta import calibration
 from ..integrated.presets import preset
 from ..rollout import FullSemanticRolloutCollector
-from ..training.run_full_semantic import FROZEN_PANEL, focal_deck, load_frozen_opponent, runtime_root
+from ..training.run_full_semantic import (
+    FOCAL_DECK_ID,
+    focal_deck,
+    load_frozen_opponent,
+    runtime_root,
+)
+from ..league import load_frozen_catalog
 from .frozen_jobs import build_frozen_jobs
 from .frozen_panel import wilson_interval
 
@@ -182,16 +188,29 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
         inference_channels_per_role: int = 8, device_name: str = "cuda:0") -> dict[str, Any]:
     if REPORT.exists() or RESULTS.exists():
         raise FileExistsError("update-0 Frozen evaluation output already exists")
-    manifest = json.loads(FROZEN_PANEL.read_text())
     device = torch.device(device_name)
     model, identity = build_preset_from_common_update0(
         focal_deck(), preset("INTEGRATED"), device=device
     )
     opponent = load_frozen_opponent(device)
-    jobs = build_frozen_jobs(
-        FROZEN_PANEL, focal_deck=focal_deck(), runtime_root=runtime_root(),
+    jobs, schedule_sha = build_frozen_jobs(
+        focal_deck_id=FOCAL_DECK_ID,
+        focal_deck=focal_deck(), runtime_root=runtime_root(),
         source_policy_update=0,
     )
+    names = {item.deck_id: item.display_name for item in load_frozen_catalog()}
+    manifest = {
+        "frozen_panel_version": "frozen_0806_seeded_2048_v2",
+        "game_list_sha256": schedule_sha,
+        "entries": [
+            {
+                "seed": job.seed,
+                "shard_id": index // 256,
+                "opponent_archetype": names[job.opponent_id],
+            }
+            for index, job in enumerate(jobs)
+        ],
+    }
     collector = FullSemanticRolloutCollector(
         model, opponent, device=device, worker_processes=workers,
         engines_per_worker=engines_per_worker,
@@ -209,7 +228,7 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
             "run_id": "0038-v2-update0-frozen-2048", "finished_at": datetime.now(UTC).isoformat(),
             "candidate": {"name": VERSION, "display_name": "0038 Zero-Shot Action Boundary update-0"},
             "frozen_panel_version": manifest["frozen_panel_version"],
-            "frozen_panel_sha256": _sha256(FROZEN_PANEL),
+            "canonical_schedule_sha256": schedule_sha,
             "game_list_sha256": manifest["game_list_sha256"],
             "checkpoint": str(COMMON_UPDATE0_CHECKPOINT.relative_to(ROOT)),
             "checkpoint_sha256": _sha256(COMMON_UPDATE0_CHECKPOINT),

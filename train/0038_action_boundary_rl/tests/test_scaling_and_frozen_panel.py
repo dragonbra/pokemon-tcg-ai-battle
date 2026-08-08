@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import importlib
+from collections import Counter
 import unittest
 
 scaling = importlib.import_module("train.0038_action_boundary_rl.training.scaling")
 metrics = importlib.import_module("train.0038_action_boundary_rl.training.metric_frequency")
 panel = importlib.import_module("train.0038_action_boundary_rl.evaluation.frozen_panel")
+frozen_jobs = importlib.import_module(
+    "train.0038_action_boundary_rl.evaluation.frozen_jobs"
+)
+runner = importlib.import_module(
+    "train.0038_action_boundary_rl.training.run_full_semantic"
+)
+league = importlib.import_module("train.0038_action_boundary_rl.league")
 
 
 class ScalingAndPanelTest(unittest.TestCase):
@@ -17,6 +25,23 @@ class ScalingAndPanelTest(unittest.TestCase):
         self.assertTrue(all(len(item) == 256 for item in shards))
         self.assertEqual(len(set.union(*shards)), 2048)
         self.assertEqual(sum(row.focal_first for row in rows), 1024)
+
+    def test_formal_frozen_jobs_match_canonical_007_contract(self):
+        jobs, schedule_sha = frozen_jobs.build_frozen_jobs(
+            focal_deck_id=runner.FOCAL_DECK_ID,
+            focal_deck=runner.focal_deck(),
+            runtime_root=runner.runtime_root(),
+            source_policy_update=0,
+        )
+        expected = {
+            item.deck_id: item.games * 8 for item in league.load_frozen_catalog()
+        }
+
+        self.assertEqual(len(jobs), 2048)
+        self.assertEqual(schedule_sha, "98b58bced460c1a2e622ae4b39bf506294fcb0230bb42e4117aaa6efc73c9ce9")
+        self.assertEqual(Counter(job.opponent_id for job in jobs), expected)
+        self.assertEqual(sum(job.focal_first for job in jobs), 1024)
+        self.assertEqual(len({job.seed for job in jobs}), 2048)
 
     def test_scaling_has_no_512_constraint(self):
         config = scaling.RolloutScalingConfig(rollout_games_per_update=1537)

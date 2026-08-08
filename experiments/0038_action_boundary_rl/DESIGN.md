@@ -100,7 +100,9 @@ V4 使用 `accelerated:cuda_resident`：兼容规则 blob 与 CUDA state machine
 
 ## Frozen Evaluation
 
-唯一面板为 `0038_frozen_2048_v1`：8 shard × 256，2,048 个全局唯一 seed，先后手各 1,024，Frozen opponent/archetype 分层并持久化逐局结果。所有 checkpoint 使用完全相同的 seed、opponent、seat、greedy、engine、action protocol；相对 update-0 报告 paired flips、McNemar、Wilson CI、seat、matchup 和 shard 方差。
+正式评估唯一合同为全局 `frozen_0806_seeded_2048_v2`：evaluation seed `341512806`，8 replicas × 原始 256-slot 环境频率分布，共 2,048 个唯一 engine seed，先后手各 1,024。007 标准 schedule SHA-256 为 `98b58bced460c1a2e622ae4b39bf506294fcb0230bb42e4117aaa6efc73c9ce9`。update 0 与之后每 5 updates 必须复用相同 seed、slot、replica、opponent 权重、seat、greedy、CUDA backend 和 termination contract；相对 update-0 报告 paired flips、McNemar、Wilson CI、seat、matchup 和 replica 方差。历史 `0038_frozen_2048_v1` 是均匀 exact-deck 面板，仅保留 V2/V3 证据，不再用于正式比较。
+
+训练 rollout 不复用 evaluation seed，但以 256 games 为不可拆分频率单位。每个连续 256-game unit 精确包含 Frozen catalog 的 opponent slot counts，unit 内按 `(training seed, source policy update)` 随机排列并平衡 seat；因此 2,048-game update 含 8 个自然分布单位，同时保持 2,048 个独立 engine seed。
 
 2,048 paired games 适合判断约 2pp 的方向与稳定性，但很小差异不能自动宣称显著。按 discordant rate 0.10/0.20/0.30 的近似规划，2pp 约需 1,962/3,923/5,884 局，1pp 约需其四倍；最终检验使用实际 paired flips。
 
@@ -110,4 +112,6 @@ checkpoint schema 为 `0038_model_only_checkpoint_v1`，强制记录 action、ga
 
 公共基线为 `V3_update0_chance_boundary_fallback`，PPO updates=0，official adapter 为 `0038_official_primitive_adapter_v2_chance_fallback`。Frozen 结果为 1308-739-1、0 error、14 safe fallback；Meta 全面板聚合因 logits 容器类型错误未发布，代码已修正，遵循“不得为统计额外 forward”合同没有单独重跑。
 
-当前阶段已完成 CUDA resident Action Boundary 接入、124 项合同测试、256 局 stochastic/greedy 吞吐 benchmark 与真实 CUDA rollout→PPO replay smoke。正式版本为严格递增的 `V4_full_stack_cuda_fresh_rl`：从 V3 common update-0 加载 BC-warm-started allocation head，默认启用 `INTEGRATED` preset，重新初始化 optimizer/scheduler/RNG/rollout/old-policy。每 update 采集 2,048 局并使用固定 optimizer budget；update 0 和之后每 5 updates 只运行同一 `0038_frozen_2048_v1`，不启用 8,192 局分支。run 不设 update 上限，在完整 update 边界响应人工 stop sentinel。稀疏梯度诊断在 update 0/5/10/之后每 10 updates 复用固定小型 minibatch，不进入普通 PPO minibatch 热路径。
+CUDA resident Action Boundary、吞吐 benchmark 与真实 CUDA rollout→PPO replay smoke 已完成。V4 在错误的均匀 exact-deck 面板完成 update-0 后，于首个 PPO update 前因 sparse-diagnostic predicate 未导入而 fail closed；没有产生 update-1 model checkpoint，其 `63.77%` 不得与 canonical 007 `57.32%` 比较。V4 保留为失败审计记录。
+
+下一正式版本为严格递增的 `V5_canonical_frozen_cuda_fresh_rl`：仍从 V3 common update-0 加载 BC-warm-started allocation head，启用 `INTEGRATED` preset，并重新初始化 optimizer/scheduler/RNG/rollout/old-policy。每 update 采集 2,048 局、固定 optimizer budget；update 0 和之后每 5 updates 运行 canonical Frozen-0806 2,048，不启用 8,192 分支。run 不设 update 上限，在完整 update 边界响应人工 stop sentinel。GPU 空闲并完成 CPU-only 合同测试前不得启动。

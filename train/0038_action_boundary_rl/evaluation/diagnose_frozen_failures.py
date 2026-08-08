@@ -10,7 +10,12 @@ import torch
 from ..initialization import build_preset_from_common_update0
 from ..integrated.presets import preset
 from ..rollout import FullSemanticRolloutCollector
-from ..training.run_full_semantic import FROZEN_PANEL, focal_deck, load_frozen_opponent, runtime_root
+from ..training.run_full_semantic import (
+    FOCAL_DECK_ID,
+    focal_deck,
+    load_frozen_opponent,
+    runtime_root,
+)
 from .frozen_jobs import build_frozen_jobs
 from .run_update0_frozen import RESULTS
 
@@ -26,8 +31,9 @@ def main() -> None:
         focal_deck(), preset("INTEGRATED"), device=device
     )
     opponent = load_frozen_opponent(device)
-    jobs = build_frozen_jobs(
-        FROZEN_PANEL, focal_deck=focal_deck(), runtime_root=runtime_root(),
+    jobs, _ = build_frozen_jobs(
+        focal_deck_id=FOCAL_DECK_ID,
+        focal_deck=focal_deck(), runtime_root=runtime_root(),
         source_policy_update=0,
     )
     jobs = [replace(job, trace_policy="full") for job in jobs if job.seed in seeds]

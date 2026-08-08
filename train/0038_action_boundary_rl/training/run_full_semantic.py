@@ -28,8 +28,13 @@ from ..rollout import ChunkedCudaRolloutCollector, FullSemanticRolloutCollector,
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .storage_full_semantic import save_model_only
+from .metric_frequency import is_sparse_diagnostic_update
 from ..semantic_policy.deployment.inference import PortableSemanticPolicy
-from ..evaluation.frozen_jobs import build_frozen_jobs
+from ..evaluation.frozen_jobs import (
+    CANONICAL_CONTRACT_ID,
+    EXPECTED_007_SCHEDULE_SHA256,
+    build_frozen_jobs,
+)
 from ..evaluation.frozen_panel import paired_summary, wilson_interval
 from ..initialization import (
     COMMON_UPDATE0_CHECKPOINT,
@@ -42,13 +47,12 @@ from ..integrated.presets import PRESETS, preset
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V4_full_stack_cuda_fresh_rl"
+FORMAL_VERSION = "V5_canonical_frozen_cuda_fresh_rl"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
 FOCAL_EXACT_DECK_SHA256 = "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
 FOCAL_DECK_PATH = ROOT / "train" / PROJECT / "league/decks" / FOCAL_DECK_ID / "deck.csv"
-FROZEN_PANEL = ROOT / "experiments/0038_action_boundary_rl/frozen_panel_2048_v1.json"
 CUDA_RULES = ROOT / ".tmp/cuda_0032_rules/official_rules.bin"
 CUDA_EXTENSION = ROOT / ".tmp/engine_cuda_benchmark/build_sm120_staged"
 
@@ -102,8 +106,10 @@ class RunConfig:
             raise ValueError(
                 "inference_channels_per_role cannot exceed engines_per_worker"
             )
-        if self.games_per_update < 2 or self.games_per_update % 2:
-            raise ValueError("games_per_update must be a positive seat-balanced count")
+        if self.games_per_update < 256 or self.games_per_update % 256:
+            raise ValueError(
+                "games_per_update must contain complete 256-slot frequency units"
+            )
         if self.engine_backend != "official" and not self.engine_backend.startswith("accelerated:"):
             raise ValueError("invalid engine backend")
         if self.optimization_mode not in {"fixed_epochs", "fixed_optimizer_budget"}:
@@ -282,53 +288,59 @@ def build_jobs(
     greedy: bool = False,
 ) -> list[RolloutJob]:
     catalog = load_frozen_catalog()
-    if count < 2 or count % 2:
-        raise ValueError("job count must be positive and seat-balanced")
+    if count < 256 or count % 256:
+        raise ValueError("job count must contain complete 256-slot frequency units")
     fixed_slots = [opponent for opponent in catalog for _ in range(opponent.games)]
-    scenario_count = count // 2
     update_offset = 0 if greedy else source_policy_update * 1_000_003
     scenario_rng = random.Random(seed + update_offset)
-    selected = []
-    while len(selected) < scenario_count:
-        indices = list(range(len(fixed_slots)))
-        scenario_rng.shuffle(indices)
-        selected.extend(fixed_slots[index] for index in indices[:scenario_count - len(selected)])
-    engine_seeds = scenario_rng.sample(range(1, 0x80000000), scenario_count)
+    selected: list[Any] = []
+    seats: list[bool] = []
+    for _unit in range(count // 256):
+        unit = list(fixed_slots)
+        scenario_rng.shuffle(unit)
+        selected.extend(unit)
+        unit_seats = [True] * 128 + [False] * 128
+        scenario_rng.shuffle(unit_seats)
+        seats.extend(unit_seats)
+    engine_seeds = scenario_rng.sample(range(1, 0x80000000), count)
     jobs: list[RolloutJob] = []
     deck = focal_deck()
     root = runtime_root()
     runtime = build_seeded_runtime()
-    for pair_index, (opponent, engine_seed) in enumerate(
-        zip(selected, engine_seeds, strict=True)
+    for game_index, (opponent, focal_first, engine_seed) in enumerate(
+        zip(selected, seats, engine_seeds, strict=True)
     ):
         search_seed = (
             (engine_seed + 900_000_007 + update_offset) & 0x7FFFFFFF
         ) or 1
-        for seat_index, focal_first in enumerate((True, False)):
-            game_index = pair_index * 2 + seat_index
-            jobs.append(
-                RolloutJob(
-                    game_id=("eval" if greedy else "rollout")
-                    + f"-u{source_policy_update:04d}-{game_index:04d}",
-                    opponent_id=opponent.deck_id,
-                    focal_first=focal_first,
-                    seed=engine_seed,
-                    source_policy_update=source_policy_update,
-                    focal_deck=deck,
-                    opponent_deck=opponent.deck,
-                    runtime_root=root,
-                    policy_seed=(
-                        (seed + 1_700_000_009 + update_offset + game_index)
-                        & 0x7FFFFFFF
-                    )
-                    or 1,
-                    search_seed=search_seed,
-                    engine_library=runtime.library_path,
-                    action_boundary_mode="enabled",
+        jobs.append(
+            RolloutJob(
+                game_id=("eval" if greedy else "rollout")
+                + f"-u{source_policy_update:04d}-{game_index:04d}",
+                opponent_id=opponent.deck_id,
+                focal_first=focal_first,
+                seed=engine_seed,
+                source_policy_update=source_policy_update,
+                focal_deck=deck,
+                opponent_deck=opponent.deck,
+                runtime_root=root,
+                policy_seed=(
+                    (seed + 1_700_000_009 + update_offset + game_index)
+                    & 0x7FFFFFFF
                 )
+                or 1,
+                search_seed=search_seed,
+                engine_library=runtime.library_path,
+                action_boundary_mode="enabled",
             )
-    if scenario_count >= len(fixed_slots) and len({job.opponent_id for job in jobs}) != len(catalog):
-        raise RuntimeError("formal schedule omitted a Frozen opponent")
+        )
+    for start in range(0, len(jobs), 256):
+        unit_counts = {
+            item.deck_id: sum(job.opponent_id == item.deck_id for job in jobs[start:start + 256])
+            for item in catalog
+        }
+        if any(unit_counts[item.deck_id] != item.games for item in catalog):
+            raise RuntimeError("formal rollout lost the 256-slot environment frequency")
     if len(jobs) != count:
         raise RuntimeError(f"schedule produced {len(jobs)} jobs instead of {count}")
     return jobs
@@ -465,7 +477,10 @@ def _opponent_snapshot() -> dict[str, Any]:
         "schema": "0038_frozen0806_pool_snapshot_v2",
         "opponent_count": len(catalog),
         "total_games": sum(item.games for item in catalog),
-        "seat_contract": "configured_by_rollout_or_frozen_panel_manifest",
+        "seat_contract": (
+            "rollout_balanced_inside_each_randomized_256-slot unit; "
+            "evaluation fixed by frozen_0806_seeded_2048_v2"
+        ),
         "pool_id": "0806_kaggle_top100_plus_v1",
         "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
         "policy": "0806_large_model_pretrained_immutable",
@@ -680,7 +695,8 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_NAME": f"{WANDB_DISPLAY_PREFIX} · {config.version}",
             "WANDB_RUN_GROUP": PROJECT,
             "WANDB_TAGS": (
-                "0038,action_boundary,cuda_resident,full_stack,ppo,frozen_panel_2048,"
+                "0038,action_boundary,cuda_resident,full_stack,ppo,"
+                "frozen_0806_seeded_2048_v2,"
                 + config.ppo.credit_clock
                 + "_clock"
             ),
@@ -731,10 +747,24 @@ def run(config: RunConfig) -> dict[str, Any]:
             "trajectory_chunk_games": config.rollout_batch_size,
         },
         "rollout_seed_contract": {
-            "sampled_engine_seeds": config.games_per_update // 2,
-            "episodes_per_seed": 2,
-            "fixed_physical_deck_slots": True,
-            "only_seat_is_swapped_within_pair": True,
+            "frequency_unit_games": 256,
+            "frequency_units_per_update": config.games_per_update // 256,
+            "unique_engine_seeds": config.games_per_update,
+            "exact_environment_slot_counts_per_unit": True,
+            "seat_balanced_per_unit": True,
+        },
+        "frozen_evaluation_contract": {
+            "contract_id": CANONICAL_CONTRACT_ID,
+            "evaluation_seed": 341512806,
+            "games": 2048,
+            "schedule_sha256": EXPECTED_007_SCHEDULE_SHA256,
+            "frequency_unit_games": 256,
+            "replicas": 8,
+            "reference_report": (
+                "evaluation/arena/combat_mat/policy_0806/"
+                "0806_kaggle_top100_plus_v1_cuda_seeded_2048_resident_v2/"
+                "reports/007_dragapult_ex.html"
+            ),
         },
         "rollout_topology": {
             "worker_processes": config.worker_processes,
@@ -829,6 +859,7 @@ def run(config: RunConfig) -> dict[str, Any]:
         })
     started = time.time()
     update = 0
+    completed_update = 0
     cumulative_episodes = 0
     cumulative_decisions = 0
     try:
@@ -885,18 +916,28 @@ def run(config: RunConfig) -> dict[str, Any]:
             )
             baseline_evaluator = build_collector(model, opponent, config, mode="greedy")
             baseline_started = time.perf_counter()
-            baseline_jobs = build_frozen_jobs(
-                FROZEN_PANEL, focal_deck=focal_deck(), runtime_root=runtime_root(),
+            baseline_jobs, baseline_schedule_sha = build_frozen_jobs(
+                focal_deck_id=FOCAL_DECK_ID,
+                focal_deck=focal_deck(), runtime_root=runtime_root(),
                 source_policy_update=0,
             )
+            if baseline_schedule_sha != EXPECTED_007_SCHEDULE_SHA256:
+                raise RuntimeError("update-0 Frozen schedule is not canonical 007")
             _atomic_json(
                 paths["artifact"] / "schedules/eval_frozen_2048.json",
-                _schedule_payload(baseline_jobs, source_checkpoint_sha256=identity.checkpoint_sha256),
+                {
+                    **_schedule_payload(
+                        baseline_jobs,
+                        source_checkpoint_sha256=identity.checkpoint_sha256,
+                    ),
+                    "contract_id": CANONICAL_CONTRACT_ID,
+                    "canonical_schedule_sha256": baseline_schedule_sha,
+                },
             )
             baseline = baseline_evaluator.collect(baseline_jobs)
             baseline_core_outcomes = _persist_frozen_results(
                 paths["artifact"] / "frozen_results/core-update-000000.json",
-                baseline, checkpoint_update=0, panel_version="0038_frozen_2048_v1",
+                baseline, checkpoint_update=0, panel_version=CANONICAL_CONTRACT_ID,
             )
             diagnostic_evaluator = build_collector(
                 model, opponent, config, mode="greedy", record_trajectory=True
@@ -983,6 +1024,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                         "parity_report": "artifact/large_model_0806_runtime_parity.json",
                     },
                 )
+                completed_update = update
                 metrics: dict[str, Any] = {
                     "trainer/update": update,
                     "rollout/source_policy_update": source_update,
@@ -1007,10 +1049,13 @@ def run(config: RunConfig) -> dict[str, Any]:
                 if update % config.eval_every == 0:
                     evaluator = build_collector(model, opponent, config, mode="greedy")
                     eval_started = time.perf_counter()
-                    evaluation_jobs = build_frozen_jobs(
-                        FROZEN_PANEL, focal_deck=focal_deck(), runtime_root=runtime_root(),
+                    evaluation_jobs, evaluation_schedule_sha = build_frozen_jobs(
+                        focal_deck_id=FOCAL_DECK_ID,
+                        focal_deck=focal_deck(), runtime_root=runtime_root(),
                         source_policy_update=update,
                     )
+                    if evaluation_schedule_sha != baseline_schedule_sha:
+                        raise RuntimeError("canonical Frozen schedule changed across checkpoints")
                     if _schedule_payload(
                         evaluation_jobs,
                         source_checkpoint_sha256=identity.checkpoint_sha256,
@@ -1022,7 +1067,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                     checkpoint_outcomes = _persist_frozen_results(
                         paths["artifact"] / f"frozen_results/core-update-{update:06d}.json",
                         evaluation, checkpoint_update=update,
-                        panel_version="0038_frozen_2048_v1",
+                        panel_version=CANONICAL_CONTRACT_ID,
                     )
                     metrics.update(_episode_metrics(evaluation, "eval/core"))
                     metrics.update(_paired_frozen_metrics(
@@ -1070,7 +1115,8 @@ def run(config: RunConfig) -> dict[str, Any]:
             paths["artifact"] / "status.json",
             {
                 "state": "failed",
-                "checkpoint_update": update,
+                "checkpoint_update": completed_update,
+                "attempted_update": update,
                 "error": f"{type(error).__name__}: {error}",
                 "elapsed_seconds": time.time() - started,
                 "wandb_sync_status": "failed_or_interrupted",

@@ -7,7 +7,7 @@ CUDA 接入完成后，请基于 `0038_action_boundary_rl` 启动今晚的正式
 实验命名：
 
 ```text
-V4_full_stack_cuda_fresh_rl
+V5_canonical_frozen_cuda_fresh_rl
 ```
 
 必须从公共起点开始：
@@ -210,10 +210,13 @@ CPU RSS
 
 ## 八、固定评测面板
 
-正式实验只使用现有 Core 2048 固定面板：
+正式实验只使用全局 canonical Frozen-0806 面板：
 
 ```text
-Core panel = 8 shards × 256 = 2048 个唯一 seed
+contract = frozen_0806_seeded_2048_v2
+evaluation_seed = 341512806
+8 replicas × 256 environment-frequency slots = 2048 games
+007 schedule SHA-256 = 98b58bced460c1a2e622ae4b39bf506294fcb0230bb42e4117aaa6efc73c9ce9
 ```
 
 要求：
@@ -222,9 +225,11 @@ Core panel = 8 shards × 256 = 2048 个唯一 seed
 - 先后手各半。
 - matchup 构成固定。
 - 不重复一组 256 seed。
-- Core seed 不得进入训练 rollout。
+- 256-slot 中每个 opponent 的次数必须与当前环境频率一致，不得改成 55 deck 均匀分布。
+- evaluation seed 不得进入训练 rollout。
 - 所有 checkpoint 使用同一面板。
 - 先对完整 Full-stack update-0 跑 Core 2048，之后才能比较训练增量。
+- 评测方式必须与 `policy_0806/.../reports/007_dragapult_ex.html` 的 seed、slot、replica、seat、opponent 权重、greedy 和 CUDA backend 对齐；仅 action contract/model checkpoint 随实验版本变化。
 
 评测频率：
 
@@ -234,6 +239,8 @@ update 0，之后每 5 updates
 ```
 
 不再运行 8192 局 Extended 分支，避免不同 checkpoint 使用不同评估规模而削弱可比性。
+
+训练 rollout 可使用不同于 evaluation 的随机 seed，但 `rollout_games_per_update` 必须是 256 的整数倍；每个连续 256-game unit 都必须精确复现 Frozen catalog 的 opponent 频率。unit 内顺序和 seat 可以按训练 seed 随机化，整体保持先后手平衡。
 
 输出：
 
@@ -386,4 +393,4 @@ CUDA 接入及 smoke 通过后，请先输出一份简短 launch manifest：
 - 正式启动命令；
 - 预估 games/hour；正式 run 的完成时间由用户手动停止决定。
 
-确认这些内容与上述合同一致后，直接解除正式入口的 fail-closed 并启动 `V4_full_stack_cuda_fresh_rl`。
+确认这些内容与上述合同一致且 GPU 空闲后，启动 `V5_canonical_frozen_cuda_fresh_rl`。失败的 V4 保留为错误均匀面板与启动诊断的审计记录，不得续写或冒充正式可比基线。

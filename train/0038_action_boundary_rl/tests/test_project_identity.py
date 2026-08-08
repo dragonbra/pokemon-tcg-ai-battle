@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from collections import Counter
 import json
 from pathlib import Path
 import re
@@ -85,20 +86,25 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(sum(item.games for item in catalog), 256)
         self.assertTrue(all(len(item.deck) == 60 for item in catalog))
 
-    def test_formal_rollout_samples_256_seeds_and_swaps_seats(self) -> None:
-        jobs = full_runner.build_jobs(source_policy_update=0, seed=123, count=512)
+    def test_formal_rollout_preserves_each_256_slot_frequency_unit(self) -> None:
+        jobs = full_runner.build_jobs(source_policy_update=0, seed=123, count=2048)
+        expected = Counter({item.deck_id: item.games for item in league.load_frozen_catalog()})
 
-        self.assertEqual(len(jobs), 512)
-        self.assertEqual(sum(job.focal_first for job in jobs), 256)
-        self.assertEqual(len({job.seed for job in jobs}), 256)
-        self.assertEqual(len({job.opponent_id for job in jobs}), 55)
-        for first, second in zip(jobs[::2], jobs[1::2], strict=True):
-            self.assertTrue(first.focal_first)
-            self.assertFalse(second.focal_first)
-            self.assertEqual(first.seed, second.seed)
-            self.assertEqual(first.search_seed, second.search_seed)
-            self.assertEqual(first.opponent_deck, second.opponent_deck)
-            self.assertNotEqual(first.policy_seed, second.policy_seed)
+        self.assertEqual(len(jobs), 2048)
+        self.assertEqual(sum(job.focal_first for job in jobs), 1024)
+        self.assertEqual(len({job.seed for job in jobs}), 2048)
+        for start in range(0, len(jobs), 256):
+            unit = jobs[start : start + 256]
+            self.assertEqual(Counter(job.opponent_id for job in unit), expected)
+        replay = full_runner.build_jobs(source_policy_update=0, seed=123, count=2048)
+        self.assertEqual(
+            [(j.opponent_id, j.focal_first, j.seed, j.search_seed, j.policy_seed) for j in jobs],
+            [(j.opponent_id, j.focal_first, j.seed, j.search_seed, j.policy_seed) for j in replay],
+        )
+
+    def test_formal_rollout_rejects_partial_frequency_unit(self) -> None:
+        with self.assertRaisesRegex(ValueError, "256"):
+            full_runner.build_jobs(source_policy_update=0, seed=123, count=512 + 2)
 
     def test_full_semantic_focal_deck_is_exact_frozen_007(self) -> None:
         frozen_007 = next(
@@ -121,7 +127,7 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.ppo.gae_lambda, 0.95)
         self.assertEqual(config.ppo.batch_size, 1024)
         self.assertEqual(config.ppo.epochs, 4)
-        self.assertEqual(config.version, "V4_full_stack_cuda_fresh_rl")
+        self.assertEqual(config.version, "V5_canonical_frozen_cuda_fresh_rl")
         self.assertIsNone(config.updates)
         self.assertEqual(config.eval_every, 5)
         self.assertEqual(config.adaptation_arm, "lora")
@@ -134,6 +140,9 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertIn("V3_update0_chance_boundary_fallback", str(full_runner.COMMON_UPDATE0_CHECKPOINT))
         with self.assertRaisesRegex(RuntimeError, "explicit user approval"):
             full_runner.run(full_runner.RunConfig(updates=1))
+
+    def test_sparse_diagnostic_predicate_is_bound_in_formal_runner(self) -> None:
+        self.assertTrue(full_runner.is_sparse_diagnostic_update(5))
 
     def test_rollout_topology_rejects_invalid_channel_count(self) -> None:
         with self.assertRaisesRegex(ValueError, "inference_channels_per_role"):

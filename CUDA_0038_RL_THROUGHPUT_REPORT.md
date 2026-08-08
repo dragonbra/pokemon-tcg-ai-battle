@@ -21,8 +21,8 @@ CUDA benchmark 峰值为 2.20 GiB allocated、4.11 GiB reserved；正式 collect
 ## 正式合同
 
 - 初始化：`V3_update0_chance_boundary_fallback` 的 pre-PPO/update-0 model-only 权重；不加载 V5 RL 权重。
-- 训练：`V4_full_stack_cuda_fresh_rl`，每 update 2,048 局，`fixed_optimizer_budget`。
-- 评估：只使用 `0038_frozen_2048_v1`；update 0 与之后每 5 updates 同合同配对评估。
+- 训练：`V5_canonical_frozen_cuda_fresh_rl`，每 update 2,048 局（8 个随机 256-slot 环境频率单位），`fixed_optimizer_budget`。
+- 评估：只使用全局 `frozen_0806_seeded_2048_v2`，seed `341512806`、标准 007 schedule `98b58b...ce9`；update 0 与之后每 5 updates 同合同配对评估。
 - 时长：无固定 update 上限，在完整 update 边界响应人工 `STOP_REQUESTED`。
 - 记录：本地 JSONL 为事实源，TensorBoard 与 private W&B 只镜像聚合标量。
 
