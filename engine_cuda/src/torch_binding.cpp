@@ -621,6 +621,39 @@ public:
             options);
     }
 
+    torch::Tensor decision_actors() const {
+        auto* pointer = reinterpret_cast<std::uint8_t*>(arena_.states)
+            + offsetof(engine::OfficialStatePod, select_player);
+        const auto options = torch::TensorOptions()
+            .device(torch::kCUDA, device_index_)
+            .dtype(torch::kInt8);
+        return torch::from_blob(
+            pointer,
+            {static_cast<std::int64_t>(arena_.config.batch_size)},
+            {static_cast<std::int64_t>(sizeof(engine::OfficialStatePod))},
+            [](void*) {},
+            options);
+    }
+
+    torch::Tensor prize_counts() const {
+        auto* pointer = reinterpret_cast<std::uint8_t*>(arena_.states)
+            + offsetof(engine::OfficialStatePod, players)
+            + offsetof(engine::OfficialPlayerStatePod, prize)
+            + offsetof(decltype(engine::OfficialPlayerStatePod::prize), count);
+        const auto options = torch::TensorOptions()
+            .device(torch::kCUDA, device_index_)
+            .dtype(torch::kInt16);
+        return torch::from_blob(
+            pointer,
+            {static_cast<std::int64_t>(arena_.config.batch_size), 2},
+            {
+                static_cast<std::int64_t>(sizeof(engine::OfficialStatePod) / sizeof(std::int16_t)),
+                static_cast<std::int64_t>(sizeof(engine::OfficialPlayerStatePod) / sizeof(std::int16_t)),
+            },
+            [](void*) {},
+            options);
+    }
+
     torch::Tensor action_bytes() const {
         return view(
             arena_.actions,
@@ -904,6 +937,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
         .def("state_bytes", &OfficialCudaEngine::state_bytes)
         .def("statuses", &OfficialCudaEngine::statuses)
         .def("game_results", &OfficialCudaEngine::game_results)
+        .def("decision_actors", &OfficialCudaEngine::decision_actors)
+        .def("prize_counts", &OfficialCudaEngine::prize_counts)
         .def("action_bytes", &OfficialCudaEngine::action_bytes)
         .def("semantic_history_raw", &OfficialCudaEngine::semantic_history_raw)
         .def_property_readonly("allocated_bytes", &OfficialCudaEngine::allocated_bytes)

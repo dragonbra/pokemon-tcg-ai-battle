@@ -39,6 +39,8 @@ class PreparedBatch:
     first_decision_credit_mean: float
     macro_actions: tuple[dict | None, ...]
     prize_reward: Tensor
+    own_prize_reward: Tensor
+    opponent_prize_reward: Tensor
     prize_return: Tensor
     prize_advantage: Tensor
     opponent_meta_label: Tensor
@@ -105,7 +107,14 @@ def prepare_episodes(
 ) -> PreparedBatch:
     if loss_weighting not in {"episode_equal_decisions", "episode_equal_turns"}:
         raise ValueError(f"unsupported loss_weighting: {loss_weighting}")
-    valid = [episode for episode in episodes if episode.valid and episode.reward is not None]
+    valid = [
+        episode for episode in episodes
+        if episode.valid and episode.reward is not None
+        and (
+            not episode.policy_transitions
+            or all(transition.valid for transition in episode.policy_transitions)
+        )
+    ]
     if not valid:
         raise ValueError("no valid terminal episodes to prepare")
     use_compound = all(episode.policy_transitions for episode in valid)
@@ -135,6 +144,8 @@ def prepare_episodes(
     opponents: list[str] = []
     macro_actions: list[dict | None] = []
     prize_rewards: list[float] = []
+    own_prize_rewards: list[float] = []
+    opponent_prize_rewards: list[float] = []
     prize_returns: list[float] = []
     prize_advantages: list[float] = []
     taxonomy_names = ["unknown", "ambiguous", *sorted({
@@ -227,6 +238,16 @@ def prepare_episodes(
             candidate_first.append(episode.job.focal_first)
             opponents.append(episode.job.opponent_id)
             prize_rewards.append(prize_reward)
+            if use_compound:
+                own_prize_rewards.append(
+                    float(record.metadata.get("focal_prizes_taken", 0)) * prize_scale
+                )
+                opponent_prize_rewards.append(
+                    float(record.metadata.get("opponent_prizes_taken", 0)) * prize_scale
+                )
+            else:
+                own_prize_rewards.append(0.0)
+                opponent_prize_rewards.append(0.0)
             prize_returns.append(prize_return)
             prize_advantages.append(prize_advantage)
             meta_labels.append(deck_to_label.get(episode.job.opponent_id, 0))
@@ -279,6 +300,8 @@ def prepare_episodes(
         first_decision_credit_mean=sum(first_decision_credits) / len(first_decision_credits),
         macro_actions=tuple(macro_actions),
         prize_reward=torch.tensor(prize_rewards, dtype=torch.float32),
+        own_prize_reward=torch.tensor(own_prize_rewards, dtype=torch.float32),
+        opponent_prize_reward=torch.tensor(opponent_prize_rewards, dtype=torch.float32),
         prize_return=torch.tensor(prize_returns, dtype=torch.float32),
         prize_advantage=normalized_prize,
         opponent_meta_label=torch.tensor(meta_labels, dtype=torch.long),
@@ -319,6 +342,17 @@ def training_batch_metrics(batch: PreparedBatch, *, include_detailed: bool = Tru
         "ppo/credit_clock_turn": float(batch.credit_clock == "turn"),
         "ppo/loss_weighting_turn_equal": float(
             batch.loss_weighting == "episode_equal_turns"
+        ),
+        "reward/terminal_episode_sum_mean": float(torch.stack([
+            batch.terminal_return[batch.episode_index.eq(index).nonzero(as_tuple=False)[0, 0]]
+            for index in batch.episode_index.unique()
+        ]).mean()),
+        "reward/own_prize_component_sum": float(batch.own_prize_reward.sum()),
+        "reward/opponent_prize_component_sum": float(batch.opponent_prize_reward.sum()),
+        "reward/net_prize_component_sum": float(batch.prize_reward.sum()),
+        "ppo/prize_to_win_advantage_std_ratio": float(
+            batch.prize_advantage.std(unbiased=False)
+            / batch.advantage.std(unbiased=False).clamp_min(1e-8)
         ),
     }
     if include_detailed:

@@ -61,12 +61,14 @@ class Semantic0031ResidentRouter:
         opponent_option_norm: Any | None,
         opponent_decoder: Any,
         same_policy: bool,
+        focal_summary_fn: Any | None = None,
     ) -> None:
         self.focal_adapter = focal_adapter
         self.opponent_last_option_layer = opponent_last_option_layer
         self.opponent_option_norm = opponent_option_norm
         self.opponent_decoder = opponent_decoder
         self.same_policy = bool(same_policy)
+        self.focal_summary_fn = focal_summary_fn
 
     def encode(self, batch: Any) -> tuple[Any, Any, Any, Any]:
         model = self.focal_adapter.model
@@ -104,12 +106,16 @@ class Semantic0031ResidentRouter:
         validated, state, focal_options, opponent_options = self.encode(batch)
         ready = focal_route.bool() | opponent_route.bool()
         focal_decoder = self.focal_adapter.model.action_decoder
+        focal_summary = (
+            self.focal_summary_fn(state)
+            if self.focal_summary_fn is not None else state.summary
+        )
         if self.same_policy and focal_greedy:
             shared = semantic0031_decode_device(
                 focal_decoder,
                 validated,
                 focal_options,
-                state.summary,
+                focal_summary,
                 max_select=max_select,
                 greedy=True,
                 route_mask=ready,
@@ -122,7 +128,7 @@ class Semantic0031ResidentRouter:
                 focal_decoder,
                 validated,
                 focal_options,
-                state.summary,
+                focal_summary,
                 max_select=max_select,
                 greedy=focal_greedy,
                 route_mask=focal_route,

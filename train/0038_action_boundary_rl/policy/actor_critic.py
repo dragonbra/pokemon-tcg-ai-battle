@@ -161,12 +161,22 @@ class SemanticActorCritic(nn.Module):
         memory = torch.cat((state.tokens, options), dim=1)
         memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
         queries = self.value_head.decode(memory, memory_mask)
-        logit = self.value_head.heads.value(queries[:, 0]).squeeze(-1)
         output: dict[str, Tensor] = {}
+        meta_logits = None
+        if self.opponent_meta_head is not None:
+            meta_logits = self.opponent_meta_head(state.summary)
+            output["opponent_meta_logits"] = meta_logits
+        value_query = queries[:, 0]
+        if meta_logits is not None and self.opponent_meta_conditioner is not None:
+            conditioned = self.opponent_meta_conditioner(
+                state.summary,
+                meta_logits,
+                detach=self.integrated_flags.opponent_meta_detach_to_actor,
+            )
+            value_query = value_query + (conditioned - state.summary)
+        logit = self.value_head.heads.value(value_query).squeeze(-1)
         if self.prize_aux is not None:
             output["v_prize"] = self.prize_aux(queries)
-        if self.opponent_meta_head is not None:
-            output["opponent_meta_logits"] = self.opponent_meta_head(state.summary)
         return 2.0 * logit.sigmoid() - 1.0, output
 
     def auxiliary_from_encoded(self, validated, state, options: Tensor) -> dict[str, Tensor]:

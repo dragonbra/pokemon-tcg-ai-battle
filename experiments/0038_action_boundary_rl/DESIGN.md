@@ -92,6 +92,8 @@ terminal 时 `next_value=0`。entropy/KL/clip 的分母仅为 valid strategic tr
 
 rollout 配置不再假设固定 512 局或固定 decision 数。`engine_backend`、games/workers/envs/batch/inflight/queue/seed shards、PPO physical minibatch、gradient accumulation、epochs 和 optimizer steps 均显式配置。accelerated backend 必须先通过 observation/legal/reward-terminal-winner/RNG/full-game/macro parity，并与 official backend 使用同一 Agent action contract。
 
+V4 使用 `accelerated:cuda_resident`：兼容规则 blob 与 CUDA state machine 驻留 GPU，Agent 仍执行同一 0038 DecisionGate、hierarchical Phantom allocation 和 primitive-select 合同。CUDA collector 只把真实 decision boundary 写入 `PolicyTrajectory`；公开奖赏数和状态位等 allocation 条件特征随 macro action 保存，用于精确重放 joint old-logprob，不引入隐藏字段。任何 actor、目标、计数、chance 或 transaction 漂移都标记 invalid/fallback 并排除 PPO。
+
 扩容有两种显式模式：`fixed_epochs` 会随样本增加 optimizer steps；默认优先 `fixed_optimizer_budget`，固定每 update optimizer steps，通过 effective minibatch、累积或抽样吸收更多 rollout。切换模式必须由用户确认，不能连带静默改变 LR、epochs、effective batch 或 advantage normalization 范围。
 
 指标分三档：每 update 只聚合已有 forward 的低成本 scalar 与七阶段 wall time；Frozen point 从已有 2,048 局逐局结果离线聚合；梯度范数/cosine、allocation margin 和详细 calibration 只在固定小 minibatch 的 update 0/5/10/之后每 10 次运行。exhaustive parity、hidden leakage、RNG/state A/B 和 fault injection 仅在测试/CI。
@@ -106,6 +108,6 @@ rollout 配置不再假设固定 512 局或固定 decision 数。`engine_backend
 
 checkpoint schema 为 `0038_model_only_checkpoint_v1`，强制记录 action、gate、canonicalizer、trajectory 与 official adapter 五个版本。model-only payload 禁止 optimizer/scheduler/RNG/rollout/replay。
 
-当前阶段已完成 implementation、数据准备、124 项测试、短 smoke 与 2,048 局 update-0 Frozen evaluation；未授权正式 50/200-update 训练。公共基线为 `V3_update0_chance_boundary_fallback`，PPO updates=0，official adapter 为 `0038_official_primitive_adapter_v2_chance_fallback`。Frozen 结果为 1308-739-1、0 error、14 safe fallback；Meta 全面板聚合因 logits 容器类型错误未发布，代码已修正，遵循“不得为统计额外 forward”合同没有单独重跑。
+公共基线为 `V3_update0_chance_boundary_fallback`，PPO updates=0，official adapter 为 `0038_official_primitive_adapter_v2_chance_fallback`。Frozen 结果为 1308-739-1、0 error、14 safe fallback；Meta 全面板聚合因 logits 容器类型错误未发布，代码已修正，遵循“不得为统计额外 forward”合同没有单独重跑。
 
-正式 PPO 入口继续 fail closed。人工批准后预留版本为严格递增的 `V4_integrated_fresh_rl`：从 V3 common update-0 加载 BC-warm-started allocation head，默认启用 `INTEGRATED` preset，重新初始化 optimizer/scheduler/RNG/rollout/old-policy。稀疏梯度诊断在 update 0/5/10/之后每 10 updates 复用 update-0 Frozen forward 中固定下来的小型 minibatch，不进入普通 PPO minibatch 热路径。
+当前阶段已完成 CUDA resident Action Boundary 接入、124 项合同测试、256 局 stochastic/greedy 吞吐 benchmark 与真实 CUDA rollout→PPO replay smoke。正式版本为严格递增的 `V4_full_stack_cuda_fresh_rl`：从 V3 common update-0 加载 BC-warm-started allocation head，默认启用 `INTEGRATED` preset，重新初始化 optimizer/scheduler/RNG/rollout/old-policy。每 update 采集 2,048 局并使用固定 optimizer budget；update 0 和之后每 5 updates 只运行同一 `0038_frozen_2048_v1`，不启用 8,192 局分支。run 不设 update 上限，在完整 update 边界响应人工 stop sentinel。稀疏梯度诊断在 update 0/5/10/之后每 10 updates 复用固定小型 minibatch，不进入普通 PPO minibatch 热路径。

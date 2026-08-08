@@ -5,11 +5,13 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict, dataclass, replace
 import hashlib
+import itertools
 import json
 import os
 from pathlib import Path
 import random
 import re
+import resource
 import shutil
 import time
 from typing import Any
@@ -22,7 +24,7 @@ from evaluation.runtime.seeded import build_seeded_runtime
 from ..league import load_frozen_catalog
 from ..parity import assert_large_model_0806_runtime_parity, collect_official_observations
 from ..policy import AdaptationConfig, load_actor_critic
-from ..rollout import FullSemanticRolloutCollector, RolloutJob
+from ..rollout import ChunkedCudaRolloutCollector, FullSemanticRolloutCollector, RolloutJob
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .storage_full_semantic import save_model_only
@@ -40,27 +42,31 @@ from ..integrated.presets import PRESETS, preset
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V4_integrated_fresh_rl"
+FORMAL_VERSION = "V4_full_stack_cuda_fresh_rl"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
 FOCAL_EXACT_DECK_SHA256 = "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
 FOCAL_DECK_PATH = ROOT / "train" / PROJECT / "league/decks" / FOCAL_DECK_ID / "deck.csv"
 FROZEN_PANEL = ROOT / "experiments/0038_action_boundary_rl/frozen_panel_2048_v1.json"
+CUDA_RULES = ROOT / ".tmp/cuda_0032_rules/official_rules.bin"
+CUDA_EXTENSION = ROOT / ".tmp/engine_cuda_benchmark/build_sm120_staged"
 
 
 @dataclass(frozen=True, slots=True)
 class RunConfig:
     version: str = FORMAL_VERSION
-    updates: int = 50
+    updates: int | None = None
     worker_processes: int = 16
     engines_per_worker: int = 8
     inference_channels_per_role: int = 8
     coalesce_ms: float = 5.0
     device: str = "cuda:0"
     seed: int = 330031001
-    games_per_update: int = 512
-    engine_backend: str = "official"
+    games_per_update: int = 2048
+    engine_backend: str = "accelerated:cuda_resident"
+    cuda_lane_count: int = 256
+    rollout_batch_size: int = 512
     inference_batch_size: int = 64
     max_inflight_requests: int = 256
     rollout_queue_depth: int = 512
@@ -74,19 +80,24 @@ class RunConfig:
     adaptation_arm: str = "lora"
     preset_name: str = "INTEGRATED"
     wandb_mode: str = "online"
+    launch_formal: bool = False
+    resume_update0: bool = False
     ppo: PPOConfig = PPOConfig()
 
     def validate(self) -> None:
         if re.fullmatch(r"V[1-9]\d*_[a-z0-9]+(?:_[a-z0-9]+)*", self.version) is None:
             raise ValueError("version must match V<n>_<ascii_snake_case>")
         if min(
-            self.updates,
             self.worker_processes,
             self.engines_per_worker,
             self.inference_channels_per_role,
             self.eval_every,
         ) < 1 or self.coalesce_ms < 0:
-            raise ValueError("updates, rollout topology, and eval_every must be positive")
+            raise ValueError("rollout topology and eval_every must be positive")
+        if self.updates is not None and self.updates < 1:
+            raise ValueError("updates must be positive when a finite limit is configured")
+        if self.resume_update0 and not self.launch_formal:
+            raise ValueError("resume_update0 requires the formal launch token")
         if self.inference_channels_per_role > self.engines_per_worker:
             raise ValueError(
                 "inference_channels_per_role cannot exceed engines_per_worker"
@@ -99,7 +110,8 @@ class RunConfig:
             raise ValueError("invalid optimization mode")
         if min(self.inference_batch_size, self.max_inflight_requests,
                self.rollout_queue_depth, self.seed_shard_count,
-               self.optimizer_steps_per_update, self.ppo_gradient_accumulation) < 1:
+               self.optimizer_steps_per_update, self.ppo_gradient_accumulation,
+               self.cuda_lane_count, self.rollout_batch_size) < 1:
             raise ValueError("capacity settings must be positive")
         if (self.ppo.batch_size != self.ppo_minibatch_size
                 or self.ppo.epochs != self.ppo_epochs
@@ -196,6 +208,24 @@ def assert_fresh_version(version: str) -> dict[str, Path]:
     return paths
 
 
+def assert_update0_resume(version: str) -> dict[str, Path]:
+    paths = _paths(version)
+    status_path = paths["artifact"] / "status.json"
+    if not status_path.is_file():
+        raise FileNotFoundError("update-0 resume requires an existing status.json")
+    status = json.loads(status_path.read_text())
+    checkpoints = sorted(paths["checkpoint"].glob("update-*.pt"))
+    metrics_path = paths["artifact"] / "training_metrics.jsonl"
+    if (
+        status.get("state") != "failed"
+        or int(status.get("checkpoint_update", -1)) != 0
+        or [path.name for path in checkpoints] != ["update-000000.pt"]
+        or (metrics_path.is_file() and metrics_path.stat().st_size != 0)
+    ):
+        raise RuntimeError("resume is allowed only for an interrupted pre-PPO update-0 run")
+    return paths
+
+
 def focal_deck() -> tuple[int, ...]:
     cards = tuple(int(line) for line in FOCAL_DECK_PATH.read_text().splitlines())
     if len(cards) != 60 or any(card <= 0 for card in cards):
@@ -213,6 +243,35 @@ def runtime_root() -> Path:
     if not roots:
         raise FileNotFoundError("official CPU engine runtime is unavailable")
     return roots[0].parents[1].resolve()
+
+
+def build_collector(model, opponent, config: RunConfig, *, mode: str,
+                    record_trajectory: bool | None = None):
+    if record_trajectory is None:
+        record_trajectory = mode == "sample"
+    if config.engine_backend == "accelerated:cuda_resident":
+        return ChunkedCudaRolloutCollector(
+            model,
+            opponent,
+            rollout_batch_size=config.rollout_batch_size,
+            device=torch.device(config.device),
+            rules_path=CUDA_RULES,
+            extension_dir=CUDA_EXTENSION,
+            lane_count=config.cuda_lane_count,
+            mode=mode,
+            check_interval=8,
+            record_trajectory=record_trajectory,
+        )
+    return FullSemanticRolloutCollector(
+        model,
+        opponent,
+        device=torch.device(config.device),
+        worker_processes=config.worker_processes,
+        engines_per_worker=config.engines_per_worker,
+        inference_channels_per_role=config.inference_channels_per_role,
+        mode=mode,
+        coalesce_ms=config.coalesce_ms,
+    )
 
 
 def build_jobs(
@@ -325,7 +384,8 @@ def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
     }
 
 
-def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_update: int) -> dict[int, int]:
+def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_update: int,
+                            panel_version: str) -> dict[int, int]:
     rows = []
     outcomes = {}
     for episode in episodes:
@@ -338,25 +398,26 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
             "error": episode.error,
             "fallback": int(episode.diagnostics.get("macro_fallback", 0)),
         })
-    if len(rows) != 2048 or len(outcomes) != 2048:
+    if len(rows) != 2048 or len(outcomes) != len(rows):
         raise RuntimeError("Frozen result persistence requires 2,048 unique games")
     _atomic_json(path, {
         "schema_version": "0038_frozen_per_game_results_v1",
-        "frozen_panel_version": "0038_frozen_2048_v1",
+        "frozen_panel_version": panel_version,
         "checkpoint_update": checkpoint_update, "entries": rows,
     })
     return outcomes
 
 
-def _paired_frozen_metrics(baseline: dict[int, int], checkpoint: dict[int, int]) -> dict[str, float]:
+def _paired_frozen_metrics(baseline: dict[int, int], checkpoint: dict[int, int],
+                           prefix: str = "eval") -> dict[str, float]:
     summary = paired_summary(baseline, checkpoint)
     return {
-        "eval/win_rate": float(summary["win_rate"]),
-        "eval/wilson_low": float(summary["wilson_95"][0]),
-        "eval/wilson_high": float(summary["wilson_95"][1]),
-        "eval/baseline_loss_to_win": float(summary["baseline_loss_to_checkpoint_win"]),
-        "eval/baseline_win_to_loss": float(summary["baseline_win_to_checkpoint_loss"]),
-        "eval/mcnemar_chi2": float(summary["mcnemar_continuity_corrected_chi2"]),
+        f"{prefix}/win_rate": float(summary["win_rate"]),
+        f"{prefix}/wilson_low": float(summary["wilson_95"][0]),
+        f"{prefix}/wilson_high": float(summary["wilson_95"][1]),
+        f"{prefix}/baseline_loss_to_win": float(summary["baseline_loss_to_checkpoint_win"]),
+        f"{prefix}/baseline_win_to_loss": float(summary["baseline_win_to_checkpoint_loss"]),
+        f"{prefix}/mcnemar_chi2": float(summary["mcnemar_continuity_corrected_chi2"]),
     }
 
 
@@ -418,6 +479,28 @@ def _opponent_snapshot() -> dict[str, Any]:
             }
             for item in catalog
         ],
+    }
+
+
+def _trainable_manifest(model, trainer) -> dict[str, Any]:
+    rows = [
+        {"name": name, "shape": list(parameter.shape), "parameters": parameter.numel()}
+        for name, parameter in model.named_parameters() if parameter.requires_grad
+    ]
+    groups = []
+    for group in trainer.optimizer.param_groups:
+        groups.append({
+            "name": str(group.get("name", "unnamed")),
+            "learning_rate": float(group["lr"]),
+            "weight_decay": float(group.get("weight_decay", 0.0)),
+            "parameters": sum(parameter.numel() for parameter in group["params"]),
+            "tensor_count": len(group["params"]),
+        })
+    return {
+        "trainable_parameters": sum(row["parameters"] for row in rows),
+        "trainable_tensors": len(rows),
+        "parameter_table": rows,
+        "optimizer_groups": groups,
     }
 
 
@@ -556,12 +639,12 @@ def run_gate(
 
 
 def run(config: RunConfig) -> dict[str, Any]:
-    raise RuntimeError(
-        "0038 formal PPO remains fail-closed pending explicit user approval of the "
-        "V3 common update-0; tests/smoke/evaluation entry points remain available"
-    )
-    # The implementation below is the audited rollout/evaluation harness. The guard
-    # is removed only after explicit approval of the common update-0.
+    if not config.launch_formal:
+        raise RuntimeError(
+            "0038 formal PPO requires explicit user approval via the "
+            "--launch-formal token; "
+            "tests and imports must remain side-effect free"
+        )
     config.validate()
     flags = replace(
         preset(config.preset_name),
@@ -572,14 +655,19 @@ def run(config: RunConfig) -> dict[str, Any]:
         lora=True,
         layernorm_tuning=config.adaptation_arm == "lora_layernorm",
     )
-    paths = assert_fresh_version(config.version)
-    for name in ("artifact", "checkpoint", "tensorboard", "wandb"):
-        paths[name].mkdir(parents=True, exist_ok=False)
+    resuming = config.resume_update0
+    paths = assert_update0_resume(config.version) if resuming else assert_fresh_version(config.version)
+    if not resuming:
+        for name in ("artifact", "checkpoint", "tensorboard", "wandb"):
+            paths[name].mkdir(parents=True, exist_ok=False)
     random.seed(config.seed)
     torch.manual_seed(config.seed)
     device = torch.device(config.device)
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA inference/training requested but unavailable")
+    if config.engine_backend == "accelerated:cuda_resident":
+        if not CUDA_RULES.is_file() or not (CUDA_EXTENSION / "_ptcg_cuda.so").is_file():
+            raise RuntimeError("validated CUDA rules/extension artifacts are unavailable")
     run_id = "0038-" + config.version.lower().replace("_", "-")
     wandb_url = f"https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/{run_id}"
     os.environ.update(
@@ -592,7 +680,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_NAME": f"{WANDB_DISPLAY_PREFIX} · {config.version}",
             "WANDB_RUN_GROUP": PROJECT,
             "WANDB_TAGS": (
-                "0038,action_boundary,official_cpu,ppo,frozen_panel_2048,"
+                "0038,action_boundary,cuda_resident,full_stack,ppo,frozen_panel_2048,"
                 + config.ppo.credit_clock
                 + "_clock"
             ),
@@ -631,6 +719,17 @@ def run(config: RunConfig) -> dict[str, Any]:
         "opponent_policy_sha256": _sha256(SOURCE_CHECKPOINT),
         "opponent_schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
         "official_engine": "seeded_official_engine_abi_v1_runtime_0002",
+        "engine_backend": {
+            "name": config.engine_backend,
+            "cuda_rules": str(CUDA_RULES.relative_to(ROOT)),
+            "cuda_rules_sha256": _sha256(CUDA_RULES)
+            if config.engine_backend == "accelerated:cuda_resident" else None,
+            "cuda_extension": str((CUDA_EXTENSION / "_ptcg_cuda.so").relative_to(ROOT)),
+            "cuda_extension_sha256": _sha256(CUDA_EXTENSION / "_ptcg_cuda.so")
+            if config.engine_backend == "accelerated:cuda_resident" else None,
+            "lane_count": config.cuda_lane_count,
+            "trajectory_chunk_games": config.rollout_batch_size,
+        },
         "rollout_seed_contract": {
             "sampled_engine_seeds": config.games_per_update // 2,
             "episodes_per_seed": 2,
@@ -664,6 +763,12 @@ def run(config: RunConfig) -> dict[str, Any]:
             "auxiliary_heads_in_ppo": False,
         },
         "checkpoint_retention": "all",
+        "run_duration": {
+            "mode": "manual_stop" if config.updates is None else "finite_updates",
+            "max_updates": config.updates,
+            "stop_sentinel": "artifact/STOP_REQUESTED",
+            "stop_check_boundary": "after_each_complete_update",
+        },
         "adaptation": asdict(adaptation),
         "value_diagnostics": {
             "source": "on_policy_rollout_old_value",
@@ -672,7 +777,14 @@ def run(config: RunConfig) -> dict[str, Any]:
             "outcomes": ["focal_win", "focal_loss", "draw"],
             "targets": ["gae_return", "terminal_outcome"],
         },
-        "reward": "terminal_only_minus_one_zero_plus_one",
+        "reward": {
+            "v_win_target": "terminal_only_minus_one_zero_plus_one",
+            "prize_mode": flags.prize_aux_mode,
+            "net_prize_delta": "own_prizes_taken-opponent_prizes_taken",
+            "prize_scale": flags.prize_aux_scale,
+            "prize_actor_weight": flags.prize_aux_actor_weight,
+            "double_scaling": False,
+        },
         "temporal_credit": {
             "gamma": config.ppo.gamma,
             "gae_lambda": config.ppo.gae_lambda,
@@ -688,18 +800,33 @@ def run(config: RunConfig) -> dict[str, Any]:
             "engine_turn_limit": 99,
         },
     }
-    _atomic_json(paths["artifact"] / "training_config.json", config_payload)
-    _atomic_json(paths["artifact"] / "opponent_snapshot.json", _opponent_snapshot())
-    _atomic_json(
-        paths["artifact"] / "status.json",
-        {
-            "state": "initializing",
-            "version": config.version,
-            "wandb_run_id": run_id,
-            "wandb_url": wandb_url,
-            "wandb_sync_status": "initializing",
-        },
-    )
+    if not resuming:
+        _atomic_json(paths["artifact"] / "training_config.json", config_payload)
+        _atomic_json(paths["artifact"] / "opponent_snapshot.json", _opponent_snapshot())
+        _atomic_json(
+            paths["artifact"] / "status.json",
+            {
+                "state": "initializing",
+                "version": config.version,
+                "wandb_run_id": run_id,
+                "wandb_url": wandb_url,
+                "wandb_sync_status": "initializing",
+            },
+        )
+    else:
+        previous_config_path = paths["artifact"] / "training_config.json"
+        interrupted_config_path = paths["artifact"] / "interrupted_update0_config.json"
+        if not interrupted_config_path.exists():
+            _atomic_json(interrupted_config_path, json.loads(previous_config_path.read_text()))
+        _atomic_json(previous_config_path, config_payload)
+        _merge_status(paths["artifact"] / "status.json", {
+            "state": "resuming_update0",
+            "resume_reason": "interrupted test-triggered baseline before PPO update 1",
+            "resume_time": time.time(),
+            "run_duration_mode": "manual_stop" if config.updates is None else "finite_updates",
+            "max_updates": config.updates,
+            "interrupted_config_preserved": "artifact/interrupted_update0_config.json",
+        })
     started = time.time()
     update = 0
     cumulative_episodes = 0
@@ -713,21 +840,26 @@ def run(config: RunConfig) -> dict[str, Any]:
         if not parity["passed"]:
             raise RuntimeError("Large Model 0806 runtime parity did not pass")
         trainer = PPOTrainer(model, device=device, config=config.ppo)
+        _atomic_json(
+            paths["artifact"] / "trainable_parameters.json",
+            _trainable_manifest(model, trainer),
+        )
         representation = model.representation_sha256()
         initial_decoder = model.decoder_sha256()
-        save_model_only(
-            model,
-            paths["checkpoint"] / "update-000000.pt",
-            update=0,
-            metadata={
-                "project": PROJECT,
-                "version": config.version,
-                "source_checkpoint_sha256": identity.checkpoint_sha256,
-                "parent_update0_sha256": COMMON_UPDATE0_SHA256,
-                "integrated_flags": flags.metadata(),
-                "representation_sha256": representation,
-            },
-        )
+        if not resuming:
+            save_model_only(
+                model,
+                paths["checkpoint"] / "update-000000.pt",
+                update=0,
+                metadata={
+                    "project": PROJECT,
+                    "version": config.version,
+                    "source_checkpoint_sha256": identity.checkpoint_sha256,
+                    "parent_update0_sha256": COMMON_UPDATE0_SHA256,
+                    "integrated_flags": flags.metadata(),
+                    "representation_sha256": representation,
+                },
+            )
         _merge_status(
             paths["artifact"] / "status.json",
             {
@@ -751,16 +883,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "rollout/source_policy_update": 0,
                 }
             )
-            baseline_evaluator = FullSemanticRolloutCollector(
-                model,
-                opponent,
-                device=device,
-                worker_processes=config.worker_processes,
-                engines_per_worker=config.engines_per_worker,
-                inference_channels_per_role=config.inference_channels_per_role,
-                mode="greedy",
-                coalesce_ms=config.coalesce_ms,
-            )
+            baseline_evaluator = build_collector(model, opponent, config, mode="greedy")
             baseline_started = time.perf_counter()
             baseline_jobs = build_frozen_jobs(
                 FROZEN_PANEL, focal_deck=focal_deck(), runtime_root=runtime_root(),
@@ -768,18 +891,19 @@ def run(config: RunConfig) -> dict[str, Any]:
             )
             _atomic_json(
                 paths["artifact"] / "schedules/eval_frozen_2048.json",
-                _schedule_payload(
-                    baseline_jobs,
-                    source_checkpoint_sha256=identity.checkpoint_sha256,
-                ),
+                _schedule_payload(baseline_jobs, source_checkpoint_sha256=identity.checkpoint_sha256),
             )
             baseline = baseline_evaluator.collect(baseline_jobs)
-            baseline_outcomes = _persist_frozen_results(
-                paths["artifact"] / "frozen_results/update-000000.json",
-                baseline, checkpoint_update=0,
+            baseline_core_outcomes = _persist_frozen_results(
+                paths["artifact"] / "frozen_results/core-update-000000.json",
+                baseline, checkpoint_update=0, panel_version="0038_frozen_2048_v1",
             )
+            diagnostic_evaluator = build_collector(
+                model, opponent, config, mode="greedy", record_trajectory=True
+            )
+            diagnostic_episodes = diagnostic_evaluator.collect(baseline_jobs[:2])
             diagnostic_batch = prepare_episodes(
-                baseline[:2],
+                diagnostic_episodes,
                 gamma=config.ppo.gamma,
                 gae_lambda=config.ppo.gae_lambda,
                 credit_clock=config.ppo.credit_clock,
@@ -796,21 +920,19 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "eval/wall_seconds": time.perf_counter() - baseline_started,
                     "representation/sha256_unchanged": 1.0,
                     **trainer.sparse_gradient_diagnostics(diagnostic_batch),
-                    **_episode_metrics(baseline, "eval"),
+                    **_episode_metrics(baseline, "eval/core"),
+                    **baseline_evaluator.metrics(),
                 },
             )
-            for update in range(1, config.updates + 1):
+            update_iterator = (
+                itertools.count(1)
+                if config.updates is None
+                else range(1, config.updates + 1)
+            )
+            stop_requested = False
+            for update in update_iterator:
                 source_update = update - 1
-                collector = FullSemanticRolloutCollector(
-                    model,
-                    opponent,
-                    device=device,
-                    worker_processes=config.worker_processes,
-                    engines_per_worker=config.engines_per_worker,
-                    inference_channels_per_role=config.inference_channels_per_role,
-                    mode="sample",
-                    coalesce_ms=config.coalesce_ms,
-                )
+                collector = build_collector(model, opponent, config, mode="sample")
                 rollout_started = time.perf_counter()
                 rollout_jobs = build_jobs(
                     source_policy_update=source_update,
@@ -874,22 +996,16 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "ppo/wall_seconds": ppo_seconds,
                     "system/end_to_end/wall_seconds": rollout_seconds + ppo_seconds,
                     "system/disk/free_gib": shutil.disk_usage(paths["root"]).free / 1024**3,
+                    "system/cpu/max_rss_bytes": float(
+                        resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024
+                    ),
                     "system/gpu/max_allocated_bytes": torch.cuda.max_memory_allocated(device),
                     "system/gpu/max_reserved_bytes": torch.cuda.max_memory_reserved(device),
                     **rollout_metrics,
                     **ppo_metrics,
                 }
                 if update % config.eval_every == 0:
-                    evaluator = FullSemanticRolloutCollector(
-                        model,
-                        opponent,
-                        device=device,
-                        worker_processes=config.worker_processes,
-                        engines_per_worker=config.engines_per_worker,
-                        inference_channels_per_role=config.inference_channels_per_role,
-                        mode="greedy",
-                        coalesce_ms=config.coalesce_ms,
-                    )
+                    evaluator = build_collector(model, opponent, config, mode="greedy")
                     eval_started = time.perf_counter()
                     evaluation_jobs = build_frozen_jobs(
                         FROZEN_PANEL, focal_deck=focal_deck(), runtime_root=runtime_root(),
@@ -904,11 +1020,15 @@ def run(config: RunConfig) -> dict[str, Any]:
                         raise RuntimeError("fixed evaluation schedule changed across checkpoints")
                     evaluation = evaluator.collect(evaluation_jobs)
                     checkpoint_outcomes = _persist_frozen_results(
-                        paths["artifact"] / f"frozen_results/update-{update:06d}.json",
+                        paths["artifact"] / f"frozen_results/core-update-{update:06d}.json",
                         evaluation, checkpoint_update=update,
+                        panel_version="0038_frozen_2048_v1",
                     )
-                    metrics.update(_episode_metrics(evaluation, "eval"))
-                    metrics.update(_paired_frozen_metrics(baseline_outcomes, checkpoint_outcomes))
+                    metrics.update(_episode_metrics(evaluation, "eval/core"))
+                    metrics.update(_paired_frozen_metrics(
+                        baseline_core_outcomes, checkpoint_outcomes, "eval/core"
+                    ))
+                    metrics.update(evaluator.metrics())
                     metrics["eval/checkpoint_update"] = update
                     metrics["eval/wall_seconds"] = time.perf_counter() - eval_started
                 logger.log(update, metrics)
@@ -925,8 +1045,11 @@ def run(config: RunConfig) -> dict[str, Any]:
                         "elapsed_seconds": time.time() - started,
                     },
                 )
+                if (paths["artifact"] / "STOP_REQUESTED").exists():
+                    stop_requested = True
+                    break
         summary = {
-            "state": "complete",
+            "state": "stopped_by_request" if stop_requested else "complete",
             "version": config.version,
             "updates": update,
             "episodes": cumulative_episodes,
@@ -968,12 +1091,22 @@ def main() -> int:
     parser.add_argument("--gate-ppo", action="store_true")
     parser.add_argument("--gate-preset", choices=tuple(PRESETS), default="BASE")
     parser.add_argument("--version", default=FORMAL_VERSION)
-    parser.add_argument("--updates", type=int, default=50)
+    parser.add_argument(
+        "--updates", type=int, default=None,
+        help="optional finite update limit; omit to run until artifact/STOP_REQUESTED",
+    )
     parser.add_argument("--worker-processes", type=int, default=16)
     parser.add_argument("--engines-per-worker", type=int, default=8)
     parser.add_argument("--inference-channels-per-role", type=int, default=8)
     parser.add_argument("--coalesce-ms", type=float, default=5.0)
-    parser.add_argument("--games-per-update", type=int, default=512)
+    parser.add_argument("--games-per-update", type=int, default=2048)
+    parser.add_argument(
+        "--engine-backend",
+        choices=("official", "accelerated:cuda_resident"),
+        default="accelerated:cuda_resident",
+    )
+    parser.add_argument("--cuda-lane-count", type=int, default=256)
+    parser.add_argument("--rollout-batch-size", type=int, default=512)
     parser.add_argument("--ppo-minibatch-size", type=int, default=1024)
     parser.add_argument("--ppo-gradient-accumulation", type=int, default=1)
     parser.add_argument("--ppo-epochs", type=int, default=4)
@@ -993,6 +1126,8 @@ def main() -> int:
         default="episode_equal_decisions",
     )
     parser.add_argument("--wandb-mode", choices=("online", "offline"), default="online")
+    parser.add_argument("--launch-formal", action="store_true")
+    parser.add_argument("--resume-update0", action="store_true")
     args = parser.parse_args()
     if args.gate_output is not None:
         report = run_gate(
@@ -1021,6 +1156,9 @@ def main() -> int:
             inference_channels_per_role=args.inference_channels_per_role,
             coalesce_ms=args.coalesce_ms,
             games_per_update=args.games_per_update,
+            engine_backend=args.engine_backend,
+            cuda_lane_count=args.cuda_lane_count,
+            rollout_batch_size=args.rollout_batch_size,
             ppo_minibatch_size=args.ppo_minibatch_size,
             ppo_gradient_accumulation=args.ppo_gradient_accumulation,
             ppo_epochs=args.ppo_epochs,
@@ -1030,6 +1168,8 @@ def main() -> int:
             adaptation_arm=args.adaptation_arm,
             preset_name=args.preset,
             wandb_mode=args.wandb_mode,
+            launch_formal=args.launch_formal,
+            resume_update0=args.resume_update0,
             ppo=PPOConfig(
                 gae_lambda=args.gae_lambda,
                 credit_clock=args.credit_clock,

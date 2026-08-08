@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import time
 from typing import Any, Sequence
 
@@ -27,6 +27,77 @@ class LaneRefill:
     lane_indices: Any
     job_indices: Any
     retired_lane_indices: Any
+
+
+@dataclass(frozen=True)
+class ResidentActionBypass:
+    """Primitive actions that provably do not require a policy forward."""
+
+    actions: Any
+    lengths: Any
+    bypass_mask: Any
+    forced_mask: Any
+    macro_mask: Any
+
+    def validate(self, *, lane_count: int) -> None:
+        import torch
+
+        masks = (self.bypass_mask, self.forced_mask, self.macro_mask)
+        if any(mask.shape != (lane_count,) or mask.dtype != torch.bool for mask in masks):
+            raise ValueError("resident bypass masks must be bool [lane_count]")
+        if self.actions.ndim != 2 or self.actions.shape[0] != lane_count:
+            raise ValueError("resident bypass actions must be [lane_count, width]")
+        if self.lengths.shape != (lane_count,):
+            raise ValueError("resident bypass lengths must be [lane_count]")
+        if bool((self.forced_mask & self.macro_mask).any()):
+            raise ValueError("forced and macro bypass masks must not overlap")
+        if not torch.equal(self.bypass_mask, self.forced_mask | self.macro_mask):
+            raise ValueError("bypass mask must equal forced | macro")
+        if bool((self.lengths[self.bypass_mask] < 0).any()):
+            raise ValueError("resident bypass action lengths cannot be negative")
+
+
+def select_semantic_rows(
+    batch: dict[str, Any], rows: Any, *, batch_size: int
+) -> dict[str, Any]:
+    """Select device batch rows while preserving scalar/schema metadata."""
+
+    output: dict[str, Any] = {}
+    for name, value in batch.items():
+        if hasattr(value, "ndim") and value.ndim > 0 and value.shape[0] == batch_size:
+            output[name] = value.index_select(0, rows)
+        else:
+            output[name] = value
+    return output
+
+
+def merge_resident_actions(
+    *,
+    bypass: ResidentActionBypass,
+    policy_rows: Any,
+    policy_actions: Any,
+    policy_lengths: Any,
+    lane_count: int,
+    action_width: int,
+    device: Any,
+) -> tuple[Any, Any]:
+    """Scatter compact policy rows and bypass primitives into lane order."""
+
+    import torch
+
+    bypass.validate(lane_count=lane_count)
+    width = max(action_width, int(bypass.actions.shape[1]), int(policy_actions.shape[1]))
+    actions = torch.zeros((lane_count, width), dtype=torch.long, device=device)
+    lengths = torch.zeros(lane_count, dtype=torch.long, device=device)
+    if policy_rows.numel():
+        actions[policy_rows, : policy_actions.shape[1]] = policy_actions
+        lengths.index_copy_(0, policy_rows, policy_lengths.long())
+    actions[:, : bypass.actions.shape[1]] = torch.where(
+        bypass.bypass_mask[:, None], bypass.actions.long(),
+        actions[:, : bypass.actions.shape[1]],
+    )
+    lengths = torch.where(bypass.bypass_mask, bypass.lengths.long(), lengths)
+    return actions.contiguous(), lengths.contiguous()
 
 
 class ResidentLaneQueue:
@@ -152,6 +223,7 @@ class ResidentRunResult:
     forfeit_schedule_indices: tuple[int, ...]
     terminal_turns: tuple[int, ...]
     engine_selections: tuple[int, ...]
+    terminal_prize_counts: tuple[tuple[int, int], ...]
     decisions: int
     routed_ready_rows: int
     refill_events: int
@@ -159,6 +231,7 @@ class ResidentRunResult:
     gpu_seconds: float
     peak_allocated_bytes: int
     peak_reserved_bytes: int
+    action_adapter_metrics: dict[str, int] = field(default_factory=dict)
 
 
 def run_resident_greedy_jobs(
@@ -177,6 +250,7 @@ def run_resident_greedy_jobs(
     focal_value_fn: Any | None = None,
     focal_decision_sink: Any | None = None,
     compact_prefixes: bool = True,
+    action_adapter: Any | None = None,
 ) -> ResidentRunResult:
     """Run finite routed jobs while immediately reusing terminal lanes."""
 
@@ -208,6 +282,7 @@ def run_resident_greedy_jobs(
     completed_forfeit = torch.zeros(len(jobs), dtype=torch.bool, device=device)
     completed_turns = torch.zeros(len(jobs), dtype=torch.int32, device=device)
     completed_selections = torch.zeros(len(jobs), dtype=torch.int32, device=device)
+    completed_prizes = torch.zeros((len(jobs), 2), dtype=torch.int16, device=device)
     lane_turn = torch.zeros(lane_count, dtype=torch.int32, device=device)
     lane_selections = torch.zeros(lane_count, dtype=torch.int32, device=device)
     lanes = torch.arange(lane_count, dtype=torch.int32, device=device)
@@ -246,6 +321,11 @@ def run_resident_greedy_jobs(
         engine.reset_seeded_interactive_semantic_masked(
             lane_decks, lane_seeds, reset_mask
         )
+        if action_adapter is not None and hasattr(action_adapter, "on_refill"):
+            action_adapter.on_refill(
+                lane_indices=refill.lane_indices,
+                job_indices=refill.job_indices,
+            )
 
     initial = queue.initial()
     assign(initial)
@@ -271,7 +351,11 @@ def run_resident_greedy_jobs(
             )
             if compact_prefixes:
                 semantic = compact_semantic_prefixes(semantic)
-            actor = semantic["global_cat"][:, 3].long() - 1
+            # Semantic0031 is actor-relative by design.  global_cat[3] is the
+            # supporter-played flag, not an absolute seat.  Routing must use the
+            # official state field so a supporter play cannot silently swap the
+            # focal and opponent policies.
+            actor = engine.decision_actors().long()
             lane_turn.copy_(semantic["global_num"][:, 0].to(dtype=torch.int32))
             focal_route = ready & actor.eq(lane_focal)
             opponent_route = ready & ~focal_route
@@ -282,20 +366,100 @@ def run_resident_greedy_jobs(
                     int(torch.where(ready, semantic["max_count"], 0).amax().item()),
                 ),
             )
-            routed = router.route(
-                semantic,
-                focal_route=focal_route,
-                opponent_route=opponent_route,
-                max_select=action_width,
-                focal_greedy=focal_greedy,
-                compute_stats=not focal_greedy,
-                focal_sampling_seeds=lane_policy_seeds,
-                focal_sampling_counters=lane_focal_decisions,
-            )
-            routed_rows.add_(ready.long().sum())
+            bypass = None
+            if action_adapter is not None:
+                bypass = action_adapter.pre_route(
+                    semantic=semantic,
+                    ready=ready,
+                    focal_route=focal_route,
+                    opponent_route=opponent_route,
+                    lane_job=queue.lane_job,
+                    turns=lane_turn,
+                    selections=lane_selections,
+                    max_select=max_select,
+                )
+                bypass.validate(lane_count=lane_count)
+                if bool((bypass.bypass_mask & ~ready).any()):
+                    raise RuntimeError("action adapter attempted to bypass a non-ready lane")
+                policy_ready = ready & ~bypass.bypass_mask
+                policy_lanes = policy_ready.nonzero(as_tuple=False).flatten()
+                policy_semantic = select_semantic_rows(
+                    semantic, policy_lanes, batch_size=lane_count
+                )
+                routed = None
+                decision_metadata = None
+                if policy_lanes.numel():
+                    local_focal = focal_route.index_select(0, policy_lanes)
+                    local_opponent = opponent_route.index_select(0, policy_lanes)
+                    routed = router.route(
+                        policy_semantic,
+                        focal_route=local_focal,
+                        opponent_route=local_opponent,
+                        max_select=action_width,
+                        focal_greedy=focal_greedy,
+                        compute_stats=not focal_greedy,
+                        focal_sampling_seeds=lane_policy_seeds.index_select(0, policy_lanes),
+                        focal_sampling_counters=lane_focal_decisions.index_select(0, policy_lanes),
+                    )
+                    if hasattr(action_adapter, "post_route"):
+                        decision_metadata = action_adapter.post_route(
+                            semantic=policy_semantic,
+                            routed=routed,
+                            focal_route=local_focal,
+                            opponent_route=local_opponent,
+                            lane_indices=policy_lanes,
+                            lane_job=queue.lane_job.index_select(0, policy_lanes),
+                            turns=lane_turn.index_select(0, policy_lanes),
+                        )
+                    actions, routed_lengths = merge_resident_actions(
+                        bypass=bypass,
+                        policy_rows=policy_lanes,
+                        policy_actions=routed.actions,
+                        policy_lengths=routed.lengths,
+                        lane_count=lane_count,
+                        action_width=action_width,
+                        device=device,
+                    )
+                else:
+                    empty_actions = torch.empty(
+                        (0, action_width), dtype=torch.long, device=device
+                    )
+                    empty_lengths = torch.empty(0, dtype=torch.long, device=device)
+                    actions, routed_lengths = merge_resident_actions(
+                        bypass=bypass,
+                        policy_rows=policy_lanes,
+                        policy_actions=empty_actions,
+                        policy_lengths=empty_lengths,
+                        lane_count=lane_count,
+                        action_width=action_width,
+                        device=device,
+                    )
+                routed_rows.add_(policy_ready.long().sum())
+            else:
+                policy_lanes = ready.nonzero(as_tuple=False).flatten()
+                policy_semantic = semantic
+                local_focal = focal_route
+                routed = router.route(
+                    semantic,
+                    focal_route=focal_route,
+                    opponent_route=opponent_route,
+                    max_select=action_width,
+                    focal_greedy=focal_greedy,
+                    compute_stats=not focal_greedy,
+                    focal_sampling_seeds=lane_policy_seeds,
+                    focal_sampling_counters=lane_focal_decisions,
+                )
+                actions, routed_lengths = routed.actions, routed.lengths
+                decision_metadata = None
+                routed_rows.add_(ready.long().sum())
             lane_selections.add_(ready.to(dtype=torch.int32))
-            lane_focal_decisions.add_(focal_route.to(dtype=torch.int64))
-            if focal_decision_sink is not None and bool(focal_route.any().item()):
+            strategic_focal = focal_route if bypass is None else focal_route & ~bypass.bypass_mask
+            lane_focal_decisions.add_(strategic_focal.to(dtype=torch.int64))
+            if (
+                focal_decision_sink is not None
+                and routed is not None
+                and bool(local_focal.any().item())
+            ):
                 focal_value = (
                     focal_value_fn(
                         routed.validated,
@@ -306,26 +470,30 @@ def run_resident_greedy_jobs(
                     else None
                 )
                 focal_decision_sink(
-                    semantic=semantic,
+                    semantic=policy_semantic,
                     routed=routed,
-                    focal_route=focal_route,
-                    lane_job=queue.lane_job,
-                    turns=lane_turn,
+                    focal_route=local_focal,
+                    lane_job=queue.lane_job.index_select(0, policy_lanes)
+                    if bypass is not None else queue.lane_job,
+                    lane_indices=policy_lanes,
+                    turns=lane_turn.index_select(0, policy_lanes)
+                    if bypass is not None else lane_turn,
                     values=focal_value,
+                    decision_metadata=decision_metadata,
                 )
             new_forfeits = guard.observe(
                 option_cat=semantic["option_cat"],
                 selection_type=semantic["global_cat"][:, 0],
                 turn=semantic["global_num"][:, 0],
                 actor=actor,
-                actions=routed.actions,
-                lengths=routed.lengths,
+                actions=actions,
+                lengths=routed_lengths,
                 ready=ready,
             )
             lane_forfeit |= new_forfeits
             apply_loop_forfeits(engine, new_forfeits, actor)
-            lengths = torch.where(new_forfeits, 0, routed.lengths)
-            engine.pack_actions(routed.actions, lengths)
+            lengths = torch.where(new_forfeits, 0, routed_lengths)
+            engine.pack_actions(actions, lengths)
             engine.apply_packed_actions()
             engine.advance_to_decision()
             decisions = step + 1
@@ -341,6 +509,11 @@ def run_resident_greedy_jobs(
             terminal_lanes = terminal.nonzero(as_tuple=False).flatten()
             if terminal_lanes.numel():
                 completed_jobs = queue.lane_job.index_select(0, terminal_lanes)
+                if action_adapter is not None and hasattr(action_adapter, "on_terminal"):
+                    action_adapter.on_terminal(
+                        lane_indices=terminal_lanes,
+                        job_indices=completed_jobs,
+                    )
                 terminal_states.index_copy_(
                     0,
                     completed_jobs,
@@ -354,6 +527,9 @@ def run_resident_greedy_jobs(
                 )
                 completed_selections.index_copy_(
                     0, completed_jobs, lane_selections.index_select(0, terminal_lanes)
+                )
+                completed_prizes.index_copy_(
+                    0, completed_jobs, engine.prize_counts().index_select(0, terminal_lanes)
                 )
                 refill = queue.complete(terminal, engine.game_results())
                 completed += int(terminal_lanes.numel())
@@ -386,6 +562,9 @@ def run_resident_greedy_jobs(
         engine_selections=tuple(
             int(value) for value in completed_selections.cpu().tolist()
         ),
+        terminal_prize_counts=tuple(
+            (int(row[0]), int(row[1])) for row in completed_prizes.cpu().tolist()
+        ),
         decisions=decisions,
         routed_ready_rows=int(routed_rows.item()),
         refill_events=refill_events,
@@ -393,14 +572,21 @@ def run_resident_greedy_jobs(
         gpu_seconds=gpu_seconds,
         peak_allocated_bytes=int(torch.cuda.max_memory_allocated(device)),
         peak_reserved_bytes=int(torch.cuda.max_memory_reserved(device)),
+        action_adapter_metrics=(
+            {str(key): int(value) for key, value in action_adapter.metrics().items()}
+            if action_adapter is not None and hasattr(action_adapter, "metrics") else {}
+        ),
     )
 
 
 __all__ = [
     "LaneRefill",
+    "ResidentActionBypass",
     "ResidentJob",
     "ResidentLaneQueue",
     "ResidentRunResult",
     "compact_semantic_prefixes",
+    "merge_resident_actions",
     "run_resident_greedy_jobs",
+    "select_semantic_rows",
 ]

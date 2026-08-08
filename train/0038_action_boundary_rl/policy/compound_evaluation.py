@@ -23,6 +23,9 @@ def evaluate_parameter_actions(model, validated, state, options: Tensor,
         identities = []
         raw_targets = []
         embeddings = []
+        stored_visible = macro.get("visible_targets")
+        if stored_visible is not None and len(stored_visible) != len(serials):
+            raise ValueError("stored Phantom visible-target snapshot has the wrong length")
         for serial in serials:
             match = (
                 validated.card_mask[row]
@@ -35,12 +38,23 @@ def evaluate_parameter_actions(model, validated, state, options: Tensor,
             index = int(match[0])
             cat, numeric = validated.card_cat[row, index], validated.card_num[row, index]
             identities.append(StableTargetIdentity(1, serial, int(cat[0]), int(cat[4]) - 1))
-            raw_targets.append({
-                "serial": serial, "id": int(cat[0]), "benchSlot": int(cat[4]) - 1,
-                "hp": float(numeric[0]), "maxHp": float(numeric[1]),
-                "energyCards": [None] * int(numeric[2]),
-                "preEvolution": [None] * int(numeric[5]), "statusBits": int(cat[6]),
-            })
+            if stored_visible is None:
+                raw_targets.append({
+                    "serial": serial, "id": int(cat[0]), "benchSlot": int(cat[4]) - 1,
+                    "hp": float(numeric[0]), "maxHp": float(numeric[1]),
+                    "energyCards": [None] * int(numeric[2]),
+                    "preEvolution": [None] * int(numeric[5]),
+                    "statusBits": max(0, int(cat[6]) - 1),
+                })
+            else:
+                visible = dict(stored_visible[len(raw_targets)])
+                if (
+                    int(visible.get("serial", -1)) != serial
+                    or int(visible.get("id", -1)) != int(cat[0])
+                    or int(visible.get("benchSlot", -1)) != int(cat[4]) - 1
+                ):
+                    raise ValueError("stored Phantom visible-target identity drifted")
+                raw_targets.append(visible)
             embeddings.append(state.cards[row, index])
         allocations = enumerate_allocations(identities)
         if len(allocations) == 1:

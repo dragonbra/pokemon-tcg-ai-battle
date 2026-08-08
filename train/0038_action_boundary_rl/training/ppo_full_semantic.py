@@ -96,10 +96,12 @@ class PPOTrainer:
         }
         groups = [
                 {
+                    "name": "action_decoder",
                     "params": model.actor.action_decoder.parameters(),
                     "lr": config.actor_learning_rate,
                 },
                 {
+                    "name": "value_win",
                     "params": [
                         parameter
                         for parameter in model.value_head.parameters()
@@ -108,6 +110,7 @@ class PPOTrainer:
                     "lr": config.value_learning_rate,
                 },
                 {
+                    "name": "allocation_head",
                     "params": model.allocation_head.parameters(),
                     "lr": config.actor_learning_rate,
                 },
@@ -115,16 +118,16 @@ class PPOTrainer:
         adapters = adapter_parameters(model.actor)
         norms = tuned_layernorm_parameters(model.actor)
         if adapters:
-            groups.append({"params": adapters, "lr": model.adaptation_config.adapter_learning_rate})
+            groups.append({"name": "last_option_qv_lora", "params": adapters, "lr": model.adaptation_config.adapter_learning_rate})
         if norms:
-            groups.append({"params": norms, "lr": model.adaptation_config.layernorm_learning_rate})
+            groups.append({"name": "local_output_layernorm", "params": norms, "lr": model.adaptation_config.layernorm_learning_rate})
         if model.prize_aux is not None:
-            groups.append({"params": model.prize_aux.parameters(), "lr": config.prize_learning_rate})
+            groups.append({"name": "value_prize", "params": model.prize_aux.parameters(), "lr": config.prize_learning_rate})
         if model.opponent_meta_head is not None:
-            groups.append({"params": model.opponent_meta_head.parameters(),
+            groups.append({"name": "opponent_meta", "params": model.opponent_meta_head.parameters(),
                            "lr": config.opponent_meta_learning_rate})
         if model.opponent_meta_conditioner is not None:
-            groups.append({"params": model.opponent_meta_conditioner.parameters(),
+            groups.append({"name": "opponent_conditioner", "params": model.opponent_meta_conditioner.parameters(),
                            "lr": config.actor_learning_rate})
         self.optimizer = torch.optim.AdamW(
             groups,
@@ -219,6 +222,8 @@ class PPOTrainer:
         preupdate_mae_max = 0.0
         optimizer_steps = 0
         accumulation_count = 0
+        samples_consumed = 0
+        covered = torch.zeros(batch.decisions, dtype=torch.bool)
         self.model.eval()
         with torch.no_grad():
             for start in range(0, batch.decisions, self.config.batch_size):
@@ -262,6 +267,8 @@ class PPOTrainer:
                         and optimizer_steps >= self.config.optimizer_steps_per_update):
                     break
                 indices = order[start : start + self.config.batch_size]
+                samples_consumed += int(indices.numel())
+                covered[indices.cpu()] = True
                 features = move_batch(
                     collate_feature_batches([batch.features[int(index)] for index in indices]),
                     self.device,
@@ -440,6 +447,13 @@ class PPOTrainer:
                     self.config.optimization_mode == "fixed_optimizer_budget"
                 ),
                 "ppo/decisions": float(batch.decisions),
+                "ppo/optimizer_samples_consumed": float(samples_consumed),
+                "ppo/sample_coverage_ratio": float(covered.float().mean()),
+                "ppo/sample_reuse_ratio": float(samples_consumed / max(1, batch.decisions)),
+                **{
+                    f"optimizer/lr/{group.get('name', index)}": float(group["lr"])
+                    for index, group in enumerate(self.optimizer.param_groups)
+                },
                 "ppo/actor_relative_l2_vs_behavior": self._relative_l2(behavior_parameters),
                 "ppo/actor_relative_l2_vs_reference": self._relative_l2(self.reference_parameters),
                 "ppo/encoder_lora_relative_l2_vs_initial": self._actor_group_relative_l2(self.adapter_initial),
