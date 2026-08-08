@@ -1,6 +1,6 @@
 {
   "project_id": "0037_dragapult_value_initialized_rl",
-  "status": "v2_ready_to_launch",
+  "status": "v2_running",
   "focal_deck": {
     "deck_id": "dragapult_ex_07bedfffbfad",
     "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
@@ -43,6 +43,13 @@
     "seeded512_median_games_per_second": 2.68284871216153,
     "ppo_canary_explained_variance": 0.5197435617446899,
     "ppo_canary_behavior_replay_mae": 3.5762786865234375e-06,
-    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning"
+    "wandb_project": "dragon_bra/pokemon-tcg-policy-learning",
+    "wandb_run_id": "0037-v2-engine-pool-prototype-cache-seeded512",
+    "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0037-v2-engine-pool-prototype-cache-seeded512",
+    "formal_fixed_eval_wall_seconds": 195.456975063993,
+    "formal_update_1_rollout_seconds": 229.8724345169976,
+    "formal_update_1_ppo_seconds": 136.44766525999876,
+    "formal_update_1_explained_variance": 0.40751445293426514,
+    "formal_update_1_behavior_replay_mae": 1.3828277587890625e-05
   }
 }
