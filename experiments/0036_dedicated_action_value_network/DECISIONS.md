@@ -52,3 +52,10 @@ The full latent-query critic with both admitted auxiliary losses is promoted to 
 - A 100-batch end-to-end full latent-query benchmark measured 0.240157 seconds/batch, 4,263.87 actions/s, 0.52999 seconds total data wait, 2.2068% data-wait fraction, and 4.741 GiB peak allocated GPU memory. This passes the performance gate but makes no quality claim.
 - User priority supersedes the former baseline-first schedule: `V2_latent_value_archetype_diff` is the first run after the I/O gate and trains the full SOTA candidate with both auxiliary losses. It uses 30 epochs and retains a model-only checkpoint from every epoch. Remaining ablations use later unused versions and do not delay V2.
 - To keep the six-hour GPU window productive without delaying V2, successful V2 completion gates a fail-closed sequential queue: `V3_raw_pool_mlp_io_optimized`, `V4_summary_mlp`, `V5_latent_value_only`, then `V6_latent_value_archetype`, each for 20 epochs with the same cache, split, optimizer contract and per-epoch model-only retention. A failed or interrupted version stops the queue; no later result is fabricated or appended to an older version.
+
+## 2026-08-08 — Stop V6 after the useful early comparison window
+
+- V2–V5 completed their planned epochs. V6 completed nine full train/validation epochs and retained nine model-only checkpoints before the user stopped it to avoid spending GPU time in the anticipated overfit region.
+- V6's nominal best is epoch 5 with exact-007 BCE `0.5290129421` and all-Dragapult BCE `0.5058679616`. Its epoch-9 exact-007 BCE had already moved back to `0.5477953716`.
+- The stable W&B run was resumed only to record the termination reason and close it with failed/user-stopped state; no additional training metric row was appended. Local status and summary explicitly preserve nine completed epochs rather than presenting V6 as a 20-epoch success.
+- V2 epoch 5 remains the nominal primary candidate at exact-007 BCE `0.5267365347`. V6 epoch 5 and V3 epoch 12 are close challengers; their small aggregate differences are not treated as significance evidence without a trajectory-paired analysis.

@@ -15,25 +15,37 @@ python3 -m evaluation run \
   --output .tmp/evaluation/<candidate>
 ```
 
-默认 pool 是 `frozen`：固定 0019 Epoch 13 Foundation policy、`source_id=0` 与 49 个 exact-deck
-identity。49 个 opponent 共用一个常驻 batched GPU policy service；被评测 candidate 使用第二个
-常驻 GPU service。每个 request 都携带本方 exact 60-card deck，因此共享权重不会丢失卡组身份。
+默认 pool 是 `frozen`：固定 Frozen-0806 的 55 个 exact-deck identity 和 Policy-0806 冻结 policy。
+55 个 opponent 共用一个常驻 batched GPU policy service；被评测 candidate 使用第二个常驻 GPU
+service。每个 request 都携带本方 exact 60-card deck，因此共享权重不会丢失卡组身份。
 CPU worker 只执行未修改的 official engine 状态转移。Frozen 模式默认双方使用 `cuda:0`，可用
 `--candidate-device` 与 `--opponent-device` 显式选择 GPU；缺少双边共享 GPU inference 时 fail
 closed。
 
 本地 evaluation 默认先从未改动的 `engine/source/` 构建并锁定
-`engine/build/seeded_official/0001/libcg.so`，再把该绝对路径传给每个 worker；manifest 内的
-source、adapter、compiler 和 library hash 用于审计 `0001` 的实际内容。candidate 始终占物理 player 0，opponent 始终占 player 1；harness
+`engine/build/seeded_official/0002/libcg.so`，再把该绝对路径传给每个 worker；manifest 内的
+source、adapter、compiler 和 library hash 用于审计 `0002` 的实际内容。`0002` 与 `0001` 使用
+相同 official ABI，额外静态链接 libstdc++/libgcc，避免纯 ctypes 进程依赖 PyTorch 或 shell 的
+动态库加载顺序。candidate 始终占物理 player 0，opponent 始终占 player 1；harness
 只在官方 `IS_FIRST` 选择上强制先后手，不交换 deck 槽位。每个 matchup 的相邻两局组成一对，
 共享 engine seed 和 Search seed，仅交换先后手；policy seed 按单局独立派生。报告 manifest
 记录 official source、adapter、动态库 hash、ABI、三套 seed 公式和换手合同。相同 runtime hash、
 两套 exact deck、三套 seed 与确定性策略动作会产生相同 trace；随机策略还必须使用记录的
 policy RNG 流。该保证是本地评测合同，不扩展到 Kaggle 托管 runtime。
 
-标准 checkpoint 验收使用 `--opponents all --games 10`，即 49×10=490 局、每套先后手各 5 局。
-48×2=96 局只用于快速 diagnostic。旧异构 Kaggle-derived pool 保留在 `arena/opponents/`，通过
-全局参数 `--pool opponents` 显式选择，只作为 secondary external-generalization evidence。
+Frozen-0806 的不可变 schedule 是一个 256 局最小单位。现阶段标准 checkpoint 强度评测固定运行
+两个单位，即 512 局；CLI 在 `--pool frozen` 时忽略 legacy `--games` 数量参数。两单位使用独立于
+RL 的固定 evaluation seed `341512806`，合计 256 局先手、256 局后手和 256 对共享 engine/Search
+seed 的换手场景。报告 manifest 必须记录 `games=512`、展开后的 per-opponent counts、evaluation
+seed、合同 schedule hash 和 seeded runtime hash；只有 512/512 finished、0 error、0 unfinished
+才能作为同合同策略强度证据。旧异构 Kaggle-derived pool 保留在 `arena/opponents/`，通过全局参数
+`--pool opponents` 显式选择，只作为 secondary external-generalization evidence。
+
+2026-08-07 启动的 Policy-0806 全池评测仍是旧 256 局合同，目前在
+`arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1/` 保留 25/55 份报告；对应未发布运行与
+中断日志保留在 `.tmp/evaluation/frozen_0806_full/`。这些资产是历史、未完成证据，不删除、不覆盖，
+也不得与新的 seeded 512 报告拼接或冒充完整评测。后续用户要求新的 Frozen-0806 评测时，默认从
+512 局合同创建独立 run；是否专门继续旧 256 局批次必须另行明确指定。
 
 `run` 也支持 `--control PACKAGE`（只在报告中展示对比）、调试用 `--visualize` / `--keep-temp`、
 `--max-steps N` 和可重复的 `--metric-module MODULE[:Class]`。默认不生成可视化帧。每次 CLI
@@ -227,3 +239,15 @@ trace。`--keep-temp` 仅用于调试，不能把临时文件当成长期资料�
 该框架在报告中记录 package hash、cg hash、seeded runtime hash、参数和结果。新 seeded
 runtime 合同承诺在相同平台/build、相同完整输入和相同动作序列下复现本地 engine trace；它不
 声称跨编译器位级一致，也不能替代 Kaggle 的正式策略评估。
+
+## Seeded checkpoint 比较最低合同
+
+同一卡组的 checkpoint 筛选默认至少使用 512 局，而不是把单个 256 局 rollout/probe 当作提交
+依据。512 局由冻结的 256-slot 对手权重整体翻倍，并组织成 256 个 matched engine-seed pair；
+每一对固定 candidate/opponent 物理槽位、共享 engine/Search seed，并强制相反先后手。所有待比
+checkpoint 必须复用完全相同的 request schedule SHA-256。evaluation base seed 使用独立 namespace，
+不得复用 PPO rollout 的 update seed window。
+
+该合同改善 checkpoint 间的 common-random-number 比较，但不是“512 局必然足够”的统计保证；
+轨迹在策略首次选择不同时就会分叉，配对 seed 不能令之后的随机调用保持动作索引级一致。提交或
+策略强度结论仍必须同时报告 W-L-D、先后手、区间、逐场景翻转和 official-engine 0-error 护栏。

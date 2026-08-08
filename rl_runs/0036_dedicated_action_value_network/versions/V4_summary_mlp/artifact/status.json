@@ -1,0 +1,16 @@
+{
+  "checkpoint_retention": "all",
+  "source_checkpoint_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+  "state": "complete",
+  "version": "V4_summary_mlp",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0036_dedicated_action_value_network--v4_summary_mlp-92c7eb1449",
+    "state": "synced",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0036_dedicated_action_value_network--v4_summary_mlp-92c7eb1449"
+  }
+}

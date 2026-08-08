@@ -83,7 +83,21 @@
       "checkpoints": 0
     }
   ],
-  "next_formal_version": "V2_latent_value_archetype_diff",
-  "status": "io_performance_gate_passed_v2_full_critic_pending",
+  "offline_training_results": {
+    "nominal_champion": "V2_latent_value_archetype_diff/epoch_0005",
+    "nominal_champion_exact007_bce": 0.5267365347498268,
+    "completed_versions": [
+      "V2_latent_value_archetype_diff",
+      "V3_raw_pool_mlp_io_optimized",
+      "V4_summary_mlp",
+      "V5_latent_value_only"
+    ],
+    "user_stopped_version": "V6_latent_value_archetype",
+    "v6_completed_epochs": 9,
+    "v6_best_epoch": 5,
+    "v6_best_exact007_bce": 0.5290129420647445,
+    "strength_claim": false
+  },
+  "status": "offline_ablation_complete_rl_integration_pending",
   "training_package": "train/0036_dedicated_action_value_network"
 }

@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PROJECT_ID = "0034_dragapult_third_large_model_rl"
 SOURCE_SCHEMA = "0031_shared_prototype_fp16_storage_candidate_checkpoint_v1"
 OUTPUT_SCHEMA = "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
+SOURCE_SCHEMAS = frozenset({SOURCE_SCHEMA, OUTPUT_SCHEMA})
 RL_SCHEMA = "0034_full_semantic_decoder_value_model_only_v1"
 
 
@@ -48,7 +49,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
     source_model_path = source / "strategy/model.bin"
     source_payload = _load_payload(source_model_path)
     rl_payload = _load_payload(checkpoint)
-    if source_payload.get("schema_version") != SOURCE_SCHEMA:
+    if source_payload.get("schema_version") not in SOURCE_SCHEMAS:
         raise ValueError("source candidate is not the audited fp16 Large Model 0806 package")
     if rl_payload.get("schema_version") != RL_SCHEMA:
         raise ValueError("checkpoint is not a V3 full-semantic model-only checkpoint")

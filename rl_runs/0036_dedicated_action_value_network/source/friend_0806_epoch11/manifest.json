@@ -1,0 +1,14 @@
+{
+  "artifact": "model.pt",
+  "bytes": 464776602,
+  "checkpoint_retention": "immutable_source_copy",
+  "epoch": 11,
+  "global_step": 141878,
+  "model_only": true,
+  "parameter_count": 56352322,
+  "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
+  "schema_version": "0036_frozen_source_manifest_v1",
+  "sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+  "source": "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt",
+  "version": "V2_full_winners_bs1024_20260616_20260803"
+}

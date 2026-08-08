@@ -845,9 +845,12 @@ class PolicyServer:
             event_static_components = batch.pop(
                 "_runtime_event_static_components", None
             )
-            result = self._policy.model.deterministic_action_tensors(
-                batch, event_static_components
-            )
+            if event_static_components is None:
+                result = self._policy.model.deterministic_action_tensors(batch)
+            else:
+                result = self._policy.model.deterministic_action_tensors(
+                    batch, event_static_components
+                )
         if cuda_end is not None:
             cuda_end.record()
             cuda_end.synchronize()

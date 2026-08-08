@@ -1,6 +1,6 @@
 # 0036 Dedicated Action Value Network
 
-Status: **the all-date, recency-weighted Dragapult focal dataset and its mmap tensor cache are complete and verified. V1 exposed a gzip/JSON input bottleneck and was intentionally stopped before completing epoch 1. The first production-target run is now V2's full latent-query critic; no offline result or RL strength claim exists yet.**
+Status: **the all-date, recency-weighted Dragapult focal dataset, mmap tensor cache, and V2–V6 offline comparison are complete. V1 was stopped during the gzip/JSON performance preflight; V2–V5 completed; V6 was intentionally stopped after epoch 9 before the anticipated overfit region. V2 epoch 5 is the nominal exact-007 BCE winner, but no RL strength claim exists yet.**
 
 ## Evidence boundary
 
@@ -89,7 +89,7 @@ Checkpoint selection is lexicographic: lowest episode-weighted **exact-007 valid
 
 Each epoch performs exactly one shuffled train update pass and one complete, non-updating validation pass. AdamW updates only Value-head parameters. CUDA bfloat16 autocast is the default. Every epoch writes a model-only checkpoint, with retention `all`; optimizer, scheduler, scaler, RNG, loader position and replay state are forbidden.
 
-Formal runs use strictly immutable versions. `V1_raw_pool_mlp` is a retained failed performance-preflight record with no completed epoch, metric row, or checkpoint; it cannot be reused. `V2_latent_value_archetype_diff` is the first production-target training version and uses 30 epochs so every epoch yields a model-only checkpoint while the lexicographic validation selector retains a stable best pointer. After successful V2 completion, the fail-closed queue is V3 optimized raw-pool MLP, V4 summary MLP, V5 latent Value-only, and V6 latent plus archetype, each for 20 epochs. `training_metrics.jsonl` is written before TensorBoard and W&B online mirror data. The private W&B target is `dragon_bra/pokemon-tcg-policy-learning`; display names begin with `0036`. A mirror failure does not erase local evidence and must remain visible in status metadata.
+Formal runs use strictly immutable versions. `V1_raw_pool_mlp` is a retained failed performance-preflight record with no completed epoch, metric row, or checkpoint; it cannot be reused. V2 full latent plus archetype/final-diff completed 30 epochs, V3 optimized raw-pool, V4 summary MLP, and V5 latent Value-only completed 20 each. V6 latent plus archetype completed nine epochs and was then user-stopped; its nine model-only checkpoints and best epoch 5 remain valid research artifacts. V2 epoch 5 has the lowest observed exact-007 BCE (`0.5267365`), narrowly ahead of V6 epoch 5 (`0.5290129`) and V3 epoch 12 (`0.5312780`); the small gaps are directional rather than a significance claim. `training_metrics.jsonl` is written before TensorBoard and W&B online mirror data. The private W&B target is `dragon_bra/pokemon-tcg-policy-learning`; display names begin with `0036`. A mirror failure does not erase local evidence and must remain visible in status metadata.
 
 ## RL boundary and next stage
 

@@ -60,10 +60,34 @@ V6 `V6_exact007_0023_selection_lambda095` launched with 500 updates, 32 workers,
 
 ## 2026-08-08 — V7 seeded paired official-engine contract (not launched)
 
-The next code-level version is `V7_seeded_paired_official_engine`; no V7 run directory, W&B run, checkpoint or strength result has been created. The official source remains untouched. Versioned runtime `engine/build/seeded_official/0001/libcg.so` exposes deterministic battle and Search initialization and records the official-source, adapter, compiler and library hashes. Each update deterministically samples 128 unique engine seeds and 128 opponent slots from the frozen 256-slot distribution. Every seed emits two Episodes with fixed physical deck slots and opposite first-player choices, for 256 Episodes per update. The pair shares engine and Search seeds; focal policy sampling uses a distinct per-Episode generator so CUDA batching order does not redefine its RNG stream. This is paired environment randomness only and does not claim action-indexed CRN after trajectories diverge.
+The next code-level version is `V7_seeded_paired_official_engine`; no V7 run directory, W&B run, checkpoint or strength result has been created. The official source remains untouched. Versioned runtime `engine/build/seeded_official/0002/libcg.so` exposes deterministic battle and Search initialization and records the official-source, adapter, compiler and library hashes. Runtime 0002 retains the 0001 ABI/engine semantics and statically links the C++ runtime after a pure-ctypes portability gate found that the original conda-forge GCC build otherwise required PyTorch's newer libstdc++ to be loaded first. Each update deterministically samples 128 unique engine seeds and 128 opponent slots from the frozen 256-slot distribution. Every seed emits two Episodes with fixed physical deck slots and opposite first-player choices, for 256 Episodes per update. The pair shares engine and Search seeds; focal policy sampling uses a distinct per-Episode generator so CUDA batching order does not redefine its RNG stream. This is paired environment randomness only and does not claim action-indexed CRN after trajectories diverge.
 
 Update 1 then completed 256/256 stochastic on-policy games with zero error at 119-137-0 (46.48%). PPO used four epochs and 112 minibatches over 28,517 decisions, preserved the frozen representation hash and saved model-only checkpoint 1. This sampled rollout is not comparable to the greedy update-0 strength result; the first paired strength comparison is the fixed-seed greedy probe at update 10.
 
 ## 2026-08-07: Stop V6 manually after update 123
 
 The user manually stopped the V6 training process after update 123. The latest complete local model-only checkpoint and canonical metric row are both update 123, covering 31,488 Episodes and 3,440,480 focal decisions. The W&B remote run is marked `crashed` because the process was terminated manually; its remote history was checked and also reaches `trainer/update=123`, `checkpoint/update=123`, 31,488 Episodes and 3,440,480 decisions. V6 is therefore retained as `user_stopped`, not completed and not an active 500-update run.
+
+## 2026-08-08: Seeded 512-game V6 checkpoint screen selects zero-shot
+
+The user requested one final candidate screen before changing the RL paradigm. Checkpoints were
+fixed before seeing the new outcomes: update 0, early high update 10, early regression control
+update 20, historical high updates 80 and 100, and final user-stopped update 123. Historical frozen
+probe or sampled rollout rates were selection context only.
+
+All six decoders then ran the same 512-game official-engine greedy contract against frozen
+Policy-0806 opponents: exact deck 007 remained fixed, the Frozen-0806 256-slot allocation was
+doubled, and 256 engine seeds were each evaluated in both requested seats. The evaluation-only base
+seed was `341512806`, distinct from V6's training seed. Request schedule SHA-256 was
+`dfaa72127e32f3ff0cb23fe963d4721dd95443b84b9f2d82aa95c4cba953d3de`; all 3,072 games completed
+with zero errors. These completed results used seeded runtime 0001 library SHA-256
+`c5d4e3ae65fb8f1d125e9056950a421a9e021ee5c9e8a57d6b37fd78385ebba8`, as embedded in every
+source report. The later 0002 portability build does not retroactively relabel that evidence.
+
+Results were update 0: 302-210 (58.98%), update 10: 301-211 (58.79%), update 20: 298-214
+(58.20%), update 80: 286-226 (55.86%), update 100: 293-219 (57.23%), and update 123: 288-224
+(56.25%). Versus zero-shot on identical game IDs, update 10 gained 9 games and lost 10, while the
+other RL checkpoints had negative net flips. No evaluated RL decoder improved on zero-shot; update
+10 is effectively tied but has no submission-strength advantage. The selected retained candidate
+is therefore update 0, not an RL checkpoint. This is implementation/evaluation evidence and does
+not change official game rules, card semantics, model inputs, action contract, or training loss.

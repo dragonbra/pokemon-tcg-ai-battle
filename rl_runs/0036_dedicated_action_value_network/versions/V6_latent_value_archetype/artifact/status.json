@@ -1,0 +1,18 @@
+{
+  "best_epoch": 5,
+  "best_validation_exact007_value_loss": 0.5290129420647445,
+  "completed_epochs": 9,
+  "failure": "UserStopped: stopped after epoch 9 before the anticipated overfit region",
+  "state": "failed",
+  "version": "V6_latent_value_archetype",
+  "wandb": {
+    "entity": "dragon_bra",
+    "failure": null,
+    "project": "pokemon-tcg-policy-learning",
+    "reason": null,
+    "run_id": "0036_dedicated_action_value_network--v6_latent_value-d991cc0089",
+    "state": "failed",
+    "sync_state": "synced",
+    "url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0036_dedicated_action_value_network--v6_latent_value-d991cc0089"
+  }
+}

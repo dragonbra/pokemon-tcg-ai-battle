@@ -58,10 +58,10 @@ class SeededOfficialRuntimeTest(unittest.TestCase):
         self.assertTrue(self.manifest.library_path.is_file())
         self.assertEqual(self.manifest.library_path.suffix, ".so")
         self.assertTrue(self.manifest.library_path.is_relative_to(ROOT / "engine/build"))
-        self.assertEqual(self.manifest.runtime_version, 1)
+        self.assertEqual(self.manifest.runtime_version, 2)
         self.assertEqual(
             self.manifest.library_path.parent,
-            ROOT / "engine/build/seeded_official/0001",
+            ROOT / "engine/build/seeded_official/0002",
         )
         self.assertEqual(self.manifest.official_source_sha256, source_tree_sha256())
         self.assertEqual(

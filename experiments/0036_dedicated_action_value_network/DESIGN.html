@@ -3,7 +3,7 @@
 <title>0036 Dedicated Action Value Network</title>
 <style>body{max-width:1080px;margin:36px auto;padding:0 24px;font:16px/1.65 system-ui;color:#18202a}h1,h2{line-height:1.25}code,pre{background:#f3f5f7;border-radius:6px}code{padding:.1em .3em}pre{padding:16px;overflow:auto}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd3da;padding:8px;text-align:left}th{background:#eef2f5}.status{padding:12px 16px;background:#fff4cc;border-left:4px solid #d89b00}</style></head>
 <body><h1>0036 Dedicated Action Value Network</h1>
-<p class="status"><strong>当前状态：</strong>正式多龙数据及 mmap tensor cache 已完成并验证。V1 在 epoch 1 完成前暴露 gzip/JSON I/O 瓶颈并按要求中止；首个生产目标改为 V2 完整 latent-query critic。尚无离线质量或 RL 强度结论。</p>
+<p class="status"><strong>当前状态：</strong>正式多龙数据、mmap tensor cache 与 V2–V6 离线比较均已完成。V2–V5 完整结束；V6 在 epoch 9 后、预期过拟合区间前按用户要求停止。V2 epoch 5 是 nominal exact-007 BCE 最优点；尚无 RL 强度结论。</p>
 <h2>目标与证据边界</h2><p>冻结 0031 friend-0806 epoch-11 的语义 Encoder（56,352,322 参数；checkpoint SHA-256 <code>0ca395…df8</code>），只训练专用 Value head。通用胜利与回合规则来自项目规则调研；具体 observation 与终局来自未修改的 official engine Episode；标签、权重和网络结构是 0036 的实验假设。</p>
 <h2>action 级数据合同</h2><p>正式 small dataset 选择 10,000 个至少一方注册卡组含 Dragapult ex（card ID 121）的唯一 Episode，只监督符合条件的多龙玩家视角。多龙镜像仍只占一个 Episode 配额，但会产生两条焦点轨迹，且整局不得跨 split。</p>
 <p>扫描所有本地已获取、且不晚于 Frozen-0806 端点的官方日归档，不截断早期日期。每个有候选局的日期至少保留一局；其余配额按“25% 日期均匀 + 75% 近期指数权重”分配，近期权重半衰期为 7 天，候选不足的日期会把配额回流。日期内按稳定 SHA 排序，禁止复制 Episode。此前 08-03..06 的通用双方视角 10k corpus（commitment <code>4228c7…d9374</code>）仅保留为本地、Git-ignored 的流水线证据，不进入正式 V1–V5。</p>
@@ -19,6 +19,6 @@
   -> value [B], archetype [B,15], final diff [B,13]</pre>
 <h2>Loss 与实验顺序</h2><p><code>L = BCE_value + lambda_class * CE_archetype + lambda_diff * CE_final_diff</code>。手牌预测关闭，非零权重会 fail closed。V1 raw-pool MLP 是保留的 I/O 失败预检记录，没有完成 epoch。按生产优先级，V2 首先训练 latent-query + 牌组分类 + final diff（两个辅助权重均为 0.1）；summary MLP、latent Value only、latent + 牌组分类以及优化后的 raw-pool baseline 均使用后续新版本。</p>
 <p>checkpoint 按 exact-007 validation 的 episode-weighted Value BCE 优先、全体多龙 validation Value BCE 次优进行字典序选择；Brier、ECE、AUROC、分类准确率和 diff MAE 仅作为诊断护栏。exact-007 身份绝不进入 forward。</p>
-<h2>训练、产物与 RL 边界</h2><p>每 epoch 只有一次 train 更新 pass 和一次完整固定模型 validation。V2 先独占运行 30 epochs；成功后按 fail-closed 队列依次运行 V3 optimized raw-pool、V4 summary MLP、V5 latent Value-only、V6 latent + archetype，各 20 epochs。全部逐 epoch 保留 model-only checkpoint，并按 exact-007 Value BCE 选择 best；禁止 optimizer/RNG/replay state。指标按 canonical JSONL、TensorBoard、W&amp;B online 的顺序记录，W&amp;B 名称以 0036 开头。</p>
+<h2>训练、产物与 RL 边界</h2><p>每 epoch 只有一次 train 更新 pass 和一次完整固定模型 validation。V2 完成 30 epochs，V3–V5 各完成 20，V6 在完成 9 epochs 后按要求停止；全部已完成 epoch 均保留 model-only checkpoint。观察到的 exact-007 BCE 最优点依次为 V2 epoch 5：0.52674、V6 epoch 5：0.52901、V3 epoch 12：0.53128。差距较小，不作为统计显著性结论。禁止 optimizer/RNG/replay state；指标按 canonical JSONL、TensorBoard、W&amp;B online 的顺序记录。</p>
 <p>离线 critic 拟合的是 replay behavior policy 的胜率，进入 PPO 后仍需 on-policy 校准。<code>V(next)-V(current)</code> 可用于 GAE/诊断，但不自动成为环境 reward。策略强度只能由 official engine 冻结评测证明。</p>
 <p>完整权威细节与字段表见同目录 <a href="DESIGN.md">DESIGN.md</a>，决策记录见 <a href="DECISIONS.md">DECISIONS.md</a>。</p></body></html>

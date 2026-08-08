@@ -17,7 +17,16 @@ OFFICIAL_SOURCE = REPOSITORY_ROOT / "engine/source/ptcgProgram 22"
 ADAPTER_SOURCE = Path(__file__).with_name("seeded_engine.cpp")
 BUILD_ROOT = REPOSITORY_ROOT / "engine/build/seeded_official"
 ABI_SCHEMA = "seeded_official_engine_abi_v1"
-RUNTIME_VERSION = 1
+RUNTIME_VERSION = 2
+BUILD_FLAGS = (
+    "-std=c++20",
+    "-O2",
+    "-fPIC",
+    "-shared",
+    "-pthread",
+    "-static-libstdc++",
+    "-static-libgcc",
+)
 
 
 def _sha256_bytes(payload: bytes) -> str:
@@ -87,7 +96,8 @@ def build_seeded_runtime(*, compiler: str = "g++") -> SeededRuntimeManifest:
     adapter_hash = _sha256_file(ADAPTER_SOURCE)
     compiler_identity = _compiler_identity(compiler)
     build_key = _sha256_bytes(
-        f"{ABI_SCHEMA}\0{official_hash}\0{adapter_hash}\0{compiler_identity}".encode("utf-8")
+        f"{ABI_SCHEMA}\0{official_hash}\0{adapter_hash}\0{compiler_identity}\0"
+        f"{' '.join(BUILD_FLAGS)}".encode("utf-8")
     )[:20]
     output_dir = BUILD_ROOT / f"{RUNTIME_VERSION:04d}"
     library_path = output_dir / "libcg.so"
@@ -105,6 +115,8 @@ def build_seeded_runtime(*, compiler: str = "g++") -> SeededRuntimeManifest:
                 and manifest.abi_schema == ABI_SCHEMA
                 and manifest.official_source_sha256 == official_hash
                 and manifest.adapter_source_sha256 == adapter_hash
+                and manifest.compiler == compiler_identity
+                and manifest.build_key == build_key
                 and manifest.library_sha256 == _sha256_file(library_path)
             ):
                 return manifest
@@ -118,11 +130,7 @@ def build_seeded_runtime(*, compiler: str = "g++") -> SeededRuntimeManifest:
             subprocess.run(
                 [
                     compiler,
-                    "-std=c++20",
-                    "-O2",
-                    "-fPIC",
-                    "-shared",
-                    "-pthread",
+                    *BUILD_FLAGS,
                     "-I",
                     str(OFFICIAL_SOURCE),
                     str(ADAPTER_SOURCE),

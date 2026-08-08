@@ -9,6 +9,12 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from evaluation import cli
+from evaluation.frozen_0806_contract import (
+    FROZEN_0806_EVALUATION_SEED,
+    evaluation_counts,
+    evaluation_schedule_id,
+)
+from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
 from evaluation.frozen import FrozenCatalog
 from evaluation.packages.loader import PackageValidationError, SubmissionPackage
 
@@ -63,6 +69,52 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertIsNone(args.workers)
         self.assertEqual(args.worker_cpu_threads, 1)
         self.assertEqual(args.engine_pool_size, 1)
+
+    def test_frozen_run_uses_seeded_512_evaluation_contract(self) -> None:
+        catalog = load_frozen_0806_runtime_catalog(opponent_policy_label="0806")
+        result = SimpleNamespace(run_id="run-frozen-seeded-512")
+        args = cli._parser().parse_args(
+            [
+                "run",
+                "--candidate",
+                str(catalog.candidates[0].root),
+                "--opponents",
+                "all",
+                "--output",
+                str(Path.cwd() / ".tmp" / "evaluation" / "cli-frozen-512-test"),
+            ]
+        )
+        with (
+            patch.object(cli, "_load_official_card_ids", return_value=set(catalog.candidates[0].deck)),
+            patch.object(cli, "load_submission_package", return_value=catalog.candidates[0]),
+            patch.object(
+                cli, "load_frozen_0806_runtime_catalog", return_value=catalog
+            ) as load_frozen,
+            patch.object(cli, "assert_cg_compatible"),
+            patch.object(cli, "run_batch", return_value=result) as run_batch,
+        ):
+            self.assertEqual(cli._run(args), result.run_id)
+
+        config = run_batch.call_args.args[0]
+        load_frozen.assert_called_once_with(
+            cli.DEFAULT_FROZEN_CATALOG,
+            cli.DEFAULT_FROZEN_CATALOG.resolve().parent.parent,
+            opponent_policy_label="0806",
+        )
+        expected_counts = evaluation_counts(catalog.pool.schedule)
+        self.assertEqual(config.games_by_opponent, expected_counts)
+        self.assertEqual(sum(config.games_by_opponent or ()), 512)
+        self.assertEqual(config.seed, FROZEN_0806_EVALUATION_SEED)
+        self.assertTrue(config.seeded_engine)
+        self.assertEqual(
+            config.opponent_policy_hash,
+            catalog.pool.policies["main"]["weights_sha256"],
+        )
+        self.assertEqual(config.opponent_policy_label, "Policy-0806")
+        self.assertEqual(
+            config.opponent_schedule_id,
+            evaluation_schedule_id(catalog.pool.manifest["schedule_sha256"]),
+        )
 
     def test_frozen_exact_deck_decorates_live_candidate_with_canonical_identity(self) -> None:
         live = package("0022_dragapult_update75", self.root / "live")

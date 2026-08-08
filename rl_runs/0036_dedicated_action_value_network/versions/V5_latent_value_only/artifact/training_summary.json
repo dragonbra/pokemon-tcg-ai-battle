@@ -1,0 +1,7 @@
+{
+  "best_epoch": 8,
+  "best_validation_dragapult_value_loss": 0.5086056030433429,
+  "best_validation_exact007_value_loss": 0.5383682321297449,
+  "status": "complete",
+  "trainable_parameter_count": 3407389
+}

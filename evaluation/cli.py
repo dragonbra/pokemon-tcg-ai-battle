@@ -16,6 +16,11 @@ from evaluation.packages.loader import (
 )
 from evaluation.cards import card_image_url, load_card_catalog
 from evaluation.frozen import FrozenCatalog, load_frozen_catalog
+from evaluation.frozen_0806_contract import (
+    FROZEN_0806_EVALUATION_SEED,
+    evaluation_counts,
+    evaluation_schedule_id,
+)
 from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
 from evaluation.metrics.profiles import available_metric_profiles
 from evaluation.runner.batch import BatchConfig, default_worker_count, run_batch
@@ -314,7 +319,7 @@ def _parser() -> argparse.ArgumentParser:
         "--pool",
         choices=("frozen", "opponents"),
         default="frozen",
-        help="评测池；默认使用 Frozen-0806 的固定 55-deck / 256-game 分布",
+        help="评测池；默认使用 Frozen-0806 的固定 seed / 512-game 合同",
     )
     parser.add_argument("--catalog", type=Path, default=None)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -330,7 +335,7 @@ def _parser() -> argparse.ArgumentParser:
         "--games",
         type=int,
         default=10,
-        help="legacy opponent 的每项局数；Frozen-0806 固定使用 schedule 中的 256 局",
+        help="legacy opponent 的每项局数；Frozen-0806 固定使用两个 256 局 seed 单元",
     )
     run.add_argument(
         "--output",
@@ -443,7 +448,11 @@ def _run(args: argparse.Namespace) -> str:
     frozen_catalog: FrozenCatalog | None = None
     frozen_0806 = None
     if args.pool == "frozen":
-        frozen_0806 = load_frozen_0806_runtime_catalog(catalog_path, evaluation_root)
+        frozen_0806 = load_frozen_0806_runtime_catalog(
+            catalog_path,
+            evaluation_root,
+            opponent_policy_label="0806",
+        )
         available_opponents = frozen_0806.opponents
         candidate = _decorate_candidate_from_identities(candidate, frozen_0806.candidates)
     else:
@@ -468,7 +477,7 @@ def _run(args: argparse.Namespace) -> str:
         (args.opponent_device or candidate_device) if frozen_0806 else None
     )
     games_by_opponent = (
-        tuple(entry.games for entry in frozen_0806.pool.schedule)
+        evaluation_counts(frozen_0806.pool.schedule)
         if frozen_0806 is not None
         else None
     )
@@ -503,16 +512,18 @@ def _run(args: argparse.Namespace) -> str:
                 frozen_0806.pool.manifest_sha256 if frozen_0806 is not None else None
             ),
             opponent_policy_hash=(
-                frozen_0806.pool.policies["opponent"]["weights_sha256"]
+                frozen_0806.pool.policies["main"]["weights_sha256"]
                 if frozen_0806 is not None
                 else None
             ),
+            opponent_policy_label=("Policy-0806" if frozen_0806 is not None else None),
             games_by_opponent=games_by_opponent,
             opponent_schedule_id=(
-                frozen_0806.pool.manifest["schedule_sha256"]
+                evaluation_schedule_id(frozen_0806.pool.manifest["schedule_sha256"])
                 if frozen_0806 is not None
                 else None
             ),
+            seed=(FROZEN_0806_EVALUATION_SEED if frozen_0806 is not None else 22022),
         )
     )
     return result.run_id
@@ -573,7 +584,9 @@ def main(argv: list[str] | None = None) -> int:
                 names = [
                     package.name
                     for package in load_frozen_0806_runtime_catalog(
-                        catalog_path, evaluation_root
+                        catalog_path,
+                        evaluation_root,
+                        opponent_policy_label="0806",
                     ).opponents
                 ]
             else:
