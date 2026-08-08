@@ -130,6 +130,34 @@ class CudaCollectorTerminationContractTest(unittest.TestCase):
         )
         self.assertEqual(selected, collector._trajectory_job_indices(jobs, 512))
 
+    def test_diagnostic_batch_smaller_than_budget_keeps_every_episode(self) -> None:
+        original = collector.CudaFullSemanticRolloutCollector
+
+        class FakeCollector:
+            captured = None
+
+            def __init__(self, *_args, **kwargs) -> None:
+                self.captured = kwargs.get("record_job_indices")
+                FakeCollector.captured = self.captured
+
+            def collect(self, _jobs):
+                return []
+
+            def metrics(self):
+                return {}
+
+        collector.CudaFullSemanticRolloutCollector = FakeCollector
+        try:
+            chunked = collector.ChunkedCudaRolloutCollector(
+                None, None, rollout_batch_size=512,
+                trajectory_games_per_update=512,
+                record_trajectory=True,
+            )
+            chunked.collect([_job("a"), _job("b")])
+            self.assertEqual(FakeCollector.captured, {0, 1})
+        finally:
+            collector.CudaFullSemanticRolloutCollector = original
+
 
 if __name__ == "__main__":
     unittest.main()

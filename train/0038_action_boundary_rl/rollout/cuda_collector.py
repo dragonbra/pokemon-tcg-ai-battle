@@ -464,19 +464,19 @@ class ChunkedCudaRolloutCollector:
         self._metrics: dict[str, float] = {}
 
     def collect(self, jobs: list[RolloutJob]) -> list[EpisodeTrajectory]:
-        if (
-            self.trajectory_games_per_update is not None
-            and not 0 <= self.trajectory_games_per_update <= len(jobs)
-        ):
-            raise ValueError("trajectory game budget must fit inside the rollout")
+        if self.trajectory_games_per_update is not None and self.trajectory_games_per_update < 0:
+            raise ValueError("trajectory game budget cannot be negative")
         episodes: list[EpisodeTrajectory] = []
         chunks: list[dict[str, float]] = []
-        selected_jobs = _trajectory_job_indices(
-            jobs,
-            self.trajectory_games_per_update
-            if self.collector_kwargs.get("record_trajectory", True)
-            else 0,
+        trajectory_budget = (
+            min(self.trajectory_games_per_update, len(jobs))
+            if (
+                self.collector_kwargs.get("record_trajectory", True)
+                and self.trajectory_games_per_update is not None
+            )
+            else 0
         )
+        selected_jobs = _trajectory_job_indices(jobs, trajectory_budget)
         started = time.perf_counter()
         for begin in range(0, len(jobs), self.rollout_batch_size):
             chunk_started = time.perf_counter()
