@@ -14,6 +14,6 @@
 - 124/124 unit/property tests 通过；短 INTEGRATED PPO smoke 通过。
 - rollout 数量、backend、并行度、inference batch 和 PPO optimizer budget 已配置化；默认扩容模式为 `fixed_optimizer_budget`。
 - V4 在首个 PPO update 前 fail closed，没有产生 update-1 model checkpoint；失败原因是使用了均匀 opponent 面板且 sparse-diagnostic predicate 未导入。
-- 下一正式版本为 `V5_canonical_frozen_cuda_fresh_rl`。rollout 每 256 局精确复现环境 opponent 频率；update-0 与每 5 updates 严格复用全局 `frozen_0806_seeded_2048_v2`（seed `341512806`、007 schedule SHA `98b58b...ce9`）。
+- 下一正式版本为 `V6_canonical_frozen_cuda_fresh_rl`。V5 因外部 CUDA 评测争用 GPU 在 update-0 期间人工中止，没有 baseline metric 或 PPO update。rollout 每 256 局精确复现环境 opponent 频率；update-0 与每 5 updates 严格复用全局 `frozen_0806_seeded_2048_v2`（seed `341512806`、007 schedule SHA `98b58b...ce9`）。
 
 详细设计见 [`experiments/0038_action_boundary_rl/DESIGN.md`](experiments/0038_action_boundary_rl/DESIGN.md)，update-0 评估见 [`V3 report`](experiments/0038_action_boundary_rl/evaluation/V3_update0_chance_boundary_fallback.html)。

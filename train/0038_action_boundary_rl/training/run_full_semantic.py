@@ -47,7 +47,7 @@ from ..integrated.presets import PRESETS, preset
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V5_canonical_frozen_cuda_fresh_rl"
+FORMAL_VERSION = "V6_canonical_frozen_cuda_fresh_rl"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"

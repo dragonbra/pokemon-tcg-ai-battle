@@ -7,7 +7,7 @@ CUDA 接入完成后，请基于 `0038_action_boundary_rl` 启动今晚的正式
 实验命名：
 
 ```text
-V5_canonical_frozen_cuda_fresh_rl
+V6_canonical_frozen_cuda_fresh_rl
 ```
 
 必须从公共起点开始：
@@ -393,4 +393,4 @@ CUDA 接入及 smoke 通过后，请先输出一份简短 launch manifest：
 - 正式启动命令；
 - 预估 games/hour；正式 run 的完成时间由用户手动停止决定。
 
-确认这些内容与上述合同一致且 GPU 空闲后，启动 `V5_canonical_frozen_cuda_fresh_rl`。失败的 V4 保留为错误均匀面板与启动诊断的审计记录，不得续写或冒充正式可比基线。
+确认这些内容与上述合同一致且 GPU 空闲后，启动 `V6_canonical_frozen_cuda_fresh_rl`。失败的 V4 保留为错误均匀面板与启动诊断的审计记录；V5 在 update-0 Frozen 评估期间因与另一个 CUDA 评测进程争用 GPU 而人工 fail closed，未产生 baseline metric 且未执行 PPO update。两者都不得续写或冒充正式可比基线。
