@@ -16,11 +16,13 @@ protocol = importlib.import_module(
 class _Connection:
     def __init__(self) -> None:
         self.messages: list[dict] = []
+        self.action_requests = 0
 
     def send(self, message: dict) -> None:
         self.messages.append(message)
 
     def recv(self) -> dict:
+        self.action_requests += 1
         return {"kind": "action", "action": [0]}
 
     def close(self) -> None:
@@ -42,7 +44,7 @@ class _Game:
 
 
 class RolloutTerminationTest(unittest.TestCase):
-    def _run(self, observation: dict) -> dict:
+    def _run(self, observation: dict) -> tuple[dict, int]:
         original = worker._load_game_api_with_runtime
         original_compiler = worker.WorkerLocalCompiler
         worker._load_game_api_with_runtime = lambda _root: _Game(observation)
@@ -55,7 +57,7 @@ class RolloutTerminationTest(unittest.TestCase):
                 "test", "deck", True, 1, 0, (1,) * 60, (2,) * 60, Path(".")
             )
             worker.run_engine_episode(connection, job)
-            return connection.messages[-1]
+            return connection.messages[-1], connection.action_requests
         finally:
             worker._load_game_api_with_runtime = original
             worker.WorkerLocalCompiler = original_compiler
@@ -69,9 +71,10 @@ class RolloutTerminationTest(unittest.TestCase):
                 "option": [{"type": 14, "id": 7}],
             },
         }
-        result = self._run(observation)
+        result, action_requests = self._run(observation)
         self.assertEqual(result["status"], "repeated_selection_forfeit")
         self.assertEqual(result["reward"], -1.0)
+        self.assertEqual(action_requests, 20)
 
     def test_fifty_full_rounds_are_a_draw(self) -> None:
         observation = {
@@ -82,7 +85,7 @@ class RolloutTerminationTest(unittest.TestCase):
                 "option": [{"type": 14, "id": 7}],
             },
         }
-        result = self._run(observation)
+        result, _action_requests = self._run(observation)
         self.assertEqual(result["status"], "turn_limit_draw")
         self.assertEqual(result["reward"], 0.0)
 

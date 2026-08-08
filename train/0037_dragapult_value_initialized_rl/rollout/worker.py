@@ -179,7 +179,7 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
                     tuple(action),
                 )
                 repeated_actions[key] += 1
-                if repeated_actions[key] > job.ability_repeat_limit:
+                if repeated_actions[key] >= job.ability_repeat_limit:
                     focal_reward = -1.0 if actor == focal_index else 1.0
                     status = (
                         "ability_repeat_forfeit"

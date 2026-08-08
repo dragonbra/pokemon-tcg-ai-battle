@@ -288,6 +288,45 @@ assert "torch" not in sys.modules
             self.assertEqual(sorted(library.finished), [1, 2])
             self.assertTrue(all(trace.exists() for _, trace in jobs))
 
+    def test_progress_guard_signal_forfeits_acting_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            request = GameRequest(
+                run_id="run-pool",
+                game_id="guarded-game",
+                candidate=_package(root, "candidate", 7),
+                opponent=_package(root, "opponent", 8),
+                candidate_first=True,
+                max_steps=10,
+                visualize=False,
+            )
+
+            def agent_factory(_request, role):
+                def agent(_observation):
+                    if role == "candidate":
+                        return {
+                            "__evaluation_forfeit__": (
+                                "same_turn_identical_selection_repeat"
+                            )
+                        }
+                    return [0]
+
+                return agent, lambda: None
+
+            result = run_pool_games(
+                [(request, root / "trace.json")],
+                library=_FakeEngineLibrary(),
+                pool_size=1,
+                agent_factory=agent_factory,
+                validate_compatibility=False,
+            )[0]
+
+            self.assertTrue(result.finished)
+            self.assertEqual(result.winner, 1)
+            self.assertIsNone(result.error_kind)
+            self.assertIn("Progress-guard forfeit", result.error or "")
+            self.assertEqual(result.steps, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

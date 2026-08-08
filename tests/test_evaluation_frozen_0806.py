@@ -61,6 +61,25 @@ class Frozen0806PoolTest(unittest.TestCase):
         self.assertEqual(len({deck.exact_deck_sha256 for deck in pool.decks}), 55)
         self.assertTrue(all(len(deck.cards) == 60 for deck in pool.decks))
 
+    def test_committed_deck_directories_use_frequency_numbers(self) -> None:
+        pool = load_frozen_0806_pool(CONFIG, EVALUATION_ROOT)
+        frequency_order = sorted(
+            pool.schedule,
+            key=lambda entry: (-entry.games, entry.best_rank, entry.deck_id),
+        )
+        expected_number = {
+            entry.deck_id: f"{number:03d}"
+            for number, entry in enumerate(frequency_order, start=1)
+        }
+
+        self.assertEqual(
+            sorted(deck.root.name[:3] for deck in pool.decks),
+            [f"{number:03d}" for number in range(1, 56)],
+        )
+        for deck in pool.decks:
+            self.assertTrue(deck.root.name.startswith(expected_number[deck.deck_id] + "_"))
+            self.assertNotIn(deck.exact_deck_sha256[:12], deck.root.name)
+
     def test_top100_schedule_reproduces_observed_population(self) -> None:
         pool = load_frozen_0806_pool(CONFIG, EVALUATION_ROOT)
         top = [item for item in pool.schedule if item.segment == "top100"]

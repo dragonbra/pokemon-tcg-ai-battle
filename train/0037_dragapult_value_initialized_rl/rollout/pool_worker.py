@@ -246,7 +246,7 @@ def _run_job(
                     tuple(action),
                 )
                 repeated_actions[key] += 1
-                if repeated_actions[key] > job.ability_repeat_limit:
+                if repeated_actions[key] >= job.ability_repeat_limit:
                     return _result(
                         job,
                         valid=True,

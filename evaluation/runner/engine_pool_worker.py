@@ -21,6 +21,7 @@ from types import ModuleType
 from typing import Any, Callable
 
 from evaluation.runner.models import GameRequest, GameResult
+from evaluation.runner.progress_guard import progress_guard_forfeit_reason
 from evaluation.runner.worker import (
     _error_result,
     _exception_text,
@@ -641,6 +642,42 @@ def _run_pointer_game(
                         status=error_side,
                         error_kind=error_side,
                         error=_exception_text(exc),
+                    )
+                    break
+
+                forfeit_reason = progress_guard_forfeit_reason(action)
+                if forfeit_reason is not None:
+                    trace.append(
+                        {
+                            "step": step,
+                            "state": summary,
+                            "observation": observation,
+                            "adjudication": {
+                                "kind": "progress_guard_forfeit",
+                                "reason": forfeit_reason,
+                                "losing_physical_player": current_player,
+                            },
+                        }
+                    )
+                    result = GameResult(
+                        game_id=request.game_id,
+                        opponent=request.opponent.name,
+                        candidate_first=request.candidate_first,
+                        candidate_physical_index=candidate_physical_index,
+                        finished=True,
+                        winner=(
+                            1
+                            if current_player == candidate_physical_index
+                            else 0
+                        ),
+                        status="finished",
+                        error_kind=None,
+                        error=(
+                            "Progress-guard forfeit: "
+                            f"{forfeit_reason}"
+                        ),
+                        steps=selection_count,
+                        trace_path=trace_path,
                     )
                     break
                 selection_count += 1

@@ -18,6 +18,13 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from evaluation.frozen_0806 import POLICY_0019_SHA256, POLICY_0806_SHA256
+from evaluation.frozen_0806_contract import (
+    FROZEN_0806_CONTRACT_ID,
+    FROZEN_0806_EVALUATION_GAMES,
+    FROZEN_0806_EVALUATION_SEED,
+    evaluation_counts,
+    evaluation_schedule_id,
+)
 from evaluation.frozen_0806_runtime import (
     Frozen0806RuntimeCatalog,
     load_frozen_0806_runtime_catalog,
@@ -41,13 +48,21 @@ OUTPUT_ROOT = (
 LEGACY_OUTPUT_ROOT = (
     ROOT / "evaluation/arena/combat_mat/frozen/0806_kaggle_top100_plus_v1"
 )
-TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_full"
-BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_benchmark"
+TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded512_full"
+BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded512_benchmark"
 EXPECTED_DECKS = 55
-EXPECTED_GAMES = 256
-EXPECTED_FIRST = 128
-EXPECTED_SECOND = 128
-DEFAULT_SEED = 8062026
+EXPECTED_GAMES = FROZEN_0806_EVALUATION_GAMES
+EXPECTED_FIRST = EXPECTED_GAMES // 2
+EXPECTED_SECOND = EXPECTED_GAMES // 2
+DEFAULT_SEED = FROZEN_0806_EVALUATION_SEED
+LEGACY_POLICY_0806_OUTPUT_ROOT = (
+    ROOT / "evaluation/arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1"
+)
+POLICY_0806_SEEDED512_OUTPUT_ROOT = (
+    ROOT
+    / "evaluation/arena/combat_mat/policy_0806"
+    / "0806_kaggle_top100_plus_v1_seeded_512_v1"
+)
 
 
 @dataclass(frozen=True)
@@ -70,10 +85,7 @@ POLICY_0806_TARGET = FrozenEvaluationTarget(
     key="0806",
     label="Policy-0806",
     policy_sha256=POLICY_0806_SHA256,
-    output_root=(
-        ROOT
-        / "evaluation/arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1"
-    ),
+    output_root=POLICY_0806_SEEDED512_OUTPUT_ROOT,
 )
 
 
@@ -121,7 +133,7 @@ def _atomic_text(path: Path, value: str) -> None:
 
 
 def _schedule_counts(catalog: Frozen0806RuntimeCatalog) -> tuple[int, ...]:
-    return tuple(entry.games for entry in catalog.pool.schedule)
+    return evaluation_counts(catalog.pool.schedule)
 
 
 def _turn_order(games: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
@@ -177,7 +189,8 @@ def validate_report_payload(
         or pool.get("catalog_sha256") != catalog.pool.manifest_sha256
         or pool.get("policy_hash") != target.policy_sha256
         or manifest.get("opponent_schedule_id")
-        != catalog.pool.manifest["schedule_sha256"]
+        != evaluation_schedule_id(catalog.pool.manifest["schedule_sha256"])
+        or manifest.get("seed") != DEFAULT_SEED
         or manifest.get("games_per_opponent") != expected_counts
         or len(manifest.get("opponents", [])) != EXPECTED_DECKS
     ):
@@ -363,7 +376,9 @@ def _batch_config(
         opponents=selected_opponents,
         games_per_opponent=1,
         games_by_opponent=selected_counts,
-        opponent_schedule_id=catalog.pool.manifest["schedule_sha256"],
+        opponent_schedule_id=evaluation_schedule_id(
+            catalog.pool.manifest["schedule_sha256"]
+        ),
         output_root=output_root,
         visualize=False,
         max_steps=2_500,
@@ -387,7 +402,7 @@ def _batch_config(
         opponent_policy_label=target.label,
         share_policy_inference_server=target.key == "0806",
         seed=DEFAULT_SEED,
-        inference_ability_repeat_limit=8,
+        inference_ability_repeat_limit=20,
         engine_turn_draw_limit=100,
         engine_pool_size=engine_pool_size,
     )
@@ -518,7 +533,7 @@ def _index_html(
     total_seconds = sum(record["wall_time_seconds"] for record in records)
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{target.label} Report · Frozen-0806 卡组强度</title><style>
+<title>{target.label} Seeded-512 Report · Frozen-0806 卡组强度</title><style>
 :root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d;--red:#a54343}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}
 header{{padding:28px max(20px,calc((100vw - 1500px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px;letter-spacing:0}}header p{{max-width:980px;margin:7px 0 0;color:#cfe1da}}
@@ -531,11 +546,11 @@ th{{position:sticky;top:0;background:#e9f0ec;color:#486158;font-size:12px;cursor
 .number{{font-size:16px;font-weight:850;color:var(--green);font-variant-numeric:tabular-nums}}.done{{color:var(--green)}}.pending{{color:#8a6b28}}
 .contract{{margin-top:16px;padding:14px 16px;border-left:4px solid var(--green);background:#fff;color:var(--muted)}}
 @media(max-width:760px){{.stats{{grid-template-columns:1fr 1fr}}.stat:nth-child(2){{border-right:0}}header{{padding:22px 16px}}main{{padding:14px}}}}
-</style></head><body><header><h1>{target.label} Report</h1><p>55 套 exact deck 均加载 Policy-0806，对战同一份 256 局 {target.label} 固定分布。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
+</style></head><body><header><h1>{target.label} Seeded-512 Report</h1><p>55 套 exact deck 均加载 Policy-0806，对战相同的两个 256 局固定单元，共 512 局；evaluation seed 固定为 {DEFAULT_SEED}，先后手各 256 局。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
 <div class="stats"><div class="stat"><b>{len(records)}/{EXPECTED_DECKS}</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>正式对局</span></div><div class="stat"><b>{sum(r['wins'] for r in records):,}</b><span>Policy-0806 胜局</span></div><div class="stat"><b>{total_seconds/3600:.2f}h</b><span>累计 wall time</span></div></div>
 <div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div>
-<div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 256 局报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
-<div class="contract">Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{catalog.pool.manifest['schedule_sha256']}</code> · Candidate Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
+<div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 512 局报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
+<div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · seed <code>{DEFAULT_SEED}</code> · Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{evaluation_schedule_id(catalog.pool.manifest['schedule_sha256'])}</code> · Candidate Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
 <script>
 const q=document.querySelector('#search'),body=document.querySelector('tbody');
 q.addEventListener('input',()=>{{
@@ -588,10 +603,15 @@ def refresh_index(
             _refresh_report_navigation(path, candidate, catalog, target)
             records.append(validate_report(path, candidate, catalog, target))
     manifest = {
-        "schema_version": "frozen_0806_full_evaluation_v1",
+        "schema_version": "frozen_0806_full_evaluation_v2",
+        "contract_id": FROZEN_0806_CONTRACT_ID,
+        "evaluation_seed": DEFAULT_SEED,
         "pool_id": catalog.pool.pool_id,
         "pool_manifest_sha256": catalog.pool.manifest_sha256,
-        "schedule_sha256": catalog.pool.manifest["schedule_sha256"],
+        "base_schedule_sha256": catalog.pool.manifest["schedule_sha256"],
+        "schedule_sha256": evaluation_schedule_id(
+            catalog.pool.manifest["schedule_sha256"]
+        ),
         "policy_0806_sha256": POLICY_0806_SHA256,
         "opponent_policy_label": target.label,
         "opponent_policy_sha256": target.policy_sha256,
@@ -611,11 +631,19 @@ def refresh_index(
         target.output_root / "index.html", _index_html(records, catalog, target)
     )
     _atomic_text(
+        ROOT / "evaluation/arena/combat_mat/policy_0806/index.html",
+        '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
+        '<title>Policy-0806 Reports</title><body><h1>Policy-0806 Reports</h1><ul>'
+        '<li><a href="0806_kaggle_top100_plus_v1_seeded_512_v1/index.html">'
+        'Seeded-512 v1（当前正式合同）</a></li>'
+        '<li><a href="0806_kaggle_top100_plus_v1/index.html">'
+        '2026-08-07 legacy 256（25/55，中断资产）</a></li></ul></body></html>\n',
+    )
+    _atomic_text(
         ROOT / "evaluation/arena/combat_mat/index.html",
         '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
         '<title>Frozen-0806 Reports</title><body><h1>Frozen-0806 Reports</h1><ul>'
-        '<li><a href="policy_0806/0806_kaggle_top100_plus_v1/index.html">'
-        'Policy-0806 Report</a></li>'
+        '<li><a href="policy_0806/index.html">Policy-0806 Reports</a></li>'
         '<li><a href="policy_0019/0806_kaggle_top100_plus_v1/index.html">'
         'Policy-0019 Report</a></li></ul></body></html>\n',
     )
@@ -647,7 +675,7 @@ def benchmark(
                 batch_size=batch_size,
                 batch_wait_ms=batch_wait_ms,
                 label="candidate",
-                ability_repeat_limit=8,
+                ability_repeat_limit=20,
                 inference_dtype=inference_dtype,
             )
         )
@@ -660,7 +688,7 @@ def benchmark(
                     batch_size=batch_size,
                     batch_wait_ms=batch_wait_ms,
                     label="opponent",
-                    ability_repeat_limit=8,
+                    ability_repeat_limit=20,
                     inference_dtype=inference_dtype,
                 )
             )
@@ -729,7 +757,7 @@ def run_full(
                 batch_size=batch_size,
                 batch_wait_ms=batch_wait_ms,
                 label="candidate",
-                ability_repeat_limit=8,
+                ability_repeat_limit=20,
                 inference_dtype=inference_dtype,
             )
         )
@@ -742,7 +770,7 @@ def run_full(
                     batch_size=batch_size,
                     batch_wait_ms=batch_wait_ms,
                     label="opponent",
-                    ability_repeat_limit=8,
+                    ability_repeat_limit=20,
                     inference_dtype=inference_dtype,
                 )
             )
@@ -818,7 +846,7 @@ def main(argv: list[str] | None = None) -> int:
     catalog = load_frozen_0806_runtime_catalog(
         opponent_policy_label=args.opponent_policy
     )
-    if len(catalog.candidates) != EXPECTED_DECKS or catalog.pool.total_games != EXPECTED_GAMES:
+    if len(catalog.candidates) != EXPECTED_DECKS or catalog.pool.total_games != 256:
         raise RuntimeError("Frozen-0806 runtime catalog does not match the formal contract")
     if args.benchmark:
         worker_counts = tuple(int(value) for value in args.benchmark_workers.split(","))

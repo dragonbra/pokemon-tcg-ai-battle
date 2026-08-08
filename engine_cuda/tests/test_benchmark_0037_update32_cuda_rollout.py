@@ -51,6 +51,41 @@ class Benchmark0037Update32CudaRolloutTest(unittest.TestCase):
         self.assertEqual(loaded.deck_rows[1], (opponent, focal))
         self.assertEqual(loaded.opponent_ids, ("opponent_a", "opponent_a"))
 
+    def test_load_schedule_resolves_numbered_directory_by_manifest_deck_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            deck_root = root / "decks"
+            opponent_root = deck_root / "001_readable_name"
+            opponent_root.mkdir(parents=True)
+            focal = tuple(range(1, 61))
+            opponent = tuple(range(101, 161))
+            (opponent_root / "deck.csv").write_text(
+                "\n".join(str(card) for card in opponent) + "\n", encoding="ascii"
+            )
+            (opponent_root / "manifest.json").write_text(
+                json.dumps({"deck_id": "opaque_internal_id_deadbeef0000"}),
+                encoding="utf-8",
+            )
+            schedule = root / "schedule.json"
+            schedule.write_text(
+                json.dumps(
+                    {
+                        "jobs": [
+                            {
+                                "engine_seed": 17,
+                                "focal_first": True,
+                                "opponent_id": "opaque_internal_id_deadbeef0000",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            loaded = benchmark.load_schedule(schedule, deck_root, focal)
+
+        self.assertEqual(loaded.deck_rows, ((focal, opponent),))
+
     def test_expanded_portable_state_restores_prototype_aliases(self) -> None:
         tensor = torch.tensor([1.0])
         expanded = benchmark.expanded_portable_state(

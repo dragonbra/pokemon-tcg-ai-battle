@@ -585,7 +585,7 @@ def run(config: RunConfig) -> dict[str, Any]:
         },
         "episode_weighting": config.ppo.loss_weighting,
         "termination_contract": {
-            "ability_repeat_limit": 8,
+            "ability_repeat_limit": 20,
             "ability_repeat_action": "opponent_win",
             "full_round_draw_limit": 50,
             "engine_turn_limit": 99,

@@ -18,6 +18,7 @@ from evaluation.frozen_0806 import (
     POOL_ID,
     allocate_largest_remainder,
     exact_deck_sha256,
+    frozen_deck_directory_name,
 )
 
 
@@ -183,13 +184,28 @@ def materialize(*, source_snapshot: Path, target: Path) -> None:
     if len(rows) != 55 or sum(row["games"] for row in rows) != 256:
         raise ValueError("Frozen-0806 materialized schedule size mismatch")
 
+    for row in rows:
+        row["deck_id"] = (
+            f"{_slug(row['archetype'])}_{row['exact_deck_sha256'][:12]}"
+        )
+    frequency_order = sorted(
+        rows,
+        key=lambda row: (-row["games"], row["best_rank"], row["deck_id"]),
+    )
+    deck_number_by_id = {
+        row["deck_id"]: number
+        for number, row in enumerate(frequency_order, start=1)
+    }
+
     official_cards = load_card_catalog(ROOT / "data" / "official" / "EN_Card_Data.csv")
     decks_root = target / "decks"
     decks_root.mkdir(parents=True)
     schedule_entries: list[dict[str, Any]] = []
     for row in rows:
-        deck_id = f"{_slug(row['archetype'])}_{row['exact_deck_sha256'][:12]}"
-        deck_root = decks_root / deck_id
+        deck_id = row["deck_id"]
+        deck_root = decks_root / frozen_deck_directory_name(
+            deck_id, row["archetype"], deck_number_by_id[deck_id]
+        )
         deck_root.mkdir()
         (deck_root / "deck.csv").write_text(
             "".join(f"{card_id}\n" for card_id in row["cards"]), encoding="ascii"
@@ -215,7 +231,7 @@ def materialize(*, source_snapshot: Path, target: Path) -> None:
             _canonical_json(deck_manifest), encoding="utf-8"
         )
         schedule_entries.append(
-            {key: value for key, value in row.items() if key != "cards"} | {"deck_id": deck_id}
+            {key: value for key, value in row.items() if key != "cards"}
         )
 
     schedule = {

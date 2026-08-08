@@ -15,6 +15,7 @@ from evaluation.frozen_0806 import (
     POLICY_0019_SHA256,
     POLICY_0806_SHA256,
     Frozen0806Pool,
+    frozen_deck_number_by_id,
     load_frozen_0806_pool,
 )
 from evaluation.packages.loader import (
@@ -260,13 +261,7 @@ def load_frozen_0806_runtime_catalog(
     _policy_identity(candidate_policy, role="candidate", expected_sha256=POLICY_0806_SHA256)
     assert_cg_compatible(candidate_policy, opponent_policy)
     ordered_ids = tuple(entry.deck_id for entry in pool.schedule)
-    frequency_order = sorted(
-        pool.schedule,
-        key=lambda entry: (-entry.games, entry.best_rank, entry.deck_id),
-    )
-    deck_number_by_id = {
-        entry.deck_id: number for number, entry in enumerate(frequency_order, start=1)
-    }
+    deck_number_by_id = frozen_deck_number_by_id(pool.schedule)
     candidates = tuple(
         _routed_package(
             candidate_policy,

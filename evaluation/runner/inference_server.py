@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import importlib.util
 import inspect
+import json
 import queue
 import sys
 import threading
@@ -24,18 +25,20 @@ from evaluation.runner.compiler_pool import CompilerPool
 class _AbilityRepeatGuard:
     limit: int
     turn_actor: tuple[int, int] | None = None
-    counts: dict[tuple[tuple[str, Any], ...], int] = field(default_factory=dict)
+    counts: dict[str, int] = field(default_factory=dict)
 
 
 def _apply_ability_repeat_guard(
     observation: dict[str, Any], action: Any, guard: _AbilityRepeatGuard
 ) -> Any:
-    if guard.limit <= 0 or not isinstance(action, list) or len(action) != 1:
+    if (
+        guard.limit <= 0
+        or not isinstance(action, list)
+        or not all(type(index) is int for index in action)
+    ):
         return action
     select = observation.get("select") or {}
     current = observation.get("current") or {}
-    if select.get("type") != 0:
-        return action
     turn = current.get("turn")
     actor = current.get("yourIndex")
     if type(turn) is not int or actor not in (0, 1):
@@ -44,27 +47,16 @@ def _apply_ability_repeat_guard(
     if guard.turn_actor != turn_actor:
         guard.turn_actor = turn_actor
         guard.counts.clear()
-    options = select.get("option") or []
-    selected = action[0]
-    if type(selected) is not int or not 0 <= selected < len(options):
-        return action
-    option = options[selected]
-    if not isinstance(option, dict) or option.get("type") != 10:
-        return action
-    identity = tuple(
-        sorted(
-            (str(key), value)
-            for key, value in option.items()
-            if isinstance(value, (int, str, bool, type(None)))
-        )
+    identity = json.dumps(
+        {"select": select, "action": action},
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
     )
     guard.counts[identity] = guard.counts.get(identity, 0) + 1
-    if guard.counts[identity] <= guard.limit:
+    if guard.counts[identity] < guard.limit:
         return action
-    return next(
-        ([index] for index, item in enumerate(options) if item.get("type") == 14),
-        action,
-    )
+    return {"__evaluation_forfeit__": "same_turn_identical_selection_repeat"}
 
 
 def _forced_action(observation: dict[str, Any]) -> list[int] | None:

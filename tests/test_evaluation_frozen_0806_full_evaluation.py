@@ -7,12 +7,14 @@ from evaluation.frozen_0806_full_evaluation import (
     EXPECTED_FIRST,
     EXPECTED_GAMES,
     EXPECTED_SECOND,
+    LEGACY_POLICY_0806_OUTPUT_ROOT,
     POLICY_0806_TARGET,
     _schedule_counts,
     _turn_order,
     validate_report_payload,
 )
 from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
+from evaluation.frozen_0806_contract import evaluation_schedule_id
 from evaluation.reporting.html import _matchup_html
 
 
@@ -21,7 +23,7 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.catalog = load_frozen_0806_runtime_catalog()
 
-    def test_schedule_is_exactly_256_and_seat_balanced(self) -> None:
+    def test_schedule_is_exactly_seeded_512_and_seat_balanced(self) -> None:
         counts = _schedule_counts(self.catalog)
         self.assertEqual(len(counts), 55)
         self.assertEqual(sum(counts), EXPECTED_GAMES)
@@ -32,6 +34,20 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
         order = _turn_order(games)
         self.assertEqual(order["first"]["games"], EXPECTED_FIRST)
         self.assertEqual(order["second"]["games"], EXPECTED_SECOND)
+        self.assertEqual(EXPECTED_GAMES, 512)
+        self.assertEqual(EXPECTED_FIRST, 256)
+        self.assertEqual(EXPECTED_SECOND, 256)
+
+    def test_policy_0806_seeded512_output_is_independent_from_legacy(self) -> None:
+        self.assertNotEqual(POLICY_0806_TARGET.output_root, LEGACY_POLICY_0806_OUTPUT_ROOT)
+        self.assertEqual(
+            POLICY_0806_TARGET.output_root.name,
+            "0806_kaggle_top100_plus_v1_seeded_512_v1",
+        )
+        self.assertEqual(
+            LEGACY_POLICY_0806_OUTPUT_ROOT.name,
+            "0806_kaggle_top100_plus_v1",
+        )
 
     def test_catalog_assigns_stable_three_digit_report_numbers(self) -> None:
         by_number = sorted(
@@ -165,14 +181,17 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
                             "catalog_sha256": self.catalog.pool.manifest_sha256,
                             "policy_hash": self.catalog.pool.policies["opponent"]["weights_sha256"],
                         },
-                        "opponent_schedule_id": self.catalog.pool.manifest["schedule_sha256"],
+                        "opponent_schedule_id": evaluation_schedule_id(
+                            self.catalog.pool.manifest["schedule_sha256"]
+                        ),
+                        "seed": 341_512_806,
                         "games_per_opponent": list(_schedule_counts(self.catalog)),
                         "opponents": [{}] * 55,
-                        "games": 256,
+                        "games": 512,
                     },
                     "summary": {
-                        "total_games": 255,
-                        "completed_games": 255,
+                        "total_games": 511,
+                        "completed_games": 511,
                         "errors": 0,
                         "unfinished": 0,
                     },

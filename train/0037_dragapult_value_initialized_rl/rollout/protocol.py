@@ -26,7 +26,7 @@ class RolloutJob:
     search_seed: int = 0
     engine_library: Path | None = None
     max_steps: int = 1_000
-    ability_repeat_limit: int = 8
+    ability_repeat_limit: int = 20
     full_round_draw_limit: int = 50
 
 

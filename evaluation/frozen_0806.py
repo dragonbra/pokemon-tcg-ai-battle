@@ -30,6 +30,13 @@ EXPECTED_TAIL_GAMES = {
     "N's Zoroark ex / Munkidori": 2,
 }
 
+_DECK_SLUG_OVERRIDES = {
+    "mega_kangaskhan_ex_crustle_310ede704da1": (
+        "wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex"
+    ),
+    "mega_kangaskhan_ex_crustle_df6f74437196": "slowking_toolbox",
+}
+
 
 @dataclass(frozen=True)
 class Frozen0806Deck:
@@ -86,6 +93,36 @@ def _sha256(path: Path) -> str:
 def exact_deck_sha256(cards: Iterable[int]) -> str:
     canonical = ",".join(str(card_id) for card_id in sorted(cards)).encode("ascii")
     return hashlib.sha256(canonical).hexdigest()
+
+
+def frozen_deck_number_by_id(
+    schedule: Iterable[Frozen0806ScheduleEntry],
+) -> dict[str, int]:
+    ordered = sorted(
+        schedule,
+        key=lambda entry: (-entry.games, entry.best_rank, entry.deck_id),
+    )
+    return {
+        entry.deck_id: number for number, entry in enumerate(ordered, start=1)
+    }
+
+
+def frozen_deck_directory_name(
+    deck_id: str, archetype: str, number: int
+) -> str:
+    slug = _DECK_SLUG_OVERRIDES.get(deck_id)
+    if slug is None:
+        slug, separator, suffix = deck_id.rpartition("_")
+        if (
+            not separator
+            or len(suffix) != 12
+            or any(character not in "0123456789abcdef" for character in suffix)
+        ):
+            slug = "_".join(
+                part for part in archetype.lower().replace("'", "").split() if part
+            )
+            slug = slug.replace("/", "_")
+    return f"{number:03d}_{slug}"
 
 
 def allocate_largest_remainder(
@@ -203,9 +240,11 @@ def load_frozen_0806_pool(config_path: Path, evaluation_root: Path) -> Frozen080
         cards = tuple(_read_deck(deck_root / "deck.csv", official_ids))
         deck_manifest = _read_json(deck_root / "manifest.json", f"deck {deck_root.name}")
         exact_hash = exact_deck_sha256(cards)
+        deck_id = deck_manifest.get("deck_id")
         if (
             deck_manifest.get("schema_version") != "evaluation_frozen_0806_deck_v1"
-            or deck_manifest.get("deck_id") != deck_root.name
+            or not isinstance(deck_id, str)
+            or not deck_id
             or deck_manifest.get("exact_deck_sha256") != exact_hash
             or deck_manifest.get("pool_id") != POOL_ID
             or not isinstance(deck_manifest.get("representative_card_ids"), list)
@@ -215,7 +254,9 @@ def load_frozen_0806_pool(config_path: Path, evaluation_root: Path) -> Frozen080
         if exact_hash in seen_hashes:
             raise PackageValidationError(f"duplicate Frozen-0806 exact deck: {deck_root.name}")
         seen_hashes.add(exact_hash)
-        deck = Frozen0806Deck(deck_root.name, deck_root, cards, exact_hash, deck_manifest)
+        if deck_id in deck_by_id:
+            raise PackageValidationError(f"duplicate Frozen-0806 deck ID: {deck_id}")
+        deck = Frozen0806Deck(deck_id, deck_root, cards, exact_hash, deck_manifest)
         decks.append(deck)
         deck_by_id[deck.deck_id] = deck
     if len(decks) != manifest["deck_count"]:
@@ -310,6 +351,20 @@ def load_frozen_0806_pool(config_path: Path, evaluation_root: Path) -> Frozen080
     if tail_games != EXPECTED_TAIL_GAMES:
         raise PackageValidationError("Frozen-0806 potential-deck allocation mismatch")
 
+    number_by_id = frozen_deck_number_by_id(schedule)
+    for deck in decks:
+        schedule_entry = next(item for item in schedule if item.deck_id == deck.deck_id)
+        expected_directory = frozen_deck_directory_name(
+            deck.deck_id,
+            schedule_entry.archetype,
+            number_by_id[deck.deck_id],
+        )
+        if deck.root.name != expected_directory:
+            raise PackageValidationError(
+                "Frozen-0806 deck directory identity mismatch: "
+                f"{deck.root.name} != {expected_directory}"
+            )
+
     return Frozen0806Pool(
         pool_id=POOL_ID, root=expected_root, manifest=manifest,
         manifest_sha256=_sha256(manifest_path), policies=policies,
@@ -320,5 +375,6 @@ def load_frozen_0806_pool(config_path: Path, evaluation_root: Path) -> Frozen080
 __all__ = [
     "Frozen0806Deck", "Frozen0806Pool", "Frozen0806ScheduleEntry", "POOL_ID",
     "POLICY_0019_SHA256", "POLICY_0806_SHA256", "allocate_largest_remainder",
-    "exact_deck_sha256", "load_frozen_0806_pool",
+    "exact_deck_sha256", "frozen_deck_directory_name",
+    "frozen_deck_number_by_id", "load_frozen_0806_pool",
 ]

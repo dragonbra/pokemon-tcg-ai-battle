@@ -7,6 +7,7 @@ import copy
 import hashlib
 import importlib
 import json
+import struct
 import sys
 import time
 from dataclasses import dataclass
@@ -119,6 +120,19 @@ def load_schedule(
     deck_rows: list[tuple[tuple[int, ...], tuple[int, ...]]] = []
     opponent_ids: list[str] = []
     deck_cache: dict[str, tuple[int, ...]] = {}
+    deck_path_by_id: dict[str, Path] = {}
+    for directory in sorted(path for path in deck_root.iterdir() if path.is_dir()):
+        manifest_path = directory / "manifest.json"
+        deck_id = directory.name
+        if manifest_path.is_file():
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest_deck_id = manifest.get("deck_id") if isinstance(manifest, dict) else None
+            if not isinstance(manifest_deck_id, str) or not manifest_deck_id:
+                raise ValueError(f"deck manifest has no deck_id: {manifest_path}")
+            deck_id = manifest_deck_id
+        if deck_id in deck_path_by_id:
+            raise ValueError(f"duplicate deck identity below {deck_root}: {deck_id}")
+        deck_path_by_id[deck_id] = directory / "deck.csv"
     for index, job in enumerate(jobs):
         if not isinstance(job, dict):
             raise ValueError(f"schedule job {index} is not an object")
@@ -134,7 +148,11 @@ def load_schedule(
         ):
             raise ValueError(f"schedule job {index} has an invalid identity/seed/seat")
         if opponent_id not in deck_cache:
-            deck_cache[opponent_id] = read_deck(deck_root / opponent_id / "deck.csv")
+            try:
+                opponent_path = deck_path_by_id[opponent_id]
+            except KeyError as exc:
+                raise ValueError(f"schedule references an unknown deck: {opponent_id}") from exc
+            deck_cache[opponent_id] = read_deck(opponent_path)
         opponent = deck_cache[opponent_id]
         engine_seeds.append(engine_seed)
         focal_players.append(0 if focal_first else 1)
@@ -284,9 +302,14 @@ def compact_semantic_prefixes(
 
 
 def routing_row_metrics(
-    *, routing_mode: str, total: int, decisions: int, routed_rows: int
+    *,
+    routing_mode: str,
+    total: int,
+    decisions: int,
+    routed_rows: int,
+    policy_branches: int = 2,
 ) -> dict[str, int]:
-    dense_rows = 2 * total * decisions
+    dense_rows = policy_branches * total * decisions
     actual_rows = dense_rows if routing_mode == "dense_masked" else routed_rows
     return {
         "routed_ready_rows": routed_rows,
@@ -358,7 +381,11 @@ def parse_args() -> argparse.Namespace:
         description="Benchmark complete CUDA games for 0037 deck-007 Update32."
     )
     parser.add_argument("--actor-package", type=Path, default=DEFAULT_PACKAGE)
+    parser.add_argument(
+        "--actor-mode", choices=("update32", "0806"), default="update32"
+    )
     parser.add_argument("--actor-checkpoint", type=Path, default=DEFAULT_ACTOR_CHECKPOINT)
+    parser.add_argument("--focal-deck", type=Path)
     parser.add_argument(
         "--opponent-model",
         type=Path,
@@ -369,6 +396,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rules", type=Path, default=DEFAULT_RULES)
     parser.add_argument("--extension-dir", type=Path, default=DEFAULT_EXTENSION)
     parser.add_argument("--game-limit", type=int, default=8)
+    parser.add_argument("--schedule-offset", type=int, default=0)
     parser.add_argument("--max-decisions", type=int, default=2048)
     parser.add_argument("--check-interval", type=int, default=16)
     parser.add_argument("--max-select", type=int, default=64)
@@ -385,6 +413,7 @@ def parse_args() -> argparse.Namespace:
         help="Trim mask-excluded semantic right padding before shared encoding.",
     )
     parser.add_argument("--profile-components", action="store_true")
+    parser.add_argument("--ability-repeat-limit", type=int, default=20)
     parser.add_argument("--device-index", type=int, default=0)
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
@@ -396,6 +425,8 @@ def _load_models(
     opponent_checkpoint: Path,
     focal_deck: tuple[int, ...],
     device: Any,
+    *,
+    actor_mode: str,
 ) -> tuple[Any, Any, dict[str, Any]]:
     import torch
 
@@ -417,13 +448,20 @@ def _load_models(
         state if set(state) == expected_names else expanded_portable_state(state)
     )
     opponent_model.load_state_dict(normalized_state, strict=True)
-    actor_payload = torch.load(
-        actor_checkpoint_path, map_location="cpu", weights_only=True
-    )
     actor_model = copy.deepcopy(opponent_model).cpu()
-    actor_model.load_state_dict(
-        merged_update32_state(normalized_state, actor_payload), strict=True
-    )
+    if actor_mode == "update32":
+        actor_payload = torch.load(
+            actor_checkpoint_path, map_location="cpu", weights_only=True
+        )
+        actor_model.load_state_dict(
+            merged_update32_state(normalized_state, actor_payload), strict=True
+        )
+        actor_checkpoint = actor_checkpoint_path
+    elif actor_mode == "0806":
+        actor_model.load_state_dict(normalized_state, strict=True)
+        actor_checkpoint = opponent_checkpoint
+    else:
+        raise ValueError(f"unsupported actor mode: {actor_mode}")
     actor_model = actor_model.requires_grad_(False).to(
         device=device, dtype=torch.float32
     ).eval()
@@ -431,8 +469,8 @@ def _load_models(
         device=device, dtype=torch.float32
     ).eval()
     return actor_model, opponent_model, {
-        "actor_checkpoint": actor_checkpoint_path,
-        "actor_checkpoint_sha256": sha256_file(actor_checkpoint_path),
+        "actor_checkpoint": actor_checkpoint,
+        "actor_checkpoint_sha256": sha256_file(actor_checkpoint),
         "actor_portable_architecture": portable_checkpoint,
         "actor_portable_architecture_sha256": sha256_file(portable_checkpoint),
         "opponent_checkpoint": opponent_checkpoint,
@@ -444,26 +482,34 @@ def main() -> int:
     args = parse_args()
     if min(args.game_limit, args.max_decisions, args.check_interval, args.max_select) <= 0:
         raise ValueError("game-limit, max-decisions, check-interval and max-select must be positive")
+    if args.schedule_offset < 0 or args.ability_repeat_limit < 1:
+        raise ValueError("schedule-offset must be non-negative and repeat limit positive")
     if args.max_select > 64:
         raise ValueError("max-select must not exceed 64")
     actor_package = args.actor_package.resolve()
     actor_checkpoint = args.actor_checkpoint.resolve()
     actor_portable_checkpoint = actor_package / "strategy/model.bin"
-    focal_deck_path = actor_package / "deck.csv"
+    focal_deck_path = (
+        args.focal_deck.resolve()
+        if args.focal_deck is not None
+        else actor_package / "deck.csv"
+    )
     opponent_checkpoint = args.opponent_model.resolve()
     schedule_path = args.schedule.resolve()
     deck_root = args.deck_root.resolve()
     rules_path = args.rules.resolve()
     extension_dir = args.extension_dir.resolve()
-    for path in (
-        actor_checkpoint,
+    required_paths = [
         actor_portable_checkpoint,
         focal_deck_path,
         opponent_checkpoint,
         schedule_path,
         rules_path,
         extension_dir / "_ptcg_cuda.so",
-    ):
+    ]
+    if args.actor_mode == "update32":
+        required_paths.append(actor_checkpoint)
+    for path in required_paths:
         if not path.is_file():
             raise FileNotFoundError(path)
 
@@ -472,6 +518,10 @@ def main() -> int:
     import torch
     import _ptcg_cuda
     from ptcg_cuda_engine.native import create_official_engine
+    from ptcg_cuda_engine.progress_guard import (
+        DeviceRepeatForfeitGuard,
+        apply_loop_forfeits,
+    )
     from ptcg_cuda_engine.semantic0031_bridge import (
         Semantic0031DeviceAdapter,
         semantic0031_greedy_decode_device,
@@ -490,15 +540,26 @@ def main() -> int:
 
     focal_deck = read_deck(focal_deck_path)
     full_schedule = load_schedule(schedule_path, deck_root, focal_deck)
-    total = min(args.game_limit, len(full_schedule.engine_seeds))
+    schedule_end = min(
+        args.schedule_offset + args.game_limit, len(full_schedule.engine_seeds)
+    )
+    total = schedule_end - args.schedule_offset
+    if total <= 0:
+        raise ValueError("schedule-offset selects no jobs")
+    selected = slice(args.schedule_offset, schedule_end)
     schedule = ScheduleBatch(
-        engine_seeds=full_schedule.engine_seeds[:total],
-        focal_players=full_schedule.focal_players[:total],
-        deck_rows=full_schedule.deck_rows[:total],
-        opponent_ids=full_schedule.opponent_ids[:total],
+        engine_seeds=full_schedule.engine_seeds[selected],
+        focal_players=full_schedule.focal_players[selected],
+        deck_rows=full_schedule.deck_rows[selected],
+        opponent_ids=full_schedule.opponent_ids[selected],
     )
     actor_model, opponent_model, model_provenance = _load_models(
-        actor_package, actor_checkpoint, opponent_checkpoint, focal_deck, device
+        actor_package,
+        actor_checkpoint,
+        opponent_checkpoint,
+        focal_deck,
+        device,
+        actor_mode=args.actor_mode,
     )
     actor_adapter = Semantic0031DeviceAdapter(
         actor_model, focal_deck, max_select=args.max_select
@@ -511,7 +572,20 @@ def main() -> int:
         opponent_model.state_encoder,
         label="shared state encoder",
     )
-    assert_last_option_qv_only(actor_model.option_encoder, opponent_model.option_encoder)
+    same_policy = args.actor_mode == "0806"
+    if same_policy:
+        assert_modules_equal(
+            actor_model.option_encoder,
+            opponent_model.option_encoder,
+            label="shared option encoder",
+        )
+        assert_modules_equal(
+            actor_model.action_decoder,
+            opponent_model.action_decoder,
+            label="shared action decoder",
+        )
+    else:
+        assert_last_option_qv_only(actor_model.option_encoder, opponent_model.option_encoder)
     decks = torch.tensor(schedule.deck_rows, dtype=torch.int32, device=device)
     seeds = torch.tensor(schedule.engine_seeds, dtype=torch.int64, device=device)
     focal_players = torch.tensor(
@@ -521,6 +595,12 @@ def main() -> int:
     engine = create_official_engine(
         rules_path.read_bytes(), batch_size=total, device_index=args.device_index
     )
+    repeat_guard = DeviceRepeatForfeitGuard(
+        batch_size=total,
+        limit=args.ability_repeat_limit,
+        device=device,
+    )
+    loop_forfeit_mask = torch.zeros(total, dtype=torch.bool, device=device)
 
     def reset() -> None:
         engine.reset_seeded_interactive_semantic(decks, seeds)
@@ -539,15 +619,18 @@ def main() -> int:
         validation_state = actor_model.state_encoder(
             validation_batch, actor_adapter.prototype_memory
         )
-        branch_actor, branch_opponent = branched_option_outputs(
-            actor_adapter, opponent_adapter, validation_batch, validation_state
-        )
         full_actor = actor_adapter._encode_options(validation_batch, validation_state)
-        full_opponent = opponent_adapter._encode_options(
-            validation_batch, validation_state
-        )
-        if not branch_actor.equal(full_actor) or not branch_opponent.equal(full_opponent):
-            raise RuntimeError("shared Option-prefix execution changed encoded options")
+        if same_policy:
+            branch_actor = full_actor
+        else:
+            branch_actor, branch_opponent = branched_option_outputs(
+                actor_adapter, opponent_adapter, validation_batch, validation_state
+            )
+            full_opponent = opponent_adapter._encode_options(
+                validation_batch, validation_state
+            )
+            if not branch_actor.equal(full_actor) or not branch_opponent.equal(full_opponent):
+                raise RuntimeError("shared Option-prefix execution changed encoded options")
         semantic0031_greedy_decode_device(
             actor_model.action_decoder,
             validation_batch,
@@ -601,9 +684,13 @@ def main() -> int:
             state = actor_model.state_encoder(
                 validated, actor_adapter.prototype_memory
             )
-            actor_options, opponent_options = branched_option_outputs(
-                actor_adapter, opponent_adapter, validated, state
-            )
+            if same_policy:
+                actor_options = actor_adapter._encode_options(validated, state)
+                opponent_options = actor_options
+            else:
+                actor_options, opponent_options = branched_option_outputs(
+                    actor_adapter, opponent_adapter, validated, state
+                )
             component_end("shared_and_branched_encoder", component)
             actor = semantic["global_cat"][:, 3].long() - 1
             learner_turn = ready & actor.eq(focal_players)
@@ -617,7 +704,18 @@ def main() -> int:
                     int(torch.where(ready, validated.max_count, 0).amax().item()),
                 ),
             )
-            if args.routing_mode == "dense_masked":
+            if same_policy:
+                component = component_start()
+                actions, lengths = semantic0031_greedy_decode_device(
+                    actor_model.action_decoder,
+                    validated,
+                    actor_options,
+                    state.summary,
+                    max_select=action_width,
+                    route_mask=ready,
+                )
+                component_end("shared_decoder", component)
+            elif args.routing_mode == "dense_masked":
                 component = component_start()
                 learner_actions, learner_lengths = semantic0031_greedy_decode_device(
                     actor_model.action_decoder,
@@ -673,7 +771,19 @@ def main() -> int:
                     actions.index_copy_(0, opponent_indices, opponent_actions)
                     lengths.index_copy_(0, opponent_indices, opponent_lengths)
                 component_end("two_decoders", component)
-            routed_rows += int(learner_indices.shape[0] + opponent_indices.shape[0])
+            routed_rows += int(ready.sum().item())
+            new_forfeits = repeat_guard.observe(
+                option_cat=semantic["option_cat"],
+                selection_type=semantic["global_cat"][:, 0],
+                turn=semantic["global_num"][:, 0],
+                actor=actor,
+                actions=actions,
+                lengths=lengths,
+                ready=ready,
+            )
+            loop_forfeit_mask |= new_forfeits
+            apply_loop_forfeits(engine, new_forfeits, actor)
+            lengths = torch.where(new_forfeits, 0, lengths)
             component = component_start()
             engine.pack_actions(actions, lengths)
             engine.apply_packed_actions()
@@ -700,10 +810,75 @@ def main() -> int:
     statuses = engine.statuses()
     completed = int(statuses.eq(TERMINAL).sum().item())
     errors = int(statuses.eq(ERROR).sum().item())
+    if completed != total or errors:
+        status_values = [int(value) for value in statuses.cpu().tolist()]
+        raw_states = engine.state_bytes().cpu().numpy()
+        failures = []
+        for lane, status in enumerate(status_values):
+            if status == TERMINAL:
+                continue
+            state = raw_states[lane].tobytes()
+            tracked = [
+                {"key": [int(value) for value in key], "count": int(count)}
+                for key, count in zip(
+                    repeat_guard.keys[lane].cpu().tolist(),
+                    repeat_guard.counts[lane].cpu().tolist(),
+                    strict=True,
+                )
+                if int(count) > 0
+            ]
+            failures.append(
+                {
+                    "lane": lane,
+                    "schedule_index": args.schedule_offset + lane,
+                    "status": status,
+                    "error_code": struct.unpack_from("<i", state, 4)[0],
+                    "error_detail": struct.unpack_from("<i", state, 8)[0],
+                    "engine_seed": schedule.engine_seeds[lane],
+                    "focal_player": schedule.focal_players[lane],
+                    "opponent_id": schedule.opponent_ids[lane],
+                    "repeat_guard_entries": tracked,
+                }
+            )
+        failure_path = args.output.resolve().with_suffix(".failure.json")
+        failure_path.parent.mkdir(parents=True, exist_ok=True)
+        failure_path.write_text(
+            json.dumps(
+                {
+                    "completed": completed,
+                    "errors": errors,
+                    "decisions": decisions,
+                    "schedule_offset": args.schedule_offset,
+                    "failures": failures,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        print(json.dumps({"failure_report": str(failure_path), "failures": failures}))
     validate_completion(total=total, completed=completed, errors=errors)
+    game_results = [int(value) for value in engine.game_results().cpu().tolist()]
+    loop_forfeit_indices = [
+        args.schedule_offset + int(index)
+        for index in loop_forfeit_mask.nonzero(as_tuple=False).flatten().cpu().tolist()
+    ]
+    terminal_state_bytes = engine.state_bytes().contiguous().cpu().numpy().tobytes()
+    result_payload = json.dumps(game_results, separators=(",", ":")).encode("ascii")
+    focal_wins = sum(
+        (focal_player == 0 and result == 1)
+        or (focal_player == 1 and result == 2)
+        for focal_player, result in zip(schedule.focal_players, game_results, strict=True)
+    )
+    focal_losses = sum(
+        (focal_player == 0 and result == 2)
+        or (focal_player == 1 and result == 1)
+        for focal_player, result in zip(schedule.focal_players, game_results, strict=True)
+    )
 
     output = {
-        "schema_version": "0037_update32_cuda_rollout_benchmark_v1",
+        "schema_version": "cuda_semantic0031_rollout_benchmark_v2",
         "passed": True,
         "not_policy_strength_evidence": True,
         "official_cpu_engine_remains_oracle": True,
@@ -713,7 +888,7 @@ def main() -> int:
         ),
         "scope": (
             "complete CUDA-resident engine + semantic0031-v2 observation + "
-            "Update32 greedy actor + immutable 0806 greedy opponent"
+            f"{args.actor_mode} greedy actor + immutable 0806 greedy opponent"
         ),
         "collector": {
             "games": total,
@@ -726,11 +901,13 @@ def main() -> int:
                 total=total,
                 decisions=decisions,
                 routed_rows=routed_rows,
+                policy_branches=1 if same_policy else 2,
             ),
             "routing_mode": args.routing_mode,
             "compact_semantic_prefixes": args.compact_semantic_prefixes,
             "shared_state_encoder": True,
-            "shared_option_prefix_blocks": 1,
+            "shared_option_prefix_blocks": 2 if same_policy else 1,
+            "shared_action_decoder": same_policy,
             "gpu_seconds": gpu_seconds,
             "wall_seconds": wall_seconds,
             "component_gpu_seconds": {
@@ -746,12 +923,32 @@ def main() -> int:
             "path": str(schedule_path),
             "sha256": sha256_file(schedule_path),
             "source_jobs": len(full_schedule.engine_seeds),
+            "schedule_offset": args.schedule_offset,
             "used_jobs": total,
             "opponent_count": len(set(schedule.opponent_ids)),
         },
+        "determinism": {
+            "game_results": game_results,
+            "game_results_sha256": hashlib.sha256(result_payload).hexdigest(),
+            "terminal_state_sha256": hashlib.sha256(terminal_state_bytes).hexdigest(),
+            "focal_wins": focal_wins,
+            "focal_losses": focal_losses,
+            "draws": total - focal_wins - focal_losses,
+        },
+        "progress_guard": {
+            "kind": "same_turn_identical_single_option_repeat_forfeit",
+            "ability_repeat_limit": args.ability_repeat_limit,
+            "trigger": "repeat_count_greater_than_or_equal_to_limit",
+            "forfeit_count": len(loop_forfeit_indices),
+            "forfeit_schedule_indices": loop_forfeit_indices,
+        },
         "models": {
             **{key: str(value) for key, value in model_provenance.items()},
-            "actor": "0037 V5 Update32 merged Last Option Q/V LoRA",
+            "actor": (
+                "immutable friend-0806 epoch11"
+                if same_policy
+                else "0037 V5 Update32 merged Last Option Q/V LoRA"
+            ),
             "opponent": "immutable friend-0806 epoch11",
             "runtime_dtype": "float32",
             "math_mode": "TF32 matmul allowed",

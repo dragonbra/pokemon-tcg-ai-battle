@@ -431,7 +431,7 @@ class CandidateInferenceServerTest(unittest.TestCase):
         self.assertIsNone(_forced_action(multiple))
         self.assertIsNone(_forced_action(zero))
 
-    def test_repeat_guard_ends_turn_after_eight_identical_ability_entries(self) -> None:
+    def test_repeat_guard_forfeits_on_twentieth_identical_selection(self) -> None:
         observation = {
             "select": {
                 "type": 0,
@@ -443,19 +443,24 @@ class CandidateInferenceServerTest(unittest.TestCase):
             },
             "current": {"turn": 10, "yourIndex": 1},
         }
-        guard = _AbilityRepeatGuard(limit=8)
-        for _ in range(8):
+        guard = _AbilityRepeatGuard(limit=20)
+        for _ in range(19):
             self.assertEqual(_apply_ability_repeat_guard(observation, [0], guard), [0])
-        self.assertEqual(_apply_ability_repeat_guard(observation, [0], guard), [2])
+        self.assertEqual(
+            _apply_ability_repeat_guard(observation, [0], guard),
+            {"__evaluation_forfeit__": "same_turn_identical_selection_repeat"},
+        )
 
-    def test_repeat_guard_does_not_change_attacks_or_disabled_contract(self) -> None:
+    def test_repeat_guard_tracks_non_ability_selections_and_disabled_contract(self) -> None:
         observation = {
             "select": {"type": 0, "option": [{"type": 13}, {"type": 14}]},
             "current": {"turn": 4, "yourIndex": 0},
         }
+        guard = _AbilityRepeatGuard(limit=2)
+        self.assertEqual(_apply_ability_repeat_guard(observation, [0], guard), [0])
         self.assertEqual(
-            _apply_ability_repeat_guard(observation, [0], _AbilityRepeatGuard(limit=8)),
-            [0],
+            _apply_ability_repeat_guard(observation, [0], guard),
+            {"__evaluation_forfeit__": "same_turn_identical_selection_repeat"},
         )
         ability = {
             "select": {"type": 0, "option": [{"type": 10}, {"type": 14}]},
