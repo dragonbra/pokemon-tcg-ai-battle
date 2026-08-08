@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>0037 Value-Initialized RL</title>
+<style>body{font:15px/1.65 system-ui;margin:32px auto;max-width:1100px;padding:0 22px;color:#172033}code,pre{background:#f3f5f8;padding:2px 5px}pre{padding:14px;overflow:auto}table{border-collapse:collapse;width:100%}th,td{padding:8px;border-bottom:1px solid #d9e0ea;text-align:left}</style></head><body>
+<h1>0037 · Value-Initialized Seeded PPO</h1>
+<p>权威 Markdown：<a href="DESIGN.md">DESIGN.md</a>。官方规则与终局来自未修改的 official engine；Value、seed pairing、GAE、PPO 与编排属于 0037 实验设计。</p>
+<h2>V1 合同</h2><table><tr><th>Focal</th><td>Frozen-0806 exact deck 007</td></tr><tr><th>Actor</th><td>friend-0806 epoch 11；冻结 Encoder、微调 Action Decoder</td></tr><tr><th>Critic</th><td>0036 V2 epoch 5；8 queries × 2 blocks；继续 on-policy 校准</td></tr><tr><th>Reward</th><td>仅终局 -1 / 0 / +1；无 PBRS</td></tr><tr><th>GAE</th><td>gamma 1.0；lambda 0.95；turn clock</td></tr><tr><th>Rollout</th><td>256 unique seeded pairs × opposite seats = 512 Episodes/update</td></tr><tr><th>Opponents</th><td>55 个 immutable Frozen-0806 pretrained policies</td></tr></table>
+<h2>数据流</h2><pre>official observation
+ -> worker-local causal stateless compiler
+ -> unchanged 39-key tensors
+ -> one frozen Encoder pass
+    +-> trainable Action Decoder -> policy
+    +-> trainable latent-query trunk -> scalar V(s)</pre>
+<h2>方差与证据</h2><p>训练、固定验证与最终 holdout 使用不相交 seed namespace。每个 pair 共享 engine/Search seed，只交换先后手；报告以 256 pair 为统计分组。随机 rollout 只描述采样策略，checkpoint 强度看固定 greedy eval，最终结论看独立 official-engine frozen evaluation。</p>
+<h2>当前阶段</h2><p>V1 已通过 parity、worker-local feature、official-engine PPO canary 与 W&amp;B 启动门禁并开始运行。Run ID：<code>0037-v1-value-initialized-turn-clock-seeded512</code>。后续的 Encoder 解冻/LoRA 和 Value-guided search 必须使用新版本。</p>
+</body></html>
