@@ -14,7 +14,7 @@ from evaluation.frozen_0806_contract import (
 from evaluation.runtime.seeded import build_seeded_runtime
 
 from ..league import load_frozen_catalog
-from ..rollout.protocol import RolloutJob
+from ..rollout.protocol import DEFAULT_FULL_ROUND_DRAW_LIMIT, RolloutJob
 
 
 CANONICAL_CONTRACT_ID = "frozen_0806_seeded_2048_v2"
@@ -93,6 +93,7 @@ def build_frozen_jobs(
             ),
             search_seed=int(row["search_seed"]),
             engine_library=runtime.library_path,
+            full_round_draw_limit=DEFAULT_FULL_ROUND_DRAW_LIMIT,
             action_boundary_mode="enabled",
             trace_policy="errors_and_sample",
         )

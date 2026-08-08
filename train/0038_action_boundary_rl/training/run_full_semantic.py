@@ -24,7 +24,12 @@ from evaluation.runtime.seeded import build_seeded_runtime
 from ..league import load_frozen_catalog
 from ..parity import assert_large_model_0806_runtime_parity, collect_official_observations
 from ..policy import AdaptationConfig, load_actor_critic
-from ..rollout import ChunkedCudaRolloutCollector, FullSemanticRolloutCollector, RolloutJob
+from ..rollout import (
+    DEFAULT_FULL_ROUND_DRAW_LIMIT,
+    ChunkedCudaRolloutCollector,
+    FullSemanticRolloutCollector,
+    RolloutJob,
+)
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .storage_full_semantic import save_model_only
@@ -47,7 +52,7 @@ from ..integrated.presets import PRESETS, preset
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V6_canonical_frozen_cuda_fresh_rl"
+FORMAL_VERSION = "V7_turn_limit_cuda_fresh_rl"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -334,6 +339,7 @@ def build_jobs(
                 or 1,
                 search_seed=search_seed,
                 engine_library=runtime.library_path,
+                full_round_draw_limit=DEFAULT_FULL_ROUND_DRAW_LIMIT,
                 action_boundary_mode="enabled",
             )
         )
@@ -446,6 +452,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
             "search_seed": job.search_seed,
             "policy_seed": job.policy_seed,
             "source_policy_update": job.source_policy_update,
+            "full_round_draw_limit": job.full_round_draw_limit,
         }
         for job in jobs
     ]
@@ -469,6 +476,7 @@ def _environment_schedule_sha256(jobs: list[RolloutJob]) -> str:
         "engine_seed": job.seed,
         "search_seed": job.search_seed,
         "policy_seed": job.policy_seed,
+        "full_round_draw_limit": job.full_round_draw_limit,
     } for job in jobs]
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("ascii")
     return hashlib.sha256(encoded).hexdigest()
@@ -832,8 +840,12 @@ def run(config: RunConfig) -> dict[str, Any]:
         "termination_contract": {
             "ability_repeat_limit": 20,
             "ability_repeat_action": "opponent_win",
-            "full_round_draw_limit": 50,
-            "engine_turn_limit": 99,
+            "full_round_draw_limit": DEFAULT_FULL_ROUND_DRAW_LIMIT,
+            "engine_turn_limit": 2 * DEFAULT_FULL_ROUND_DRAW_LIMIT - 1,
+            "turn_limit_result": "terminal_draw_reward_zero",
+            "ppo_terminal_semantics": "done_true_next_value_zero",
+            "official_rule": False,
+            "owner": "rollout_scheduler_safety_contract",
         },
     }
     if not resuming:

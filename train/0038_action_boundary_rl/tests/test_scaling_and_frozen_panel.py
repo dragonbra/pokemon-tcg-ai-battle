@@ -42,6 +42,7 @@ class ScalingAndPanelTest(unittest.TestCase):
         self.assertEqual(Counter(job.opponent_id for job in jobs), expected)
         self.assertEqual(sum(job.focal_first for job in jobs), 1024)
         self.assertEqual(len({job.seed for job in jobs}), 2048)
+        self.assertEqual({job.full_round_draw_limit for job in jobs}, {50})
 
     def test_scaling_has_no_512_constraint(self):
         config = scaling.RolloutScalingConfig(rollout_games_per_update=1537)

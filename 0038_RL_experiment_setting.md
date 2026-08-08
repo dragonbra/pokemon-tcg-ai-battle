@@ -7,7 +7,7 @@ CUDA 接入完成后，请基于 `0038_action_boundary_rl` 启动今晚的正式
 实验命名：
 
 ```text
-V6_canonical_frozen_cuda_fresh_rl
+V7_turn_limit_cuda_fresh_rl
 ```
 
 必须从公共起点开始：
@@ -175,7 +175,7 @@ Opponent fusion 必须使用零初始化 residual、零门控或其他保持 upd
 ```text
 rollout_games_per_update = 2048
 optimizer_budget_mode = fixed_optimizer_budget
-max_updates = 50
+max_updates = manual_stop
 checkpoint_every = 1
 ```
 
@@ -393,4 +393,4 @@ CUDA 接入及 smoke 通过后，请先输出一份简短 launch manifest：
 - 正式启动命令；
 - 预估 games/hour；正式 run 的完成时间由用户手动停止决定。
 
-确认这些内容与上述合同一致且 GPU 空闲后，启动 `V6_canonical_frozen_cuda_fresh_rl`。失败的 V4 保留为错误均匀面板与启动诊断的审计记录；V5 在 update-0 Frozen 评估期间因与另一个 CUDA 评测进程争用 GPU 而人工 fail closed，未产生 baseline metric 且未执行 PPO update。两者都不得续写或冒充正式可比基线。
+只有在用户再次明确确认后才启动 `V7_turn_limit_cuda_fresh_rl`。V7 继承 canonical Frozen/rollout 合同，并将 50 个完整回合显式映射为 CUDA engine turn index 99 的 scheduler-owned terminal draw：`reward=0`、`done=true`、`next_value=0`。该规则是项目防挂死截断合同，不是官方宝可梦 TCG 胜利条件。V4、V5 和 V6 均保留为不可续写的审计记录；V6 只有 canonical update-0 baseline，没有 PPO update。

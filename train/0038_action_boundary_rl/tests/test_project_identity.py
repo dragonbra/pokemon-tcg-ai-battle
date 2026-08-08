@@ -127,7 +127,7 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.ppo.gae_lambda, 0.95)
         self.assertEqual(config.ppo.batch_size, 1024)
         self.assertEqual(config.ppo.epochs, 4)
-        self.assertEqual(config.version, "V6_canonical_frozen_cuda_fresh_rl")
+        self.assertEqual(config.version, "V7_turn_limit_cuda_fresh_rl")
         self.assertIsNone(config.updates)
         self.assertEqual(config.eval_every, 5)
         self.assertEqual(config.adaptation_arm, "lora")
@@ -135,6 +135,11 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.worker_processes, 16)
         self.assertEqual(config.engines_per_worker, 8)
         self.assertEqual(config.inference_channels_per_role, 8)
+
+    def test_formal_rollout_uses_fifty_full_round_draw_limit(self) -> None:
+        jobs = full_runner.build_jobs(source_policy_update=0, seed=123, count=256)
+
+        self.assertEqual({job.full_round_draw_limit for job in jobs}, {50})
 
     def test_formal_ppo_is_blocked_before_manual_update0_approval(self) -> None:
         self.assertIn("V3_update0_chance_boundary_fallback", str(full_runner.COMMON_UPDATE0_CHECKPOINT))

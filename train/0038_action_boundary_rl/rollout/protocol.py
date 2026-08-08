@@ -12,6 +12,9 @@ else:
     Tensor = Any
 
 
+DEFAULT_FULL_ROUND_DRAW_LIMIT = 50
+
+
 @dataclass(frozen=True)
 class RolloutJob:
     game_id: str
@@ -27,7 +30,7 @@ class RolloutJob:
     engine_library: Path | None = None
     max_steps: int = 1_000
     ability_repeat_limit: int = 20
-    full_round_draw_limit: int = 50
+    full_round_draw_limit: int = DEFAULT_FULL_ROUND_DRAW_LIMIT
     action_boundary_mode: str = "shadow"
     trace_policy: str = "full"
     normal_trace_sample_modulus: int = 100
@@ -40,6 +43,8 @@ class RolloutJob:
             raise ValueError("invalid trace_policy")
         if self.normal_trace_sample_modulus < 1:
             raise ValueError("normal_trace_sample_modulus must be positive")
+        if self.full_round_draw_limit < 0:
+            raise ValueError("full_round_draw_limit cannot be negative")
 
 
 @dataclass(frozen=True)
@@ -117,6 +122,6 @@ class EpisodeTrajectory:
 
 
 __all__ = [
-    "CanonicalMacroAction", "EpisodeTrajectory", "PolicyTransition", "RolloutJob",
-    "TrajectoryDecision",
+    "CanonicalMacroAction", "DEFAULT_FULL_ROUND_DRAW_LIMIT", "EpisodeTrajectory",
+    "PolicyTransition", "RolloutJob", "TrajectoryDecision",
 ]

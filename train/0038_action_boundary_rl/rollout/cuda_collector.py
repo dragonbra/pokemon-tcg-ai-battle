@@ -63,6 +63,26 @@ def _resident_jobs(jobs: list[RolloutJob]) -> tuple[ResidentJob, ...]:
     )
 
 
+def _engine_turn_draw_limit(jobs: list[RolloutJob]) -> int:
+    """Convert the common full-round contract to the official turn index."""
+
+    round_limits = {job.full_round_draw_limit for job in jobs}
+    if len(round_limits) != 1:
+        raise ValueError("resident batch must use one full-round draw limit")
+    full_round_limit = next(iter(round_limits))
+    return 2 * full_round_limit - 1 if full_round_limit > 0 else 0
+
+
+def _termination_status(
+    index: int, *, forfeits: set[int], turn_limit_draws: set[int]
+) -> str:
+    if index in forfeits:
+        return "repeat_forfeit"
+    if index in turn_limit_draws:
+        return "turn_limit_draw"
+    return "terminal"
+
+
 class CudaFullSemanticRolloutCollector:
     """Collect true strategic boundaries while the official clone stays on GPU."""
 
@@ -121,6 +141,7 @@ class CudaFullSemanticRolloutCollector:
             raise ValueError("0038 CUDA PPO only accepts the enabled action contract")
 
         resident_jobs = _resident_jobs(jobs)
+        engine_turn_draw_limit = _engine_turn_draw_limit(jobs)
         adapter = Semantic0031DeviceAdapter(
             self.model.actor, jobs[0].focal_deck, max_select=self.max_select
         )
@@ -204,6 +225,7 @@ class CudaFullSemanticRolloutCollector:
             max_decisions=self.max_decisions,
             check_interval=self.check_interval,
             ability_repeat_limit=self.ability_repeat_limit,
+            engine_turn_draw_limit=engine_turn_draw_limit,
             focal_greedy=self.mode == "greedy",
             focal_value_fn=value_fn if self.record_trajectory else None,
             focal_decision_sink=sink if self.record_trajectory else None,
@@ -258,6 +280,7 @@ class CudaFullSemanticRolloutCollector:
         materialize_seconds = time.perf_counter() - materialize_started
 
         forfeits = set(result.forfeit_schedule_indices)
+        turn_limit_draws = set(result.turn_limit_draw_schedule_indices)
         for index, episode in enumerate(episodes):
             focal_player = 0 if episode.job.focal_first else 1
             game_result = result.game_results[index]
@@ -267,7 +290,11 @@ class CudaFullSemanticRolloutCollector:
             invalid_reason = boundary.invalid_jobs.get(index)
             episode.diagnostics = {
                 "engine_selections": result.engine_selections[index],
-                "termination_status": "repeat_forfeit" if index in forfeits else "terminal",
+                "termination_status": _termination_status(
+                    index,
+                    forfeits=forfeits,
+                    turn_limit_draws=turn_limit_draws,
+                ),
                 "source_policy_update": episode.job.source_policy_update,
                 "cuda_resident": True,
                 **job_stats,
@@ -349,9 +376,7 @@ class CudaFullSemanticRolloutCollector:
             "rollout/cuda_lane_count": float(min(self.lane_count, len(jobs))),
             "rollout/cuda_refill_events": float(result.refill_events),
             "rollout/cuda_repeat_forfeits": float(len(forfeits)),
-            "rollout/cuda_turn_limit_draws": float(
-                len(getattr(result, "turn_limit_draw_schedule_indices", ()))
-            ),
+            "rollout/cuda_turn_limit_draws": float(len(turn_limit_draws)),
             "rollout/cuda_staged_trajectory_bytes": float(staged_bytes),
             "rollout/cuda_peak_allocated_bytes": float(hot_allocated),
             "rollout/cuda_peak_reserved_bytes": float(hot_reserved),
@@ -408,6 +433,7 @@ class ChunkedCudaRolloutCollector:
             "rollout/focal_requests", "rollout/inference_seconds",
             "rollout/cuda_hot_loop_seconds", "rollout/cuda_materialize_seconds",
             "rollout/cuda_refill_events", "rollout/cuda_repeat_forfeits",
+            "rollout/cuda_turn_limit_draws",
             "rollout/cuda_staged_trajectory_bytes", "rollout/forced_shortcuts",
             "rollout/macro_actions", "rollout/macro_callbacks", "rollout/invalid_macros",
         }
