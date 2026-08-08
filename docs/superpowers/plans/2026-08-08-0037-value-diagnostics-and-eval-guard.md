@@ -120,7 +120,7 @@ Run: `python3 -m unittest -v train.0037_dragapult_value_initialized_rl.tests.tes
 
 **Interfaces:**
 - Consumes: Task 1 guard and Task 2 metrics.
-- Produces: immutable `V3_lora_r8_eval5_50u` and `V4_lora_r8_layernorm_eval5_50u` artifacts with distinct W&B runs.
+- Produces: immutable `V4_lora_r8_eval5_50u` and `V5_lora_r8_layernorm_eval5_50u` artifacts with distinct W&B runs; V3 is retained as a zero-update launcher failure.
 
 - [ ] **Step 1: Write/update contract assertions**
 
@@ -128,7 +128,7 @@ Assert default `updates == 50`, `eval_every == 5`, distinct arm identifiers, and
 
 - [ ] **Step 2: Configure V3**
 
-Expose an explicit experiment arm argument. Use versions `V3_lora_r8_eval5_50u` and `V4_lora_r8_layernorm_eval5_50u`, W&B display prefixes beginning with `0037`, fixed greedy evaluation cadence five, budget 50 updates, and exact diagnostic/adaptation contracts in `training_config.json`.
+Expose an explicit experiment arm argument. Use versions `V4_lora_r8_eval5_50u` and `V5_lora_r8_layernorm_eval5_50u`, W&B display prefixes beginning with `0037`, fixed greedy evaluation cadence five, budget 50 updates, and exact diagnostic/adaptation contracts in `training_config.json`.
 
 - [ ] **Step 3: Update both authoritative design documents**
 
@@ -141,8 +141,8 @@ Run: `python3 -m unittest discover -v train/0037_dragapult_value_initialized_rl/
 ### Task 5: Smoke and sequential formal launch
 
 **Files:**
-- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V3_lora_r8_eval5_50u/*`
-- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V4_lora_r8_layernorm_eval5_50u/*`
+- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V4_lora_r8_eval5_50u/*`
+- Create at runtime: `rl_runs/0037_dragapult_value_initialized_rl/versions/V5_lora_r8_layernorm_eval5_50u/*`
 
 **Interfaces:**
 - Consumes: tested V3 code and unchanged source checkpoints.

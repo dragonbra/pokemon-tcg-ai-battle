@@ -32,7 +32,7 @@ from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0037_dragapult_value_initialized_rl"
 WANDB_DISPLAY_PREFIX = "0037 · lora_r8 · eval5 · 50u"
-FORMAL_VERSION = "V3_lora_r8_eval5_50u"
+FORMAL_VERSION = "V4_lora_r8_eval5_50u"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"

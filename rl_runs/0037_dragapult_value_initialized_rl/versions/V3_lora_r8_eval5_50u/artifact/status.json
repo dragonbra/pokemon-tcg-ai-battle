@@ -1,0 +1,9 @@
+{
+  "state": "failed",
+  "version": "V3_lora_r8_eval5_50u",
+  "checkpoint_update": null,
+  "episodes": 0,
+  "decisions": 0,
+  "error": "launcher process group was externally terminated before training_config initialization",
+  "wandb_sync_status": "not_initialized"
+}
