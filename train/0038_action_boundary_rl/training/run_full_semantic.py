@@ -52,7 +52,7 @@ from ..integrated.presets import PRESETS, preset
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V9_turn_scoped_guard_bounded_trajectory_fresh_rl"
+FORMAL_VERSION = "V10_complete_512_rollout_fresh_rl"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -78,7 +78,7 @@ class RunConfig:
     coalesce_ms: float = 5.0
     device: str = "cuda:0"
     seed: int = 330031001
-    games_per_update: int = 2048
+    games_per_update: int = 512
     engine_backend: str = "accelerated:cuda_resident"
     cuda_lane_count: int = 256
     rollout_batch_size: int = 512
@@ -795,7 +795,11 @@ def run(config: RunConfig) -> dict[str, Any]:
             "exact_environment_slot_counts_per_unit": True,
             "seat_balanced_per_unit": True,
             "trajectory_games_per_update": config.trajectory_games_per_update,
-            "trajectory_sampling": "uniform deterministic episodes; stratified across every 256-slot unit",
+            "trajectory_sampling": (
+                "all rollout episodes; no pre-PPO discard"
+                if config.trajectory_games_per_update == config.games_per_update
+                else "uniform deterministic episodes; stratified across every 256-slot unit"
+            ),
         },
         "frozen_evaluation_contract": {
             "contract_id": CANONICAL_CONTRACT_ID,
@@ -1145,6 +1149,12 @@ def run(config: RunConfig) -> dict[str, Any]:
                         "elapsed_seconds": time.time() - started,
                     },
                 )
+                # Do not retain the previous update's high-dimensional feature
+                # tensors while the next on-policy rollout is being collected.
+                del batch, episodes, collector
+                if update % config.eval_every == 0:
+                    del evaluation, evaluator
+                torch.cuda.empty_cache()
                 if (paths["artifact"] / "STOP_REQUESTED").exists():
                     stop_requested = True
                     break
@@ -1200,7 +1210,7 @@ def main() -> int:
     parser.add_argument("--engines-per-worker", type=int, default=8)
     parser.add_argument("--inference-channels-per-role", type=int, default=8)
     parser.add_argument("--coalesce-ms", type=float, default=5.0)
-    parser.add_argument("--games-per-update", type=int, default=2048)
+    parser.add_argument("--games-per-update", type=int, default=512)
     parser.add_argument(
         "--engine-backend",
         choices=("official", "accelerated:cuda_resident"),

@@ -122,14 +122,15 @@ class ProjectIdentityTest(unittest.TestCase):
     def test_formal_run_uses_0038_zero_shot_identity(self) -> None:
         config = full_runner.RunConfig()
 
-        self.assertEqual(config.games_per_update, 2048)
         self.assertEqual(config.ppo.credit_clock, "turn")
         self.assertEqual(config.ppo.gae_lambda, 0.95)
         self.assertEqual(config.ppo.batch_size, 1024)
         self.assertEqual(config.ppo.epochs, 4)
         self.assertEqual(
-            config.version, "V9_turn_scoped_guard_bounded_trajectory_fresh_rl"
+            config.version, "V10_complete_512_rollout_fresh_rl"
         )
+        self.assertEqual(config.games_per_update, 512)
+        self.assertEqual(config.trajectory_games_per_update, 512)
         self.assertIsNone(config.updates)
         self.assertEqual(config.eval_every, 5)
         self.assertEqual(config.adaptation_arm, "lora")

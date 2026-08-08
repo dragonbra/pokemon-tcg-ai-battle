@@ -100,7 +100,7 @@ V4 使用 `accelerated:cuda_resident`：兼容规则 blob 与 CUDA state machine
 
 扩容有两种显式模式：`fixed_epochs` 会随样本增加 optimizer steps；默认优先 `fixed_optimizer_budget`，固定每 update optimizer steps，通过 effective minibatch、累积或抽样吸收更多 rollout。切换模式必须由用户确认，不能连带静默改变 LR、epochs、effective batch 或 advantage normalization 范围。
 
-V9 的 `fixed_optimizer_budget` 每 update 仍执行全部 2,048 场 stochastic game，但不再为不会进入该 update 固定优化预算的全部对局缓存大块 feature。每个 256-slot frequency unit 用版本化 SHA-256 priority 确定性抽取 64 局，八个 unit 共保留 512 条完整 EpisodeTrajectory；其余对局仍用于真实环境结果、循环/截断与吞吐统计。约 44k valid strategic transitions 足够固定的 `32 × 1024` optimizer budget。`fixed_epochs` 强制保存全部 rollout trajectory，不能使用此抽样。该上限将 update-1 实测 staged payload 从 8.94 GB 降到 2.286 GB，进程 peak RSS 从 16.24 GB 降到 5.81 GB；manifest/checkpoint 必须记录抽样合同、rollout games、trajectory games、valid transitions 和 optimizer samples。
+V10 的 `fixed_optimizer_budget` 每 update 执行两个完整 256-slot frequency unit，共 512 场 stochastic game，并为全部 512 场保留完整 EpisodeTrajectory；不再额外模拟不会进入 PPO 的 1,536 场。约 44k valid strategic transitions 足够固定的 `32 × 1024` optimizer budget。rollout 数量仍配置化，未来若扩大必须让新增 trajectory 真正进入样本池。update 结束后显式释放 batch、Episode 和 collector 引用，避免上一批高维 feature 与下一批 rollout 重叠；V9 update 2 观察到的 9.48 GB RSS 平台没有继续增长，但不作为新版本的常驻内存合同。
 
 指标分三档：每 update 只聚合已有 forward 的低成本 scalar 与七阶段 wall time；Frozen point 从已有 2,048 局逐局结果离线聚合；梯度范数/cosine、allocation margin 和详细 calibration 只在固定小 minibatch 的 update 0/5/10/之后每 10 次运行。exhaustive parity、hidden leakage、RNG/state A/B 和 fault injection 仅在测试/CI。
 
@@ -108,7 +108,7 @@ V9 的 `fixed_optimizer_budget` 每 update 仍执行全部 2,048 场 stochastic 
 
 正式评估唯一合同为全局 `frozen_0806_seeded_2048_v2`：evaluation seed `341512806`，8 replicas × 原始 256-slot 环境频率分布，共 2,048 个唯一 engine seed，先后手各 1,024。007 标准 schedule SHA-256 为 `98b58bced460c1a2e622ae4b39bf506294fcb0230bb42e4117aaa6efc73c9ce9`。update 0 与之后每 5 updates 必须复用相同 seed、slot、replica、opponent 权重、seat、greedy、CUDA backend 和 termination contract；相对 update-0 报告 paired flips、McNemar、Wilson CI、seat、matchup 和 replica 方差。历史 `0038_frozen_2048_v1` 是均匀 exact-deck 面板，仅保留 V2/V3 证据，不再用于正式比较。
 
-训练 rollout 不复用 evaluation seed，但以 256 games 为不可拆分频率单位。每个连续 256-game unit 精确包含 Frozen catalog 的 opponent slot counts，unit 内按 `(training seed, source policy update)` 随机排列并平衡 seat；因此 2,048-game update 含 8 个自然分布单位，同时保持 2,048 个独立 engine seed。
+训练 rollout 不复用 evaluation seed，但以 256 games 为不可拆分频率单位。每个连续 256-game unit 精确包含 Frozen catalog 的 opponent slot counts，unit 内按 `(training seed, source policy update)` 随机排列并平衡 seat；V10 每 update 使用两个完整单位，共 512 个独立 engine seed。
 
 2,048 paired games 适合判断约 2pp 的方向与稳定性，但很小差异不能自动宣称显著。按 discordant rate 0.10/0.20/0.30 的近似规划，2pp 约需 1,962/3,923/5,884 局，1pp 约需其四倍；最终检验使用实际 paired flips。
 
@@ -120,7 +120,7 @@ checkpoint schema 为 `0038_model_only_checkpoint_v1`，强制记录 action、ga
 
 CUDA resident Action Boundary、吞吐 benchmark 与真实 CUDA rollout→PPO replay smoke 已完成。V4 在错误的均匀 exact-deck 面板完成 update-0 后，于首个 PPO update 前因 sparse-diagnostic predicate 未导入而 fail closed；没有产生 update-1 model checkpoint，其 `63.77%` 不得与 canonical 007 `57.32%` 比较。V4 保留为失败审计记录。
 
-`V6_canonical_frozen_cuda_fresh_rl` 已应用户要求在首个 rollout 期间人工中止，等待 50 回合终止合同完成。V6 只保留 canonical update-0 baseline（1162/2048，56.74%）和 model-only update-0 checkpoint，没有执行 PPO update，不得续写。终止合同确认后，下一次正式训练必须新建严格递增版本，仍从 V3 common update-0 加载 BC-warm-started allocation head，启用 `INTEGRATED` preset，并重新初始化 optimizer/scheduler/RNG/rollout/old-policy。每 update 采集 2,048 局、固定 optimizer budget；update 0 和之后每 5 updates 运行 canonical Frozen-0806 2,048，不启用 8,192 分支。run 不设 update 上限，在完整 update 边界响应人工 stop sentinel。
+`V6_canonical_frozen_cuda_fresh_rl` 已应用户要求在首个 rollout 期间人工中止，等待 50 回合终止合同完成。V6 只保留 canonical update-0 baseline（1162/2048，56.74%）和 model-only update-0 checkpoint，没有执行 PPO update，不得续写。后续正式训练仍从 V3 common update-0 加载 BC-warm-started allocation head，启用 `INTEGRATED` preset，并重新初始化 optimizer/scheduler/RNG/rollout/old-policy。V10 每 update 采集 512 局完整 trajectory、使用固定 optimizer budget；update 0 和之后每 5 updates 运行 canonical Frozen-0806 2,048，不启用 8,192 分支。run 不设 update 上限，在完整 update 边界响应人工 stop sentinel。
 
 防挂死截断合同从 `V8_repeat_guard_turn_limit_cuda_fresh_rl` 开始作为新正式语义。`RolloutJob.full_round_draw_limit=50` 是 CPU/official wrapper 与 CUDA resident scheduler 的单一来源；CUDA 在 official turn index 99 进入 scheduler-owned terminal draw。这不是官方胜利条件，而是项目截断语义。截断局保留为有效 Episode，无 winner、reward 0；PolicyTrajectory 将累计 reward 0 归入最后真实决策，设 `done=true` 与 `next_value=0`，并在 Episode diagnostics/W&B update scalar 中分别保留 `turn_limit_draw` 和 `rollout/cuda_turn_limit_draws`。resident batch 混用不同 limit 或 limit 为负数时 fail closed。
 
@@ -129,3 +129,5 @@ V7 在首批 stochastic rollout 暴露了 Mega Venusaur/Meganium 的重复 Abili
 V8 将 key 改为 stable semantic identity，却错误地跨整局累计相同 Ability。它在 canonical 2,048 update-0 触发 242 次判负，只得到 `1005-1043-0`（49.07%）；随后完成一次 PPO update，但该版本因 Zero-Shot parity 失败及 8.94 GB trajectory/16.24 GB RSS 内存失控而判为无效，不得续训或作为收益证据。
 
 V9 的 repeat guard 仍按 actor 和 stable identity 识别同一 Ability、忽略 option index/目标排列，但在 official turn 变化时清空计数：只惩罚同一回合内 20 次无进展循环，正常跨回合 Ability 使用不会累计。canonical 2,048 A/B 中，legacy sequential 从错误 guard 的 `1003-1045` 恢复为 `1178-870`（57.52%，13 forfeits）；forced-only wrapper 与 legacy 完全同记录，完整 Phantom macro 为 `1162-886`（56.74%，12 forfeits），与旧 007 `1174-874`（57.32%）差 0.58pp。新正式版本为 `V9_turn_scoped_guard_bounded_trajectory_fresh_rl`，必须重新从公共 PPO-update-0 初始化。
+
+V9 完成 update 2 后因 rollout 效率合同变更停止；其 2,048→512 trajectory 抽样不再续用。新正式版本为 `V10_complete_512_rollout_fresh_rl`，从公共 PPO-update-0 重新初始化，不加载 V9 PPO 权重。

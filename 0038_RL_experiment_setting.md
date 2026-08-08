@@ -7,7 +7,7 @@ CUDA 接入完成后，请基于 `0038_action_boundary_rl` 启动今晚的正式
 实验命名：
 
 ```text
-V9_turn_scoped_guard_bounded_trajectory_fresh_rl
+V10_complete_512_rollout_fresh_rl
 ```
 
 必须从公共起点开始：
@@ -173,7 +173,7 @@ Opponent fusion 必须使用零初始化 residual、零门控或其他保持 upd
 正式配置：
 
 ```text
-rollout_games_per_update = 2048
+rollout_games_per_update = 512
 optimizer_budget_mode = fixed_optimizer_budget
 max_updates = manual_stop
 checkpoint_every = 1
@@ -183,9 +183,9 @@ checkpoint_every = 1
 
 - 每个 update 只使用本次新采集、未跨 update 复用的 on-policy EpisodeTrajectory；进入 PPO 的每局 trajectory 必须完整到 terminal。
 - old logprob、old value、GAE 和 return 在 rollout 后冻结。
-- fixed optimizer budget 下先按下述分层规则形成有界 on-policy EpisodeTrajectory 池，再从该池均匀采样 optimizer minibatch；不得只取 rollout 前缀。
+- 512 局全部形成完整 on-policy EpisodeTrajectory，再从完整样本池均匀采样 optimizer minibatch；不得预先丢弃对局。
 - 不因为 rollout 变大而隐式增加 optimizer step 数量。
-- 不硬编码旧的 512 games/update 假设。
+- rollout 数量仍保持配置化；当前正式合同明确选择 512 games/update。
 
 每个 update 记录：
 
@@ -393,4 +393,4 @@ CUDA 接入及 smoke 通过后，请先输出一份简短 launch manifest：
 - 正式启动命令；
 - 预估 games/hour；正式 run 的完成时间由用户手动停止决定。
 
-用户已确认修复后启动 `V9_turn_scoped_guard_bounded_trajectory_fresh_rl`。V9 继承 canonical Frozen/rollout 合同，将 50 个完整回合映射为 CUDA engine turn index 99 的 scheduler-owned terminal draw：`reward=0`、`done=true`、`next_value=0`。repeat key 使用 actor + stable Ability identity，不包含 option index/目标排列；只在同一 official turn 内累计，第 20 次判 acting player 负，turn 变化必须重置。`credit_clock=turn` 下同回合 strategic action 的 lambda 为 1，只有跨真实 turn 才应用配置 lambda。fixed optimizer budget 仍完整 rollout 2,048 场并记录全部 outcome；为限制 host RAM，只从每个 256-slot frequency unit 确定性均匀抽取 64 局，合计保留 512 条完整 EpisodeTrajectory 供 PPO 使用，其余对局不缓存高维 feature。采样规则和实际 retained transitions 都写入 manifest/metrics；这不是保留前两个 unit，也不会改变 2,048 局 rollout 的 opponent/先后手分布。V8 因跨整局 repeat 累计、Zero-Shot parity 失败和 host-memory 失控而不可续写；V4–V8 均保留审计记录。
+V9 使用 2,048 场 stochastic rollout、仅保留 512 条 trajectory，在 update 2 后确认 RSS 稳定但额外 1,536 场不参与 PPO，属于无意义环境开销；它在完成 update 2 后停止，attempted update 3 未提交。V10 改为每 update 运行两个完整 256-slot frequency unit，共 512 场，并保留全部 512 条完整 EpisodeTrajectory。optimizer budget 仍为固定 `32 × 1024`，不改变 PPO epochs、effective minibatch、学习率或 advantage normalization 合同。update 0 与之后每 5 updates 的 Frozen evaluation 仍严格运行 canonical 2,048 场。V10 必须重新从公共 PPO-update-0 初始化，不加载 V9 RL 权重。
