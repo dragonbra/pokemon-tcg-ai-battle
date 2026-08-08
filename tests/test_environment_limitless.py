@@ -317,6 +317,32 @@ class ReportContractTests(unittest.TestCase):
         self.assertIn('data-card-preview=', report)
         self.assertIn('class="matrix-archetype"', report)
 
+    def test_matchup_matrices_use_full_width_and_explicit_dragapult_variants(self):
+        report = render_report(self.snapshot)
+        primary = report.split('id="primary-heatmap"', 1)[1].split(
+            "</table>", 1
+        )[0]
+
+        for label in (
+            "Dragapult（基础/未单列）",
+            "Dragapult Dusknoir",
+            "Dragapult Blaziken",
+            "Dragapult Dudunsparce",
+            "Dragapult Froslass",
+        ):
+            self.assertIn(label, primary)
+        self.assertEqual(
+            primary.split("</thead>", 1)[0].count("<th>") - 1, 16
+        )
+        self.assertEqual(primary.count("<tr>") - 1, 16)
+        self.assertIn(
+            'class="panel matrix-panel" id="matchup-matrix"', report
+        )
+        self.assertIn(
+            'class="panel matrix-panel" id="dragapult-matchups"', report
+        )
+        self.assertIn("width:calc(100vw - 24px)", report)
+
     def test_every_exact_deck_card_type_has_an_image_tile(self):
         report = render_report(self.snapshot)
         expected = sum(

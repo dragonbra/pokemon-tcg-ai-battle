@@ -9,7 +9,11 @@ from typing import Any
 
 
 ARCHETYPE_CARD_NAMES: dict[str, tuple[str, ...]] = {
+    "Dragapult（基础/未单列）": ("Dragapult ex",),
     "Dragapult Dusknoir": ("Dragapult ex", "Dusknoir"),
+    "Dragapult Dudunsparce": ("Dragapult ex", "Dudunsparce"),
+    "Dragapult Blaziken": ("Dragapult ex", "Blaziken ex"),
+    "Dragapult Froslass": ("Dragapult ex", "Froslass"),
     "Basic Box": ("Teal Mask Ogerpon ex", "Lillie's Clefairy ex"),
     "Festival Lead": ("Dipplin", "Thwackey"),
     "Tera Box": ("Teal Mask Ogerpon ex", "Wellspring Mask Ogerpon ex"),
@@ -213,8 +217,8 @@ def _matrix_table(
                 values.append(
                     f'<td class="heat self-matchup" data-n="{cell["n"]}" title="{_e(title)}" '
                     f'tabindex="0" aria-label="{_e(title)}"><b data-rate>内战</b>'
-                    f'<small>决胜 {cell["decisive"]} · 平局 {cell["ties"]}</small>'
-                    f'<i>n={cell["n"]} · 无方向</i></td>'
+                    f'<small>决胜 {cell["decisive"]} · 平 {cell["ties"]}</small>'
+                    f'<i>n={cell["n"]}</i></td>'
                 )
                 continue
             raw_rate = cell["wins"] / cell["n"] if cell["n"] else 0.0
@@ -229,8 +233,8 @@ def _matrix_table(
                 f'data-effective="{cell["effective_win_rate"]:.6f}" data-raw="{raw_rate:.6f}" '
                 f'data-n="{cell["n"]}" title="{_e(title)}" tabindex="0" aria-label="{_e(title)}">'
                 f'<b data-rate>{_pct(cell["effective_win_rate"])}</b>'
-                f'<small>{cell["wins"]}-{cell["losses"]}-{cell["ties"]} · n={cell["n"]}</small>'
-                f'<i>{_pct(cell["wilson_low"])}–{_pct(cell["wilson_high"])}</i></td>'
+                f'<small>{cell["wins"]}–{cell["losses"]}–{cell["ties"]}</small>'
+                f'<i>n={cell["n"]}</i></td>'
             )
         body.append("<tr>" + "".join(values) + "</tr>")
     return (
@@ -428,18 +432,22 @@ def render_report(snapshot: dict[str, Any]) -> str:
             "</div></details>"
         )
 
-    primary_ids = [row["deck_id"] for row in primary_meta[:16]]
-    primary_names = {row["deck_id"]: row["name"] for row in primary_meta}
+    drag_ids = [row["deck_id"] for row in drag_variants]
+    headline_ids = drag_ids + [
+        row["deck_id"]
+        for row in variant_meta
+        if row["deck_id"] not in drag_ids
+    ][: 16 - len(drag_ids)]
+    variant_names = {row["deck_id"]: row["name"] for row in variant_meta}
+    variant_names["dragapult-ex"] = "Dragapult（基础/未单列）"
     primary_matrix = _matrix_table(
-        primary_ids,
-        primary_ids,
-        primary_names,
-        snapshot["matchups_primary"],
+        headline_ids,
+        headline_ids,
+        variant_names,
+        snapshot["matchups_variant"],
         "primary-heatmap",
         card_registry,
     )
-    variant_names = {row["deck_id"]: row["name"] for row in variant_meta}
-    drag_ids = [row["deck_id"] for row in drag_variants]
     opponent_ids = [row["deck_id"] for row in variant_meta if row["deck_id"] not in drag_ids][:16]
     drag_matrix = _matrix_table(
         drag_ids,
@@ -531,10 +539,21 @@ def render_report(snapshot: dict[str, Any]) -> str:
 .narrative-card-line{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:12px 0;color:#33414b}.narrative-card-line .inline-card-ref{margin:0 2px}
 .source-link{display:inline-block;margin-left:6px;font-weight:900;text-decoration:none;vertical-align:middle}
 .matrix .matrix-archetype{display:flex;align-items:center;gap:6px;writing-mode:horizontal-tb;transform:none;max-height:none}
-.matrix thead th{height:176px}.matrix thead th>.matrix-archetype{height:158px;flex-direction:column;justify-content:flex-end}
-.matrix thead .archetype-label{writing-mode:vertical-rl;transform:rotate(180deg);max-height:102px;overflow:hidden}
+.matrix thead th{height:224px}.matrix thead th>.matrix-archetype{height:206px;flex-direction:column;justify-content:flex-end}
+.matrix thead .archetype-label{writing-mode:vertical-rl;transform:rotate(180deg);max-height:164px;overflow:hidden}
 .matrix thead .archetype-thumbs,.matrix thead .card-ref,.matrix thead .card-thumb{writing-mode:horizontal-tb;transform:none}
 .matrix tbody th .matrix-archetype{min-width:180px}.matrix tbody th .archetype-label{white-space:normal}
+.matrix .heat b,.matrix .heat small,.matrix .heat i{white-space:nowrap}.matrix .heat small{font-variant-numeric:tabular-nums}
+@media(min-width:1200px){
+  .matrix-panel{position:relative;left:50%;width:calc(100vw - 24px);margin-left:calc(-50vw + 12px);padding-inline:clamp(12px,1.8vw,30px)}
+  .matrix-panel .matrix-wrap{overflow-x:hidden}
+  .matrix-panel .matrix{width:100%;min-width:0;table-layout:fixed}
+  .matrix-panel .matrix th:first-child{width:clamp(156px,12vw,205px);min-width:0}
+  .matrix-panel .matrix thead th:not(:first-child),.matrix-panel .matrix td{min-width:0;max-width:none;padding:7px 2px}
+  .matrix-panel .matrix tbody th .matrix-archetype{min-width:0}
+  .matrix-panel .matrix .heat b{font-size:clamp(12px,1vw,15px)}
+  .matrix-panel .matrix .heat small,.matrix-panel .matrix .heat i{font-size:clamp(8px,.7vw,10px)}
+}
 .deck-card-group{margin:22px 0 30px}.deck-card-group h4{margin:0 0 11px;padding-bottom:7px;border-bottom:2px solid #a9c4bf;font-size:18px}.deck-card-group h4 small{color:var(--muted);font-size:12px;font-weight:500}
 .deck-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}
 .deck-card-tile{min-width:0}.deck-card-art{position:relative;display:block;width:100%;padding:0;overflow:hidden;aspect-ratio:2.5/3.5;border:0;border-radius:7px;background:#e8edef;box-shadow:0 5px 14px rgba(23,32,42,.14);cursor:zoom-in}
@@ -598,9 +617,9 @@ document.querySelectorAll('table[data-sortable]').forEach(table=>{const headers=
 
 <section class="panel" id="players"><div class="heading"><div><p class="eyebrow">PLAYERS & EXACT 60</p><h2>代表选手、样本内实力与真实构筑</h2></div><p>选手表默认按 {pairing['events_with_pairings']} 场累计 Points/胜场排序；卡表按各细分牌型的最佳公开名次选择。这里的“历史”严格指 TEF-POR 可审计样本。</p></div><div class="table-wrap"><table data-sortable><thead><tr>{''.join(f'<th aria-sort="none">{label}</th>' for label in ('#','选手','赛事','Points','W-L-D','最佳','使用牌型'))}</tr></thead><tbody>{player_rows}</tbody></table></div><h3>{len(snapshot['representative_decklists'])} 份代表 exact 60-card deck</h3>{''.join(deck_blocks)}</section>
 
-<section class="panel" id="matchup-matrix"><div class="heading"><div><p class="eyebrow">PRIMARY MATCHUP MATRIX</p><h2>一级牌型对战热力图</h2></div><p>每格为我方视角，平局计半胜；对角线仅表示内战样本。悬停查看 95% Wilson、赛事数和选手数。</p></div><div class="controls"><div class="segmented"><button class="active" data-heat-mode="effective">有效胜率</button><button data-heat-mode="raw">纯胜率</button></div></div><div class="legend"><span class="good">优势</span><span class="mid">接近五五开/方向信号</span><span class="bad">劣势</span><span>粗色仅在证据更强时加深</span></div>{primary_matrix}</section>
+<section class="panel matrix-panel" id="matchup-matrix"><div class="heading"><div><p class="eyebrow">VARIANT MATCHUP MATRIX</p><h2>主流细分牌型对战热力图</h2></div><p>五种多龙站点标签全部独立展示，并与实际参赛人数最高的 11 个非多龙细分牌型组成 16×16 矩阵。每格为我方视角，平局计半胜；悬停查看完整 W-L-D、95% Wilson 与证据等级。</p></div><div class="controls"><div class="segmented"><button class="active" data-heat-mode="effective">有效胜率</button><button data-heat-mode="raw">纯胜率</button></div></div><div class="legend"><span class="good">优势</span><span class="mid">接近五五开/方向信号</span><span class="bad">劣势</span><span>粗色仅在证据更强时加深</span><span>“基础/未单列”是 Labs 原始标签边界，不是逐份卡表重分类</span></div>{primary_matrix}</section>
 
-<section class="panel" id="dragapult-matchups"><div class="heading"><div><p class="eyebrow">DRAGAPULT DEEP DIVE</p><h2>多龙五个站点标签 × 主流细分对手</h2></div><p>这是本页最重要的矩阵。相同“Dragapult”主标签在不同副轴下会出现方向相反的 matchup。</p></div>{matchup_narrative}{drag_matrix}<div class="note"><b>读法示例：</b>基础/未单列多龙对 Raging Bolt/Ogerpon 为 {_pct(base_vs_bolt['effective_win_rate'])}，土龙多龙则为 {_pct(dudun_vs_bolt['effective_win_rate'])}；三型对 Alakazam/Dudunsparce 分别为 {_pct(base_vs_alakazam['effective_win_rate'])}、{_pct(dusk_vs_alakazam['effective_win_rate'])}、{_pct(blaziken_vs_alakazam['effective_win_rate'])}。训练时至少需要把四个高样本站点标签拆成独立 opponent，再用实际卡表审计确认 candidate 边界。</div></section>
+<section class="panel matrix-panel" id="dragapult-matchups"><div class="heading"><div><p class="eyebrow">DRAGAPULT DEEP DIVE</p><h2>多龙五个站点标签 × 主流细分对手</h2></div><p>这里不再使用聚合“多龙”列：基础/未单列、黑夜魔灵、火焰鸡、土龙节节与雪妖女分别保留自己的公开赛果。</p></div>{matchup_narrative}{drag_matrix}<div class="note"><b>读法示例：</b>基础/未单列多龙对 Raging Bolt/Ogerpon 为 {_pct(base_vs_bolt['effective_win_rate'])}，土龙多龙则为 {_pct(dudun_vs_bolt['effective_win_rate'])}；三型对 Alakazam/Dudunsparce 分别为 {_pct(base_vs_alakazam['effective_win_rate'])}、{_pct(dusk_vs_alakazam['effective_win_rate'])}、{_pct(blaziken_vs_alakazam['effective_win_rate'])}。训练时至少需要把四个高样本站点标签拆成独立 opponent，再用实际卡表审计确认 candidate 边界。</div></section>
 
 <section class="panel" id="counter-evidence"><div class="heading"><div><p class="eyebrow">COUNTER EVIDENCE</p><h2>哪些优势足以称为“较可信信号”</h2></div><p>只列 n≥30 且 95% Wilson 完全高于 50% 的有向细分 matchup；仍然是观察性赛果，不消除选手水平和赛事阶段混杂。</p></div><div class="table-wrap"><table><thead><tr><th>我方</th><th>对手</th><th>W-L-D</th><th>n</th><th>有效胜率</th><th>95% Wilson</th><th>覆盖</th></tr></thead><tbody>{counter_rows}</tbody></table></div></section>
 
@@ -608,6 +627,6 @@ document.querySelectorAll('table[data-sortable]').forEach(table=>{const headers=
 
 <section class="panel" id="training"><div class="heading"><div><p class="eyebrow">BC + RL IMPLICATIONS</p><h2>对训练路线的具体调整</h2></div><p>建议遵守 deck-specific policy、candidate package 和固定 opponent catalog 边界，不把不同专家动作标签无条件混训。</p></div><div class="table-wrap"><table class="training-table"><thead><tr><th>优先级</th><th>工作包</th><th>证据</th><th>实施边界</th></tr></thead><tbody><tr><td>P0</td><td>建立基础/未单列、黑夜魔灵、土龙、火焰鸡四套隔离 BC policy</td><td>四个高样本标签分别有 {drag_variant_by_id['dragapult-ex']['players']:,} / {drag_variant_by_id['dragapult-dusknoir']['players']:,} / {drag_variant_by_id['dragapult-dudunsparce']['players']:,} / {drag_variant_by_id['dragapult-blaziken']['players']:,} 名选手，且多个 matchup 方向相反</td><td>先按标签收集，再用 exact deck 审计各自 expert、dataset manifest、version、candidate package；不合并冲突标签</td></tr><tr><td>P0</td><td>将四型作为独立 arena curriculum 候选</td><td>多龙一级 {dragapult['players']:,} 人、{_pct(drag_points['share'],2)} Points，覆盖线下核心环境</td><td>先生成候选 package，经官方 engine 真实评测和用户确认后再准入</td></tr><tr><td>P1</td><td>补充 Raging Bolt、N's Zoroark、Crustle、Alakazam 对手</td><td>它们分别揭示多龙子型的速度、Prize trade、墙与资源循环弱点</td><td>固定 pool snapshot 与采样权重，RL run 中显式记录</td></tr><tr><td>P1</td><td>为多龙加入跨回合伤害分配与副轴 conditioning</td><td>仅对 Raging Bolt/Ogerpon，土龙与基础/未单列标签就相差 {abs(dudun_vs_bolt['effective_win_rate']-base_vs_bolt['effective_win_rate'])*100:.1f} pp</td><td>若共享模型，必须显式 deck/source conditioning 和分来源评测</td></tr><tr><td>P2</td><td>保留 Kaggle Grimmsnarl 高频 curriculum，但降低其代表“真实环境”的权重</td><td>Kaggle {_pct(kaggle_grimmsnarl/kaggle['players'])}，线下实际 {_pct(grimmsnarl['players']/pairing['players_in_pairing_events'])}、有效胜率 {_pct(grimmsnarl['effective_win_rate'])}</td><td>把“榜单适应性”与“广谱牌型强度”设为两个实验变量</td></tr><tr><td>暂缓</td><td>雪妖女多龙专门训练</td><td>仅 {drag_variant_by_id['dragapult-froslass']['players']} 名选手，公开表现与 matchup 样本不足</td><td>保留 catalog 观察，不据此重排训练预算</td></tr></tbody></table></div></section>
 
-<section class="panel" id="methodology"><div class="heading"><div><p class="eyebrow">METHOD & LIMITS</p><h2>统计方法、来源与不可比较部分</h2></div></div><div class="split"><div><h3>计算合同</h3><ul><li>有效胜率 = (W + 0.5×D) / n；纯胜率 = W / n。</li><li>每格显示 95% Wilson 区间；n≥30 且区间排除 50% 才标为可信优势/劣势。</li><li>15≤n&lt;30 仅为方向信号；n&lt;15 不推断。bye、未完成、牌型缺失和 `winner=-1` no-result 均排除。</li><li>每场 BO3 match 是一个样本，不把一场 match 伪装成三局 game；同型内战只计一次，仅展示决胜/平局数量，不赋予任意 player1 牌型胜率。</li><li>Jensen–Shannon 在版本化名称映射后的并集类别计算，单位为 bit；0 相同，1 完全分离。</li></ul></div><div><h3>残余局限</h3><ul><li>韩国联赛没有 Labs pairings，进入总体但不进入矩阵。</li><li>{pairing['accepted_matches']:,} 场仍有选手能力、地区、轮次与 drop 选择偏差。</li><li>主站 Points Share、Labs 参赛套数和 Kaggle Top {kaggle['players']} 席位是三种不同分母。</li><li>细分统计遵循 Labs 站点标签；仅代表卡表经过关键副轴交叉审计，不能外推到该型每位参赛者。</li><li>卡牌机理解释来自构筑结构与公开赛果；严格因果需要控制选手与随机性的实验。</li></ul></div></div><h3>关键来源</h3><ul class="source-list"><li><a href="{_e(primary_points[0]['url'].split('/decks/')[0] + '/decks?' + snapshot['filter_contract']['query'])}" target="_blank">Limitless TEF-POR Metagame Filter</a></li><li><a href="https://limitlesstcg.com/tournaments?{_e(snapshot['filter_contract']['query'])}" target="_blank">Limitless TEF-POR Tournament Filter</a></li><li><a href="https://labs.limitlesstcg.com/0068/standings" target="_blank">Limitless Labs Indianapolis 示例</a></li><li><a href="../environment-daily_kaggle_top100/daily/2026-07-30.html">Kaggle 2026-07-30 Top {kaggle['players']} 日报</a></li><li>快照中保留 {len(snapshot['sources'])} 条源 URL、抓取时间与 SHA-256（含 8 个赛事详情页）。</li><li>聚合事实：<code>data/processed/environment_limitless/snapshot.json</code></li></ul></section>
+<section class="panel" id="methodology"><div class="heading"><div><p class="eyebrow">METHOD & LIMITS</p><h2>统计方法、来源与不可比较部分</h2></div></div><div class="split"><div><h3>计算合同</h3><ul><li>有效胜率 = (W + 0.5×D) / n；纯胜率 = W / n。</li><li>每格悬停说明显示 95% Wilson 区间；n≥30 且区间排除 50% 才标为可信优势/劣势。</li><li>15≤n&lt;30 仅为方向信号；n&lt;15 不推断。bye、未完成、牌型缺失和 `winner=-1` no-result 均排除。</li><li>每场 BO3 match 是一个样本，不把一场 match 伪装成三局 game；同型内战只计一次，仅展示决胜/平局数量，不赋予任意 player1 牌型胜率。</li><li>Jensen–Shannon 在版本化名称映射后的并集类别计算，单位为 bit；0 相同，1 完全分离。</li></ul></div><div><h3>残余局限</h3><ul><li>韩国联赛没有 Labs pairings，进入总体但不进入矩阵。</li><li>{pairing['accepted_matches']:,} 场仍有选手能力、地区、轮次与 drop 选择偏差。</li><li>主站 Points Share、Labs 参赛套数和 Kaggle Top {kaggle['players']} 席位是三种不同分母。</li><li>细分统计遵循 Labs 站点标签；仅代表卡表经过关键副轴交叉审计，不能外推到该型每位参赛者。</li><li>卡牌机理解释来自构筑结构与公开赛果；严格因果需要控制选手与随机性的实验。</li></ul></div></div><h3>关键来源</h3><ul class="source-list"><li><a href="{_e(primary_points[0]['url'].split('/decks/')[0] + '/decks?' + snapshot['filter_contract']['query'])}" target="_blank">Limitless TEF-POR Metagame Filter</a></li><li><a href="https://limitlesstcg.com/tournaments?{_e(snapshot['filter_contract']['query'])}" target="_blank">Limitless TEF-POR Tournament Filter</a></li><li><a href="https://labs.limitlesstcg.com/0068/standings" target="_blank">Limitless Labs Indianapolis 示例</a></li><li><a href="../environment-daily_kaggle_top100/daily/2026-07-30.html">Kaggle 2026-07-30 Top {kaggle['players']} 日报</a></li><li>快照中保留 {len(snapshot['sources'])} 条源 URL、抓取时间与 SHA-256（含 8 个赛事详情页）。</li><li>聚合事实：<code>data/processed/environment_limitless/snapshot.json</code></li></ul></section>
 </main><div class="card-hover-preview" id="card-hover-preview" role="tooltip"><img alt=""><b></b><small></small></div><dialog class="modal" id="card-modal"><div class="modal-head"><b></b><span data-card-meta></span></div><img alt=""><div class="modal-actions"><button type="button" data-card-prev aria-label="上一张卡" title="上一张卡">←</button><button type="button" data-card-close aria-label="关闭卡图" title="关闭">×</button><button type="button" data-card-next aria-label="下一张卡" title="下一张卡">→</button></div></dialog><script>{js}</script></body></html>"""
     return report
