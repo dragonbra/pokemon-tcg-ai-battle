@@ -3,7 +3,7 @@
 <title>0038 Action Boundary RL</title>
 <style>body{max-width:1050px;margin:40px auto;padding:0 24px;font:16px/1.65 system-ui;color:#172033}h1,h2{color:#102a43}code,pre{background:#f3f6fa;border-radius:6px}code{padding:.1em .3em}pre{padding:14px;overflow:auto}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd6e0;padding:8px;text-align:left}.callout{border-left:4px solid #2563eb;background:#eff6ff;padding:12px 16px}</style></head>
 <body><h1>0038 Action Boundary RL</h1>
-<p class="callout">权威细节与字段合同同步保存在 <code>DESIGN.md</code>。V9 验证语义修复和内存平台后停止；V10 每 update 运行并保留全部 512 局完整 trajectory，Frozen 仍为 canonical 2,048，并从公共 PPO-update-0 重新启动。</p>
+<p class="callout">权威细节与字段合同同步保存在 <code>DESIGN.md</code>。2026-08-09 semantic parity audit 已阻断 V10/U230 的 release 与后续 RL：CUDA rules 和 CUDA feature preprocessing 均存在已复现分歧，修复并通过 Gate A–D 前不得续训或提交。</p>
 <h2>目标</h2><p>让 RL timestep 对齐完整游戏动作，而非官方 UI callback。官方 engine 源码、ABI、observation、option index 和每次返回的 <code>list[int]</code> 均保持不变。</p>
 <h2>零样本来源</h2><table><tr><th>组件</th><th>来源/状态</th></tr><tr><td>State/Option Encoder + Root Decoder</td><td>Policy-0806 epoch 11；Encoder 冻结、Decoder 全量训练</td></tr><tr><td>Value head</td><td>0036 V2 epoch 5 pre-RL，Query 0 仍为终局胜负</td></tr><tr><td>Last Option LoRA</td><td>Q/V r4/a8，fresh zero-delta；拒绝 V5/update checkpoint</td></tr><tr><td>Allocation head</td><td>Zero-Shot legacy sequential teacher 的 official-engine 标签做短 BC</td></tr><tr><td>GRU</td><td>request-local，不跨官方 callback 保存 hidden</td></tr></table>
 <h2>DecisionGate</h2><p>Gate 位于 observation consumption 后、tensor compilation 前。分类为 TERMINAL、LEGAL_EMPTY_PASS、MASK_ERROR、FORCED、STRATEGIC，并记录 chance/information/priority boundary。只有唯一 canonical completion 且不存在 STOP/cancel/decline/pass 才 shortcut；forced 仍消费 knowledge/history/event，但不调用 Transformer、GRU、Value 或服务。</p>
@@ -11,14 +11,14 @@
   target_ids: stable (player_index, serial, card_id, initial_bench_slot)
   counters: [x1, ... xn], xi &gt;= 0, sum = 6
 }</pre>
-<p>分配数为 <code>C(n+5,6)=C(n+5,n-1)</code>；n=1..5 时为 1、7、28、84、210。原需求里的 <code>C(n+5,5)</code> 与指定计数不一致，0038 采用与弱组合和指定计数一致的公式。</p>
+<p>分配数为 <code>C(n+5,6)=C(n+5,n-1)</code>；n=1..8 时为 1、7、28、84、210、462、924、1716。目标用 stable serial canonicalize；目标顺序不产生 action alias。</p>
 <pre>log P(complete action)
 = log P(root action)
 + log P(allocation | state, Phantom Dive)</pre>
 <p>Root softmax 完全不因 allocation 数量改变。conditional head 复用同一次 state/cards/root-option embeddings，并以共享 target MLP + permutation-invariant sum pooling 评分。</p>
-<p>第一版只支持 <code>1≤n≤5</code>。扩展 Bench 导致 <code>n&gt;5</code> 时安全回退 legacy sequential callbacks，并把 macro PPO 样本标为 invalid。</p>
-<p>混乱状态会在 root commit 后、allocation 前揭示硬币结果，因此属于真实 chance boundary。v2 adapter 不跨该边界预提交 allocation，而是完成 official game、回退 legacy 参数链并使该局 macro PPO 样本无效。</p>
-<h2>官方协议</h2><p>MacroPlanner 在 root request 生成完整分配；PendingMacroTransaction 以 battle ID 隔离；OfficialProtocolExecutor 在六个 callback 中消费 observation、校验 actor/context/remain/effect/legal set、按 serial 重新定位，然后仍返回单个 primitive index。任何漂移均 fail closed 并使 rollout 样本无效。</p>
+<p>当前目标合同支持 <code>1≤n≤8</code>，包括零之大空洞扩展 Bench。候选超过 210 时仍在同一次 State Encoder 结果上由 conditional head 批量评分；不得退回六次 Encoder/Value/PPO transition。transaction 漂移必须保留 trace、使样本无效并 fail closed。</p>
+<p>混乱状态在 root commit 后、allocation 前揭示硬币结果，属于真实 chance boundary；release 修复必须重新证明此路径，不能用 legacy 多次 Policy/Value callback 冒充 compound transition。</p>
+<h2>官方协议</h2><p>MacroPlanner 在 root request 生成完整分配；PendingMacroTransaction 以 battle ID 隔离；OfficialProtocolExecutor 在六个 callback 中消费 observation、校验 actor/context/remain/effect/legal set、按 serial 重新定位，然后仍返回单个 primitive index。任何漂移均 fail closed 并使 rollout 样本无效。Prize 可见特征由同一版本化 public prototype 映射提供，Mega Evolution 只按名称前缀 <code>Mega </code> 判断，避免把 Yanmega ex 误作三奖。</p>
 <h2>Trajectory 与 PPO</h2><p>EngineEventTrace 保留所有 primitive event。PolicyTrajectory 只保存真实决策边界，joint old logprob 为 root 与 parameter logprob 之和。内部 callback 不产生 Value 样本，不进入 policy/entropy/KL/clip，也不增加 gamma/lambda。terminal 在 chain 中发生时归入上一个真实 transition 且 next value 为 0。</p>
 <pre>delta = reward_acc + discount_acc * next_value - value
 advantage = delta + discount_acc * lambda_boundary * next_advantage
@@ -32,4 +32,8 @@ lambda_boundary = 1 (同一 official turn)；lambda (跨 turn)</pre>
 <p><strong>50 完整回合截断：</strong><code>RolloutJob.full_round_draw_limit=50</code> 是 CPU 与 CUDA 的单一合同，CUDA 映射到 official turn index 99。该规则是 scheduler-owned 防挂死截断，不是官方胜利条件。触发后局面作为有效 draw：无 winner、reward 0、最后真实决策 <code>done=true</code> / <code>next_value=0</code>；Episode 和 W&amp;B 保留 <code>turn_limit_draw</code> 计数。</p>
 <p><strong>Ability 重复判负：</strong>repeat key 按 actor 分区，使用稳定 Ability semantic identity，不包含 option index 或目标排列；official turn 变化时必须清空计数，只在同一回合第 20 次选择相同 Ability 时判 acting player 负。canonical 2,048 legacy 回放为 13 次 repeat forfeit、0 turn-limit draw。</p>
 <p>新旧 entropy、KL 与 clip fraction 的分母不同，不可与 V5 历史曲线横向比较。</p>
+<h2>2026-08-09 Release Semantic Parity Audit</h2>
+<p class="callout"><strong>当前 U230 不可提交，也不得据此继续新 RL。</strong>模型无关 primitive differential 在 Zoroark/Munkidori seed 1、decision 129 出现 CUDA continuation 分歧；固定 official trace 又证明 CUDA feature binding 从 decision 0 起把 option skill/effect relation 张量置零，并在后续 event/resource/deck-membership history 上继续分歧。</p>
+<p>同一 U230 的 143 个 focal snapshots 中有 137 个 root-logit tolerance failure、5 个 greedy complete-action divergence，第一处 greedy divergence 在 engine decision 60；Value 最大绝对差 0.403、2 次符号差异。输入张量已经不同，因此不能归因于 GPU 浮点。</p>
+<p>不可变 U230 归档包还只对 n≤5 建 macro，并在 MacroProtocolError 后清空 transaction 再做 fresh Policy decision。隔离源码已补 n≤8、stable serial、公开奖赏映射和 fail-closed 回归，但不会回写旧包或 checkpoint。official n=1..5 的 330 个 allocation 为 0 parity failure；n=6..8 尚缺真实扩展 Bench official fixture。完整证据与 Gate A–D 状态见根目录 <code>SEMANTIC_PARITY_AUDIT.md</code>。</p>
 </body></html>

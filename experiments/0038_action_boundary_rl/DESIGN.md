@@ -37,11 +37,11 @@ DragapultDamageAllocation {
 }
 ```
 
-`n` 个目标的分配数是 `C(n+5,6)`，`n=1..5` 分别为 `1,7,28,84,210`。目标以 stable identity canonicalize；allocation 不包含选择顺序，因此没有排列 alias。
+`n` 个目标的分配数是 `C(n+5,6)`，`n=1..8` 分别为 `1,7,28,84,210,462,924,1716`。目标以 stable identity canonicalize；allocation 不包含选择顺序，因此没有排列 alias。
 
-第一版的明确支持域是官方 callback 中 `1≤n≤5`。若卡面效果扩展 Bench 使 `n>5`，wrapper 不伪造 210-option mask：在线走 legacy sequential fallback，并把该局 macro trajectory 标为 invalid；数据采集统计并跳过该链。
+当前目标合同覆盖官方 callback 中 `1≤n≤8`，包括零之大空洞的扩展 Bench。候选数超过 210 时仍由同一个 conditional allocation head 在一次完整 State Encoder 结果上批量评分；不得退回六次完整 Encoder/Value/PPO transition。超出已声明支持域或 transaction 漂移必须 fail closed，不能在内部 callback 清空事务后重新调用 Policy。
 
-若攻击者处于混乱状态，官方在 Phantom Dive root commit 后、allocation callback 前揭示硬币结果。v2 protocol adapter 将其视为真实 `CHANCE_BOUNDARY`：不预提交 allocation，在线安全回退 legacy 参数链，并把整局 macro trajectory 标为 invalid。任何未预见的 pending-transaction 漂移同样先清理 transaction、保存 trace，再回退，不终止本可继续的 official game。
+若攻击者处于混乱状态，官方在 Phantom Dive root commit 后、allocation callback 前揭示硬币结果。v2 protocol adapter 将其视为真实 `CHANCE_BOUNDARY`；此路径仍需在 release parity 修复后重新定义并证明，不能用 legacy 多次 Policy/Value callback 冒充 compound transition。任何未预见的 pending-transaction 漂移必须保留 trace、使样本无效并 fail closed。
 
 概率严格分层：
 
@@ -64,6 +64,8 @@ allocation head 复用同一次 `EncodedState.summary/cards` 与 root option emb
 5. 第六次后清理 transaction。
 
 漂移、目标消失、空 mask、超时、terminal 或优先权异常均 fail closed 并使 rollout macro 无效。官方 primitive 调用次数不减少；focal 模型 forward 从 root+六 callback 的 7 次降为 1 次。
+
+allocation 的 Prize 可见特征只从版本化 public card prototypes 推导：普通 Pokémon 为 1、Pokémon ex 为 2、名称以 `Mega ` 开头的 Mega Evolution Pokémon ex 为 3；不能用字符串任意包含 `mega` 的规则误判 Yanmega ex。CPU package、official wrapper 与 CUDA adapter 共用同一映射。
 
 ## PolicyTrajectory
 
@@ -96,7 +98,7 @@ terminal 时 `next_value=0`。entropy/KL/clip 的分母仅为 valid strategic tr
 
 rollout 配置不再假设固定 512 局或固定 decision 数。`engine_backend`、games/workers/envs/batch/inflight/queue/seed shards、PPO physical minibatch、gradient accumulation、epochs 和 optimizer steps 均显式配置。accelerated backend 必须先通过 observation/legal/reward-terminal-winner/RNG/full-game/macro parity，并与 official backend 使用同一 Agent action contract。
 
-V4 使用 `accelerated:cuda_resident`：兼容规则 blob 与 CUDA state machine 驻留 GPU，Agent 仍执行同一 0038 DecisionGate、hierarchical Phantom allocation 和 primitive-select 合同。CUDA collector 只把真实 decision boundary 写入 `PolicyTrajectory`；公开奖赏数和状态位等 allocation 条件特征随 macro action 保存，用于精确重放 joint old-logprob，不引入隐藏字段。任何 actor、目标、计数、chance 或 transaction 漂移都标记 invalid/fallback 并排除 PPO。
+V4–V10 使用 `accelerated:cuda_resident`：规则 blob 与 CUDA state machine 驻留 GPU，设计上 Agent 应执行同一 0038 DecisionGate、hierarchical Phantom allocation 和 primitive-select 合同。CUDA collector 只应把真实 decision boundary 写入 `PolicyTrajectory`；公开奖赏数和状态位等 allocation 条件特征随 macro action 保存，用于精确重放 joint old-logprob，不引入隐藏字段。任何 actor、目标、计数、chance 或 transaction 漂移都必须 fail closed 并排除 PPO。
 
 扩容有两种显式模式：`fixed_epochs` 会随样本增加 optimizer steps；默认优先 `fixed_optimizer_budget`，固定每 update optimizer steps，通过 effective minibatch、累积或抽样吸收更多 rollout。切换模式必须由用户确认，不能连带静默改变 LR、epochs、effective batch 或 advantage normalization 范围。
 
@@ -131,3 +133,16 @@ V8 将 key 改为 stable semantic identity，却错误地跨整局累计相同 A
 V9 的 repeat guard 仍按 actor 和 stable identity 识别同一 Ability、忽略 option index/目标排列，但在 official turn 变化时清空计数：只惩罚同一回合内 20 次无进展循环，正常跨回合 Ability 使用不会累计。canonical 2,048 A/B 中，legacy sequential 从错误 guard 的 `1003-1045` 恢复为 `1178-870`（57.52%，13 forfeits）；forced-only wrapper 与 legacy 完全同记录，完整 Phantom macro 为 `1162-886`（56.74%，12 forfeits），与旧 007 `1174-874`（57.32%）差 0.58pp。新正式版本为 `V9_turn_scoped_guard_bounded_trajectory_fresh_rl`，必须重新从公共 PPO-update-0 初始化。
 
 V9 完成 update 2 后因 rollout 效率合同变更停止；其 2,048→512 trajectory 抽样不再续用。新正式版本为 `V10_complete_512_rollout_fresh_rl`，从公共 PPO-update-0 重新初始化，不加载 V9 PPO 权重。
+
+## 2026-08-09 release-blocking semantic parity audit
+
+U230 之后的只读/隔离诊断推翻了“CUDA Frozen 与 official package 已具备输入语义等价”的前提，当前不得启动新 RL 或把 U230 标成 submission-ready：
+
+- 模型无关的相同 primitive script 在 Zoroark/Munkidori seed 1、decision 129 产生规则 continuation 分歧；这是 CUDA rules blocker。
+- 固定 283-decision official trace 的权威状态可由 CUDA 逐 primitive 重放，但 CUDA `semantic0031_v2_lanes` 从 decision 0 起把 `option_skill_*`/`option_effect_*` 关系张量置零，后续 event/resource/deck-membership history 也与 official compiler 不同。
+- 同一 U230 在 143 个 focal snapshots 上有 137 个 root-logit tolerance failure、5 个 greedy complete-action divergence；第一处 greedy divergence 位于 engine decision 60。Value 最大绝对差为 0.403，并有 2 次符号差异。输入不等时不得把这些差异归因于 GPU 浮点。
+- 不可变 U230 归档包只对 `n≤5` 建 macro，且 `MacroProtocolError` 后会清空 transaction 再做 fresh Policy decision；它不符合当前 fail-closed、`n≤8` 合同。源码中的最小修复不回写旧包，也不改变 checkpoint 权重。
+- official `n=1..5` 共 330 个 allocation 的既有 exhaustive parity 为 0 failure；`n=6..8` 已有枚举、stable-serial relocation 和协议回归，但尚缺真实扩展 Bench official fixture，因此仍是明确 coverage gap。
+- forced `observe_only` 的 knowledge/history/next-feature 回归通过；这不能抵消 CUDA rule/feature 两个上游 blocker。
+
+审计期间没有修改 `engine/source/`、checkpoint 或模型结构。修复 release gate 的顺序必须是 CUDA primitive rules → exact official/CUDA feature tensor → macro expanded-Bench official fixture → per-decision paired games；只有四个 Gate 全部通过，CUDA Frozen 才能作为 official/Kaggle 强度证据。完整证据见仓库根 `SEMANTIC_PARITY_AUDIT.md`。
