@@ -476,17 +476,22 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
     for episode in episodes:
         outcome = 1 if episode.reward == 1.0 else -1 if episode.reward == -1.0 else 0
         outcomes[episode.job.seed] = outcome
+        fallback_reason = episode.diagnostics.get("macro_fallback_reason")
+        chance_boundary = fallback_reason == CHANCE_BOUNDARY_FALLBACK
         rows.append({
             "game_id": episode.job.game_id, "seed": episode.job.seed,
             "opponent": episode.job.opponent_id, "focal_first": episode.job.focal_first,
             "outcome": outcome, "turns": episode.turns, "valid": episode.valid,
             "error": episode.error,
             "fallback": int(episode.diagnostics.get("macro_fallback", 0)),
+            "fallback_reason": fallback_reason,
+            "chance_boundary": chance_boundary,
+            "semantic_fallback": bool(fallback_reason) and not chance_boundary,
         })
     if len(rows) != 2048 or len(outcomes) != len(rows):
         raise RuntimeError("Frozen result persistence requires 2,048 unique games")
     _atomic_json(path, {
-        "schema_version": "0038_frozen_per_game_results_v1",
+        "schema_version": "0038_frozen_per_game_results_v2",
         "frozen_panel_version": panel_version,
         "checkpoint_update": checkpoint_update, "entries": rows,
     })
@@ -503,6 +508,14 @@ def _paired_frozen_metrics(baseline: dict[int, int], checkpoint: dict[int, int],
         f"{prefix}/baseline_loss_to_win": float(summary["baseline_loss_to_checkpoint_win"]),
         f"{prefix}/baseline_win_to_loss": float(summary["baseline_win_to_checkpoint_loss"]),
         f"{prefix}/mcnemar_chi2": float(summary["mcnemar_continuity_corrected_chi2"]),
+    }
+
+
+def _evaluation_runtime_metrics(metrics: dict[str, float]) -> dict[str, float]:
+    """Keep Frozen runtime telemetry out of the stochastic rollout namespace."""
+    return {
+        f"eval/runtime/{name.removeprefix('rollout/')}": value
+        for name, value in metrics.items()
     }
 
 
@@ -646,11 +659,20 @@ def _run_static_update0_contract(model, output: Path) -> dict[str, Any]:
 
 
 def _assert_acceptance_episode_health(
-    episodes: list[Any], collector_metrics: dict[str, float], *, scope: str
+    episodes: list[Any], collector_metrics: dict[str, float], *, scope: str,
+    allow_chance_boundary: bool = False,
 ) -> dict[str, float]:
-    fallbacks = sum(
-        int(episode.diagnostics.get("macro_fallback", 0)) for episode in episodes
-    )
+    fallback_episodes = [
+        episode for episode in episodes
+        if int(episode.diagnostics.get("macro_fallback", 0))
+    ]
+    fallbacks = len(fallback_episodes)
+    reasons = [
+        str(episode.diagnostics.get("macro_fallback_reason") or "missing_reason")
+        for episode in fallback_episodes
+    ]
+    chance_boundaries = sum(reason == CHANCE_BOUNDARY_FALLBACK for reason in reasons)
+    semantic_fallbacks = fallbacks - chance_boundaries
     invalid = int(collector_metrics.get("rollout/invalid_macros", 0.0))
     unsupported = sum(
         int(episode.diagnostics.get("unsupported_effect", 0)) for episode in episodes
@@ -658,13 +680,23 @@ def _assert_acceptance_episode_health(
     pending_resets = sum(
         int(episode.diagnostics.get("pending_macro_reset", 0)) for episode in episodes
     )
-    if any((fallbacks, invalid, unsupported, pending_resets)):
+    invalid_count_mismatch = invalid != fallbacks
+    rejected_chance_boundaries = chance_boundaries and not allow_chance_boundary
+    if any((
+        semantic_fallbacks,
+        rejected_chance_boundaries,
+        invalid_count_mismatch,
+        unsupported,
+        pending_resets,
+    )):
         raise RuntimeError(
             f"{scope} action-contract health failed: fallback={fallbacks}, "
-            f"invalid={invalid}, unsupported={unsupported}, pending_reset={pending_resets}"
+            f"invalid={invalid}, unsupported={unsupported}, pending_reset={pending_resets}, "
+            f"reasons={reasons}"
         )
     return {
         f"{scope}/fallback": 0.0,
+        f"{scope}/chance_boundaries": float(chance_boundaries),
         f"{scope}/unsupported": 0.0,
         f"{scope}/pending_macro_reset": 0.0,
     }
@@ -1319,7 +1351,8 @@ def run(config: RunConfig) -> dict[str, Any]:
             baseline_collector_metrics = baseline_evaluator.metrics()
             baseline_health_metrics = (
                 _assert_acceptance_episode_health(
-                    baseline, baseline_collector_metrics, scope="eval/core"
+                    baseline, baseline_collector_metrics, scope="eval/core",
+                    allow_chance_boundary=True,
                 )
                 if transfer_controller is not None else {}
             )
@@ -1357,7 +1390,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "representation/sha256_unchanged": 1.0,
                     **trainer.sparse_gradient_diagnostics(diagnostic_batch),
                     **_episode_metrics(baseline, "eval/core"),
-                    **baseline_collector_metrics,
+                    **_evaluation_runtime_metrics(baseline_collector_metrics),
                     **baseline_health_metrics,
                     "parity/update0_cuda_package_passed": float(
                         update0_package_parity is None
@@ -1645,6 +1678,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                         _assert_acceptance_episode_health(
                             evaluation, evaluation_collector_metrics,
                             scope="eval/core",
+                            allow_chance_boundary=True,
                         )
                         if transfer_controller is not None else {}
                     )
@@ -1657,7 +1691,9 @@ def run(config: RunConfig) -> dict[str, Any]:
                     metrics.update(_paired_frozen_metrics(
                         baseline_core_outcomes, checkpoint_outcomes, "eval/core"
                     ))
-                    metrics.update(evaluation_collector_metrics)
+                    metrics.update(_evaluation_runtime_metrics(
+                        evaluation_collector_metrics
+                    ))
                     metrics.update(evaluation_health_metrics)
                     metrics["eval/checkpoint_update"] = update
                     metrics["eval/wall_seconds"] = time.perf_counter() - eval_started

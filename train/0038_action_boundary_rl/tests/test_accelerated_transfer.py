@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import importlib
 import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 
 module = importlib.import_module(
@@ -180,6 +182,95 @@ class AcceleratedTransferTest(unittest.TestCase):
             }
             with self.assertRaisesRegex(RuntimeError, "non-resampleable macro failure"):
                 runner._replace_chance_boundary_episodes([episode], lambda _: [])
+
+    def test_frozen_health_retains_legal_chance_boundary(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        episode = SimpleNamespace(diagnostics={
+            "macro_fallback": 1,
+            "macro_fallback_reason": "chance_boundary_before_allocation",
+        })
+        metrics = runner._assert_acceptance_episode_health(
+            [episode], {"rollout/invalid_macros": 1.0},
+            scope="eval/core", allow_chance_boundary=True,
+        )
+        self.assertEqual(metrics["eval/core/chance_boundaries"], 1.0)
+        self.assertEqual(metrics["eval/core/fallback"], 0.0)
+
+    def test_frozen_health_still_rejects_nonchance_fallback(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        episode = SimpleNamespace(diagnostics={
+            "macro_fallback": 1,
+            "macro_fallback_reason": "stable_target_identity_drift",
+        })
+        with self.assertRaisesRegex(RuntimeError, "stable_target_identity_drift"):
+            runner._assert_acceptance_episode_health(
+                [episode], {"rollout/invalid_macros": 1.0},
+                scope="eval/core", allow_chance_boundary=True,
+            )
+
+    def test_rollout_health_does_not_accept_unreplaced_chance_boundary(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        episode = SimpleNamespace(diagnostics={
+            "macro_fallback": 1,
+            "macro_fallback_reason": "chance_boundary_before_allocation",
+        })
+        with self.assertRaisesRegex(RuntimeError, "chance_boundary_before_allocation"):
+            runner._assert_acceptance_episode_health(
+                [episode], {"rollout/invalid_macros": 1.0}, scope="rollout"
+            )
+
+    def test_frozen_persistence_keeps_seed_and_chance_reason(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        episodes = []
+        for seed in range(2048):
+            reason = "chance_boundary_before_allocation" if seed == 17 else None
+            episodes.append(SimpleNamespace(
+                reward=1.0,
+                turns=4,
+                valid=True,
+                error=None,
+                job=SimpleNamespace(
+                    game_id=f"game-{seed}", seed=seed, opponent_id="opponent",
+                    focal_first=bool(seed % 2),
+                ),
+                diagnostics={
+                    "macro_fallback": int(reason is not None),
+                    "macro_fallback_reason": reason,
+                },
+            ))
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "frozen.json"
+            outcomes = runner._persist_frozen_results(
+                output, episodes, checkpoint_update=5, panel_version="fixed"
+            )
+            payload = json.loads(output.read_text())
+        self.assertEqual(len(outcomes), 2048)
+        self.assertEqual(payload["entries"][17]["seed"], 17)
+        self.assertTrue(payload["entries"][17]["chance_boundary"])
+        self.assertFalse(payload["entries"][17]["semantic_fallback"])
+        self.assertEqual(
+            payload["entries"][17]["fallback_reason"],
+            "chance_boundary_before_allocation",
+        )
+
+    def test_frozen_runtime_metrics_do_not_overwrite_rollout_namespace(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        mapped = runner._evaluation_runtime_metrics({
+            "rollout/invalid_macros": 1.0,
+            "rollout/cuda_games_per_second": 12.0,
+        })
+        self.assertEqual(mapped["eval/runtime/invalid_macros"], 1.0)
+        self.assertNotIn("rollout/invalid_macros", mapped)
 
 
 if __name__ == "__main__":

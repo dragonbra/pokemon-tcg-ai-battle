@@ -4,6 +4,8 @@
 
 V11 在写出 U0 前被旧 checkpoint action-contract validator fail closed，没有 Frozen/rollout/PPO。V12 完成 U0 CUDA Frozen-2048（1147-901，55.996%，先手 603/1024、后手 544/1024，0 fallback）后，被旧 package trace 路径拦截。V13 使用正确的 283 行 trace，但门禁误读 `training_to_package.root.greedy_action_divergences` 的层级；实际 tensor/logits/greedy/Value 全部 PASS，修复提交为 `8c8be47`。V14 完成同一 U0（1147-901）和 package parity 后，在首批 rollout 精确发现 1 个合法 Confusion chance boundary，按旧合同在 PPO 前 fail closed，权重仍为 U0。以上失败资产均保留。
 
+V15 完成 U1–U5 PPO 并写出 U5 model-only checkpoint；固定 Frozen-2048 在唯一一局 `seed=2057788334` 遇到同一合法 chance boundary。对局本身正常完成、无 engine error，但旧 Frozen health gate 将 collector 的诊断 invalid 误当 semantic fallback，故在持久化 U5 Frozen 结果前 fail closed。独立使用同一 U5 checkpoint 和完整固定面板复现为恰好 1 个 `chance_boundary_before_allocation`，无其他 fallback。修复后的 Frozen 保留原 seed/outcome 并单列 chance telemetry；stochastic rollout 的补采合同不变。下一正式版本重新从 common U0 开始，不续写 V15。
+
 长程版本继续绑定不可变 283 行 fixture SHA-256 `18c1684a…56ca`。Confused Phantom Dive 的投币发生在 root 与 allocation 之间，不能把后续六次 legacy callback 伪装成 compound PPO：该次完整 trace 保留为诊断，同 opponent/seat 槽位使用新的确定性派生 seed 补采，直到每 update 恰有 512 条有效 on-policy Episode；只有 `chance_boundary_before_allocation` 在 allowlist，其他 drift/fallback 继续 fail closed。补采 provenance 按 update 独立落盘。CPU 对局不会自动调度，需用户后续指定 checkpoint。
 
 ## U0 初始化合同
