@@ -163,8 +163,12 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         raise ValueError(f"missing canonical Frozen evaluation: {result_path}")
     payload = json.loads(result_path.read_text(encoding="utf-8"))
     entries = payload.get("entries")
+    result_schema = payload.get("schema_version")
     if (
-        payload.get("schema_version") != "0038_frozen_per_game_results_v1"
+        result_schema not in {
+            "0038_frozen_per_game_results_v1",
+            "0038_frozen_per_game_results_v2",
+        }
         or payload.get("checkpoint_update") != update
         or payload.get("frozen_panel_version") != "frozen_0806_seeded_2048_v2"
         or not isinstance(entries, list)
@@ -177,6 +181,29 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
     ]
     if len(valid) != 2048:
         raise ValueError("canonical Frozen evaluation contains invalid/error games")
+    if result_schema == "0038_frozen_per_game_results_v2":
+        malformed = [
+            row for row in valid
+            if (
+                not isinstance(row.get("chance_boundary"), bool)
+                or not isinstance(row.get("semantic_fallback"), bool)
+                or bool(row.get("fallback")) != bool(
+                    row.get("chance_boundary") or row.get("semantic_fallback")
+                )
+                or bool(row.get("chance_boundary")) != (
+                    row.get("fallback_reason") == "chance_boundary_before_allocation"
+                )
+            )
+        ]
+        if malformed:
+            raise ValueError("canonical Frozen v2 chance/fallback evidence is malformed")
+        semantic_fallbacks = sum(bool(row["semantic_fallback"]) for row in valid)
+        if semantic_fallbacks:
+            raise ValueError("canonical Frozen evaluation contains semantic fallback")
+        chance_boundaries = sum(bool(row["chance_boundary"]) for row in valid)
+    else:
+        semantic_fallbacks = sum(bool(row.get("fallback")) for row in valid)
+        chance_boundaries = 0
     wins = sum(row.get("outcome") == 1 for row in valid)
     losses = len(valid) - wins
     first = [row for row in valid if row.get("focal_first") is True]
@@ -186,6 +213,7 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
     return {
         "result": str(result_path.relative_to(ROOT)),
         "result_sha256": _sha256(result_path),
+        "result_schema": result_schema,
         "panel_version": payload["frozen_panel_version"],
         "episodes": len(valid),
         "wins": wins,
@@ -193,6 +221,8 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         "win_rate": wins / len(valid),
         "first_wins": sum(row.get("outcome") == 1 for row in first),
         "second_wins": sum(row.get("outcome") == 1 for row in second),
+        "chance_boundaries": chance_boundaries,
+        "semantic_fallbacks": semantic_fallbacks,
     }
 
 

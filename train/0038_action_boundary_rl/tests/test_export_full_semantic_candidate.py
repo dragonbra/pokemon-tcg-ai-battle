@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import importlib
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 import torch
@@ -110,6 +112,41 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
                 alpha=2.0,
                 rank=1,
             )
+
+    def test_frozen_selection_accepts_v2_chance_boundary_evidence(self) -> None:
+        (exporter.ROOT / ".tmp").mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=exporter.ROOT / ".tmp") as temporary:
+            root = Path(temporary)
+            checkpoint = root / "checkpoint/update-000005.pt"
+            checkpoint.parent.mkdir()
+            checkpoint.touch()
+            result = root / "artifact/frozen_results/core-update-000005.json"
+            result.parent.mkdir(parents=True)
+            entries = []
+            for index in range(2048):
+                chance = index == 17
+                entries.append({
+                    "seed": index,
+                    "valid": True,
+                    "error": None,
+                    "outcome": 1 if index % 2 else -1,
+                    "focal_first": index < 1024,
+                    "fallback": int(chance),
+                    "fallback_reason": (
+                        "chance_boundary_before_allocation" if chance else None
+                    ),
+                    "chance_boundary": chance,
+                    "semantic_fallback": False,
+                })
+            result.write_text(json.dumps({
+                "schema_version": "0038_frozen_per_game_results_v2",
+                "checkpoint_update": 5,
+                "frozen_panel_version": "frozen_0806_seeded_2048_v2",
+                "entries": entries,
+            }))
+            selection = exporter._frozen_selection(checkpoint, 5)
+        self.assertEqual(selection["chance_boundaries"], 1)
+        self.assertEqual(selection["semantic_fallbacks"], 0)
 
 
 if __name__ == "__main__":
