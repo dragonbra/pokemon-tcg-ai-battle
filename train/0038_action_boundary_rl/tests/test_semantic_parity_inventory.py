@@ -25,6 +25,7 @@ class SemanticParityInventoryTest(unittest.TestCase):
         self.assertEqual(payload["checkpoint"]["update"], 230)
         self.assertEqual(payload["checkpoint"]["critical_missing_keys"], [])
         self.assertEqual(payload["checkpoint"]["critical_unexpected_keys"], [])
+        self.assertFalse(payload["checkpoint"]["training_distribution_compatible"])
         self.assertTrue(payload["package"]["strict_load"])
         # The already-built archive is immutable audit evidence.  It predates
         # the fail-closed source fix and must not be relabeled submission-ready.
@@ -32,7 +33,7 @@ class SemanticParityInventoryTest(unittest.TestCase):
         self.assertFalse(payload["package"]["critic_deployed"])
         self.assertTrue(payload["package"]["model_eval"])
         self.assertEqual(payload["package"]["deck_card_count"], 60)
-        self.assertEqual(
+        self.assertNotEqual(
             payload["contracts"]["action_boundary"],
             payload["package"]["action_boundary"],
         )

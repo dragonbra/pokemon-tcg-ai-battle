@@ -32,11 +32,18 @@ def summarize(report: Mapping[str, Any]) -> dict[str, Any]:
     )
     model = report.get("model") or {}
     value = report.get("value_model") or {}
+    deployment = report.get("training_to_package") or {}
     mismatch_counts = dict(report.get("tensor_mismatch_counts") or {})
     inputs_equal = not mismatch_counts and int(
         report.get("fixed_action_cuda_state_errors", 0)
     ) == 0
-    model_equal = bool(model.get("passed"))
+    value_equal = not value or value.get("skipped") is True or bool(value.get("passed"))
+    deployment_equal = (
+        not deployment
+        or deployment.get("skipped") is True
+        or bool(deployment.get("passed"))
+    )
+    model_equal = bool(model.get("passed")) and value_equal and deployment_equal
     status = "PASS" if inputs_equal and model_equal else "FAIL"
 
     first_divergence: dict[str, Any] | None = None
@@ -58,7 +65,7 @@ def summarize(report: Mapping[str, Any]) -> dict[str, Any]:
         }
 
     return {
-        "schema_version": "0038_gate_c_fixed_snapshot_v1",
+        "schema_version": "0038_gate_c_fixed_snapshot_v2",
         "gate": "C",
         "status": status,
         "case": report.get("case"),
@@ -91,6 +98,7 @@ def summarize(report: Mapping[str, Any]) -> dict[str, Any]:
             "sign_divergences": value.get("value_sign_divergences"),
             "first_divergence": value.get("first_divergence"),
         },
+        "training_to_package": deployment,
         "numeric_only_comparison_reached": inputs_equal,
         "reason": (
             None if status == "PASS" else

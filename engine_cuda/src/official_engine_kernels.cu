@@ -1316,6 +1316,7 @@ __device__ bool semantic0031_add_select_card(
 __device__ void semantic0031_zero_row(
     OfficialSemantic0031CodecBuffers output,
     std::uint32_t row) {
+    output.feature_valid[row] = 0;
     std::int64_t* global_cat =
         output.global_cat + row * kSemantic0031GlobalCatWidth;
     float* global_num =
@@ -1372,6 +1373,22 @@ __device__ void semantic0031_zero_row(
         output.option_context + row * kMaxOfficialCodecOptions;
     std::int64_t* option_effect_card =
         output.option_effect_card + row * kMaxOfficialCodecOptions;
+    std::int64_t* option_skill_id =
+        output.option_skill_id + row * kSemantic0031OptionSkillCapacity;
+    std::int64_t* option_skill_role =
+        output.option_skill_role + row * kSemantic0031OptionSkillCapacity;
+    std::int64_t* option_skill_parent =
+        output.option_skill_parent + row * kSemantic0031OptionSkillCapacity;
+    std::uint8_t* option_skill_mask =
+        output.option_skill_mask + row * kSemantic0031OptionSkillCapacity;
+    std::int64_t* option_effect_id =
+        output.option_effect_id + row * kSemantic0031OptionEffectCapacity;
+    std::int64_t* option_effect_role =
+        output.option_effect_role + row * kSemantic0031OptionEffectCapacity;
+    std::int64_t* option_effect_parent =
+        output.option_effect_parent + row * kSemantic0031OptionEffectCapacity;
+    std::uint8_t* option_effect_mask =
+        output.option_effect_mask + row * kSemantic0031OptionEffectCapacity;
 
     for (std::uint32_t index = 0; index < kSemantic0031GlobalCatWidth; ++index) {
         global_cat[index] = 0;
@@ -1428,6 +1445,18 @@ __device__ void semantic0031_zero_row(
     for (std::uint32_t index = 0; index < kMaxOfficialCodecOptions * kSemantic0031OptionNumWidth; ++index) {
         option_num[index] = 0.0F;
         option_state[index] = 0;
+    }
+    for (std::uint32_t index = 0; index < kSemantic0031OptionSkillCapacity; ++index) {
+        option_skill_id[index] = 0;
+        option_skill_role[index] = 0;
+        option_skill_parent[index] = 0;
+        option_skill_mask[index] = 0;
+    }
+    for (std::uint32_t index = 0; index < kSemantic0031OptionEffectCapacity; ++index) {
+        option_effect_id[index] = 0;
+        option_effect_role[index] = 0;
+        option_effect_parent[index] = 0;
+        option_effect_mask[index] = 0;
     }
     output.min_count[row] = 0;
     output.max_count[row] = 0;
@@ -1666,6 +1695,22 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
         output.option_context + row * kMaxOfficialCodecOptions;
     std::int64_t* option_effect_card =
         output.option_effect_card + row * kMaxOfficialCodecOptions;
+    std::int64_t* option_skill_id =
+        output.option_skill_id + row * kSemantic0031OptionSkillCapacity;
+    std::int64_t* option_skill_role =
+        output.option_skill_role + row * kSemantic0031OptionSkillCapacity;
+    std::int64_t* option_skill_parent =
+        output.option_skill_parent + row * kSemantic0031OptionSkillCapacity;
+    std::uint8_t* option_skill_mask =
+        output.option_skill_mask + row * kSemantic0031OptionSkillCapacity;
+    std::int64_t* option_effect_id =
+        output.option_effect_id + row * kSemantic0031OptionEffectCapacity;
+    std::int64_t* option_effect_role =
+        output.option_effect_role + row * kSemantic0031OptionEffectCapacity;
+    std::int64_t* option_effect_parent =
+        output.option_effect_parent + row * kSemantic0031OptionEffectCapacity;
+    std::uint8_t* option_effect_mask =
+        output.option_effect_mask + row * kSemantic0031OptionEffectCapacity;
 
     const std::int32_t actor = state->select_player >= 0 && state->select_player <= 1
         ? state->select_player
@@ -1679,10 +1724,52 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
         lane, static_cast<std::uint32_t>(actor));
     if (history != nullptr && state->select_deck != 0) {
         history->deck_membership_known[actor_knowledge] = 1;
-        history->prize_membership_known[actor_knowledge] = 1;
+        // A full deck view does not by itself make Prize membership exact.
+        // The authoritative CPU CausalKnowledge re-anchors the deck first,
+        // then infers Prize only when initial - deck - all currently visible
+        // cards is non-negative for every identity and sums to Prize count.
+        history->prize_membership_known[actor_knowledge] = 0;
         history->deck_order_known[actor_knowledge] = 1;
         history->deck_source_event[actor_knowledge] = history_total;
-        history->prize_source_event[actor_knowledge] = history_total;
+        history->prize_source_event[actor_knowledge] = 0;
+        for (std::uint32_t serial = 0;
+             serial < kOfficialSemanticSerialCapacity;
+             ++serial) {
+            history->known_self_deck_serial[official_semantic_serial_offset(
+                lane, static_cast<std::uint32_t>(actor), serial)] = 0;
+        }
+        for (std::uint16_t index = 0; index < own.deck.count; ++index) {
+            const std::uint32_t serial = own.deck.values[index].index;
+            if (serial < kOfficialSemanticSerialCapacity) {
+                history->known_self_deck_serial[official_semantic_serial_offset(
+                    lane, static_cast<std::uint32_t>(actor), serial)] = 1;
+            }
+        }
+    } else if (history != nullptr
+        && history->deck_membership_known[actor_knowledge] != 0) {
+        std::uint32_t remembered_count = 0;
+        bool current_deck_matches_memory = true;
+        for (std::uint32_t serial = 1;
+             serial < kOfficialSemanticSerialCapacity;
+             ++serial) {
+            if (history->known_self_deck_serial[official_semantic_serial_offset(
+                    lane, static_cast<std::uint32_t>(actor), serial)] != 0) {
+                ++remembered_count;
+            }
+        }
+        for (std::uint16_t index = 0; index < own.deck.count; ++index) {
+            const std::uint32_t serial = own.deck.values[index].index;
+            if (serial >= kOfficialSemanticSerialCapacity
+                || history->known_self_deck_serial[official_semantic_serial_offset(
+                    lane, static_cast<std::uint32_t>(actor), serial)] == 0) {
+                current_deck_matches_memory = false;
+                break;
+            }
+        }
+        if (!current_deck_matches_memory || remembered_count != own.deck.count) {
+            history->deck_membership_known[actor_knowledge] = 0;
+            history->deck_order_known[actor_knowledge] = 0;
+        }
     }
     std::int32_t known_opponent_hand_count = 0;
     std::int32_t possible_opponent_hand_count = 0;
@@ -1752,7 +1839,7 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
     global_cat[8] = semantic0031_clamp_i64(opp_status + 1, 0, 32);
     const bool deck_membership_known = history != nullptr
         && history->deck_membership_known[actor_knowledge] != 0;
-    const bool prize_membership_known = history != nullptr
+    bool prize_membership_known = history != nullptr
         && history->prize_membership_known[actor_knowledge] != 0;
     const bool deck_order_known = history != nullptr
         && history->deck_order_known[actor_knowledge] != 0;
@@ -1996,6 +2083,10 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
                 &resource_count, card.card_id);
         }
     }
+    const bool prize_reanchor_candidate = history != nullptr
+        && state->select_deck != 0 && deck_membership_known;
+    bool prize_reanchor_valid = prize_reanchor_candidate;
+    float prize_reanchor_total = 0.0F;
     for (std::int32_t resource = 0; resource < resource_count; ++resource) {
         std::int64_t* cat =
             resource_cat + resource * kSemantic0031ResourceCatWidth;
@@ -2009,6 +2100,7 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
         float visible_discard = 0.0F;
         float visible_stadium = 0.0F;
         float visible_playing = 0.0F;
+        float visible_looking = 0.0F;
         for (std::int32_t entity = 0; entity < card_count; ++entity) {
             const std::int64_t* entity_cat =
                 card_cat + entity * kSemantic0031CardCatWidth;
@@ -2032,9 +2124,44 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
             else if (zone == kSemanticZoneSelfDiscard) visible_discard += 1.0F;
             else if (zone == kSemanticZoneStadium) visible_stadium += 1.0F;
             else if (zone == kSemanticZoneSelfPlaying) visible_playing += 1.0F;
+            else if (zone == kSemanticZoneLooking) visible_looking += 1.0F;
+        }
+        // CausalKnowledge._visible_counts does not enumerate select.deck.
+        // It nevertheless counts contextCard/effect as "playing" when their
+        // serial has not already appeared in a public current-state zone.
+        // During a deck search the relational card entity is de-duplicated
+        // against the select-deck row, so reproduce that independent ledger
+        // contribution here instead of leaking private Prize membership.
+        const OfficialCardRefPod ledger_select_refs[2] = {
+            context_ref_for_cards,
+            effect_ref_for_cards,
+        };
+        for (std::uint32_t ref_index = 0; ref_index < 2; ++ref_index) {
+            const OfficialCardRefPod ref = ledger_select_refs[ref_index];
+            if (ref.index == 0
+                || (ref_index == 1 && ref == ledger_select_refs[0])) {
+                continue;
+            }
+            const OfficialCardStatePod* selected = official_codec_card(state, ref);
+            if (selected == nullptr || selected->card_id != identity) continue;
+            const std::int32_t relation = semantic0031_find_serial(
+                card_cat, card_mask, card_count, ref.index);
+            if (relation <= 0) continue;
+            std::int64_t zone = card_cat[
+                (relation - 1) * kSemantic0031CardCatWidth + 3];
+            const bool already_visible =
+                zone == kSemanticZoneSelfActive
+                || zone == kSemanticZoneSelfBench
+                || zone == kSemanticZoneSelfHand
+                || zone == kSemanticZoneSelfDiscard
+                || zone == kSemanticZoneStadium
+                || zone == kSemanticZoneSelfPlaying
+                || zone == kSemanticZoneLooking;
+            if (!already_visible) visible_playing += 1.0F;
         }
         const float visible_total = visible_active + visible_bench + visible_hand
-            + visible_discard + visible_stadium + visible_playing;
+            + visible_discard + visible_stadium + visible_playing
+            + visible_looking;
         const float hidden_remaining = num[0] > visible_total
             ? num[0] - visible_total
             : 0.0F;
@@ -2054,6 +2181,14 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
                 const OfficialCardStatePod* card = official_codec_card(
                     state, own.prize.values[index]);
                 if (card != nullptr && card->card_id == identity) exact_prize += 1.0F;
+            }
+        }
+        const float inferred_prize = num[0] - exact_deck - visible_total;
+        if (prize_reanchor_candidate) {
+            if (inferred_prize < 0.0F) {
+                prize_reanchor_valid = false;
+            } else {
+                prize_reanchor_total += inferred_prize;
             }
         }
         cat[1] = deck_membership_known ? 4 : 5;
@@ -2100,6 +2235,37 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
             field_state[7] = kSemanticFieldUnknown;
         }
         if (!prize_membership_known) field_state[10] = kSemanticFieldUnknown;
+        // Keep the per-identity inference in the otherwise-unknown exact slot
+        // until the cross-identity sum has been validated below.
+        if (prize_reanchor_candidate) {
+            num[10] = inferred_prize < 0.0F ? 0.0F : inferred_prize;
+        }
+    }
+    if (prize_reanchor_candidate) {
+        prize_reanchor_valid = prize_reanchor_valid
+            && prize_reanchor_total == static_cast<float>(own.prize.count);
+        history->prize_membership_known[actor_knowledge] =
+            prize_reanchor_valid ? 1 : 0;
+        history->prize_source_event[actor_knowledge] =
+            prize_reanchor_valid ? history_total : 0ULL;
+        prize_membership_known = prize_reanchor_valid;
+        for (std::int32_t resource = 0; resource < resource_count; ++resource) {
+            std::int64_t* cat =
+                resource_cat + resource * kSemantic0031ResourceCatWidth;
+            float* num = resource_num + resource * kSemantic0031ResourceNumWidth;
+            std::int64_t* field_state =
+                resource_state + resource * kSemantic0031ResourceNumWidth;
+            if (prize_reanchor_valid) {
+                cat[2] = 4;
+                num[11] = num[10];
+                num[12] = num[10];
+                num[14] = 0.0F;
+                field_state[10] = kSemanticFieldPresent;
+            } else {
+                num[10] = 0.0F;
+                field_state[10] = kSemanticFieldUnknown;
+            }
+        }
     }
 
     const std::uint64_t total = history == nullptr ? 0ULL : history->total_count[lane];
@@ -2308,6 +2474,8 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
     const std::uint16_t option_count = state->options.count > kMaxOfficialCodecOptions
         ? static_cast<std::uint16_t>(kMaxOfficialCodecOptions)
         : state->options.count;
+    std::uint32_t skill_relation_count = 0;
+    std::uint32_t effect_relation_count = 0;
     for (std::uint16_t option_index = 0; option_index < option_count; ++option_index) {
         const OfficialSelectOptionPod option = state->options.values[option_index];
         std::int32_t source_player = actor;
@@ -2458,9 +2626,115 @@ __global__ void encode_official_semantic0031_codec_v2_kernel(
         option_context[option_index] = context_relation;
         option_effect_card[option_index] = effect_relation;
         option_mask[option_index] = 1;
+
+        // Match features.compiler.compile_canonical_row exactly: source,
+        // context, and effect cards in that order; ability/play/delay within
+        // each card; then each skill's effects followed by attack effects.
+        // Duplicate (skill_id, role) pairs are removed per option.
+        const std::int64_t relation_card_ids[3] = {
+            source_card,
+            context_card_id,
+            effect_card_id,
+        };
+        std::int32_t seen_skill_ids[9]{};
+        std::int32_t seen_skill_roles[9]{};
+        std::uint32_t seen_skill_count = 0;
+        for (std::uint32_t relation = 0; relation < 3; ++relation) {
+            const OfficialCardRule* master = relation_card_ids[relation] > 0
+                ? official_card_rule(
+                    rules, static_cast<std::uint32_t>(relation_card_ids[relation]))
+                : nullptr;
+            if (master == nullptr) continue;
+            const std::int32_t card_skills[3] = {
+                master->values[kCardAbilityId],
+                master->values[kCardPlayId],
+                master->values[kCardDelayId],
+            };
+            for (std::uint32_t card_role = 0; card_role < 3; ++card_role) {
+                const std::int32_t skill_id = card_skills[card_role];
+                if (skill_id <= 0) continue;
+                const std::int32_t role = static_cast<std::int32_t>(
+                    relation * 3 + card_role + 1);
+                bool duplicate = false;
+                for (std::uint32_t seen = 0; seen < seen_skill_count; ++seen) {
+                    if (seen_skill_ids[seen] == skill_id
+                        && seen_skill_roles[seen] == role) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if (duplicate) continue;
+                if (seen_skill_count >= 9
+                    || skill_relation_count >= kSemantic0031OptionSkillCapacity) {
+                    return;
+                }
+                seen_skill_ids[seen_skill_count] = skill_id;
+                seen_skill_roles[seen_skill_count] = role;
+                ++seen_skill_count;
+                option_skill_id[skill_relation_count] = skill_id;
+                option_skill_role[skill_relation_count] = role;
+                option_skill_parent[skill_relation_count] = option_index + 1;
+                option_skill_mask[skill_relation_count] = 1;
+                ++skill_relation_count;
+
+                const OfficialSkillRule* skill = official_skill_rule(
+                    rules, static_cast<std::uint32_t>(skill_id));
+                if (skill == nullptr) continue;
+                const std::int32_t offset = skill->values[kSkillEffectOffset];
+                const std::int32_t count = skill->values[kSkillEffectCount];
+                if (offset < 0 || count < 0
+                    || count > static_cast<std::int32_t>(kSemantic0031MaxSkillEffects)) {
+                    return;
+                }
+                for (std::int32_t effect = 0; effect < count; ++effect) {
+                    if (effect_relation_count >= kSemantic0031OptionEffectCapacity) {
+                        return;
+                    }
+                    option_effect_id[effect_relation_count] = offset + effect + 1;
+                    option_effect_role[effect_relation_count] = 1;
+                    option_effect_parent[effect_relation_count] = option_index + 1;
+                    option_effect_mask[effect_relation_count] = 1;
+                    ++effect_relation_count;
+                }
+            }
+        }
+        if (attack_id > 0) {
+            const OfficialAttackRule* attack = official_attack_rule(
+                rules, static_cast<std::uint32_t>(attack_id));
+            if (attack != nullptr) {
+                const std::int32_t offsets[2] = {
+                    attack->values[kAttackPreEffectOffset],
+                    attack->values[kAttackPostEffectOffset],
+                };
+                const std::int32_t counts[2] = {
+                    attack->values[kAttackPreEffectCount],
+                    attack->values[kAttackPostEffectCount],
+                };
+                if (counts[0] < 0 || counts[1] < 0
+                    || counts[0] + counts[1]
+                        > static_cast<std::int32_t>(kSemantic0031MaxAttackEffects)) {
+                    return;
+                }
+                for (std::uint32_t phase = 0; phase < 2; ++phase) {
+                    if (offsets[phase] < 0) return;
+                    for (std::int32_t effect = 0; effect < counts[phase]; ++effect) {
+                        if (effect_relation_count >= kSemantic0031OptionEffectCapacity) {
+                            return;
+                        }
+                        option_effect_id[effect_relation_count] =
+                            offsets[phase] + effect + 1;
+                        option_effect_role[effect_relation_count] = 2;
+                        option_effect_parent[effect_relation_count] = option_index + 1;
+                        option_effect_mask[effect_relation_count] = 1;
+                        ++effect_relation_count;
+                    }
+                }
+            }
+        }
     }
     output.min_count[row] = min_count;
     output.max_count[row] = max_count;
+    output.feature_valid[row] = 1;
 }
 
 template <typename T>
@@ -2596,6 +2870,14 @@ cudaError_t allocate_official_arena(
         return status;
     }
     status = official_allocate(
+        &arena->semantic_known_self_deck_serial,
+        semantic_serial_entries,
+        &arena->allocated_bytes);
+    if (status != cudaSuccess) {
+        free_official_arena(arena);
+        return status;
+    }
+    status = official_allocate(
         &arena->semantic_deck_source_event,
         semantic_actor_entries,
         &arena->allocated_bytes);
@@ -2671,6 +2953,7 @@ cudaError_t allocate_official_arena(
     history_view.deck_membership_known = arena->semantic_deck_membership_known;
     history_view.prize_membership_known = arena->semantic_prize_membership_known;
     history_view.deck_order_known = arena->semantic_deck_order_known;
+    history_view.known_self_deck_serial = arena->semantic_known_self_deck_serial;
     history_view.deck_source_event = arena->semantic_deck_source_event;
     history_view.prize_source_event = arena->semantic_prize_source_event;
     history_view.known_opponent_hand = arena->semantic_known_opponent_hand;
@@ -2741,6 +3024,13 @@ cudaError_t allocate_official_arena(
     status = cudaMemset(
         arena->semantic_deck_order_known, 0,
         sizeof(std::uint8_t) * semantic_actor_entries);
+    if (status != cudaSuccess) {
+        free_official_arena(arena);
+        return status;
+    }
+    status = cudaMemset(
+        arena->semantic_known_self_deck_serial, 0,
+        sizeof(std::uint8_t) * semantic_serial_entries);
     if (status != cudaSuccess) {
         free_official_arena(arena);
         return status;
@@ -2918,6 +3208,7 @@ cudaError_t free_official_arena(OfficialDeviceArena* arena) {
     PTCG_OFFICIAL_FREE(arena->semantic_deck_membership_known);
     PTCG_OFFICIAL_FREE(arena->semantic_prize_membership_known);
     PTCG_OFFICIAL_FREE(arena->semantic_deck_order_known);
+    PTCG_OFFICIAL_FREE(arena->semantic_known_self_deck_serial);
     PTCG_OFFICIAL_FREE(arena->semantic_deck_source_event);
     PTCG_OFFICIAL_FREE(arena->semantic_prize_source_event);
     PTCG_OFFICIAL_FREE(arena->semantic_known_opponent_hand);

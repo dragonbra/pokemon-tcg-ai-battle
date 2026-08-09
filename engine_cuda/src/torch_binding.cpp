@@ -494,6 +494,7 @@ public:
             .device(torch::Device(torch::kCUDA, device_index_));
 
         std::unordered_map<std::string, torch::Tensor> result{
+            {"feature_valid", torch::empty({ready}, byte_options)},
             {"global_cat", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031GlobalCatWidth)}, long_options)},
             {"global_num", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031GlobalNumWidth)}, float_options)},
             {"global_state", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031GlobalNumWidth)}, long_options)},
@@ -522,20 +523,23 @@ public:
             {"option_target", torch::empty({ready, 128}, long_options)},
             {"option_context", torch::empty({ready, 128}, long_options)},
             {"option_effect_card", torch::empty({ready, 128}, long_options)},
-            {"option_skill_id", torch::zeros({ready, 1}, long_options)},
-            {"option_skill_role", torch::zeros({ready, 1}, long_options)},
-            {"option_skill_parent", torch::zeros({ready, 1}, long_options)},
-            {"option_skill_mask", torch::zeros({ready, 1}, byte_options)},
-            {"option_effect_id", torch::zeros({ready, 1}, long_options)},
-            {"option_effect_role", torch::zeros({ready, 1}, long_options)},
-            {"option_effect_parent", torch::zeros({ready, 1}, long_options)},
-            {"option_effect_mask", torch::zeros({ready, 1}, byte_options)},
+            {"option_skill_id", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionSkillCapacity)}, long_options)},
+            {"option_skill_role", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionSkillCapacity)}, long_options)},
+            {"option_skill_parent", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionSkillCapacity)}, long_options)},
+            {"option_skill_mask", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionSkillCapacity)}, byte_options)},
+            {"option_effect_id", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionEffectCapacity)}, long_options)},
+            {"option_effect_role", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionEffectCapacity)}, long_options)},
+            {"option_effect_parent", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionEffectCapacity)}, long_options)},
+            {"option_effect_mask", torch::empty({ready, static_cast<std::int64_t>(engine::kSemantic0031OptionEffectCapacity)}, byte_options)},
+            {"feature_schema_version", torch::full(
+                {ready}, engine::kSemantic0031CudaFeatureSchemaVersion, long_options)},
             {"min_count", torch::empty({ready}, long_options)},
             {"max_count", torch::empty({ready}, long_options)},
             {"targets", torch::empty({ready, 1}, long_options)},
         };
 
         engine::OfficialSemantic0031CodecBuffers output{};
+        output.feature_valid = result["feature_valid"].data_ptr<std::uint8_t>();
         output.global_cat = result["global_cat"].data_ptr<std::int64_t>();
         output.global_num = result["global_num"].data_ptr<float>();
         output.global_state = result["global_state"].data_ptr<std::int64_t>();
@@ -564,6 +568,14 @@ public:
         output.option_target = result["option_target"].data_ptr<std::int64_t>();
         output.option_context = result["option_context"].data_ptr<std::int64_t>();
         output.option_effect_card = result["option_effect_card"].data_ptr<std::int64_t>();
+        output.option_skill_id = result["option_skill_id"].data_ptr<std::int64_t>();
+        output.option_skill_role = result["option_skill_role"].data_ptr<std::int64_t>();
+        output.option_skill_parent = result["option_skill_parent"].data_ptr<std::int64_t>();
+        output.option_skill_mask = result["option_skill_mask"].data_ptr<std::uint8_t>();
+        output.option_effect_id = result["option_effect_id"].data_ptr<std::int64_t>();
+        output.option_effect_role = result["option_effect_role"].data_ptr<std::int64_t>();
+        output.option_effect_parent = result["option_effect_parent"].data_ptr<std::int64_t>();
+        output.option_effect_mask = result["option_effect_mask"].data_ptr<std::uint8_t>();
         output.min_count = result["min_count"].data_ptr<std::int64_t>();
         output.max_count = result["max_count"].data_ptr<std::int64_t>();
         output.targets = result["targets"].data_ptr<std::int64_t>();
@@ -904,6 +916,12 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, module) {
     module.attr("OFFICIAL_RULE_ABI_VERSION") = engine::kOfficialRuleAbiVersion;
     module.attr("OFFICIAL_SELECT_CONTEXT_OFFSET") =
         offsetof(engine::OfficialStatePod, select_context);
+    module.attr("OFFICIAL_SELECT_TYPE_OFFSET") =
+        offsetof(engine::OfficialStatePod, select_type);
+    module.attr("OFFICIAL_SELECT_DECK_OFFSET") =
+        offsetof(engine::OfficialStatePod, select_deck);
+    module.attr("SEMANTIC0031_CUDA_FEATURE_SCHEMA_VERSION") =
+        engine::kSemantic0031CudaFeatureSchemaVersion;
     module.attr("OFFICIAL_SEEDED_SETUP_POLICY") = "first_min_v1";
     module.attr("OFFICIAL_INTERACTIVE_SETUP_POLICY") = "device_action_v1";
     pybind11::class_<OfficialCudaEngine>(module, "OfficialCudaEngine")

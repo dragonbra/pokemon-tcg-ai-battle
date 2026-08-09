@@ -14,6 +14,7 @@ from ..action_boundary.dragapult import (
     StableTargetIdentity,
 )
 from ..action_boundary.macro_planner import MacroPlanner
+from ..action_boundary.macro_protocol import MacroProtocolError
 from ..action_boundary.public_card_features import card_prize_counts
 
 
@@ -22,6 +23,23 @@ PROTOTYPES = (
     ROOT / "train/0038_action_boundary_rl/semantic_policy/assets/"
     "official_full_engine_prototypes_v2.json"
 )
+
+
+def _first_player_harness_mask(
+    semantic: dict[str, torch.Tensor], ready: torch.Tensor
+) -> torch.Tensor:
+    option_count = semantic["option_mask"].long().sum(dim=1)
+    minimum = semantic["min_count"].long()
+    maximum = semantic["max_count"].long()
+    context = semantic["global_cat"][:, 1].long() - 1
+    mask = ready & context.eq(41)
+    invalid = mask & ~(option_count.eq(2) & minimum.eq(1) & maximum.eq(1))
+    if bool(invalid.any()):
+        rows = invalid.nonzero(as_tuple=False).flatten().tolist()
+        raise RuntimeError(
+            f"first-player harness contract drift on resident lanes {rows}"
+        )
+    return mask
 
 
 @dataclass(slots=True)
@@ -76,8 +94,16 @@ class CudaActionBoundaryAdapter:
         self.invalid_jobs.setdefault(job, reason)
 
     @staticmethod
-    def _option_target_serials(semantic: dict[str, torch.Tensor]) -> torch.Tensor:
-        relation = semantic["option_target"].long()
+    def _option_source_serials(semantic: dict[str, torch.Tensor]) -> torch.Tensor:
+        """Resolve official type-3 in-play choices through option_source.
+
+        Phantom Dive target callbacks are represented by the official ABI as
+        ``{type: 3, area: Bench, index: ..., playerIndex: ...}``.  The CPU
+        feature compiler therefore places the chosen in-play entity in
+        ``option_source``; ``option_target`` is intentionally empty because no
+        ``inPlayArea``/``inPlayIndex`` fields exist on this callback.
+        """
+        relation = semantic["option_source"].long()
         safe = (relation - 1).clamp(min=0, max=semantic["card_cat"].shape[1] - 1)
         serial = semantic["card_cat"][..., 1].long() - 1
         gathered = serial.gather(1, safe)
@@ -92,11 +118,10 @@ class CudaActionBoundaryAdapter:
         expected: StableTargetIdentity,
     ) -> torch.Tensor:
         option_cat = semantic["option_cat"][row]
-        target_serials = cls._option_target_serials(semantic)[row]
+        target_serials = cls._option_source_serials(semantic)[row]
         return (
             semantic["option_mask"][row]
             & option_cat[:, 5].eq(expected.card_id)
-            & option_cat[:, 13].eq(expected.initial_bench_slot + 1)
             & target_serials.eq(expected.serial)
         ).nonzero(as_tuple=False).flatten()
 
@@ -124,6 +149,10 @@ class CudaActionBoundaryAdapter:
         option_count = semantic["option_mask"].long().sum(dim=1)
         minimum = semantic["min_count"].long()
         maximum = semantic["max_count"].long()
+        # Resident jobs reorder decks so physical player 0 is always the
+        # requested first player.  Match the official CPU harness by submitting
+        # Yes/index 0 directly; seat assignment is not a learned decision.
+        first_player_harness = _first_player_harness_mask(semantic, ready)
         sole_type = semantic["option_cat"][:, 0, 0].long() - 1
         # No/decline (2) and End/pass (14) remain policy choices.  This is
         # deliberately conservative: equivalent multi-option aliases are not
@@ -132,6 +161,7 @@ class CudaActionBoundaryAdapter:
             ready & option_count.eq(1) & minimum.eq(1) & maximum.eq(1)
             & sole_type.ne(2) & sole_type.ne(14)
         )
+        forced |= first_player_harness
         empty_pass = ready & option_count.eq(0) & minimum.eq(0) & maximum.eq(0)
         forced |= empty_pass
         actions[forced & ~empty_pass, 0] = 0
@@ -168,14 +198,16 @@ class CudaActionBoundaryAdapter:
             # option set happens to contain one target.
             forced[lane] = False
             if not pending_focal[position]:
-                self._invalidate(job, "actor_or_priority_drift")
-                continue
+                reason = "actor_or_priority_drift"
+                self._invalidate(job, reason)
+                raise MacroProtocolError(f"job {job}: {reason}")
             context = int(pending_context[position])
             remaining = int(pending_remaining[position])
             expected_remaining = len(pending.targets)
             if context != 14 or remaining != expected_remaining:
-                self._invalidate(job, "context_or_remaining_counter_drift")
-                continue
+                reason = "context_or_remaining_counter_drift"
+                self._invalidate(job, reason)
+                raise MacroProtocolError(f"job {job}: {reason}")
             expected = pending.targets[0]
             option_cat = pending_cats[position]
             candidates = self._matching_target_options(
@@ -183,11 +215,17 @@ class CudaActionBoundaryAdapter:
             )
             if candidates.numel() != 1:
                 cats = option_cat[pending_masks[position]].tolist()
-                self._invalidate(
-                    job,
-                    f"stable_target_identity_drift:expected={expected.serial}:cat={cats}",
+                target_serials = self._option_source_serials(semantic)[
+                    lane, pending_masks[position].to(device)
+                ].tolist()
+                reason = (
+                    "stable_target_identity_drift:"
+                    f"expected_serial={expected.serial}:"
+                    f"expected_card={expected.card_id}:"
+                    f"option_source_serials={target_serials}:cat={cats}"
                 )
-                continue
+                self._invalidate(job, reason)
+                raise MacroProtocolError(f"job {job}: {reason}")
             actions[lane, 0] = int(candidates[0])
             lengths[lane] = 1
             macro[lane] = True
@@ -377,4 +415,4 @@ class CudaActionBoundaryAdapter:
         return totals
 
 
-__all__ = ["CudaActionBoundaryAdapter"]
+__all__ = ["CudaActionBoundaryAdapter", "_first_player_harness_mask"]

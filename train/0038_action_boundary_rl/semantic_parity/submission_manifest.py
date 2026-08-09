@@ -31,8 +31,14 @@ def build_manifest(
         blockers.append("critical checkpoint keys are missing")
     if checkpoint["critical_unexpected_keys"]:
         blockers.append("critical checkpoint keys are unexpected")
+    if not checkpoint.get("training_distribution_compatible", False):
+        blockers.append(
+            "checkpoint was trained under an incompatible or unattested feature distribution"
+        )
     if not package["strict_load"]:
         blockers.append("portable model is not strict-load compatible")
+    if not package["critic_deployed"]:
+        blockers.append("portable package does not strict-load the Value Network")
     if package["silent_legacy_fallback"]:
         blockers.append("package contains silent macro-to-policy fallback")
     if not package["model_eval"]:
@@ -77,6 +83,12 @@ def build_manifest(
             ],
             "critical_missing_keys": checkpoint["critical_missing_keys"],
             "critical_unexpected_keys": checkpoint["critical_unexpected_keys"],
+            "training_feature_preprocessing_version": checkpoint.get(
+                "training_feature_preprocessing_version"
+            ),
+            "training_distribution_compatible": checkpoint.get(
+                "training_distribution_compatible", False
+            ),
         },
         "package": {
             "root": package["root"],
@@ -105,7 +117,7 @@ def build_manifest(
                 "official_protocol_adapter"
             ],
             "feature_preprocessing_version": (
-                "0031_rule_faithful_semantic_decision_v2"
+                contracts["feature_preprocessing"]
             ),
             "card_database_sha256": runtime["card_database_sha256"],
             "cuda_rules_sha256": runtime["cuda_rules_sha256"],
@@ -176,6 +188,8 @@ def validate_release_manifest(manifest: Mapping[str, Any]) -> None:
         or any(gates[name] != "PASS" for name in "ABCD")
         or package["silent_legacy_fallback"]
         or not package["strict_load"]
+        or not package.get("critic_deployed", False)
+        or not checkpoint.get("training_distribution_compatible", False)
         or manifest["source"]["git_dirty"]
     ):
         raise ValueError("release_ready contradicts fail-closed release conditions")

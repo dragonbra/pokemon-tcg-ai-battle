@@ -394,6 +394,13 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_card(
     std::int32_t open_type = 0) {
     OfficialCardRefPod ref = official_pod_remove_zone_card(state, player, from_area, from_index);
     if (!official_pod_ok(state)) return {};
+    OfficialArea log_from_area = from_area;
+    if (from_area == OfficialArea::kTemporary) {
+        const OfficialCardStatePod* before_move = official_pod_card(state, ref);
+        if (before_move != nullptr) {
+            log_from_area = static_cast<OfficialArea>(before_move->area);
+        }
+    }
     if (!official_pod_push_zone_card(state, player, to_area, ref)) return {};
     const OfficialArea stored_area = to_area == OfficialArea::kDeckBottom
         ? OfficialArea::kDeck
@@ -408,8 +415,8 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_card(
                 player,
                 moved == nullptr ? 0 : moved->card_id,
                 ref.index,
-                static_cast<std::int32_t>(from_area),
-                static_cast<std::int32_t>(stored_area));
+                static_cast<std::int32_t>(log_from_area),
+                static_cast<std::int32_t>(to_area));
         } else {
             official_semantic_history_append(
                 state,
@@ -417,8 +424,8 @@ PTCG_OFFICIAL_CORE_HD inline OfficialCardRefPod official_pod_move_card(
                 player,
                 moved->card_id,
                 ref.index,
-                static_cast<std::int32_t>(from_area),
-                static_cast<std::int32_t>(stored_area),
+                static_cast<std::int32_t>(log_from_area),
+                static_cast<std::int32_t>(to_area),
                 open_type);
         }
     }

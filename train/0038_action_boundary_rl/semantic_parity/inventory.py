@@ -5,13 +5,23 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import subprocess
+import sys
 from typing import Any, Iterable
 
 import torch
 
 from ..checkpoint import validate_model_only_payload
+from ..action_boundary.contracts import (
+    ACTION_BOUNDARY_SCHEMA_VERSION,
+    CANONICALIZER_VERSION,
+    DECISION_GATE_VERSION,
+    FEATURE_PREPROCESSING_VERSION,
+    OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+    TRAJECTORY_SCHEMA_VERSION,
+)
 from ..policy.actor_critic import load_actor_critic
 from ..policy.adaptation import AdaptationConfig
 from ..integrated.config import IntegratedFlags
@@ -110,6 +120,39 @@ def _source_has_silent_macro_fallback(package_root: Path) -> bool:
     return "raise" not in handler and "self.pending = None" in handler
 
 
+def _strict_package_startup(package_root: Path) -> dict[str, Any]:
+    code = """
+import json, runpy
+namespace = runpy.run_path('main.py')
+policy = namespace['POLICY']
+print(json.dumps({
+    'checkpoint_update': int(policy.metadata['checkpoint_update']),
+    'actor_tensors': len(policy.actor.state_dict()),
+    'value_tensors': len(policy.value_head.state_dict()) if hasattr(policy, 'value_head') else 0,
+    'allocation_tensors': len(policy.allocation_head.state_dict()),
+    'meta_head_tensors': len(policy.meta_head.state_dict()),
+    'meta_conditioner_tensors': len(policy.meta_conditioner.state_dict()),
+    'model_eval': not policy.actor.training,
+    'value_eval': (not policy.value_head.training) if hasattr(policy, 'value_head') else False,
+    'deck_cards': len(namespace['read_deck_csv']()),
+}, sort_keys=True))
+"""
+    environment = dict(os.environ)
+    environment.pop("PYTHONPATH", None)
+    completed = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=package_root,
+        env=environment,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+    if not lines:
+        raise RuntimeError("strict package startup emitted no load report")
+    return json.loads(lines[-1])
+
+
 def build_runtime_inventory(*, checkpoint: Path, package_root: Path) -> dict[str, Any]:
     checkpoint = checkpoint.resolve()
     package_root = package_root.resolve()
@@ -140,17 +183,27 @@ def build_runtime_inventory(*, checkpoint: Path, package_root: Path) -> dict[str
         (package_root / "manifest.json").read_text(encoding="utf-8")
     )
     portable_metadata = package_model.get("metadata") or {}
-    portable_expected_top_level = {
-        "schema_version", "actor_state_dict", "allocation_head_state_dict",
+    portable_required_top_level = {
+        "schema_version", "actor_state_dict", "value_head_state_dict",
+        "allocation_head_state_dict",
         "opponent_meta_head_state_dict", "opponent_meta_conditioner_state_dict",
         "metadata",
     }
-    if set(package_model) != portable_expected_top_level:
+    portable_legacy_top_level = portable_required_top_level - {
+        "value_head_state_dict"
+    }
+    portable_top_level = set(package_model)
+    if portable_top_level not in (
+        portable_required_top_level, portable_legacy_top_level
+    ):
         raise ValueError("portable package top-level state inventory mismatch")
     deck = [
         int(line) for line in (package_root / "deck.csv").read_text().splitlines()
         if line.strip()
     ]
+    # Exercise the formal package entrypoint in an isolated process.  This also
+    # validates the immutable file inventory before every strict state load.
+    package_load_report = _strict_package_startup(package_root)
 
     component_hashes = {
         "base_encoder": _tensor_state_sha256(
@@ -188,6 +241,10 @@ def build_runtime_inventory(*, checkpoint: Path, package_root: Path) -> dict[str
             package_model["opponent_meta_conditioner_state_dict"].items()
         ),
     }
+    if "value_head_state_dict" in package_model:
+        portable_component_hashes["value"] = _tensor_state_sha256(
+            package_model["value_head_state_dict"].items()
+        )
     return {
         "schema_version": "0038_semantic_parity_runtime_inventory_v1",
         "git_commit": _git_commit(),
@@ -220,15 +277,30 @@ def build_runtime_inventory(*, checkpoint: Path, package_root: Path) -> dict[str
             "state_tensor_count": len(state),
             "adaptation": payload["adaptation"],
             "integrated_flags": payload["integrated_flags"],
+            "training_feature_preprocessing_version": metadata.get(
+                "feature_preprocessing_version"
+            ),
+            "training_distribution_compatible": (
+                metadata.get("feature_preprocessing_version")
+                == FEATURE_PREPROCESSING_VERSION
+            ),
         },
         "contracts": {
-            "action_boundary": metadata.get("action_schema_version"),
-            "decision_gate": metadata.get("decision_gate_version"),
-            "canonicalizer": metadata.get("canonicalizer_version"),
-            "trajectory": metadata.get("trajectory_schema_version"),
-            "official_protocol_adapter": metadata.get(
-                "official_protocol_adapter_version"
-            ),
+            "action_boundary": ACTION_BOUNDARY_SCHEMA_VERSION,
+            "decision_gate": DECISION_GATE_VERSION,
+            "canonicalizer": CANONICALIZER_VERSION,
+            "trajectory": TRAJECTORY_SCHEMA_VERSION,
+            "official_protocol_adapter": OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+            "feature_preprocessing": FEATURE_PREPROCESSING_VERSION,
+            "source_checkpoint": {
+                "action_boundary": metadata.get("action_schema_version"),
+                "decision_gate": metadata.get("decision_gate_version"),
+                "canonicalizer": metadata.get("canonicalizer_version"),
+                "trajectory": metadata.get("trajectory_schema_version"),
+                "official_protocol_adapter": metadata.get(
+                    "official_protocol_adapter_version"
+                ),
+            },
         },
         "package": {
             "root": str(package_root.relative_to(ROOT)),
@@ -243,9 +315,14 @@ def build_runtime_inventory(*, checkpoint: Path, package_root: Path) -> dict[str
             ),
             "checkpoint_update": portable_metadata.get("checkpoint_update"),
             "strict_load": (
-                set(package_model) == portable_expected_top_level
+                portable_top_level in (
+                    portable_required_top_level, portable_legacy_top_level
+                )
                 and not missing and not unexpected
+                and package_load_report["checkpoint_update"] == int(payload["update"])
+                and package_load_report["model_eval"]
             ),
+            "strict_load_report": package_load_report,
             "silent_legacy_fallback": _source_has_silent_macro_fallback(package_root),
             "model_eval": ".eval()" in (
                 package_root / "strategy/deployment/compound_inference.py"

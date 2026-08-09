@@ -22,9 +22,10 @@ from ..domain.prototypes import PrototypeIndex
 from ..model import ModelConfig, SemanticPolicy
 from .inference import _expanded_portable_state_dict
 from .online_runtime import OnlineCausalEncoder, _prototype_paths
+from .value_network import LatentQueryValueHead
 
 
-SCHEMA_VERSION = "0038_compound_kaggle_candidate_v2"
+SCHEMA_VERSION = "0038_compound_kaggle_candidate_v3"
 PROTOTYPES = (
     Path(__file__).resolve().parents[1]
     / "assets/official_full_engine_prototypes_v2.json"
@@ -96,11 +97,16 @@ class OpponentMetaConditioner(nn.Module):
 class PortableCompoundSemanticPolicy:
     """Greedy 0038 actor with forced shortcuts and cached macro expansion."""
 
-    def __init__(self, actor: SemanticPolicy, allocation_head: nn.Module,
+    def __init__(self, actor: SemanticPolicy, value_head: nn.Module,
+                 allocation_head: nn.Module,
                  meta_head: nn.Module, meta_conditioner: nn.Module,
                  deck: Sequence[int], metadata: Mapping[str, Any]) -> None:
         torch.set_num_threads(1)
         self.actor = actor.eval()
+        # The critic is carried and strict-loaded for audit/parity.  It is not
+        # called by select(), so deployment action latency and semantics remain
+        # actor-only.
+        self.value_head = value_head.eval()
         self.allocation_head = allocation_head.eval()
         self.meta_head = meta_head.eval()
         self.meta_conditioner = meta_conditioner.eval()
@@ -124,7 +130,8 @@ class PortableCompoundSemanticPolicy:
     def from_checkpoint(cls, path: Path, deck: Sequence[int]):
         payload = torch.load(path, map_location="cpu", weights_only=True)
         expected = {
-            "schema_version", "actor_state_dict", "allocation_head_state_dict",
+            "schema_version", "actor_state_dict", "value_head_state_dict",
+            "allocation_head_state_dict",
             "opponent_meta_head_state_dict", "opponent_meta_conditioner_state_dict",
             "metadata",
         }
@@ -145,6 +152,8 @@ class PortableCompoundSemanticPolicy:
             _expanded_portable_state_dict(payload["actor_state_dict"]), strict=True
         )
         width = int(actor.config.d_model)
+        value_head = LatentQueryValueHead(width, int(actor.config.heads))
+        value_head.load_state_dict(payload["value_head_state_dict"], strict=True)
         classes = int(metadata["opponent_meta_class_count"])
         allocation_head = DragapultAllocationHead(width)
         allocation_head.load_state_dict(payload["allocation_head_state_dict"], strict=True)
@@ -154,7 +163,20 @@ class PortableCompoundSemanticPolicy:
         conditioner.load_state_dict(
             payload["opponent_meta_conditioner_state_dict"], strict=True
         )
-        return cls(actor, allocation_head, meta_head, conditioner, deck, metadata)
+        return cls(
+            actor, value_head, allocation_head, meta_head, conditioner, deck, metadata
+        )
+
+    def value_from_encoded(self, validated, state, options):
+        """Diagnostic-only Value parity path; never called by select()."""
+        memory = torch.cat((state.tokens, options), dim=1)
+        memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
+        queries = self.value_head.decode(memory, memory_mask)
+        meta_logits = self.meta_head(state.summary)
+        conditioned = self.meta_conditioner(state.summary, meta_logits)
+        value_query = queries[:, 0] + (conditioned - state.summary)
+        logit = self.value_head.heads.value(value_query).squeeze(-1)
+        return 2.0 * logit.sigmoid() - 1.0
 
     def reset(self) -> None:
         self.encoder = None
@@ -187,6 +209,7 @@ class PortableCompoundSemanticPolicy:
         encoder = self._ensure_encoder(int(actor))
 
         if self.pending is not None:
+            self._observe_only(observation, int(actor))
             try:
                 action = self.pending.next_primitive(
                     observation, battle_id=self.battle_id
@@ -195,7 +218,6 @@ class PortableCompoundSemanticPolicy:
                 self.pending = None
                 raise
             else:
-                self._observe_only(observation, int(actor))
                 if self.pending.complete:
                     self.pending = None
                 return action

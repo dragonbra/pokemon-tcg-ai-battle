@@ -337,6 +337,12 @@ class SemanticProjectionTests(unittest.TestCase):
             "option_effect_mask",
         ):
             raw[name] = raw[name].to(dtype=torch.uint8)
+        raw["feature_schema_version"] = torch.ones(
+            (1,), dtype=torch.int64, device="cuda"
+        )
+        raw["feature_valid"] = torch.ones(
+            (1,), dtype=torch.uint8, device="cuda"
+        )
 
         normalized = semantic0031_v2_ready_batch(raw, max_action_steps=3)
 
@@ -354,6 +360,17 @@ class SemanticProjectionTests(unittest.TestCase):
         self.assertEqual(tuple(normalized["max_count"].shape), (1,))
         self.assertEqual(tuple(normalized["targets"].shape), (1, 1))
         self.assertTrue(torch.equal(normalized["max_count"], torch.tensor([2], device="cuda")))
+
+        missing_schema = dict(raw)
+        missing_schema.pop("feature_schema_version")
+        with self.assertRaisesRegex(KeyError, "feature_schema_version"):
+            semantic0031_v2_ready_batch(missing_schema, max_action_steps=3)
+        invalid = dict(raw)
+        invalid["feature_valid"] = torch.zeros(
+            (1,), dtype=torch.uint8, device="cuda"
+        )
+        with self.assertRaisesRegex(RuntimeError, "incomplete row"):
+            semantic0031_v2_ready_batch(invalid, max_action_steps=3)
 
     def test_hot_path_has_no_host_materialization(self) -> None:
         sources = "\n".join(

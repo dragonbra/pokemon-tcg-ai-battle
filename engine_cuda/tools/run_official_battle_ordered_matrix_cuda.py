@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -136,6 +137,106 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def sha256_tree(root: Path, suffixes: tuple[str, ...]) -> str:
+    """Hash build-relevant files by relative path and content."""
+
+    digest = hashlib.sha256()
+    files = sorted(
+        path for path in root.rglob("*")
+        if path.is_file() and path.suffix.lower() in suffixes
+    )
+    if not files:
+        raise ValueError(f"build input tree contains no matching files: {root}")
+    for path in files:
+        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(block)
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def persistent_build_contract(
+    *,
+    source: Path,
+    rules: Path,
+    image: str,
+    branch_coverage: bool,
+    nvcc_threads: int,
+    engine_root: Path = CUDA_ENGINE_ROOT,
+) -> dict[str, Any]:
+    """Return the exact source/rule contract required to reuse a Gate-A binary."""
+
+    return {
+        "schema_version": "official_cuda_gate_a_binary_provenance_v1",
+        "official_source_tree_sha256": sha256_tree(
+            source, (".h", ".hpp", ".cpp", ".c", ".cc")
+        ),
+        "cuda_include_tree_sha256": sha256_tree(
+            engine_root / "include", (".h", ".hpp", ".cuh")
+        ),
+        "cuda_extractor_tree_sha256": sha256_tree(
+            engine_root / "extractor", (".h", ".hpp", ".cpp", ".cc")
+        ),
+        "ordered_matrix_source_sha256": sha256_file(
+            engine_root / "benchmarks" / "official_battle_ordered_matrix_cuda_paired.cu"
+        ),
+        "paired_battle_source_sha256": sha256_file(
+            engine_root / "benchmarks" / "official_battle_end_turn_cuda_paired.cu"
+        ),
+        "cuda_kernel_source_sha256": sha256_file(
+            engine_root / "src" / "official_engine_kernels.cu"
+        ),
+        "rule_pack_sha256": sha256_file(rules),
+        "container_image": image,
+        "nvcc_threads": nvcc_threads,
+        "nvcc_contract": {
+            "std": "c++20",
+            "optimization": "O0",
+            "arch": "sm_86",
+            "split_compile": 1,
+            "branch_coverage": branch_coverage,
+        },
+    }
+
+
+def validate_persistent_build_manifest(
+    manifest_path: Path,
+    executable: Path,
+    expected: dict[str, Any],
+) -> None:
+    """Fail closed when a cached differential binary is stale or unprovenanced."""
+
+    if not manifest_path.is_file():
+        raise SystemExit(
+            "refusing unprovenanced cached Gate-A binary: "
+            f"missing {manifest_path}"
+        )
+    try:
+        recorded = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(
+            f"refusing invalid Gate-A build manifest {manifest_path}: {error}"
+        ) from error
+    mismatches = {
+        key: {"expected": value, "recorded": recorded.get(key)}
+        for key, value in expected.items()
+        if recorded.get(key) != value
+    }
+    actual_binary_hash = sha256_file(executable)
+    if recorded.get("executable_sha256") != actual_binary_hash:
+        mismatches["executable_sha256"] = {
+            "expected": actual_binary_hash,
+            "recorded": recorded.get("executable_sha256"),
+        }
+    if mismatches:
+        raise SystemExit(
+            "refusing stale Gate-A binary; rebuild required: "
+            + json.dumps(mismatches, sort_keys=True)
+        )
+
+
 def write_result(path: Path, result: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -176,6 +277,18 @@ def run_persistent_container(
     executable = build_dir / "official_battle_ordered_matrix_cuda_paired"
     if args.skip_persistent_build and not executable.is_file():
         raise SystemExit(f"persistent CUDA matrix executable is missing: {executable}")
+    build_manifest_path = build_dir / "build_manifest.json"
+    build_contract = persistent_build_contract(
+        source=source,
+        rules=rules,
+        image=image,
+        branch_coverage=args.branch_coverage,
+        nvcc_threads=args.nvcc_threads,
+    )
+    if args.skip_persistent_build:
+        validate_persistent_build_manifest(
+            build_manifest_path, executable, build_contract
+        )
     coverage_define = (
         "-DPTCG_OFFICIAL_BRANCH_COVERAGE=1 " if args.branch_coverage else ""
     )
@@ -245,6 +358,14 @@ def run_persistent_container(
             evidence_by_ordinal[int(ordinal_text)] = json.loads(payload)
     returncode = process.wait()
     if returncode == 0:
+        if not args.skip_persistent_build:
+            completed_manifest = {
+                **build_contract,
+                "executable_sha256": sha256_file(executable),
+            }
+            temporary_manifest = build_manifest_path.with_suffix(".json.tmp")
+            write_result(temporary_manifest, completed_manifest)
+            os.replace(temporary_manifest, build_manifest_path)
         return evidence_by_ordinal, None
     return evidence_by_ordinal, {
         "name": str(cases[active_ordinal - 1]["name"])

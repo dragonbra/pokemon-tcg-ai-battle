@@ -25,7 +25,7 @@ class PendingMacroTransaction:
     timeout_seconds: float = 30.0
     consumed: int = 0
     invalid_reason: str | None = None
-    _visible_identity_fingerprint: tuple[Any, ...] | None = None
+    _target_universe_fingerprint: tuple[Any, ...] | None = None
 
     @property
     def complete(self) -> bool:
@@ -85,20 +85,26 @@ class PendingMacroTransaction:
             unexpected = log_types.difference({15, 16, "Attack", "HpChange"})
             if unexpected:
                 raise MacroProtocolError(f"new information/event inside macro transaction: {unexpected}")
-        visible_identity = tuple(
-            (player_index, zone, slot, card.get("serial"), card.get("id"))
-            for player_index, player in enumerate(players)
-            if isinstance(player, Mapping)
-            for zone in ("active", "bench", "discard")
-            for slot, card in enumerate(player.get(zone) or [])
+        target_players = {target.player_index for target in self.allocation.target_ids}
+        target_universe = tuple(sorted(
+            (player_index, card.get("serial"), card.get("id"))
+            for player_index in target_players
+            if isinstance(players[player_index], Mapping)
+            for card in players[player_index].get("bench") or []
             if isinstance(card, Mapping)
-        )
+        ))
+        expected_universe = tuple(sorted(
+            (target.player_index, target.serial, target.card_id)
+            for target in self.allocation.target_ids
+        ))
+        if target_universe != expected_universe:
+            raise MacroProtocolError("stable target universe changed inside macro transaction")
         if (
-            self._visible_identity_fingerprint is not None
-            and visible_identity != self._visible_identity_fingerprint
+            self._target_universe_fingerprint is not None
+            and target_universe != self._target_universe_fingerprint
         ):
-            raise MacroProtocolError("visible card identity changed inside macro transaction")
-        self._visible_identity_fingerprint = visible_identity
+            raise MacroProtocolError("stable target universe drifted between callbacks")
+        self._target_universe_fingerprint = target_universe
         matches: list[int] = []
         expected = next(target for target in self.allocation.target_ids if target.serial == serial)
         for index, option in enumerate(options):

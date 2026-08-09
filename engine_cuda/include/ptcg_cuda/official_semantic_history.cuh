@@ -59,6 +59,7 @@ struct OfficialSemanticHistoryDeviceView {
     std::uint8_t* deck_membership_known = nullptr;
     std::uint8_t* prize_membership_known = nullptr;
     std::uint8_t* deck_order_known = nullptr;
+    std::uint8_t* known_self_deck_serial = nullptr;
     std::uint64_t* deck_source_event = nullptr;
     std::uint64_t* prize_source_event = nullptr;
     std::uint8_t* known_opponent_hand = nullptr;

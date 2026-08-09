@@ -256,22 +256,11 @@ PTCG_OFFICIAL_MAIN_HD inline bool official_main_add_attack_options_from_master(
                 option.params[1] = static_cast<std::int16_t>(attack_id);
                 option.params[2] = static_cast<std::int16_t>(bench_index);
                 option.option_equiv = static_cast<std::uint16_t>(copied_attack_id);
-                bool duplicate = false;
-                for (std::uint16_t option_index = 0;
-                     option_index < state->options.count;
-                     ++option_index) {
-                    const OfficialSelectOptionPod& existing =
-                        state->options.values[option_index];
-                    if (existing.type == static_cast<std::uint8_t>(
-                            OfficialSelectOptionTypeId::kAttack)
-                        && existing.params[0] == option.params[0]
-                        && existing.params[1] == option.params[1]
-                        && existing.params[2] == option.params[2]) {
-                        duplicate = true;
-                        break;
-                    }
-                }
-                if (duplicate) continue;
+                // Preserve one official option per eligible copy source.
+                // Two benched N Pokemon with the same printed attacks create
+                // identical JSON attackId aliases in the CPU engine.  They
+                // are semantically equivalent but remain distinct primitive
+                // options until the agent-side canonical DecisionGate layer.
                 if (!official_pod_push(
                         state, &state->options, option,
                         OfficialPodError::kOptionOverflow)) {

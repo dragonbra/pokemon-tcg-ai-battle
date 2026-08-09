@@ -234,17 +234,17 @@ def _run_job_impl(
             if protocol_executor.has_pending(job.game_id):
                 _trace[-1].update({"gate": "FORCED", "forced": True, "action_family": "phantom_dive_parameter"})
                 compiler = focal_compiler if actor == 0 else opponent_compiler
+                compiler.observe_only(observation)
                 try:
                     action = protocol_executor.select(job.game_id, observation)
                 except MacroProtocolError as error:
                     protocol_executor.invalidate(job.game_id, str(error))
                     _trace[-1].update({
-                        "gate": "STRATEGIC", "forced": False,
-                        "action_family": "phantom_dive_legacy_fallback",
+                        "action_family": "phantom_dive_macro_invalid",
                         "macro_fallback_reason": f"{type(error).__name__}: {error}",
                     })
+                    raise
                 else:
-                    compiler.observe_only(observation)
                     selections += 1
                     observation = battle.select(action)
                     continue

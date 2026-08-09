@@ -534,6 +534,7 @@ PTCG_OFFICIAL_HD inline void official_semantic_history_clear_lane(
             view->known_opponent_hand[serial_offset] = 0;
             view->possible_opponent_hand[serial_offset] = 0;
             view->remembered_opponent_cards[serial_offset] = 0;
+            view->known_self_deck_serial[serial_offset] = 0;
         }
     }
     for (std::uint32_t slot = 0; slot < view->capacity; ++slot) {
@@ -595,6 +596,13 @@ PTCG_OFFICIAL_HD inline void official_semantic_history_append_raw(
         } else if (type == OfficialSemanticLogType::kDraw && param_count >= 3) {
             if (view->deck_membership_known[player_offset] != 0) {
                 view->deck_source_event[player_offset] = event_index;
+                const std::int32_t serial = params[2];
+                if (serial > 0
+                    && serial < static_cast<std::int32_t>(
+                        kOfficialSemanticSerialCapacity)) {
+                    view->known_self_deck_serial[
+                        official_semantic_serial_offset(lane, player, serial)] = 0;
+                }
             }
         } else if ((type == OfficialSemanticLogType::kMoveCard
                 || type == OfficialSemanticLogType::kMoveCardReverse)
@@ -609,11 +617,20 @@ PTCG_OFFICIAL_HD inline void official_semantic_history_append_raw(
             const bool touches_deck =
                 from_area == static_cast<std::int32_t>(OfficialArea::kDeck)
                 || to_area == static_cast<std::int32_t>(OfficialArea::kDeck);
+            const bool touches_deck_bottom =
+                from_area == static_cast<std::int32_t>(OfficialArea::kDeckBottom)
+                || to_area == static_cast<std::int32_t>(OfficialArea::kDeckBottom);
             const bool touches_prize =
                 from_area == static_cast<std::int32_t>(OfficialArea::kPrize)
                 || to_area == static_cast<std::int32_t>(OfficialArea::kPrize);
-            if (!visible_to_owner) {
-                if (touches_deck) {
+            if (type == OfficialSemanticLogType::kMoveCardReverse
+                || !visible_to_owner || touches_deck_bottom) {
+                // The official observation reports DeckBottom as area 14,
+                // while CausalKnowledge only updates exact membership for
+                // area 1.  The next deck-count check therefore invalidates
+                // exact membership.  Mirror that loss of authority instead
+                // of recomputing hidden truth from the resident state.
+                if (touches_deck || touches_deck_bottom) {
                     view->deck_membership_known[player_offset] = 0;
                     view->deck_order_known[player_offset] = 0;
                 }
@@ -624,6 +641,17 @@ PTCG_OFFICIAL_HD inline void official_semantic_history_append_raw(
                 if (touches_deck
                     && view->deck_membership_known[player_offset] != 0) {
                     view->deck_source_event[player_offset] = event_index;
+                    const std::int32_t serial = params[2];
+                    if (serial > 0
+                        && serial < static_cast<std::int32_t>(
+                            kOfficialSemanticSerialCapacity)) {
+                        view->known_self_deck_serial[
+                            official_semantic_serial_offset(
+                                lane, player, serial)] =
+                            to_area == static_cast<std::int32_t>(
+                                OfficialArea::kDeck)
+                                ? 1 : 0;
+                    }
                 }
                 if (to_area == static_cast<std::int32_t>(OfficialArea::kDeck)) {
                     view->deck_order_known[player_offset] = 0;

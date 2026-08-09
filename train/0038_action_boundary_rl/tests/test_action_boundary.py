@@ -113,6 +113,43 @@ class DragapultTests(unittest.TestCase):
             transaction.next_primitive(obs, battle_id="battle-a")
         self.assertIsNotNone(transaction.invalid_reason)
 
+    def test_macro_allows_bench_reordering_but_not_target_universe_drift(self):
+        targets = self.targets(2)
+        transaction = PendingMacroTransaction(
+            "battle-a", 0, DragapultDamageAllocation(targets, (1, 5))
+        )
+
+        def callback(remain, bench):
+            return {
+                "current": {"yourIndex": 0, "players": [{}, {"bench": bench}]},
+                "select": {
+                    "context": 14, "remainDamageCounter": remain,
+                    "minCount": 1, "maxCount": 1,
+                    "option": [
+                        {"playerIndex": 1, "index": 0},
+                        {"playerIndex": 1, "index": 1},
+                    ],
+                },
+            }
+
+        original = [
+            {"serial": targets[0].serial, "id": targets[0].card_id},
+            {"serial": targets[1].serial, "id": targets[1].card_id},
+        ]
+        reordered = list(reversed(original))
+        self.assertEqual(
+            transaction.next_primitive(callback(6, original), battle_id="battle-a"),
+            [0],
+        )
+        self.assertEqual(
+            transaction.next_primitive(callback(5, reordered), battle_id="battle-a"),
+            [0],
+        )
+
+        drifted = [reordered[0], {"serial": 999, "id": reordered[1]["id"]}]
+        with self.assertRaises(MacroProtocolError):
+            transaction.next_primitive(callback(4, drifted), battle_id="battle-a")
+
 
 class AllocationHeadTests(unittest.TestCase):
     def test_permutation_invariant_and_root_independent(self):

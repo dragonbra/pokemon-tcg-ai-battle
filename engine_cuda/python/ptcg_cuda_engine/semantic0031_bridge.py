@@ -17,6 +17,8 @@ from typing import Any
 
 
 SEMANTIC0031_SCHEMA = "0031_rule_faithful_semantic_decision_v2"
+SEMANTIC0031_CUDA_FEATURE_SCHEMA = "0038_cuda_semantic0031_feature_parity_v1"
+SEMANTIC0031_CUDA_FEATURE_SCHEMA_VERSION = 1
 SEMANTIC0031_PACKAGE_SCHEMA = "0031_pt0805_compact_candidate_v1"
 SEMANTIC0031_CHECKPOINT_SCHEMA = "0031_compact_fp16_storage_v1"
 SEMANTIC0031_FP32_SHARED_CHECKPOINT_SCHEMA = "0031_compact_shared_prototype_fp32_v1"
@@ -120,6 +122,9 @@ _SEMANTIC0031_V2_REQUIRED_KEYS = frozenset(
         "max_count",
         "targets",
     }
+)
+_SEMANTIC0031_V2_ATTESTATION_KEYS = frozenset(
+    {"feature_schema_version", "feature_valid"}
 )
 _SEMANTIC0031_V2_MASK_KEYS = frozenset(
     {
@@ -1379,7 +1384,10 @@ def semantic0031_v2_ready_batch(
 
     if not 1 <= max_action_steps <= 64:
         raise ValueError("semantic0031 max_action_steps must be in [1, 64]")
-    missing = sorted(_SEMANTIC0031_V2_REQUIRED_KEYS - set(batch))
+    missing = sorted(
+        (_SEMANTIC0031_V2_REQUIRED_KEYS | _SEMANTIC0031_V2_ATTESTATION_KEYS)
+        - set(batch)
+    )
     if missing:
         raise KeyError(f"semantic0031 v2 batch is missing fields: {missing}")
     device = batch["option_mask"].device
@@ -1412,6 +1420,22 @@ def semantic0031_v2_ready_batch(
     batch_size = option_mask.shape[0]
     if batch["global_cat"].shape[0] != batch_size:
         raise ValueError("semantic0031 v2 global batch axis disagrees")
+    feature_schema = batch["feature_schema_version"]
+    feature_valid = batch["feature_valid"]
+    if feature_schema.device != device or feature_valid.device != device:
+        raise ValueError("semantic0031 v2 feature attestation is on a different device")
+    if feature_schema.shape != (batch_size,) or feature_valid.shape != (batch_size,):
+        raise ValueError("semantic0031 v2 feature attestation must have shape [batch]")
+    if feature_schema.dtype != torch.int64:
+        raise TypeError("semantic0031 v2 feature schema must be int64")
+    if not bool(feature_schema.eq(SEMANTIC0031_CUDA_FEATURE_SCHEMA_VERSION).all()):
+        raise RuntimeError(
+            "semantic0031 CUDA feature schema mismatch; refusing zero/default fallback"
+        )
+    if not bool(feature_valid.bool().all()):
+        raise RuntimeError(
+            "semantic0031 CUDA feature codec reported an incomplete row"
+        )
 
     sequence_fields = {
         "card_mask": batch["card_cat"].shape[:2],

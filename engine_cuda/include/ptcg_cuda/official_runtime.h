@@ -43,8 +43,21 @@ constexpr std::size_t kSemantic0031EventCatWidth = 31;
 constexpr std::size_t kSemantic0031EventNumWidth = 4;
 constexpr std::size_t kSemantic0031OptionCatWidth = 19;
 constexpr std::size_t kSemantic0031OptionNumWidth = 2;
+// The authoritative Python compiler considers ability/play/delay skills for
+// each of source/context/effect cards.  A skill has at most eleven effects in
+// the audited rule database and an attack has at most seven pre/post effects.
+constexpr std::size_t kSemantic0031MaxCardSkills = 3;
+constexpr std::size_t kSemantic0031MaxSkillEffects = 11;
+constexpr std::size_t kSemantic0031MaxAttackEffects = 7;
+constexpr std::size_t kSemantic0031OptionSkillCapacity =
+    kSemantic0031ReadyCapacity * 3 * kSemantic0031MaxCardSkills;
+constexpr std::size_t kSemantic0031OptionEffectCapacity =
+    kSemantic0031OptionSkillCapacity * kSemantic0031MaxSkillEffects
+    + kSemantic0031ReadyCapacity * kSemantic0031MaxAttackEffects;
+constexpr std::int64_t kSemantic0031CudaFeatureSchemaVersion = 1;
 
 struct OfficialSemantic0031CodecBuffers {
+    std::uint8_t* feature_valid = nullptr;
     std::int64_t* global_cat = nullptr;
     float* global_num = nullptr;
     std::int64_t* global_state = nullptr;
@@ -73,6 +86,14 @@ struct OfficialSemantic0031CodecBuffers {
     std::int64_t* option_target = nullptr;
     std::int64_t* option_context = nullptr;
     std::int64_t* option_effect_card = nullptr;
+    std::int64_t* option_skill_id = nullptr;
+    std::int64_t* option_skill_role = nullptr;
+    std::int64_t* option_skill_parent = nullptr;
+    std::uint8_t* option_skill_mask = nullptr;
+    std::int64_t* option_effect_id = nullptr;
+    std::int64_t* option_effect_role = nullptr;
+    std::int64_t* option_effect_parent = nullptr;
+    std::uint8_t* option_effect_mask = nullptr;
     std::int64_t* min_count = nullptr;
     std::int64_t* max_count = nullptr;
     std::int64_t* targets = nullptr;
@@ -92,6 +113,7 @@ struct OfficialDeviceArena {
     std::uint8_t* semantic_deck_membership_known = nullptr;
     std::uint8_t* semantic_prize_membership_known = nullptr;
     std::uint8_t* semantic_deck_order_known = nullptr;
+    std::uint8_t* semantic_known_self_deck_serial = nullptr;
     std::uint64_t* semantic_deck_source_event = nullptr;
     std::uint64_t* semantic_prize_source_event = nullptr;
     std::uint8_t* semantic_known_opponent_hand = nullptr;

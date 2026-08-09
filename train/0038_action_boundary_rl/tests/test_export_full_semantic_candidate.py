@@ -13,6 +13,21 @@ exporter = importlib.import_module(
 
 
 class ExportFullSemanticCandidateTest(unittest.TestCase):
+    def test_portable_value_network_matches_training_state_contract(self) -> None:
+        training_value = importlib.import_module(
+            "train.0038_action_boundary_rl.policy.value_network"
+        ).LatentQueryValueHead(320, queries=8, layers=2, heads=8, dropout=0.0)
+        portable_value = importlib.import_module(
+            "train.0038_action_boundary_rl.kaggle_runtime.value_network"
+        ).LatentQueryValueHead(320, 8)
+        training_state = training_value.state_dict()
+        portable_state = portable_value.state_dict()
+        self.assertEqual(set(training_state), set(portable_state))
+        self.assertEqual(
+            {name: tuple(value.shape) for name, value in training_state.items()},
+            {name: tuple(value.shape) for name, value in portable_state.items()},
+        )
+
     def test_export_uses_0038_cached_semantic_runtime(self) -> None:
         runtime = exporter.SEMANTIC_RUNTIME_ROOT / "model/policy.py"
         source = runtime.read_text(encoding="utf-8")

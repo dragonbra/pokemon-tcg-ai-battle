@@ -11,6 +11,15 @@ from typing import Any
 
 import torch
 
+from .action_boundary.contracts import (
+    ACTION_BOUNDARY_SCHEMA_VERSION,
+    CANONICALIZER_VERSION,
+    DECISION_GATE_VERSION,
+    FEATURE_PREPROCESSING_VERSION,
+    OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+    TRAJECTORY_SCHEMA_VERSION,
+)
+
 
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT_ID = "0038_action_boundary_rl"
@@ -18,7 +27,7 @@ SOURCE_SCHEMA = "0031_shared_prototype_fp16_storage_candidate_checkpoint_v1"
 SOURCE_RUNTIME_SCHEMA = (
     "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
 )
-OUTPUT_SCHEMA = "0038_compound_kaggle_candidate_v2"
+OUTPUT_SCHEMA = "0038_compound_kaggle_candidate_v3"
 SOURCE_SCHEMAS = frozenset({SOURCE_SCHEMA, SOURCE_RUNTIME_SCHEMA})
 BASE_SCHEMA = "0031_model_only_checkpoint_v1"
 BASE_SHA256 = "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
@@ -50,6 +59,22 @@ def _sha256(path: Path) -> str:
 def _deck_hash(deck: list[int]) -> str:
     payload = ",".join(str(card_id) for card_id in sorted(deck)).encode("ascii")
     return hashlib.sha256(payload).hexdigest()
+
+
+def _package_file_hashes(root: Path) -> dict[str, str]:
+    rows: dict[str, str] = {}
+    for path in sorted(root.rglob("*")):
+        if (
+            not path.is_file()
+            or path.name == "manifest.json"
+            or "__pycache__" in path.parts
+            or path.suffix == ".pyc"
+        ):
+            continue
+        rows[str(path.relative_to(root))] = _sha256(path)
+    if not rows:
+        raise ValueError("candidate package file inventory is empty")
+    return rows
 
 
 def _load_payload(path: Path) -> dict[str, Any]:
@@ -231,11 +256,15 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
     deployed_prefixes = (
         "allocation_head.", "opponent_meta_head.", "opponent_meta_conditioner."
     )
-    ignored_prefixes = ("value_head.", "prize_aux.")
+    value_names = {name for name in rl_state if name.startswith("value_head.")}
+    ignored_prefixes = ("prize_aux.",)
     deployed_names = {name for name in rl_state if name.startswith(deployed_prefixes)}
     ignored_names = {name for name in rl_state if name.startswith(ignored_prefixes)}
     if (
-        set(rl_state) != rl_decoder_names | lora_names | deployed_names | ignored_names
+        set(rl_state) != (
+            rl_decoder_names | lora_names | value_names | deployed_names | ignored_names
+        )
+        or not value_names
         or not any(name.startswith("allocation_head.") for name in deployed_names)
         or not any(name.startswith("opponent_meta_head.") for name in deployed_names)
         or not any(name.startswith("opponent_meta_conditioner.") for name in deployed_names)
@@ -288,17 +317,25 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
         "source_policy_update": metadata.get("source_policy_update"),
         "actor_metadata": source_payload["metadata"],
         "opponent_meta_class_count": int(flags["opponent_meta_class_count"]),
-        "action_schema_version": metadata.get("action_schema_version"),
-        "decision_gate_version": metadata.get("decision_gate_version"),
-        "canonicalizer_version": metadata.get("canonicalizer_version"),
-        "official_protocol_adapter_version": metadata.get(
-            "official_protocol_adapter_version"
-        ),
+        "action_schema_version": ACTION_BOUNDARY_SCHEMA_VERSION,
+        "decision_gate_version": DECISION_GATE_VERSION,
+        "canonicalizer_version": CANONICALIZER_VERSION,
+        "trajectory_schema_version": TRAJECTORY_SCHEMA_VERSION,
+        "official_protocol_adapter_version": OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+        "feature_preprocessing_version": FEATURE_PREPROCESSING_VERSION,
+        "source_checkpoint_contracts": {
+            key: metadata.get(key) for key in (
+                "action_schema_version", "decision_gate_version",
+                "canonicalizer_version", "trajectory_schema_version",
+                "official_protocol_adapter_version",
+            )
+        },
         "inference_contract": "greedy_root_plus_allocation_with_primitive_expansion",
     }
     portable = {
         "schema_version": OUTPUT_SCHEMA,
         "actor_state_dict": portable_actor_state,
+        "value_head_state_dict": portable_substate("value_head."),
         "allocation_head_state_dict": portable_substate("allocation_head."),
         "opponent_meta_head_state_dict": portable_substate("opponent_meta_head."),
         "opponent_meta_conditioner_state_dict": portable_substate(
@@ -335,12 +372,16 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             RUNTIME_ROOT / "compound_inference.py",
             output / "strategy/deployment/compound_inference.py",
         )
+        shutil.copy2(
+            RUNTIME_ROOT / "value_network.py",
+            output / "strategy/deployment/value_network.py",
+        )
         action_boundary = output / "strategy/action_boundary"
         action_boundary.mkdir()
         (action_boundary / "__init__.py").write_text("", encoding="utf-8")
         for name in (
             "decision_gate.py", "dragapult.py", "macro_planner.py", "macro_protocol.py",
-            "public_card_features.py",
+            "public_card_features.py", "contracts.py",
         ):
             shutil.copy2(ACTION_BOUNDARY_ROOT / name, action_boundary / name)
         torch.save(portable, output / "strategy/model.bin")
@@ -362,6 +403,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             "deck_id": FOCAL_DECK_ID,
             "deck_display_name": "007 · Dragapult ex",
             "deck_sha256": deck_sha256,
+            "deck_file_sha256": _sha256(output / "deck.csv"),
             "deck_source": str(FOCAL_DECK_PATH.relative_to(ROOT)),
             "source_candidate": str(source.relative_to(ROOT)),
             "source_portable_checkpoint_sha256": _sha256(source_model_path),
@@ -393,7 +435,8 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             "evaluation_inference_device": "cuda:0",
             "model_only": True,
             "optimizer_state_saved": False,
-            "critic_deployed": False,
+            "critic_deployed": True,
+            "critic_runtime_role": "strict-loaded diagnostic only; excluded from select()",
             "frozen_evaluation": frozen,
             "selection": (
                 f"V10 update{checkpoint_update} canonical Frozen-0806 greedy "
@@ -401,6 +444,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
                 f"({frozen['win_rate'] * 100:.8f}%), 0 error"
             ),
         }
+        manifest["package_file_sha256"] = _package_file_hashes(output)
         (output / "manifest.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )

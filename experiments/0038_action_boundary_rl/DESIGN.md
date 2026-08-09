@@ -136,13 +136,14 @@ V9 完成 update 2 后因 rollout 效率合同变更停止；其 2,048→512 tra
 
 ## 2026-08-09 release-blocking semantic parity audit
 
-U230 之后的只读/隔离诊断推翻了“CUDA Frozen 与 official package 已具备输入语义等价”的前提，当前不得启动新 RL 或把 U230 标成 submission-ready：
+本轮先固化 U230 的 pre-fix failures，再按 Gate A→B→C→D 完成 runtime 修复。修复后的证据为：
 
-- 模型无关的相同 primitive script 在 Zoroark/Munkidori seed 1、decision 129 产生规则 continuation 分歧；这是 CUDA rules blocker。
-- 固定 283-decision official trace 的权威状态可由 CUDA 逐 primitive 重放，但 CUDA `semantic0031_v2_lanes` 从 decision 0 起把 `option_skill_*`/`option_effect_*` 关系张量置零，后续 event/resource/deck-membership history 也与 official compiler 不同。
-- 同一 U230 在 143 个 focal snapshots 上有 137 个 root-logit tolerance failure、5 个 greedy complete-action divergence；第一处 greedy divergence 位于 engine decision 60。Value 最大绝对差为 0.403，并有 2 次符号差异。输入不等时不得把这些差异归因于 GPU 浮点。
-- 不可变 U230 归档包只对 `n≤5` 建 macro，且 `MacroProtocolError` 后会清空 transaction 再做 fresh Policy decision；它不符合当前 fail-closed、`n≤8` 合同。源码中的最小修复不回写旧包，也不改变 checkpoint 权重。
-- official `n=1..5` 共 330 个 allocation 的既有 exhaustive parity 为 0 failure；`n=6..8` 已有枚举、stable-serial relocation 和协议回归，但尚缺真实扩展 Bench official fixture，因此仍是明确 coverage gap。
-- forced `observe_only` 的 knowledge/history/next-feature 回归通过；这不能抵消 CUDA rule/feature 两个上游 blocker。
+- Gate A：最新源码重编后的 Dragapult/Dusknoir、Area Zero、Zoroark/Munkidori 共 697 个 fixed primitive decisions，CPU/reference/CUDA state、status、outcome mismatch 均为 0。原 decision 129 continuation failure 来自没有源码 provenance 的 stale cached binary；缓存现在必须校验 official/CUDA source、rule blob、compile contract 和 executable hash。
+- Gate B：真实 official Area Zero fixtures 对 `n=6..8` 的 3,102 个 allocation 全部通过 canonical macro、legacy sequence 与 reversed-order alias parity；加上既有 `n=1..5` 的 330 个 allocation，最终权威 public state failure 为 0。CUDA/package callback 按 `option_source → stable serial` 重定位，任何 drift 都 fail closed，不能在内部 callback 重新调用 Policy。
+- Gate C：immutable 283-decision trace 的所有模型输入 tensor、legal/mask 精确一致；143 个 focal decisions 的 root top-1/top-2/greedy divergence 为 0。CUDA/package root-logit 最大误差 `6.44e-6`，训练/CUDA Value 最大误差 `1.37e-6`、无符号翻转。修复涵盖 option skill/effect relations、event history、public resource/deck/Prize knowledge 和 feature-schema attestation。
+- Gate D：8 局 CPU package/CUDA lockstep、1,335 callbacks、21 个 Phantom macros/126 个内部 callbacks，first divergence、fallback、timeout 均为 0。过程中额外修复 full-deck Prize 泄漏、stale exact-deck 重建和 Zoroark copied-attack primitive alias 被 CUDA 去重的问题。
+- forced `observe_only`、macro one-forward/one-Value/one-transition、joint logprob 和 boundary GAE 合同继续通过；GRU 保持 request-local。
 
-审计期间没有修改 `engine/source/`、checkpoint 或模型结构。修复 release gate 的顺序必须是 CUDA primitive rules → exact official/CUDA feature tensor → macro expanded-Bench official fixture → per-decision paired games；只有四个 Gate 全部通过，CUDA Frozen 才能作为 official/Kaggle 强度证据。完整证据见仓库根 `SEMANTIC_PARITY_AUDIT.md`。
+这次没有修改 `engine/source/`、official ABI/observation schema、checkpoint tensors、reward、学习率或模型结构。不过 U230 权重是在上述 feature 修复前的 CUDA 输入分布上通过 PPO 得到的，运行时 Gate PASS 不能恢复它的训练分布。因此 U230 继续是不可提交、不可续训的诊断 checkpoint。release manifest 会在 checkpoint metadata 缺少当前 `0038_cpu_authoritative_cuda_feature_parity_v1` attestation 时 fail closed。
+
+下一阶段只能从原始 Zero-Shot/Pretrain 权重建立修复后 U0，先做 CUDA vs packaged official CPU parity，再经人工确认运行最多 5～10 updates canary；不得从 U215/U230 继续。完整证据、修改文件、命令与风险见仓库根 `SEMANTIC_PARITY_AUDIT.md`。

@@ -20,6 +20,8 @@ class SemanticParitySubmissionManifestTest(unittest.TestCase):
                 "schema_version": "checkpoint-v1",
                 "source_actor_sha256": "0" * 64,
                 "critical_missing_keys": [], "critical_unexpected_keys": [],
+                "training_feature_preprocessing_version": None,
+                "training_distribution_compatible": False,
                 "component_sha256": {
                     "base_encoder": "1" * 64, "option_encoder_lora": "2" * 64,
                     "action_decoder": "3" * 64, "value": "4" * 64,
@@ -45,6 +47,7 @@ class SemanticParitySubmissionManifestTest(unittest.TestCase):
                 "action_boundary": "ab", "decision_gate": "gate",
                 "canonicalizer": "canon", "trajectory": "trajectory",
                 "official_protocol_adapter": "adapter",
+                "feature_preprocessing": "features",
             },
         }
         result = module.build_manifest(
@@ -55,6 +58,10 @@ class SemanticParitySubmissionManifestTest(unittest.TestCase):
         self.assertFalse(result["release_ready"])
         self.assertIn("package contains silent macro-to-policy fallback", result["release_blockers"])
         self.assertIn("Gate C is FAIL", result["release_blockers"])
+        self.assertIn(
+            "checkpoint was trained under an incompatible or unattested feature distribution",
+            result["release_blockers"],
+        )
 
     def test_validator_rejects_removed_field_and_false_ready_claim(self) -> None:
         module = importlib.import_module(
@@ -69,6 +76,7 @@ class SemanticParitySubmissionManifestTest(unittest.TestCase):
                 "base_encoder_component_sha256": "2" * 64,
                 "lora_sha256": "3" * 64, "action_decoder_sha256": "4" * 64,
                 "value_sha256": "5" * 64, "allocation_head_sha256": "6" * 64,
+                "training_distribution_compatible": False,
             },
             "package": {
                 "model_sha256": "7" * 64, "manifest_sha256": "8" * 64,

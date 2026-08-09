@@ -387,6 +387,12 @@ def _summary(catalog: Any, candidate: Any, result: dict[str, Any]) -> dict[str, 
         "progress_guard_forfeits": result["progress_guard"][
             "forfeit_schedule_indices"
         ],
+        "turn_limit_draws": result["progress_guard"].get(
+            "turn_limit_draw_schedule_indices", []
+        ),
+        "turn_limit_draw_contract": (
+            result["progress_guard"].get("engine_turn_draw_limit") == 100
+        ),
         "wall_seconds": result["collector"]["wall_seconds"],
         "games_per_second": result["collector"]["games_per_second_wall"],
         "lane_count": int(result["collector"].get("lane_count", 0)),
@@ -397,29 +403,62 @@ def _summary(catalog: Any, candidate: Any, result: dict[str, Any]) -> dict[str, 
     }
 
 
-def _card_rows(candidate: Any) -> str:
+def _deck_overview(candidate: Any, summary: dict[str, Any]) -> str:
     from evaluation.cards import card_image_url, load_card_catalog
 
     cards = load_card_catalog(ROOT / "data/official/EN_Card_Data.csv")
-    rows = []
+    groups: dict[str, list[str]] = {"Pokémon": [], "Trainer": [], "Energy": []}
+    group_counts = Counter()
     for card_id, count in sorted(
         Counter(candidate.deck).items(),
         key=lambda item: (cards[item[0]]["name"], item[0]),
     ):
         card = cards[card_id]
+        stage_or_type = str(card.get("stage_or_type", ""))
+        if "Pokémon" in stage_or_type:
+            group = "Pokémon"
+        elif "Energy" in stage_or_type or "Energy" in str(card["name"]):
+            group = "Energy"
+        else:
+            group = "Trainer"
         image_url = card_image_url(card["expansion"], card["collection_number"])
         image = (
-            f'<img class="card-thumb" src="{html.escape(image_url, quote=True)}" '
-            f'alt="{html.escape(card["name"], quote=True)}" loading="lazy">'
+            f'<img src="{html.escape(image_url, quote=True)}" '
+            f'alt="{html.escape(card["name"], quote=True)}" loading="lazy" '
+            f'onerror="this.hidden=true">'
             if image_url
             else ""
         )
-        rows.append(
-            f"<tr><td>{image}</td><td>{card_id}</td>"
-            f"<td>{html.escape(card['name'])}<small>{html.escape(card['expansion'])} "
-            f"{html.escape(card['collection_number'])}</small></td><td>{count}</td></tr>"
+        groups[group].append(
+            f'<div class="deck-entry">{image}<span>'
+            f'<span class="deck-card-name">{html.escape(card["name"])}</span>'
+            f'<span class="deck-card-set">{html.escape(card["expansion"])} '
+            f'{html.escape(card["collection_number"])} · ID {card_id}</span></span>'
+            f'<span class="deck-card-count">×{count}</span></div>'
         )
-    return "".join(rows)
+        group_counts[group] += count
+    representative_images = "".join(
+        f'<img src="{html.escape(str(card["image_url"]), quote=True)}" '
+        f'alt="{html.escape(str(card["name"]), quote=True)}" loading="eager" '
+        f'onerror="this.hidden=true">'
+        for card in candidate.representative_cards
+    )
+    group_html = "".join(
+        f'<div class="deck-group"><div class="deck-group-head"><h3>{group}</h3>'
+        f'<span class="deck-count">{group_counts[group]} 张</span></div>'
+        f'<div class="deck-list">{"".join(groups[group])}</div></div>'
+        for group in ("Pokémon", "Trainer", "Energy")
+    )
+    return (
+        '<section class="candidate-overview"><div class="candidate-lead"><div>'
+        '<p class="candidate-kicker">主视角卡组</p>'
+        f'<h2 class="candidate-title">{html.escape(summary["deck_number"])} · '
+        f'{html.escape(summary["display_name"])}</h2>'
+        '<div class="candidate-meta"><span>Policy-0806</span><span>Exact 60 cards</span>'
+        '<span>Frozen Arena · 0806_kaggle_top100_plus_v1</span></div></div>'
+        f'<div class="candidate-representatives">{representative_images}</div></div>'
+        f'<div class="deck-groups">{group_html}</div></section>'
+    )
 
 
 def _report_html(
@@ -431,6 +470,7 @@ def _report_html(
     actor_label: str = "Policy-0806",
     actor_sha256: str = POLICY_SHA256,
     back_href: str = "../index.html",
+    evaluation_seed: int = EVALUATION_SEED,
 ) -> str:
     matchup_rows = []
     matchup_bars = []
@@ -475,7 +515,7 @@ def _report_html(
             "evidence_boundary": (
                 "CUDA engine result; not official-CPU strength evidence until parity is established"
             ),
-            "evaluation_seed": EVALUATION_SEED,
+            "evaluation_seed": evaluation_seed,
             "actor_label": actor_label,
             "actor_sha256": actor_sha256,
             "opponent_policy_sha256": POLICY_SHA256,
@@ -495,15 +535,16 @@ def _report_html(
 :root{{--bg:#f3f7f5;--surface:#fff;--soft:#f7faf8;--ink:#172b25;--muted:#60736c;--line:#dce7e2;--brand:#217a58;--dark:#14563d;--warn:#a66a18}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 system-ui,"PingFang SC",sans-serif}}main{{max-width:1240px;margin:auto;padding:36px 28px 64px}}
 .hero{{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:22px;padding:30px 32px;border-radius:8px;color:#fff;background:var(--dark)}}.hero-main{{display:flex;align-items:center;gap:18px}}.hero-art{{display:flex;min-width:78px}}.hero-art img{{width:58px;height:80px;margin-right:-13px;border:2px solid #d7eee4;border-radius:7px;object-fit:cover;box-shadow:0 8px 20px #082d2066}}.eyebrow{{margin:0 0 6px;color:#c8eadb;font-size:12px;font-weight:700;letter-spacing:.12em}}.back{{color:#d8eee5;text-decoration:none;font-weight:700}}h1{{margin:4px 0 0;font-size:32px;line-height:1.2}}h2{{margin:0 0 6px;font-size:20px}}section{{margin:18px 0;padding:22px;overflow:auto;border:1px solid var(--line);border-radius:8px;background:#fff}}
+.candidate-overview{{padding:0;overflow:hidden}}.candidate-lead{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;padding:24px;border-bottom:1px solid var(--line);background:#fff}}.candidate-kicker{{margin:0 0 5px;color:var(--brand);font-size:12px;font-weight:750;text-transform:uppercase}}.candidate-title{{font-size:26px}}.candidate-meta{{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;color:var(--muted);font-size:12px}}.candidate-representatives{{display:flex;align-items:center;gap:10px}}.candidate-representatives img{{width:112px;aspect-ratio:2.5/3.5;object-fit:cover;border:1px solid #cbd9d2;border-radius:6px;background:#e7eeea}}.deck-groups{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:18px 24px 24px}}.deck-group{{min-width:0;padding:0 20px;border-left:1px solid var(--line)}}.deck-group:first-child{{padding-left:0;border-left:0}}.deck-group:last-child{{padding-right:0}}.deck-group-head{{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}}.deck-group-head h3{{margin:0;font-size:15px}}.deck-count{{color:var(--muted);font-size:12px}}.deck-list{{display:grid;gap:3px}}.deck-entry{{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:48px;padding:4px 0;border-top:1px solid #edf2ef}}.deck-entry:first-child{{border-top:0}}.deck-entry img{{width:38px;height:52px;object-fit:cover;border:1px solid #d2ddd7;border-radius:3px;background:#e7eeea}}.deck-card-name{{display:block;font-size:12px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}}.deck-card-set{{display:block;color:var(--muted);font-size:10px}}.deck-card-count{{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums}}
 .summary{{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}}.card{{min-height:92px;padding:15px 16px;border:1px solid var(--line);border-radius:11px;background:#fff}}.label,small{{display:block;color:var(--muted);font-size:12px}}.value{{margin-top:5px;font-size:23px;font-weight:750}}.warn{{border-left:4px solid var(--warn)}}
 .matchup-chart{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 20px;margin-top:14px;font-size:12px}}.chart-row{{display:grid;grid-template-columns:minmax(210px,270px) 1fr 125px;gap:8px;align-items:center;padding:4px 5px;border-radius:6px}}.chart-row:hover{{background:var(--soft)}}.opponent-identity{{display:flex;align-items:center;min-width:0;gap:7px}}.deck-number{{min-width:34px;padding:2px 5px;border:1px solid #b8cec4;border-radius:4px;background:#edf6f1;color:var(--dark);font-weight:800;text-align:center}}.opponent-thumbnails{{display:flex;padding-left:3px}}.opponent-thumb{{width:29px;height:38px;margin-left:-3px;object-fit:cover;border:1px solid #bdccc5;border-radius:4px;background:#e6eee9}}.opponent-name{{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}.bar-track{{height:7px;overflow:hidden;border-radius:999px;background:#e4ece8}}.bar{{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#2a8d65,#54b184)}}.chart-result{{text-align:right}}.chart-rate{{font-weight:800}}.chart-record{{margin-left:5px;color:var(--muted);font-size:11px}}
-table{{width:100%;min-width:820px;margin-top:14px;border-collapse:collapse}}th,td{{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}}th{{background:var(--soft);color:#496159;font-size:12px}}th:nth-child(2),td:nth-child(2){{text-align:left}}tr:hover td{{background:#fbfdfc}}.card-thumb{{width:46px;height:64px;object-fit:cover;border-radius:5px}}img{{cursor:zoom-in}}code{{font-size:11px;overflow-wrap:anywhere}}.lightbox{{position:fixed;inset:0;z-index:10;display:none;place-items:center;padding:24px;background:#071c16dd}}.lightbox.open{{display:grid}}.lightbox img{{max-width:min(90vw,520px);max-height:88vh;border-radius:12px;box-shadow:0 24px 80px #0009;cursor:zoom-out}}@media(max-width:780px){{main{{padding:18px 12px}}.hero{{padding:22px 18px;align-items:flex-start}}.hero-main{{align-items:flex-start}}.hero-art img{{width:45px;height:63px}}.matchup-chart{{grid-template-columns:1fr}}}}
+table{{width:100%;min-width:820px;margin-top:14px;border-collapse:collapse}}th,td{{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;vertical-align:middle}}th{{background:var(--soft);color:#496159;font-size:12px}}th:nth-child(2),td:nth-child(2){{text-align:left}}tr:hover td{{background:#fbfdfc}}img{{cursor:zoom-in}}code{{font-size:11px;overflow-wrap:anywhere}}.lightbox{{position:fixed;inset:0;z-index:10;display:none;place-items:center;padding:24px;background:#071c16dd}}.lightbox.open{{display:grid}}.lightbox img{{max-width:min(90vw,520px);max-height:88vh;border-radius:12px;box-shadow:0 24px 80px #0009;cursor:zoom-out}}@media(max-width:780px){{main{{padding:18px 12px}}.hero{{padding:22px 18px;align-items:flex-start}}.hero-main{{align-items:flex-start}}.hero-art img{{width:45px;height:63px}}.matchup-chart{{grid-template-columns:1fr}}.candidate-lead{{grid-template-columns:1fr;padding:18px}}.candidate-representatives img{{width:88px}}.deck-groups{{grid-template-columns:1fr;padding:10px 18px 18px}}.deck-group,.deck-group:first-child,.deck-group:last-child{{padding:14px 0;border-left:0;border-top:1px solid var(--line)}}.deck-group:first-child{{border-top:0}}}}
 </style></head><body><main><div class="hero"><div class="hero-main"><span class="hero-art">{hero_images}</span><div><a class="back" href="{html.escape(back_href, quote=True)}">← 返回评测总览</a><p class="eyebrow">{html.escape(report_label)} · DECK {summary['deck_number']}</p><h1>{html.escape(summary['display_name'])}</h1></div></div><div>{summary['lane_count']} resident CUDA lanes<br>{summary['games_per_second']:.2f} games/s</div></div>
+{_deck_overview(candidate, summary)}
 <section class="warn"><strong>证据边界：</strong>CUDA engine Frozen Greedy evaluation；在 CUDA/official CPU parity 完成前不替代 official-CPU 强度合同。Actor：{html.escape(actor_label)}；Opponent：immutable Policy-0806。</section>
-<section class="summary"><div class="card"><span class="label">W-L-D</span><div class="value">{summary['wins']}-{summary['losses']}-{summary['draws']}</div></div><div class="card"><span class="label">总体胜率</span><div class="value">{summary['win_rate']:.2%}</div></div><div class="card"><span class="label">先攻</span><div class="value">{summary['first']['wins']}/{summary['first']['games']}</div><small>{summary['first']['wins']/summary['first']['games']:.2%}</small></div><div class="card"><span class="label">后攻</span><div class="value">{summary['second']['wins']}/{summary['second']['games']}</div><small>{summary['second']['wins']/summary['second']['games']:.2%}</small></div><div class="card"><span class="label">耗时</span><div class="value">{summary['wall_seconds']:.1f}s</div><small>{summary['games_per_second']:.2f} games/s</small></div><div class="card"><span class="label">循环判负</span><div class="value">{len(summary['progress_guard_forfeits'])}</div><small>同 Ability 第 20 次</small></div></section>
+<section class="summary"><div class="card"><span class="label">W-L-D</span><div class="value">{summary['wins']}-{summary['losses']}-{summary['draws']}</div></div><div class="card"><span class="label">总体胜率</span><div class="value">{summary['win_rate']:.2%}</div></div><div class="card"><span class="label">先攻</span><div class="value">{summary['first']['wins']}/{summary['first']['games']}</div><small>{summary['first']['wins']/summary['first']['games']:.2%}</small></div><div class="card"><span class="label">后攻</span><div class="value">{summary['second']['wins']}/{summary['second']['games']}</div><small>{summary['second']['wins']/summary['second']['games']:.2%}</small></div><div class="card"><span class="label">耗时</span><div class="value">{summary['wall_seconds']:.1f}s</div><small>{summary['games_per_second']:.2f} games/s</small></div><div class="card"><span class="label">50 回合平局</span><div class="value">{len(summary.get('turn_limit_draws', [])) if summary.get('turn_limit_draw_contract', True) else '未记录'}</div><small>{'engine turn 100' if summary.get('turn_limit_draw_contract', True) else '历史结果未启用该护栏'}</small></div><div class="card"><span class="label">循环判负</span><div class="value">{len(summary['progress_guard_forfeits'])}</div><small>同一方同 Ability 第 20 次</small></div></section>
 <section><h2>对 001–055 的表现</h2><p class="label">实际对局数按 Frozen-0806 频率分布；每个固定 slot 使用 8 个独立 seed replica，并严格平衡 4 次先手、4 次后手。</p><div class="matchup-chart">{''.join(matchup_bars)}</div><table><thead><tr><th>编号</th><th>对手卡组</th><th>对局</th><th>胜</th><th>负</th><th>平</th><th>胜率</th></tr></thead><tbody>{''.join(matchup_rows)}</tbody></table></section>
-<section><h2>我的 exact 60-card deck</h2><table><thead><tr><th>卡图</th><th>Card ID</th><th>卡牌</th><th>数量</th></tr></thead><tbody>{_card_rows(candidate)}</tbody></table></section>
-<section><h2>可复现合同</h2><p>Seed <code>{EVALUATION_SEED}</code> · Actor <code>{actor_sha256}</code> · Opponent <code>{POLICY_SHA256}</code> · schedule <code>{summary['schedule_sha256']}</code> · result <code>{summary['game_results_sha256']}</code></p></section>
+<section><h2>可复现合同</h2><p>Seed <code>{evaluation_seed}</code> · Actor <code>{actor_sha256}</code> · Opponent <code>{POLICY_SHA256}</code> · schedule <code>{summary['schedule_sha256']}</code> · result <code>{summary['game_results_sha256']}</code></p></section>
 <script type="application/json" id="report-data">{embedded}</script></main><div class="lightbox" id="lightbox"><img alt="卡图大图预览"></div><script>const box=document.querySelector('#lightbox'),large=box.querySelector('img');for(const image of document.querySelectorAll('main img'))image.addEventListener('click',()=>{{large.src=image.src;large.alt=image.alt;box.classList.add('open')}});box.addEventListener('click',()=>box.classList.remove('open'));addEventListener('keydown',event=>{{if(event.key==='Escape')box.classList.remove('open')}});</script></body></html>"""
 
 

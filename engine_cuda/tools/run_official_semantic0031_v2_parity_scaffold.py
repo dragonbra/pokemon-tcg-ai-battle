@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib
 import json
 import subprocess
@@ -55,6 +56,16 @@ FAMILY_KEYS = {
         "option_context",
         "option_effect_card",
     ),
+    "option_skill": (
+        "option_skill_id",
+        "option_skill_role",
+        "option_skill_parent",
+    ),
+    "option_effect": (
+        "option_effect_id",
+        "option_effect_role",
+        "option_effect_parent",
+    ),
 }
 
 
@@ -80,6 +91,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--package", type=Path, default=DEFAULT_MODEL_PACKAGE)
     parser.add_argument("--checkpoint", type=Path, default=DEFAULT_CHECKPOINT)
     parser.add_argument(
+        "--training-checkpoint",
+        type=Path,
+        help="Optional 0038 model-only checkpoint used for Value parity.",
+    )
+    parser.add_argument(
         "--extension-dir",
         type=Path,
         default=CUDA_ENGINE_ROOT / "build" / "torch_0031_linux",
@@ -95,10 +111,22 @@ def parse_args() -> argparse.Namespace:
         default="coverage-random-legal",
     )
     parser.add_argument("--skip-trace-build", action="store_true")
+    parser.add_argument(
+        "--reuse-trace",
+        action="store_true",
+        help=(
+            "Read --trace as an immutable captured official trace without "
+            "building or executing the trace producer."
+        ),
+    )
     parser.add_argument("--skip-model", action="store_true")
     parser.add_argument("--model-chunk", type=int, default=2)
     parser.add_argument("--logits-atol", type=float, default=2e-4)
     parser.add_argument("--logits-rtol", type=float, default=2e-4)
+    parser.add_argument("--value-atol", type=float, default=2e-6)
+    parser.add_argument("--deployment-logits-atol", type=float, default=5e-3)
+    parser.add_argument("--deployment-logits-rtol", type=float, default=5e-3)
+    parser.add_argument("--deployment-value-atol", type=float, default=2e-3)
     parser.add_argument("--max-mismatch-details", type=int, default=32)
     parser.add_argument(
         "--require-history-wrap",
@@ -135,6 +163,18 @@ def build_and_run_trace(
     source = args.source.resolve()
     if not source.is_dir():
         raise FileNotFoundError(source)
+    if args.reuse_trace:
+        if not args.trace.is_file():
+            raise FileNotFoundError(args.trace)
+        trace = load_trace(args.trace)
+        digest = hashlib.sha256(args.trace.read_bytes()).hexdigest()
+        return {
+            "passed": True,
+            "scope": "immutable_official_semantic_trace",
+            "semantic_trace_records": len(trace),
+            "trace_sha256": digest,
+            "reused": True,
+        }
     build_dir = CUDA_ENGINE_ROOT / "build" / "official_semantic0031_trace_linux"
     build_dir.mkdir(parents=True, exist_ok=True)
     executable = build_dir / "official_semantic0031_trace"
@@ -204,13 +244,23 @@ def load_trace(path: Path) -> list[dict[str, Any]]:
 
 def import_cpu_semantic(package_root: Path) -> tuple[Any, Any, Any, Any]:
     sys.path.insert(0, str(package_root.resolve()))
-    compiler = importlib.import_module("semantic0031.features.compiler")
-    collate = importlib.import_module("semantic0031.features.collate")
-    knowledge = importlib.import_module("semantic0031.knowledge.state")
-    prototypes = importlib.import_module("semantic0031.domain.prototypes")
+    if (package_root / "strategy").is_dir():
+        # 0038 Kaggle candidates carry the same audited compiler under the
+        # production package namespace rather than the historical semantic0031
+        # directory name.  Supporting it here lets the parity gate exercise the
+        # exact deployable files instead of a copied diagnostic-only runtime.
+        module_root = "strategy"
+        asset_root = package_root / "strategy/assets"
+    else:
+        module_root = "semantic0031"
+        asset_root = package_root / "semantic0031/assets"
+    compiler = importlib.import_module(f"{module_root}.features.compiler")
+    collate = importlib.import_module(f"{module_root}.features.collate")
+    knowledge = importlib.import_module(f"{module_root}.knowledge.state")
+    prototypes = importlib.import_module(f"{module_root}.domain.prototypes")
     prototype_index = prototypes.PrototypeIndex.load(
-        package_root / "semantic0031/assets/official_public_prototypes_v1.json",
-        package_root / "semantic0031/assets/official_full_engine_prototypes_v2.json",
+        asset_root / "official_public_prototypes_v1.json",
+        asset_root / "official_full_engine_prototypes_v2.json",
     )
     return (
         compiler.compile_canonical_row,
@@ -338,6 +388,7 @@ def compare_model_chunks(
     maximum_absolute_error = 0.0
     decisions = 0
     first_failure: dict[str, Any] | None = None
+    first_greedy_divergence: dict[str, Any] | None = None
     with torch.inference_mode():
         for start in range(0, len(cpu_records), chunk_size):
             stop = min(len(cpu_records), start + chunk_size)
@@ -377,6 +428,34 @@ def compare_model_chunks(
                 actual_action = extract_greedy(cuda_greedy, row)
                 if expected_action != actual_action:
                     greedy_divergences += 1
+                    if first_greedy_divergence is None:
+                        legal_cpu_logits = torch.cat(
+                            (cpu_logits[row, :option_count], cpu_logits[row, -1:])
+                        ).float()
+                        legal_cuda_logits = torch.cat(
+                            (cuda_logits[row, :option_count], cuda_logits[row, -1:])
+                        ).float()
+                        top_count = min(5, int(legal_cpu_logits.numel()))
+                        first_greedy_divergence = {
+                            "decision": start + row,
+                            "cpu_greedy": expected_action,
+                            "cuda_greedy": actual_action,
+                            "option_count": option_count,
+                            "cpu_legal_plus_stop_logits": legal_cpu_logits.cpu().tolist(),
+                            "cuda_legal_plus_stop_logits": legal_cuda_logits.cpu().tolist(),
+                            "cpu_topk": [
+                                {"index": int(index), "logit": float(value)}
+                                for value, index in zip(
+                                    *legal_cpu_logits.topk(top_count), strict=True
+                                )
+                            ],
+                            "cuda_topk": [
+                                {"index": int(index), "logit": float(value)}
+                                for value, index in zip(
+                                    *legal_cuda_logits.topk(top_count), strict=True
+                                )
+                            ],
+                        }
                     if first_failure is None:
                         first_failure = {
                             "decision": start + row,
@@ -427,12 +506,659 @@ def compare_model_chunks(
     }
 
 
+def load_compound_policy(package_root: Path, deck: Sequence[int], device: Any) -> Any:
+    """Load the exact 0038 production actor and conditional heads strictly."""
+
+    module = importlib.import_module("strategy.deployment.compound_inference")
+    policy = module.PortableCompoundSemanticPolicy.from_checkpoint(
+        package_root / "strategy/model.bin", deck
+    )
+    policy.actor.to(device).eval()
+    policy.value_head.to(device).eval()
+    policy.allocation_head.to(device).eval()
+    policy.meta_head.to(device).eval()
+    policy.meta_conditioner.to(device).eval()
+    return policy
+
+
+def compare_compound_model_chunks(
+    policy: Any,
+    collate_records: Any,
+    cpu_records: Sequence[Mapping[str, Any]],
+    cuda_records: Sequence[Mapping[str, Any]],
+    option_counts: Sequence[int],
+    *,
+    chunk_size: int,
+    atol: float,
+    rtol: float,
+) -> dict[str, Any]:
+    """Measure policy-intent drift caused only by CPU/CUDA semantic tensors."""
+
+    import torch
+
+    actor = policy.actor
+    device = next(actor.parameters()).device
+    greedy_divergences = 0
+    first_step_top1_divergences = 0
+    first_step_top2_set_divergences = 0
+    logits_failures = 0
+    maximum_absolute_error = 0.0
+    absolute_error_sum = 0.0
+    absolute_error_values = 0
+    minimum_cpu_margin = float("inf")
+    minimum_cuda_margin = float("inf")
+    first_failure: dict[str, Any] | None = None
+    first_greedy_divergence: dict[str, Any] | None = None
+    decisions = 0
+
+    def decode(mapping: Mapping[str, Any]) -> tuple[Any, Any, Any]:
+        validated, state, options = actor.encode(mapping)
+        meta_logits = policy.meta_head(state.summary)
+        summary = policy.meta_conditioner(state.summary, meta_logits)
+        decoder = actor.action_decoder.initialize(validated, summary)
+        root_logits = actor.action_decoder.logits(validated, options, decoder)
+        greedy = actor.action_decoder.greedy(validated, options, summary)
+        return root_logits, greedy, state.summary
+
+    with torch.inference_mode():
+        for start in range(0, len(cpu_records), chunk_size):
+            stop = min(len(cpu_records), start + chunk_size)
+            cpu_mapping = {
+                name: tensor.to(device)
+                for name, tensor in collate_records(cpu_records[start:stop]).items()
+            }
+            cuda_mapping = semantic0031_v2_ready_batch({
+                name: torch.cat(
+                    [record[name] for record in cuda_records[start:stop]], dim=0
+                ).to(device)
+                for name in cuda_records[start]
+            })
+            cpu_logits, cpu_greedy, _ = decode(cpu_mapping)
+            cuda_logits, cuda_greedy, _ = decode(cuda_mapping)
+            for row, option_count in enumerate(option_counts[start:stop]):
+                expected_action = extract_greedy(cpu_greedy, row)
+                actual_action = extract_greedy(cuda_greedy, row)
+                if expected_action != actual_action:
+                    greedy_divergences += 1
+                    if first_greedy_divergence is None:
+                        legal_cpu_logits = torch.cat(
+                            (cpu_logits[row, :option_count], cpu_logits[row, -1:])
+                        ).float()
+                        legal_cuda_logits = torch.cat(
+                            (cuda_logits[row, :option_count], cuda_logits[row, -1:])
+                        ).float()
+                        top_count = min(5, int(legal_cpu_logits.numel()))
+                        first_greedy_divergence = {
+                            "decision": start + row,
+                            "cpu_greedy": expected_action,
+                            "cuda_greedy": actual_action,
+                            "option_count": option_count,
+                            "cpu_legal_plus_stop_logits": legal_cpu_logits.cpu().tolist(),
+                            "cuda_legal_plus_stop_logits": legal_cuda_logits.cpu().tolist(),
+                            "cpu_topk": [
+                                {"index": int(index), "logit": float(value)}
+                                for value, index in zip(
+                                    *legal_cpu_logits.topk(top_count), strict=True
+                                )
+                            ],
+                            "cuda_topk": [
+                                {"index": int(index), "logit": float(value)}
+                                for value, index in zip(
+                                    *legal_cuda_logits.topk(top_count), strict=True
+                                )
+                            ],
+                        }
+                    if first_failure is None:
+                        first_failure = {
+                            "decision": start + row,
+                            "stage": "greedy_action",
+                            "cpu_greedy": expected_action,
+                            "cuda_greedy": actual_action,
+                        }
+                expected_logits = torch.cat(
+                    (cpu_logits[row, :option_count], cpu_logits[row, -1:])
+                ).float()
+                actual_logits = torch.cat(
+                    (cuda_logits[row, :option_count], cuda_logits[row, -1:])
+                ).float()
+                finite = torch.isfinite(expected_logits) & torch.isfinite(actual_logits)
+                if bool(finite.any()):
+                    difference = (expected_logits[finite] - actual_logits[finite]).abs()
+                    maximum_absolute_error = max(
+                        maximum_absolute_error, float(difference.max().cpu())
+                    )
+                    absolute_error_sum += float(difference.sum().cpu())
+                    absolute_error_values += int(difference.numel())
+                close = torch.isclose(
+                    expected_logits, actual_logits, atol=atol, rtol=rtol,
+                    equal_nan=False,
+                )
+                if not bool(close.all()):
+                    logits_failures += 1
+                    if first_failure is None:
+                        first_failure = {
+                            "decision": start + row,
+                            "stage": "root_logits",
+                            "max_abs": maximum_absolute_error,
+                        }
+                top_count = min(2, int(expected_logits.numel()))
+                cpu_values, cpu_indices = expected_logits.topk(top_count)
+                cuda_values, cuda_indices = actual_logits.topk(top_count)
+                if int(cpu_indices[0]) != int(cuda_indices[0]):
+                    first_step_top1_divergences += 1
+                if set(cpu_indices.tolist()) != set(cuda_indices.tolist()):
+                    first_step_top2_set_divergences += 1
+                if top_count == 2:
+                    minimum_cpu_margin = min(
+                        minimum_cpu_margin, float((cpu_values[0] - cpu_values[1]).cpu())
+                    )
+                    minimum_cuda_margin = min(
+                        minimum_cuda_margin, float((cuda_values[0] - cuda_values[1]).cpu())
+                    )
+                decisions += 1
+    return {
+        "runtime": "0038_compound_kaggle_candidate_v3",
+        "decisions": decisions,
+        "logits_atol": atol,
+        "logits_rtol": rtol,
+        "max_root_logit_absolute_error": maximum_absolute_error,
+        "mean_root_logit_absolute_error": (
+            absolute_error_sum / max(1, absolute_error_values)
+        ),
+        "root_logits_tolerance_failures": logits_failures,
+        "first_step_top1_divergences": first_step_top1_divergences,
+        "first_step_top2_set_divergences": first_step_top2_set_divergences,
+        "greedy_action_divergences": greedy_divergences,
+        "minimum_cpu_top1_top2_margin": (
+            minimum_cpu_margin if minimum_cpu_margin != float("inf") else None
+        ),
+        "minimum_cuda_top1_top2_margin": (
+            minimum_cuda_margin if minimum_cuda_margin != float("inf") else None
+        ),
+        "first_failure": first_failure,
+        "first_greedy_divergence": first_greedy_divergence,
+        "value": "strict_loaded_diagnostic_only",
+        "passed": logits_failures == 0 and greedy_divergences == 0,
+    }
+
+
+def load_training_actor_critic(checkpoint: Path, deck: Sequence[int], device: Any) -> Any:
+    """Strictly reconstruct the 0038 model-only checkpoint, including Value."""
+
+    import torch
+
+    actor_critic = importlib.import_module(
+        "train.0038_action_boundary_rl.policy.actor_critic"
+    )
+    adaptation_module = importlib.import_module(
+        "train.0038_action_boundary_rl.policy.adaptation"
+    )
+    integrated_module = importlib.import_module(
+        "train.0038_action_boundary_rl.integrated.config"
+    )
+    storage = importlib.import_module(
+        "train.0038_action_boundary_rl.training.storage_full_semantic"
+    )
+    source = importlib.import_module("train.0038_action_boundary_rl.source")
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    model, _ = actor_critic.load_actor_critic(
+        source.ACTOR_CHECKPOINT,
+        tuple(int(card) for card in deck),
+        device,
+        adaptation=adaptation_module.AdaptationConfig(**payload["adaptation"]),
+        integrated_flags=integrated_module.IntegratedFlags(
+            **payload["integrated_flags"]
+        ),
+    )
+    storage.load_adapted_model_only(model, checkpoint)
+    return model.eval()
+
+
+def compare_value_chunks(
+    model: Any,
+    collate_records: Any,
+    cpu_records: Sequence[Mapping[str, Any]],
+    cuda_records: Sequence[Mapping[str, Any]],
+    *,
+    chunk_size: int,
+    atol: float,
+) -> dict[str, Any]:
+    """Compare V_win under official-package and resident-CUDA feature semantics."""
+
+    import torch
+
+    device = model.device
+    maximum_absolute_error = 0.0
+    absolute_error_sum = 0.0
+    values = 0
+    sign_divergences = 0
+    first_divergence: dict[str, Any] | None = None
+    maximum_divergence: dict[str, Any] | None = None
+    sign_divergence_samples: list[dict[str, Any]] = []
+    with torch.inference_mode():
+        for start in range(0, len(cpu_records), chunk_size):
+            stop = min(len(cpu_records), start + chunk_size)
+            cpu_mapping = {
+                name: tensor.to(device)
+                for name, tensor in collate_records(cpu_records[start:stop]).items()
+            }
+            cuda_mapping = semantic0031_v2_ready_batch({
+                name: torch.cat(
+                    [record[name] for record in cuda_records[start:stop]], dim=0
+                ).to(device)
+                for name in cuda_records[start]
+            })
+            _, _, _, cpu_value = model.encode(cpu_mapping)
+            _, _, _, cuda_value = model.encode(cuda_mapping)
+            difference = (cpu_value.float() - cuda_value.float()).abs()
+            maximum_absolute_error = max(
+                maximum_absolute_error, float(difference.max().cpu())
+            )
+            absolute_error_sum += float(difference.sum().cpu())
+            values += int(difference.numel())
+            sign = cpu_value.sign().ne(cuda_value.sign())
+            sign_divergences += int(sign.sum().cpu())
+            maximum_row = int(difference.argmax())
+            maximum_row_error = float(difference[maximum_row].cpu())
+            if (
+                maximum_divergence is None
+                or maximum_row_error > maximum_divergence["absolute_error"]
+            ):
+                maximum_divergence = {
+                    "decision": start + maximum_row,
+                    "cpu_value": float(cpu_value[maximum_row].cpu()),
+                    "cuda_value": float(cuda_value[maximum_row].cpu()),
+                    "absolute_error": maximum_row_error,
+                }
+            for row in sign.nonzero(as_tuple=False).flatten().tolist():
+                if len(sign_divergence_samples) >= 16:
+                    break
+                sign_divergence_samples.append({
+                    "decision": start + int(row),
+                    "cpu_value": float(cpu_value[row].cpu()),
+                    "cuda_value": float(cuda_value[row].cpu()),
+                    "absolute_error": float(difference[row].cpu()),
+                })
+            if first_divergence is None and bool(difference.gt(atol).any()):
+                row = int(difference.gt(atol).nonzero(as_tuple=False)[0])
+                first_divergence = {
+                    "decision": start + row,
+                    "cpu_value": float(cpu_value[row].cpu()),
+                    "cuda_value": float(cuda_value[row].cpu()),
+                    "absolute_error": float(difference[row].cpu()),
+                }
+    return {
+        "decisions": values,
+        "max_value_absolute_error": maximum_absolute_error,
+        "mean_value_absolute_error": absolute_error_sum / max(1, values),
+        "value_sign_divergences": sign_divergences,
+        "first_divergence": first_divergence,
+        "maximum_divergence": maximum_divergence,
+        "sign_divergence_samples": sign_divergence_samples,
+        "atol": atol,
+        "passed": maximum_absolute_error <= atol and sign_divergences == 0,
+    }
+
+
+def compare_training_to_package_chunks(
+    training_model: Any,
+    package_policy: Any,
+    collate_records: Any,
+    cpu_records: Sequence[Mapping[str, Any]],
+    option_counts: Sequence[int],
+    *,
+    chunk_size: int,
+    logits_atol: float,
+    logits_rtol: float,
+    value_atol: float,
+) -> dict[str, Any]:
+    """Compare the training checkpoint to its portable merged/FP16 package.
+
+    This is distinct from CPU-vs-CUDA feature parity: both sides consume the
+    exact same official CPU feature tensors, so any difference belongs to
+    model export, LoRA merging, dtype conversion, or strict component loading.
+    """
+
+    import torch
+
+    device = training_model.device
+    package_actor = package_policy.actor
+    root_max = root_sum = 0.0
+    root_values = root_failures = greedy_divergences = 0
+    root_top1_divergences = root_top2_set_divergences = 0
+    minimum_training_margin = minimum_package_margin = float("inf")
+    value_max = value_sum = 0.0
+    value_values = value_sign_divergences = 0
+    allocation_max = allocation_sum = 0.0
+    allocation_values = allocation_top1_divergences = allocation_decisions = 0
+    allocation_centered_max = allocation_probability_max = 0.0
+    allocation_top2_set_divergences = 0
+    minimum_training_allocation_margin = float("inf")
+    minimum_package_allocation_margin = float("inf")
+    first_root_divergence = None
+    first_value_divergence = None
+    first_allocation_divergence = None
+    dragapult = importlib.import_module("strategy.action_boundary.dragapult")
+
+    def decode_package(mapping):
+        validated, state, options = package_actor.encode(mapping)
+        meta_logits = package_policy.meta_head(state.summary)
+        summary = package_policy.meta_conditioner(state.summary, meta_logits)
+        decoder = package_actor.action_decoder.initialize(validated, summary)
+        logits = package_actor.action_decoder.logits(validated, options, decoder)
+        greedy = package_actor.action_decoder.greedy(validated, options, summary)
+        value = package_policy.value_from_encoded(validated, state, options)
+        return validated, state, options, logits, greedy, value
+
+    def decode_training(mapping):
+        validated, state, options = training_model.actor.encode(mapping)
+        summary = training_model.actor_summary(state)
+        decoder = training_model.actor.action_decoder.initialize(validated, summary)
+        logits = training_model.actor.action_decoder.logits(
+            validated, options, decoder
+        )
+        greedy = training_model.actor.action_decoder.greedy(
+            validated, options, summary
+        )
+        value = training_model.value_from_encoded(validated, state, options)
+        return validated, state, options, logits, greedy, value
+
+    with torch.inference_mode():
+        for start in range(0, len(cpu_records), chunk_size):
+            stop = min(len(cpu_records), start + chunk_size)
+            mapping = {
+                name: tensor.to(device)
+                for name, tensor in collate_records(cpu_records[start:stop]).items()
+            }
+            t_validated, t_state, t_options, t_logits, t_greedy, t_value = (
+                decode_training(mapping)
+            )
+            p_validated, p_state, p_options, p_logits, p_greedy, p_value = (
+                decode_package(mapping)
+            )
+            for row, option_count in enumerate(option_counts[start:stop]):
+                decision = start + row
+                training_action = extract_greedy(t_greedy, row)
+                package_action = extract_greedy(p_greedy, row)
+                expected = torch.cat(
+                    (t_logits[row, :option_count], t_logits[row, -1:])
+                ).float()
+                actual = torch.cat(
+                    (p_logits[row, :option_count], p_logits[row, -1:])
+                ).float()
+                finite = torch.isfinite(expected) & torch.isfinite(actual)
+                difference = (expected[finite] - actual[finite]).abs()
+                if difference.numel():
+                    root_max = max(root_max, float(difference.max().cpu()))
+                    root_sum += float(difference.sum().cpu())
+                    root_values += int(difference.numel())
+                close = torch.isclose(
+                    expected, actual, atol=logits_atol, rtol=logits_rtol
+                )
+                if not bool(close.all()):
+                    root_failures += 1
+                if training_action != package_action:
+                    greedy_divergences += 1
+                    if first_root_divergence is None:
+                        first_root_divergence = {
+                            "decision": decision,
+                            "training_action": training_action,
+                            "package_action": package_action,
+                            "max_abs_logit_error": (
+                                float(difference.max().cpu())
+                                if difference.numel() else 0.0
+                            ),
+                        }
+                top_count = min(2, int(expected.numel()))
+                training_values, training_indices = expected.topk(top_count)
+                package_values, package_indices = actual.topk(top_count)
+                if int(training_indices[0]) != int(package_indices[0]):
+                    root_top1_divergences += 1
+                if set(training_indices.tolist()) != set(package_indices.tolist()):
+                    root_top2_set_divergences += 1
+                if top_count == 2:
+                    minimum_training_margin = min(
+                        minimum_training_margin,
+                        float((training_values[0] - training_values[1]).cpu()),
+                    )
+                    minimum_package_margin = min(
+                        minimum_package_margin,
+                        float((package_values[0] - package_values[1]).cpu()),
+                    )
+
+                value_difference = float(
+                    (t_value[row].float() - p_value[row].float()).abs().cpu()
+                )
+                value_max = max(value_max, value_difference)
+                value_sum += value_difference
+                value_values += 1
+                if int(t_value[row].sign()) != int(p_value[row].sign()):
+                    value_sign_divergences += 1
+                    if first_value_divergence is None:
+                        first_value_divergence = {
+                            "decision": decision,
+                            "training_value": float(t_value[row].cpu()),
+                            "package_value": float(p_value[row].cpu()),
+                            "absolute_error": value_difference,
+                        }
+
+                phantom_roots = (
+                    mapping["option_cat"][row, :option_count, 7]
+                    .eq(154).nonzero(as_tuple=False).flatten().tolist()
+                )
+                if not phantom_roots:
+                    continue
+                target_rows = (
+                    p_validated.card_mask[row]
+                    & p_validated.card_cat[row, :, 2].eq(2)
+                    & p_validated.card_cat[row, :, 3].eq(6)
+                ).nonzero(as_tuple=False).flatten().tolist()
+                if not 1 <= len(target_rows) <= 8:
+                    continue
+                ordered = sorted(
+                    target_rows,
+                    key=lambda index: (
+                        int(p_validated.card_cat[row, index, 1]),
+                        int(p_validated.card_cat[row, index, 0]),
+                    ),
+                )
+                targets = tuple(
+                    dragapult.StableTargetIdentity(
+                        1,
+                        int(p_validated.card_cat[row, index, 1]) - 1,
+                        int(p_validated.card_cat[row, index, 0]),
+                        int(p_validated.card_cat[row, index, 4]) - 1,
+                    )
+                    for index in ordered
+                )
+                candidates = dragapult.enumerate_allocations(targets)
+                visible = []
+                for index in ordered:
+                    card_id = int(p_validated.card_cat[row, index, 0])
+                    visible.append({
+                        "serial": int(p_validated.card_cat[row, index, 1]) - 1,
+                        "id": card_id,
+                        "hp": float(p_validated.card_num[row, index, 0]),
+                        "maxHp": float(p_validated.card_num[row, index, 1]),
+                        "prize": int(package_policy.prizes[card_id]),
+                        "benchSlot": int(p_validated.card_cat[row, index, 4]) - 1,
+                        "energyCards": [0] * max(
+                            0, int(round(float(p_validated.card_num[row, index, 2])))
+                        ),
+                        "statusBits": max(
+                            0, int(p_validated.card_cat[row, index, 6]) - 1
+                        ),
+                        "preEvolution": [0] * max(
+                            0, int(round(float(p_validated.card_num[row, index, 5])))
+                        ),
+                    })
+                features = package_policy.planner.visible_features(
+                    visible, candidates
+                ).to(device=device, dtype=p_state.cards.dtype)
+                allocation_count = len(candidates)
+                feature_batch = features.unsqueeze(0)
+                mask = torch.ones(
+                    feature_batch.shape[:-1], dtype=torch.bool, device=device
+                )
+                allocation_mask = torch.ones(
+                    (1, allocation_count), dtype=torch.bool, device=device
+                )
+                for root in phantom_roots:
+                    p_targets = p_state.cards[row, ordered]
+                    t_targets = t_state.cards[row, ordered]
+                    p_target_batch = p_targets.unsqueeze(0).expand(
+                        allocation_count, -1, -1
+                    ).unsqueeze(0)
+                    t_target_batch = t_targets.unsqueeze(0).expand(
+                        allocation_count, -1, -1
+                    ).unsqueeze(0)
+                    package_logits = package_policy.allocation_head(
+                        p_state.summary[row].unsqueeze(0),
+                        p_options[row, root].unsqueeze(0),
+                        p_target_batch,
+                        feature_batch,
+                        mask,
+                        allocation_mask,
+                    )[0].float()
+                    training_logits = training_model.allocation_head(
+                        t_state.summary[row].unsqueeze(0),
+                        t_options[row, root].unsqueeze(0),
+                        t_target_batch,
+                        feature_batch,
+                        mask,
+                        allocation_mask,
+                    )[0].float()
+                    allocation_difference = (
+                        training_logits - package_logits
+                    ).abs()
+                    centered_difference = (
+                        (training_logits - package_logits)
+                        - (training_logits - package_logits).mean()
+                    ).abs()
+                    probability_difference = (
+                        training_logits.softmax(dim=0)
+                        - package_logits.softmax(dim=0)
+                    ).abs()
+                    allocation_max = max(
+                        allocation_max, float(allocation_difference.max().cpu())
+                    )
+                    allocation_centered_max = max(
+                        allocation_centered_max,
+                        float(centered_difference.max().cpu()),
+                    )
+                    allocation_probability_max = max(
+                        allocation_probability_max,
+                        float(probability_difference.max().cpu()),
+                    )
+                    allocation_sum += float(allocation_difference.sum().cpu())
+                    allocation_values += int(allocation_difference.numel())
+                    training_top = int(training_logits.argmax())
+                    package_top = int(package_logits.argmax())
+                    top_count = min(2, allocation_count)
+                    training_values, training_indices = training_logits.topk(top_count)
+                    package_values, package_indices = package_logits.topk(top_count)
+                    if set(training_indices.tolist()) != set(package_indices.tolist()):
+                        allocation_top2_set_divergences += 1
+                    if top_count == 2:
+                        minimum_training_allocation_margin = min(
+                            minimum_training_allocation_margin,
+                            float((training_values[0] - training_values[1]).cpu()),
+                        )
+                        minimum_package_allocation_margin = min(
+                            minimum_package_allocation_margin,
+                            float((package_values[0] - package_values[1]).cpu()),
+                        )
+                    allocation_decisions += 1
+                    if training_top != package_top:
+                        allocation_top1_divergences += 1
+                        if first_allocation_divergence is None:
+                            first_allocation_divergence = {
+                                "decision": decision,
+                                "root_index": root,
+                                "target_count": len(targets),
+                                "training_top1": training_top,
+                                "package_top1": package_top,
+                                "training_counters": list(
+                                    candidates[training_top].counters
+                                ),
+                                "package_counters": list(
+                                    candidates[package_top].counters
+                                ),
+                                "max_abs_logit_error": float(
+                                    allocation_difference.max().cpu()
+                                ),
+                            }
+
+    return {
+        "root": {
+            "decisions": len(cpu_records),
+            "max_abs_logit_error": root_max,
+            "mean_abs_logit_error": root_sum / max(1, root_values),
+            "tolerance_failures": root_failures,
+            "greedy_action_divergences": greedy_divergences,
+            "top1_divergences": root_top1_divergences,
+            "top2_set_divergences": root_top2_set_divergences,
+            "minimum_training_top1_top2_margin": (
+                None if minimum_training_margin == float("inf")
+                else minimum_training_margin
+            ),
+            "minimum_package_top1_top2_margin": (
+                None if minimum_package_margin == float("inf")
+                else minimum_package_margin
+            ),
+            "first_divergence": first_root_divergence,
+            "atol": logits_atol,
+            "rtol": logits_rtol,
+        },
+        "value": {
+            "decisions": value_values,
+            "max_abs_error": value_max,
+            "mean_abs_error": value_sum / max(1, value_values),
+            "sign_divergences": value_sign_divergences,
+            "first_sign_divergence": first_value_divergence,
+            "atol": value_atol,
+        },
+        "allocation": {
+            "decisions": allocation_decisions,
+            "max_abs_logit_error": allocation_max,
+            "mean_abs_logit_error": allocation_sum / max(1, allocation_values),
+            "max_centered_logit_error": allocation_centered_max,
+            "max_probability_error": allocation_probability_max,
+            "top1_divergences": allocation_top1_divergences,
+            "top2_set_divergences": allocation_top2_set_divergences,
+            "minimum_training_top1_top2_margin": (
+                None if minimum_training_allocation_margin == float("inf")
+                else minimum_training_allocation_margin
+            ),
+            "minimum_package_top1_top2_margin": (
+                None if minimum_package_allocation_margin == float("inf")
+                else minimum_package_allocation_margin
+            ),
+            "first_divergence": first_allocation_divergence,
+        },
+        "passed": (
+            root_failures == 0
+            and greedy_divergences == 0
+            and value_max <= value_atol
+            and value_sign_divergences == 0
+            and allocation_top1_divergences == 0
+        ),
+    }
+
+
 def main() -> int:
     args = parse_args()
     if args.seed_count <= 0 or args.decision_limit <= 0:
         raise ValueError("seed-count and decision-limit must be positive")
     if args.compare_decisions < 0 or args.model_chunk <= 0:
         raise ValueError("compare-decisions cannot be negative and model-chunk must be positive")
+    if min(
+        args.value_atol,
+        args.deployment_logits_atol,
+        args.deployment_logits_rtol,
+        args.deployment_value_atol,
+    ) < 0:
+        raise ValueError("numeric parity tolerances cannot be negative")
     if args.max_mismatch_details <= 0:
         raise ValueError("max-mismatch-details must be positive")
 
@@ -446,7 +1172,8 @@ def main() -> int:
         raise RuntimeError("_ptcg_cuda lacks encode_semantic0031_v2_lanes")
     if not args.package.is_dir():
         raise FileNotFoundError(args.package)
-    if not args.skip_model and not args.checkpoint.is_file():
+    compound_package = (args.package / "strategy/model.bin").is_file()
+    if not args.skip_model and not compound_package and not args.checkpoint.is_file():
         raise FileNotFoundError(args.checkpoint)
 
     manifest: dict[str, Any] = json.loads(
@@ -487,6 +1214,7 @@ def main() -> int:
     compiled_records: list[Mapping[str, Any]] = []
     encoded_records: list[Mapping[str, Any]] = []
     option_counts: list[int] = []
+    record_actors: list[int] = []
     replayed = 0
     state_errors = 0
     max_history_total_count = 0
@@ -595,6 +1323,7 @@ def main() -> int:
             compiled_records.append(canonical)
             encoded_records.append(encoded_cpu)
             option_counts.append(len(canonical["actor"]["option_cat"]))
+            record_actors.append(actor)
             width = max(1, len(action))
             action_tensor = torch.full(
                 (1, width), -1, dtype=torch.int64, device=device
@@ -613,29 +1342,102 @@ def main() -> int:
                 break
 
     package = None
+    package_policy = None
     model_report: dict[str, Any] = {"skipped": True, "passed": False}
-    if not args.skip_model and not mismatch_counts and state_errors == 0:
-        package = load_semantic0031_package(
-            args.package,
-            device=device,
-            trusted_directory=True,
-            checkpoint_override=args.checkpoint,
-        )
-        try:
-            adapter = Semantic0031DeviceAdapter(package.model, package.deck)
-            model_report = compare_model_chunks(
-                package,
-                adapter,
+    focal_record_indices = [
+        index for index, actor in enumerate(record_actors) if actor == 0
+    ]
+    focal_compiled_records = [compiled_records[index] for index in focal_record_indices]
+    focal_encoded_records = [encoded_records[index] for index in focal_record_indices]
+    focal_option_counts = [option_counts[index] for index in focal_record_indices]
+    if not args.skip_model and state_errors == 0:
+        if compound_package:
+            policy = load_compound_policy(args.package, deck_rows[0], device)
+            package_policy = policy
+            model_report = compare_compound_model_chunks(
+                policy,
                 collate_records,
-                compiled_records,
-                encoded_records,
-                option_counts,
+                focal_compiled_records,
+                focal_encoded_records,
+                focal_option_counts,
                 chunk_size=args.model_chunk,
                 atol=args.logits_atol,
                 rtol=args.logits_rtol,
             )
-        finally:
-            package.close()
+        elif not mismatch_counts:
+            package = load_semantic0031_package(
+                args.package,
+                device=device,
+                trusted_directory=True,
+                checkpoint_override=args.checkpoint,
+            )
+            try:
+                adapter = Semantic0031DeviceAdapter(package.model, package.deck)
+                model_report = compare_model_chunks(
+                    package,
+                    adapter,
+                    collate_records,
+                    focal_compiled_records,
+                    focal_encoded_records,
+                    focal_option_counts,
+                    chunk_size=args.model_chunk,
+                    atol=args.logits_atol,
+                    rtol=args.logits_rtol,
+                )
+            finally:
+                package.close()
+        for key in ("first_failure", "first_greedy_divergence"):
+            detail = model_report.get(key)
+            if isinstance(detail, dict) and isinstance(detail.get("decision"), int):
+                focal_index = int(detail["decision"])
+                detail["focal_decision_index"] = focal_index
+                detail["engine_decision"] = focal_record_indices[focal_index]
+
+    value_report: dict[str, Any] = {"skipped": True, "passed": False}
+    deployment_report: dict[str, Any] = {"skipped": True, "passed": False}
+    if args.training_checkpoint is not None:
+        checkpoint = args.training_checkpoint.resolve()
+        if not checkpoint.is_file():
+            raise FileNotFoundError(checkpoint)
+        training_model = load_training_actor_critic(
+            checkpoint, deck_rows[0], device
+        )
+        value_report = compare_value_chunks(
+            training_model,
+            collate_records,
+            focal_compiled_records,
+            focal_encoded_records,
+            chunk_size=args.model_chunk,
+            atol=args.value_atol,
+        )
+        if package_policy is not None:
+            deployment_report = compare_training_to_package_chunks(
+                training_model,
+                package_policy,
+                collate_records,
+                focal_compiled_records,
+                focal_option_counts,
+                chunk_size=args.model_chunk,
+                logits_atol=args.deployment_logits_atol,
+                logits_rtol=args.deployment_logits_rtol,
+                value_atol=args.deployment_value_atol,
+            )
+        detail = value_report.get("first_divergence")
+        if isinstance(detail, dict) and isinstance(detail.get("decision"), int):
+            focal_index = int(detail["decision"])
+            detail["focal_decision_index"] = focal_index
+            detail["engine_decision"] = focal_record_indices[focal_index]
+        for key in ("maximum_divergence",):
+            detail = value_report.get(key)
+            if isinstance(detail, dict) and isinstance(detail.get("decision"), int):
+                focal_index = int(detail["decision"])
+                detail["focal_decision_index"] = focal_index
+                detail["engine_decision"] = focal_record_indices[focal_index]
+        for detail in value_report.get("sign_divergence_samples", []):
+            if isinstance(detail, dict) and isinstance(detail.get("decision"), int):
+                focal_index = int(detail["decision"])
+                detail["focal_decision_index"] = focal_index
+                detail["engine_decision"] = focal_record_indices[focal_index]
 
     tensor_passed = not mismatch_counts and state_errors == 0 and replayed == requested
     coverage_complete = requested == len(trace) and replayed == len(trace)
@@ -646,6 +1448,12 @@ def main() -> int:
         and history_wrap_passed
         and not args.skip_model
         and bool(model_report.get("passed"))
+        and (args.training_checkpoint is None or bool(value_report.get("passed")))
+        and (
+            not compound_package
+            or args.training_checkpoint is None
+            or bool(deployment_report.get("passed"))
+        )
     )
     report = {
         "schema_version": 2,
@@ -670,13 +1478,17 @@ def main() -> int:
         + [name for names in FAMILY_KEYS.values() for name in names]
         + [f"{family}_mask" for family in FAMILY_KEYS],
         "static_prototype_fields": (
-            "option skill/effect prototype relations are injected by the shared adapter "
-            "and are gated by logits/greedy parity rather than duplicated per lane"
+            "option skill/effect prototype relations are compared as exact tensor fields; "
+            "a CUDA zero placeholder is a preprocessing mismatch, not a shared-adapter injection"
         ),
         "tensor_mismatch_counts": dict(sorted(mismatch_counts.items())),
         "tensor_mismatch_details": mismatch_details,
         "integer_mask_relation_exact": tensor_passed,
         "model": model_report,
+        "value_model": value_report,
+        "training_to_package": deployment_report,
+        "model_focal_actor": 0,
+        "model_focal_decisions": len(focal_record_indices),
         "full_cpu_causalknowledge_parity": full_passed,
         "extension": str(Path(_ptcg_cuda.__file__).resolve()),
     }
