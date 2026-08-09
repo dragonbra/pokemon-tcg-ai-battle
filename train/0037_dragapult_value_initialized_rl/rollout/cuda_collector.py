@@ -110,6 +110,10 @@ class CudaFullSemanticRolloutCollector:
         updates = {job.source_policy_update for job in jobs}
         if len(updates) != 1:
             raise ValueError("resident rollout must use one source policy update")
+        round_limits = {job.full_round_draw_limit for job in jobs}
+        if len(round_limits) != 1:
+            raise ValueError("resident rollout must use one full-round draw limit")
+        full_round_draw_limit = next(iter(round_limits))
 
         focal_deck = next(iter(focal_decks))
         adapter = Semantic0031DeviceAdapter(
@@ -181,6 +185,10 @@ class CudaFullSemanticRolloutCollector:
             max_decisions=self.max_decisions,
             check_interval=self.check_interval,
             ability_repeat_limit=self.ability_repeat_limit,
+            engine_turn_draw_limit=(
+                2 * full_round_draw_limit - 1
+                if full_round_draw_limit > 0 else 0
+            ),
             focal_greedy=self.mode == "greedy",
             focal_value_fn=value_fn,
             focal_decision_sink=sink,
@@ -222,6 +230,7 @@ class CudaFullSemanticRolloutCollector:
         materialize_seconds = time.perf_counter() - materialize_started
 
         forfeits = set(result.forfeit_schedule_indices)
+        turn_limit_draws = set(result.turn_limit_draw_schedule_indices)
         for index, (episode, game_result) in enumerate(
             zip(episodes, result.game_results, strict=True)
         ):
@@ -230,7 +239,11 @@ class CudaFullSemanticRolloutCollector:
             episode.finish(reward, result.terminal_turns[index])
             episode.diagnostics = {
                 "engine_selections": result.engine_selections[index],
-                "termination_status": "repeat_forfeit" if index in forfeits else "terminal",
+                "termination_status": (
+                    "repeat_forfeit" if index in forfeits
+                    else "turn_limit_draw" if index in turn_limit_draws
+                    else "terminal"
+                ),
                 "termination_error": None,
                 "source_policy_update": episode.job.source_policy_update,
                 "cuda_resident": True,
@@ -254,6 +267,7 @@ class CudaFullSemanticRolloutCollector:
             "rollout/cuda_lane_count": float(min(self.lane_count, len(jobs))),
             "rollout/cuda_refill_events": float(result.refill_events),
             "rollout/cuda_repeat_forfeits": float(len(forfeits)),
+            "rollout/cuda_turn_limit_draws": float(len(turn_limit_draws)),
             "rollout/cuda_staged_trajectory_bytes": float(staged_bytes),
             "rollout/cuda_peak_allocated_bytes": float(hot_loop_peak_allocated),
             "rollout/cuda_peak_reserved_bytes": float(hot_loop_peak_reserved),

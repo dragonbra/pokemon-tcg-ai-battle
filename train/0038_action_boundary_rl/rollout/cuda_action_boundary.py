@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -11,9 +10,11 @@ import torch
 
 from ..action_boundary.dragapult import (
     PHANTOM_DIVE_ATTACK_ID,
+    PHANTOM_DIVE_MAX_TARGETS,
     StableTargetIdentity,
 )
 from ..action_boundary.macro_planner import MacroPlanner
+from ..action_boundary.public_card_features import card_prize_counts
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -29,23 +30,6 @@ class _Pending:
     root_index: int
     targets: list[StableTargetIdentity]
     macro_action: dict[str, Any]
-
-
-def _card_prizes() -> dict[int, int]:
-    payload = json.loads(PROTOTYPES.read_text(encoding="utf-8"))
-    result: dict[int, int] = {}
-    for row in payload["cards"]:
-        name = str(row.get("name_en") or "").lower()
-        if "mega " in name and " ex" in name:
-            prizes = 3
-        elif " ex" in name:
-            prizes = 2
-        else:
-            prizes = 1
-        if row.get("no_prize"):
-            prizes = 0
-        result[int(row["card_id"])] = prizes
-    return result
 
 
 class CudaActionBoundaryAdapter:
@@ -85,7 +69,7 @@ class CudaActionBoundaryAdapter:
             generator = torch.Generator(device=model.device)
             generator.manual_seed(int(job.policy_seed))
             self.generators[index] = generator
-        self.prizes = _card_prizes()
+        self.prizes = card_prize_counts(PROTOTYPES)
 
     def _invalidate(self, job: int, reason: str) -> None:
         self.pending.pop(job, None)
@@ -98,6 +82,23 @@ class CudaActionBoundaryAdapter:
         serial = semantic["card_cat"][..., 1].long() - 1
         gathered = serial.gather(1, safe)
         return torch.where(relation.gt(0), gathered, torch.full_like(gathered, -1))
+
+    @classmethod
+    def _matching_target_options(
+        cls,
+        semantic: dict[str, torch.Tensor],
+        *,
+        row: int,
+        expected: StableTargetIdentity,
+    ) -> torch.Tensor:
+        option_cat = semantic["option_cat"][row]
+        target_serials = cls._option_target_serials(semantic)[row]
+        return (
+            semantic["option_mask"][row]
+            & option_cat[:, 5].eq(expected.card_id)
+            & option_cat[:, 13].eq(expected.initial_bench_slot + 1)
+            & target_serials.eq(expected.serial)
+        ).nonzero(as_tuple=False).flatten()
 
     def pre_route(
         self,
@@ -177,11 +178,9 @@ class CudaActionBoundaryAdapter:
                 continue
             expected = pending.targets[0]
             option_cat = pending_cats[position]
-            candidates = (
-                pending_masks[position]
-                & option_cat[:, 5].eq(expected.card_id)
-                & option_cat[:, 13].eq(expected.initial_bench_slot + 1)
-            ).nonzero(as_tuple=False).flatten()
+            candidates = self._matching_target_options(
+                semantic, row=lane, expected=expected
+            )
             if candidates.numel() != 1:
                 cats = option_cat[pending_masks[position]].tolist()
                 self._invalidate(
@@ -206,6 +205,10 @@ class CudaActionBoundaryAdapter:
         row: int,
     ) -> dict[str, Any]:
         card_id = int(card_cat[row, 0])
+        if card_id not in self.prizes:
+            raise ValueError(
+                f"visible CUDA target is absent from public Prize map: {card_id}"
+            )
         current_hp = float(card_num[row, 0])
         maximum_hp = float(card_num[row, 1])
         return {
@@ -213,7 +216,7 @@ class CudaActionBoundaryAdapter:
             "id": card_id,
             "hp": current_hp,
             "maxHp": maximum_hp,
-            "prize": self.prizes.get(card_id, 1),
+            "prize": self.prizes[card_id],
             "benchSlot": int(card_cat[row, 4]) - 1,
             "energyCards": [0] * max(0, int(round(float(card_num[row, 2])))),
             "statusBits": max(0, int(card_cat[row, 6]) - 1),
@@ -273,7 +276,7 @@ class CudaActionBoundaryAdapter:
                 # Phantom Dive remains a normal attack when no opposing Bench
                 # exists; the official engine emits no allocation callbacks.
                 continue
-            if target_rows.numel() > 5:
+            if target_rows.numel() > PHANTOM_DIVE_MAX_TARGETS:
                 serials = [
                     int(routed.validated.card_cat[row, index, 1]) - 1
                     for index in target_rows.tolist()

@@ -60,7 +60,7 @@ class AllocationDatasetTest(unittest.TestCase):
         self.assertIsNone(session.pending_shadow_allocation)
         self.assertEqual(session.allocation_bc_invalid, 1)
 
-    def test_expanded_bench_above_five_is_explicitly_unsupported(self):
+    def test_expanded_bench_remains_one_macro_label(self):
         job = protocol.RolloutJob("b", "opp", True, 7, 0, (1,) * 60, (2,) * 60,
                                   __import__("pathlib").Path("."), action_boundary_mode="shadow")
         session = collector._Session(job, torch.Generator())
@@ -69,8 +69,9 @@ class AllocationDatasetTest(unittest.TestCase):
             session, {"actor": 0, "turn": 3, "select": {"context": 0}},
             SimpleNamespace(indices=(0,)), {"x": torch.zeros(1, 2)}, 0, 0, bench,
         )
-        self.assertIsNone(session.pending_shadow_allocation)
-        self.assertEqual(session.allocation_bc_invalid_reasons, {"target_count_outside_1_5": 1})
+        self.assertIsNotNone(session.pending_shadow_allocation)
+        self.assertEqual(len(session.pending_shadow_allocation["identities"]), 6)
+        self.assertEqual(session.allocation_bc_invalid_reasons, {})
 
 
 if __name__ == "__main__":

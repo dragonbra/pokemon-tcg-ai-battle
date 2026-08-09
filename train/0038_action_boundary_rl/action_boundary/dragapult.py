@@ -10,6 +10,7 @@ from typing import Any
 PHANTOM_DIVE_ATTACK_ID = 154
 PHANTOM_DIVE_COUNTERS = 6
 PHANTOM_DIVE_CONTEXTS = frozenset({14, "DamageCounterAny"})
+PHANTOM_DIVE_MAX_TARGETS = 8
 
 
 @dataclass(frozen=True, order=True, slots=True)
@@ -54,8 +55,13 @@ def enumerate_allocations(
     targets: Sequence[StableTargetIdentity], total: int = PHANTOM_DIVE_COUNTERS
 ) -> tuple[DragapultDamageAllocation, ...]:
     canonical = tuple(sorted(targets))
-    if not 1 <= len(canonical) <= 5 or len(set(canonical)) != len(canonical):
-        raise ValueError("Phantom Dive requires one to five distinct stable Bench targets")
+    if (
+        not 1 <= len(canonical) <= PHANTOM_DIVE_MAX_TARGETS
+        or len(set(canonical)) != len(canonical)
+    ):
+        raise ValueError(
+            "Phantom Dive requires one to eight distinct stable Bench targets"
+        )
     return tuple(
         DragapultDamageAllocation(canonical, counters, total)
         for counters in _weak_compositions(total, len(canonical))
@@ -85,5 +91,6 @@ def opponent_bench_targets(observation: Mapping[str, Any], actor: int) -> tuple[
 
 __all__ = [
     "DragapultDamageAllocation", "PHANTOM_DIVE_ATTACK_ID", "PHANTOM_DIVE_CONTEXTS",
+    "PHANTOM_DIVE_MAX_TARGETS",
     "StableTargetIdentity", "enumerate_allocations", "opponent_bench_targets",
 ]

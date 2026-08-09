@@ -1,4 +1,4 @@
-"""Export an adapted 0037 actor as a self-contained semantic candidate."""
+"""Export a 0038 compound-action checkpoint as a self-contained candidate."""
 
 from __future__ import annotations
 
@@ -15,15 +15,26 @@ import torch
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT_ID = "0038_action_boundary_rl"
 SOURCE_SCHEMA = "0031_shared_prototype_fp16_storage_candidate_checkpoint_v1"
-OUTPUT_SCHEMA = "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
-SOURCE_SCHEMAS = frozenset({SOURCE_SCHEMA, OUTPUT_SCHEMA})
+SOURCE_RUNTIME_SCHEMA = (
+    "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
+)
+OUTPUT_SCHEMA = "0038_compound_kaggle_candidate_v2"
+SOURCE_SCHEMAS = frozenset({SOURCE_SCHEMA, SOURCE_RUNTIME_SCHEMA})
 BASE_SCHEMA = "0031_model_only_checkpoint_v1"
 BASE_SHA256 = "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
 BASE_CHECKPOINT = (
     ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 )
-RL_SCHEMA = "0037_value_initialized_adapted_model_only_v2"
-EXPECTED_VERSION = "V5_last_option_qv_lora_r4_eval5_50u"
+RL_SCHEMA = "0038_model_only_checkpoint_v1"
+EXPECTED_VERSION = "V10_complete_512_rollout_fresh_rl"
+RUNTIME_ROOT = ROOT / "train/0038_action_boundary_rl/kaggle_runtime"
+ACTION_BOUNDARY_ROOT = ROOT / "train/0038_action_boundary_rl/action_boundary"
+SEMANTIC_RUNTIME_ROOT = ROOT / "train/0038_action_boundary_rl/semantic_policy"
+FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
+FOCAL_DECK_SHA256 = "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
+FOCAL_DECK_PATH = (
+    ROOT / "train/0038_action_boundary_rl/league/decks" / FOCAL_DECK_ID / "deck.csv"
+)
 _PROTOTYPE_ALIASES = ("state_encoder.prototypes.", "option_encoder.prototypes.")
 _LORA_MODULES = ("self_attn", "multihead_attn")
 
@@ -118,11 +129,50 @@ def _checkpoint_sidecar(path: Path) -> str:
     return digest
 
 
-def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[str, Any]:
-    raise RuntimeError(
-        "0038 candidate export is fail-closed until the allocation head is warm-started "
-        "and the OfficialProtocolExecutor is packaged with fixed-trace parity evidence"
+def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
+    result_path = (
+        checkpoint.parent.parent
+        / "artifact/frozen_results"
+        / f"core-update-{update:06d}.json"
     )
+    if not result_path.is_file():
+        raise ValueError(f"missing canonical Frozen evaluation: {result_path}")
+    payload = json.loads(result_path.read_text(encoding="utf-8"))
+    entries = payload.get("entries")
+    if (
+        payload.get("schema_version") != "0038_frozen_per_game_results_v1"
+        or payload.get("checkpoint_update") != update
+        or payload.get("frozen_panel_version") != "frozen_0806_seeded_2048_v2"
+        or not isinstance(entries, list)
+        or len(entries) != 2048
+    ):
+        raise ValueError("canonical Frozen evaluation contract mismatch")
+    valid = [
+        row for row in entries
+        if row.get("valid") is True and row.get("error") in (None, "")
+    ]
+    if len(valid) != 2048:
+        raise ValueError("canonical Frozen evaluation contains invalid/error games")
+    wins = sum(row.get("outcome") == 1 for row in valid)
+    losses = len(valid) - wins
+    first = [row for row in valid if row.get("focal_first") is True]
+    second = [row for row in valid if row.get("focal_first") is False]
+    if len(first) != 1024 or len(second) != 1024:
+        raise ValueError("canonical Frozen evaluation is not turn-order balanced")
+    return {
+        "result": str(result_path.relative_to(ROOT)),
+        "result_sha256": _sha256(result_path),
+        "panel_version": payload["frozen_panel_version"],
+        "episodes": len(valid),
+        "wins": wins,
+        "losses": losses,
+        "win_rate": wins / len(valid),
+        "first_wins": sum(row.get("outcome") == 1 for row in first),
+        "second_wins": sum(row.get("outcome") == 1 for row in second),
+    }
+
+
+def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[str, Any]:
     source = source.resolve()
     checkpoint = checkpoint.resolve()
     output = output.resolve()
@@ -135,6 +185,8 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
         raise ValueError("source candidate is not the audited fp16 Large Model 0806 package")
     metadata = rl_payload.get("metadata") or {}
     adaptation = rl_payload.get("adaptation") or {}
+    flags = rl_payload.get("integrated_flags") or {}
+    checkpoint_update = int(rl_payload.get("update", -1))
     expected_adaptation = {
         "lora": True,
         "layernorm_tuning": False,
@@ -147,9 +199,14 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
         or metadata.get("project") != PROJECT_ID
         or metadata.get("version") != EXPECTED_VERSION
         or adaptation != expected_adaptation
+        or not flags.get("enable_action_boundary")
+        or not flags.get("enable_forced_shortcut")
+        or not flags.get("enable_dragapult_macro")
+        or not flags.get("enable_opponent_meta_conditioning")
     ):
-        raise ValueError("checkpoint is not the audited 0037 V5 Last Option Q/V LoRA arm")
+        raise ValueError("checkpoint is not the audited 0038 V10 compound policy")
     checkpoint_sha256 = _checkpoint_sidecar(checkpoint)
+    frozen = _frozen_selection(checkpoint, checkpoint_update)
     if _sha256(BASE_CHECKPOINT) != BASE_SHA256:
         raise ValueError("0037 audited 0806 base checkpoint SHA-256 mismatch")
     base_payload = _load_payload(BASE_CHECKPOINT)
@@ -171,9 +228,19 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             f"{module_name}.parametrizations.in_proj_weight.0."
         )
         lora_names.update(prefix + suffix for suffix in ("q_a", "q_b", "v_a", "v_b"))
-    value_names = {name for name in rl_state if name.startswith("value_head.")}
-    if set(rl_state) != rl_decoder_names | lora_names | value_names or not value_names:
-        raise ValueError("adapted checkpoint trainable tensor inventory is incomplete or unexpected")
+    deployed_prefixes = (
+        "allocation_head.", "opponent_meta_head.", "opponent_meta_conditioner."
+    )
+    ignored_prefixes = ("value_head.", "prize_aux.")
+    deployed_names = {name for name in rl_state if name.startswith(deployed_prefixes)}
+    ignored_names = {name for name in rl_state if name.startswith(ignored_prefixes)}
+    if (
+        set(rl_state) != rl_decoder_names | lora_names | deployed_names | ignored_names
+        or not any(name.startswith("allocation_head.") for name in deployed_names)
+        or not any(name.startswith("opponent_meta_head.") for name in deployed_names)
+        or not any(name.startswith("opponent_meta_conditioner.") for name in deployed_names)
+    ):
+        raise ValueError("0038 trainable tensor inventory is incomplete or unexpected")
 
     for name in decoder_names:
         value = rl_state[f"actor.{name}"]
@@ -191,7 +258,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             f"{module_name}.parametrizations.in_proj_weight.0."
         )
         merged_state[base_name] = _merge_qv_weight(
-            merged_state[base_name],
+            merged_state[base_name].float(),
             q_a=rl_state[prefix + "q_a"],
             q_b=rl_state[prefix + "q_b"],
             v_a=rl_state[prefix + "v_a"],
@@ -200,35 +267,43 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             rank=int(adaptation["rank"]),
         )
 
-    portable_state = {
+    portable_actor_state = {
         name: value.half() if torch.is_floating_point(value) else value
         for name, value in merged_state.items()
     }
 
-    portable_metadata = dict(source_payload["metadata"])
-    portable_metadata["rl_finetune"] = {
+    def portable_substate(prefix: str) -> dict[str, torch.Tensor]:
+        return {
+            name.removeprefix(prefix): (
+                value.half() if torch.is_floating_point(value) else value
+            )
+            for name, value in rl_state.items() if name.startswith(prefix)
+        }
+
+    portable_metadata = {
         "project_id": PROJECT_ID,
         "version": metadata.get("version"),
-        "checkpoint_update": rl_payload.get("update"),
+        "checkpoint_update": checkpoint_update,
         "checkpoint_sha256": checkpoint_sha256,
         "source_policy_update": metadata.get("source_policy_update"),
-        "adaptation": adaptation,
-        "trainable_contract": [
-            "actor.action_decoder.*",
-            "actor.option_encoder.last_block.self_attn.qv_lora",
-            "actor.option_encoder.last_block.cross_attn.qv_lora",
-            "value_head.*",
-        ],
-        "deployed_contract": [
-            "action_decoder.*",
-            "option_encoder.last_block.self_attn.qv_merged",
-            "option_encoder.last_block.cross_attn.qv_merged",
-        ],
-        "critic_deployed": False,
+        "actor_metadata": source_payload["metadata"],
+        "opponent_meta_class_count": int(flags["opponent_meta_class_count"]),
+        "action_schema_version": metadata.get("action_schema_version"),
+        "decision_gate_version": metadata.get("decision_gate_version"),
+        "canonicalizer_version": metadata.get("canonicalizer_version"),
+        "official_protocol_adapter_version": metadata.get(
+            "official_protocol_adapter_version"
+        ),
+        "inference_contract": "greedy_root_plus_allocation_with_primitive_expansion",
     }
     portable = {
         "schema_version": OUTPUT_SCHEMA,
-        "state_dict": portable_state,
+        "actor_state_dict": portable_actor_state,
+        "allocation_head_state_dict": portable_substate("allocation_head."),
+        "opponent_meta_head_state_dict": portable_substate("opponent_meta_head."),
+        "opponent_meta_conditioner_state_dict": portable_substate(
+            "opponent_meta_conditioner."
+        ),
         "metadata": portable_metadata,
     }
 
@@ -236,8 +311,38 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
         shutil.copytree(
             source,
             output,
-            ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "manifest.json"),
+            ignore=shutil.ignore_patterns(
+                "__pycache__", "*.pyc", "manifest.json",
+            ),
         )
+        # The source candidate is only the audited deck/cg/weight provenance.
+        # Deploy the project-local 0038 semantic runtime rather than inheriting
+        # the stale 0034 package copy.  In particular, this preserves the frozen
+        # prototype embedding cache used by training and resident evaluation.
+        shutil.rmtree(output / "strategy")
+        shutil.copytree(
+            SEMANTIC_RUNTIME_ROOT,
+            output / "strategy",
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+        # The historical portable actor package carries a one-card-different
+        # Dragapult list.  The RL checkpoint was trained and Frozen-evaluated
+        # with the versioned 007 deck below, so the deployment deck must come
+        # from that authority rather than from the actor source package.
+        shutil.copy2(FOCAL_DECK_PATH, output / "deck.csv")
+        shutil.copy2(RUNTIME_ROOT / "main.py", output / "main.py")
+        shutil.copy2(
+            RUNTIME_ROOT / "compound_inference.py",
+            output / "strategy/deployment/compound_inference.py",
+        )
+        action_boundary = output / "strategy/action_boundary"
+        action_boundary.mkdir()
+        (action_boundary / "__init__.py").write_text("", encoding="utf-8")
+        for name in (
+            "decision_gate.py", "dragapult.py", "macro_planner.py", "macro_protocol.py",
+            "public_card_features.py",
+        ):
+            shutil.copy2(ACTION_BOUNDARY_ROOT / name, action_boundary / name)
         torch.save(portable, output / "strategy/model.bin")
         deck = [
             int(line)
@@ -246,24 +351,41 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
         ]
         if len(deck) != 60:
             raise ValueError("candidate deck is not exactly 60 cards")
+        deck_sha256 = _deck_hash(deck)
+        if deck_sha256 != FOCAL_DECK_SHA256:
+            raise ValueError("candidate deck does not match the Frozen 007 exact deck")
         manifest = {
-            "schema_version": "0037_adapted_full_semantic_rl_candidate_v1",
+            "schema_version": OUTPUT_SCHEMA,
             "candidate": output.name,
             "project_id": PROJECT_ID,
             "version": metadata.get("version"),
-            "deck_id": "dragapult_ex_007",
+            "deck_id": FOCAL_DECK_ID,
             "deck_display_name": "007 · Dragapult ex",
-            "deck_sha256": _deck_hash(deck),
+            "deck_sha256": deck_sha256,
+            "deck_source": str(FOCAL_DECK_PATH.relative_to(ROOT)),
             "source_candidate": str(source.relative_to(ROOT)),
             "source_portable_checkpoint_sha256": _sha256(source_model_path),
             "base_checkpoint": str(BASE_CHECKPOINT.relative_to(ROOT)),
             "base_checkpoint_sha256": BASE_SHA256,
             "rl_checkpoint": str(checkpoint.relative_to(ROOT)),
             "rl_checkpoint_sha256": checkpoint_sha256,
-            "checkpoint_update": rl_payload.get("update"),
+            "checkpoint_update": checkpoint_update,
             "source_policy_update": metadata.get("source_policy_update"),
             "adaptation": adaptation,
             "adapter_deployment": "merged_into_last_option_self_and_cross_attention_qv",
+            "action_boundary_deployment": {
+                "decision_gate": True,
+                "forced_observe_only": True,
+                "phantom_allocation_head": True,
+                "official_primitive_transaction": True,
+                "opponent_meta_conditioning": True,
+            },
+            "semantic_runtime_source": str(SEMANTIC_RUNTIME_ROOT.relative_to(ROOT)),
+            "prototype_embedding_cache": {
+                "enabled": True,
+                "scope": "once_per_process_across_battles",
+                "invalidation": "weights_device_dtype_or_trainable_prototypes",
+            },
             "portable_checkpoint_schema_version": portable["schema_version"],
             "portable_checkpoint_sha256": _sha256(output / "strategy/model.bin"),
             "storage_dtype": "fp16",
@@ -272,7 +394,12 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             "model_only": True,
             "optimizer_state_saved": False,
             "critic_deployed": False,
-            "selection": "update32 official seeded512 frozen greedy 305-207 (59.57%)",
+            "frozen_evaluation": frozen,
+            "selection": (
+                f"V10 update{checkpoint_update} canonical Frozen-0806 greedy "
+                f"{frozen['wins']}-{frozen['losses']} "
+                f"({frozen['win_rate'] * 100:.8f}%), 0 error"
+            ),
         }
         (output / "manifest.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"

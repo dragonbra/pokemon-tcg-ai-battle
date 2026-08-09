@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+from pathlib import Path
 import unittest
 
 import torch
@@ -12,6 +13,37 @@ exporter = importlib.import_module(
 
 
 class ExportFullSemanticCandidateTest(unittest.TestCase):
+    def test_export_uses_0038_cached_semantic_runtime(self) -> None:
+        runtime = exporter.SEMANTIC_RUNTIME_ROOT / "model/policy.py"
+        source = runtime.read_text(encoding="utf-8")
+        self.assertIn("def prepare_prototype_cache", source)
+        self.assertIn("def prototype_cache_stats", source)
+        self.assertNotEqual(
+            runtime.resolve(),
+            Path(
+                "evaluation/arena/candidates/"
+                "0034_dragapult_third_large_model_zero_shot/strategy/model/policy.py"
+            ).resolve(),
+        )
+
+    def test_export_uses_exact_frozen_007_deck(self) -> None:
+        deck = [
+            int(value)
+            for value in exporter.FOCAL_DECK_PATH.read_text(encoding="utf-8").splitlines()
+            if value.strip()
+        ]
+        self.assertEqual(len(deck), 60)
+        self.assertEqual(exporter._deck_hash(deck), exporter.FOCAL_DECK_SHA256)
+        stale = [
+            int(value)
+            for value in Path(
+                "evaluation/arena/candidates/"
+                "0034_dragapult_third_large_model_zero_shot/deck.csv"
+            ).read_text(encoding="utf-8").splitlines()
+            if value.strip()
+        ]
+        self.assertNotEqual(exporter._deck_hash(stale), exporter.FOCAL_DECK_SHA256)
+
     def test_merge_qv_weight_changes_only_q_and_v_rows(self) -> None:
         width = 3
         base = torch.arange(27, dtype=torch.float32).reshape(9, 3)

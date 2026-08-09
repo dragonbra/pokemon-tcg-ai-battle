@@ -22,9 +22,12 @@ from .protocol import (
     TrajectoryDecision,
 )
 from .pool_worker import run_engine_pool
-from ..action_boundary.dragapult import PHANTOM_DIVE_ATTACK_ID, StableTargetIdentity
+from ..action_boundary.dragapult import (
+    PHANTOM_DIVE_ATTACK_ID, PHANTOM_DIVE_MAX_TARGETS, StableTargetIdentity,
+)
 from ..action_boundary.macro_planner import MacroPlanner
 from ..action_boundary.macro_protocol import PendingMacroTransaction
+from ..action_boundary.public_card_features import card_prize_counts, with_public_prize
 from ..data.allocation_dataset import AllocationBCSample
 
 
@@ -34,7 +37,7 @@ def phantom_macro_eligible(
 ) -> bool:
     return (
         phantom_root is not None
-        and 1 <= target_count <= 5
+        and 1 <= target_count <= PHANTOM_DIVE_MAX_TARGETS
         and action_boundary_mode == "enabled"
         and not chance_before_allocation
     )
@@ -104,6 +107,10 @@ class FullSemanticRolloutCollector:
         self.engines_per_worker = engines_per_worker
         self.inference_channels_per_role = inference_channels_per_role
         self.mode = mode
+        self.prizes = card_prize_counts(
+            Path(__file__).resolve().parents[1]
+            / "semantic_policy/assets/official_full_engine_prototypes_v2.json"
+        )
         self.coalesce_seconds = coalesce_ms / 1000.0
         self.timeout_seconds = timeout_seconds
         self.context = mp.get_context("spawn")
@@ -348,7 +355,10 @@ class FullSemanticRolloutCollector:
                 identities.sort()
                 raw_by_serial = {int(raw["serial"]): {**raw, "benchSlot": slot}
                                  for slot, raw in enumerate(raw_bench)}
-                visible = [raw_by_serial[target.serial] for target in identities]
+                visible = [
+                    with_public_prize(raw_by_serial[target.serial], self.prizes)
+                    for target in identities
+                ]
                 target_rows = []
                 for target in identities:
                     card_mask = (
@@ -387,7 +397,7 @@ class FullSemanticRolloutCollector:
                 item.invalid_macro_episode = True
                 item.macro_fallback_reason = "phantom_chance_boundary_before_allocation"
             elif (phantom_root is not None and item.job.action_boundary_mode == "enabled"
-                  and len(raw_bench) > 5):
+                  and len(raw_bench) > PHANTOM_DIVE_MAX_TARGETS):
                 item.invalid_macro_episode = True
                 item.macro_fallback_reason = "phantom_target_count_above_v1_limit"
             item.decisions.append(
@@ -433,8 +443,8 @@ class FullSemanticRolloutCollector:
                                      int(raw["id"]), slot)
                 for slot, raw in enumerate(raw_bench)
             ))
-            if not 1 <= len(identities) <= 5:
-                item.invalidate_allocation_chain("target_count_outside_1_5")
+            if not 1 <= len(identities) <= PHANTOM_DIVE_MAX_TARGETS:
+                item.invalidate_allocation_chain("target_count_outside_1_8")
                 return
             item.pending_shadow_allocation = {
                 "features": cpu_batch({name: value[batch_index: batch_index + 1]

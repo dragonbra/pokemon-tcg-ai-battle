@@ -69,7 +69,9 @@ class DragapultTests(unittest.TestCase):
         return tuple(StableTargetIdentity(1, 100 + i, 500 + i, i) for i in range(n))
 
     def test_exhaustive_counts_and_uniqueness(self):
-        for n, expected in enumerate((1, 7, 28, 84, 210), start=1):
+        for n, expected in enumerate(
+            (1, 7, 28, 84, 210, 462, 924, 1716), start=1,
+        ):
             allocations = enumerate_allocations(self.targets(n))
             self.assertEqual(len(allocations), expected)
             self.assertEqual(len({item.counters for item in allocations}), expected)
