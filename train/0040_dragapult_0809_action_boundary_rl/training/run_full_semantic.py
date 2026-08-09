@@ -71,7 +71,7 @@ from ..action_boundary.contracts import (
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0040_dragapult_0809_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0040 · 0809 normal LR action boundary"
-FORMAL_VERSION = "V1_0809_normal_lr_long_run"
+FORMAL_VERSION = "V2_snapshot_loader_fix_long_run"
 IMMUTABLE_GATE_C_TRACE_SHA256 = (
     "18c1684a3dc8158494fd9820278a85e60e351b2b274b520bb9fb413b1fa056ca"
 )
@@ -878,6 +878,7 @@ def _run_attested_update0_package_parity(
             "--manifest", str(trace_manifest),
             "--package", str(package),
             "--training-checkpoint", str(checkpoint),
+            "--training-project", f"train.{PROJECT}",
             "--extension-dir", str(CUDA_EXTENSION),
             "--reuse-trace", "--trace", str(trace),
             "--compare-decisions", "283",

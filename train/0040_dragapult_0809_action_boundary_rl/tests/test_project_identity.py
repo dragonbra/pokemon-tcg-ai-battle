@@ -127,7 +127,7 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(config.ppo.batch_size, 1024)
         self.assertEqual(config.ppo.epochs, 4)
         self.assertEqual(
-            config.version, "V1_0809_normal_lr_long_run"
+            config.version, "V2_snapshot_loader_fix_long_run"
         )
         self.assertEqual(config.games_per_update, 512)
         self.assertEqual(config.trajectory_games_per_update, 512)

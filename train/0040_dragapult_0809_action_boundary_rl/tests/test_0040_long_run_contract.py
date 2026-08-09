@@ -13,7 +13,7 @@ FROZEN = importlib.import_module(f"{PROJECT}.evaluation.frozen_jobs")
 class LongRun0040ContractTest(unittest.TestCase):
     def test_default_formal_run_is_normal_lr_unbounded_prize(self) -> None:
         config = RUNNER.RunConfig()
-        self.assertEqual(config.version, "V1_0809_normal_lr_long_run")
+        self.assertEqual(config.version, "V2_snapshot_loader_fix_long_run")
         self.assertIsNone(config.updates)
         self.assertEqual(config.preset_name, "PRIZE")
         self.assertFalse(config.accelerated_transfer_acceptance)

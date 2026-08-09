@@ -15,7 +15,7 @@
   "feature_schema_version": "0038_cpu_authoritative_cuda_feature_parity_v1",
   "trajectory_schema_version": "0038_policy_trajectory_v2_compound",
   "reward_contract": "0038_win_plus_directional_prize_v1",
-  "version": "V1_0809_normal_lr_long_run",
+  "version": "V2_snapshot_loader_fix_long_run",
   "updates": null,
   "rollout_games_per_update": 512,
   "trajectory_games_per_update": 512,

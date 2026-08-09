@@ -41,9 +41,9 @@ Preset `PRIZE` preserves the 0038 objective registry:
 
 Opponent Meta, Meta conditioning, tempo curriculum/loss and all proposed post-0038 heads remain disabled.
 
-## V1 long-run configuration
+## V2 long-run configuration
 
-`V1_0809_normal_lr_long_run` uses CUDA resident rollout with the repaired CPU-authoritative feature schema and the exact Frozen Policy-0806 opponent catalog. Each update collects 512 complete games and retains all 512 trajectories. Optimization uses `fixed_optimizer_budget`, 32 optimizer steps, physical minibatch 1024, accumulation 1 and 4 PPO epochs.
+`V2_snapshot_loader_fix_long_run` uses CUDA resident rollout with the repaired CPU-authoritative feature schema and the exact Frozen Policy-0806 opponent catalog. Each update collects 512 complete games and retains all 512 trajectories. Optimization uses `fixed_optimizer_budget`, 32 optimizer steps, physical minibatch 1024, accumulation 1 and 4 PPO epochs.
 
 | optimizer group | LR | gradient source |
 |---|---:|---|
@@ -61,4 +61,4 @@ U0 and every fifth update run the versioned Frozen-0806 agent-choice v3 panel: e
 
 Frozen metrics are logged under `eval/*`; stochastic rollout diagnostics remain under `rollout/*`. W&B is online in private project `dragon_bra/pokemon-tcg-policy-learning`, while local `training_metrics.jsonl` is canonical. Every update saves an atomic model-only checkpoint; no optimizer, scheduler, RNG, replay or rollout buffer is serialized.
 
-Project stage: implementation and U0/U5 guarded launch. A checkpoint is not submission-ready merely because CUDA Frozen improves; official CPU/package transfer remains a separately authorized evaluation.
+V1 completed its U0 Frozen-2048 but failed closed before PPO because the shared snapshot diagnostic hard-coded the 0038 checkpoint loader. V2 passes an explicit numbered training project to the same strict loader; the repaired 283-decision test has zero tensor/mask/greedy divergence and Value max error `5.37e-7`. Project stage: V2 U0/U5 guarded launch. A checkpoint is not submission-ready merely because CUDA Frozen improves; official CPU/package transfer remains a separately authorized evaluation.

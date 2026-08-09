@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import importlib
 import json
+import re
 import subprocess
 import sys
 from collections import Counter, defaultdict
@@ -93,7 +94,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--training-checkpoint",
         type=Path,
-        help="Optional 0038 model-only checkpoint used for Value parity.",
+        help="Optional numbered-project model-only checkpoint used for Value parity.",
+    )
+    parser.add_argument(
+        "--training-project",
+        default="train.0038_action_boundary_rl",
+        help="Numbered project package that strictly reconstructs --training-checkpoint.",
     )
     parser.add_argument(
         "--extension-dir",
@@ -682,24 +688,26 @@ def compare_compound_model_chunks(
     }
 
 
-def load_training_actor_critic(checkpoint: Path, deck: Sequence[int], device: Any) -> Any:
-    """Strictly reconstruct the 0038 model-only checkpoint, including Value."""
+def load_training_actor_critic(
+    checkpoint: Path,
+    deck: Sequence[int],
+    device: Any,
+    *,
+    training_project: str = "train.0038_action_boundary_rl",
+) -> Any:
+    """Strictly reconstruct a numbered-project model-only checkpoint."""
 
     import torch
 
-    actor_critic = importlib.import_module(
-        "train.0038_action_boundary_rl.policy.actor_critic"
-    )
-    adaptation_module = importlib.import_module(
-        "train.0038_action_boundary_rl.policy.adaptation"
-    )
-    integrated_module = importlib.import_module(
-        "train.0038_action_boundary_rl.integrated.config"
-    )
+    if re.fullmatch(r"train\.\d{4}_[a-z0-9_]+", training_project) is None:
+        raise ValueError("training project must be an explicit numbered train package")
+    actor_critic = importlib.import_module(f"{training_project}.policy.actor_critic")
+    adaptation_module = importlib.import_module(f"{training_project}.policy.adaptation")
+    integrated_module = importlib.import_module(f"{training_project}.integrated.config")
     storage = importlib.import_module(
-        "train.0038_action_boundary_rl.training.storage_full_semantic"
+        f"{training_project}.training.storage_full_semantic"
     )
-    source = importlib.import_module("train.0038_action_boundary_rl.source")
+    source = importlib.import_module(f"{training_project}.source")
     payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
     model, _ = actor_critic.load_actor_critic(
         source.ACTOR_CHECKPOINT,
@@ -1400,7 +1408,10 @@ def main() -> int:
         if not checkpoint.is_file():
             raise FileNotFoundError(checkpoint)
         training_model = load_training_actor_critic(
-            checkpoint, deck_rows[0], device
+            checkpoint,
+            deck_rows[0],
+            device,
+            training_project=args.training_project,
         )
         value_report = compare_value_chunks(
             training_model,

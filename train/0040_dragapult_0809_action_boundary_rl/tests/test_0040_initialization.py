@@ -10,6 +10,7 @@ import torch
 
 PROJECT = "train.0040_dragapult_0809_action_boundary_rl"
 ROOT = Path(__file__).resolve().parents[3]
+PROJECT_ROOT = ROOT / "train/0040_dragapult_0809_action_boundary_rl"
 INITIALIZATION = importlib.import_module(f"{PROJECT}.initialization")
 PRESETS = importlib.import_module(f"{PROJECT}.integrated.presets")
 RUNNER = importlib.import_module(f"{PROJECT}.training.run_full_semantic")
@@ -25,6 +26,15 @@ def sha256(path: Path) -> str:
 
 
 class Initialization0040Test(unittest.TestCase):
+    def test_snapshot_gate_selects_the_0040_strict_training_loader(self) -> None:
+        runner_source = (PROJECT_ROOT / "training/run_full_semantic.py").read_text()
+        scaffold_source = (
+            ROOT / "engine_cuda/tools/run_official_semantic0031_v2_parity_scaffold.py"
+        ).read_text()
+        self.assertIn('"--training-project", f"train.{PROJECT}"', runner_source)
+        self.assertIn('"--training-project"', scaffold_source)
+        self.assertIn("training_project: str", scaffold_source)
+
     def test_sources_are_the_strict_paired_0809_checkpoints(self) -> None:
         self.assertEqual(
             SOURCE.ACTOR_CHECKPOINT,
