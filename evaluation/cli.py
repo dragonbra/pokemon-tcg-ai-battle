@@ -375,6 +375,12 @@ def _parser() -> argparse.ArgumentParser:
         help="限制每个 worker 的 OMP/MKL CPU 线程数",
     )
     run.add_argument(
+        "--worker-timeout-seconds",
+        type=float,
+        default=30.0,
+        help="每局隔离 worker 的超时秒数；慢模型打包 smoke 应显式校准并记录",
+    )
+    run.add_argument(
         "--engine-pool-size",
         type=int,
         default=1,
@@ -434,6 +440,7 @@ def _run(args: argparse.Namespace) -> str:
         _validate_positive(args.workers, "--workers")
     if args.worker_cpu_threads is not None:
         _validate_positive(args.worker_cpu_threads, "--worker-cpu-threads")
+    _validate_positive(args.worker_timeout_seconds, "--worker-timeout-seconds")
     _validate_positive(args.engine_pool_size, "--engine-pool-size")
     _validate_positive(args.candidate_batch_size, "--candidate-batch-size")
     if args.candidate_batch_wait_ms < 0:
@@ -497,6 +504,7 @@ def _run(args: argparse.Namespace) -> str:
             keep_temp=args.keep_temp,
             workers=args.workers if args.workers is not None else default_worker_count(),
             worker_cpu_threads=args.worker_cpu_threads,
+            worker_timeout_seconds=args.worker_timeout_seconds,
             engine_pool_size=args.engine_pool_size,
             candidate_inference_device=candidate_device,
             candidate_inference_batch_size=args.candidate_batch_size,

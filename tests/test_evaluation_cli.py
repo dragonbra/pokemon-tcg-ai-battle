@@ -68,6 +68,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertFalse(args.visualize)
         self.assertIsNone(args.workers)
         self.assertEqual(args.worker_cpu_threads, 1)
+        self.assertEqual(args.worker_timeout_seconds, 30.0)
         self.assertEqual(args.engine_pool_size, 1)
 
     def test_frozen_run_uses_seeded_2048_evaluation_contract(self) -> None:
@@ -260,6 +261,8 @@ class EvaluationCliTests(unittest.TestCase):
                     "4",
                     "--worker-cpu-threads",
                     "1",
+                    "--worker-timeout-seconds",
+                    "120",
                     "--engine-pool-size",
                     "2",
                     "--metric-profile",
@@ -282,6 +285,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertEqual(config.engine_pool_size, 2)
         self.assertEqual(config.workers, 4)
         self.assertEqual(config.worker_cpu_threads, 1)
+        self.assertEqual(config.worker_timeout_seconds, 120.0)
         self.assertEqual(config.metric_profile_id, "auto_iteration_v8_setup_relay")
         self.assertEqual(config.metric_module_paths, ("metrics/custom.py:CustomPlugin",))
         self.assertIn("run-cli-test", output.getvalue())

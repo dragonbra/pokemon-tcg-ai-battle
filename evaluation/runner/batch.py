@@ -1186,6 +1186,9 @@ def _package_payload(package: SubmissionPackage) -> dict[str, object]:
         "package_hash": package.package_hash,
         "deck_hash": package.deck_hash,
         "cg_manifest": package.cg_manifest,
+        "display_name": package.display_name,
+        "representative_cards": package.representative_cards,
+        "package_manifest": package.package_manifest,
     }
 
 
@@ -1528,6 +1531,7 @@ def _manifest(
         ),
         "worker_crash_retries": config.worker_crash_retries,
         "worker_cpu_threads": config.worker_cpu_threads,
+        "worker_timeout_seconds": config.worker_timeout_seconds,
         "candidate_inference": {
             "mode": (
                 "external_shared_server"

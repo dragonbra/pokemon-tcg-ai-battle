@@ -1011,6 +1011,7 @@ class OverridePlugin:
         )
         self.assertEqual(result.manifest["workers"], 2)
         self.assertEqual(result.manifest["worker_cpu_threads"], 1)
+        self.assertEqual(result.manifest["worker_timeout_seconds"], 30.0)
 
     def test_auto_iteration_profile_writes_payloads_and_presentations(self) -> None:
         candidate = self.make_package("candidate", 7)

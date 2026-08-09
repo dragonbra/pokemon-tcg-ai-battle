@@ -176,6 +176,13 @@ TensorBoard 默认读取 `rl_runs` 中的嵌套项目版本目录，监听 `127.
   `__file__` 缺失时安全回退到当前工作目录或 `/kaggle_simulations/agent`，并在导入 PyTorch、
   NumPy 或 OpenMP 相关模块前完成线程环境配置。直接无保护地执行 `Path(__file__)` 的 package
   一律视为不可提交。
+- PyTorch package 必须在 `manifest.json` 显式记录 `"runtime_framework": "pytorch"` 和
+  `"native_runtime_load_order": "torch_before_cg"`。`main.py` 必须先设置线程环境变量，再立即、
+  主动导入 PyTorch，之后才允许导入策略模块；在 PyTorch 完成导入前，入口及其传递依赖均不得
+  import `cg`、调用 `ctypes.CDLL` 或以其他方式加载 `cg/libcg.so`。不得把 PyTorch 延迟到第一次
+  非初始化 action 才导入。原因是同一进程内先载入 `libcg`、后载入 PyTorch 已确认可能在
+  `torch._ops`/quantization 初始化期间触发原生段错误，表现为 step 0 `worker_crash`，而非可捕获的
+  Python 异常。
 - 打包完成后必须把最终 `.tar.gz` 解压到全新临时目录，以该目录而非源 candidate 执行全部门禁：
   1) 检查顶层结构、60-card deck、无 symlink/缓存/额外目录层；2) 运行
   `python3 -m evaluation validate <extracted-root>`；3) 在不定义 `__file__`、不注入仓库
@@ -183,6 +190,14 @@ TensorBoard 默认读取 `rl_runs` 中的嵌套项目版本目录，监听 `127.
   60-card 返回；4) 使用解包后的 package 通过 official engine runtime 至少完成一个 opponent
   ×10 局的 smoke，要求 10/10 finished、0 error。任何一步失败都必须 fail closed、修复并重新打包，
   不得把只通过源目录验证或普通本地 import 的产物交付给用户。
+- PyTorch package 的 official-engine smoke 必须使用会在加载 `cg/libcg` 前读取上述 manifest 并预加载
+  PyTorch 的评测 worker；禁止用“普通 import 成功”、手工改变加载顺序后单局成功、shared inference
+  绕开本地 agent import，或历史包也同样崩溃来替代 10/10 门禁。若出现 step 0 `worker_crash`，必须先
+  查看保留 trace 中的具体 error：明确的 `worker timed out` 必须与原生崩溃分开处理，并用
+  `--worker-timeout-seconds N`、`--workers N` 在当前硬件上校准后记录实际值；无 Python error 且进程收到
+  SIGSEGV 时再用 `PYTHONFAULTHANDLER=1` 核查 Torch-before-`cg` 顺序。不得仅靠放宽 timeout 掩盖原生
+  崩溃。修复入口、manifest、评测加载器或 timeout/并行配置后，必须从最终压缩包重新解开并重跑完整
+  smoke。
 - 交付时必须同时给出完整目录、最终压缩包、压缩包 SHA-256、上述门禁结果，并明确是否执行过
   Kaggle submission。除非用户另行明确授权，本流程只打包和验证，绝不提交或重试提交。
 

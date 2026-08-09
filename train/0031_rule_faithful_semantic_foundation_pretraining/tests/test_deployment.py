@@ -155,6 +155,16 @@ class DeploymentTests(unittest.TestCase):
             self.assertEqual(manifest["project_id"], BASE.split(".", 1)[1])
             self.assertEqual(manifest["checkpoint_selection"], "latest")
             self.assertEqual(manifest["checkpoint_epoch"], 2)
+            self.assertEqual(manifest["runtime_framework"], "pytorch")
+            self.assertEqual(
+                manifest["native_runtime_load_order"], "torch_before_cg"
+            )
+            main_source = (output / "main.py").read_text(encoding="ascii")
+            self.assertLess(
+                main_source.index("import torch"),
+                main_source.index("from strategy.inference"),
+            )
+            self.assertNotIn("import cg", main_source)
             self.assertEqual(len((output / "deck.csv").read_text().splitlines()), 60)
             self.assertTrue((output / "strategy/inference.py").is_file())
             self.assertTrue((output / "strategy/online_runtime.py").is_file())

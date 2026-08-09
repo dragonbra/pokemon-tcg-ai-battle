@@ -7,13 +7,21 @@ import sys
 import tempfile
 import types
 import unittest
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
+from unittest.mock import patch
 
 from evaluation.packages.loader import SubmissionPackage
 from evaluation.runtime.loader import compute_cg_manifest
+from evaluation.runner.batch import _request_payload
 from evaluation.runner.models import GameRequest, GameResult
-from evaluation.runner.worker import _arbitrary_legal_agent, run_game
+from evaluation.runner.worker import (
+    _arbitrary_legal_agent,
+    _package_requires_pytorch,
+    _preload_local_agent_runtime_dependencies,
+    _request_from_payload,
+    run_game,
+)
 
 
 class EvaluationWorkerTests(unittest.TestCase):
@@ -53,6 +61,70 @@ class EvaluationWorkerTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
+
+    def test_declared_pytorch_runtime_is_preloaded_before_engine(self) -> None:
+        candidate = replace(
+            self.make_package("candidate", 7),
+            package_manifest={
+                "runtime_framework": "pytorch",
+                "native_runtime_load_order": "torch_before_cg",
+            },
+        )
+        request = self.make_request(candidate_first=True, candidate=candidate)
+
+        with patch("evaluation.runner.worker.importlib.import_module") as import_module:
+            _preload_local_agent_runtime_dependencies(request)
+
+        import_module.assert_called_once_with("torch")
+
+    def test_historical_model_bin_package_uses_pytorch_compatibility_fallback(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        model_path = candidate.root / "strategy/model.bin"
+        model_path.parent.mkdir()
+        model_path.write_bytes(b"historical pytorch checkpoint")
+
+        self.assertTrue(_package_requires_pytorch(candidate))
+
+    def test_shared_only_worker_does_not_preload_pytorch(self) -> None:
+        candidate = replace(
+            self.make_package("candidate", 7),
+            package_manifest={"runtime_framework": "pytorch"},
+        )
+        opponent = replace(
+            self.make_package("opponent", 8),
+            package_manifest={"runtime_framework": "pytorch"},
+        )
+        request = self.make_request(
+            candidate_first=True,
+            candidate=candidate,
+            opponent=opponent,
+        )
+
+        with patch.dict(
+            os.environ,
+            {
+                "EVALUATION_CANDIDATE_INFERENCE_SOCKET": "/tmp/candidate.sock",
+                "EVALUATION_OPPONENT_INFERENCE_SOCKET": "/tmp/opponent.sock",
+            },
+        ), patch("evaluation.runner.worker.importlib.import_module") as import_module:
+            _preload_local_agent_runtime_dependencies(request)
+
+        import_module.assert_not_called()
+
+    def test_worker_request_preserves_package_runtime_manifest(self) -> None:
+        candidate = replace(
+            self.make_package("candidate", 7),
+            package_manifest={"runtime_framework": "pytorch"},
+        )
+        request = self.make_request(candidate_first=True, candidate=candidate)
+        payload = _request_payload(request, self.root / "trace.json")
+
+        restored, _ = _request_from_payload(payload)
+
+        self.assertEqual(
+            restored.candidate.package_manifest,
+            {"runtime_framework": "pytorch"},
+        )
 
     def make_package(
         self,

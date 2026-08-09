@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import ctypes
+import importlib
 import importlib.util
 import json
 import os
@@ -184,7 +185,38 @@ def _load_game_api_with_runtime(runtime_root: Path) -> object:
     return game_module
 
 
+def _package_requires_pytorch(package: SubmissionPackage) -> bool:
+    manifest = package.package_manifest or {}
+    framework = manifest.get("runtime_framework")
+    if framework is not None:
+        if framework != "pytorch":
+            return False
+        load_order = manifest.get("native_runtime_load_order")
+        if load_order != "torch_before_cg":
+            raise PackageValidationError(
+                f"{package.name} declares PyTorch but not "
+                "native_runtime_load_order=torch_before_cg"
+            )
+        return True
+    # Historical model packages predate the explicit runtime manifest contract.
+    return (package.root / "strategy/model.bin").is_file()
+
+
+def _preload_local_agent_runtime_dependencies(request: GameRequest) -> None:
+    """Load PyTorch before cg/libcg for every in-process PyTorch policy."""
+    if request.arbitrary_legal_actions:
+        return
+    local_packages = []
+    if not os.environ.get("EVALUATION_CANDIDATE_INFERENCE_SOCKET"):
+        local_packages.append(request.candidate)
+    if not os.environ.get("EVALUATION_OPPONENT_INFERENCE_SOCKET"):
+        local_packages.append(request.opponent)
+    if any(_package_requires_pytorch(package) for package in local_packages):
+        importlib.import_module("torch")
+
+
 def _load_agents(request: GameRequest) -> tuple[Any, Any]:
+    _preload_local_agent_runtime_dependencies(request)
     _clear_cg_modules()
     game_module = _load_game_api_with_runtime(request.candidate.root)
     if request.arbitrary_legal_actions:
@@ -681,6 +713,17 @@ def _package_from_payload(payload: dict[str, Any]) -> SubmissionPackage:
         package_hash=str(payload["package_hash"]),
         deck_hash=str(payload["deck_hash"]),
         cg_manifest=dict(payload["cg_manifest"]),
+        display_name=(
+            str(payload["display_name"])
+            if payload.get("display_name") is not None
+            else None
+        ),
+        representative_cards=tuple(payload.get("representative_cards") or ()),
+        package_manifest=(
+            dict(payload["package_manifest"])
+            if payload.get("package_manifest") is not None
+            else None
+        ),
     )
 
 

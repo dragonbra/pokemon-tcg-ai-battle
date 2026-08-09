@@ -56,6 +56,7 @@ if not (ROOT / "deck.csv").is_file() and Path("/kaggle_simulations/agent/deck.cs
     ROOT = Path("/kaggle_simulations/agent")
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+import torch  # Must precede cg/libcg loading in the host process.
 from strategy.inference import PortableSemanticPolicy
 DECK = [int(line) for line in (ROOT / "deck.csv").read_text().splitlines() if line.strip()]
 POLICY = PortableSemanticPolicy.from_checkpoint(ROOT / "strategy/model.bin", DECK)
@@ -197,6 +198,8 @@ def export_candidate(
             "portable_checkpoint_sha256": _sha256(strategy / "model.bin"),
             "storage_dtype": storage_dtype,
             "runtime_dtype": runtime_dtype,
+            "runtime_framework": "pytorch",
+            "native_runtime_load_order": "torch_before_cg",
             "checkpoint_selection": checkpoint.stem,
             "checkpoint_epoch": metadata.get("epoch"),
             "checkpoint_global_step": metadata.get("global_step"),
