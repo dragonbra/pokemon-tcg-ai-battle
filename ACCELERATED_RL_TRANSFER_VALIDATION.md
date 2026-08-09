@@ -2,7 +2,9 @@
 
 ## 当前状态
 
-V11 在写出 U0 前被旧 checkpoint action-contract validator fail closed，没有 Frozen/rollout/PPO。V12 完成 U0 CUDA Frozen-2048（1147-901，55.996%，先手 603/1024、后手 544/1024，0 fallback）后，被 package gate 的错误 trace 路径拦截：脚本读取了 220 行中间 trace，却要求 283 行完整覆盖；已比较的 tensor/logits/greedy/Value 全部 PASS。失败资产均保留，新正式 run 使用 V13 并绑定不可变 283 行 fixture SHA-256 `18c1684a…56ca`。CPU 对局不会自动调度，需用户后续指定 checkpoint。
+V11 在写出 U0 前被旧 checkpoint action-contract validator fail closed，没有 Frozen/rollout/PPO。V12 完成 U0 CUDA Frozen-2048（1147-901，55.996%，先手 603/1024、后手 544/1024，0 fallback）后，被旧 package trace 路径拦截。V13 使用正确的 283 行 trace，但门禁误读 `training_to_package.root.greedy_action_divergences` 的层级；实际 tensor/logits/greedy/Value 全部 PASS，修复提交为 `8c8be47`。V14 完成同一 U0（1147-901）和 package parity 后，在首批 rollout 精确发现 1 个合法 Confusion chance boundary，按旧合同在 PPO 前 fail closed，权重仍为 U0。以上失败资产均保留。
+
+长程版本继续绑定不可变 283 行 fixture SHA-256 `18c1684a…56ca`。Confused Phantom Dive 的投币发生在 root 与 allocation 之间，不能把后续六次 legacy callback 伪装成 compound PPO：该次完整 trace 保留为诊断，同 opponent/seat 槽位使用新的确定性派生 seed 补采，直到每 update 恰有 512 条有效 on-policy Episode；只有 `chance_boundary_before_allocation` 在 allowlist，其他 drift/fallback 继续 fail closed。补采 provenance 按 update 独立落盘。CPU 对局不会自动调度，需用户后续指定 checkpoint。
 
 ## U0 初始化合同
 
@@ -36,13 +38,13 @@ V10 实际共 7 个 optimizer groups；上表已全部列出。Local output Laye
 
 ## 运行合同
 
-- CUDA resident，512 rollout games/update，512 trajectory games/update。
+- CUDA resident，每 update 512 个环境频率槽位与恰好 512 条有效 trajectory；真实 pre-allocation chance boundary 诊断局以同 opponent/seat 新 seed 补采。
 - `fixed_optimizer_budget`，32 optimizer steps，physical minibatch 1024，accumulation 1。
 - U0 与每 5 updates 使用相同标准 CUDA Frozen-2048。
 - 不设 update 上限；前 50 updates 是观察窗口，直到用户要求停止。
 - W&B online：`dragon_bra/pokemon-tcg-policy-learning`。
 - 所有 update 保存 model-only checkpoint；champion 只由 CUDA Frozen-2048 选择。
-- fallback、invalid macro、unsupported、pending reset、NaN/Inf、replay parity failure 均 fail closed。
+- 除显式 `chance_boundary_before_allocation` 诊断排除外，fallback、invalid macro、unsupported、pending reset、NaN/Inf、replay parity failure 均 fail closed。
 
 ## 安全控制
 

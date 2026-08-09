@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import hashlib
 from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -103,6 +104,82 @@ class AcceleratedTransferTest(unittest.TestCase):
         self.assertTrue(runner._attested_package_parity_passed(report))
         report["training_to_package"]["root"]["greedy_action_divergences"] = 1
         self.assertFalse(runner._attested_package_parity_passed(report))
+
+    def test_chance_boundary_episode_is_replaced_in_the_same_environment_slot(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        protocol = importlib.import_module(
+            "train.0038_action_boundary_rl.rollout.protocol"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            job = protocol.RolloutJob(
+                game_id="rollout-u0000-0103",
+                opponent_id="barbaracle",
+                focal_first=True,
+                seed=11,
+                source_policy_update=0,
+                focal_deck=(1,) * 60,
+                opponent_deck=(2,) * 60,
+                runtime_root=Path(temporary),
+                policy_seed=12,
+                search_seed=13,
+                action_boundary_mode="enabled",
+            )
+            episode = protocol.EpisodeTrajectory(job)
+            episode.finish(-1.0, 16)
+            episode.diagnostics = {
+                "macro_fallback": 1,
+                "macro_fallback_reason": "chance_boundary_before_allocation",
+            }
+
+            def collect(replacements):
+                self.assertEqual(len(replacements), 1)
+                replacement = replacements[0]
+                self.assertEqual(replacement.opponent_id, job.opponent_id)
+                self.assertEqual(replacement.focal_first, job.focal_first)
+                self.assertNotEqual(replacement.seed, job.seed)
+                clean = protocol.EpisodeTrajectory(replacement)
+                clean.finish(1.0, 12)
+                clean.diagnostics = {"macro_fallback": 0}
+                return [clean]
+
+            accepted, evidence = runner._replace_chance_boundary_episodes(
+                [episode], collect
+            )
+            self.assertEqual(len(accepted), 1)
+            self.assertEqual(accepted[0].job.opponent_id, job.opponent_id)
+            self.assertEqual(accepted[0].job.focal_first, job.focal_first)
+            self.assertEqual(len(evidence), 1)
+            self.assertEqual(evidence[0]["reason"], "chance_boundary_before_allocation")
+
+    def test_nonchance_macro_invalid_still_fails_closed(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        protocol = importlib.import_module(
+            "train.0038_action_boundary_rl.rollout.protocol"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            job = protocol.RolloutJob(
+                game_id="drift",
+                opponent_id="opponent",
+                focal_first=False,
+                seed=1,
+                source_policy_update=0,
+                focal_deck=(1,) * 60,
+                opponent_deck=(2,) * 60,
+                runtime_root=Path(temporary),
+                action_boundary_mode="enabled",
+            )
+            episode = protocol.EpisodeTrajectory(job)
+            episode.finish(-1.0, 4)
+            episode.diagnostics = {
+                "macro_fallback": 1,
+                "macro_fallback_reason": "stable_target_identity_drift",
+            }
+            with self.assertRaisesRegex(RuntimeError, "non-resampleable macro failure"):
+                runner._replace_chance_boundary_episodes([episode], lambda _: [])
 
 
 if __name__ == "__main__":

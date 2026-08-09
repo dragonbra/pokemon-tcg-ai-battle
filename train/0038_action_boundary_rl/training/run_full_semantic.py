@@ -670,6 +670,95 @@ def _assert_acceptance_episode_health(
     }
 
 
+CHANCE_BOUNDARY_FALLBACK = "chance_boundary_before_allocation"
+
+
+def _chance_boundary_replacement_job(job: RolloutJob, retry: int) -> RolloutJob:
+    if retry < 1:
+        raise ValueError("chance-boundary retry must be positive")
+    digest = hashlib.sha256(
+        f"{job.game_id}:{job.seed}:{job.policy_seed}:{job.search_seed}:"
+        f"chance-boundary-retry:{retry}".encode("ascii")
+    ).digest()
+
+    def seeded(offset: int) -> int:
+        return int.from_bytes(digest[offset : offset + 8], "big") % 0x7FFFFFFF or 1
+
+    return replace(
+        job,
+        game_id=f"{job.game_id}-chance-retry-{retry:02d}",
+        seed=seeded(0),
+        policy_seed=seeded(8),
+        search_seed=seeded(16),
+    )
+
+
+def _replace_chance_boundary_episodes(
+    episodes: list[Any],
+    collect_replacements: Any,
+    *,
+    max_retries: int = 8,
+) -> tuple[list[Any], list[dict[str, Any]]]:
+    """Return the same environment slots with chance-boundary episodes resampled.
+
+    Confusion reveals a real random result before Phantom Dive allocation.  The
+    legacy fallback trace is retained for diagnostics but cannot enter compound
+    PPO because it contains six primitive policy callbacks.  Only this explicit
+    chance boundary is replaceable; every protocol drift remains fail closed.
+    """
+
+    if max_retries < 1:
+        raise ValueError("max_retries must be positive")
+    accepted = list(episodes)
+    originals = [episode.job for episode in episodes]
+    retry_count = [0] * len(episodes)
+    evidence: list[dict[str, Any]] = []
+    while True:
+        positions: list[int] = []
+        replacement_jobs: list[RolloutJob] = []
+        for position, episode in enumerate(accepted):
+            if not episode.diagnostics.get("macro_fallback"):
+                continue
+            reason = str(episode.diagnostics.get("macro_fallback_reason") or "")
+            if reason != CHANCE_BOUNDARY_FALLBACK:
+                raise RuntimeError(
+                    f"non-resampleable macro failure in {episode.job.game_id}: {reason}"
+                )
+            retry_count[position] += 1
+            if retry_count[position] > max_retries:
+                raise RuntimeError(
+                    f"chance-boundary replacement exhausted for "
+                    f"{originals[position].game_id}"
+                )
+            replacement = _chance_boundary_replacement_job(
+                originals[position], retry_count[position]
+            )
+            evidence.append({
+                "source_policy_update": originals[position].source_policy_update,
+                "slot_game_id": originals[position].game_id,
+                "opponent_id": originals[position].opponent_id,
+                "focal_first": originals[position].focal_first,
+                "excluded_engine_seed": episode.job.seed,
+                "excluded_policy_seed": episode.job.policy_seed,
+                "excluded_search_seed": episode.job.search_seed,
+                "replacement_game_id": replacement.game_id,
+                "replacement_engine_seed": replacement.seed,
+                "replacement_policy_seed": replacement.policy_seed,
+                "replacement_search_seed": replacement.search_seed,
+                "retry": retry_count[position],
+                "reason": reason,
+            })
+            positions.append(position)
+            replacement_jobs.append(replacement)
+        if not positions:
+            return accepted, evidence
+        replacements = list(collect_replacements(replacement_jobs))
+        if len(replacements) != len(positions):
+            raise RuntimeError("chance-boundary replacement collector changed cardinality")
+        for position, replacement in zip(positions, replacements, strict=True):
+            accepted[position] = replacement
+
+
 def _attested_package_parity_passed(report: dict[str, Any]) -> bool:
     deployment = report.get("training_to_package") or {}
     root = deployment.get("root") or {}
@@ -983,10 +1072,19 @@ def run(config: RunConfig) -> dict[str, Any]:
             "seat_balanced_per_unit": True,
             "trajectory_games_per_update": config.trajectory_games_per_update,
             "trajectory_sampling": (
-                "all rollout episodes; no pre-PPO discard"
+                "all configured environment slots; a real pre-allocation chance "
+                "boundary is retained as diagnostic evidence and replaced with a "
+                "new auditable seed in the same opponent/seat slot"
                 if config.trajectory_games_per_update == config.games_per_update
                 else "uniform deterministic episodes; stratified across every 256-slot unit"
             ),
+            "chance_boundary_replacement": {
+                "reason_allowlist": [CHANCE_BOUNDARY_FALLBACK],
+                "same_opponent_and_seat": True,
+                "max_retries_per_slot": 8,
+                "excluded_legacy_callbacks_enter_ppo": False,
+                "provenance": "artifact/schedules/chance_boundary_replacements/",
+            },
         },
         "frozen_evaluation_contract": {
             "contract_id": CANONICAL_CONTRACT_ID,
@@ -1304,9 +1402,98 @@ def run(config: RunConfig) -> dict[str, Any]:
                     ),
                 )
                 episodes = collector.collect(rollout_jobs)
-                rollout_seconds = time.perf_counter() - rollout_started
-                rollout_metrics = _episode_metrics(episodes, "rollout")
                 collector_metrics = collector.metrics()
+                replacement_metric_rows: list[dict[str, float]] = []
+
+                def collect_chance_replacements(
+                    replacement_jobs: list[RolloutJob],
+                ) -> list[Any]:
+                    replacement_collector = build_collector(
+                        model, opponent, config, mode="sample"
+                    )
+                    replacement_episodes = replacement_collector.collect(
+                        replacement_jobs
+                    )
+                    replacement_metric_rows.append(replacement_collector.metrics())
+                    return replacement_episodes
+
+                episodes, chance_exclusions = _replace_chance_boundary_episodes(
+                    episodes, collect_chance_replacements
+                )
+                rollout_seconds = time.perf_counter() - rollout_started
+                additive_metrics = {
+                    "rollout/inference_batches", "rollout/inference_requests",
+                    "rollout/focal_requests", "rollout/inference_seconds",
+                    "rollout/cuda_hot_loop_seconds", "rollout/cuda_materialize_seconds",
+                    "rollout/cuda_refill_events", "rollout/cuda_repeat_forfeits",
+                    "rollout/cuda_turn_limit_draws", "rollout/cuda_staged_trajectory_bytes",
+                    "rollout/cuda_chunks",
+                }
+                maximum_metrics = {
+                    "rollout/max_batch_size", "rollout/cuda_lane_count",
+                    "rollout/cuda_peak_allocated_bytes", "rollout/cuda_peak_reserved_bytes",
+                }
+                for row in replacement_metric_rows:
+                    for name in additive_metrics:
+                        collector_metrics[name] = (
+                            collector_metrics.get(name, 0.0) + row.get(name, 0.0)
+                        )
+                    for name in maximum_metrics:
+                        collector_metrics[name] = max(
+                            collector_metrics.get(name, 0.0), row.get(name, 0.0)
+                        )
+                collector_metrics.update({
+                    "rollout/focal_requests": float(sum(
+                        int(episode.diagnostics.get("strategic_decisions", 0))
+                        for episode in episodes
+                    )),
+                    "rollout/forced_shortcuts": float(sum(
+                        int(episode.diagnostics.get("forced_shortcuts", 0))
+                        for episode in episodes
+                    )),
+                    "rollout/macro_actions": float(sum(
+                        int(episode.diagnostics.get("macro_actions", 0))
+                        for episode in episodes
+                    )),
+                    "rollout/macro_callbacks": float(sum(
+                        int(episode.diagnostics.get("macro_callbacks", 0))
+                        for episode in episodes
+                    )),
+                    "rollout/invalid_macros": 0.0,
+                    "rollout/chance_boundary_exclusions": float(len(chance_exclusions)),
+                    "rollout/attempted_games": float(
+                        len(episodes) + len(chance_exclusions)
+                    ),
+                    "rollout/cuda_trajectory_games": float(sum(
+                        bool(episode.policy_transitions) for episode in episodes
+                    )),
+                    "rollout/cuda_stored_policy_transitions": float(sum(
+                        len(episode.policy_transitions) for episode in episodes
+                    )),
+                    "rollout/cuda_games_per_second": len(episodes)
+                    / max(rollout_seconds, 1e-9),
+                    "rollout/cuda_attempted_games_per_second": (
+                        len(episodes) + len(chance_exclusions)
+                    ) / max(rollout_seconds, 1e-9),
+                    "rollout/strategic_decisions_per_second": float(sum(
+                        int(episode.diagnostics.get("strategic_decisions", 0))
+                        for episode in episodes
+                    )) / max(rollout_seconds, 1e-9),
+                })
+                if chance_exclusions:
+                    _atomic_json(
+                        paths["artifact"]
+                        / "schedules/chance_boundary_replacements"
+                        / f"source-update-{source_update:06d}.json",
+                        {
+                            "schema": "0038_chance_boundary_replacements_v1",
+                            "source_policy_update": source_update,
+                            "accepted_episodes": len(episodes),
+                            "attempted_episodes": len(episodes) + len(chance_exclusions),
+                            "entries": chance_exclusions,
+                        },
+                    )
+                rollout_metrics = _episode_metrics(episodes, "rollout")
                 rollout_metrics.update(collector_metrics)
                 if transfer_controller is not None:
                     rollout_metrics.update(_assert_acceptance_episode_health(

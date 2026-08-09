@@ -152,7 +152,7 @@ V9 完成 update 2 后因 rollout 效率合同变更停止；其 2,048→512 tra
 
 V11 在保存 U0 前因旧 checkpoint validator 不接受 repaired action-contract metadata 而 fail closed；V12 完成 U0 CUDA Frozen 后又因 package gate 指向 220 行中间 trace 而未进入 PPO。两个目录都保留为失败审计。V13 绑定 SHA-256 固定的 283 行 fixture，并从 common update-0 新建 on-policy 轨迹：Zero-Shot core、pre-RL `V_win`、BC allocation head 与 fresh zero-delta Q/V LoRA；optimizer、RNG、rollout、old logprob 和 GAE 全部重新生成。它不加载任何 U215/U225/U230/U255 或其他 PPO 权重。
 
-本轮显式使用 `PRIZE` preset：保留 0038 已有 directional Prize auxiliary 和只读 Tempo metrics，但关闭 Opponent Meta、Meta conditioning、Tempo curriculum/loss 以及所有后续 Seat/Plan/Search 结构。训练合同固定为 CUDA resident、每 update 两个 256-slot unit 共 512 局、全部 trajectory 入池、`fixed_optimizer_budget=32`、physical minibatch 1024、accumulation 1。
+本轮显式使用 `PRIZE` preset：保留 0038 已有 directional Prize auxiliary 和只读 Tempo metrics，但关闭 Opponent Meta、Meta conditioning、Tempo curriculum/loss 以及所有后续 Seat/Plan/Search 结构。训练合同固定为 CUDA resident、每 update 两个 256-slot unit 共 512 个 opponent/seat 槽位、恰好 512 条有效 trajectory 入池、`fixed_optimizer_budget=32`、physical minibatch 1024、accumulation 1。Confused 会在 Phantom Dive root 与 allocation 之间揭示真实随机结果；该局的 legacy primitive fallback trace 只作诊断且不能进入 compound PPO。运行器只允许这个明确的 chance-boundary reason，以相同 opponent/seat 和新的可审计 engine/policy/search seed 补齐原槽位；其他 macro drift、fallback、unsupported 或 pending reset 仍立即 fail closed。每次排除和补采均写入 `artifact/schedules/chance_boundary_replacements/`，不得静默丢弃或改变 256-slot 环境频率。
 
 实际 V10 base LR 与 V13 加速计划如下：
 
@@ -164,6 +164,6 @@ V11 在保存 U0 前因旧 checkpoint validator 不接受 repaired action-contra
 | V_win | 1e-4 | 2e-4 | 2e-4 | 2e-4 | terminal win Value only |
 | V_prize | 1e-4 | 2e-4 | 2e-4 | 2e-4 | directional Prize Value only |
 
-Behavior KL `>0.005` warning，`>0.01` 将后续 Actor cap 从 10→5→3；`≥0.02` 或 KL early-stop 会撤销本次所有 trainable tensor、清空 optimizer state 并用较低 cap 重试同一 on-policy batch。clip fraction `>10%` warning、`>30%` 同样回滚；NaN/Inf、old-logprob replay mismatch、invalid/fallback/unsupported/pending reset 直接 fail closed。
+Behavior KL `>0.005` warning，`>0.01` 将后续 Actor cap 从 10→5→3；`≥0.02` 或 KL early-stop 会撤销本次所有 trainable tensor、清空 optimizer state 并用较低 cap 重试同一 on-policy batch。clip fraction `>10%` warning、`>30%` 同样回滚；NaN/Inf、old-logprob replay mismatch、非 chance-boundary 的 invalid/fallback、unsupported 或 pending reset 直接 fail closed。
 
 U0 与之后每 5 updates 只运行 CUDA Frozen-2048。U0 package parity 使用已经固化的 283-decision official snapshot，不启动新的 CPU 对局：比较 repaired CUDA feature、training checkpoint、strict portable package 的 tensor、mask、root/allocation intent 与 Value。正式 run 不设 update 上限，在完整 update 边界响应 `STOP_REQUESTED`；前 50 updates 只是观察窗口。CPU engine 评测不自动调度，必须等用户查看曲线并指定 checkpoint 后另行执行。
