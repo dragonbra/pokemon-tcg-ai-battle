@@ -1593,7 +1593,7 @@ def _manifest(
         "shared_policy_inference_process": config.share_policy_inference_server,
         "arbitrary_legal_actions": config.arbitrary_legal_actions,
         "inference_progress_guard": {
-            "kind": "same_turn_identical_ability_repeat_then_end",
+            "kind": "same_turn_identical_selection_repeat_forfeit",
             "ability_repeat_limit": config.inference_ability_repeat_limit,
             "applies_to": "candidate_and_opponent",
         },

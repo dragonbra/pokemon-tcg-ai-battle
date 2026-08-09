@@ -26,7 +26,7 @@ official engine source changed:        NO
 
 - `.tmp/evaluation/0038_semantic_parity_audit/final/u230_submission_manifest.json`
 - Gates 均为 `PASS`；`release_ready=false`
-- blockers：旧训练 feature 分布不兼容/未 attested；当前修复树尚未形成不可变 release commit
+- blockers：旧训练 feature 分布不兼容/未 attested。runtime 修复已固化为 commit `bf37545`；后续 evaluation harness 修正见 `e65204a`
 
 ## Gate 总表
 
@@ -255,10 +255,10 @@ Gate D 在修复过程中依次发现并保留了以下 first-divergence：
 - package action path 不存在 `strict=False` 或 broad exception → legacy action fallback；
 - startup 校验 manifest/file hashes，缺失关键权重或 schema mismatch 时 fail closed。
 
-U230 最终仍为 `release_ready=false`，因为：
-
-1. checkpoint metadata 没有当前 `0038_cpu_authoritative_cuda_feature_parity_v1` 的训练分布 attestation，而且已知其 rollout 来自 pre-fix CUDA features；
-2. 当前工作树尚未形成不可变 release commit。
+U230 最终仍为 `release_ready=false`，因为 checkpoint metadata 没有当前
+`0038_cpu_authoritative_cuda_feature_parity_v1` 的训练分布 attestation，而且已知其
+rollout 来自 pre-fix CUDA features。runtime 修复是否已提交不改变这条 checkpoint
+provenance 判定。
 
 这条 provenance guard 是永久合同：以后即使 A–D 都通过，feature schema 不匹配的旧 RL checkpoint 也不能被误标为可发布。
 
@@ -336,3 +336,40 @@ Release-focused unit/property suite：**66 tests passed**。Gate A/B/C/D 的真�
 6. canary 与 parity 通过后，才讨论正式 RL 或 Kaggle package。
 
 因此本轮最终判定为：**semantic runtime repair PASS；U230 submission-ready NO；新 RL 尚未启动。**
+
+## 13. Post-fix 007 CPU/CUDA 分布验证
+
+根据人工调整后的快速验收预算，正式 CPU-2048 改为一个完整 CPU-256 频率单元；CUDA
+仍运行八个固定 256 shard，共 2,048 局。两边都使用 exact deck 007、双方
+Policy-0806、deterministic greedy、FP32、evaluation seed `341512806`、循环上限 20 和
+engine turn 100 draw。CPU 使用 official seeded runtime；模型 forward 仍在 GPU。
+
+| runtime | 局数 | W-L-D | 胜率 | Wilson 95% CI | error / unfinished | wall time |
+|---|---:|---:|---:|---:|---:|---:|
+| official CPU | 256 | 152-104-0 | 59.38% | 53.26%–65.21% | 0 / 0 | 210.01s |
+| repaired CUDA | 2,048 | 1146-902-0 | 55.96% | 53.80%–58.09% | 0 / 0 | 105.25s |
+
+CPU 与 CUDA 点估计相差 3.42pp，但 CPU-256 的区间很宽；两样本 pooled z=`1.04`、
+双侧 `p=0.299`。CPU 结果也落在 CUDA 八个 shard 的 51.17%–62.11% 范围内。按 CUDA
+逐 matchup 胜率计算，CPU 预期胜场为 143.25，实际 152，标准化差 `z=1.17`、
+`p=0.241`。没有观察到此前担心的十个百分点级系统性偏移。
+
+额外把 CPU-256 的相同 engine/search seed、opponent 和 seat 原样交给 CUDA 重放：
+
+- 两边总体均为 `152-104-0`；
+- 256 个 pairing key 全匹配；
+- 逐局 outcome 一致 196/256（76.56%）；
+- CPU win→CUDA loss 30 局，CPU loss→CUDA win 30 局，净偏差为 0。
+
+这证明相同 seed 在两个独立 engine backend 上不要求逐局轨迹完全相同，但本次样本没有
+方向性 outcome 偏差。结合 Gate A–D 的逐状态、逐字段和逐决策证据，当前在已覆盖合同内
+可判定 semantic runtime parity 通过；仍不能把有限 fixture 表述成对所有卡牌/状态的数学穷尽证明。
+
+昨天的 pre-fix CUDA-2048 为 1174-874-0（57.32%）。相同 schedule 下，修复后为
+1146-902-0（55.96%）：净变化 -28 胜（-1.37pp），逐局 outcome agreement 69.14%，
+且 330 个 win→loss 与 302 个 loss→win 大体对称。由于 pre-fix 输入确实缺失 option/history/
+resource 语义，昨天的 CUDA **策略强度、RL 收益和 checkpoint 选择结论不能继续作为 official
+部署证据**；但固定 schedule、吞吐数据、规则层 fixture 和问题定位证据仍然有用，不应笼统删除。
+
+完整统计与路径见根目录 `0038_007_CPU_CUDA_POSTFIX_VALIDATION.md`。U230 的训练 provenance
+结论不变：它仍不可提交、不可续训；本轮未启动 RL 或 Kaggle submission。
