@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib
+import hashlib
+from pathlib import Path
 import unittest
 
 
@@ -70,6 +72,22 @@ class AcceleratedTransferTest(unittest.TestCase):
                 preset_name="INTEGRATED",
                 accelerated_transfer_acceptance=True,
             ).validate()
+
+    def test_attested_package_gate_uses_exact_immutable_283_trace(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        trace = (
+            Path(runner.ROOT)
+            / ".tmp/evaluation/0038_semantic_parity_audit/gate_c_final/"
+            "fixed_283_primitive_trace.jsonl"
+        )
+        self.assertTrue(trace.is_file())
+        self.assertEqual(sum(bool(line.strip()) for line in trace.open()), 283)
+        self.assertEqual(
+            hashlib.sha256(trace.read_bytes()).hexdigest(),
+            runner.IMMUTABLE_GATE_C_TRACE_SHA256,
+        )
 
 
 if __name__ == "__main__":

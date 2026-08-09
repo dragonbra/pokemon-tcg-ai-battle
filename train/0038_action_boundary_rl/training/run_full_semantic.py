@@ -71,7 +71,10 @@ from ..action_boundary.contracts import (
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V12_accelerated_transfer_acceptance"
+FORMAL_VERSION = "V13_accelerated_transfer_acceptance"
+IMMUTABLE_GATE_C_TRACE_SHA256 = (
+    "18c1684a3dc8158494fd9820278a85e60e351b2b274b520bb9fb413b1fa056ca"
+)
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -174,7 +177,7 @@ class RunConfig:
         if self.preset_name not in PRESETS:
             raise ValueError("invalid integrated preset")
         if self.version == FORMAL_VERSION and not self.accelerated_transfer_acceptance:
-            raise ValueError("V12 requires the accelerated transfer acceptance contract")
+            raise ValueError("V13 requires the accelerated transfer acceptance contract")
         if self.accelerated_transfer_acceptance:
             if self.updates is not None:
                 raise ValueError("accelerated transfer acceptance must run until manual stop")
@@ -681,7 +684,9 @@ def _run_attested_update0_package_parity(
         source=CANDIDATE_ROOT, checkpoint=checkpoint, output=package
     )
     trace = (
-        ROOT / ".tmp/evaluation/0038_semantic_parity_audit/gate_c/semantic_trace.jsonl"
+        ROOT
+        / ".tmp/evaluation/0038_semantic_parity_audit/gate_c_final/"
+        "fixed_283_primitive_trace.jsonl"
     )
     trace_manifest = (
         ROOT
@@ -689,6 +694,11 @@ def _run_attested_update0_package_parity(
     )
     if not trace.is_file() or not trace_manifest.is_file():
         raise FileNotFoundError("immutable repaired-schema Gate C trace is unavailable")
+    if (
+        _sha256(trace) != IMMUTABLE_GATE_C_TRACE_SHA256
+        or sum(1 for line in trace.open(encoding="utf-8") if line.strip()) != 283
+    ):
+        raise RuntimeError("immutable 283-decision Gate C trace identity mismatch")
     subprocess.run(
         [
             sys.executable,

@@ -657,7 +657,7 @@ def compare_compound_model_chunks(
                     )
                 decisions += 1
     return {
-        "runtime": "0038_compound_kaggle_candidate_v3",
+        "runtime": "0038_compound_kaggle_candidate_v4",
         "decisions": decisions,
         "logits_atol": atol,
         "logits_rtol": rtol,
