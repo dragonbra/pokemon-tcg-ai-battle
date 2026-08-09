@@ -35,9 +35,10 @@ class Policy0806CudaSeedReplicationTests(unittest.TestCase):
         self.assertEqual(len(replication["jobs"]), 2048)
         self.assertEqual(len(replication_seeds), 2048)
         self.assertTrue(canonical_seeds.isdisjoint(replication_seeds))
-        self.assertEqual(
-            sum(bool(job["focal_first"]) for job in replication["jobs"]), 1024
+        self.assertTrue(
+            all(type(job["focal_won_toss"]) is bool for job in replication["jobs"])
         )
+        self.assertTrue(all("focal_first" not in job for job in replication["jobs"]))
 
 
 if __name__ == "__main__":

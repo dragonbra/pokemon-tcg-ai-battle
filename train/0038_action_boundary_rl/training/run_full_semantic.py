@@ -333,6 +333,10 @@ def build_collector(model, opponent, config: RunConfig, *, mode: str,
             mode=mode,
             check_interval=8,
             record_trajectory=record_trajectory,
+            # Frozen evaluation jobs carry seeded toss winners and must let the
+            # winning Agent process context 41.  Stochastic rollout retains its
+            # separately configured sampling contract.
+            agent_selects_first_player=mode == "greedy",
         )
     return FullSemanticRolloutCollector(
         model,
@@ -413,6 +417,20 @@ def build_jobs(
     return jobs
 
 
+def _episode_focal_first(episode: Any) -> bool:
+    if episode.job.focal_won_toss is None:
+        return bool(episode.job.focal_first)
+    choice = episode.diagnostics.get("first_player_choice")
+    if isinstance(choice, dict) and type(choice.get("focal_first")) is bool:
+        return bool(choice["focal_first"])
+    for event in episode.diagnostics.get("engine_event_trace", []):
+        if isinstance(event, dict) and type(event.get("focal_first")) is bool:
+            return bool(event["focal_first"])
+    raise RuntimeError(
+        f"Frozen episode {episode.job.game_id} lacks Agent first-player evidence"
+    )
+
+
 def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
     invalid = [episode for episode in episodes if not episode.valid]
     if invalid:
@@ -424,8 +442,8 @@ def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
     wins = sum(episode.reward == 1.0 for episode in episodes)
     losses = sum(episode.reward == -1.0 for episode in episodes)
     draws = sum(episode.reward == 0.0 for episode in episodes)
-    first = [episode for episode in episodes if episode.job.focal_first]
-    second = [episode for episode in episodes if not episode.job.focal_first]
+    first = [episode for episode in episodes if _episode_focal_first(episode)]
+    second = [episode for episode in episodes if not _episode_focal_first(episode)]
     pairs: dict[tuple[str, int], list[Any]] = {}
     for episode in episodes:
         pairs.setdefault((episode.job.opponent_id, episode.job.seed), []).append(episode)
@@ -480,7 +498,9 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
         chance_boundary = fallback_reason == CHANCE_BOUNDARY_FALLBACK
         rows.append({
             "game_id": episode.job.game_id, "seed": episode.job.seed,
-            "opponent": episode.job.opponent_id, "focal_first": episode.job.focal_first,
+            "opponent": episode.job.opponent_id,
+            "focal_won_toss": episode.job.focal_won_toss,
+            "focal_first": _episode_focal_first(episode),
             "outcome": outcome, "turns": episode.turns, "valid": episode.valid,
             "error": episode.error,
             "fallback": int(episode.diagnostics.get("macro_fallback", 0)),
@@ -519,12 +539,20 @@ def _evaluation_runtime_metrics(metrics: dict[str, float]) -> dict[str, float]:
     }
 
 
+def _job_seat_payload(job: RolloutJob) -> dict[str, bool]:
+    return (
+        {"focal_won_toss": bool(job.focal_won_toss)}
+        if job.focal_won_toss is not None
+        else {"focal_first": bool(job.focal_first)}
+    )
+
+
 def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) -> dict[str, Any]:
     rows = [
         {
             "game_id": job.game_id,
             "opponent_id": job.opponent_id,
-            "focal_first": job.focal_first,
+            **_job_seat_payload(job),
             "engine_seed": job.seed,
             "search_seed": job.search_seed,
             "policy_seed": job.policy_seed,
@@ -536,7 +564,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("ascii")
     environment_sha256 = _environment_schedule_sha256(jobs)
     return {
-        "schema": "0038_dynamic_rollout_schedule_v2",
+        "schema": "0038_dynamic_rollout_schedule_v3_agent_first_player",
         "episodes": len(rows),
         "seed_pairs": len({(row["opponent_id"], row["engine_seed"]) for row in rows}),
         "source_checkpoint_sha256": source_checkpoint_sha256,
@@ -549,7 +577,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
 def _environment_schedule_sha256(jobs: list[RolloutJob]) -> str:
     rows = [{
         "opponent_id": job.opponent_id,
-        "focal_first": job.focal_first,
+        **_job_seat_payload(job),
         "engine_seed": job.seed,
         "search_seed": job.search_seed,
         "policy_seed": job.policy_seed,
@@ -567,7 +595,7 @@ def _opponent_snapshot() -> dict[str, Any]:
         "total_games": sum(item.games for item in catalog),
         "seat_contract": (
             "rollout_balanced_inside_each_randomized_256-slot unit; "
-            "evaluation fixed by frozen_0806_seeded_2048_v2"
+            "evaluation fixed by frozen_0806_seeded_agent_first_player_v3"
         ),
         "pool_id": "0806_kaggle_top100_plus_v1",
         "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
@@ -1023,7 +1051,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_RUN_GROUP": PROJECT,
             "WANDB_TAGS": (
                 "0038,action_boundary,cuda_resident,full_stack,ppo,"
-                "frozen_0806_seeded_2048_v2,"
+                "frozen_0806_seeded_agent_first_player_v3,"
                 + ("accelerated_transfer_acceptance," if config.accelerated_transfer_acceptance else "")
                 + config.ppo.credit_clock
                 + "_clock"

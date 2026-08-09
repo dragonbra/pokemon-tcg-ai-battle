@@ -57,7 +57,7 @@
 - `visualization/` 提供 replay 可视化核心、外部 viewer launcher、CLI 和使用说明。
 - `evaluation/` 是仓库内的评测运行入口：`configs/opponents.json` 固定 catalog，`arena/opponents/<archetype>_<NN>/` 是正式固定对手池，每个对手都是独立标准 package（`main.py`、60 行 `deck.csv`、物理复制的 `cg/`），不是 adapter；正式名称按关键宝可梦组合使用 ASCII `snake_case` 和两位序号，例如 `alakazam_dudunsparce_01`。catalog 同时维护页面显示名和 1–2 张代表宝可梦卡 ID，用于胜率图缩略图。`arena/candidates/<name>/` 只暂存待准入 package，不参与 `--opponents all`，在用户确认收编前保持候选原名。官方 engine runtime 是唯一运行时来源；评测代码不得修改 `engine/source/`，也不得依赖隔壁评测仓库。
 - 评测 CLI 使用 `python3 -m evaluation list-opponents`、`validate <package>` 和 `run --candidate <package> --opponents all --output <report-path>`。每次正式“评测”都只对 `evaluation/arena/opponents/` 固定池运行；这里的 `arena/candidates/` 是候选 opponent 准入区，不是 CLI `--candidate` 所指的被评测卡组。自 `0013` 起，正式实验输出必须是 `experiments/<project_id>/evaluation/V<n>_<tag>.html`，并维护同目录的 `index.html` 汇总所有 `V*.html` 的 candidate、run、局数、胜负、error、胜率和完成率；每次新增正式报告后必须自动刷新 index，版本名可点击进入完整报告。manifest、逐局轻量记录、指标和 case 摘要都内嵌在版本报告中，并继续保留真实 `run_id`；同名 `rl_runs/<project_id>/versions/<V<n>_<tag>>/artifact/evaluation.json` 必须反向指向该权威报告。`.tmp/evaluation/<purpose>` 等临时输出仍可使用隔离的 `run-<id>/report.html`。`evaluation/arena/` 不属于 Kaggle 正式 submission 输出目录。
-- Frozen-0806 checkpoint 强度评测固定使用 seeded official engine 和八个不可变的 256 局最小单位，即每个候选 2,048 局；evaluation seed 固定为 `341512806` 并与 RL 采样 seed 分离。八个单位必须保持相同 exact-deck/opponent slot schedule，每个 slot 使用八个独立 engine/Search seed，并在八次 replica 中严格平衡四次先手、四次后手，合计 1,024 局先手、1,024 局后手。每局最多 50 个完整回合，达到 raw engine turn 100 时记平局；同一 physical actor 在一个官方回合中第 20 次提交同一完整选择时判该 actor 负，双方重复计数独立。只有 2,048/2,048 terminal、0 error、0 unfinished 且平局/循环判负元数据完整的报告才可用于同合同强度比较。2026-08-07 的 Policy-0806 旧 256 局全池评测与后续 seeded-512/CUDA-512 资产均为历史合同，必须保留，不得删除、覆盖、拼接到新 2,048 局报告或冒充当前完整评测；后续默认新建独立 seeded-2048 run，只有用户再次明确要求时才可继续旧合同。
+- Frozen-0806 的当前合同为 `frozen_0806_seeded_agent_first_player_v3`。只固定 evaluation seed `341512806`、exact-deck/opponent slot schedule 和各局 engine/Search seed；抛硬币赢家必须由对应 Agent 真实处理官方 context 41 并选择先后手，评测 harness 禁止人为指定、交替或平衡坐席。official CPU 部署复核固定使用一个 256 局频率单元；CUDA checkpoint 强度评测固定使用八个不可变、互不重复的 256 局单元，即每候选 2,048 局。每局最多 50 个完整回合，达到 raw engine turn 100 时记平局；同一 physical actor 在一个官方回合中第 20 次提交同一完整选择时判该 actor 负，双方重复计数独立。只有目标局数全部 terminal、0 error、0 unfinished，且 seeded toss、Agent 选择、实际先后手、平局/循环判负元数据完整的报告才可用于同合同比较。旧 fixed-seat、seeded-512 和 v2 balanced-seat 结果不得与 v3 比较或冒充当前强度证据。
 - 每场评测在独立 worker 进程中运行，隔离双方策略的模块级状态、导入缓存和 cg 状态。完整 trace 仅在当前 run 的临时目录保留，结束时默认删除，不再长期复制三份 trace；只有调试时才使用 `--keep-temp`，需要卡面帧时再显式使用 `--visualize`。
 - evaluation 支持用 `--workers N` 并行调度多局，但不得因此复用同一局的 engine 或策略进程；指标分析和报告仍须按 catalog/game 固定顺序落盘，并在 manifest 中记录实际并行度。包含 PyTorch、OpenMP、MKL 或 OpenBLAS CPU 推理的候选，并行时必须同时用 `--worker-cpu-threads N` 限制每个 worker 的内部线程，避免进程乘线程造成 CPU 过度订阅。本机 8 核 BC004 的 18×10 实测为：串行 234.41 秒，`--workers 4 --worker-cpu-threads 1` 为 60.29 秒，`--workers 8 --worker-cpu-threads 1` 为 40.23 秒；未限制内部线程的 4-worker 反而耗时 488.41 秒并出现 worker error。因此本机 CPU-only BC evaluation 默认优先使用 `--workers 8 --worker-cpu-threads 1`，其他硬件先把小规模 benchmark report 写到 `.tmp/evaluation/benchmarks/` 校准，不得盲目按逻辑 CPU 数放大 worker。并行只优化吞吐，不构成策略强度证据；不同 run 的随机胜负不可用于验证并行语义一致性。
 - 需要 setup/relay 语义指标时使用 `--metric-profile auto_iteration_v8_setup_relay`（兼容 ID，当前 revision 7）生成完整报告；报告按结果护栏、阶段一二回合基础能力、阶段二 Post-KO 接力、阶段三攻击质量和辅助审计分组，同时保留原始 metric payload。该 profile 只定义指标与展示合同，不代表或触发任何自动迭代、规则策略修改、晋级或淘汰流程。
@@ -98,7 +98,7 @@
 - W&B SDK 与 CLI 在本机使用宿主机 `python3` 的用户级环境，不安装到项目 `.venv`；登录和诊断统一使用 `python3 -m wandb ...`。真正执行训练的解释器必须能够 `import wandb`，不得一边用宿主机安装、一边用默认不可见宿主 site-packages 的 `.venv/bin/python` 启动正式 online run。
 - 自动 W&B 镜像只允许由 `TrainingLogger` 对 `rl_runs/<project_id>/versions/<V<n>_<tag>>/artifact/` 正式路径启用。一个 repository version 映射到一个稳定 W&B run ID；同一版本的真实断点恢复可以 resume，新训练语义、超参数或策略更新必须分配新的 `V<n>_<tag>` 和 W&B run，禁止复用旧 run 或向旧曲线追加另一项实验。
 - BC 使用 `trainer/epoch` 横轴与 `bc/*` namespace，value calibration 使用 `trainer/epoch` 与 `value/*`，PPO 使用 `trainer/update` 与 `ppo/*`，rollout 诊断使用 `env/decisions`/`env/episodes` 与 `rollout/*`。不同阶段的 loss、训练内 rollout 胜率和吞吐不能互相冒充策略强度。
-- PPO rollout 指标必须记录并按真实 policy 时序汇报。若第 `k` 批 Episode 在参数更新前由 `checkpoint/update=k-1` 的 stochastic behavior policy 采集，则 rolling 100/500/2000 只能称为该采样策略及其历史窗口的训练诊断，不得称为 `checkpoint/update=k` 的 greedy 胜率或策略强度。现有 `trainer/update` 与 `rollout/*` 曲线不得为了对齐 checkpoint 而回写或平移；后续 run 应额外记录 `rollout/source_policy_update`、`checkpoint/update`，并把固定 opponent snapshot、固定 seed、平衡先后手的冻结 greedy 评测单独写入 `eval/*` 与 `eval/checkpoint_update`。Agent 汇报候选 checkpoint 时必须明确区分 sampled rollout、该批数据更新产生的 checkpoint 和 frozen greedy evaluation；rolling 峰值只能用于定位候选区间，checkpoint 强弱结论必须以同合同的 official-engine 冻结评测为准。
+- PPO rollout 指标必须记录并按真实 policy 时序汇报。若第 `k` 批 Episode 在参数更新前由 `checkpoint/update=k-1` 的 stochastic behavior policy 采集，则 rolling 100/500/2000 只能称为该采样策略及其历史窗口的训练诊断，不得称为 `checkpoint/update=k` 的 greedy 胜率或策略强度。现有 `trainer/update` 与 `rollout/*` 曲线不得为了对齐 checkpoint 而回写或平移；后续 run 应额外记录 `rollout/source_policy_update`、`checkpoint/update`，并把固定 opponent snapshot、固定 seed、seeded toss 后由 Agent 自主选择先后手的冻结 greedy 评测单独写入 `eval/*` 与 `eval/checkpoint_update`。Agent 汇报候选 checkpoint 时必须明确区分 sampled rollout、该批数据更新产生的 checkpoint 和 frozen greedy evaluation；rolling 峰值只能用于定位候选区间，checkpoint 强弱结论必须以同合同的 official-engine 冻结评测为准。
 - 每个正式版本的 `status.json`、`training_summary.json` 或等价版本记录必须保留 W&B project、稳定 run ID 或 URL、sync 状态以及失败原因；本地 `rl_runs/<project_id>/versions/<V<n>_<tag>>/wandb/` 只作为可再生 staging 并保持 Git ignore。
 - 默认只镜像有限标量、非秘密 config 和 W&B 自动元数据，不上传 checkpoint、dataset、optimizer state、完整 trace、replay、observation、source patch 或其他大文件。跨 BC/RL 的 policy 强度比较仍必须来自相同 official-engine runtime、opponent catalog、seed/先后手合同和 metric profile 下的正式 `eval/*` 结果。
 
@@ -183,6 +183,14 @@ TensorBoard 默认读取 `rl_runs` 中的嵌套项目版本目录，监听 `127.
   非初始化 action 才导入。原因是同一进程内先载入 `libcg`、后载入 PyTorch 已确认可能在
   `torch._ops`/quantization 初始化期间触发原生段错误，表现为 step 0 `worker_crash`，而非可捕获的
   Python 异常。
+- 所有基于 Semantic0031 的 BC、Zero-Shot 与 RL PyTorch package 必须带有模型自持有的
+  Frozen Prototype Embedding Cache，并在 `manifest.json` 显式记录
+  `"prototype_embedding_cache_version": "frozen_model_owned_v1"` 与
+  `"prototype_embedding_cache_required": true`。每个进程只允许编译一次冻结的静态 prototype
+  embeddings，并在局内及跨局复用；加载 state dict、改变 device/dtype 时必须自动失效重建，prototype
+  参数可训练时必须绕过缓存以保留 autograd。缓存是非持久化派生状态，不得写入 checkpoint，且启用前后
+  feature、logits、greedy action 和 action contract 必须一致。exporter 或最终解包门禁发现该实现或
+  manifest 字段缺失时必须 fail closed，不得交付无缓存包。
 - 打包完成后必须把最终 `.tar.gz` 解压到全新临时目录，以该目录而非源 candidate 执行全部门禁：
   1) 检查顶层结构、60-card deck、无 symlink/缓存/额外目录层；2) 运行
   `python3 -m evaluation validate <extracted-root>`；3) 在不定义 `__file__`、不注入仓库

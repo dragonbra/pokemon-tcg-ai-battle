@@ -159,6 +159,15 @@ class DeploymentTests(unittest.TestCase):
             self.assertEqual(
                 manifest["native_runtime_load_order"], "torch_before_cg"
             )
+            self.assertEqual(
+                manifest["prototype_embedding_cache"], "frozen_model_owned_v1"
+            )
+            self.assertEqual(
+                manifest["prototype_embedding_cache_version"],
+                "frozen_model_owned_v1",
+            )
+            self.assertTrue(manifest["prototype_embedding_cache_required"])
+            self.assertFalse(manifest["prototype_embedding_cache_persistent"])
             main_source = (output / "main.py").read_text(encoding="ascii")
             self.assertLess(
                 main_source.index("import torch"),
@@ -171,6 +180,11 @@ class DeploymentTests(unittest.TestCase):
             self.assertTrue((output / "strategy/features/layers.py").is_file())
             self.assertTrue((output / "strategy/features/incremental.py").is_file())
             self.assertTrue((output / "strategy/model/policy.py").is_file())
+            packaged_policy = (output / "strategy/model/policy.py").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("def prepare_prototype_cache(", packaged_policy)
+            self.assertIn("def prototype_cache_stats(", packaged_policy)
             self.assertFalse(any(path.is_symlink() for path in output.rglob("*")))
             portable = torch.load(
                 output / "strategy/model.bin", map_location="cpu", weights_only=True

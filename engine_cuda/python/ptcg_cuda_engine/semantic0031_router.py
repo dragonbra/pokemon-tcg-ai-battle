@@ -61,6 +61,7 @@ class Semantic0031ResidentRouter:
         opponent_option_norm: Any | None,
         opponent_decoder: Any,
         same_policy: bool,
+        opponent_adapter: Any | None = None,
         focal_summary_fn: Any | None = None,
     ) -> None:
         self.focal_adapter = focal_adapter
@@ -68,6 +69,7 @@ class Semantic0031ResidentRouter:
         self.opponent_option_norm = opponent_option_norm
         self.opponent_decoder = opponent_decoder
         self.same_policy = bool(same_policy)
+        self.opponent_adapter = opponent_adapter
         self.focal_summary_fn = focal_summary_fn
 
     def encode(self, batch: Any) -> tuple[Any, Any, Any, Any]:
@@ -76,7 +78,7 @@ class Semantic0031ResidentRouter:
         state = model.state_encoder(
             validated, self.focal_adapter.prototype_memory
         )
-        if self.same_policy:
+        if self.same_policy or self.opponent_adapter is not None:
             focal_options = self.focal_adapter._encode_options(validated, state)
             opponent_options = focal_options
         else:
@@ -104,6 +106,16 @@ class Semantic0031ResidentRouter:
         import torch
 
         validated, state, focal_options, opponent_options = self.encode(batch)
+        opponent_state = state
+        if self.opponent_adapter is not None:
+            opponent_model = self.opponent_adapter.model
+            opponent_validated = opponent_model.validate_batch(batch)
+            opponent_state = opponent_model.state_encoder(
+                opponent_validated, self.opponent_adapter.prototype_memory
+            )
+            opponent_options = self.opponent_adapter._encode_options(
+                opponent_validated, opponent_state
+            )
         ready = focal_route.bool() | opponent_route.bool()
         focal_decoder = self.focal_adapter.model.action_decoder
         focal_summary = (
@@ -140,7 +152,7 @@ class Semantic0031ResidentRouter:
                 self.opponent_decoder,
                 validated,
                 opponent_options,
-                state.summary,
+                opponent_state.summary,
                 max_select=max_select,
                 greedy=True,
                 route_mask=opponent_route,

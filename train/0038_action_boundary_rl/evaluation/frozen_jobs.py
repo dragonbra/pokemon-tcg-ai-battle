@@ -7,8 +7,11 @@ import json
 from pathlib import Path
 
 from evaluation.frozen_0806_contract import (
+    FROZEN_0806_CONTRACT_ID,
     FROZEN_0806_EVALUATION_SEED,
     FROZEN_0806_EVALUATION_UNITS,
+    FROZEN_0806_FIRST_PLAYER_CONTRACT,
+    evaluation_coin_winner,
     evaluation_game_seed,
 )
 from evaluation.runtime.seeded import build_seeded_runtime
@@ -17,9 +20,9 @@ from ..league import load_frozen_catalog
 from ..rollout.protocol import DEFAULT_FULL_ROUND_DRAW_LIMIT, RolloutJob
 
 
-CANONICAL_CONTRACT_ID = "frozen_0806_seeded_2048_v2"
+CANONICAL_CONTRACT_ID = FROZEN_0806_CONTRACT_ID
 EXPECTED_007_SCHEDULE_SHA256 = (
-    "98b58bced460c1a2e622ae4b39bf506294fcb0230bb42e4117aaa6efc73c9ce9"
+    "7e1c79c7e9265bbc1dd5c084aa482e381366a0cd64541cd26305886ad218a77c"
 )
 
 
@@ -48,10 +51,18 @@ def _canonical_payload(focal_deck_id: str) -> dict:
                         replica=replica,
                         namespace="search",
                     ),
-                    "focal_first": replica % 2 == 0,
+                    "focal_won_toss": evaluation_coin_winner(
+                        evaluation_seed=FROZEN_0806_EVALUATION_SEED,
+                        focal_identity=focal_deck_id,
+                        opponent_identity=opponent.deck_id,
+                        slot=slot,
+                        replica=replica,
+                    ),
                 })
     payload = {
-        "schema": "policy_0806_cuda_seeded2048_v2",
+        "schema": "policy_0806_cuda_seeded2048_agent_choice_v3",
+        "contract_id": CANONICAL_CONTRACT_ID,
+        "first_player_contract": FROZEN_0806_FIRST_PLAYER_CONTRACT,
         "evaluation_seed": FROZEN_0806_EVALUATION_SEED,
         "focal_deck_id": focal_deck_id,
         "jobs": jobs,
@@ -77,7 +88,10 @@ def build_frozen_jobs(
         RolloutJob(
             game_id=str(row["game_id"]),
             opponent_id=str(row["opponent_id"]),
-            focal_first=bool(row["focal_first"]),
+            # Retained only for legacy non-Frozen callers.  Frozen collectors
+            # must use focal_won_toss and let context 41 determine the seat.
+            focal_first=bool(row["focal_won_toss"]),
+            focal_won_toss=bool(row["focal_won_toss"]),
             seed=int(row["engine_seed"]),
             source_policy_update=source_policy_update,
             focal_deck=focal_deck,

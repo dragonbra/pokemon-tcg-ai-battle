@@ -11,7 +11,6 @@ from unittest.mock import patch
 from evaluation import cli
 from evaluation.frozen_0806_contract import (
     FROZEN_0806_EVALUATION_SEED,
-    evaluation_counts,
     evaluation_schedule_id,
 )
 from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
@@ -71,7 +70,7 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertEqual(args.worker_timeout_seconds, 30.0)
         self.assertEqual(args.engine_pool_size, 1)
 
-    def test_frozen_run_uses_seeded_2048_evaluation_contract(self) -> None:
+    def test_frozen_run_uses_cpu256_seeded_toss_agent_choice_contract(self) -> None:
         catalog = load_frozen_0806_runtime_catalog(opponent_policy_label="0806")
         result = SimpleNamespace(run_id="run-frozen-seeded-2048")
         args = cli._parser().parse_args(
@@ -102,10 +101,12 @@ class EvaluationCliTests(unittest.TestCase):
             cli.DEFAULT_FROZEN_CATALOG.resolve().parent.parent,
             opponent_policy_label="0806",
         )
-        expected_counts = evaluation_counts(catalog.pool.schedule)
+        expected_counts = tuple(int(entry.games) for entry in catalog.pool.schedule)
         self.assertEqual(config.games_by_opponent, expected_counts)
-        self.assertEqual(sum(config.games_by_opponent or ()), 2048)
-        self.assertTrue(config.independent_engine_seeds)
+        self.assertEqual(sum(config.games_by_opponent or ()), 256)
+        self.assertFalse(config.independent_engine_seeds)
+        self.assertTrue(config.agent_selects_first_player)
+        self.assertEqual(config.focal_seed_identity, catalog.candidates[0].name)
         self.assertEqual(config.seed, FROZEN_0806_EVALUATION_SEED)
         self.assertTrue(config.seeded_engine)
         self.assertEqual(
@@ -115,7 +116,9 @@ class EvaluationCliTests(unittest.TestCase):
         self.assertEqual(config.opponent_policy_label, "Policy-0806")
         self.assertEqual(
             config.opponent_schedule_id,
-            evaluation_schedule_id(catalog.pool.manifest["schedule_sha256"]),
+            evaluation_schedule_id(
+                catalog.pool.manifest["schedule_sha256"], evaluation_units=1
+            ),
         )
 
     def test_frozen_exact_deck_decorates_live_candidate_with_canonical_identity(self) -> None:

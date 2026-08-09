@@ -17,13 +17,12 @@ import re
 from typing import Any, Iterable, Mapping, Sequence
 
 from evaluation.frozen_0806_contract import (
-    FROZEN_0806_CONTRACT_ID,
+    FROZEN_0806_LEGACY_BALANCED_SEAT_CONTRACT_ID,
     FROZEN_0806_EVALUATION_GAMES,
     FROZEN_0806_EVALUATION_SEED,
     FROZEN_0806_EVALUATION_UNITS,
     FROZEN_0806_UNIT_GAMES,
     evaluation_game_seed,
-    evaluation_schedule_id,
 )
 
 
@@ -38,8 +37,8 @@ _Z95 = 1.959963984540054
 _FROZEN_0806_BASE_SCHEDULE_SHA256 = (
     "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c"
 )
-_FROZEN_0806_SCHEDULE_ID = evaluation_schedule_id(
-    _FROZEN_0806_BASE_SCHEDULE_SHA256
+_FROZEN_0806_SCHEDULE_ID = (
+    "673fc18946281060e526fd49bee9a73b4240a5c72c96a2c73a1174ba2115a29d"
 )
 
 
@@ -192,7 +191,7 @@ def _validate_and_pair(
     if (
         cpu_manifest.get("games") != expected
         or cpu_manifest.get("seed") != FROZEN_0806_EVALUATION_SEED
-        or cuda.get("contract_id") != FROZEN_0806_CONTRACT_ID
+        or cuda.get("contract_id") != FROZEN_0806_LEGACY_BALANCED_SEAT_CONTRACT_ID
         or cuda.get("evaluation_seed") != FROZEN_0806_EVALUATION_SEED
     ):
         raise ValueError("Frozen-0806 evaluation contract or seed mismatch")
@@ -474,7 +473,7 @@ def analyze_standard_panel_reference(
             "cuda_manifest_json": {"path": str(cuda_manifest_json), "sha256": _sha256(cuda_manifest_json)},
         },
         "contract": {
-            "contract_id": FROZEN_0806_CONTRACT_ID,
+            "contract_id": FROZEN_0806_LEGACY_BALANCED_SEAT_CONTRACT_ID,
             "evaluation_seed": FROZEN_0806_EVALUATION_SEED,
             "games": FROZEN_0806_EVALUATION_GAMES,
             "shards": FROZEN_0806_EVALUATION_UNITS,

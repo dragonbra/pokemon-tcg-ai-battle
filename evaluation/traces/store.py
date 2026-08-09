@@ -59,6 +59,7 @@ class TraceStore:
             "opponent": result.opponent,
             "swap": not result.candidate_first,
             "candidate_first": result.candidate_first,
+            "candidate_won_toss": result.candidate_won_toss,
             "status": result.status,
             "winner": result.winner,
             "steps": result.steps,

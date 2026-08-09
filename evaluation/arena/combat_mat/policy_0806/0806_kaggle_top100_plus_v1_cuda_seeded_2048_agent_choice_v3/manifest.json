@@ -1,0 +1,4505 @@
+{
+  "complete": false,
+  "contract_id": "frozen_0806_seeded_agent_first_player_v3",
+  "evaluation_seed": 341512806,
+  "evidence_boundary": "cuda_frozen_strength_contract_official_cpu_transfer_separate",
+  "expected_decks": 55,
+  "expected_games": 112640,
+  "first_player_contract": "seeded_coin_winner_then_winning_agent_selects_context_41",
+  "lane_topology": "256_resident_cuda_masked_refill",
+  "policy_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+  "progress_guard_repeat_limit": 20,
+  "published_decks": 11,
+  "published_games": 22528,
+  "reports": [
+    {
+      "best_rank": 5,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 102,
+          "wins": 170
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 19,
+          "wins": 21
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 25,
+          "wins": 31
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 11,
+          "wins": 13
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 25,
+          "wins": 15
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 11,
+          "wins": 13
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 2,
+          "games": 408,
+          "losses": 225,
+          "wins": 181
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 41,
+          "wins": 39
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 14,
+          "wins": 26
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 19,
+          "wins": 21
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 1,
+          "games": 120,
+          "losses": 63,
+          "wins": 56
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 20,
+          "wins": 20
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 62,
+          "wins": 58
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 8,
+          "wins": 8
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 17,
+          "wins": 23
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 6,
+          "wins": 18
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 51,
+          "wins": 5
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 64,
+          "wins": 16
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 7,
+          "wins": 17
+        }
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6",
+      "deck_number": "001",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 3,
+      "exact_deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "first": {
+        "draws": 1,
+        "games": 1052,
+        "losses": 469,
+        "wins": 582
+      },
+      "first_player_choices": {
+        "first": 2016,
+        "second": 32
+      },
+      "game_records": "games/001.json",
+      "game_records_sha256": "c32e084daeec434dc70a6bcec30d240ff1bb4f111df514772d96a1111dec94f7",
+      "game_results_sha256": "ea3779de06c0514edb32a831ed11ed7cfc944d027f8e8bcdd400622196e7ffc7",
+      "games": 2048,
+      "games_per_second": 19.63445589397693,
+      "lane_count": 256,
+      "losses": 988,
+      "observed_players": 21,
+      "peak_reserved_bytes": 12301893632,
+      "progress_guard_forfeits": [
+        670,
+        926,
+        1181,
+        1182,
+        1223,
+        1437,
+        1439,
+        1693,
+        1991
+      ],
+      "refill_events": 162,
+      "report": "reports/001_marnie_s_grimmsnarl_ex_froslass.html",
+      "report_sha256": "ad3cb196b6b18b7c6c794ec313dad9684706af647d8ba14b89c984cc14b4604a",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "schedule_games": 51,
+      "schedule_sha256": "e85f0065796e18bcc09b7e484e9f0d5e993bba2d6e4e87741bbfd224cd79c205",
+      "second": {
+        "draws": 2,
+        "games": 996,
+        "losses": 519,
+        "wins": 475
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "0f53c35c13bf16f20a7dabe6a6ae3f415f122bfa3de818ef5ec37cb05014d503",
+      "toss": {
+        "focal_won": 1020,
+        "opponent_won": 1028
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 104.30643003599835,
+      "win_rate": 0.51611328125,
+      "wins": 1057
+    },
+    {
+      "best_rank": 7,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 6,
+          "games": 272,
+          "losses": 145,
+          "wins": 121
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 6,
+          "wins": 18
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 2,
+          "games": 16,
+          "losses": 4,
+          "wins": 10
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 3,
+          "games": 16,
+          "losses": 3,
+          "wins": 10
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 10,
+          "wins": 30
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 26,
+          "wins": 30
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 13,
+          "wins": 11
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 22,
+          "wins": 18
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 16,
+          "wins": 8
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 0,
+          "games": 408,
+          "losses": 245,
+          "wins": 163
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 42,
+          "wins": 38
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 9,
+          "wins": 31
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 2,
+          "wins": 22
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 12,
+          "wins": 28
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 0,
+          "games": 120,
+          "losses": 40,
+          "wins": 80
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 3,
+          "wins": 37
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 40,
+          "wins": 80
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 19,
+          "wins": 21
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 4,
+          "wins": 20
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 16,
+          "wins": 40
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 23,
+          "wins": 57
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 2,
+          "games": 24,
+          "losses": 10,
+          "wins": 12
+        }
+      },
+      "deck_id": "alakazam_dudunsparce_3f4515092dc5",
+      "deck_number": "002",
+      "display_name": "Alakazam / Dudunsparce",
+      "draws": 13,
+      "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "first": {
+        "draws": 8,
+        "games": 1056,
+        "losses": 357,
+        "wins": 691
+      },
+      "first_player_choices": {
+        "first": 2019,
+        "second": 29
+      },
+      "game_records": "games/002.json",
+      "game_records_sha256": "6adda76a5c6d47f93959f8f6f4a7309ff8585174517ca08c0cf2eee53420d798",
+      "game_results_sha256": "2c9a6d341a38053b7904fa6ede290d2ab0febbfb3a070068de0e2ab84ac7352b",
+      "games": 2048,
+      "games_per_second": 16.61440324392575,
+      "lane_count": 256,
+      "losses": 816,
+      "observed_players": 14,
+      "peak_reserved_bytes": 10580131840,
+      "progress_guard_forfeits": [
+        158,
+        159,
+        413,
+        415,
+        670,
+        927,
+        1183,
+        1693,
+        1951
+      ],
+      "refill_events": 143,
+      "report": "reports/002_alakazam_dudunsparce.html",
+      "report_sha256": "a1a1c1ba2a243de9d61765752ff0ef908aa0752c4680f453c2b1397d49e9de7d",
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam"
+        },
+        {
+          "card_id": 66,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce"
+        }
+      ],
+      "schedule_games": 34,
+      "schedule_sha256": "f2fa8bede3ee5f2bc7ad4156031eec0e6184704bb8c48860ac6e51192e356b36",
+      "second": {
+        "draws": 5,
+        "games": 992,
+        "losses": 459,
+        "wins": 528
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "56185547cc7cac102fde4e7d829a2950b118f75b20f45c32ceb0ec255076cb8f",
+      "toss": {
+        "focal_won": 1027,
+        "opponent_won": 1021
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [
+        165,
+        337,
+        357,
+        1000,
+        1191,
+        1367,
+        1512,
+        1613,
+        1723,
+        1769,
+        1878,
+        1887,
+        1980
+      ],
+      "wall_seconds": 123.2665398770041,
+      "win_rate": 0.59521484375,
+      "wins": 1219
+    },
+    {
+      "best_rank": 2,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 172,
+          "wins": 100
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 17,
+          "wins": 7
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 31,
+          "wins": 9
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 21,
+          "wins": 35
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 4,
+          "wins": 20
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 15,
+          "wins": 25
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 8,
+          "wins": 8
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 9,
+          "wins": 15
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 0,
+          "games": 408,
+          "losses": 167,
+          "wins": 241
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 29,
+          "wins": 51
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 14,
+          "wins": 26
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 3,
+          "wins": 21
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 14,
+          "wins": 26
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 7,
+          "wins": 17
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 0,
+          "games": 120,
+          "losses": 43,
+          "wins": 77
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 11,
+          "wins": 29
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 58,
+          "wins": 62
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 28,
+          "wins": 12
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 0,
+          "wins": 24
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 4,
+          "wins": 52
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 10,
+          "wins": 70
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 3,
+          "wins": 21
+        }
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c",
+      "deck_number": "003",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 0,
+      "exact_deck_sha256": "dd63244cb42c5002bb2c7e415e8224e3dc8440ee02743f0db22d9d44594a72cc",
+      "first": {
+        "draws": 0,
+        "games": 1014,
+        "losses": 358,
+        "wins": 656
+      },
+      "first_player_choices": {
+        "first": 2013,
+        "second": 35
+      },
+      "game_records": "games/003.json",
+      "game_records_sha256": "bff8c0f8528341836fb461d657374afc075713673ce47bb65866b09a40afd823",
+      "game_results_sha256": "e1cd85f06a7a9068b9bb2e8d27089f652997e0b81aa6f77980cda5df20f0b785",
+      "games": 2048,
+      "games_per_second": 19.20354256457297,
+      "lane_count": 256,
+      "losses": 788,
+      "observed_players": 6,
+      "peak_reserved_bytes": 12448694272,
+      "progress_guard_forfeits": [
+        157,
+        198,
+        199,
+        413,
+        414,
+        454,
+        455,
+        710,
+        711,
+        926,
+        927,
+        1181,
+        1182,
+        1183,
+        1222,
+        1223,
+        1437,
+        1438,
+        1478,
+        1693,
+        1735,
+        1949,
+        1950
+      ],
+      "refill_events": 154,
+      "report": "reports/003_mega_lopunny_ex_mega_froslass_ex.html",
+      "report_sha256": "e5188271cd5546059018f0503ba31d7b187837381e13e21a4e41be54385f03d6",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        },
+        {
+          "card_id": 861,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex"
+        }
+      ],
+      "schedule_games": 15,
+      "schedule_sha256": "0c47bdec0b4541d4e977f7485d01a96578b8a71e3321f023beaa458041134bb1",
+      "second": {
+        "draws": 0,
+        "games": 1034,
+        "losses": 430,
+        "wins": 604
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "141346fb6efbdaa908e405db77d193aeb968190ac93dc7c3c03a12c0dafb23e6",
+      "toss": {
+        "focal_won": 979,
+        "opponent_won": 1069
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 106.64698938299989,
+      "win_rate": 0.615234375,
+      "wins": 1260
+    },
+    {
+      "best_rank": 18,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 3,
+          "games": 272,
+          "losses": 174,
+          "wins": 95
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 22,
+          "wins": 2
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 34,
+          "wins": 6
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 38,
+          "wins": 18
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 13,
+          "wins": 11
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 6,
+          "wins": 34
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 13,
+          "wins": 11
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 0,
+          "games": 408,
+          "losses": 172,
+          "wins": 236
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 24,
+          "wins": 56
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 4,
+          "wins": 36
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 4,
+          "wins": 20
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 4,
+          "wins": 36
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 1,
+          "games": 24,
+          "losses": 5,
+          "wins": 18
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 1,
+          "games": 120,
+          "losses": 63,
+          "wins": 56
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 24,
+          "wins": 16
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 84,
+          "wins": 36
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 35,
+          "wins": 5
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 0,
+          "wins": 24
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 6,
+          "wins": 50
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 1,
+          "games": 80,
+          "losses": 2,
+          "wins": 77
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        }
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
+      "deck_number": "004",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 6,
+      "exact_deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "first": {
+        "draws": 5,
+        "games": 1032,
+        "losses": 380,
+        "wins": 647
+      },
+      "first_player_choices": {
+        "first": 2016,
+        "second": 32
+      },
+      "game_records": "games/004.json",
+      "game_records_sha256": "cd3f27008558b23b428cd2db3f21ebbfd700d23f1386a3bafbcad8dcf2aebd66",
+      "game_results_sha256": "85c7be91fa3c1a614203beebac1ef2bbd9bcf37296b0cbdb9caa124fbb82290e",
+      "games": 2048,
+      "games_per_second": 14.58615686344192,
+      "lane_count": 256,
+      "losses": 834,
+      "observed_players": 6,
+      "peak_reserved_bytes": 11129585664,
+      "progress_guard_forfeits": [
+        157,
+        159,
+        199,
+        669,
+        670,
+        1222,
+        1438,
+        1439,
+        1478,
+        1734,
+        1735,
+        1949
+      ],
+      "refill_events": 156,
+      "report": "reports/004_mega_lopunny_ex_mega_froslass_ex.html",
+      "report_sha256": "03348da868978fac89a82e709a7186f531b9618dfe62ac8392558669d9d5fa7b",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "schedule_games": 15,
+      "schedule_sha256": "9544b0e546b07bcd7dff8cbcd1ed83bdf84abe9cad6a0f8ea3bbfc978e74e2f0",
+      "second": {
+        "draws": 1,
+        "games": 1016,
+        "losses": 454,
+        "wins": 561
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "ff522ab77676527c5bd375793a94fbe598c0deda4b412e456b10b77b7ae7ea81",
+      "toss": {
+        "focal_won": 1000,
+        "opponent_won": 1048
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [
+        1367,
+        1616,
+        1878
+      ],
+      "wall_seconds": 140.40710100499564,
+      "win_rate": 0.58984375,
+      "wins": 1208
+    },
+    {
+      "best_rank": 1,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 124,
+          "wins": 148
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 3,
+          "wins": 21
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 21,
+          "wins": 19
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 26,
+          "wins": 30
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 13,
+          "wins": 11
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 10,
+          "wins": 30
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 15,
+          "wins": 9
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 0,
+          "games": 408,
+          "losses": 226,
+          "wins": 182
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 38,
+          "wins": 42
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 24,
+          "wins": 16
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 2,
+          "wins": 22
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 18,
+          "wins": 22
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 9,
+          "wins": 15
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 0,
+          "games": 120,
+          "losses": 41,
+          "wins": 79
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 16,
+          "wins": 24
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 71,
+          "wins": 49
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 23,
+          "wins": 17
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 13,
+          "wins": 43
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 20,
+          "wins": 60
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 4,
+          "wins": 20
+        }
+      },
+      "deck_id": "dragapult_ex_07bedfffbfad",
+      "deck_number": "007",
+      "display_name": "Dragapult ex",
+      "draws": 0,
+      "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+      "first": {
+        "draws": 0,
+        "games": 1040,
+        "losses": 425,
+        "wins": 615
+      },
+      "first_player_choices": {
+        "first": 2010,
+        "second": 38
+      },
+      "game_records": "games/007.json",
+      "game_records_sha256": "aa9900294d775b3398768c3b9ed9b897b08e69069af10fe68518081da1afe458",
+      "game_results_sha256": "f31405d434221407ac08a55efbccf8dded38f5c4804c4f2b4e64bbf0e7657265",
+      "games": 2048,
+      "games_per_second": 17.864172135045827,
+      "lane_count": 256,
+      "losses": 880,
+      "observed_players": 3,
+      "peak_reserved_bytes": 6062866432,
+      "progress_guard_forfeits": [
+        157,
+        198,
+        414,
+        454,
+        670,
+        711,
+        925,
+        927,
+        1478,
+        1695,
+        1990
+      ],
+      "refill_events": 168,
+      "report": "reports/007_dragapult_ex.html",
+      "report_sha256": "7e4fe2fc48ee6a055bb6478d4dc5644b1ba4a7877e9ef4a6588fbd1b283dbf95",
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex"
+        }
+      ],
+      "schedule_games": 7,
+      "schedule_sha256": "7e1c79c7e9265bbc1dd5c084aa482e381366a0cd64541cd26305886ad218a77c",
+      "second": {
+        "draws": 0,
+        "games": 1008,
+        "losses": 455,
+        "wins": 553
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "a0c71ac970408dab670eb2ff0bb1a70f8c52199e8215e46ba52ba773d685e72d",
+      "toss": {
+        "focal_won": 1002,
+        "opponent_won": 1046
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 114.64287203000276,
+      "win_rate": 0.5703125,
+      "wins": 1168
+    },
+    {
+      "best_rank": 8,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 135,
+          "wins": 137
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 15,
+          "wins": 9
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 19,
+          "wins": 21
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 28,
+          "wins": 28
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 1,
+          "games": 24,
+          "losses": 7,
+          "wins": 16
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 26,
+          "wins": 14
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 18,
+          "wins": 6
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 0,
+          "games": 408,
+          "losses": 267,
+          "wins": 141
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 44,
+          "wins": 36
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 16,
+          "wins": 24
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 8,
+          "wins": 8
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 2,
+          "wins": 22
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 15,
+          "wins": 25
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 8,
+          "wins": 8
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 13,
+          "wins": 11
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 1,
+          "games": 120,
+          "losses": 13,
+          "wins": 106
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 4,
+          "wins": 36
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 26,
+          "wins": 94
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 18,
+          "wins": 22
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 1,
+          "wins": 23
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 21,
+          "wins": 35
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 32,
+          "wins": 48
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 13,
+          "wins": 11
+        }
+      },
+      "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
+      "deck_number": "009",
+      "display_name": "Mega Lucario ex / Solrock",
+      "draws": 2,
+      "exact_deck_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
+      "first": {
+        "draws": 1,
+        "games": 1057,
+        "losses": 442,
+        "wins": 614
+      },
+      "first_player_choices": {
+        "first": 2016,
+        "second": 32
+      },
+      "game_records": "games/009.json",
+      "game_records_sha256": "27b1325baf8b1f05871992759252e12ba9aa36fa97803c87da878bb99752b00f",
+      "game_results_sha256": "70aaaf580591074a734983900e011ca31c0446ddf0a9536edcae1cdc9ef5ebf7",
+      "games": 2048,
+      "games_per_second": 23.5845128685345,
+      "lane_count": 256,
+      "losses": 895,
+      "observed_players": 2,
+      "peak_reserved_bytes": 10227810304,
+      "progress_guard_forfeits": [
+        159,
+        199,
+        414,
+        455,
+        671,
+        710,
+        925,
+        926,
+        967,
+        1222,
+        1479,
+        1693,
+        1949,
+        1951,
+        1991
+      ],
+      "refill_events": 131,
+      "report": "reports/009_mega_lucario_ex_solrock.html",
+      "report_sha256": "0f3ac9b5b33ae790dc8897bbf631663fe98c250377a7d67af88d29d41d62de22",
+      "representative_cards": [
+        {
+          "card_id": 678,
+          "image_url": "https://images.pokemontcg.io/me1/77.png",
+          "name": "Mega Lucario ex"
+        },
+        {
+          "card_id": 676,
+          "image_url": "https://images.pokemontcg.io/me1/75.png",
+          "name": "Solrock"
+        }
+      ],
+      "schedule_games": 5,
+      "schedule_sha256": "852f1432b8987d5005c667a56547bc801d6a2a1f3b0b751a61e2d8813e5ed54c",
+      "second": {
+        "draws": 1,
+        "games": 991,
+        "losses": 453,
+        "wins": 537
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "c357b7b2931b752b8bf13bc375ef9509c218eca3f914f5b115860fd6654ca183",
+      "toss": {
+        "focal_won": 1025,
+        "opponent_won": 1023
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 86.8366462099948,
+      "win_rate": 0.56201171875,
+      "wins": 1151
+    },
+    {
+      "best_rank": 22,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 102,
+          "wins": 170
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 15,
+          "wins": 9
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 3,
+          "wins": 37
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 38,
+          "wins": 18
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 14,
+          "wins": 10
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 22,
+          "wins": 18
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 7,
+          "wins": 17
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 0,
+          "games": 408,
+          "losses": 151,
+          "wins": 257
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 38,
+          "wins": 42
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 6,
+          "wins": 34
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 10,
+          "wins": 30
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 10,
+          "wins": 14
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 0,
+          "games": 120,
+          "losses": 94,
+          "wins": 26
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 35,
+          "wins": 5
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 98,
+          "wins": 22
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 20,
+          "wins": 20
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 7,
+          "wins": 1
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 4,
+          "wins": 20
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 8,
+          "wins": 48
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 18,
+          "wins": 62
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 1,
+          "wins": 15
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 8,
+          "wins": 16
+        }
+      },
+      "deck_id": "festival_lead_dipplin_d6c573dd89bd",
+      "deck_number": "010",
+      "display_name": "Festival Lead / Dipplin",
+      "draws": 0,
+      "exact_deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "first": {
+        "draws": 0,
+        "games": 1031,
+        "losses": 404,
+        "wins": 627
+      },
+      "first_player_choices": {
+        "first": 2011,
+        "second": 37
+      },
+      "game_records": "games/010.json",
+      "game_records_sha256": "74c858bd3d54246dc04b345dc4c90dfd9010dea2d747ad9b5efdc524a8bbb1d0",
+      "game_results_sha256": "68fc36d749a3234afbd1bc989a37b4befa4988eacbca207c0c1062bae08d2394",
+      "games": 2048,
+      "games_per_second": 21.75724940524764,
+      "lane_count": 256,
+      "losses": 900,
+      "observed_players": 2,
+      "peak_reserved_bytes": 9435086848,
+      "progress_guard_forfeits": [
+        158,
+        414,
+        454,
+        670,
+        710,
+        925,
+        1693,
+        1990
+      ],
+      "refill_events": 143,
+      "report": "reports/010_festival_lead_dipplin.html",
+      "report_sha256": "b7c18bfc00e5d4c8b8af3af5424947799078eded1688cdee751a9518b3d54f0c",
+      "representative_cards": [
+        {
+          "card_id": 93,
+          "image_url": "https://images.pokemontcg.io/sv6/18.png",
+          "name": "Dipplin"
+        }
+      ],
+      "schedule_games": 5,
+      "schedule_sha256": "ded2386a0973c6d172274000fdbcdef0fc2fddec39c9ba8e1b46189d0042549d",
+      "second": {
+        "draws": 0,
+        "games": 1017,
+        "losses": 496,
+        "wins": 521
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "2ea614cfc0f3d7f7f940bbddab0011d6ab500719bd4fa99b58318269542fa7cf",
+      "toss": {
+        "focal_won": 994,
+        "opponent_won": 1054
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 94.12954559899663,
+      "win_rate": 0.560546875,
+      "wins": 1148
+    },
+    {
+      "best_rank": 28,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 8,
+          "wins": 8
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 211,
+          "wins": 61
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 24,
+          "wins": 0
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 11,
+          "wins": 29
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 16,
+          "wins": 40
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 10,
+          "wins": 14
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 1,
+          "games": 16,
+          "losses": 1,
+          "wins": 14
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 32,
+          "wins": 8
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 11,
+          "wins": 13
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 1,
+          "games": 408,
+          "losses": 222,
+          "wins": 185
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 1,
+          "games": 80,
+          "losses": 40,
+          "wins": 39
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 18,
+          "wins": 22
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 25,
+          "wins": 15
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 8,
+          "wins": 8
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 10,
+          "wins": 14
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 0,
+          "games": 120,
+          "losses": 107,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 34,
+          "wins": 6
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 1,
+          "games": 120,
+          "losses": 87,
+          "wins": 32
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 21,
+          "wins": 19
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 1,
+          "wins": 23
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 0,
+          "wins": 8
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 2,
+          "wins": 54
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 6,
+          "wins": 74
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 0,
+          "wins": 16
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 16,
+          "wins": 8
+        }
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_03822cc73f78",
+      "deck_number": "011",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "draws": 4,
+      "exact_deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "first": {
+        "draws": 2,
+        "games": 1049,
+        "losses": 509,
+        "wins": 538
+      },
+      "first_player_choices": {
+        "first": 2009,
+        "second": 39
+      },
+      "game_records": "games/011.json",
+      "game_records_sha256": "d993d56009a7dde8e047f10e3efd1ca292be1d08244ca391327c15125d99bafd",
+      "game_results_sha256": "4a8950f47dcf602f5de692c695bcd1658ee2e7bf08049dafddc7d1224af8c407",
+      "games": 2048,
+      "games_per_second": 23.14122831102826,
+      "lane_count": 256,
+      "losses": 1051,
+      "observed_players": 2,
+      "peak_reserved_bytes": 11844714496,
+      "progress_guard_forfeits": [
+        159,
+        198,
+        199,
+        414,
+        415,
+        455,
+        710,
+        711,
+        925,
+        926,
+        967,
+        1181,
+        1437,
+        1439,
+        1478,
+        1735,
+        1950,
+        1951,
+        1990
+      ],
+      "refill_events": 132,
+      "report": "reports/011_mega_kangaskhan_ex_crustle.html",
+      "report_sha256": "1eece9bea0b52d3909498c7cf1d7468fecde4373862f31b0702349be0f553cf7",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "schedule_games": 5,
+      "schedule_sha256": "763c3447de6f2f2cd50111220dfa4221345dff769287824111230ad6b5feb4e7",
+      "second": {
+        "draws": 2,
+        "games": 999,
+        "losses": 542,
+        "wins": 455
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "cd0582233ca1971d15d8b708cfc0de0fd56be96368e22dae4fd3482a2e0b40fc",
+      "toss": {
+        "focal_won": 1010,
+        "opponent_won": 1038
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 88.5000559379987,
+      "win_rate": 0.48486328125,
+      "wins": 993
+    },
+    {
+      "best_rank": 56,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 172,
+          "wins": 100
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 6,
+          "wins": 10
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 8,
+          "wins": 16
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 18,
+          "wins": 22
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 23,
+          "wins": 33
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 10,
+          "wins": 14
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 4,
+          "wins": 12
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 37,
+          "wins": 3
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 5,
+          "wins": 11
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 11,
+          "wins": 13
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 0,
+          "games": 408,
+          "losses": 225,
+          "wins": 183
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 26,
+          "wins": 54
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 30,
+          "wins": 10
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 26,
+          "wins": 14
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 6,
+          "wins": 18
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 8,
+          "wins": 8
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 0,
+          "games": 120,
+          "losses": 26,
+          "wins": 94
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 9,
+          "wins": 31
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 3,
+          "wins": 13
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 21,
+          "wins": 99
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 2,
+          "wins": 14
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 15,
+          "wins": 25
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 3,
+          "wins": 5
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 8,
+          "wins": 16
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 36,
+          "wins": 20
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 51,
+          "wins": 29
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 14,
+          "wins": 10
+        }
+      },
+      "deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
+      "deck_number": "013",
+      "display_name": "Cynthia's Garchomp ex / Roserade",
+      "draws": 0,
+      "exact_deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "first": {
+        "draws": 0,
+        "games": 1077,
+        "losses": 435,
+        "wins": 642
+      },
+      "first_player_choices": {
+        "first": 2018,
+        "second": 30
+      },
+      "game_records": "games/013.json",
+      "game_records_sha256": "949fa8c0d55b72a04468bc7195ce7672d9de585cca0ac87e843739bedaae6861",
+      "game_results_sha256": "e2a85290ea88cc5b6e4221dc904d13d32983c007fd0821d249f4aca4fc121b8c",
+      "games": 2048,
+      "games_per_second": 22.611023069217637,
+      "lane_count": 256,
+      "losses": 961,
+      "observed_players": 2,
+      "peak_reserved_bytes": 8812232704,
+      "progress_guard_forfeits": [
+        159,
+        413,
+        415,
+        454,
+        669,
+        670,
+        1181,
+        1183,
+        1222,
+        1223,
+        1437,
+        1693,
+        1694,
+        1735,
+        1951
+      ],
+      "refill_events": 140,
+      "report": "reports/013_cynthia_s_garchomp_ex_roserade.html",
+      "report_sha256": "02b6ee9ee9c97d5098344e87187605f9d89dbee104c6147a4ebbf8bafb2a6b03",
+      "representative_cards": [
+        {
+          "card_id": 381,
+          "image_url": "https://images.pokemontcg.io/sv10/104.png",
+          "name": "Cynthia's Garchomp ex"
+        }
+      ],
+      "schedule_games": 5,
+      "schedule_sha256": "5904fedaef1cf0446118001c686b82e8c59a56a9dca121f9226a04682d790cb0",
+      "second": {
+        "draws": 0,
+        "games": 971,
+        "losses": 526,
+        "wins": 445
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "a6ee8602fc17f735a94173edc78177d0b207621fd51d430afef2565e085a0ad0",
+      "toss": {
+        "focal_won": 1047,
+        "opponent_won": 1001
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 90.57529125199653,
+      "win_rate": 0.53076171875,
+      "wins": 1087
+    },
+    {
+      "best_rank": 9,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 235,
+          "wins": 37
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 7,
+          "wins": 1
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 21,
+          "wins": 3
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 34,
+          "wins": 6
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 0,
+          "games": 56,
+          "losses": 43,
+          "wins": 13
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 16,
+          "wins": 8
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 2,
+          "wins": 6
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 0,
+          "games": 40,
+          "losses": 28,
+          "wins": 12
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 0,
+          "games": 24,
+          "losses": 18,
+          "wins": 6
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 1,
+          "games": 408,
+          "losses": 295,
+          "wins": 112
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 0,
+          "games": 80,
+          "losses": 49,
+          "wins": 31
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 37,
+          "wins": 3
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 15,
+          "wins": 9
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 36,
+          "wins": 4
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 4,
+          "wins": 20
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 7,
+          "wins": 9
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 1,
+          "games": 120,
+          "losses": 102,
+          "wins": 17
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 1,
+          "games": 40,
+          "losses": 27,
+          "wins": 12
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 0,
+          "games": 120,
+          "losses": 104,
+          "wins": 16
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 0,
+          "games": 40,
+          "losses": 37,
+          "wins": 3
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 1,
+          "wins": 7
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 4,
+          "wins": 4
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 7,
+          "wins": 1
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 5,
+          "wins": 19
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 47,
+          "wins": 9
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 68,
+          "wins": 12
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 14,
+          "wins": 10
+        }
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_310ede704da1",
+      "deck_number": "015",
+      "display_name": "Wellspring Mask Ogerpon ex / Teal Mask Ogerpon ex",
+      "draws": 3,
+      "exact_deck_sha256": "310ede704da1adc09e09efc2b3e4f96cd2201abdbcb3f51ada245472cac2742a",
+      "first": {
+        "draws": 2,
+        "games": 1067,
+        "losses": 820,
+        "wins": 245
+      },
+      "first_player_choices": {
+        "first": 2014,
+        "second": 34
+      },
+      "game_records": "games/015.json",
+      "game_records_sha256": "3997937c5ffb06a8f23f199c939a08c81f1de29ee8bf27315245a98a46d9e83b",
+      "game_results_sha256": "c022e38ce71fb45c5384e90f66d98baaac58e7f46571c2f1c0d488fc73f0cc13",
+      "games": 2048,
+      "games_per_second": 22.606098433550425,
+      "lane_count": 256,
+      "losses": 1577,
+      "observed_players": 1,
+      "peak_reserved_bytes": 6522142720,
+      "progress_guard_forfeits": [
+        157,
+        158,
+        159,
+        198,
+        414,
+        669,
+        925,
+        927,
+        1437,
+        1438,
+        1693,
+        1695,
+        1734,
+        1990,
+        1991
+      ],
+      "refill_events": 134,
+      "report": "reports/015_wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex.html",
+      "report_sha256": "db8835ec566e3b79746e279845ecc3d2b225f80fa3306f942992b61816a6e6e7",
+      "representative_cards": [
+        {
+          "card_id": 108,
+          "image_url": "https://images.pokemontcg.io/sv6/64.png",
+          "name": "Wellspring Mask Ogerpon ex"
+        },
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        }
+      ],
+      "schedule_games": 3,
+      "schedule_sha256": "1c582e12a6dc962a9f8385e2bdc6f7db7274a427b480c33d305c1654dc3146f3",
+      "second": {
+        "draws": 1,
+        "games": 981,
+        "losses": 757,
+        "wins": 223
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "c72365d450719bbb052b36e2c2d1aded38c4d11c6e0d923e2aec477918c410dd",
+      "toss": {
+        "focal_won": 1033,
+        "opponent_won": 1015
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [],
+      "wall_seconds": 90.59502266700292,
+      "win_rate": 0.228515625,
+      "wins": 468
+    },
+    {
+      "best_rank": 15,
+      "by_opponent": {
+        "alakazam_dudunsparce_09b937915fb7": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "alakazam_dudunsparce_3f4515092dc5": {
+          "draws": 0,
+          "games": 272,
+          "losses": 188,
+          "wins": 84
+        },
+        "alakazam_dudunsparce_56024e4e1751": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "alakazam_dudunsparce_59c6fdb878b6": {
+          "draws": 0,
+          "games": 16,
+          "losses": 12,
+          "wins": 4
+        },
+        "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f": {
+          "draws": 0,
+          "games": 16,
+          "losses": 13,
+          "wins": 3
+        },
+        "archaludon_ex_cinderace_05566aeb4e7e": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "archaludon_ex_cinderace_56b532d24b01": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "archaludon_ex_cinderace_da1d56e33b96": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "archaludon_ex_cinderace_ee01ffad9675": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e": {
+          "draws": 0,
+          "games": 24,
+          "losses": 20,
+          "wins": 4
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c": {
+          "draws": 1,
+          "games": 16,
+          "losses": 6,
+          "wins": 9
+        },
+        "cynthia_s_garchomp_ex_roserade_c04e65de725b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 29,
+          "wins": 11
+        },
+        "dragapult_ex_07bedfffbfad": {
+          "draws": 1,
+          "games": 56,
+          "losses": 39,
+          "wins": 16
+        },
+        "dragapult_ex_daa1cce90790": {
+          "draws": 0,
+          "games": 24,
+          "losses": 16,
+          "wins": 8
+        },
+        "dragapult_ex_dusknoir_b85bae9f3a21": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "erika_s_vileplume_ex_cinderace_a982751f90cf": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "festival_lead_dipplin_d6c573dd89bd": {
+          "draws": 1,
+          "games": 40,
+          "losses": 32,
+          "wins": 7
+        },
+        "hydrapple_ex_meganium_415af0a5541c": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "hydrapple_ex_meganium_f1d642b4458b": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "marnie_s_grimmsnarl_ex_froslass_0043a7493af9": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a": {
+          "draws": 1,
+          "games": 24,
+          "losses": 14,
+          "wins": 9
+        },
+        "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6": {
+          "draws": 1,
+          "games": 408,
+          "losses": 260,
+          "wins": 147
+        },
+        "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95": {
+          "draws": 2,
+          "games": 80,
+          "losses": 58,
+          "wins": 20
+        },
+        "mega_kangaskhan_ex_crustle_03822cc73f78": {
+          "draws": 0,
+          "games": 40,
+          "losses": 30,
+          "wins": 10
+        },
+        "mega_kangaskhan_ex_crustle_189395071707": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "mega_kangaskhan_ex_crustle_310ede704da1": {
+          "draws": 0,
+          "games": 24,
+          "losses": 19,
+          "wins": 5
+        },
+        "mega_kangaskhan_ex_crustle_67cf83ea7e09": {
+          "draws": 0,
+          "games": 40,
+          "losses": 35,
+          "wins": 5
+        },
+        "mega_kangaskhan_ex_crustle_747769779b60": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "mega_kangaskhan_ex_crustle_926cc79d2c4e": {
+          "draws": 0,
+          "games": 16,
+          "losses": 9,
+          "wins": 7
+        },
+        "mega_kangaskhan_ex_crustle_ca60839cba73": {
+          "draws": 0,
+          "games": 16,
+          "losses": 14,
+          "wins": 2
+        },
+        "mega_kangaskhan_ex_crustle_df6f74437196": {
+          "draws": 0,
+          "games": 24,
+          "losses": 14,
+          "wins": 10
+        },
+        "mega_kangaskhan_ex_crustle_f50fa3a23cdf": {
+          "draws": 0,
+          "games": 16,
+          "losses": 10,
+          "wins": 6
+        },
+        "mega_lopunny_ex_mega_froslass_ex_01501d644249": {
+          "draws": 3,
+          "games": 120,
+          "losses": 90,
+          "wins": 27
+        },
+        "mega_lopunny_ex_mega_froslass_ex_053b4950d40b": {
+          "draws": 0,
+          "games": 40,
+          "losses": 26,
+          "wins": 14
+        },
+        "mega_lopunny_ex_mega_froslass_ex_546b39d1d134": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "mega_lopunny_ex_mega_froslass_ex_5b509baed30a": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca": {
+          "draws": 0,
+          "games": 16,
+          "losses": 11,
+          "wins": 5
+        },
+        "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c": {
+          "draws": 3,
+          "games": 120,
+          "losses": 88,
+          "wins": 29
+        },
+        "mega_lopunny_ex_mega_froslass_ex_e9911db454f5": {
+          "draws": 0,
+          "games": 16,
+          "losses": 15,
+          "wins": 1
+        },
+        "mega_lucario_ex_solrock_77a53ffc32f8": {
+          "draws": 1,
+          "games": 40,
+          "losses": 23,
+          "wins": 16
+        },
+        "mega_starmie_ex_dusknoir_46fd6cbdd4d2": {
+          "draws": 0,
+          "games": 8,
+          "losses": 6,
+          "wins": 2
+        },
+        "mega_starmie_ex_dusknoir_b15853cdfb83": {
+          "draws": 0,
+          "games": 8,
+          "losses": 8,
+          "wins": 0
+        },
+        "mega_starmie_ex_mega_froslass_ex_555de3e40ea3": {
+          "draws": 1,
+          "games": 8,
+          "losses": 6,
+          "wins": 1
+        },
+        "mega_starmie_ex_mega_froslass_ex_5694d3eb6909": {
+          "draws": 0,
+          "games": 8,
+          "losses": 7,
+          "wins": 1
+        },
+        "mega_starmie_ex_mega_froslass_ex_7b5c56647730": {
+          "draws": 0,
+          "games": 8,
+          "losses": 7,
+          "wins": 1
+        },
+        "mega_venusaur_ex_meganium_8c6c9898455c": {
+          "draws": 0,
+          "games": 24,
+          "losses": 18,
+          "wins": 6
+        },
+        "n_s_zoroark_ex_munkidori_11bd8fb9fc18": {
+          "draws": 0,
+          "games": 8,
+          "losses": 5,
+          "wins": 3
+        },
+        "n_s_zoroark_ex_munkidori_940bc1f37b2a": {
+          "draws": 0,
+          "games": 8,
+          "losses": 7,
+          "wins": 1
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc": {
+          "draws": 0,
+          "games": 56,
+          "losses": 55,
+          "wins": 1
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9": {
+          "draws": 0,
+          "games": 80,
+          "losses": 77,
+          "wins": 3
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435": {
+          "draws": 0,
+          "games": 16,
+          "losses": 16,
+          "wins": 0
+        },
+        "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204": {
+          "draws": 0,
+          "games": 16,
+          "losses": 16,
+          "wins": 0
+        },
+        "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0": {
+          "draws": 0,
+          "games": 24,
+          "losses": 22,
+          "wins": 2
+        }
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_df6f74437196",
+      "deck_number": "016",
+      "display_name": "Slowking Toolbox",
+      "draws": 15,
+      "exact_deck_sha256": "df6f7443719675711c2dcead3559087de996f3b8c43192d55ebfe6182e43cb7c",
+      "first": {
+        "draws": 4,
+        "games": 1052,
+        "losses": 767,
+        "wins": 281
+      },
+      "first_player_choices": {
+        "first": 2020,
+        "second": 28
+      },
+      "game_records": "games/016.json",
+      "game_records_sha256": "ad74c854116e865c719bd012e1ddb47a8b449375dc1e3f0ee52a5e34fd7c2a7c",
+      "game_results_sha256": "8ff02121bd447e2a3be707dc30a4b0b47245168c4be003b68a5a6f9f352fa392",
+      "games": 2048,
+      "games_per_second": 18.166389094523467,
+      "lane_count": 256,
+      "losses": 1503,
+      "observed_players": 1,
+      "peak_reserved_bytes": 6153043968,
+      "progress_guard_forfeits": [
+        157,
+        669,
+        710,
+        711,
+        1183,
+        1222,
+        1223,
+        1439,
+        1479,
+        1991
+      ],
+      "refill_events": 127,
+      "report": "reports/016_slowking_toolbox.html",
+      "report_sha256": "e532680b2420face118854290a43fd706543e4db285d703b3b73ffc93261fc00",
+      "representative_cards": [
+        {
+          "card_id": 163,
+          "image_url": "https://images.pokemontcg.io/sv7/58.png",
+          "name": "Slowking"
+        }
+      ],
+      "schedule_games": 3,
+      "schedule_sha256": "5a9b02510faaeacafa6f88c8c5e6e2c5761336a10e4b8acf9c72ec3c068055b2",
+      "second": {
+        "draws": 11,
+        "games": 996,
+        "losses": 736,
+        "wins": 249
+      },
+      "segment": "top100",
+      "terminal_state_sha256": "48d099cb278eaa7df2619ff951dfe851cca63e4dd5bdc0e09341ea68e182e8ad",
+      "toss": {
+        "focal_won": 1024,
+        "opponent_won": 1024
+      },
+      "turn_limit_draw_contract": true,
+      "turn_limit_draws": [
+        827,
+        913,
+        1933
+      ],
+      "wall_seconds": 112.735667465,
+      "win_rate": 0.2587890625,
+      "wins": 530
+    }
+  ],
+  "schema": "policy_0806_cuda_seeded2048_index_v3_agent_first_player"
+}

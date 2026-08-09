@@ -65,11 +65,13 @@ class CudaActionBoundaryAdapter:
         *,
         greedy: bool,
         max_select: int,
+        agent_selects_first_player: bool = False,
     ) -> None:
         self.model = model
         self.jobs = tuple(jobs)
         self.greedy = bool(greedy)
         self.max_select = int(max_select)
+        self.agent_selects_first_player = bool(agent_selects_first_player)
         self.planner = MacroPlanner(model.allocation_head)
         self.pending: dict[int, _Pending] = {}
         self.invalid_jobs: dict[int, str] = {}
@@ -83,6 +85,7 @@ class CudaActionBoundaryAdapter:
             for index in range(len(jobs))
         }
         self.generators: dict[int, torch.Generator] = {}
+        self.first_player_choices: dict[int, dict[str, int | bool]] = {}
         for index, job in enumerate(jobs):
             generator = torch.Generator(device=model.device)
             generator.manual_seed(int(job.policy_seed))
@@ -161,7 +164,8 @@ class CudaActionBoundaryAdapter:
             ready & option_count.eq(1) & minimum.eq(1) & maximum.eq(1)
             & sole_type.ne(2) & sole_type.ne(14)
         )
-        forced |= first_player_harness
+        if not self.agent_selects_first_player:
+            forced |= first_player_harness
         empty_pass = ready & option_count.eq(0) & minimum.eq(0) & maximum.eq(0)
         forced |= empty_pass
         actions[forced & ~empty_pass, 0] = 0
@@ -273,6 +277,30 @@ class CudaActionBoundaryAdapter:
         turns: torch.Tensor,
     ) -> list[dict[str, Any] | None]:
         metadata: list[dict[str, Any] | None] = [None] * int(lane_indices.numel())
+        contexts = semantic["global_cat"][:, 1].long() - 1
+        first_rows = contexts.eq(41).nonzero(as_tuple=False).flatten().tolist()
+        for row in first_rows:
+            job = int(lane_job[row])
+            length = int(routed.lengths[row])
+            if length != 1:
+                raise RuntimeError(
+                    f"job {job}: first-player policy returned {length} selections"
+                )
+            action_index = int(routed.actions[row, 0])
+            if action_index not in (0, 1):
+                raise RuntimeError(
+                    f"job {job}: invalid first-player option index {action_index}"
+                )
+            resident_focal = int(self.jobs[job].focal_player)
+            chooser = resident_focal if bool(focal_route[row]) else 1 - resident_focal
+            actual_first = chooser if action_index == 0 else 1 - chooser
+            self.first_player_choices[job] = {
+                "chooser": chooser,
+                "chooser_is_focal": chooser == resident_focal,
+                "action_index": action_index,
+                "actual_first": actual_first,
+                "focal_first": actual_first == resident_focal,
+            }
         focal_rows_tensor = focal_route.nonzero(as_tuple=False).flatten()
         focal_jobs = lane_job.index_select(0, focal_rows_tensor).tolist()
         for job in focal_jobs:

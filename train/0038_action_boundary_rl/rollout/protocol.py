@@ -35,6 +35,7 @@ class RolloutJob:
     trace_policy: str = "full"
     normal_trace_sample_modulus: int = 100
     include_action_prefix: bool = False
+    focal_won_toss: bool | None = None
 
     def __post_init__(self) -> None:
         if self.action_boundary_mode not in {"shadow", "enabled"}:

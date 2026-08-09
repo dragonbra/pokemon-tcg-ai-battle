@@ -22,6 +22,7 @@ class GameRequest:
     search_seed: int = 0
     engine_library: Path | None = None
     arbitrary_legal_actions: bool = False
+    candidate_won_toss: bool | None = None
 
 
 @dataclass(frozen=True)
@@ -38,3 +39,4 @@ class GameResult:
     steps: int
     trace_path: Path
     performance: dict[str, Any] | None = None
+    candidate_won_toss: bool | None = None

@@ -20,9 +20,9 @@ from typing import Any, Iterable
 from evaluation.frozen_0806 import POLICY_0019_SHA256, POLICY_0806_SHA256
 from evaluation.frozen_0806_contract import (
     FROZEN_0806_CONTRACT_ID,
-    FROZEN_0806_EVALUATION_GAMES,
+    FROZEN_0806_CPU_GAMES,
     FROZEN_0806_EVALUATION_SEED,
-    evaluation_counts,
+    FROZEN_0806_FIRST_PLAYER_CONTRACT,
     evaluation_schedule_id,
 )
 from evaluation.frozen_0806_runtime import (
@@ -48,12 +48,10 @@ OUTPUT_ROOT = (
 LEGACY_OUTPUT_ROOT = (
     ROOT / "evaluation/arena/combat_mat/frozen/0806_kaggle_top100_plus_v1"
 )
-TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded2048_full"
-BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_seeded2048_benchmark"
+TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_cpu256_agent_choice_v3_full"
+BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_cpu256_agent_choice_v3_benchmark"
 EXPECTED_DECKS = 55
-EXPECTED_GAMES = FROZEN_0806_EVALUATION_GAMES
-EXPECTED_FIRST = EXPECTED_GAMES // 2
-EXPECTED_SECOND = EXPECTED_GAMES // 2
+EXPECTED_GAMES = FROZEN_0806_CPU_GAMES
 DEFAULT_SEED = FROZEN_0806_EVALUATION_SEED
 LEGACY_POLICY_0806_OUTPUT_ROOT = (
     ROOT / "evaluation/arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1"
@@ -61,7 +59,7 @@ LEGACY_POLICY_0806_OUTPUT_ROOT = (
 POLICY_0806_SEEDED2048_OUTPUT_ROOT = (
     ROOT
     / "evaluation/arena/combat_mat/policy_0806"
-    / "0806_kaggle_top100_plus_v1_seeded_2048_v2"
+    / "0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3"
 )
 
 
@@ -133,7 +131,10 @@ def _atomic_text(path: Path, value: str) -> None:
 
 
 def _schedule_counts(catalog: Frozen0806RuntimeCatalog) -> tuple[int, ...]:
-    return evaluation_counts(catalog.pool.schedule)
+    counts = tuple(int(entry.games) for entry in catalog.pool.schedule)
+    if sum(counts) != FROZEN_0806_CPU_GAMES:
+        raise ValueError("Frozen-0806 CPU schedule must contain exactly 256 games")
+    return counts
 
 
 def _turn_order(games: list[dict[str, Any]]) -> dict[str, dict[str, int]]:
@@ -189,7 +190,11 @@ def validate_report_payload(
         or pool.get("catalog_sha256") != catalog.pool.manifest_sha256
         or pool.get("policy_hash") != target.policy_sha256
         or manifest.get("opponent_schedule_id")
-        != evaluation_schedule_id(catalog.pool.manifest["schedule_sha256"])
+        != evaluation_schedule_id(
+            catalog.pool.manifest["schedule_sha256"], evaluation_units=1
+        )
+        or manifest.get("first_player_contract")
+        != FROZEN_0806_FIRST_PLAYER_CONTRACT
         or manifest.get("seed") != DEFAULT_SEED
         or manifest.get("games_per_opponent") != expected_counts
         or len(manifest.get("opponents", [])) != EXPECTED_DECKS
@@ -214,9 +219,9 @@ def validate_report_payload(
     }
     if observed_counts != Counter(expected_by_name):
         raise ValueError("Frozen-0806 report game distribution mismatch")
+    if any(type(game.get("candidate_won_toss")) is not bool for game in games):
+        raise ValueError("Frozen-0806 report lacks seeded toss provenance")
     order = _turn_order(games)
-    if order["first"]["games"] != EXPECTED_FIRST or order["second"]["games"] != EXPECTED_SECOND:
-        raise ValueError("Frozen-0806 report seat balance mismatch")
     schedule = next(entry for entry in catalog.pool.schedule if entry.deck_id == candidate.name)
     return {
         "deck_id": candidate.name,
@@ -380,7 +385,7 @@ def _batch_config(
         games_per_opponent=1,
         games_by_opponent=selected_counts,
         opponent_schedule_id=evaluation_schedule_id(
-            catalog.pool.manifest["schedule_sha256"]
+            catalog.pool.manifest["schedule_sha256"], evaluation_units=1
         ),
         output_root=output_root,
         visualize=False,
@@ -408,7 +413,9 @@ def _batch_config(
         inference_ability_repeat_limit=20,
         engine_turn_draw_limit=100,
         engine_pool_size=engine_pool_size,
-        independent_engine_seeds=True,
+        independent_engine_seeds=False,
+        agent_selects_first_player=True,
+        focal_seed_identity=candidate.name,
     )
 
 
@@ -537,7 +544,7 @@ def _index_html(
     total_seconds = sum(record["wall_time_seconds"] for record in records)
     return f"""<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{target.label} Seeded-2048 Report · Frozen-0806 卡组强度</title><style>
+<title>{target.label} CPU Seeded-256 Agent-Choice Report · Frozen-0806 卡组强度</title><style>
 :root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d;--red:#a54343}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}
 header{{padding:28px max(20px,calc((100vw - 1500px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px;letter-spacing:0}}header p{{max-width:980px;margin:7px 0 0;color:#cfe1da}}
@@ -550,11 +557,11 @@ th{{position:sticky;top:0;background:#e9f0ec;color:#486158;font-size:12px;cursor
 .number{{font-size:16px;font-weight:850;color:var(--green);font-variant-numeric:tabular-nums}}.done{{color:var(--green)}}.pending{{color:#8a6b28}}
 .contract{{margin-top:16px;padding:14px 16px;border-left:4px solid var(--green);background:#fff;color:var(--muted)}}
 @media(max-width:760px){{.stats{{grid-template-columns:1fr 1fr}}.stat:nth-child(2){{border-right:0}}header{{padding:22px 16px}}main{{padding:14px}}}}
-</style></head><body><header><h1>{target.label} Seeded-2048 Report</h1><p>55 套 exact deck 均加载 Policy-0806，对战相同的八个 256 局固定单元，共 2,048 局；每个 slot 使用八个独立 seed replica，evaluation seed 固定为 {DEFAULT_SEED}，先后手各 1,024 局。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
+</style></head><body><header><h1>{target.label} CPU Seeded-256 · Agent 选择先后手</h1><p>55 套 exact deck 均加载 Policy-0806，对战一个固定 256 局频率单元；evaluation seed 固定为 {DEFAULT_SEED}。抛硬币赢家由对应 Agent 处理 context 41 并自主选择先后手，不做人为坐席分配。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
 <div class="stats"><div class="stat"><b>{len(records)}/{EXPECTED_DECKS}</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>正式对局</span></div><div class="stat"><b>{sum(r['wins'] for r in records):,}</b><span>Policy-0806 胜局</span></div><div class="stat"><b>{total_seconds/3600:.2f}h</b><span>累计 wall time</span></div></div>
 <div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div>
-<div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 2,048 局报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
-<div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · seed <code>{DEFAULT_SEED}</code> · Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{evaluation_schedule_id(catalog.pool.manifest['schedule_sha256'])}</code> · Candidate Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
+<div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 256 局报告</th><th>W-L-D</th><th>胜率</th><th>实际先攻</th><th>实际后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
+<div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · first-player <code>{FROZEN_0806_FIRST_PLAYER_CONTRACT}</code> · seed <code>{DEFAULT_SEED}</code> · Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{evaluation_schedule_id(catalog.pool.manifest['schedule_sha256'], evaluation_units=1)}</code> · Candidate Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
 <script>
 const q=document.querySelector('#search'),body=document.querySelector('tbody');
 q.addEventListener('input',()=>{{
@@ -607,14 +614,15 @@ def refresh_index(
             _refresh_report_navigation(path, candidate, catalog, target)
             records.append(validate_report(path, candidate, catalog, target))
     manifest = {
-        "schema_version": "frozen_0806_full_evaluation_v2",
+        "schema_version": "frozen_0806_cpu256_agent_first_player_v3",
         "contract_id": FROZEN_0806_CONTRACT_ID,
+        "first_player_contract": FROZEN_0806_FIRST_PLAYER_CONTRACT,
         "evaluation_seed": DEFAULT_SEED,
         "pool_id": catalog.pool.pool_id,
         "pool_manifest_sha256": catalog.pool.manifest_sha256,
         "base_schedule_sha256": catalog.pool.manifest["schedule_sha256"],
         "schedule_sha256": evaluation_schedule_id(
-            catalog.pool.manifest["schedule_sha256"]
+            catalog.pool.manifest["schedule_sha256"], evaluation_units=1
         ),
         "policy_0806_sha256": POLICY_0806_SHA256,
         "opponent_policy_label": target.label,
@@ -634,17 +642,17 @@ def refresh_index(
     _atomic_text(
         target.output_root / "index.html", _index_html(records, catalog, target)
     )
-    _atomic_text(
-        ROOT / "evaluation/arena/combat_mat/policy_0806/index.html",
-        '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
-        '<title>Policy-0806 Reports</title><body><h1>Policy-0806 Reports</h1><ul>'
-        '<li><a href="0806_kaggle_top100_plus_v1_seeded_2048_v2/index.html">'
-        'Seeded-2048 v2（当前正式合同）</a></li>'
-        '<li><a href="0806_kaggle_top100_plus_v1_seeded_512_v1/index.html">'
-        'Seeded-512 v1（历史合同）</a></li>'
-        '<li><a href="0806_kaggle_top100_plus_v1/index.html">'
-        '2026-08-07 legacy 256（25/55，中断资产）</a></li></ul></body></html>\n',
-    )
+    if target.key == "0806":
+        _atomic_text(
+            ROOT / "evaluation/arena/combat_mat/policy_0806/index.html",
+            '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
+            '<title>Policy-0806 Reports</title><body><h1>Policy-0806 Reports</h1><ul>'
+            '<li><a href="0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3/index.html">'
+            'CUDA Seeded-2048 Agent Choice v3（正式强度合同）</a></li>'
+            '<li><a href="0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3/index.html">'
+            'Official CPU Seeded-256 Agent Choice v3（部署复核合同）</a></li>'
+            '</ul></body></html>\n',
+        )
     _atomic_text(
         ROOT / "evaluation/arena/combat_mat/index.html",
         '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'

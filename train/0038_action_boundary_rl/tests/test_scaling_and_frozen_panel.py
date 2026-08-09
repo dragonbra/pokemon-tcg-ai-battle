@@ -24,7 +24,7 @@ class ScalingAndPanelTest(unittest.TestCase):
         shards = [{row.seed for row in rows if row.shard_id == i} for i in range(8)]
         self.assertTrue(all(len(item) == 256 for item in shards))
         self.assertEqual(len(set.union(*shards)), 2048)
-        self.assertEqual(sum(row.focal_first for row in rows), 1024)
+        self.assertTrue(all(type(row.focal_won_toss) is bool for row in rows))
 
     def test_formal_frozen_jobs_match_canonical_007_contract(self):
         jobs, schedule_sha = frozen_jobs.build_frozen_jobs(
@@ -38,9 +38,10 @@ class ScalingAndPanelTest(unittest.TestCase):
         }
 
         self.assertEqual(len(jobs), 2048)
-        self.assertEqual(schedule_sha, "98b58bced460c1a2e622ae4b39bf506294fcb0230bb42e4117aaa6efc73c9ce9")
+        self.assertEqual(schedule_sha, frozen_jobs.EXPECTED_007_SCHEDULE_SHA256)
         self.assertEqual(Counter(job.opponent_id for job in jobs), expected)
-        self.assertEqual(sum(job.focal_first for job in jobs), 1024)
+        self.assertTrue(all(type(job.focal_won_toss) is bool for job in jobs))
+        self.assertEqual(sum(bool(job.focal_won_toss) for job in jobs), 1002)
         self.assertEqual(len({job.seed for job in jobs}), 2048)
         self.assertEqual({job.full_round_draw_limit for job in jobs}, {50})
 

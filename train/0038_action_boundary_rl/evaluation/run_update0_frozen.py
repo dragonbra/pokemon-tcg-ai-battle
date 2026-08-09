@@ -23,6 +23,7 @@ from ..integrated.presets import preset
 from ..rollout import FullSemanticRolloutCollector
 from ..training.run_full_semantic import (
     FOCAL_DECK_ID,
+    _episode_focal_first,
     focal_deck,
     load_frozen_opponent,
     runtime_root,
@@ -115,7 +116,8 @@ def summarize(episodes: list[Any], manifest: dict[str, Any]) -> tuple[dict[str, 
             "game_id": episode.job.game_id, "seed": episode.job.seed,
             "shard_id": contract["shard_id"], "opponent_deck": episode.job.opponent_id,
             "opponent_archetype": contract["opponent_archetype"],
-            "focal_first": episode.job.focal_first, "outcome": outcome,
+            "focal_won_toss": episode.job.focal_won_toss,
+            "focal_first": _episode_focal_first(episode), "outcome": outcome,
             "turns": episode.turns, "valid": episode.valid, "error": episode.error,
             "fallback": int(episode.diagnostics.get("macro_fallback", 0)),
             "fallback_reason": episode.diagnostics.get("macro_fallback_reason"),
@@ -136,8 +138,8 @@ def summarize(episodes: list[Any], manifest: dict[str, Any]) -> tuple[dict[str, 
         "errors": len(invalid), "unfinished": len(invalid), "win_rate": wins / len(episodes),
         "completion_rate": (len(episodes) - len(invalid)) / len(episodes),
         "wilson_95": list(wilson_interval(wins, len(episodes))),
-        "first_win_rate": _rate([item for item in episodes if item.job.focal_first]),
-        "second_win_rate": _rate([item for item in episodes if not item.job.focal_first]),
+        "first_win_rate": _rate([item for item in episodes if _episode_focal_first(item)]),
+        "second_win_rate": _rate([item for item in episodes if not _episode_focal_first(item)]),
         "mean_turn": sum(item.turns for item in episodes) / len(episodes),
         "shard_win_rates": shard_rates, "shard_mean": statistics.fmean(shard_rates),
         "shard_variance": statistics.pvariance(shard_rates),
@@ -200,7 +202,7 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
     )
     names = {item.deck_id: item.display_name for item in load_frozen_catalog()}
     manifest = {
-        "frozen_panel_version": "frozen_0806_seeded_2048_v2",
+        "frozen_panel_version": "frozen_0806_seeded_agent_first_player_v3",
         "game_list_sha256": schedule_sha,
         "entries": [
             {

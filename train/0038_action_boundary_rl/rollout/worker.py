@@ -49,8 +49,15 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
     os.environ.setdefault("MKL_NUM_THREADS", "1")
     os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
     random.seed(job.policy_seed or job.seed)
-    focal_index = 0
-    decks = (job.focal_deck, job.opponent_deck)
+    agent_selects_first_player = job.focal_won_toss is not None
+    focal_index = (
+        0 if bool(job.focal_won_toss) else 1
+    ) if agent_selects_first_player else 0
+    decks = (
+        (job.focal_deck, job.opponent_deck)
+        if focal_index == 0
+        else (job.opponent_deck, job.focal_deck)
+    )
     game = None
     selections = 0
     final_turn = None
@@ -59,8 +66,8 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
         int,
     ] = defaultdict(int)
     turn_actor: tuple[int, int] | None = None
-    focal_compiler = WorkerLocalCompiler(0, job.focal_deck)
-    opponent_compiler = WorkerLocalCompiler(1, job.opponent_deck)
+    focal_compiler = WorkerLocalCompiler(focal_index, job.focal_deck)
+    opponent_compiler = WorkerLocalCompiler(1 - focal_index, job.opponent_deck)
     decision_gate = DecisionGate()
     protocol_executor = OfficialProtocolExecutor()
 
@@ -121,7 +128,7 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
                 turn_actor = (final_turn, actor)
                 repeated_actions.clear()
             selection = observation.get("select") or {}
-            if selection.get("context") == 41:
+            if selection.get("context") == 41 and not agent_selects_first_player:
                 action = [0] if job.focal_first else [1]
                 selections += 1
                 observation = game.battle_select(action)
@@ -226,6 +233,21 @@ def run_engine_episode(connection: Connection, job: RolloutJob) -> None:
                     return
             selections += 1
             observation = game.battle_select(response.get("action"))
+            if selection.get("context") == 41:
+                action = response.get("action")
+                if (
+                    not isinstance(action, list)
+                    or len(action) != 1
+                    or action[0] not in (0, 1)
+                ):
+                    raise RuntimeError("Agent first-player choice is not one Yes/No action")
+                actual_first = (observation.get("current") or {}).get("firstPlayer")
+                expected_first = actor if action[0] == 0 else 1 - actor
+                if actual_first != expected_first:
+                    raise RuntimeError(
+                        "official engine did not honor Agent first-player choice: "
+                        f"expected {expected_first}, got {actual_first}"
+                    )
         connection.send(_result(
             job, valid=False, reward=None, status="step_limit",
             error=f"step limit reached ({job.max_steps})", selections=selections,

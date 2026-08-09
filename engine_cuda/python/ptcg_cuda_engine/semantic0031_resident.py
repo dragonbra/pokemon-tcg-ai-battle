@@ -241,6 +241,9 @@ class ResidentRunResult:
     terminal_turns: tuple[int, ...]
     engine_selections: tuple[int, ...]
     terminal_prize_counts: tuple[tuple[int, int], ...]
+    first_player_choosers: tuple[int, ...]
+    first_player_actions: tuple[int, ...]
+    actual_first_players: tuple[int, ...]
     decisions: int
     routed_ready_rows: int
     refill_events: int
@@ -307,8 +310,26 @@ def run_resident_greedy_jobs(
     completed_turns = torch.zeros(len(jobs), dtype=torch.int32, device=device)
     completed_selections = torch.zeros(len(jobs), dtype=torch.int32, device=device)
     completed_prizes = torch.zeros((len(jobs), 2), dtype=torch.int16, device=device)
+    completed_first_player_chooser = torch.full(
+        (len(jobs),), -1, dtype=torch.int8, device=device
+    )
+    completed_first_player_action = torch.full(
+        (len(jobs),), -1, dtype=torch.int8, device=device
+    )
+    completed_actual_first_player = torch.full(
+        (len(jobs),), -1, dtype=torch.int8, device=device
+    )
     lane_turn = torch.zeros(lane_count, dtype=torch.int32, device=device)
     lane_selections = torch.zeros(lane_count, dtype=torch.int32, device=device)
+    lane_first_player_chooser = torch.full(
+        (lane_count,), -1, dtype=torch.int8, device=device
+    )
+    lane_first_player_action = torch.full(
+        (lane_count,), -1, dtype=torch.int8, device=device
+    )
+    lane_actual_first_player = torch.full(
+        (lane_count,), -1, dtype=torch.int8, device=device
+    )
     lanes = torch.arange(lane_count, dtype=torch.int32, device=device)
     engine = create_official_engine(rules, batch_size=lane_count, device_index=device_index)
     terminal_states = torch.zeros(
@@ -340,6 +361,9 @@ def run_resident_greedy_jobs(
         lane_turn_limit_draw.index_fill_(0, refill.lane_indices, False)
         lane_turn.index_fill_(0, refill.lane_indices, 0)
         lane_selections.index_fill_(0, refill.lane_indices, 0)
+        lane_first_player_chooser.index_fill_(0, refill.lane_indices, -1)
+        lane_first_player_action.index_fill_(0, refill.lane_indices, -1)
+        lane_actual_first_player.index_fill_(0, refill.lane_indices, -1)
         reset_mask = torch.zeros(lane_count, dtype=torch.bool, device=device)
         reset_mask.index_fill_(0, refill.lane_indices, True)
         guard.reset(reset_mask)
@@ -488,6 +512,35 @@ def run_resident_greedy_jobs(
                 decision_metadata = None
                 routed_rows.add_(ready.long().sum())
             lane_selections.add_(ready.to(dtype=torch.int32))
+            first_player_choice = ready & semantic["global_cat"][:, 1].eq(42)
+            if bool(first_player_choice.any().item()):
+                choice_rows = first_player_choice.nonzero(as_tuple=False).flatten()
+                if bool(
+                    lane_first_player_action.index_select(0, choice_rows).ne(-1).any()
+                ):
+                    raise RuntimeError("resident lane received duplicate first-player choice")
+                choice_lengths = routed_lengths.index_select(0, choice_rows).long()
+                choice_actions = actions.index_select(0, choice_rows)[:, 0].long()
+                if bool(
+                    choice_lengths.ne(1).any()
+                    or ((choice_actions != 0) & (choice_actions != 1)).any()
+                ):
+                    raise RuntimeError(
+                        "first-player choice must be one Yes/No primitive selection"
+                    )
+                choice_actors = actor.index_select(0, choice_rows).long()
+                actual_first = torch.where(
+                    choice_actions.eq(0), choice_actors, 1 - choice_actors
+                )
+                lane_first_player_chooser.index_copy_(
+                    0, choice_rows, choice_actors.to(dtype=torch.int8)
+                )
+                lane_first_player_action.index_copy_(
+                    0, choice_rows, choice_actions.to(dtype=torch.int8)
+                )
+                lane_actual_first_player.index_copy_(
+                    0, choice_rows, actual_first.to(dtype=torch.int8)
+                )
             strategic_focal = focal_route if bypass is None else focal_route & ~bypass.bypass_mask
             lane_focal_decisions.add_(strategic_focal.to(dtype=torch.int64))
             if (
@@ -602,6 +655,21 @@ def run_resident_greedy_jobs(
                 completed_prizes.index_copy_(
                     0, completed_jobs, engine.prize_counts().index_select(0, terminal_lanes)
                 )
+                completed_first_player_chooser.index_copy_(
+                    0,
+                    completed_jobs,
+                    lane_first_player_chooser.index_select(0, terminal_lanes),
+                )
+                completed_first_player_action.index_copy_(
+                    0,
+                    completed_jobs,
+                    lane_first_player_action.index_select(0, terminal_lanes),
+                )
+                completed_actual_first_player.index_copy_(
+                    0,
+                    completed_jobs,
+                    lane_actual_first_player.index_select(0, terminal_lanes),
+                )
                 refill = queue.complete(terminal, engine.game_results())
                 completed += int(terminal_lanes.numel())
                 if refill.lane_indices.numel():
@@ -668,6 +736,15 @@ def run_resident_greedy_jobs(
         ),
         terminal_prize_counts=tuple(
             (int(row[0]), int(row[1])) for row in completed_prizes.cpu().tolist()
+        ),
+        first_player_choosers=tuple(
+            int(value) for value in completed_first_player_chooser.cpu().tolist()
+        ),
+        first_player_actions=tuple(
+            int(value) for value in completed_first_player_action.cpu().tolist()
+        ),
+        actual_first_players=tuple(
+            int(value) for value in completed_actual_first_player.cpu().tolist()
         ),
         decisions=decisions,
         routed_ready_rows=int(routed_rows.item()),

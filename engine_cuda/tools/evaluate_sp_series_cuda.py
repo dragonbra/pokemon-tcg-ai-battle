@@ -22,8 +22,8 @@ from evaluation.frozen_0806 import exact_deck_sha256
 
 
 SERIES_ROOT = ROOT / "docs/reports/sp-series"
-OUTPUT_ROOT = SERIES_ROOT / "seeded2048_cuda_v2"
-TEMP_ROOT = ROOT / ".tmp/evaluation/sp_series_cuda_seeded2048_v2"
+OUTPUT_ROOT = SERIES_ROOT / "seeded2048_cuda_agent_choice_v3"
+TEMP_ROOT = ROOT / ".tmp/evaluation/sp_series_cuda_seeded2048_agent_choice_v3"
 EXPECTED_IDS = tuple(f"SP{index:02d}_MAGA" for index in range(1, 10))
 
 
@@ -102,7 +102,7 @@ def _strict_result(result: dict[str, Any], schedule_path: Path) -> bool:
     return (
         result.get("passed") is True
         and result.get("schema_version")
-        == "cuda_semantic0031_resident_refill_strict_fp32_v2"
+        == "cuda_semantic0031_resident_refill_strict_fp32_v3_agent_first_player"
         and result.get("collector", {}).get("completed_games") == base.EXPECTED_GAMES
         and result.get("collector", {}).get("errors") == 0
         and len(result.get("determinism", {}).get("game_results", []))
@@ -118,6 +118,8 @@ def _strict_result(result: dict[str, Any], schedule_path: Path) -> bool:
         and guard.get("engine_turn_draw_limit") == 100
         and guard.get("full_round_draw_limit") == 50
         and isinstance(guard.get("turn_limit_draw_schedule_indices"), list)
+        and result.get("per_game_diagnostics", {}).get("schema")
+        == "cuda_resident_terminal_diagnostics_v2_agent_first_player"
     )
 
 
@@ -189,21 +191,19 @@ def summarize(catalog: Any, candidate: Any, result: dict[str, Any]) -> dict[str,
     second = {"games": 0, "wins": 0, "losses": 0, "draws": 0}
     by_opponent: dict[str, dict[str, int]] = {}
     wins = losses = draws = 0
-    for job, game_result in zip(
-        schedule["jobs"], result["determinism"]["game_results"], strict=True
-    ):
-        focal_player = 0 if job["focal_first"] else 1
-        won = game_result == focal_player + 1
-        lost = game_result in (1, 2) and not won
+    game_records = base.build_cuda_game_records(schedule, result)
+    for game in game_records:
+        won = game["focal_outcome"] == "win"
+        lost = game["focal_outcome"] == "loss"
         outcome = "wins" if won else "losses" if lost else "draws"
         wins += int(won)
         losses += int(lost)
         draws += int(not won and not lost)
-        seat = first if job["focal_first"] else second
+        seat = first if game["focal_first"] else second
         seat["games"] += 1
         seat[outcome] += 1
         row = by_opponent.setdefault(
-            job["opponent_id"],
+            game["opponent_id"],
             {"games": 0, "wins": 0, "losses": 0, "draws": 0},
         )
         row["games"] += 1
@@ -291,8 +291,8 @@ def publish(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
             result = (
                 f"<td>{record['wins']}-{record['losses']}-{record['draws']}</td>"
                 f"<td><b>{record['win_rate']:.2%}</b></td>"
-                f"<td>{first_rate:.2%}<small>{record['first']['wins']}/1024</small></td>"
-                f"<td>{second_rate:.2%}<small>{record['second']['wins']}/1024</small></td>"
+                f"<td>{first_rate:.2%}<small>{record['first']['wins']}/{record['first']['games']}</small></td>"
+                f"<td>{second_rate:.2%}<small>{record['second']['wins']}/{record['second']['games']}</small></td>"
                 f"<td>{record['wall_seconds']:.1f}s<small>{record['games_per_second']:.2f} games/s</small></td>"
             )
             link = f'<a href="{record["report"]}">{html.escape(candidate.name)}</a>'
@@ -308,7 +308,7 @@ def publish(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
         )
     total_games = sum(record["games"] for record in records)
     index = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SP01–SP09 MAGA · CUDA Seeded-2048</title><style>
-:root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}header{{padding:34px max(20px,calc((100vw - 1150px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px}}header p{{color:#cfe1da}}main{{max-width:1150px;margin:auto;padding:20px}}.stats{{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid var(--line)}}.stat{{padding:16px;border-right:1px solid var(--line)}}.stat b{{display:block;font-size:22px}}small,.stat span{{display:block;color:var(--muted)}}.table{{margin-top:18px;overflow:auto;border:1px solid var(--line);background:#fff}}table{{width:100%;min-width:900px;border-collapse:collapse}}th,td{{padding:11px;border-bottom:1px solid var(--line);text-align:right}}th:nth-child(2),td:nth-child(2){{text-align:left}}th{{background:#e9f0ec}}a{{color:var(--green);font-weight:800;text-decoration:none}}.art{{display:inline-flex;width:88px;vertical-align:middle}}.art img{{width:38px;height:53px;margin-right:-7px;border:1px solid #c9d5cf;border-radius:4px;object-fit:cover}}.best td{{background:#eef7f1}}.contract,.analysis{{margin-top:16px;padding:14px;border-left:4px solid var(--green);background:#fff}}.analysis a{{font-size:17px}}@media(max-width:700px){{.stats{{grid-template-columns:1fr 1fr}}}}</style></head><body><header><h1>SP01–SP09 MAGA · CUDA Seeded-2048</h1><p>Policy-0806 对 Policy-0806 · Frozen-0806 固定频率池 · strict FP32 · 每套先后手各 1024</p></header><main><div class="stats"><div class="stat"><b>{len(records)}/9</b><span>完成构筑</span></div><div class="stat"><b>{total_games:,}</b><span>完成对局</span></div><div class="stat"><b>{best:.2%}</b><span>当前最高胜率</span></div><div class="stat"><b>{sum(len(r['turn_limit_draws']) for r in records)}</b><span>50 回合平局</span></div><div class="stat"><b>{sum(len(r['progress_guard_forfeits']) for r in records)}</b><span>循环判负</span></div></div><div class="analysis"><a href="002_strength_analysis.html">查看 Frozen 002 独立复测与 Nighttime Mine 归因报告 →</a></div><div class="table"><table><thead><tr><th>编号</th><th>构筑 / 报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>耗时</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div><div class="contract">Seed <code>{base.EVALUATION_SEED}</code> · 8×256 independent seeds · strict FP32 · 256 resident CUDA lanes · engine turn 100 记平局 · repeat-forfeit 20 · CUDA/official CPU parity 完成前不替代 official-CPU 强度合同。</div></main></body></html>'''
+:root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}header{{padding:34px max(20px,calc((100vw - 1150px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px}}header p{{color:#cfe1da}}main{{max-width:1150px;margin:auto;padding:20px}}.stats{{display:grid;grid-template-columns:repeat(5,1fr);background:#fff;border:1px solid var(--line)}}.stat{{padding:16px;border-right:1px solid var(--line)}}.stat b{{display:block;font-size:22px}}small,.stat span{{display:block;color:var(--muted)}}.table{{margin-top:18px;overflow:auto;border:1px solid var(--line);background:#fff}}table{{width:100%;min-width:900px;border-collapse:collapse}}th,td{{padding:11px;border-bottom:1px solid var(--line);text-align:right}}th:nth-child(2),td:nth-child(2){{text-align:left}}th{{background:#e9f0ec}}a{{color:var(--green);font-weight:800;text-decoration:none}}.art{{display:inline-flex;width:88px;vertical-align:middle}}.art img{{width:38px;height:53px;margin-right:-7px;border:1px solid #c9d5cf;border-radius:4px;object-fit:cover}}.best td{{background:#eef7f1}}.contract,.analysis{{margin-top:16px;padding:14px;border-left:4px solid var(--green);background:#fff}}.analysis a{{font-size:17px}}@media(max-width:700px){{.stats{{grid-template-columns:1fr 1fr}}}}</style></head><body><header><h1>SP01–SP09 MAGA · CUDA Seeded-2048</h1><p>Policy-0806 对 Policy-0806 · Frozen-0806 固定频率池 · strict FP32 · 只固定 seed，抛硬币获胜 Agent 选择先后手</p></header><main><div class="stats"><div class="stat"><b>{len(records)}/9</b><span>完成构筑</span></div><div class="stat"><b>{total_games:,}</b><span>完成对局</span></div><div class="stat"><b>{best:.2%}</b><span>当前最高胜率</span></div><div class="stat"><b>{sum(len(r['turn_limit_draws']) for r in records)}</b><span>50 回合平局</span></div><div class="stat"><b>{sum(len(r['progress_guard_forfeits']) for r in records)}</b><span>循环判负</span></div></div><div class="analysis"><a href="002_strength_analysis.html">查看 Frozen 002 独立复测与 Nighttime Mine 归因报告 →</a></div><div class="table"><table><thead><tr><th>编号</th><th>构筑 / 报告</th><th>W-L-D</th><th>胜率</th><th>先攻</th><th>后攻</th><th>耗时</th></tr></thead><tbody>{''.join(rows)}</tbody></table></div><div class="contract">Seed <code>{base.EVALUATION_SEED}</code> · 8×256 unique games · 先后手由抛硬币获胜 Agent 在 context 41 选择，不人为平衡 · strict FP32 · 256 resident CUDA lanes · engine turn 100 记平局 · repeat-forfeit 20。</div></main></body></html>'''
     manifest = {
         "schema": "sp_maga_policy_0806_cuda_seeded2048_v2",
         "evaluation_seed": base.EVALUATION_SEED,

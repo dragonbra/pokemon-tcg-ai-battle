@@ -59,3 +59,6 @@ archive/submission/dist/*.tar.gz
 /rl_runs/*/versions/*/checkpoint/
 /rl_runs/*/versions/*/wandb/
 /rl_runs/*/versions/*/tensorboard/
+new-model-0809.tar.gz
+evaluation/arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3/games/*
+evaluation/arena/combat_mat/policy_0806/0809_gsb_v5_vs_0806_cuda_seeded_2048_agent_choice_v3/games/*

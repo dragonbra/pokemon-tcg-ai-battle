@@ -31,7 +31,9 @@ def json_ready(value):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--actor-mode", choices=("update32", "0806"), default="update32")
+    parser.add_argument(
+        "--actor-mode", choices=("update32", "0806", "pretrained"), default="update32"
+    )
     parser.add_argument("--actor-package", type=Path, default=legacy.DEFAULT_PACKAGE)
     parser.add_argument("--actor-checkpoint", type=Path, default=legacy.DEFAULT_ACTOR_CHECKPOINT)
     parser.add_argument("--opponent-model", type=Path, default=legacy.DEFAULT_OPPONENT_MODEL)
@@ -90,6 +92,13 @@ def main() -> int:
         actor_mode=args.actor_mode,
     )
     actor_adapter = Semantic0031DeviceAdapter(actor, focal_deck, max_select=args.max_select)
+    opponent_adapter = (
+        None
+        if args.actor_mode in {"0806", "update32"}
+        else Semantic0031DeviceAdapter(
+            opponent, focal_deck, max_select=args.max_select
+        )
+    )
     opponent_transformer = opponent.option_encoder.cross_attention_transformer
     router = Semantic0031ResidentRouter(
         focal_adapter=actor_adapter,
@@ -97,6 +106,7 @@ def main() -> int:
         opponent_option_norm=opponent_transformer.norm,
         opponent_decoder=opponent.action_decoder,
         same_policy=args.actor_mode == "0806",
+        opponent_adapter=opponent_adapter,
     )
     jobs = tuple(
         ResidentJob(
@@ -133,7 +143,7 @@ def main() -> int:
     )
     game_bytes = json.dumps(result.game_results, separators=(",", ":")).encode("ascii")
     payload = {
-        "schema_version": "cuda_semantic0031_resident_refill_strict_fp32_v2",
+        "schema_version": "cuda_semantic0031_resident_refill_strict_fp32_v3_agent_first_player",
         "passed": len(result.game_results) == count,
         "collector": {
             "games": count,
@@ -161,12 +171,15 @@ def main() -> int:
         # device-side hot-path instrumentation. Strategic/action-family counts
         # are deliberately not inferred from official selection callbacks.
         "per_game_diagnostics": {
-            "schema": "cuda_resident_terminal_diagnostics_v1",
+            "schema": "cuda_resident_terminal_diagnostics_v2_agent_first_player",
             "terminal_turns": list(result.terminal_turns),
             "engine_selections": list(result.engine_selections),
             "terminal_prize_counts": [
                 list(row) for row in result.terminal_prize_counts
             ],
+            "first_player_choosers": list(result.first_player_choosers),
+            "first_player_actions": list(result.first_player_actions),
+            "actual_first_players": list(result.actual_first_players),
         },
         "progress_guard": {
             "ability_repeat_limit": args.ability_repeat_limit,

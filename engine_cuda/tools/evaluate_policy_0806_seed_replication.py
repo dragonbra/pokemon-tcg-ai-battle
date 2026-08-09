@@ -20,9 +20,9 @@ DECK_NUMBER = "002"
 OUTPUT_ROOT = (
     ROOT
     / "evaluation/arena/combat_mat/policy_0806"
-    / "0806_kaggle_top100_plus_v1_cuda_seeded_2048_replication_002"
+    / "0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_replication_002_v3"
 )
-TEMP_ROOT = ROOT / ".tmp/evaluation/policy_0806_cuda_seeded2048_replication_002"
+TEMP_ROOT = ROOT / ".tmp/evaluation/policy_0806_cuda_seeded2048_agent_choice_replication_002_v3"
 
 
 def _candidate(catalog: Any, candidates: tuple[Any, ...]) -> Any:
@@ -47,6 +47,8 @@ def _strict_result(result: dict[str, Any], schedule_path: Path) -> bool:
     device = result.get("device", {})
     return (
         result.get("passed") is True
+        and result.get("schema_version")
+        == "cuda_semantic0031_resident_refill_strict_fp32_v3_agent_first_player"
         and result.get("collector", {}).get("completed_games") == base.EXPECTED_GAMES
         and result.get("collector", {}).get("errors") == 0
         and len(result.get("determinism", {}).get("game_results", []))
@@ -61,6 +63,8 @@ def _strict_result(result: dict[str, Any], schedule_path: Path) -> bool:
         and device.get("cudnn_allow_tf32") is False
         and guard.get("engine_turn_draw_limit") == 100
         and guard.get("full_round_draw_limit") == 50
+        and result.get("per_game_diagnostics", {}).get("schema")
+        == "cuda_resident_terminal_diagnostics_v2_agent_first_player"
     )
 
 
@@ -74,29 +78,27 @@ def _summarize(
     second = {"games": 0, "wins": 0, "losses": 0, "draws": 0}
     by_opponent: dict[str, dict[str, int]] = {}
     wins = losses = draws = 0
-    for job, game_result in zip(
-        schedule["jobs"], result["determinism"]["game_results"], strict=True
-    ):
-        focal_player = 0 if job["focal_first"] else 1
-        won = game_result == focal_player + 1
-        lost = game_result in (1, 2) and not won
+    game_records = base.build_cuda_game_records(schedule, result)
+    for game in game_records:
+        won = game["focal_outcome"] == "win"
+        lost = game["focal_outcome"] == "loss"
         outcome = "wins" if won else "losses" if lost else "draws"
         wins += int(won)
         losses += int(lost)
         draws += int(not won and not lost)
-        seat = first if job["focal_first"] else second
+        seat = first if game["focal_first"] else second
         seat["games"] += 1
         seat[outcome] += 1
         row = by_opponent.setdefault(
-            job["opponent_id"],
+            game["opponent_id"],
             {"games": 0, "wins": 0, "losses": 0, "draws": 0},
         )
         row["games"] += 1
         row[outcome] += 1
     if wins + losses + draws != base.EXPECTED_GAMES:
         raise RuntimeError("replication outcome total is invalid")
-    if first["games"] != 1024 or second["games"] != 1024:
-        raise RuntimeError("replication seat balance is invalid")
+    if first["games"] + second["games"] != base.EXPECTED_GAMES:
+        raise RuntimeError("replication actual-seat evidence is incomplete")
     return {
         "deck_number": DECK_NUMBER,
         "deck_id": candidate.name,

@@ -20,6 +20,7 @@ FP16_STORAGE_SCHEMA_VERSION = (
 FP16_STORAGE_FP32_RUNTIME_SCHEMA_VERSION = (
     "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
 )
+PROTOTYPE_EMBEDDING_CACHE_VERSION = "frozen_model_owned_v1"
 _PROTOTYPE_ALIASES = ("state_encoder.prototypes.", "option_encoder.prototypes.")
 
 
@@ -88,6 +89,20 @@ def _copy_runtime(source_root: Path, strategy: Path) -> None:
         "__all__ = ['OnlineCausalEncoder']\n",
         encoding="ascii",
     )
+    policy_source = (strategy / "model/policy.py").read_text(encoding="utf-8")
+    required_cache_symbols = (
+        "def prepare_prototype_cache(",
+        "def prototype_memory(",
+        "def prototype_cache_stats(",
+        'clear_prototype_cache("load_state_dict")',
+        'clear_prototype_cache("module_apply")',
+    )
+    missing = [symbol for symbol in required_cache_symbols if symbol not in policy_source]
+    if missing:
+        raise RuntimeError(
+            "submission runtime lacks required frozen prototype embedding cache: "
+            + ", ".join(missing)
+        )
 
 
 def _portable_checkpoint(
@@ -200,6 +215,10 @@ def export_candidate(
             "runtime_dtype": runtime_dtype,
             "runtime_framework": "pytorch",
             "native_runtime_load_order": "torch_before_cg",
+            "prototype_embedding_cache": PROTOTYPE_EMBEDDING_CACHE_VERSION,
+            "prototype_embedding_cache_version": PROTOTYPE_EMBEDDING_CACHE_VERSION,
+            "prototype_embedding_cache_required": True,
+            "prototype_embedding_cache_persistent": False,
             "checkpoint_selection": checkpoint.stem,
             "checkpoint_epoch": metadata.get("epoch"),
             "checkpoint_global_step": metadata.get("global_step"),

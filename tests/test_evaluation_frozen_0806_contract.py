@@ -4,11 +4,15 @@ from dataclasses import dataclass
 import unittest
 
 from evaluation.frozen_0806_contract import (
+    FROZEN_0806_CONTRACT_ID,
+    FROZEN_0806_CPU_GAMES,
+    FROZEN_0806_FIRST_PLAYER_CONTRACT,
     FROZEN_0806_EVALUATION_GAMES,
     FROZEN_0806_EVALUATION_SEED,
     FROZEN_0806_EVALUATION_UNITS,
     FROZEN_0806_UNIT_GAMES,
     evaluation_counts,
+    evaluation_coin_winner,
     evaluation_game_seed,
     evaluation_schedule_id,
 )
@@ -37,6 +41,7 @@ class Frozen0806EvaluationContractTests(unittest.TestCase):
         self.assertEqual(FROZEN_0806_UNIT_GAMES, 256)
         self.assertEqual(FROZEN_0806_EVALUATION_UNITS, 8)
         self.assertEqual(FROZEN_0806_EVALUATION_GAMES, 2048)
+        self.assertEqual(FROZEN_0806_CPU_GAMES, 256)
         self.assertEqual(FROZEN_0806_EVALUATION_SEED, 341_512_806)
         self.assertEqual(
             evaluation_counts((Entry(3), Entry(251), Entry(2))),
@@ -51,6 +56,21 @@ class Frozen0806EvaluationContractTests(unittest.TestCase):
         self.assertEqual(len(first), 64)
         self.assertNotEqual(first, base)
         self.assertNotEqual(first, evaluation_schedule_id("b" * 64))
+        self.assertNotEqual(first, evaluation_schedule_id(base, evaluation_units=1))
+        self.assertIn("agent_first_player", FROZEN_0806_CONTRACT_ID)
+        self.assertIn("winning_agent", FROZEN_0806_FIRST_PLAYER_CONTRACT)
+
+    def test_seeded_toss_winner_is_backend_independent(self) -> None:
+        arguments = {
+            "focal_identity": "candidate",
+            "opponent_identity": "opponent",
+            "slot": 3,
+            "replica": 5,
+        }
+        self.assertIs(type(evaluation_coin_winner(**arguments)), bool)
+        self.assertEqual(
+            evaluation_coin_winner(**arguments), evaluation_coin_winner(**arguments)
+        )
 
     def test_rejects_schedule_that_is_not_one_256_game_unit(self) -> None:
         with self.assertRaisesRegex(ValueError, "256"):

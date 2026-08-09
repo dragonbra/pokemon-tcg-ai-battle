@@ -11,6 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from evaluation.metrics import GameMetric
+from evaluation.frozen_0806_contract import evaluation_coin_winner, evaluation_game_seed
 from evaluation.metrics.registry import CORE_METRIC_IDS
 from evaluation.packages.loader import SubmissionPackage
 from evaluation.reporting import ReportData
@@ -598,6 +599,40 @@ class OverridePlugin:
         self.assertNotEqual(requests[0].seed, requests[2].seed)
         self.assertNotEqual(requests[0].policy_seed, requests[1].policy_seed)
         self.assertTrue(all(request.search_seed > 0 for request in requests))
+
+    def test_agent_first_player_contract_uses_seeded_toss_not_fixed_seat(self) -> None:
+        candidate = self.make_package("candidate", 7)
+        opponent = self.make_package("opponent", 8)
+        config = replace(
+            self.make_config(candidate, (opponent,), games=3),
+            seed=341_512_806,
+            agent_selects_first_player=True,
+            focal_seed_identity="canonical-candidate",
+        )
+        store = TraceStore(self.root / "toss-temp", self.root / "toss-report")
+
+        requests = [request for request, _ in _game_jobs(config, "run-toss", store)]
+
+        self.assertEqual(len(requests), 3)
+        for slot, request in enumerate(requests):
+            expected = evaluation_coin_winner(
+                evaluation_seed=config.seed,
+                focal_identity="canonical-candidate",
+                opponent_identity="opponent",
+                slot=slot,
+                replica=0,
+            )
+            self.assertEqual(request.candidate_won_toss, expected)
+            self.assertEqual(
+                request.seed,
+                evaluation_game_seed(
+                    evaluation_seed=config.seed,
+                    focal_identity="canonical-candidate",
+                    opponent_identity="opponent",
+                    slot=slot,
+                    replica=0,
+                ),
+            )
 
     def test_independent_seed_contract_keeps_seats_balanced_without_seed_pairing(self) -> None:
         candidate = self.make_package("candidate", 7)

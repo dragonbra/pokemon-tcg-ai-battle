@@ -170,7 +170,8 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
             "0038_frozen_per_game_results_v2",
         }
         or payload.get("checkpoint_update") != update
-        or payload.get("frozen_panel_version") != "frozen_0806_seeded_2048_v2"
+        or payload.get("frozen_panel_version")
+        != "frozen_0806_seeded_agent_first_player_v3"
         or not isinstance(entries, list)
         or len(entries) != 2048
     ):
@@ -208,8 +209,10 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
     losses = len(valid) - wins
     first = [row for row in valid if row.get("focal_first") is True]
     second = [row for row in valid if row.get("focal_first") is False]
-    if len(first) != 1024 or len(second) != 1024:
-        raise ValueError("canonical Frozen evaluation is not turn-order balanced")
+    if len(first) + len(second) != len(valid) or not first or not second:
+        raise ValueError(
+            "canonical Frozen evaluation lacks actual Agent-selected turn-order evidence"
+        )
     return {
         "result": str(result_path.relative_to(ROOT)),
         "result_sha256": _sha256(result_path),
@@ -458,6 +461,9 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
                 "scope": "once_per_process_across_battles",
                 "invalidation": "weights_device_dtype_or_trainable_prototypes",
             },
+            "prototype_embedding_cache_version": "frozen_model_owned_v1",
+            "prototype_embedding_cache_required": True,
+            "prototype_embedding_cache_persistent": False,
             "portable_checkpoint_schema_version": portable["schema_version"],
             "portable_checkpoint_sha256": _sha256(output / "strategy/model.bin"),
             "storage_dtype": "fp16",

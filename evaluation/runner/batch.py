@@ -30,7 +30,10 @@ from evaluation.runtime.seeded import build_seeded_runtime
 from evaluation.traces.store import TraceStore
 from rl_environment.runs import project_version_paths
 from evaluation.frozen_0806_contract import (
+    FROZEN_0806_CPU_GAMES,
     FROZEN_0806_EVALUATION_UNITS,
+    FROZEN_0806_EVALUATION_SEED,
+    evaluation_coin_winner,
     evaluation_game_seed,
 )
 
@@ -113,6 +116,8 @@ class BatchConfig:
     engine_library: Path | None = None
     seeded_runtime_manifest: dict[str, object] | None = None
     independent_engine_seeds: bool = False
+    agent_selects_first_player: bool = False
+    focal_seed_identity: str | None = None
 
 
 @dataclass(frozen=True)
@@ -133,6 +138,28 @@ def run_batch(config: BatchConfig) -> BatchResult:
         raise ValueError("max_steps must be at least one")
     if config.worker_timeout_seconds <= 0:
         raise ValueError("worker_timeout_seconds must be greater than zero")
+    if config.agent_selects_first_player and config.engine_pool_size != 1:
+        raise ValueError(
+            "agent-selected first player currently requires isolated one-game workers"
+        )
+    if config.opponent_pool_id == "0806_kaggle_top100_plus_v1":
+        total_games = (
+            sum(config.games_by_opponent)
+            if config.games_by_opponent is not None
+            else len(config.opponents) * config.games_per_opponent
+        )
+        if (
+            total_games != FROZEN_0806_CPU_GAMES
+            or config.seed != FROZEN_0806_EVALUATION_SEED
+            or not config.agent_selects_first_player
+            or config.independent_engine_seeds
+            or not config.focal_seed_identity
+        ):
+            raise ValueError(
+                "Frozen-0806 CPU evaluation requires exactly 256 games, the "
+                "canonical seed, seeded toss + Agent first-player choice, and "
+                "no fixed-seat schedule"
+            )
     if config.workers < 1:
         raise ValueError("workers must be at least one")
     if config.engine_pool_size < 1:
@@ -302,6 +329,9 @@ def run_batch(config: BatchConfig) -> BatchResult:
                 config, jobs, store.temp_root, candidate_socket, opponent_socket
             ):
                 result, trace = _read_or_create_trace(request, result, trace_path)
+                result = replace(
+                    result, candidate_won_toss=request.candidate_won_toss
+                )
                 context = GameContext(
                     game_id=result.game_id,
                     candidate_name=config.candidate.name,
@@ -574,16 +604,45 @@ def _game_jobs(
             else:
                 seed_number = (game_number + 1) // 2
                 candidate_first = global_game_number % 2 == 1
-                engine_seed = _stable_game_seed(
-                    config.seed, config.candidate.name, opponent.name, seed_number
+                if config.agent_selects_first_player:
+                    identity = config.focal_seed_identity or config.candidate.name
+                    engine_seed = evaluation_game_seed(
+                        evaluation_seed=config.seed,
+                        focal_identity=identity,
+                        opponent_identity=opponent.name,
+                        slot=game_number - 1,
+                        replica=0,
+                    )
+                    search_seed = evaluation_game_seed(
+                        evaluation_seed=config.seed,
+                        focal_identity=identity,
+                        opponent_identity=opponent.name,
+                        slot=game_number - 1,
+                        replica=0,
+                        namespace="search",
+                    )
+                else:
+                    engine_seed = _stable_game_seed(
+                        config.seed, config.candidate.name, opponent.name, seed_number
+                    )
+                    search_seed = _stable_named_seed(
+                        config.seed,
+                        "search",
+                        config.candidate.name,
+                        opponent.name,
+                        seed_number,
+                    )
+            candidate_won_toss = (
+                evaluation_coin_winner(
+                    evaluation_seed=config.seed,
+                    focal_identity=config.focal_seed_identity or config.candidate.name,
+                    opponent_identity=opponent.name,
+                    slot=game_number - 1,
+                    replica=0,
                 )
-                search_seed = _stable_named_seed(
-                    config.seed,
-                    "search",
-                    config.candidate.name,
-                    opponent.name,
-                    seed_number,
-                )
+                if config.agent_selects_first_player
+                else None
+            )
             request = GameRequest(
                 run_id=run_id,
                 game_id=game_id,
@@ -594,16 +653,28 @@ def _game_jobs(
                 engine_turn_draw_limit=config.engine_turn_draw_limit,
                 visualize=config.visualize,
                 seed=engine_seed,
-                policy_seed=_stable_named_seed(
-                    config.seed,
-                    "policy",
-                    config.candidate.name,
-                    opponent.name,
-                    game_number,
+                policy_seed=(
+                    evaluation_game_seed(
+                        evaluation_seed=config.seed,
+                        focal_identity=config.focal_seed_identity or config.candidate.name,
+                        opponent_identity=opponent.name,
+                        slot=game_number - 1,
+                        replica=0,
+                        namespace="policy",
+                    )
+                    if config.agent_selects_first_player
+                    else _stable_named_seed(
+                        config.seed,
+                        "policy",
+                        config.candidate.name,
+                        opponent.name,
+                        game_number,
+                    )
                 ),
                 search_seed=search_seed,
                 engine_library=config.engine_library,
                 arbitrary_legal_actions=config.arbitrary_legal_actions,
+                candidate_won_toss=candidate_won_toss,
             )
             jobs.append((request, store.temp_path(game_id)))
     return jobs
@@ -1173,6 +1244,7 @@ def _request_payload(request: GameRequest, trace_path: Path) -> dict[str, object
             str(request.engine_library) if request.engine_library is not None else None
         ),
         "arbitrary_legal_actions": request.arbitrary_legal_actions,
+        "candidate_won_toss": request.candidate_won_toss,
         "trace_path": str(trace_path),
     }
 
@@ -1509,6 +1581,12 @@ def _manifest(
             if config.seeded_engine
             else "legacy package runtime; engine RNG is not controlled"
         ),
+        "first_player_contract": (
+            "seeded_coin_winner_then_winning_agent_selects_context_41"
+            if config.agent_selects_first_player
+            else "harness_controlled_candidate_first"
+        ),
+        "focal_seed_identity": config.focal_seed_identity or config.candidate.name,
         "workers": actual_workers,
         "requested_workers": config.workers,
         "worker_processes": actual_workers,

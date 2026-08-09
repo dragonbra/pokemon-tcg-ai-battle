@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from evaluation.frozen_0806 import exact_deck_sha256
+from evaluation.frozen_0806_contract import evaluation_coin_winner
 from engine_cuda.tools.evaluate_policy_0806_cuda import (
     EXPECTED_GAMES,
     POLICY_SHA256,
@@ -29,7 +30,7 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
     def test_cached_result_requires_current_schedule_and_diagnostic_schema(self) -> None:
         cached = {
             "passed": True,
-            "schema_version": "cuda_semantic0031_resident_refill_strict_fp32_v2",
+            "schema_version": "cuda_semantic0031_resident_refill_strict_fp32_v3_agent_first_player",
             "collector": {"completed_games": EXPECTED_GAMES, "errors": 0},
             "models": {
                 "actor_checkpoint_sha256": POLICY_SHA256,
@@ -42,10 +43,13 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
                 "cudnn_allow_tf32": False,
             },
             "per_game_diagnostics": {
-                "schema": "cuda_resident_terminal_diagnostics_v1",
+                "schema": "cuda_resident_terminal_diagnostics_v2_agent_first_player",
                 "terminal_turns": [1] * EXPECTED_GAMES,
                 "engine_selections": [1] * EXPECTED_GAMES,
                 "terminal_prize_counts": [[0, 0]] * EXPECTED_GAMES,
+                "first_player_choosers": [0] * EXPECTED_GAMES,
+                "first_player_actions": [0] * EXPECTED_GAMES,
+                "actual_first_players": [0] * EXPECTED_GAMES,
             },
         }
         self.assertTrue(
@@ -108,10 +112,13 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
                     "terminal_state_sha256": f"terminal-{offset}",
                 },
                 "per_game_diagnostics": {
-                    "schema": "cuda_resident_terminal_diagnostics_v1",
+                    "schema": "cuda_resident_terminal_diagnostics_v2_agent_first_player",
                     "terminal_turns": [5 + offset + index for index in range(games)],
                     "engine_selections": [10 + offset + index for index in range(games)],
                     "terminal_prize_counts": [[2, 4] for _ in range(games)],
+                    "first_player_choosers": [0] * games,
+                    "first_player_actions": [0] * games,
+                    "actual_first_players": [0] * games,
                 },
                 "progress_guard": {
                     "forfeit_schedule_indices": [offset] if offset else [],
@@ -135,7 +142,7 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
         self.assertEqual(merged["memory"]["torch_peak_reserved_bytes"], 202)
         self.assertEqual(merged["per_game_diagnostics"]["terminal_turns"], [5, 6, 7, 8])
 
-    def test_schedule_has_eight_independent_seed_replicas_and_balanced_seats(self) -> None:
+    def test_schedule_has_eight_independent_seed_replicas_and_seeded_tosses(self) -> None:
         schedule = build_cuda_schedule(
             focal_deck_id="candidate_a",
             entries=(Entry("opponent_a", 2), Entry("opponent_b", 1)),
@@ -144,16 +151,28 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
 
         jobs = schedule["jobs"]
         self.assertEqual(len(jobs), 24)
-        self.assertEqual(sum(job["focal_first"] for job in jobs), 12)
+        self.assertTrue(all("focal_first" not in job for job in jobs))
+        self.assertTrue(all(type(job["focal_won_toss"]) is bool for job in jobs))
         grouped: dict[tuple[str, int], list[dict]] = {}
         for job in jobs:
             grouped.setdefault((job["opponent_id"], job["slot"]), []).append(job)
         self.assertEqual(len(grouped), 3)
-        for replicas in grouped.values():
+        for (opponent_id, slot), replicas in grouped.items():
             self.assertEqual(len(replicas), 8)
             self.assertEqual(len({job["engine_seed"] for job in replicas}), 8)
             self.assertEqual(len({job["search_seed"] for job in replicas}), 8)
-            self.assertEqual(sum(job["focal_first"] for job in replicas), 4)
+            self.assertEqual(
+                [job["focal_won_toss"] for job in replicas],
+                [
+                    evaluation_coin_winner(
+                        focal_identity="candidate_a",
+                        opponent_identity=opponent_id,
+                        slot=slot,
+                        replica=replica,
+                    )
+                    for replica in range(8)
+                ],
+            )
 
     def test_schedule_changes_with_focal_identity_but_is_reproducible(self) -> None:
         entries = (Entry("opponent_a", 1),)
@@ -208,7 +227,7 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
                     "slot": 0,
                     "engine_seed": 11,
                     "search_seed": 12,
-                    "focal_first": True,
+                    "focal_won_toss": True,
                 },
                 {
                     "game_id": "second",
@@ -217,7 +236,7 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
                     "slot": 0,
                     "engine_seed": 21,
                     "search_seed": 22,
-                    "focal_first": False,
+                    "focal_won_toss": False,
                 },
             ]
         }
@@ -226,10 +245,13 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
             "collector": {"completed_games": 2, "errors": 0},
             "determinism": {"game_results": [1, 1]},
             "per_game_diagnostics": {
-                "schema": "cuda_resident_terminal_diagnostics_v1",
+                "schema": "cuda_resident_terminal_diagnostics_v2_agent_first_player",
                 "terminal_turns": [12, 5],
                 "engine_selections": [170, 121],
                 "terminal_prize_counts": [[0, 3], [4, 1]],
+                "first_player_choosers": [0, 0],
+                "first_player_actions": [0, 0],
+                "actual_first_players": [0, 0],
             },
             "progress_guard": {
                 "forfeit_schedule_indices": [1],

@@ -54,9 +54,12 @@ def _resident_jobs(jobs: list[RolloutJob]) -> tuple[ResidentJob, ...]:
         ResidentJob(
             schedule_index=index,
             decks=(job.focal_deck, job.opponent_deck)
-            if job.focal_first else (job.opponent_deck, job.focal_deck),
+            if (job.focal_won_toss if job.focal_won_toss is not None else job.focal_first)
+            else (job.opponent_deck, job.focal_deck),
             engine_seed=job.seed,
-            focal_player=0 if job.focal_first else 1,
+            focal_player=0
+            if (job.focal_won_toss if job.focal_won_toss is not None else job.focal_first)
+            else 1,
             opponent_id=job.opponent_id,
             policy_seed=int(job.policy_seed or job.seed),
         )
@@ -131,6 +134,7 @@ class CudaFullSemanticRolloutCollector:
         ability_repeat_limit: int = 20,
         record_trajectory: bool = True,
         record_job_indices: set[int] | frozenset[int] | None = None,
+        agent_selects_first_player: bool = False,
     ) -> None:
         if device.type != "cuda" or lane_count < 1:
             raise ValueError("0038 CUDA collector requires CUDA and positive lanes")
@@ -160,6 +164,7 @@ class CudaFullSemanticRolloutCollector:
             None if record_job_indices is None
             else frozenset(int(index) for index in record_job_indices)
         )
+        self.agent_selects_first_player = bool(agent_selects_first_player)
         self._metrics: dict[str, float] = {}
 
     def collect(self, jobs: list[RolloutJob]) -> list[EpisodeTrajectory]:
@@ -173,6 +178,12 @@ class CudaFullSemanticRolloutCollector:
             raise ValueError("resident batch must use one behavior-policy update")
         if any(job.action_boundary_mode != "enabled" for job in jobs):
             raise ValueError("0038 CUDA PPO only accepts the enabled action contract")
+        if self.agent_selects_first_player and any(
+            job.focal_won_toss is None for job in jobs
+        ):
+            raise ValueError(
+                "Agent-owned first-player choice requires a seeded toss winner for every job"
+            )
         if self.record_job_indices is not None and any(
             index < 0 or index >= len(jobs) for index in self.record_job_indices
         ):
@@ -197,6 +208,7 @@ class CudaFullSemanticRolloutCollector:
             resident_jobs,
             greedy=self.mode == "greedy",
             max_select=self.max_select,
+            agent_selects_first_player=self.agent_selects_first_player,
         )
         expected = tuple(sorted(self.model.actor.expected_batch_keys))
         staged: list[_Staged] = []
@@ -330,7 +342,7 @@ class CudaFullSemanticRolloutCollector:
         forfeits = set(result.forfeit_schedule_indices)
         turn_limit_draws = set(result.turn_limit_draw_schedule_indices)
         for index, episode in enumerate(episodes):
-            focal_player = 0 if episode.job.focal_first else 1
+            focal_player = resident_jobs[index].focal_player
             game_result = result.game_results[index]
             reward = 1.0 if game_result == focal_player + 1 else -1.0 if game_result else 0.0
             episode.finish(reward, result.terminal_turns[index])
@@ -345,6 +357,8 @@ class CudaFullSemanticRolloutCollector:
                 ),
                 "source_policy_update": episode.job.source_policy_update,
                 "cuda_resident": True,
+                "first_player_choice": boundary.first_player_choices.get(index),
+                "focal_won_toss": episode.job.focal_won_toss,
                 **job_stats,
                 "macro_fallback": int(invalid_reason is not None),
                 "macro_fallback_reason": invalid_reason,

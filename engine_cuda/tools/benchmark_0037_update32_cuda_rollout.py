@@ -139,14 +139,20 @@ def load_schedule(
         opponent_id = job.get("opponent_id")
         engine_seed = job.get("engine_seed")
         focal_first = job.get("focal_first")
+        focal_won_toss = job.get("focal_won_toss")
+        has_fixed_seat = isinstance(focal_first, bool)
+        has_agent_seat_choice = isinstance(focal_won_toss, bool)
         if (
             not isinstance(opponent_id, str)
             or not opponent_id
             or isinstance(engine_seed, bool)
             or not isinstance(engine_seed, int)
-            or not isinstance(focal_first, bool)
+            or has_fixed_seat == has_agent_seat_choice
         ):
-            raise ValueError(f"schedule job {index} has an invalid identity/seed/seat")
+            raise ValueError(
+                f"schedule job {index} must contain exactly one of "
+                "focal_first or focal_won_toss"
+            )
         if opponent_id not in deck_cache:
             try:
                 opponent_path = deck_path_by_id[opponent_id]
@@ -155,8 +161,11 @@ def load_schedule(
             deck_cache[opponent_id] = read_deck(opponent_path)
         opponent = deck_cache[opponent_id]
         engine_seeds.append(engine_seed)
-        focal_players.append(0 if focal_first else 1)
-        deck_rows.append((focal, opponent) if focal_first else (opponent, focal))
+        focal_player_zero = focal_first if has_fixed_seat else focal_won_toss
+        focal_players.append(0 if focal_player_zero else 1)
+        deck_rows.append(
+            (focal, opponent) if focal_player_zero else (opponent, focal)
+        )
         opponent_ids.append(opponent_id)
     return ScheduleBatch(
         engine_seeds=tuple(engine_seeds),
@@ -356,7 +365,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--actor-package", type=Path, default=DEFAULT_PACKAGE)
     parser.add_argument(
-        "--actor-mode", choices=("update32", "0806"), default="update32"
+        "--actor-mode", choices=("update32", "0806", "pretrained"), default="update32"
     )
     parser.add_argument("--actor-checkpoint", type=Path, default=DEFAULT_ACTOR_CHECKPOINT)
     parser.add_argument("--focal-deck", type=Path)
@@ -435,6 +444,24 @@ def _load_models(
     elif actor_mode == "0806":
         actor_model.load_state_dict(normalized_state, strict=True)
         actor_checkpoint = opponent_checkpoint
+    elif actor_mode == "pretrained":
+        actor_payload = torch.load(
+            actor_checkpoint_path, map_location="cpu", weights_only=True
+        )
+        actor_state = (
+            actor_payload.get("state_dict")
+            if isinstance(actor_payload, dict)
+            else None
+        )
+        if not isinstance(actor_state, dict):
+            raise ValueError("pretrained actor checkpoint has no state_dict")
+        normalized_actor_state = (
+            actor_state
+            if set(actor_state) == expected_names
+            else expanded_portable_state(actor_state)
+        )
+        actor_model.load_state_dict(normalized_actor_state, strict=True)
+        actor_checkpoint = actor_checkpoint_path
     else:
         raise ValueError(f"unsupported actor mode: {actor_mode}")
     actor_model = actor_model.requires_grad_(False).to(

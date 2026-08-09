@@ -367,8 +367,16 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
     agent_calls = 0
     engine_select_calls = 0
     random.seed(request.policy_seed or request.seed)
-    candidate_physical_index = 0
-    physical_packages = (request.candidate, request.opponent)
+    agent_selects_first_player = request.candidate_won_toss is not None
+    candidate_physical_index = (
+        0 if request.candidate_won_toss else 1
+    ) if agent_selects_first_player else 0
+    physical_packages = (
+        (request.candidate, request.opponent)
+        if candidate_physical_index == 0
+        else (request.opponent, request.candidate)
+    )
+    candidate_first = request.candidate_first
 
     trace: list[dict[str, Any]] = []
     selection_count = 0
@@ -487,7 +495,7 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                 forced_first_player = select.get("context") == 41
                 selected_agent = candidate_agent if current_player == candidate_physical_index else opponent_agent
                 try:
-                    if forced_first_player:
+                    if forced_first_player and not agent_selects_first_player:
                         action = [0] if request.candidate_first else [1]
                     else:
                         agent_started_ns = time.perf_counter_ns()
@@ -564,8 +572,11 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     "observation": observation,
                     "action": action,
                 }
-                if forced_first_player:
+                if forced_first_player and not agent_selects_first_player:
                     trace_entry["forced_by_harness"] = "first_player"
+                elif forced_first_player:
+                    trace_entry["selected_by_agent"] = "first_player"
+                    trace_entry["candidate_won_toss"] = request.candidate_won_toss
                 trace.append(trace_entry)
                 try:
                     engine_selected_ns = time.perf_counter_ns()
@@ -576,12 +587,19 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                         engine_select_calls += 1
                     if forced_first_player:
                         actual_first = (observation.get("current") or {}).get("firstPlayer")
-                        expected_first = 0 if request.candidate_first else 1
-                        if actual_first != expected_first:
-                            raise RuntimeError(
-                                "official engine did not honor forced first player: "
-                                f"expected {expected_first}, got {actual_first}"
-                            )
+                        if agent_selects_first_player:
+                            if actual_first not in (0, 1):
+                                raise RuntimeError(
+                                    f"official engine returned invalid first player: {actual_first}"
+                                )
+                            candidate_first = actual_first == candidate_physical_index
+                        else:
+                            expected_first = 0 if request.candidate_first else 1
+                            if actual_first != expected_first:
+                                raise RuntimeError(
+                                    "official engine did not honor forced first player: "
+                                    f"expected {expected_first}, got {actual_first}"
+                                )
                 except IndexError as exc:
                     error_side = (
                         "candidate_error"
@@ -680,6 +698,7 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                 )
             result = replace(
                 result,
+                candidate_first=candidate_first,
                 performance={
                     "worker_wall_seconds": (time.perf_counter_ns() - worker_started_ns) / 1e9,
                     "engine_start_seconds": engine_start_ns / 1e9,
@@ -689,6 +708,8 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     "engine_select_calls": engine_select_calls,
                 },
             )
+            payload["candidate_first"] = candidate_first
+            payload["candidate_won_toss"] = request.candidate_won_toss
             payload["result"] = _serialized_result(result)
             trace_path.parent.mkdir(parents=True, exist_ok=True)
             trace_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -746,6 +767,11 @@ def _request_from_payload(payload: dict[str, Any]) -> tuple[GameRequest, Path]:
             else None
         ),
         arbitrary_legal_actions=bool(payload.get("arbitrary_legal_actions", False)),
+        candidate_won_toss=(
+            bool(payload["candidate_won_toss"])
+            if payload.get("candidate_won_toss") is not None
+            else None
+        ),
     )
     return request, Path(payload["trace_path"])
 

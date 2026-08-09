@@ -18,7 +18,6 @@ from evaluation.cards import card_image_url, load_card_catalog
 from evaluation.frozen import FrozenCatalog, load_frozen_catalog
 from evaluation.frozen_0806_contract import (
     FROZEN_0806_EVALUATION_SEED,
-    evaluation_counts,
     evaluation_schedule_id,
 )
 from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
@@ -484,7 +483,7 @@ def _run(args: argparse.Namespace) -> str:
         (args.opponent_device or candidate_device) if frozen_0806 else None
     )
     games_by_opponent = (
-        evaluation_counts(frozen_0806.pool.schedule)
+        tuple(int(entry.games) for entry in frozen_0806.pool.schedule)
         if frozen_0806 is not None
         else None
     )
@@ -527,12 +526,16 @@ def _run(args: argparse.Namespace) -> str:
             opponent_policy_label=("Policy-0806" if frozen_0806 is not None else None),
             games_by_opponent=games_by_opponent,
             opponent_schedule_id=(
-                evaluation_schedule_id(frozen_0806.pool.manifest["schedule_sha256"])
+                evaluation_schedule_id(
+                    frozen_0806.pool.manifest["schedule_sha256"], evaluation_units=1
+                )
                 if frozen_0806 is not None
                 else None
             ),
             seed=(FROZEN_0806_EVALUATION_SEED if frozen_0806 is not None else 22022),
-            independent_engine_seeds=frozen_0806 is not None,
+            independent_engine_seeds=False,
+            agent_selects_first_player=frozen_0806 is not None,
+            focal_seed_identity=(candidate.name if frozen_0806 is not None else None),
         )
     )
     return result.run_id

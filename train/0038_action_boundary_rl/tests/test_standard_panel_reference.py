@@ -140,9 +140,7 @@ def _fixture(root: Path) -> tuple[Path, Path, Path]:
             }},
             "games": 2_048,
             "games_per_opponent": [2_048],
-            "opponent_schedule_id": evaluation_schedule_id(
-                "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c"
-            ),
+            "opponent_schedule_id": reference._FROZEN_0806_SCHEDULE_ID,
             "seed": 341_512_806,
         },
         "metrics": {"correctness": {"numerator": len(cpu_guard_indices)}},

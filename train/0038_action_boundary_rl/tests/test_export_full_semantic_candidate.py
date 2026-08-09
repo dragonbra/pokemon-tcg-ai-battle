@@ -42,6 +42,12 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
                 "0034_dragapult_third_large_model_zero_shot/strategy/model/policy.py"
             ).resolve(),
         )
+        export_source = Path(exporter.__file__).read_text(encoding="utf-8")
+        self.assertIn(
+            '"prototype_embedding_cache_version": "frozen_model_owned_v1"',
+            export_source,
+        )
+        self.assertIn('"prototype_embedding_cache_required": True', export_source)
 
     def test_export_uses_exact_frozen_007_deck(self) -> None:
         deck = [
@@ -141,7 +147,7 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
             result.write_text(json.dumps({
                 "schema_version": "0038_frozen_per_game_results_v2",
                 "checkpoint_update": 5,
-                "frozen_panel_version": "frozen_0806_seeded_2048_v2",
+                "frozen_panel_version": "frozen_0806_seeded_agent_first_player_v3",
                 "entries": entries,
             }))
             selection = exporter._frozen_selection(checkpoint, 5)

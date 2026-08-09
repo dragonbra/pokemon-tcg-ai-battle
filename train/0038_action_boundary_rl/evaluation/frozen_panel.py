@@ -7,7 +7,12 @@ from dataclasses import asdict, dataclass
 import math
 from typing import Iterable
 
-PANEL_VERSION = "0038_frozen_2048_v1"
+from evaluation.frozen_0806_contract import (
+    FROZEN_0806_FIRST_PLAYER_CONTRACT,
+    evaluation_coin_winner,
+)
+
+PANEL_VERSION = "0038_frozen_2048_agent_first_player_v3"
 SHARDS = 8
 GAMES_PER_SHARD = 256
 
@@ -19,14 +24,20 @@ class FrozenGame:
     shard_id: int
     opponent_deck: str
     opponent_archetype: str
-    focal_first: bool
+    focal_won_toss: bool
+    first_player_contract: str
     engine_backend: str
     engine_version: str
     action_protocol: str
     greedy: bool = True
 
 
-def build_panel(opponents: list[tuple[str, str]], *, seed_base: int = 38_204_800) -> list[FrozenGame]:
+def build_panel(
+    opponents: list[tuple[str, str]],
+    *,
+    seed_base: int = 38_204_800,
+    focal_identity: str = "focal",
+) -> list[FrozenGame]:
     if not opponents:
         raise ValueError("Frozen panel requires opponents")
     rows: list[FrozenGame] = []
@@ -36,7 +47,15 @@ def build_panel(opponents: list[tuple[str, str]], *, seed_base: int = 38_204_800
         deck, archetype = opponents[index % len(opponents)]
         rows.append(FrozenGame(
             PANEL_VERSION, seed_base + index, shard, deck, archetype,
-            focal_first=(index % 2 == 0), engine_backend="official",
+            focal_won_toss=evaluation_coin_winner(
+                evaluation_seed=seed_base,
+                focal_identity=focal_identity,
+                opponent_identity=deck,
+                slot=index % GAMES_PER_SHARD,
+                replica=shard,
+            ),
+            first_player_contract=FROZEN_0806_FIRST_PLAYER_CONTRACT,
+            engine_backend="official",
             engine_version="official_runtime_current", action_protocol="0038_macro_v1",
         ))
     validate_panel(rows)
@@ -51,10 +70,8 @@ def validate_panel(rows: list[FrozenGame]) -> None:
     shard_counts = Counter(row.shard_id for row in rows)
     if shard_counts != Counter({i: GAMES_PER_SHARD for i in range(SHARDS)}):
         raise ValueError("Frozen panel must contain eight complete 256-game shards")
-    if abs(sum(row.focal_first for row in rows) - len(rows) / 2) > 1:
-        raise ValueError("Frozen panel must be seat-balanced")
     contracts = {(row.frozen_panel_version, row.engine_backend, row.engine_version,
-                  row.action_protocol, row.greedy) for row in rows}
+                  row.action_protocol, row.greedy, row.first_player_contract) for row in rows}
     if len(contracts) != 1:
         raise ValueError("Frozen panel deterministic contract drift")
 

@@ -172,8 +172,17 @@ def _run_job_impl(
     battle = _PointerBattle(library, library_lock, _trace)
     selections = 0
     final_turn = None
-    focal_compiler = WorkerLocalCompiler(0, job.focal_deck)
-    opponent_compiler = WorkerLocalCompiler(1, job.opponent_deck)
+    agent_selects_first_player = job.focal_won_toss is not None
+    focal_index = (
+        0 if bool(job.focal_won_toss) else 1
+    ) if agent_selects_first_player else 0
+    decks = (
+        (job.focal_deck, job.opponent_deck)
+        if focal_index == 0
+        else (job.opponent_deck, job.focal_deck)
+    )
+    focal_compiler = WorkerLocalCompiler(focal_index, job.focal_deck)
+    opponent_compiler = WorkerLocalCompiler(1 - focal_index, job.opponent_deck)
     repeated_actions: dict[
         tuple[int, int, int, object, tuple[tuple[tuple[str, object], ...], ...], tuple[int, ...]],
         int,
@@ -183,9 +192,7 @@ def _run_job_impl(
     forced_shortcuts = 0
     protocol_executor = OfficialProtocolExecutor()
     try:
-        observation = battle.start(
-            job.focal_deck, job.opponent_deck, job.seed, job.search_seed
-        )
+        observation = battle.start(decks[0], decks[1], job.seed, job.search_seed)
         if observation is None:
             return _result(
                 job, valid=False, reward=None, status="start_error",
@@ -198,7 +205,9 @@ def _run_job_impl(
             winner = current.get("result")
             if isinstance(winner, int) and winner >= 0:
                 _trace[-1].update({"gate": "TERMINAL", "terminal": True, "winner": winner})
-                reward = 0.0 if winner not in (0, 1) else (1.0 if winner == 0 else -1.0)
+                reward = 0.0 if winner not in (0, 1) else (
+                    1.0 if winner == focal_index else -1.0
+                )
                 return _result(
                     job, valid=True, reward=reward, status="finished", error=None,
                     selections=selections, final_turn=final_turn,
@@ -218,7 +227,7 @@ def _run_job_impl(
                 turn_actor = (final_turn, actor)
                 repeated_actions.clear()
             selection = observation.get("select") or {}
-            if selection.get("context") == 41:
+            if selection.get("context") == 41 and not agent_selects_first_player:
                 _trace[-1].update({"gate": "STRATEGIC", "forced": False, "action_family": "setup_first_player"})
                 action = [0] if job.focal_first else [1]
                 selections += 1
@@ -233,7 +242,7 @@ def _run_job_impl(
                 continue
             if protocol_executor.has_pending(job.game_id):
                 _trace[-1].update({"gate": "FORCED", "forced": True, "action_family": "phantom_dive_parameter"})
-                compiler = focal_compiler if actor == 0 else opponent_compiler
+                compiler = focal_compiler if actor == focal_index else opponent_compiler
                 compiler.observe_only(observation)
                 try:
                     action = protocol_executor.select(job.game_id, observation)
@@ -264,7 +273,7 @@ def _run_job_impl(
                 job.action_boundary_mode == "enabled"
                 and gate.classification in {DecisionClass.FORCED, DecisionClass.LEGAL_EMPTY_PASS}
             ):
-                compiler = focal_compiler if actor == 0 else opponent_compiler
+                compiler = focal_compiler if actor == focal_index else opponent_compiler
                 compiler.observe_only(observation)
                 action = list(gate.forced_action or ())
                 forced_shortcuts += 1
@@ -273,11 +282,11 @@ def _run_job_impl(
                 continue
             compile_started = time.perf_counter()
             record = (
-                focal_compiler if actor == 0 else opponent_compiler
+                focal_compiler if actor == focal_index else opponent_compiler
             ).compile(observation)
             compile_seconds = time.perf_counter() - compile_started
-            role = "focal" if actor == 0 else "opponent"
-            channels = focal_channels if actor == 0 else opponent_channels
+            role = "focal" if actor == focal_index else "opponent"
+            channels = focal_channels if actor == focal_index else opponent_channels
             service_started = time.perf_counter()
             response = channels.exchange({
                 "kind": "decision",
@@ -314,8 +323,8 @@ def _run_job_impl(
                 "transformer_seconds": float(telemetry.get("transformer_seconds", 0.0)),
                 "value_seconds": float(telemetry.get("value_seconds", 0.0)),
                 "gru_seconds": float(telemetry.get("gru_seconds", 0.0)),
-                "written_to_policy_trajectory": actor == 0,
-                "value_sample": actor == 0,
+                "written_to_policy_trajectory": actor == focal_index,
+                "value_sample": actor == focal_index,
             })
             action = response.get("action")
             macro = response.get("macro_transaction")
@@ -353,7 +362,7 @@ def _run_job_impl(
                     return _result(
                         job,
                         valid=True,
-                        reward=-1.0 if actor == 0 else 1.0,
+                        reward=-1.0 if actor == focal_index else 1.0,
                         status=(
                             "ability_repeat_forfeit"
                             if selection.get("type") == 0
@@ -365,6 +374,28 @@ def _run_job_impl(
                     )
             selections += 1
             observation = battle.select(action)
+            if selection.get("context") == 41:
+                if (
+                    not isinstance(action, list)
+                    or len(action) != 1
+                    or action[0] not in (0, 1)
+                ):
+                    raise RuntimeError("Agent first-player choice is not one Yes/No action")
+                actual_first = (observation.get("current") or {}).get("firstPlayer")
+                expected_first = actor if action[0] == 0 else 1 - actor
+                if actual_first != expected_first:
+                    raise RuntimeError(
+                        "official engine did not honor Agent first-player choice: "
+                        f"expected {expected_first}, got {actual_first}"
+                    )
+                _trace[-1].update({
+                    "action_family": "setup_first_player",
+                    "focal_won_toss": bool(job.focal_won_toss),
+                    "first_player_chooser": actor,
+                    "first_player_action": int(action[0]),
+                    "actual_first_player": int(actual_first),
+                    "focal_first": int(actual_first) == focal_index,
+                })
         return _result(
             job, valid=False, reward=None, status="step_limit",
             error=f"step limit reached ({job.max_steps})", selections=selections,
