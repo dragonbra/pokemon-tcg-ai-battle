@@ -1,0 +1,1 @@
+{"preset":"META","base":"BASE","enable_opponent_meta":true,"enable_opponent_meta_conditioning":true,"opponent_meta_detach_to_actor":true,"opponent_meta_backprop_to_lora":false,"opponent_meta_taxonomy_version":"0038_opponent_meta_taxonomy_v1"}

@@ -1,0 +1,566 @@
+"""Persistent multi-battle official-engine worker for 0038 action-boundary rollout."""
+
+from __future__ import annotations
+
+import ctypes
+import hashlib
+import json
+import os
+import queue
+import signal
+import threading
+import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from multiprocessing.connection import Connection
+from typing import Any
+
+from evaluation.runtime.seeded import load_seeded_library
+
+from .protocol import RolloutJob
+from .worker_compiler import WorkerLocalCompiler
+from ..action_boundary.decision_gate import DecisionClass, DecisionGate
+from ..action_boundary.macro_protocol import PendingMacroTransaction
+from ..action_boundary.macro_protocol import MacroProtocolError
+from ..action_boundary.official_protocol import OfficialProtocolExecutor
+
+
+class _PointerBattle:
+    """One independent battle pointer in the unchanged seeded runtime."""
+
+    def __init__(self, library: Any, library_lock: threading.Lock,
+                 trace: list[dict[str, Any]] | None = None) -> None:
+        self._library = library
+        self._library_lock = library_lock
+        self._pointer: Any = None
+        self._finished = False
+        self._trace = trace
+
+    def _observation(self) -> dict[str, Any]:
+        if self._pointer is None:
+            raise RuntimeError("battle has not started")
+        with self._library_lock:
+            serial = self._library.GetBattleData(self._pointer)
+            payload = bytes(serial.json).decode()
+            search_input = ctypes.string_at(serial.data, serial.count).decode("ascii")
+        observation = json.loads(payload)
+        observation["search_begin_input"] = search_input
+        return observation
+
+    def start(self, deck0: tuple[int, ...], deck1: tuple[int, ...], seed: int,
+              search_seed: int | None = None):
+        cards = deck0 + deck1
+        if len(deck0) != 60 or len(deck1) != 60:
+            raise ValueError("official battle decks must contain exactly 60 cards")
+        argument = (ctypes.c_int * len(cards))(*cards)
+        search_seed = search_seed or (((seed + 900_000_007) & 0x7FFFFFFF) or 1)
+        with self._library_lock:
+            configured = int(self._library.ConfigureSeeds(seed, search_seed))
+            if configured != 0:
+                raise RuntimeError(f"seeded runtime configuration failed: {configured}")
+            started = self._library.BattleStartSeeded(argument, seed)
+        self._pointer = started.battle_ptr
+        if self._pointer is None or self._pointer == 0:
+            return None
+        observation = self._observation()
+        if self._trace is not None:
+            self._trace.append({"primitive_select": None, "observation": observation})
+        return observation
+
+    def select(self, action: list[int]) -> dict[str, Any]:
+        if not isinstance(action, list) or not all(type(index) is int for index in action):
+            raise ValueError("official action must be list[int]")
+        argument = (ctypes.c_int * len(action))(*action)
+        with self._library_lock:
+            error = int(self._library.Select(self._pointer, argument, len(action)))
+        if error == 30:
+            raise ValueError("battle pointer is broken")
+        if error != 0:
+            raise IndexError(f"official engine rejected action: {error}")
+        observation = self._observation()
+        if self._trace is not None:
+            self._trace.append({"primitive_select": list(action), "observation": observation})
+        return observation
+
+    def finish(self) -> None:
+        if self._finished or self._pointer is None:
+            return
+        self._finished = True
+        with self._library_lock:
+            self._library.BattleFinish(self._pointer)
+
+
+class _ChannelPool:
+    """Lease one synchronous duplex inference channel per active request."""
+
+    def __init__(self, connections: list[Connection]) -> None:
+        if not connections:
+            raise ValueError("inference channel pool cannot be empty")
+        self._connections = connections
+        self._available: queue.Queue[Connection] = queue.Queue(len(connections))
+        for connection in connections:
+            self._available.put(connection)
+
+    def exchange(self, payload: dict[str, Any]) -> dict[str, Any]:
+        connection = self._available.get()
+        try:
+            connection.send(payload)
+            response = connection.recv()
+        finally:
+            self._available.put(connection)
+        if not isinstance(response, dict) or response.get("kind") != "action":
+            raise RuntimeError("collector returned an invalid action response")
+        return response
+
+    def close(self) -> None:
+        for connection in self._connections:
+            try:
+                connection.close()
+            except OSError:
+                pass
+
+
+def _result(
+    job: RolloutJob,
+    *,
+    valid: bool,
+    reward: float | None,
+    status: str,
+    error: str | None,
+    selections: int,
+    final_turn: int | None,
+) -> dict[str, Any]:
+    return {
+        "kind": "result",
+        "game_id": job.game_id,
+        "valid": valid,
+        "reward": reward,
+        "status": status,
+        "error": error,
+        "engine_selections": selections,
+        "final_turn": final_turn,
+    }
+
+
+def _option_identity(option: dict[str, Any]) -> tuple[tuple[str, object], ...]:
+    return tuple(sorted(
+        (key, value)
+        for key, value in option.items()
+        if isinstance(value, (int, str, bool, type(None)))
+    ))
+
+
+def _chance_before_phantom_allocation(current: dict[str, Any], actor: int) -> bool:
+    """Phantom Dive reveals a coin result before allocation when the attacker is confused."""
+    players = current.get("players") or []
+    return bool(
+        0 <= actor < len(players)
+        and isinstance(players[actor], dict)
+        and players[actor].get("confused") is True
+    )
+
+
+def _run_job_impl(
+    job: RolloutJob,
+    *,
+    library: Any,
+    library_lock: threading.Lock,
+    focal_channels: _ChannelPool,
+    opponent_channels: _ChannelPool,
+    _trace: list[dict[str, Any]],
+) -> dict[str, Any]:
+    battle = _PointerBattle(library, library_lock, _trace)
+    selections = 0
+    final_turn = None
+    agent_selects_first_player = job.focal_won_toss is not None
+    focal_index = (
+        0 if bool(job.focal_won_toss) else 1
+    ) if agent_selects_first_player else 0
+    decks = (
+        (job.focal_deck, job.opponent_deck)
+        if focal_index == 0
+        else (job.opponent_deck, job.focal_deck)
+    )
+    focal_compiler = WorkerLocalCompiler(focal_index, job.focal_deck)
+    opponent_compiler = WorkerLocalCompiler(1 - focal_index, job.opponent_deck)
+    repeated_actions: dict[
+        tuple[int, int, int, object, tuple[tuple[tuple[str, object], ...], ...], tuple[int, ...]],
+        int,
+    ] = defaultdict(int)
+    turn_actor: tuple[int, int] | None = None
+    decision_gate = DecisionGate()
+    forced_shortcuts = 0
+    protocol_executor = OfficialProtocolExecutor()
+    try:
+        observation = battle.start(decks[0], decks[1], job.seed, job.search_seed)
+        if observation is None:
+            return _result(
+                job, valid=False, reward=None, status="start_error",
+                error="BattleStartSeeded returned no observation", selections=0,
+                final_turn=None,
+            )
+        for _ in range(job.max_steps):
+            current = observation.get("current") or {}
+            final_turn = int(current.get("turn", 0))
+            winner = current.get("result")
+            if isinstance(winner, int) and winner >= 0:
+                _trace[-1].update({"gate": "TERMINAL", "terminal": True, "winner": winner})
+                reward = 0.0 if winner not in (0, 1) else (
+                    1.0 if winner == focal_index else -1.0
+                )
+                return _result(
+                    job, valid=True, reward=reward, status="finished", error=None,
+                    selections=selections, final_turn=final_turn,
+                )
+            if (
+                job.full_round_draw_limit > 0
+                and (final_turn + 1) // 2 >= job.full_round_draw_limit
+            ):
+                return _result(
+                    job, valid=True, reward=0.0, status="turn_limit_draw", error=None,
+                    selections=selections, final_turn=final_turn,
+                )
+            actor = int(current.get("yourIndex", -1))
+            if actor not in (0, 1):
+                raise RuntimeError(f"official observation has invalid actor: {actor}")
+            if turn_actor != (final_turn, actor):
+                turn_actor = (final_turn, actor)
+                repeated_actions.clear()
+            selection = observation.get("select") or {}
+            if selection.get("context") == 41 and not agent_selects_first_player:
+                _trace[-1].update({"gate": "STRATEGIC", "forced": False, "action_family": "setup_first_player"})
+                action = [0] if job.focal_first else [1]
+                selections += 1
+                observation = battle.select(action)
+                actual_first = (observation.get("current") or {}).get("firstPlayer")
+                expected_first = 0 if job.focal_first else 1
+                if actual_first != expected_first:
+                    raise RuntimeError(
+                        "official engine did not honor forced first player: "
+                        f"expected {expected_first}, got {actual_first}"
+                    )
+                continue
+            if protocol_executor.has_pending(job.game_id):
+                _trace[-1].update({"gate": "FORCED", "forced": True, "action_family": "phantom_dive_parameter"})
+                compiler = focal_compiler if actor == focal_index else opponent_compiler
+                compiler.observe_only(observation)
+                try:
+                    action = protocol_executor.select(job.game_id, observation)
+                except MacroProtocolError as error:
+                    protocol_executor.invalidate(job.game_id, str(error))
+                    _trace[-1].update({
+                        "action_family": "phantom_dive_macro_invalid",
+                        "macro_fallback_reason": f"{type(error).__name__}: {error}",
+                    })
+                    raise
+                else:
+                    selections += 1
+                    observation = battle.select(action)
+                    continue
+            gate = decision_gate.classify(observation)
+            _trace[-1].update({
+                "gate": gate.classification.value,
+                "forced": gate.classification in {DecisionClass.FORCED, DecisionClass.LEGAL_EMPTY_PASS},
+                "raw_option_count": gate.raw_option_count,
+                "legal_completion_count": gate.legal_completion_count,
+                "canonical_completion_count": gate.canonical_completion_count,
+                "stop_legal": gate.stop_legal, "cancel_legal": gate.cancel_legal,
+                "decline_legal": gate.decline_legal, "pass_legal": gate.pass_legal,
+            })
+            if gate.classification is DecisionClass.MASK_ERROR:
+                raise RuntimeError(f"DecisionGate MASK_ERROR: {gate.reason}")
+            if (
+                job.action_boundary_mode == "enabled"
+                and gate.classification in {DecisionClass.FORCED, DecisionClass.LEGAL_EMPTY_PASS}
+            ):
+                compiler = focal_compiler if actor == focal_index else opponent_compiler
+                compiler.observe_only(observation)
+                action = list(gate.forced_action or ())
+                forced_shortcuts += 1
+                selections += 1
+                observation = battle.select(action)
+                continue
+            compile_started = time.perf_counter()
+            record = (
+                focal_compiler if actor == focal_index else opponent_compiler
+            ).compile(observation)
+            compile_seconds = time.perf_counter() - compile_started
+            role = "focal" if actor == focal_index else "opponent"
+            channels = focal_channels if actor == focal_index else opponent_channels
+            service_started = time.perf_counter()
+            response = channels.exchange({
+                "kind": "decision",
+                "session_id": job.game_id,
+                "game_id": job.game_id,
+                "role": role,
+                "actor": actor,
+                "selection_index": selections,
+                "record": record,
+                "turn": final_turn,
+                "select": {
+                    "type": selection.get("type"),
+                    "context": selection.get("context"),
+                    "minCount": selection.get("minCount"),
+                    "maxCount": selection.get("maxCount"),
+                    "option": selection.get("option"),
+                },
+                "compile_seconds": compile_seconds,
+                "visible_opponent_bench": list(
+                    ((current.get("players") or [{}, {}])[1 - actor] or {}).get("bench") or []
+                ),
+                "chance_before_phantom_allocation": _chance_before_phantom_allocation(
+                    current, actor
+                ),
+                **({"primitive_action_prefix": [
+                    event["primitive_select"] for event in _trace
+                    if event.get("primitive_select") is not None
+                ]} if job.include_action_prefix else {}),
+            })
+            telemetry = response.get("telemetry") or {}
+            _trace[-1].update({
+                "compile_seconds": compile_seconds,
+                "service_roundtrip_seconds": time.perf_counter() - service_started,
+                "transformer_seconds": float(telemetry.get("transformer_seconds", 0.0)),
+                "value_seconds": float(telemetry.get("value_seconds", 0.0)),
+                "gru_seconds": float(telemetry.get("gru_seconds", 0.0)),
+                "written_to_policy_trajectory": actor == focal_index,
+                "value_sample": actor == focal_index,
+            })
+            action = response.get("action")
+            macro = response.get("macro_transaction")
+            if macro is not None:
+                transaction = PendingMacroTransaction.from_wire(macro)
+                if transaction.battle_id != job.game_id or transaction.actor != actor:
+                    raise RuntimeError("collector returned a macro for the wrong session/actor")
+                protocol_executor.begin(transaction)
+            options = selection.get("option") or []
+            if (
+                job.ability_repeat_limit > 0
+                and isinstance(action, list)
+                and all(isinstance(value, int) for value in action)
+            ):
+                option_fingerprints = tuple(
+                    _option_identity(option)
+                    for option in options
+                    if isinstance(option, dict)
+                )
+                context = selection.get("context")
+                try:
+                    hash(context)
+                except TypeError:
+                    context = repr(context)
+                key = (
+                    final_turn,
+                    actor,
+                    int(selection.get("type", -1)),
+                    context,
+                    option_fingerprints,
+                    tuple(action),
+                )
+                repeated_actions[key] += 1
+                if repeated_actions[key] >= job.ability_repeat_limit:
+                    return _result(
+                        job,
+                        valid=True,
+                        reward=-1.0 if actor == focal_index else 1.0,
+                        status=(
+                            "ability_repeat_forfeit"
+                            if selection.get("type") == 0
+                            else "repeated_selection_forfeit"
+                        ),
+                        error=None,
+                        selections=selections,
+                        final_turn=final_turn,
+                    )
+            selections += 1
+            observation = battle.select(action)
+            if selection.get("context") == 41:
+                if (
+                    not isinstance(action, list)
+                    or len(action) != 1
+                    or action[0] not in (0, 1)
+                ):
+                    raise RuntimeError("Agent first-player choice is not one Yes/No action")
+                actual_first = (observation.get("current") or {}).get("firstPlayer")
+                expected_first = actor if action[0] == 0 else 1 - actor
+                if actual_first != expected_first:
+                    raise RuntimeError(
+                        "official engine did not honor Agent first-player choice: "
+                        f"expected {expected_first}, got {actual_first}"
+                    )
+                _trace[-1].update({
+                    "action_family": "setup_first_player",
+                    "focal_won_toss": bool(job.focal_won_toss),
+                    "first_player_chooser": actor,
+                    "first_player_action": int(action[0]),
+                    "actual_first_player": int(actual_first),
+                    "focal_first": int(actual_first) == focal_index,
+                })
+        return _result(
+            job, valid=False, reward=None, status="step_limit",
+            error=f"step limit reached ({job.max_steps})", selections=selections,
+            final_turn=final_turn,
+        )
+    except (EOFError, BrokenPipeError):
+        return _result(
+            job, valid=False, reward=None, status="collector_closed",
+            error="collector inference channel closed", selections=selections,
+            final_turn=final_turn,
+        )
+    except BaseException as error:
+        return _result(
+            job, valid=False, reward=None, status="engine_error",
+            error=f"{type(error).__name__}: {error}", selections=selections,
+            final_turn=final_turn,
+        )
+    finally:
+        protocol_executor.clear(job.game_id)
+        try:
+            battle.finish()
+        except BaseException:
+            pass
+
+
+def _run_job(
+    job: RolloutJob,
+    *,
+    library: Any,
+    library_lock: threading.Lock,
+    focal_channels: _ChannelPool,
+    opponent_channels: _ChannelPool,
+) -> dict[str, Any]:
+    trace: list[dict[str, Any]] = []
+    result = _run_job_impl(
+        job, library=library, library_lock=library_lock,
+        focal_channels=focal_channels, opponent_channels=opponent_channels,
+        _trace=trace,
+    )
+    if trace:
+        trace[-1]["reward"] = result.get("reward")
+        trace[-1]["terminal"] = bool(result.get("valid") and result.get("reward") is not None)
+    result["engine_event_trace"] = trace
+    result["forced_choices_observed"] = sum(bool(event.get("forced")) for event in trace)
+    result["forced_shortcuts"] = (
+        result["forced_choices_observed"] if job.action_boundary_mode == "enabled" else 0
+    )
+    result["strategic_decisions"] = sum(event.get("gate") == "STRATEGIC" for event in trace)
+    result["tempo_events"] = _tempo_from_trace(trace)
+    fallback_reasons = [
+        event["macro_fallback_reason"] for event in trace
+        if event.get("macro_fallback_reason")
+    ]
+    result["macro_fallback"] = len(fallback_reasons)
+    result["macro_fallback_reason"] = fallback_reasons[-1] if fallback_reasons else None
+    keep_full = job.trace_policy == "full" or not result.get("valid")
+    if job.trace_policy == "errors_and_sample" and result.get("valid"):
+        bucket = int.from_bytes(hashlib.sha256(job.game_id.encode()).digest()[:8], "big")
+        keep_full = bucket % job.normal_trace_sample_modulus == 0
+    if not keep_full:
+        result["engine_event_trace"] = [_compact_event(event) for event in trace]
+        result["trace_compacted"] = True
+    else:
+        result["trace_compacted"] = False
+    return result
+
+
+def _tempo_from_trace(trace: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Offline public-option aggregation; performs no model inference."""
+    turns: dict[int, dict[str, Any]] = {}
+    own_turn_order: dict[int, int] = {}
+    for index, event in enumerate(trace[:-1]):
+        observation = event.get("observation") or {}
+        current = observation.get("current") or {}
+        if current.get("yourIndex") != 0:
+            continue
+        official_turn = int(current.get("turn", -1))
+        if official_turn < 0:
+            continue
+        if official_turn not in own_turn_order:
+            own_turn_order[official_turn] = len(own_turn_order) + 1
+        selection = observation.get("select") or {}
+        options = selection.get("option") or []
+        attack_indices = {
+            option_index for option_index, option in enumerate(options)
+            if isinstance(option, dict) and option.get("attackId") is not None
+        }
+        chosen = trace[index + 1].get("primitive_select") or []
+        row = turns.setdefault(official_turn, {
+            "own_turn_index": own_turn_order[official_turn], "attack_legal": False,
+            "attacked": False,
+        })
+        row["attack_legal"] = bool(row["attack_legal"] or attack_indices)
+        row["attacked"] = bool(row["attacked"] or attack_indices.intersection(chosen))
+    return [turns[key] for key in sorted(turns)]
+
+
+def _compact_event(event: dict[str, Any]) -> dict[str, Any]:
+    observation = event.get("observation") or {}
+    current = observation.get("current") or {}
+    select = observation.get("select") or {}
+    compact = {key: value for key, value in event.items() if key != "observation"}
+    compact["observation"] = {
+        "current": {key: current.get(key) for key in ("turn", "yourIndex", "firstPlayer", "result")},
+        "select": {key: select.get(key) for key in (
+            "type", "context", "minCount", "maxCount", "remainDamageCounter"
+        )},
+    }
+    players = current.get("players") or []
+    compact["public_prize_counts"] = [
+        len(player.get("prize") or []) if isinstance(player, dict) else None
+        for player in players
+    ]
+    return compact
+
+
+def run_engine_pool(
+    result_connection: Connection,
+    focal_connections: list[Connection],
+    opponent_connections: list[Connection],
+    jobs: list[RolloutJob],
+    engines_per_worker: int,
+) -> None:
+    """Run a stable worker shard and stream per-game results to the parent."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    os.environ.setdefault("OMP_NUM_THREADS", "1")
+    os.environ.setdefault("MKL_NUM_THREADS", "1")
+    os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+    if engines_per_worker < 1:
+        raise ValueError("engines_per_worker must be at least one")
+    if not jobs:
+        result_connection.close()
+        return
+    libraries = {job.engine_library.resolve() for job in jobs if job.engine_library is not None}
+    if len(libraries) != 1 or any(job.engine_library is None for job in jobs):
+        raise ValueError("pooled RL requires one explicit seeded engine library")
+    library = load_seeded_library(next(iter(libraries)))
+    library_lock = threading.Lock()
+    result_lock = threading.Lock()
+    focal_channels = _ChannelPool(focal_connections)
+    opponent_channels = _ChannelPool(opponent_connections)
+
+    def execute(job: RolloutJob) -> None:
+        message = _run_job(
+            job,
+            library=library,
+            library_lock=library_lock,
+            focal_channels=focal_channels,
+            opponent_channels=opponent_channels,
+        )
+        with result_lock:
+            result_connection.send(message)
+
+    try:
+        with ThreadPoolExecutor(max_workers=engines_per_worker) as executor:
+            futures = [executor.submit(execute, job) for job in jobs]
+            for future in futures:
+                future.result()
+        result_connection.send({"kind": "worker_done"})
+    except (EOFError, BrokenPipeError, OSError):
+        pass
+    finally:
+        focal_channels.close()
+        opponent_channels.close()
+        result_connection.close()
+
+
+__all__ = ["_ChannelPool", "_PointerBattle", "run_engine_pool"]
