@@ -89,6 +89,21 @@ class AcceleratedTransferTest(unittest.TestCase):
             runner.IMMUTABLE_GATE_C_TRACE_SHA256,
         )
 
+    def test_attested_package_gate_reads_root_divergence_from_report_schema(self):
+        runner = importlib.import_module(
+            "train.0038_action_boundary_rl.training.run_full_semantic"
+        )
+        report = {
+            "full_cpu_causalknowledge_parity": True,
+            "training_to_package": {
+                "passed": True,
+                "root": {"greedy_action_divergences": 0},
+            },
+        }
+        self.assertTrue(runner._attested_package_parity_passed(report))
+        report["training_to_package"]["root"]["greedy_action_divergences"] = 1
+        self.assertFalse(runner._attested_package_parity_passed(report))
+
 
 if __name__ == "__main__":
     unittest.main()

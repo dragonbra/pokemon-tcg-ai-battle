@@ -670,6 +670,16 @@ def _assert_acceptance_episode_health(
     }
 
 
+def _attested_package_parity_passed(report: dict[str, Any]) -> bool:
+    deployment = report.get("training_to_package") or {}
+    root = deployment.get("root") or {}
+    return bool(
+        report.get("full_cpu_causalknowledge_parity")
+        and deployment.get("passed")
+        and int(root.get("greedy_action_divergences", -1)) == 0
+    )
+
+
 def _run_attested_update0_package_parity(
     *, version: str, checkpoint: Path, artifact: Path
 ) -> dict[str, Any]:
@@ -718,12 +728,7 @@ def _run_attested_update0_package_parity(
         text=True,
     )
     report = json.loads(report_path.read_text(encoding="utf-8"))
-    deployment = report.get("training_to_package") or {}
-    if (
-        not report.get("full_cpu_causalknowledge_parity")
-        or not deployment.get("passed")
-        or int(deployment.get("greedy_action_divergences", -1)) != 0
-    ):
+    if not _attested_package_parity_passed(report):
         raise RuntimeError("attested U0 CUDA/package fixed-snapshot parity failed")
     _atomic_json(
         artifact / "update0_package_manifest.json",
