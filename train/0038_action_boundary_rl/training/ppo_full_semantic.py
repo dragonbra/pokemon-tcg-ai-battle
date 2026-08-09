@@ -133,6 +133,72 @@ class PPOTrainer:
             groups,
             weight_decay=config.weight_decay,
         )
+        self.base_learning_rates = {
+            str(group["name"]): float(group["lr"])
+            for group in self.optimizer.param_groups
+        }
+
+    def optimizer_group_manifest(self) -> list[dict[str, object]]:
+        gradient_sources = {
+            "action_decoder": "PPO policy + entropy + reference KL + Prize actor advantage",
+            "allocation_head": "Phantom allocation policy + entropy + Prize actor advantage",
+            "last_option_qv_lora": "PPO policy + entropy + reference KL + Prize actor advantage",
+            "local_output_layernorm": "PPO policy + entropy + reference KL + Prize actor advantage",
+            "value_win": "terminal win Value loss only",
+            "value_prize": "directional Prize Value loss only",
+            "opponent_meta": "Opponent Meta classification only",
+            "opponent_conditioner": "PPO Actor path through detached Meta prediction",
+        }
+        return [
+            {
+                "name": str(group["name"]),
+                "base_learning_rate": self.base_learning_rates[str(group["name"])],
+                "current_learning_rate": float(group["lr"]),
+                "trainable_parameters": sum(
+                    int(parameter.numel()) for parameter in group["params"]
+                ),
+                "tensor_count": len(group["params"]),
+                "gradient_source": gradient_sources[str(group["name"])],
+            }
+            for group in self.optimizer.param_groups
+        ]
+
+    def set_group_learning_rates(self, rates: dict[str, float]) -> None:
+        names = {str(group["name"]) for group in self.optimizer.param_groups}
+        if set(rates) != names:
+            raise ValueError("learning-rate update does not cover exact optimizer groups")
+        for group in self.optimizer.param_groups:
+            value = float(rates[str(group["name"])])
+            if value <= 0:
+                raise ValueError("optimizer learning rates must remain positive")
+            group["lr"] = value
+
+    def snapshot_trainable_state(self) -> dict[str, torch.Tensor]:
+        return {
+            name: parameter.detach().clone()
+            for name, parameter in self.model.named_parameters()
+            if parameter.requires_grad
+        }
+
+    def restore_trainable_state(
+        self, state: dict[str, torch.Tensor], *, reset_optimizer: bool = True
+    ) -> None:
+        current = {
+            name: parameter
+            for name, parameter in self.model.named_parameters()
+            if parameter.requires_grad
+        }
+        if set(state) != set(current):
+            raise ValueError("rollback trainable tensor inventory mismatch")
+        with torch.no_grad():
+            for name, parameter in current.items():
+                source = state[name]
+                if source.shape != parameter.shape:
+                    raise ValueError(f"rollback tensor shape mismatch: {name}")
+                parameter.copy_(source.to(parameter.device, parameter.dtype))
+        self.optimizer.zero_grad(set_to_none=True)
+        if reset_optimizer:
+            self.optimizer.state.clear()
 
     def _relative_l2(self, baseline: dict[str, torch.Tensor]) -> float:
         difference = torch.zeros((), device=self.device, dtype=torch.float64)

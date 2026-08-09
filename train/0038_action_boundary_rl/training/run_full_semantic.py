@@ -13,6 +13,8 @@ import random
 import re
 import resource
 import shutil
+import subprocess
+import sys
 import time
 from typing import Any
 
@@ -22,7 +24,11 @@ from rl_environment.logging import TrainingLogger
 from evaluation.runtime.seeded import build_seeded_runtime
 
 from ..league import load_frozen_catalog
-from ..parity import assert_large_model_0806_runtime_parity, collect_official_observations
+from ..parity import (
+    assert_full_schema,
+    assert_large_model_0806_runtime_parity,
+    collect_official_observations,
+)
 from ..policy import AdaptationConfig, load_actor_critic
 from ..rollout import (
     DEFAULT_FULL_ROUND_DRAW_LIMIT,
@@ -34,6 +40,10 @@ from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .storage_full_semantic import save_model_only
 from .metric_frequency import is_sparse_diagnostic_update
+from .accelerated_transfer import (
+    AcceleratedTransferConfig,
+    AcceleratedTransferController,
+)
 from ..semantic_policy.deployment.inference import PortableSemanticPolicy
 from ..evaluation.frozen_jobs import (
     CANONICAL_CONTRACT_ID,
@@ -47,12 +57,21 @@ from ..initialization import (
     build_preset_from_common_update0,
 )
 from ..integrated.presets import PRESETS, preset
+from ..export_full_semantic_candidate import export_candidate
+from ..action_boundary.contracts import (
+    ACTION_BOUNDARY_SCHEMA_VERSION,
+    CANONICALIZER_VERSION,
+    DECISION_GATE_VERSION,
+    FEATURE_PREPROCESSING_VERSION,
+    OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+    TRAJECTORY_SCHEMA_VERSION,
+)
 
 
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V10_complete_512_rollout_fresh_rl"
+FORMAL_VERSION = "V11_accelerated_transfer_acceptance"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -98,6 +117,8 @@ class RunConfig:
     wandb_mode: str = "online"
     launch_formal: bool = False
     resume_update0: bool = False
+    accelerated_transfer_acceptance: bool = False
+    accelerated_transfer: AcceleratedTransferConfig = AcceleratedTransferConfig()
     ppo: PPOConfig = PPOConfig()
 
     def validate(self) -> None:
@@ -152,6 +173,24 @@ class RunConfig:
             raise ValueError("invalid adaptation arm")
         if self.preset_name not in PRESETS:
             raise ValueError("invalid integrated preset")
+        if self.version == FORMAL_VERSION and not self.accelerated_transfer_acceptance:
+            raise ValueError("V11 requires the accelerated transfer acceptance contract")
+        if self.accelerated_transfer_acceptance:
+            if self.updates is not None:
+                raise ValueError("accelerated transfer acceptance must run until manual stop")
+            if self.engine_backend != "accelerated:cuda_resident":
+                raise ValueError("accelerated transfer acceptance requires CUDA resident")
+            if self.preset_name != "PRIZE":
+                raise ValueError("accelerated transfer acceptance disables Opponent Meta")
+            if (
+                self.games_per_update != 512
+                or self.trajectory_games_per_update != 512
+                or self.optimizer_steps_per_update != 32
+                or self.eval_every != 5
+                or self.optimization_mode != "fixed_optimizer_budget"
+            ):
+                raise ValueError("accelerated transfer scaling contract changed")
+            self.accelerated_transfer.validate()
         self.ppo.validate()
 
 
@@ -572,6 +611,122 @@ def _run_parity(model, output: Path) -> dict[str, Any]:
     )
 
 
+def _git_identity() -> dict[str, Any]:
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip()
+    dirty = bool(subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT, check=True,
+        capture_output=True, text=True,
+    ).stdout.strip())
+    return {"git_commit": commit, "git_dirty": dirty}
+
+
+def _run_static_update0_contract(model, output: Path) -> dict[str, Any]:
+    """Validate strict U0 identity without scheduling a new official CPU game."""
+    assert_full_schema()
+    model.assert_trainable_contract()
+    report = {
+        "schema": "0038_accelerated_u0_static_contract_v1",
+        "passed": True,
+        "official_cpu_engine_scheduled": False,
+        "source_policy_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
+        "source_value_checkpoint": "0036_v2_epoch5_pre_rl",
+        "common_update0_sha256": COMMON_UPDATE0_SHA256,
+        "representation_sha256": model.representation_sha256(),
+        "actor_schema": "0031_rule_faithful_semantic_decision_v2",
+        "followup_gate": "immutable_283_decision_cuda_training_package_parity",
+    }
+    _atomic_json(output, report)
+    return report
+
+
+def _assert_acceptance_episode_health(
+    episodes: list[Any], collector_metrics: dict[str, float], *, scope: str
+) -> dict[str, float]:
+    fallbacks = sum(
+        int(episode.diagnostics.get("macro_fallback", 0)) for episode in episodes
+    )
+    invalid = int(collector_metrics.get("rollout/invalid_macros", 0.0))
+    unsupported = sum(
+        int(episode.diagnostics.get("unsupported_effect", 0)) for episode in episodes
+    )
+    pending_resets = sum(
+        int(episode.diagnostics.get("pending_macro_reset", 0)) for episode in episodes
+    )
+    if any((fallbacks, invalid, unsupported, pending_resets)):
+        raise RuntimeError(
+            f"{scope} action-contract health failed: fallback={fallbacks}, "
+            f"invalid={invalid}, unsupported={unsupported}, pending_reset={pending_resets}"
+        )
+    return {
+        f"{scope}/fallback": 0.0,
+        f"{scope}/unsupported": 0.0,
+        f"{scope}/pending_macro_reset": 0.0,
+    }
+
+
+def _run_attested_update0_package_parity(
+    *, version: str, checkpoint: Path, artifact: Path
+) -> dict[str, Any]:
+    temporary_root = (
+        ROOT / ".tmp/evaluation/0038_accelerated_transfer" / version
+    )
+    package = temporary_root / "u0_package"
+    report_path = artifact / "update0_cuda_package_fixed_snapshot_parity.json"
+    if package.exists():
+        raise FileExistsError(f"attested U0 package path already exists: {package}")
+    manifest = export_candidate(
+        source=CANDIDATE_ROOT, checkpoint=checkpoint, output=package
+    )
+    trace = (
+        ROOT / ".tmp/evaluation/0038_semantic_parity_audit/gate_c/semantic_trace.jsonl"
+    )
+    trace_manifest = (
+        ROOT
+        / ".tmp/evaluation/0038_semantic_parity_audit/gate_c/semantic_trace_manifest.json"
+    )
+    if not trace.is_file() or not trace_manifest.is_file():
+        raise FileNotFoundError("immutable repaired-schema Gate C trace is unavailable")
+    subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "engine_cuda/tools/run_official_semantic0031_v2_parity_scaffold.py"),
+            "--manifest", str(trace_manifest),
+            "--package", str(package),
+            "--training-checkpoint", str(checkpoint),
+            "--extension-dir", str(CUDA_EXTENSION),
+            "--reuse-trace", "--trace", str(trace),
+            "--compare-decisions", "283",
+            "--require-history-wrap", "--strict",
+            "--output", str(report_path),
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    deployment = report.get("training_to_package") or {}
+    if (
+        not report.get("full_cpu_causalknowledge_parity")
+        or not deployment.get("passed")
+        or int(deployment.get("greedy_action_divergences", -1)) != 0
+    ):
+        raise RuntimeError("attested U0 CUDA/package fixed-snapshot parity failed")
+    _atomic_json(
+        artifact / "update0_package_manifest.json",
+        {
+            **manifest,
+            "diagnostic_only": True,
+            "official_cpu_engine_scheduled": False,
+            "fixed_snapshot_trace_sha256": _sha256(trace),
+        },
+    )
+    return report
+
+
 def load_frozen_opponent(device: torch.device):
     policy = PortableSemanticPolicy.from_checkpoint(SOURCE_CHECKPOINT, focal_deck())
     actor = policy.model.to(device).eval()
@@ -716,6 +871,9 @@ def run(config: RunConfig) -> dict[str, Any]:
     if config.engine_backend == "accelerated:cuda_resident":
         if not CUDA_RULES.is_file() or not (CUDA_EXTENSION / "_ptcg_cuda.so").is_file():
             raise RuntimeError("validated CUDA rules/extension artifacts are unavailable")
+    source_identity = _git_identity()
+    if config.accelerated_transfer_acceptance and source_identity["git_dirty"]:
+        raise RuntimeError("accelerated transfer acceptance requires a clean source commit")
     run_id = "0038-" + config.version.lower().replace("_", "-")
     wandb_url = f"https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/{run_id}"
     os.environ.update(
@@ -730,6 +888,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_TAGS": (
                 "0038,action_boundary,cuda_resident,full_stack,ppo,"
                 "frozen_0806_seeded_2048_v2,"
+                + ("accelerated_transfer_acceptance," if config.accelerated_transfer_acceptance else "")
                 + config.ppo.credit_clock
                 + "_clock"
             ),
@@ -749,6 +908,19 @@ def run(config: RunConfig) -> dict[str, Any]:
         "base_source_checkpoint": str(SOURCE_CHECKPOINT.relative_to(ROOT)),
         "base_source_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
         "integrated_flags": flags.metadata(),
+        **source_identity,
+        "cuda_rules_sha256": _sha256(CUDA_RULES),
+        "cuda_extension_sha256": _sha256(CUDA_EXTENSION / "_ptcg_cuda.so"),
+        "feature_preprocessing_version": FEATURE_PREPROCESSING_VERSION,
+        "action_schema_version": ACTION_BOUNDARY_SCHEMA_VERSION,
+        "decision_gate_version": DECISION_GATE_VERSION,
+        "canonicalizer_version": CANONICALIZER_VERSION,
+        "trajectory_schema_version": TRAJECTORY_SCHEMA_VERSION,
+        "official_protocol_adapter_version": OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+        "cpu_evaluation_contract": (
+            "not_scheduled_wait_for_explicit_user_checkpoint_selection"
+            if config.accelerated_transfer_acceptance else "unchanged"
+        ),
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
         "actor": "exact_0031_semantic_policy_no_reduction",
         "focal_deck_id": FOCAL_DECK_ID,
@@ -926,13 +1098,41 @@ def run(config: RunConfig) -> dict[str, Any]:
             focal_deck(), flags, device=device
         )
         opponent = load_frozen_opponent(device)
-        parity = _run_parity(model, paths["artifact"] / "large_model_0806_runtime_parity.json")
+        parity = (
+            _run_static_update0_contract(
+                model, paths["artifact"] / "large_model_0806_runtime_parity.json"
+            )
+            if config.accelerated_transfer_acceptance
+            else _run_parity(
+                model, paths["artifact"] / "large_model_0806_runtime_parity.json"
+            )
+        )
         if not parity["passed"]:
             raise RuntimeError("Large Model 0806 runtime parity did not pass")
         trainer = PPOTrainer(model, device=device, config=config.ppo)
+        transfer_controller = (
+            AcceleratedTransferController(config.accelerated_transfer)
+            if config.accelerated_transfer_acceptance else None
+        )
+        trainable_manifest = _trainable_manifest(model, trainer)
+        if transfer_controller is not None:
+            base_rates = trainer.base_learning_rates
+            trainable_manifest.update({
+                "accelerated_transfer": transfer_controller.metadata(),
+                "optimizer_group_contract": trainer.optimizer_group_manifest(),
+                "planned_update1_learning_rates": transfer_controller.learning_rates(
+                    base_rates, update=1
+                ),
+                "planned_update3_learning_rates": transfer_controller.learning_rates(
+                    base_rates, update=3
+                ),
+                "planned_update6_learning_rates": transfer_controller.learning_rates(
+                    base_rates, update=6
+                ),
+            })
         _atomic_json(
             paths["artifact"] / "trainable_parameters.json",
-            _trainable_manifest(model, trainer),
+            trainable_manifest,
         )
         representation = model.representation_sha256()
         initial_decoder = model.decoder_sha256()
@@ -948,6 +1148,15 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "parent_update0_sha256": COMMON_UPDATE0_SHA256,
                     "integrated_flags": flags.metadata(),
                     "representation_sha256": representation,
+                    **source_identity,
+                    "feature_preprocessing_version": FEATURE_PREPROCESSING_VERSION,
+                    "action_schema_version": ACTION_BOUNDARY_SCHEMA_VERSION,
+                    "decision_gate_version": DECISION_GATE_VERSION,
+                    "canonicalizer_version": CANONICALIZER_VERSION,
+                    "trajectory_schema_version": TRAJECTORY_SCHEMA_VERSION,
+                    "official_protocol_adapter_version": OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+                    "initialization_contract": "zero_shot_pretrain_common_update0_no_rl_state",
+                    "lora_initialization": "zero_delta",
                 },
             )
         _merge_status(
@@ -994,10 +1203,24 @@ def run(config: RunConfig) -> dict[str, Any]:
                 },
             )
             baseline = baseline_evaluator.collect(baseline_jobs)
+            baseline_collector_metrics = baseline_evaluator.metrics()
+            baseline_health_metrics = (
+                _assert_acceptance_episode_health(
+                    baseline, baseline_collector_metrics, scope="eval/core"
+                )
+                if transfer_controller is not None else {}
+            )
             baseline_core_outcomes = _persist_frozen_results(
                 paths["artifact"] / "frozen_results/core-update-000000.json",
                 baseline, checkpoint_update=0, panel_version=CANONICAL_CONTRACT_ID,
             )
+            update0_package_parity = None
+            if transfer_controller is not None:
+                update0_package_parity = _run_attested_update0_package_parity(
+                    version=config.version,
+                    checkpoint=paths["checkpoint"] / "update-000000.pt",
+                    artifact=paths["artifact"],
+                )
             diagnostic_evaluator = build_collector(
                 model, opponent, config, mode="greedy", record_trajectory=True
             )
@@ -1021,9 +1244,28 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "representation/sha256_unchanged": 1.0,
                     **trainer.sparse_gradient_diagnostics(diagnostic_batch),
                     **_episode_metrics(baseline, "eval/core"),
-                    **baseline_evaluator.metrics(),
+                    **baseline_collector_metrics,
+                    **baseline_health_metrics,
+                    "parity/update0_cuda_package_passed": float(
+                        update0_package_parity is None
+                        or update0_package_parity["full_cpu_causalknowledge_parity"]
+                    ),
                 },
             )
+            baseline_win_rate = sum(
+                value == 1 for value in baseline_core_outcomes.values()
+            ) / len(baseline_core_outcomes)
+            best_frozen_update = 0
+            best_frozen_win_rate = baseline_win_rate
+            frozen_below_best_streak = 0
+            _atomic_json(paths["artifact"] / "champion.json", {
+                "schema": "0038_cuda_frozen_champion_v1",
+                "checkpoint_update": 0,
+                "win_rate": baseline_win_rate,
+                "checkpoint": "checkpoint/update-000000.pt",
+                "selection_runtime": "accelerated:cuda_resident",
+                "cpu_evaluation_run": False,
+            })
             update_iterator = (
                 itertools.count(1)
                 if config.updates is None
@@ -1049,7 +1291,12 @@ def run(config: RunConfig) -> dict[str, Any]:
                 episodes = collector.collect(rollout_jobs)
                 rollout_seconds = time.perf_counter() - rollout_started
                 rollout_metrics = _episode_metrics(episodes, "rollout")
-                rollout_metrics.update(collector.metrics())
+                collector_metrics = collector.metrics()
+                rollout_metrics.update(collector_metrics)
+                if transfer_controller is not None:
+                    rollout_metrics.update(_assert_acceptance_episode_health(
+                        episodes, collector_metrics, scope="rollout"
+                    ))
                 rollout_metrics["rollout/wall_seconds"] = rollout_seconds
                 cumulative_episodes += len(episodes)
                 cumulative_decisions += int(rollout_metrics["rollout/decisions"])
@@ -1066,7 +1313,59 @@ def run(config: RunConfig) -> dict[str, Any]:
                 ppo_metrics = {}
                 if is_sparse_diagnostic_update(update):
                     ppo_metrics.update(trainer.sparse_gradient_diagnostics(diagnostic_batch))
-                ppo_metrics.update(trainer.update(batch, update=update))
+                rollback_retries = 0
+                applied_actor_multiplier = 1.0
+                if transfer_controller is None:
+                    ppo_metrics.update(trainer.update(batch, update=update))
+                else:
+                    trainable_before = trainer.snapshot_trainable_state()
+                    cpu_rng_before = torch.get_rng_state()
+                    cuda_rng_before = torch.cuda.get_rng_state_all()
+                    while True:
+                        applied_actor_multiplier = transfer_controller.actor_multiplier(update)
+                        trainer.set_group_learning_rates(
+                            transfer_controller.learning_rates(
+                                trainer.base_learning_rates, update=update
+                            )
+                        )
+                        attempt_metrics = trainer.update(batch, update=update)
+                        health = transfer_controller.health(attempt_metrics)
+                        if health.rollback:
+                            trainer.restore_trainable_state(
+                                trainable_before, reset_optimizer=True
+                            )
+                            torch.set_rng_state(cpu_rng_before)
+                            torch.cuda.set_rng_state_all(cuda_rng_before)
+                            rollback_retries += 1
+                            transfer_controller.reduce_actor_cap(
+                                current_multiplier=applied_actor_multiplier
+                            )
+                            if rollback_retries > 2:
+                                raise RuntimeError(
+                                    "accelerated PPO exceeded rollback retry budget"
+                                )
+                            continue
+                        ppo_metrics.update(attempt_metrics)
+                        if (
+                            health.reduce_actor_lr
+                            and applied_actor_multiplier > 3.0
+                        ):
+                            transfer_controller.reduce_actor_cap(
+                                current_multiplier=applied_actor_multiplier
+                            )
+                        ppo_metrics.update({
+                            "accelerated/actor_lr_multiplier": applied_actor_multiplier,
+                            "accelerated/value_lr_multiplier": (
+                                transfer_controller.config.value_multiplier
+                            ),
+                            "accelerated/actor_lr_cap_next": transfer_controller.actor_cap,
+                            "accelerated/health_warning": float(health.warning),
+                            "accelerated/lr_reduction_triggered": float(
+                                health.reduce_actor_lr
+                            ),
+                            "accelerated/rollback_retries": float(rollback_retries),
+                        })
+                        break
                 ppo_seconds = time.perf_counter() - ppo_started
                 checkpoint = paths["checkpoint"] / f"update-{update:06d}.pt"
                 digest = save_model_only(
@@ -1081,6 +1380,22 @@ def run(config: RunConfig) -> dict[str, Any]:
                         "representation_sha256": representation,
                         "opponent_snapshot": "artifact/opponent_snapshot.json",
                         "parity_report": "artifact/large_model_0806_runtime_parity.json",
+                        "accelerated_transfer": (
+                            transfer_controller.metadata()
+                            if transfer_controller is not None else None
+                        ),
+                        "actor_lr_multiplier": applied_actor_multiplier,
+                        "value_lr_multiplier": (
+                            transfer_controller.config.value_multiplier
+                            if transfer_controller is not None else 1.0
+                        ),
+                        "feature_preprocessing_version": FEATURE_PREPROCESSING_VERSION,
+                        "action_schema_version": ACTION_BOUNDARY_SCHEMA_VERSION,
+                        "decision_gate_version": DECISION_GATE_VERSION,
+                        "canonicalizer_version": CANONICALIZER_VERSION,
+                        "trajectory_schema_version": TRAJECTORY_SCHEMA_VERSION,
+                        "official_protocol_adapter_version": OFFICIAL_PROTOCOL_ADAPTER_VERSION,
+                        **source_identity,
                     },
                 )
                 completed_update = update
@@ -1123,6 +1438,14 @@ def run(config: RunConfig) -> dict[str, Any]:
                     )["environment_sha256"]:
                         raise RuntimeError("fixed evaluation schedule changed across checkpoints")
                     evaluation = evaluator.collect(evaluation_jobs)
+                    evaluation_collector_metrics = evaluator.metrics()
+                    evaluation_health_metrics = (
+                        _assert_acceptance_episode_health(
+                            evaluation, evaluation_collector_metrics,
+                            scope="eval/core",
+                        )
+                        if transfer_controller is not None else {}
+                    )
                     checkpoint_outcomes = _persist_frozen_results(
                         paths["artifact"] / f"frozen_results/core-update-{update:06d}.json",
                         evaluation, checkpoint_update=update,
@@ -1132,9 +1455,38 @@ def run(config: RunConfig) -> dict[str, Any]:
                     metrics.update(_paired_frozen_metrics(
                         baseline_core_outcomes, checkpoint_outcomes, "eval/core"
                     ))
-                    metrics.update(evaluator.metrics())
+                    metrics.update(evaluation_collector_metrics)
+                    metrics.update(evaluation_health_metrics)
                     metrics["eval/checkpoint_update"] = update
                     metrics["eval/wall_seconds"] = time.perf_counter() - eval_started
+                    frozen_win_rate = sum(
+                        value == 1 for value in checkpoint_outcomes.values()
+                    ) / len(checkpoint_outcomes)
+                    if frozen_win_rate > best_frozen_win_rate:
+                        best_frozen_win_rate = frozen_win_rate
+                        best_frozen_update = update
+                        frozen_below_best_streak = 0
+                        _atomic_json(paths["artifact"] / "champion.json", {
+                            "schema": "0038_cuda_frozen_champion_v1",
+                            "checkpoint_update": update,
+                            "win_rate": frozen_win_rate,
+                            "delta_vs_update0": frozen_win_rate - baseline_win_rate,
+                            "checkpoint": f"checkpoint/update-{update:06d}.pt",
+                            "selection_runtime": "accelerated:cuda_resident",
+                            "cpu_evaluation_run": False,
+                        })
+                    else:
+                        frozen_below_best_streak += 1
+                    metrics.update({
+                        "eval/champion_update": float(best_frozen_update),
+                        "eval/champion_win_rate": best_frozen_win_rate,
+                        "eval/below_best_consecutive_points": float(
+                            frozen_below_best_streak
+                        ),
+                        "eval/degradation_warning": float(
+                            frozen_below_best_streak >= 3
+                        ),
+                    })
                 logger.log(update, metrics)
                 _merge_status(
                     paths["artifact"] / "status.json",
@@ -1171,6 +1523,16 @@ def run(config: RunConfig) -> dict[str, Any]:
             "final_decoder_sha256": model.decoder_sha256(),
             "checkpoint_retention": "all",
             "wandb_url": wandb_url,
+            "cuda_champion_update": best_frozen_update,
+            "cuda_champion_win_rate": best_frozen_win_rate,
+            "cuda_champion_delta_vs_update0": (
+                best_frozen_win_rate - baseline_win_rate
+            ),
+            "cpu_evaluation_scheduled": False,
+            "accelerated_transfer": (
+                transfer_controller.metadata()
+                if transfer_controller is not None else None
+            ),
         }
         _atomic_json(paths["artifact"] / "training_summary.json", summary)
         _merge_status(paths["artifact"] / "status.json", summary)
@@ -1240,6 +1602,7 @@ def main() -> int:
     parser.add_argument("--wandb-mode", choices=("online", "offline"), default="online")
     parser.add_argument("--launch-formal", action="store_true")
     parser.add_argument("--resume-update0", action="store_true")
+    parser.add_argument("--accelerated-transfer-acceptance", action="store_true")
     args = parser.parse_args()
     if args.gate_output is not None:
         report = run_gate(
@@ -1283,6 +1646,7 @@ def main() -> int:
             wandb_mode=args.wandb_mode,
             launch_formal=args.launch_formal,
             resume_update0=args.resume_update0,
+            accelerated_transfer_acceptance=args.accelerated_transfer_acceptance,
             ppo=PPOConfig(
                 gae_lambda=args.gae_lambda,
                 credit_clock=args.credit_clock,

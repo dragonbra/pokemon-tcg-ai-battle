@@ -27,7 +27,7 @@ SOURCE_SCHEMA = "0031_shared_prototype_fp16_storage_candidate_checkpoint_v1"
 SOURCE_RUNTIME_SCHEMA = (
     "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
 )
-OUTPUT_SCHEMA = "0038_compound_kaggle_candidate_v3"
+OUTPUT_SCHEMA = "0038_compound_kaggle_candidate_v4"
 SOURCE_SCHEMAS = frozenset({SOURCE_SCHEMA, SOURCE_RUNTIME_SCHEMA})
 BASE_SCHEMA = "0031_model_only_checkpoint_v1"
 BASE_SHA256 = "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
@@ -35,7 +35,6 @@ BASE_CHECKPOINT = (
     ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 )
 RL_SCHEMA = "0038_model_only_checkpoint_v1"
-EXPECTED_VERSION = "V10_complete_512_rollout_fresh_rl"
 RUNTIME_ROOT = ROOT / "train/0038_action_boundary_rl/kaggle_runtime"
 ACTION_BOUNDARY_ROOT = ROOT / "train/0038_action_boundary_rl/action_boundary"
 SEMANTIC_RUNTIME_ROOT = ROOT / "train/0038_action_boundary_rl/semantic_policy"
@@ -222,14 +221,13 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
     if (
         rl_payload.get("schema_version") != RL_SCHEMA
         or metadata.get("project") != PROJECT_ID
-        or metadata.get("version") != EXPECTED_VERSION
+        or metadata.get("version") != checkpoint.parent.parent.name
         or adaptation != expected_adaptation
         or not flags.get("enable_action_boundary")
         or not flags.get("enable_forced_shortcut")
         or not flags.get("enable_dragapult_macro")
-        or not flags.get("enable_opponent_meta_conditioning")
     ):
-        raise ValueError("checkpoint is not the audited 0038 V10 compound policy")
+        raise ValueError("checkpoint is not an audited 0038 compound policy")
     checkpoint_sha256 = _checkpoint_sidecar(checkpoint)
     frozen = _frozen_selection(checkpoint, checkpoint_update)
     if _sha256(BASE_CHECKPOINT) != BASE_SHA256:
@@ -253,6 +251,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             f"{module_name}.parametrizations.in_proj_weight.0."
         )
         lora_names.update(prefix + suffix for suffix in ("q_a", "q_b", "v_a", "v_b"))
+    meta_enabled = bool(flags.get("enable_opponent_meta_conditioning"))
     deployed_prefixes = (
         "allocation_head.", "opponent_meta_head.", "opponent_meta_conditioner."
     )
@@ -266,8 +265,8 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
         )
         or not value_names
         or not any(name.startswith("allocation_head.") for name in deployed_names)
-        or not any(name.startswith("opponent_meta_head.") for name in deployed_names)
-        or not any(name.startswith("opponent_meta_conditioner.") for name in deployed_names)
+        or (meta_enabled != any(name.startswith("opponent_meta_head.") for name in deployed_names))
+        or (meta_enabled != any(name.startswith("opponent_meta_conditioner.") for name in deployed_names))
     ):
         raise ValueError("0038 trainable tensor inventory is incomplete or unexpected")
 
@@ -317,6 +316,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
         "source_policy_update": metadata.get("source_policy_update"),
         "actor_metadata": source_payload["metadata"],
         "opponent_meta_class_count": int(flags["opponent_meta_class_count"]),
+        "enable_opponent_meta_conditioning": meta_enabled,
         "action_schema_version": ACTION_BOUNDARY_SCHEMA_VERSION,
         "decision_gate_version": DECISION_GATE_VERSION,
         "canonicalizer_version": CANONICALIZER_VERSION,
@@ -420,7 +420,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
                 "forced_observe_only": True,
                 "phantom_allocation_head": True,
                 "official_primitive_transaction": True,
-                "opponent_meta_conditioning": True,
+                "opponent_meta_conditioning": meta_enabled,
             },
             "semantic_runtime_source": str(SEMANTIC_RUNTIME_ROOT.relative_to(ROOT)),
             "prototype_embedding_cache": {
@@ -439,7 +439,7 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
             "critic_runtime_role": "strict-loaded diagnostic only; excluded from select()",
             "frozen_evaluation": frozen,
             "selection": (
-                f"V10 update{checkpoint_update} canonical Frozen-0806 greedy "
+                f"{metadata.get('version')} update{checkpoint_update} canonical Frozen-0806 greedy "
                 f"{frozen['wins']}-{frozen['losses']} "
                 f"({frozen['win_rate'] * 100:.8f}%), 0 error"
             ),

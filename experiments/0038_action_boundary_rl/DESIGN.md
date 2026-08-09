@@ -146,4 +146,24 @@ V9 完成 update 2 后因 rollout 效率合同变更停止；其 2,048→512 tra
 
 这次没有修改 `engine/source/`、official ABI/observation schema、checkpoint tensors、reward、学习率或模型结构。不过 U230 权重是在上述 feature 修复前的 CUDA 输入分布上通过 PPO 得到的，运行时 Gate PASS 不能恢复它的训练分布。因此 U230 继续是不可提交、不可续训的诊断 checkpoint。release manifest 会在 checkpoint metadata 缺少当前 `0038_cpu_authoritative_cuda_feature_parity_v1` attestation 时 fail closed。
 
-下一阶段只能从原始 Zero-Shot/Pretrain 权重建立修复后 U0，先做 CUDA vs packaged official CPU parity，再经人工确认运行最多 5～10 updates canary；不得从 U215/U230 继续。完整证据、修改文件、命令与风险见仓库根 `SEMANTIC_PARITY_AUDIT.md`。
+下一阶段只能从原始 Zero-Shot/Pretrain 权重建立修复后 U0；不得从 U215/U230 继续。完整证据、修改文件、命令与风险见仓库根 `SEMANTIC_PARITY_AUDIT.md`。
+
+## V11 Accelerated RL Transfer Acceptance
+
+V11 是全新的 on-policy 轨迹：从 common update-0 加载 Zero-Shot core、pre-RL `V_win`、BC allocation head 与 fresh zero-delta Q/V LoRA；optimizer、RNG、rollout、old logprob 和 GAE 全部重新生成。它不加载任何 U215/U225/U230/U255 或其他 PPO 权重。
+
+本轮显式使用 `PRIZE` preset：保留 0038 已有 directional Prize auxiliary 和只读 Tempo metrics，但关闭 Opponent Meta、Meta conditioning、Tempo curriculum/loss 以及所有后续 Seat/Plan/Search 结构。训练合同固定为 CUDA resident、每 update 两个 256-slot unit 共 512 局、全部 trajectory 入池、`fixed_optimizer_budget=32`、physical minibatch 1024、accumulation 1。
+
+实际 V10 base LR 与 V11 加速计划如下：
+
+| optimizer group | base LR | U1–2 | U3–5 | U6+ 健康上限 | gradient source |
+|---|---:|---:|---:|---:|---|
+| Action Decoder | 1e-5 | 3e-5 | 5e-5 | 1e-4 | policy/entropy/reference-KL/Prize actor |
+| Allocation Head | 1e-5 | 3e-5 | 5e-5 | 1e-4 | allocation policy/entropy/Prize actor |
+| Last Option Q/V LoRA | 3e-5 | 9e-5 | 1.5e-4 | 3e-4 | shared Actor path |
+| V_win | 1e-4 | 2e-4 | 2e-4 | 2e-4 | terminal win Value only |
+| V_prize | 1e-4 | 2e-4 | 2e-4 | 2e-4 | directional Prize Value only |
+
+Behavior KL `>0.005` warning，`>0.01` 将后续 Actor cap 从 10→5→3；`≥0.02` 或 KL early-stop 会撤销本次所有 trainable tensor、清空 optimizer state 并用较低 cap 重试同一 on-policy batch。clip fraction `>10%` warning、`>30%` 同样回滚；NaN/Inf、old-logprob replay mismatch、invalid/fallback/unsupported/pending reset 直接 fail closed。
+
+U0 与之后每 5 updates 只运行 CUDA Frozen-2048。U0 package parity 使用已经固化的 283-decision official snapshot，不启动新的 CPU 对局：比较 repaired CUDA feature、training checkpoint、strict portable package 的 tensor、mask、root/allocation intent 与 Value。正式 run 不设 update 上限，在完整 update 边界响应 `STOP_REQUESTED`；前 50 updates 只是观察窗口。CPU engine 评测不自动调度，必须等用户查看曲线并指定 checkpoint 后另行执行。

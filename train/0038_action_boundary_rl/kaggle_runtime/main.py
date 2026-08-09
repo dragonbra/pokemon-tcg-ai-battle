@@ -29,7 +29,7 @@ def _sha256(path):
 def _validate_package_manifest():
     manifest_path = ROOT / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != "0038_compound_kaggle_candidate_v3":
+    if manifest.get("schema_version") != "0038_compound_kaggle_candidate_v4":
         raise RuntimeError("0038 package manifest schema mismatch")
     expected = manifest.get("package_file_sha256")
     if not isinstance(expected, dict) or not expected:

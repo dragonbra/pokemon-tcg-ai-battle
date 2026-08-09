@@ -25,7 +25,7 @@ from .online_runtime import OnlineCausalEncoder, _prototype_paths
 from .value_network import LatentQueryValueHead
 
 
-SCHEMA_VERSION = "0038_compound_kaggle_candidate_v3"
+SCHEMA_VERSION = "0038_compound_kaggle_candidate_v4"
 PROTOTYPES = (
     Path(__file__).resolve().parents[1]
     / "assets/official_full_engine_prototypes_v2.json"
@@ -94,6 +94,20 @@ class OpponentMetaConditioner(nn.Module):
         return state_summary + self.output(distribution @ self.archetype_embeddings)
 
 
+class DisabledOpponentMetaHead(nn.Module):
+    def __init__(self, classes: int) -> None:
+        super().__init__()
+        self.classes = classes
+
+    def forward(self, state_summary):
+        return state_summary.new_zeros((state_summary.shape[0], self.classes))
+
+
+class DisabledOpponentMetaConditioner(nn.Module):
+    def forward(self, state_summary, logits):
+        return state_summary
+
+
 class PortableCompoundSemanticPolicy:
     """Greedy 0038 actor with forced shortcuts and cached macro expansion."""
 
@@ -157,9 +171,14 @@ class PortableCompoundSemanticPolicy:
         classes = int(metadata["opponent_meta_class_count"])
         allocation_head = DragapultAllocationHead(width)
         allocation_head.load_state_dict(payload["allocation_head_state_dict"], strict=True)
-        meta_head = OpponentMetaHead(width, classes)
+        meta_enabled = bool(metadata.get("enable_opponent_meta_conditioning", True))
+        if meta_enabled:
+            meta_head = OpponentMetaHead(width, classes)
+            conditioner = OpponentMetaConditioner(width, classes)
+        else:
+            meta_head = DisabledOpponentMetaHead(classes)
+            conditioner = DisabledOpponentMetaConditioner()
         meta_head.load_state_dict(payload["opponent_meta_head_state_dict"], strict=True)
-        conditioner = OpponentMetaConditioner(width, classes)
         conditioner.load_state_dict(
             payload["opponent_meta_conditioner_state_dict"], strict=True
         )
