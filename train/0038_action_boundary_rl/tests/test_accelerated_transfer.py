@@ -83,7 +83,7 @@ class AcceleratedTransferTest(unittest.TestCase):
             "fixed_283_primitive_trace.jsonl"
         )
         self.assertTrue(trace.is_file())
-        self.assertEqual(sum(bool(line.strip()) for line in trace.open()), 283)
+        self.assertEqual(sum(bool(line.strip()) for line in trace.read_text().splitlines()), 283)
         self.assertEqual(
             hashlib.sha256(trace.read_bytes()).hexdigest(),
             runner.IMMUTABLE_GATE_C_TRACE_SHA256,

@@ -696,7 +696,7 @@ def _run_attested_update0_package_parity(
         raise FileNotFoundError("immutable repaired-schema Gate C trace is unavailable")
     if (
         _sha256(trace) != IMMUTABLE_GATE_C_TRACE_SHA256
-        or sum(1 for line in trace.open(encoding="utf-8") if line.strip()) != 283
+        or sum(bool(line.strip()) for line in trace.read_text(encoding="utf-8").splitlines()) != 283
     ):
         raise RuntimeError("immutable 283-decision Gate C trace identity mismatch")
     subprocess.run(
