@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-V11 实现/验收准备中。本文件是长期运行的简明事实页；CUDA U0、每 5 updates Frozen 曲线和 champion 会在正式 run 产物中持续记录。CPU 对局不会自动调度，需用户后续指定 checkpoint。
+V11 在写出 U0 前被 checkpoint action-contract validator fail closed；没有 Frozen、rollout 或 PPO。根因是旧 validator 只接受 pre-audit v1/v2 metadata，而 repaired runtime 已升级为 compound v2 / official adapter v3。失败资产按迭代合同保留，新正式 run 使用 V12。本文件是长期运行的简明事实页；CUDA U0、每 5 updates Frozen 曲线和 champion 会在 V12 产物中持续记录。CPU 对局不会自动调度，需用户后续指定 checkpoint。
 
 ## U0 初始化合同
 
@@ -32,7 +32,7 @@ V11 实现/验收准备中。本文件是长期运行的简明事实页；CUDA U
 | Opponent Meta Head（V10） | 1e-4 | disabled | disabled | disabled | 110,743 | V10 classification；本轮禁止 |
 | Opponent conditioner（V10） | 1e-5 | disabled | disabled | disabled | 110,080 | V10 Actor conditioning；本轮禁止 |
 
-V10 实际共 7 个 optimizer groups；上表已全部列出。Local output LayerNorm 在 V10/V11 都关闭，不构成 optimizer group。正式 `trainable_parameters.json` 会从实际构造模型重新统计，不能以本表替代 runtime inventory。
+V10 实际共 7 个 optimizer groups；上表已全部列出。Local output LayerNorm 在 V10/V12 都关闭，不构成 optimizer group。正式 `trainable_parameters.json` 会从实际构造模型重新统计，不能以本表替代 runtime inventory。
 
 ## 运行合同
 

@@ -71,7 +71,7 @@ from ..action_boundary.contracts import (
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0038_action_boundary_rl"
 WANDB_DISPLAY_PREFIX = "0038 · action_boundary"
-FORMAL_VERSION = "V11_accelerated_transfer_acceptance"
+FORMAL_VERSION = "V12_accelerated_transfer_acceptance"
 SOURCE_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
 CANDIDATE_ROOT = ROOT / "evaluation/arena/candidates/0034_dragapult_third_large_model_zero_shot"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
@@ -174,7 +174,7 @@ class RunConfig:
         if self.preset_name not in PRESETS:
             raise ValueError("invalid integrated preset")
         if self.version == FORMAL_VERSION and not self.accelerated_transfer_acceptance:
-            raise ValueError("V11 requires the accelerated transfer acceptance contract")
+            raise ValueError("V12 requires the accelerated transfer acceptance contract")
         if self.accelerated_transfer_acceptance:
             if self.updates is not None:
                 raise ValueError("accelerated transfer acceptance must run until manual stop")

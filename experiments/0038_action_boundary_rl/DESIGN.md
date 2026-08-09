@@ -148,13 +148,13 @@ V9 完成 update 2 后因 rollout 效率合同变更停止；其 2,048→512 tra
 
 下一阶段只能从原始 Zero-Shot/Pretrain 权重建立修复后 U0；不得从 U215/U230 继续。完整证据、修改文件、命令与风险见仓库根 `SEMANTIC_PARITY_AUDIT.md`。
 
-## V11 Accelerated RL Transfer Acceptance
+## V12 Accelerated RL Transfer Acceptance
 
-V11 是全新的 on-policy 轨迹：从 common update-0 加载 Zero-Shot core、pre-RL `V_win`、BC allocation head 与 fresh zero-delta Q/V LoRA；optimizer、RNG、rollout、old logprob 和 GAE 全部重新生成。它不加载任何 U215/U225/U230/U255 或其他 PPO 权重。
+V11 在保存 U0 前因旧 checkpoint validator 不接受 repaired action-contract metadata 而 fail closed；未运行 Frozen、rollout 或 PPO，目录保留为失败审计。V12 是全新的 on-policy 轨迹：从 common update-0 加载 Zero-Shot core、pre-RL `V_win`、BC allocation head 与 fresh zero-delta Q/V LoRA；optimizer、RNG、rollout、old logprob 和 GAE 全部重新生成。它不加载任何 U215/U225/U230/U255 或其他 PPO 权重。
 
 本轮显式使用 `PRIZE` preset：保留 0038 已有 directional Prize auxiliary 和只读 Tempo metrics，但关闭 Opponent Meta、Meta conditioning、Tempo curriculum/loss 以及所有后续 Seat/Plan/Search 结构。训练合同固定为 CUDA resident、每 update 两个 256-slot unit 共 512 局、全部 trajectory 入池、`fixed_optimizer_budget=32`、physical minibatch 1024、accumulation 1。
 
-实际 V10 base LR 与 V11 加速计划如下：
+实际 V10 base LR 与 V12 加速计划如下：
 
 | optimizer group | base LR | U1–2 | U3–5 | U6+ 健康上限 | gradient source |
 |---|---:|---:|---:|---:|---|

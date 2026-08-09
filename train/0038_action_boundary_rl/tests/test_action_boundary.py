@@ -243,6 +243,26 @@ class CheckpointContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "forbidden"):
             checkpoint_module.validate_model_only_payload(payload)
 
+    def test_current_and_complete_legacy_contracts_are_accepted_but_mixed_is_not(self):
+        current = checkpoint_module.checkpoint_metadata(
+            source_actor_sha256="actor", source_value_sha256="value"
+        )
+        checkpoint_module.validate_model_only_payload({
+            "schema_version": checkpoint_module.CHECKPOINT_SCHEMA_VERSION,
+            "metadata": current,
+        })
+        legacy = {**current, **checkpoint_module.LEGACY_ACTION_CONTRACT}
+        checkpoint_module.validate_model_only_payload({
+            "schema_version": checkpoint_module.CHECKPOINT_SCHEMA_VERSION,
+            "metadata": legacy,
+        })
+        mixed = {**current, "action_schema_version": legacy["action_schema_version"]}
+        with self.assertRaisesRegex(ValueError, "action contract"):
+            checkpoint_module.validate_model_only_payload({
+                "schema_version": checkpoint_module.CHECKPOINT_SCHEMA_VERSION,
+                "metadata": mixed,
+            })
+
 
 if __name__ == "__main__":
     unittest.main()
