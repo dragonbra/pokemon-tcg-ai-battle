@@ -21,6 +21,22 @@ def _sha256(path: Path) -> str:
 
 
 def _package_contract(package_root: Path) -> dict[str, Any]:
+    if package_root.is_file():
+        payload = json.loads(package_root.read_text(encoding="utf-8"))
+        required = {
+            "maximum_macro_targets",
+            "macro_protocol_fail_closed",
+            "package_manifest_sha256",
+            "source_evidence",
+        }
+        missing = sorted(required - payload.keys())
+        if missing:
+            raise ValueError(f"immutable package contract missing fields: {missing}")
+        return {
+            "root": str(package_root.resolve()),
+            "evidence_file_sha256": _sha256(package_root),
+            **payload,
+        }
     source_path = package_root / "strategy/deployment/compound_inference.py"
     source = source_path.read_text(encoding="utf-8")
     limit = 8 if "1 <= len(raw_bench) <= 8" in source else (

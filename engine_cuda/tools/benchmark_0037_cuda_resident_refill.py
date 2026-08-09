@@ -156,6 +156,18 @@ def main() -> int:
             "focal_losses": focal_losses,
             "draws": count - focal_wins - focal_losses,
         },
+        # These arrays are already collected by the resident scheduler before a
+        # terminal lane is reset. Serializing them adds no model forward and no
+        # device-side hot-path instrumentation. Strategic/action-family counts
+        # are deliberately not inferred from official selection callbacks.
+        "per_game_diagnostics": {
+            "schema": "cuda_resident_terminal_diagnostics_v1",
+            "terminal_turns": list(result.terminal_turns),
+            "engine_selections": list(result.engine_selections),
+            "terminal_prize_counts": [
+                list(row) for row in result.terminal_prize_counts
+            ],
+        },
         "progress_guard": {
             "ability_repeat_limit": args.ability_repeat_limit,
             "forfeit_count": len(result.forfeit_schedule_indices),

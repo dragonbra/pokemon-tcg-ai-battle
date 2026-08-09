@@ -47,6 +47,11 @@ CUDA_EXTENSION = (
 )
 OFFICIAL_CPU_LIBRARY = ROOT / "engine/build/seeded_official/0002/libcg.so"
 CARD_DATABASE = ROOT / "data/official/EN_Card_Data.csv"
+ARCHIVED_U230_INVENTORY_FIXTURE = (
+    ROOT
+    / "train/0038_action_boundary_rl/tests/fixtures/semantic_parity_v1/"
+    "u230_package_load_report.json"
+)
 
 
 def _sha256(path: Path) -> str:
@@ -151,6 +156,33 @@ print(json.dumps({
     if not lines:
         raise RuntimeError("strict package startup emitted no load report")
     return json.loads(lines[-1])
+
+
+def load_archived_runtime_inventory_fixture(
+    fixture: Path = ARCHIVED_U230_INVENTORY_FIXTURE,
+) -> dict[str, Any]:
+    """Load a hash-validated inventory captured before package retirement."""
+
+    from .freeze_regression_fixtures import validate_fixtures
+
+    fixture = fixture.resolve()
+    manifest = validate_fixtures(fixture.parent)
+    registered = {entry["path"] for entry in manifest["entries"]}
+    if fixture.name not in registered:
+        raise ValueError("runtime inventory fixture is not registered in its manifest")
+    payload = json.loads(fixture.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != "0038_u230_package_load_prefx_fixture_v1":
+        raise ValueError("archived runtime inventory fixture schema mismatch")
+    report = payload.get("load_report")
+    if not isinstance(report, dict):
+        raise ValueError("archived runtime inventory fixture has no load report")
+    required_sections = {"checkpoint", "contracts", "package", "runtime"}
+    if not required_sections.issubset(report):
+        raise ValueError("archived runtime inventory load report is incomplete")
+    source_manifest_sha256 = manifest["sources"]["package_manifest_sha256"]
+    if report["package"].get("manifest_sha256") != source_manifest_sha256:
+        raise ValueError("archived package manifest identity mismatch")
+    return report
 
 
 def build_runtime_inventory(*, checkpoint: Path, package_root: Path) -> dict[str, Any]:
@@ -371,4 +403,8 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = ["build_runtime_inventory"]
+__all__ = [
+    "ARCHIVED_U230_INVENTORY_FIXTURE",
+    "build_runtime_inventory",
+    "load_archived_runtime_inventory_fixture",
+]

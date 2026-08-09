@@ -50,8 +50,11 @@ def build_cuda_schedule(
     *,
     focal_deck_id: str,
     entries: Iterable[Any],
-    evaluation_seed: int = EVALUATION_SEED,
+    evaluation_seed: int | None = None,
 ) -> dict[str, Any]:
+    evaluation_seed = EVALUATION_SEED if evaluation_seed is None else int(evaluation_seed)
+    if evaluation_seed < 0:
+        raise ValueError("evaluation_seed cannot be negative")
     jobs: list[dict[str, Any]] = []
     entries = tuple(entries)
     if not entries or any(int(entry.games) < 1 for entry in entries):
@@ -192,6 +195,10 @@ def merge_cuda_chunk_results(
     wall_seconds = gpu_seconds = 0.0
     routed_rows = completed_games = errors = 0
     peak_allocated = peak_reserved = 0
+    terminal_turns: list[int] = []
+    engine_selections: list[int] = []
+    terminal_prize_counts: list[list[int]] = []
+    diagnostic_chunks = 0
     for chunk in ordered:
         collector = chunk["collector"]
         schedule = chunk["schedule"]
@@ -214,6 +221,24 @@ def merge_cuda_chunk_results(
         routed_rows += int(collector["routed_ready_rows"])
         game_results.extend(int(value) for value in results)
         terminal_hashes.append(str(chunk["determinism"]["terminal_state_sha256"]))
+        diagnostics = chunk.get("per_game_diagnostics")
+        if diagnostics is not None:
+            diagnostic_chunks += 1
+            if (
+                not isinstance(diagnostics, dict)
+                or len(diagnostics.get("terminal_turns", [])) != games
+                or len(diagnostics.get("engine_selections", [])) != games
+                or len(diagnostics.get("terminal_prize_counts", [])) != games
+            ):
+                raise ValueError("CUDA per-game diagnostics do not match chunk size")
+            terminal_turns.extend(int(value) for value in diagnostics["terminal_turns"])
+            engine_selections.extend(
+                int(value) for value in diagnostics["engine_selections"]
+            )
+            terminal_prize_counts.extend(
+                [int(row[0]), int(row[1])]
+                for row in diagnostics["terminal_prize_counts"]
+            )
         forfeits.extend(
             int(value)
             for value in chunk["progress_guard"]["forfeit_schedule_indices"]
@@ -226,6 +251,8 @@ def merge_cuda_chunk_results(
         )
     if cursor != expected_games:
         raise ValueError(f"CUDA chunks cover {cursor}, expected {expected_games}")
+    if diagnostic_chunks not in {0, len(ordered)}:
+        raise ValueError("CUDA chunks must either all include diagnostics or all omit them")
     merged = copy.deepcopy(ordered[0])
     merged["schema_version"] = "cuda_semantic0031_rollout_chunked_v1"
     merged["collector"].update(
@@ -265,6 +292,13 @@ def merge_cuda_chunk_results(
             "torch_peak_reserved_bytes": peak_reserved,
         }
     )
+    if terminal_turns:
+        merged["per_game_diagnostics"] = {
+            "schema": "cuda_resident_terminal_diagnostics_v1",
+            "terminal_turns": terminal_turns,
+            "engine_selections": engine_selections,
+            "terminal_prize_counts": terminal_prize_counts,
+        }
     return merged
 
 
@@ -285,6 +319,30 @@ def build_cuda_game_records(
         int(index)
         for index in progress_guard.get("turn_limit_draw_schedule_indices", [])
     }
+    diagnostics = result.get("per_game_diagnostics")
+    collector = result.get("collector")
+    successful_engine_run = (
+        result.get("passed") is True
+        and isinstance(collector, dict)
+        and int(collector.get("completed_games", -1)) == len(jobs)
+        and int(collector.get("errors", -1)) == 0
+    )
+    terminal_turns: list[Any] = []
+    engine_selections: list[Any] = []
+    terminal_prize_counts: list[Any] = []
+    if diagnostics is not None:
+        if not isinstance(diagnostics, dict):
+            raise ValueError("CUDA per-game diagnostics must be a mapping")
+        terminal_turns = list(diagnostics.get("terminal_turns", []))
+        engine_selections = list(diagnostics.get("engine_selections", []))
+        terminal_prize_counts = list(diagnostics.get("terminal_prize_counts", []))
+        if not (
+            len(terminal_turns)
+            == len(engine_selections)
+            == len(terminal_prize_counts)
+            == len(jobs)
+        ):
+            raise ValueError("CUDA per-game diagnostics/result lengths differ")
     records: list[dict[str, Any]] = []
     for index, (job, raw_result) in enumerate(zip(jobs, outcomes, strict=True)):
         focal_player = 0 if bool(job["focal_first"]) else 1
@@ -294,16 +352,42 @@ def build_cuda_game_records(
         lost = (focal_player == 0 and raw_result == 2) or (
             focal_player == 1 and raw_result == 1
         )
-        records.append(
-            {
-                **job,
-                "schedule_index": index,
-                "raw_engine_result": int(raw_result),
-                "focal_outcome": "win" if won else "loss" if lost else "draw",
-                "repeat_forfeit": index in forfeits,
-                "turn_limit_draw": index in turn_limit_draws,
-            }
-        )
+        record = {
+            **job,
+            "schedule_index": index,
+            "raw_engine_result": int(raw_result),
+            "focal_outcome": "win" if won else "loss" if lost else "draw",
+            "repeat_forfeit": index in forfeits,
+            "turn_limit_draw": index in turn_limit_draws,
+        }
+        if successful_engine_run:
+            # This is derived from the fail-closed benchmark contract: any
+            # engine status=error aborts without publishing a passed result.
+            record["error"] = False
+            record["continuation_error"] = False
+        if diagnostics is not None:
+            raw_turn = int(terminal_turns[index])
+            raw_prizes = terminal_prize_counts[index]
+            if (
+                not isinstance(raw_prizes, (list, tuple))
+                or len(raw_prizes) != 2
+            ):
+                raise ValueError(f"invalid terminal prize counts at game {index}")
+            prize_counts = (int(raw_prizes[0]), int(raw_prizes[1]))
+            focal_prizes = prize_counts[focal_player]
+            opponent_prizes = prize_counts[1 - focal_player]
+            record.update(
+                {
+                    "terminal_turn": raw_turn,
+                    "game_length": (raw_turn + 1) // 2,
+                    "engine_selections": int(engine_selections[index]),
+                    "terminal_prize_counts": list(prize_counts),
+                    # (focal prizes taken - opponent prizes taken); the common
+                    # six-Prize initial count cancels.
+                    "prize_differential": opponent_prizes - focal_prizes,
+                }
+            )
+        records.append(record)
     return records
 
 
@@ -311,8 +395,12 @@ def _game_evidence(candidate: Any, result: dict[str, Any]) -> dict[str, Any]:
     number = str(candidate.package_manifest["frozen_deck_number"])
     schedule = json.loads(_schedule_path(number).read_text(encoding="utf-8"))
     return {
-        "schema": "policy_0806_cuda_seeded2048_games_v1",
-        "contract_id": "frozen_0806_seeded_2048_v2",
+        "schema": "policy_0806_cuda_seeded2048_games_v2_terminal_diagnostics",
+        "contract_id": (
+            "frozen_0806_seeded_2048_v2"
+            if EVALUATION_SEED == FROZEN_0806_EVALUATION_SEED
+            else "gate_g_independent_seed_v1"
+        ),
         "evaluation_seed": EVALUATION_SEED,
         "deck_number": number,
         "deck_id": candidate.name,
@@ -321,6 +409,33 @@ def _game_evidence(candidate: Any, result: dict[str, Any]) -> dict[str, Any]:
         "game_results_sha256": result["determinism"]["game_results_sha256"],
         "games": build_cuda_game_records(schedule, result),
     }
+
+
+def _cached_result_is_reusable(
+    cached: dict[str, Any], *, schedule_file_sha256: str
+) -> bool:
+    """Fail closed on stale schema, diagnostics, seed schedule, or model state."""
+
+    device = cached.get("device", {})
+    diagnostics = cached.get("per_game_diagnostics", {})
+    return (
+        cached.get("passed") is True
+        and cached.get("schema_version")
+        == "cuda_semantic0031_resident_refill_strict_fp32_v2"
+        and cached.get("collector", {}).get("completed_games") == EXPECTED_GAMES
+        and cached.get("collector", {}).get("errors") == 0
+        and cached.get("models", {}).get("actor_checkpoint_sha256") == POLICY_SHA256
+        and cached.get("models", {}).get("opponent_checkpoint_sha256") == POLICY_SHA256
+        and cached.get("schedule", {}).get("sha256") == schedule_file_sha256
+        and device.get("float32_matmul_precision") == "highest"
+        and device.get("matmul_allow_tf32") is False
+        and device.get("cudnn_allow_tf32") is False
+        and diagnostics.get("schema")
+        == "cuda_resident_terminal_diagnostics_v1"
+        and len(diagnostics.get("terminal_turns", [])) == EXPECTED_GAMES
+        and len(diagnostics.get("engine_selections", [])) == EXPECTED_GAMES
+        and len(diagnostics.get("terminal_prize_counts", [])) == EXPECTED_GAMES
+    )
 
 
 def _run_one(catalog: Any, candidate: Any) -> dict[str, Any]:
@@ -337,15 +452,9 @@ def _run_one(catalog: Any, candidate: Any) -> dict[str, Any]:
     _atomic_json(schedule_path, schedule)
     if result_path.is_file():
         cached = json.loads(result_path.read_text(encoding="utf-8"))
-        device = cached.get("device", {})
-        strict_fp32 = (
-            cached.get("schema_version")
-            == "cuda_semantic0031_resident_refill_strict_fp32_v2"
-            and device.get("float32_matmul_precision") == "highest"
-            and device.get("matmul_allow_tf32") is False
-            and device.get("cudnn_allow_tf32") is False
-        )
-        if not strict_fp32:
+        if not _cached_result_is_reusable(
+            cached, schedule_file_sha256=_sha256(schedule_path)
+        ):
             result_path.unlink()
     if not result_path.is_file():
         log_path = TEMP_ROOT / "logs" / f"{number}.log"
@@ -390,6 +499,7 @@ def _run_one(catalog: Any, candidate: Any) -> dict[str, Any]:
                     f"resident CUDA evaluation failed for deck {number}; see {log_path}"
                 )
     result = json.loads(result_path.read_text(encoding="utf-8"))
+    diagnostics = result.get("per_game_diagnostics", {})
     if (
         result.get("passed") is not True
         or result.get("schema_version")
@@ -404,6 +514,11 @@ def _run_one(catalog: Any, candidate: Any) -> dict[str, Any]:
         or result.get("device", {}).get("float32_matmul_precision") != "highest"
         or result.get("device", {}).get("matmul_allow_tf32") is not False
         or result.get("device", {}).get("cudnn_allow_tf32") is not False
+        or diagnostics.get("schema")
+        != "cuda_resident_terminal_diagnostics_v1"
+        or len(diagnostics.get("terminal_turns", [])) != EXPECTED_GAMES
+        or len(diagnostics.get("engine_selections", [])) != EXPECTED_GAMES
+        or len(diagnostics.get("terminal_prize_counts", [])) != EXPECTED_GAMES
     ):
         raise RuntimeError(f"CUDA result failed the seeded-2048 contract: deck {number}")
     return result
@@ -715,13 +830,24 @@ def _refresh(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    global EVALUATION_SEED
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--deck-number", action="append", default=[])
     parser.add_argument("--reproduce-first", action="store_true")
     parser.add_argument("--output-root", type=Path)
     parser.add_argument("--temp-root", type=Path)
+    parser.add_argument(
+        "--evaluation-seed",
+        type=int,
+        default=FROZEN_0806_EVALUATION_SEED,
+        help="root seed; use the canonical default only for formal Frozen-0806",
+    )
     args = parser.parse_args(argv)
+    if args.evaluation_seed < 0:
+        parser.error("--evaluation-seed cannot be negative")
+    EVALUATION_SEED = int(args.evaluation_seed)
     configure_output_roots(output_root=args.output_root, temp_root=args.temp_root)
     catalog, candidates = _catalog()
     requested = (

@@ -14,18 +14,22 @@ class SemanticParityInventoryTest(unittest.TestCase):
         inventory = importlib.import_module(
             f"{PROJECT}.semantic_parity.inventory"
         )
-        payload = inventory.build_runtime_inventory(
-            checkpoint=ROOT
-            / "rl_runs/0038_action_boundary_rl/versions/"
-            "V10_complete_512_rollout_fresh_rl/checkpoint/update-000230.pt",
-            package_root=ROOT
-            / "archive/submission/0038_dragapult_ex_rl_update230",
+        payload = inventory.load_archived_runtime_inventory_fixture(
+            ROOT
+            / "train/0038_action_boundary_rl/tests/fixtures/"
+            "semantic_parity_v1/u230_package_load_report.json",
         )
 
         self.assertEqual(payload["checkpoint"]["update"], 230)
         self.assertEqual(payload["checkpoint"]["critical_missing_keys"], [])
         self.assertEqual(payload["checkpoint"]["critical_unexpected_keys"], [])
-        self.assertFalse(payload["checkpoint"]["training_distribution_compatible"])
+        # This pre-fix report predates the authoritative feature contract.  Its
+        # absence is itself release-blocking; do not recompute or relabel the
+        # immutable historical evidence with the current schema.
+        self.assertNotIn("feature_preprocessing", payload["contracts"])
+        self.assertNotIn(
+            "training_feature_preprocessing_version", payload["checkpoint"]
+        )
         self.assertTrue(payload["package"]["strict_load"])
         # The already-built archive is immutable audit evidence.  It predates
         # the fail-closed source fix and must not be relabeled submission-ready.
@@ -33,9 +37,13 @@ class SemanticParityInventoryTest(unittest.TestCase):
         self.assertFalse(payload["package"]["critic_deployed"])
         self.assertTrue(payload["package"]["model_eval"])
         self.assertEqual(payload["package"]["deck_card_count"], 60)
-        self.assertNotEqual(
+        self.assertEqual(
             payload["contracts"]["action_boundary"],
             payload["package"]["action_boundary"],
+        )
+        self.assertNotEqual(
+            payload["package"]["action_boundary"],
+            inventory.ACTION_BOUNDARY_SCHEMA_VERSION,
         )
         for component in (
             "base_encoder",

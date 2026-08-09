@@ -148,7 +148,8 @@ class SemanticParityGateBTest(unittest.TestCase):
             official_parity=ROOT
             / "experiments/0038_action_boundary_rl/OFFICIAL_PARITY_FINAL_V3.json",
             archived_package=ROOT
-            / "archive/submission/0038_dragapult_ex_rl_update230",
+            / "train/0038_action_boundary_rl/tests/fixtures/semantic_parity_v2/"
+              "u230_archived_macro_contract.json",
             fixed_package=ROOT
             / ".tmp/evaluation/0038_semantic_parity_audit/fixed_u230_package",
         )

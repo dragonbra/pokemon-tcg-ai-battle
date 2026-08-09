@@ -7,35 +7,52 @@
 checkpoint：`update-000230.pt`
 checkpoint SHA-256：`a70b41d8b979a72ed3d79d8e739def40345efaf99dbf0ac49c9a08b81f9f8ab8`
 
-## 结论
+## Release 结论（按 2026-08-09 条件转移 / 分布等价合同）
 
 ```text
-Gate A/B/C/D runtime semantic parity: PASS
-U230 submission-ready:                NO
-U230 continuation training allowed:   NO
-new RL started:                       NO
-checkpoint weights changed:           NO
-official engine source changed:        NO
+deterministic runtime parity:          PASS in audited fixtures
+explicit-random conditional parity:    PASS in audited representative rules
+independent RNG statistics:            PASS in primitive/audited-effect scope
+end-to-end distribution equivalence:   INCOMPLETE
+U230 submission-ready:                 NO
+U230 continuation training allowed:    NO
+new RL started:                        NO
+checkpoint weights changed:            NO
+official engine source changed:         NO
 ```
 
-修复后的 CUDA、0038 Action Boundary 和 Kaggle-compatible package runtime 已在本轮 Gate A→B→C→D 证据范围内实现一致的公开 observation、legal option、mask、greedy 策略意图和 primitive execution。
+本报告原先使用 A–D 表示规则、macro、snapshot 和 lockstep；后续验收合同已扩展为
+canonical state、固定 snapshot、确定性转移、显式随机结果、RNG 分布、Action Boundary 和
+端到端分布七道 Gate。旧 A–D 证据仍有效，但不能自动令新的 A–G 全部通过。
+
+修复后的 CUDA、0038 Action Boundary 和 Kaggle-compatible package runtime 已在确定性 fixture
+范围内实现一致的 observation、legal option、mask、greedy 策略意图和 primitive execution。
+显式 random outcome 已在 shuffle/Prize、Numbing Water、Double Hit 与 Astonish 的真实规则路径中
+闭合；CPU official、host POD 与 CUDA kernel 的完整 post-state、continuation、legal options、history
+和 RNG 均一致。该结论是代表性 effect coverage，不是全卡池逐张穷举。端到端独立 seed 数据仍缺
+CPU Prize 与双方 action-boundary/action-type/fallback 逐局字段，且胜率差区间尚未完全落入预注册
+`±3pp` 等价带。因此当前必须保持 `submission-ready=NO`，不能由接近的胜率覆盖这些缺口。
 
 但 U230 的权重是在修复前、缺失 option relation/history/resource knowledge 的 CUDA feature 分布上通过 PPO 得到的。运行时修好不能倒推这些权重的训练数据分布有效，因此 U230 只保留为诊断 checkpoint，不能提交或继续训练。下一步必须先从原始 Zero-Shot/Pretrain 权重建立修复后 U0 parity，再决定是否运行 5～10 updates canary。
 
 机器可读 release manifest：
 
 - `.tmp/evaluation/0038_semantic_parity_audit/final/u230_submission_manifest.json`
-- Gates 均为 `PASS`；`release_ready=false`
+- 该旧 manifest 中的 A–D 均为 `PASS`；在新的 A–G 合同下它不是完整 release attestation
 - blockers：旧训练 feature 分布不兼容/未 attested。runtime 修复已固化为 commit `bf37545`；后续 evaluation harness 修正见 `e65204a`
 
-## Gate 总表
+## 新 Gate 总表
 
-| Gate | 修复前 | 修复后证据 | 状态 |
+| Gate | 验收对象 | 当前证据 | 状态 |
 |---|---|---|---|
-| A：纯规则 differential | Zoroark/Munkidori seed 1 decision 129 的旧缓存 binary 返回 `error=20/detail=403` | 最新源码重新编译，3 case、697 primitive decisions，state/status/outcome mismatch 均为 0 | **PASS** |
-| B：Phantom macro | 旧归档仅支持 `n≤5`，错误时可能 fresh Policy fallback | official Area Zero `n=6..8` 共 3,102 allocations；既有 `n=1..5` 共 330；canonical/alias/final public state failure 为 0 | **PASS** |
-| C：固定 snapshot 模型推理 | option relation 被置零，history/resource/deck knowledge 漂移；5 次 greedy divergence | immutable 283 decisions 全量 tensor parity；143 focal decisions top-1/top-2/greedy 全一致 | **PASS** |
-| D：端到端 lockstep | 首轮先后暴露 macro exception、target relation、Prize/deck knowledge、Zoroark duplicate option 问题 | 8 paired games、1,335 decisions、21 macros/126 callbacks，0 divergence/fallback/timeout | **PASS** |
+| A | backend-independent canonical authority state | versioned fail-closed schema；Gate A POD exact state comparison；排除字段有穷列举 | **PASS（已覆盖字段/fixtures）** |
+| B | fixed snapshot feature/model parity | 283 snapshots；离散 tensor 0 mismatch；143 focal greedy 0 divergence | **PASS** |
+| C | deterministic primitive transition | 3 case / 697 decisions 0 mismatch；Zoroark decision 129 当前 213 steps PASS | **PASS** |
+| D | explicit random outcome conditional transition | 6 cases：shuffle/Prize、Numbing Water head/tail、Double Hit、Astonish；完整 continuation/state exact | **PASS（代表性规则范围）** |
+| E | independent RNG distribution | batch 1/8/256/512，各 backend 每档 1,048,576 样本；基础 coin/position/opening/Prize/target 达到 margin；Gate D 代表 effect composition 通过 | **PASS（已审计 primitive/effect 范围）** |
+| F | Action Boundary regression | forced/observe-only、Phantom `n=1..8`、stable serial、one Policy/Value/PPO contract | **PASS** |
+| G | independent-seed end-to-end distribution | official CPU-2048 vs disjoint-seed CUDA-2048；分层/seed/error/局长通过；win CI 未落入 ±3pp 且缺部分过程字段 | **INCOMPLETE** |
+| H | suite sensitivity | old runtime artifact decision 129 FAIL、current PASS；option_effect/continuation perturb FAIL→restore PASS | **PASS，带 provenance 限制** |
 
 ## 1. 运行路径
 
@@ -314,11 +331,11 @@ fixed_283_primitive_trace.jsonl --reuse-trace --compare-decisions 283 \
   --require-history-wrap --strict
 ```
 
-Release-focused unit/property suite：**66 tests passed**。Gate A/B/C/D 的真实执行证据不由 mock/unit test 替代。
+Release-focused unit/property suite：**72 tests passed**。Gate A/B/C/D 的真实执行证据不由 mock/unit test 替代。
 
 ## 11. 尚未覆盖的风险
 
-- Gate D 是 8 局锁步诊断，不是 2,048 局强度评估；它足以定位当前已知 deterministic semantic divergence，但不能穷尽全部卡牌效果。
+- Gate D 的显式结果覆盖 6 条代表性 conditional rule path，不是全卡池随机效果逐张穷举。
 - 混乱等 root commit 后的 chance boundary 已按 invalid/fail-closed 合同处理，但缺少真实 Phantom-confusion 长链 lockstep fixture。
 - Area Zero `n=6..8` 已有真实 official exhaustive fixture和模型 snapshot，但 Gate D 的自然对局样本没有恰好命中全部 6/7/8 三种规模。
 - Kaggle 宿主级 OOM/进程重启不在 package 控制内；正式 canary 仍必须计数 timeout、process restart、pending reset。
@@ -339,31 +356,28 @@ Release-focused unit/property suite：**66 tests passed**。Gate A/B/C/D 的真�
 
 ## 13. Post-fix 007 CPU/CUDA 分布验证
 
-根据人工调整后的快速验收预算，正式 CPU-2048 改为一个完整 CPU-256 频率单元；CUDA
-仍运行八个固定 256 shard，共 2,048 局。两边都使用 exact deck 007、双方
-Policy-0806、deterministic greedy、FP32、evaluation seed `341512806`、循环上限 20 和
-engine turn 100 draw。CPU 使用 official seeded runtime；模型 forward 仍在 GPU。
+最终完成了完整 official CPU `8×256=2,048` 面板。两边使用 exact deck 007、双方
+Policy-0806、deterministic greedy、strict FP32、evaluation seed `341512806`、循环上限 20 和
+engine turn 100 draw；CPU 使用 official seeded runtime，模型 forward 仍在 GPU。
 
-| runtime | 局数 | W-L-D | 胜率 | Wilson 95% CI | error / unfinished | wall time |
+| runtime | 局数 | W-L-D | 胜率 | Wilson 95% CI | first / second | lifecycle error |
 |---|---:|---:|---:|---:|---:|---:|
-| official CPU | 256 | 152-104-0 | 59.38% | 53.26%–65.21% | 0 / 0 | 210.01s |
-| repaired CUDA | 2,048 | 1146-902-0 | 55.96% | 53.80%–58.09% | 0 / 0 | 105.25s |
+| official CPU | 2,048 | 1149-899-0 | 56.10% | 53.94%–58.24% | 58.89% / 53.32% | 0 |
+| repaired CUDA | 2,048 | 1146-902-0 | 55.96% | 53.80%–58.09% | 59.08% / 52.83% | 0 |
 
-CPU 与 CUDA 点估计相差 3.42pp，但 CPU-256 的区间很宽；两样本 pooled z=`1.04`、
-双侧 `p=0.299`。CPU 结果也落在 CUDA 八个 shard 的 51.17%–62.11% 范围内。按 CUDA
-逐 matchup 胜率计算，CPU 预期胜场为 143.25，实际 152，标准化差 `z=1.17`、
-`p=0.241`。没有观察到此前担心的十个百分点级系统性偏移。
+CPU−CUDA 仅 `+0.1465pp`。2048 个 opponent/slot/replica/seat mapping 全部通过；逐局 outcome
+一致率 76.42%，CPU loss→CUDA win 为 240，CPU win→CUDA loss 为 243，配对差 95% CI
+约 `[-1.96pp,+2.25pp]`。两边各有 10 次 repeat/progress-guard 裁决、0 turn-limit draw；
+guard schedule 不要求相同，因为两个 backend 的随机轨迹允许分叉。
 
-额外把 CPU-256 的相同 engine/search seed、opponent 和 seat 原样交给 CUDA 重放：
+这份 shared standard panel 是强参考，但明确标记
+`shared_standard_panel_reference_not_independent_gate_g`，不能冒充独立 RNG 的 Gate G。
+machine-readable evidence：
+`.tmp/evaluation/0038_semantic_parity_audit/standard_panel_reference/cpu2048_vs_cuda2048.json`。
 
-- 两边总体均为 `152-104-0`；
-- 256 个 pairing key 全匹配；
-- 逐局 outcome 一致 196/256（76.56%）；
-- CPU win→CUDA loss 30 局，CPU loss→CUDA win 30 局，净偏差为 0。
-
-这证明相同 seed 在两个独立 engine backend 上不要求逐局轨迹完全相同，但本次样本没有
-方向性 outcome 偏差。结合 Gate A–D 的逐状态、逐字段和逐决策证据，当前在已覆盖合同内
-可判定 semantic runtime parity 通过；仍不能把有限 fixture 表述成对所有卡牌/状态的数学穷尽证明。
+CPU wall time 为 1,592.06 秒（1.286 games/s）；同标准面板 CUDA 为 105.25 秒
+（19.459 games/s），端到端约 `15.13×`。新增终局诊断字段后的独立 CUDA run 为
+129.71 秒（15.789 games/s），相对 CPU 约 `12.27×`。
 
 昨天的 pre-fix CUDA-2048 为 1174-874-0（57.32%）。相同 schedule 下，修复后为
 1146-902-0（55.96%）：净变化 -28 胜（-1.37pp），逐局 outcome agreement 69.14%，
@@ -373,3 +387,251 @@ resource 语义，昨天的 CUDA **策略强度、RL 收益和 checkpoint 选择
 
 完整统计与路径见根目录 `0038_007_CPU_CUDA_POSTFIX_VALIDATION.md`。U230 的训练 provenance
 结论不变：它仍不可提交、不可续训；本轮未启动 RL 或 Kaggle submission。
+
+---
+
+## 14. 条件转移与随机分布验收补充（本轮权威结论）
+
+本节覆盖 2026-08-09 新增的 A–I 验收合同。判断目标不再是“同 seed 必须得到同一局”，而是：
+
+```text
+same canonical state + same primitive action + same explicit random outcome
+→ same canonical next state
+
+P_CPU(next_state | state, action)
+≈ P_CUDA(next_state | state, action)
+```
+
+同 seed 锁步只保留为定位工具；胜率只属于 Gate G，不能掩盖 A–F 的失败。
+
+### 14.1 Canonical authority state
+
+新增 schema `0038_authority_state_v1`，实现位于
+`train/0038_action_boundary_rl/semantic_parity/canonical_state.py`。它与 Actor 可见的
+`canonical_public_observation` 分离：前者用于规则 differential，允许保存双方完整权威区域顺序；
+后者继续执行隐藏信息隔离，不能把完整 deck/Prize 注入模型。
+
+Canonical authority state 要求 game/turn/phase/seat/counters；双方 Active、Bench、hand、deck、
+discard、Prize、energy、tools、pre-evolution、temporary；卡牌 owner、stable serial、zone/index、
+HP、damage、status、attachments 与回合/Ability flags；Supporter/retreat/manual Energy/
+once-per-turn 状态；effect/continuation stack；pending choice；ordered legal options；event history；
+terminal/winner/error；reward、Prize delta 和 terminal reward。
+
+任一 required section/field 缺失即 fail closed；未知字段不会被静默丢弃。只排除下列非规则字段：
+
+| 排除字段 | 原因 |
+|---|---|
+| `backend` | provenance，单独写入 manifest |
+| `capture_timestamp_ns` | wall-clock capture metadata |
+| `host_pointer` / `device_pointer` | 进程/设备局部地址 |
+| `struct_padding` | 无规则语义的 ABI padding |
+| `debug_render_cache` | 规则不读取的派生 UI/debug cache |
+| `kernel_lane` | CUDA 执行布局；游戏身份由 episode ID 表示 |
+
+禁止把 damage、zone、serial、continuation、legal option 或 reward 字段加入 exclusion。当前真实
+Gate A 的 official state→`OfficialStatePod` exact comparison 覆盖 697 个 primitive decision，
+state/status/outcome mismatch 为 0；Python schema 的 fail-closed、hash、deck/Prize order 与
+continuation sensitivity 测试通过。Gate A 结论限定于已导出 ABI 字段与 fixtures。
+
+### 14.2 Fixed snapshot feature/model parity
+
+比较顺序固定为 observation → option skill/effect relations → event/resource/deck-membership →
+option order/mask → DecisionGate → representation → logits → macro → Value。离散字段 exact；
+一般浮点 tensor 使用 `atol=rtol=1e-6`；FP32 logits/Value 使用 `atol=rtol=1e-5`。
+
+283 个 immutable snapshots 的离散 tensor mismatch 为 0；143 个 focal 决策的 CUDA/package
+top-1、top-2 set 和 greedy intent divergence 均为 0。CUDA 与 training FP32 root-logit max error
+`6.44e-6`、Value max error `1.37e-6`。Package 因 FP16 storage→FP32 runtime root max error
+`0.003183`、Value max error `0.001199`，但未改变 top-1/top-2 或 Value sign。
+
+### 14.3 Deterministic primitive transition
+
+固定 primitive trace 比较 pre-state hash、action、continuation、ordered legal set、event semantics、
+reward delta 和 post-state。当前源码的 Dragapult/Dusknoir、Area Zero、Zoroark/Munkidori 共
+697 decisions 全部 0 mismatch。
+
+Gate H 对 decision 129 的执行身份得到一个重要 provenance 结论：
+
+- 历史无 provenance binary `84e338…`：decision 129 精确 FAIL，`error=20/detail=403`；
+- 当前 binary `5147f9…`：同 case 213 decisions PASS；
+- tracked pre-fix commit `c29dd6` 干净重编 binary `6a809d…`：同样 213 decisions PASS。
+
+因此不能写成“`c29dd6` 源码必现 Gate-A bug”。可证明的是历史部署 binary 陈旧且缺少 build
+provenance；这也是后来加入 source/rules/binary manifest 与 fail-closed cache 校验的原因。
+Gate-C 的 pre-fix feature failures 由 `semantic_parity_v1` 的 decision 0/60/Value fixtures 独立固化。
+
+### 14.4 Test-only explicit random outcome injection
+
+新增 versioned fixture：shuffle permutation、Prize indices、coin results、random target indices、
+named effect results；消费 cursor 对 underflow、越界和未消费结果 fail closed。fixture header 仅被
+standalone benchmark 引用，production `engine_cuda/src` 和普通 include 路径没有引用。
+
+| explicit outcome | 真实规则路径 | 结果 |
+|---|---|---|
+| reverse shuffle permutation | shuffle 后继续 `Draw` | complete state exact PASS |
+| Prize indices/count | `DeckToPrize` | complete state exact PASS |
+| coin=head / tail | `Numbing Water` 两条 continuation | complete state exact PASS |
+| coin sequence `[head,tail]` | `Double Hit`，最终 90 damage | complete state exact PASS |
+| target index `2` | `Astonish` 随机弃牌目标 | complete state exact PASS |
+
+fixture 使用隔离的 `test_only_rng_preimage` adapter：显式结果先映射为能产生该结果的初始 RNG
+state，随后 CPU official、host POD 和真实 CUDA kernel 都执行未修改的原始 attack/effect/
+continuation。比较包含 RNG、ordered legal options、continuation 和 history。测试 header 未被
+production translation unit include，生产热路径没有新增 provider 或分支。
+
+artifact：`.tmp/evaluation/0038_semantic_parity_audit/gate_d_random/explicit_outcomes_v2.json`。
+6 个 conditional cases 全部通过，Gate D 在上述代表性规则范围内为 PASS；这不是所有随机卡的
+逐张 exhaustive，也不是 production runtime 的通用 mid-chain 注入接口。
+
+### 14.5 Statistical RNG equivalence
+
+预注册 margin：binary/small-cardinality `±0.01`；60-card position TV upper-95 `≤0.02`；
+lag-1 correlation 使用 99% envelope。CPU/CUDA 使用互不重叠 seed range；逻辑 batch
+`1/8/256/512` 每个 backend、每档各 `1,048,576` 样本。
+
+| batch | coin diff 95% CI | card-position TV / upper95 | target TV / upper95 | 99% lag envelope | 结果 |
+|---:|---:|---:|---:|---:|---|
+| 1 | `[-0.001873, 0.000834]` | `0.003832 / 0.018360` | `0.001798 / 0.007103` | `±0.002515` | PASS |
+| 8 | `[-0.002155, 0.000551]` | `0.003871 / 0.018400` | `0.001275 / 0.006580` | `±0.002515` | PASS |
+| 256 | `[-0.002359, 0.000348]` | `0.004734 / 0.019263` | `0.002144 / 0.007449` | `±0.002515` | PASS |
+| 512 | `[-0.000689, 0.002018]` | `0.003930 / 0.018459` | `0.001544 / 0.006849` | `±0.002515` | PASS |
+
+opening-hand inclusion、Prize inclusion、相邻 fingerprint duplication 和 batch-1 对
+8/256/512 的分布稳定性使用相同 margin，六个 within-backend batch-stability comparisons 全部
+PASS。结合 Gate D 的条件规则一致性，这证明基础 RNG primitive 与已审计 effect composition 的
+分布合同成立；Gate E 在当前 primitive/代表 effect 范围内 PASS。未覆盖卡牌仍列为 coverage risk，
+而不是声称全卡池数学穷举。
+
+### 14.6 Action Boundary regression
+
+- forced mandatory choice：0 Policy、0 Value、0 PPO row；observation/history/event 正常消费；
+- `n=1..8` Phantom allocation 数量为 `1/7/28/84/210/462/924/1716`，始终一个 macro intent；
+- stable serial 每 callback 重定位；target universe/actor/context/remaining 漂移即 fail closed；
+- macro drift 不触发第二次 Policy；
+- root + allocation joint old-logprob 与 PPO replay 定义一致；内部 callbacks 不额外折扣；
+- official protocol 仍逐次返回原 ABI `list[int]`。
+
+CUDA 当前没有绕过 official primitive semantics 的 fused Phantom state mutation；两边都逐 primitive
+执行。当前 fused-vs-unfolding 因而退化为同一 macro 的两套 primitive executor parity，已有
+`n=1..8` exhaustive/official fixtures 通过。
+
+### 14.7 End-to-end distribution gate
+
+正式独立样本比较使用 official CPU-2048（seed `341512806`）与 CUDA-2048（seed
+`934151280`）。两边 2,048 个 engine seed 各自唯一、集合交集为 0；opponent×seat strata exact，
+先后手各 1,024，runtime error 均为 0。
+
+| metric | official CPU | independent CUDA | comparison |
+|---|---:|---:|---:|
+| win rate | 56.10% | 57.57% | CPU−CUDA `-1.4648pp`；95% CI `[-4.498,+1.569]pp` |
+| first | 58.89% | 59.47% | `-0.586pp` |
+| second | 53.32% | 55.66% | `-2.344pp` |
+| mean full rounds | 6.861 | 6.950 | `-0.089`；95% CI `[-0.217,+0.039]` |
+| runtime errors | 0 | 0 | PASS |
+
+局长区间完全落入预注册 `±0.5` round，PASS。胜率方向没有显示十个百分点级系统偏移，但其
+95% CI 未完全落入预注册 `±3pp` 等价带，因此必须记为 INCOMPLETE，不是 FAIL，也不能在看到
+结果后放宽 margin。55 个 exact matchup 多数样本远低于每 backend/stratum 200，同样只作描述。
+
+CUDA 现在零额外 forward 地序列化 resident scheduler 已经收集的 `terminal_turns`、
+`engine_selections`、`terminal_prize_counts`；旧 cache 缺 schema、diagnostic arrays、schedule seed
+或 model hash 会 fail closed 重跑。但 official CPU compact report 没有 final Prize differential，
+Policy-0806 两侧也没有 strategic/macro/forced/action-type/fallback per-game rows。因此 Gate G
+仍为 INCOMPLETE。
+
+artifacts：
+
+- `.tmp/evaluation/0038_semantic_parity_audit/gate_g/distribution_cpu2048_cuda2048_independent_v2.json`
+- `.tmp/evaluation/0038_semantic_parity_audit/gate_g/cpu_2048_official_normalized_v2.json`
+- `.tmp/evaluation/0038_semantic_parity_audit/gate_g/cuda_2048_independent_934151280_normalized_v2.json`
+
+### 14.8 Test sensitivity
+
+- 历史 runtime artifact 在 decision 129 FAIL；当前 runtime 同 fixture PASS；
+- in-memory 修改一个 `option_effect_relations`，首个差异定位到该 stage；
+- in-memory 修改 continuation opcode，首个差异定位到 continuation；
+- 撤销两项扰动后恢复 PASS。
+
+执行身份 fixture：
+`train/0038_action_boundary_rl/tests/fixtures/semantic_parity_v2/gate_h_execution_identity.json`。
+
+## 15. 本轮修改范围与命令
+
+新增 canonical/transition/model comparators、random fixture/statistics、Gate F/G/H analyzer、
+standalone CUDA RNG/outcome benchmarks、immutable fixtures 和 focused tests。未修改 official
+`engine/source/`、checkpoint、reward、模型结构或正式 rollout hot path；未启动 RL，未提交 Kaggle。
+
+关键命令：
+
+```bash
+# historical artifact: expected decision-129 FAIL；current binary: 213-step PASS
+engine_cuda/build/cuda_support_audit/official_battle_ordered_matrix_cuda_paired \
+  .tmp/cuda_0032_rules/official_rules.bin \
+  .tmp/evaluation/0038_semantic_parity_audit/sensitivity/zoroark_seed1.tsv \
+  1 1 512 coverage-first-legal
+
+.tmp/evaluation/0038_semantic_parity_audit/gate_a_final/\
+official_battle_ordered_matrix_cuda_paired \
+  .tmp/cuda_0032_rules/official_rules.bin \
+  .tmp/evaluation/0038_semantic_parity_audit/sensitivity/zoroark_seed1.tsv \
+  1 1 512 coverage-first-legal
+
+python3 engine_cuda/tools/run_official_rng_distribution.py \
+  --samples 1048576 \
+  --output .tmp/evaluation/0038_semantic_parity_audit/gate_e/rng_distribution_1048576.json
+
+python3 engine_cuda/tools/run_official_random_outcome_injection_paired.py \
+  --rules .tmp/cuda_support_audit/official_rules.bin \
+  --output .tmp/evaluation/0038_semantic_parity_audit/gate_d_random/explicit_outcomes_v2.json
+
+python3 engine_cuda/tools/evaluate_policy_0806_cuda.py \
+  --deck-number 007 --evaluation-seed 934151280 \
+  --output-root evaluation/arena/combat_mat/policy_0806/0806_gate_g_independent_seed_934151280 \
+  --temp-root .tmp/evaluation/0038_semantic_parity_audit/gate_g/cuda_independent_934151280
+
+python3 -m train.0038_action_boundary_rl.semantic_parity.standard_panel_reference \
+  --cpu-report .tmp/evaluation/0038_007_cpu_seeded2048_conditional_parity/\
+published/reports/007_dragapult_ex.html \
+  --cuda-games evaluation/arena/combat_mat/policy_0806/\
+0806_kaggle_top100_plus_v1_cuda_seeded_2048_postfix_bf37545/games/007.json \
+  --output .tmp/evaluation/0038_semantic_parity_audit/standard_panel_reference/\
+cpu2048_vs_cuda2048.json
+```
+
+Focused audit suite：72/72 PASS；`compileall` 与 `git diff --check` PASS。新增/修改集中在：
+
+- `semantic_parity/`：canonical state、fixed snapshot、deterministic transition、Gate F/G/H、
+  RNG statistics、standard-panel reference、archived inventory loader；
+- `engine_cuda/benchmarks|tools|tests`：test-only random-outcome benchmark、RNG benchmark、
+  terminal diagnostics serialization 和 independent evaluation seed；
+- `tests/fixtures/semantic_parity_v1|v2`：hash-validated pre-fix/current regression evidence；
+- `SEMANTIC_PARITY_AUDIT.md`：pre/post-fix 证据、执行命令、coverage boundary 与最终 Gate 状态。
+
+完整 tracked/new source 清单：
+
+| 用途 | 文件 |
+|---|---|
+| 报告/计划 | `SEMANTIC_PARITY_AUDIT.md`、`0038_007_CPU_CUDA_POSTFIX_VALIDATION.md`、`docs/superpowers/plans/2026-08-09-0038-conditional-transition-rng-parity.md` |
+| CUDA evaluation diagnostics | `engine_cuda/tools/benchmark_0037_cuda_resident_refill.py`、`engine_cuda/tools/evaluate_policy_0806_cuda.py`、`engine_cuda/tests/test_policy_0806_cuda_evaluation.py` |
+| test-only random/RNG harness | `engine_cuda/benchmarks/official_random_outcome_injection_paired.cu`、`engine_cuda/benchmarks/official_rng_distribution.cu`、`engine_cuda/include/ptcg_cuda/testing/random_outcome_fixture.cuh`、`engine_cuda/tools/run_official_random_outcome_injection_paired.py`、`engine_cuda/tools/run_official_rng_distribution.py`、`engine_cuda/tests/test_random_outcome_injection.py`、`engine_cuda/tests/test_official_rng_distribution.py` |
+| parity analyzers | `semantic_parity/canonical_state.py`、`deterministic_transition.py`、`fixed_snapshot_parity.py`、`gate_f_action_boundary.py`、`gate_g_distribution.py`、`random_outcomes.py`、`sensitivity.py`、`standard_panel_reference.py`、`statistical_equivalence.py`、`inventory.py`、`gate_b_macro.py`（均位于 `train/0038_action_boundary_rl/`） |
+| regression tests | `tests/test_deterministic_transition_parity.py`、`test_fixed_snapshot_feature_parity.py`、`test_gate_f_action_boundary.py`、`test_gate_g_distribution.py`、`test_random_outcome_schema.py`、`test_semantic_parity_canonical_state.py`、`test_semantic_parity_sensitivity.py`、`test_standard_panel_reference.py`、`test_statistical_equivalence.py`、`test_semantic_parity_gate_b.py`、`test_semantic_parity_inventory.py`（均位于 `train/0038_action_boundary_rl/`） |
+| immutable evidence | `train/0038_action_boundary_rl/tests/fixtures/semantic_parity_v2/manifest.json`、`gate_h_execution_identity.json`、`u230_archived_macro_contract.json` |
+
+没有修改 `engine/source/`、模型权重、checkpoint、reward、PPO/action contract 或 observation schema。
+
+## 16. 未覆盖风险与最终判定
+
+1. Gate D 覆盖代表性的 coin/random-target/effect 路径，不是全卡池随机效果逐张穷举；
+2. Gate G 缺 CPU final Prize，以及 strategic/macro/forced/action-type/fallback per-game fields；
+3. independent CPU/CUDA 2,048×2,048 的 win-rate CI 未完全落入预注册 `±3pp`，不能 post-hoc 放宽；
+4. 55 个 matchup 在当前样本下无法逐项达到 `±3pp` equivalence 的统计功效；
+5. 规则 fixtures 重点覆盖当前主牌表/常见对手，不是全卡池 effect 穷举；
+6. U215/U230 权重来自 pre-fix CUDA feature distribution，运行时 parity 不会修复其训练 provenance。
+
+```text
+submission-ready = NO
+new RL allowed    = NO
+```
+
+只有 Gate A–G 全部 PASS，且从正确 Zero-Shot/Pretrain U0 重新采集 on-policy 数据后，才可解除。
