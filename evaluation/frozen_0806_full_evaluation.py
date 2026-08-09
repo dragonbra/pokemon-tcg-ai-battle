@@ -207,7 +207,10 @@ def validate_report_payload(
         raise ValueError("Frozen-0806 report is partial or contains errors")
     observed_counts = Counter(str(game.get("opponent")) for game in games)
     expected_by_name = {
-        entry.deck_id: entry.games for entry in catalog.pool.schedule
+        entry.deck_id: games
+        for entry, games in zip(
+            catalog.pool.schedule, _schedule_counts(catalog), strict=True
+        )
     }
     if observed_counts != Counter(expected_by_name):
         raise ValueError("Frozen-0806 report game distribution mismatch")

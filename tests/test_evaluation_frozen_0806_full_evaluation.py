@@ -201,6 +201,64 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
                 self.catalog,
             )
 
+    def test_acceptance_uses_eight_replica_counts_per_opponent(self) -> None:
+        candidate = self.catalog.candidates[0]
+        counts = _schedule_counts(self.catalog)
+        games = []
+        for opponent, expanded_games in zip(
+            self.catalog.pool.schedule, counts, strict=True
+        ):
+            base_slots = expanded_games // 8
+            for game_number in range(expanded_games):
+                replica = game_number // base_slots
+                games.append(
+                    {
+                        "candidate_first": replica % 2 == 0,
+                        "opponent": opponent.deck_id,
+                        "status": "finished",
+                        "winner": 0,
+                    }
+                )
+        payload = {
+            "manifest": {
+                "candidate": {
+                    "deck": candidate.deck,
+                    "package_manifest": candidate.package_manifest,
+                },
+                "opponent_pool": {
+                    "pool_id": self.catalog.pool.pool_id,
+                    "catalog_sha256": self.catalog.pool.manifest_sha256,
+                    "policy_hash": POLICY_0806_TARGET.policy_sha256,
+                },
+                "opponent_schedule_id": evaluation_schedule_id(
+                    self.catalog.pool.manifest["schedule_sha256"]
+                ),
+                "seed": 341_512_806,
+                "games_per_opponent": list(counts),
+                "opponents": [{}] * 55,
+                "games": EXPECTED_GAMES,
+            },
+            "summary": {
+                "total_games": EXPECTED_GAMES,
+                "completed_games": EXPECTED_GAMES,
+                "errors": 0,
+                "unfinished": 0,
+                "wins": EXPECTED_GAMES,
+                "losses": 0,
+                "draws": 0,
+                "win_rate": 1.0,
+            },
+            "games": games,
+        }
+
+        record = validate_report_payload(
+            payload, candidate, self.catalog, POLICY_0806_TARGET
+        )
+
+        self.assertEqual(record["games"], EXPECTED_GAMES)
+        self.assertEqual(record["turn_order"]["first"]["games"], EXPECTED_FIRST)
+        self.assertEqual(record["turn_order"]["second"]["games"], EXPECTED_SECOND)
+
     def test_acceptance_rejects_wrong_candidate_checkpoint(self) -> None:
         candidate = self.catalog.candidates[0]
         manifest = dict(candidate.package_manifest)

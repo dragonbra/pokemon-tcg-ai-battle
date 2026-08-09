@@ -29,12 +29,16 @@ POLICY_MODEL = (
     ROOT / "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt"
 )
 BENCHMARK = ROOT / "engine_cuda/tools/benchmark_0037_cuda_resident_refill.py"
-OUTPUT_ROOT = (
+CANONICAL_OUTPUT_ROOT = (
     ROOT
     / "evaluation/arena/combat_mat/policy_0806"
     / "0806_kaggle_top100_plus_v1_cuda_seeded_2048_resident_v2"
 )
-TEMP_ROOT = ROOT / ".tmp/evaluation/policy_0806_cuda_seeded2048_resident_v2"
+CANONICAL_TEMP_ROOT = (
+    ROOT / ".tmp/evaluation/policy_0806_cuda_seeded2048_resident_v2"
+)
+OUTPUT_ROOT = CANONICAL_OUTPUT_ROOT
+TEMP_ROOT = CANONICAL_TEMP_ROOT
 EVALUATION_SEED = FROZEN_0806_EVALUATION_SEED
 EXPECTED_DECKS = 55
 EXPECTED_GAMES = FROZEN_0806_EVALUATION_GAMES
@@ -110,6 +114,26 @@ def _atomic_json(path: Path, payload: object) -> None:
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def configure_output_roots(
+    *, output_root: Path | None = None, temp_root: Path | None = None
+) -> None:
+    """Select an isolated evidence namespace without overwriting history."""
+
+    global OUTPUT_ROOT, TEMP_ROOT
+    selected_output = (output_root or CANONICAL_OUTPUT_ROOT).resolve()
+    selected_temp = (temp_root or CANONICAL_TEMP_ROOT).resolve()
+    allowed_output = (
+        ROOT / "evaluation/arena/combat_mat/policy_0806"
+    ).resolve()
+    allowed_temp = (ROOT / ".tmp/evaluation").resolve()
+    if not selected_output.is_relative_to(allowed_output):
+        raise ValueError("CUDA evaluation output must stay under Policy-0806 combat_mat")
+    if not selected_temp.is_relative_to(allowed_temp):
+        raise ValueError("CUDA evaluation temp root must stay under .tmp/evaluation")
+    OUTPUT_ROOT = selected_output
+    TEMP_ROOT = selected_temp
 
 
 def _catalog() -> tuple[Any, tuple[Any, ...]]:
@@ -242,6 +266,61 @@ def merge_cuda_chunk_results(
         }
     )
     return merged
+
+
+def build_cuda_game_records(
+    schedule: dict[str, Any], result: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """Materialize the immutable per-game evidence behind an aggregate report."""
+
+    jobs = list(schedule.get("jobs", []))
+    outcomes = list(result.get("determinism", {}).get("game_results", []))
+    if len(jobs) != len(outcomes):
+        raise ValueError("CUDA schedule/result lengths differ")
+    progress_guard = result.get("progress_guard", {})
+    forfeits = {
+        int(index) for index in progress_guard.get("forfeit_schedule_indices", [])
+    }
+    turn_limit_draws = {
+        int(index)
+        for index in progress_guard.get("turn_limit_draw_schedule_indices", [])
+    }
+    records: list[dict[str, Any]] = []
+    for index, (job, raw_result) in enumerate(zip(jobs, outcomes, strict=True)):
+        focal_player = 0 if bool(job["focal_first"]) else 1
+        won = (focal_player == 0 and raw_result == 1) or (
+            focal_player == 1 and raw_result == 2
+        )
+        lost = (focal_player == 0 and raw_result == 2) or (
+            focal_player == 1 and raw_result == 1
+        )
+        records.append(
+            {
+                **job,
+                "schedule_index": index,
+                "raw_engine_result": int(raw_result),
+                "focal_outcome": "win" if won else "loss" if lost else "draw",
+                "repeat_forfeit": index in forfeits,
+                "turn_limit_draw": index in turn_limit_draws,
+            }
+        )
+    return records
+
+
+def _game_evidence(candidate: Any, result: dict[str, Any]) -> dict[str, Any]:
+    number = str(candidate.package_manifest["frozen_deck_number"])
+    schedule = json.loads(_schedule_path(number).read_text(encoding="utf-8"))
+    return {
+        "schema": "policy_0806_cuda_seeded2048_games_v1",
+        "contract_id": "frozen_0806_seeded_2048_v2",
+        "evaluation_seed": EVALUATION_SEED,
+        "deck_number": number,
+        "deck_id": candidate.name,
+        "exact_deck_sha256": candidate.package_manifest["exact_deck_sha256"],
+        "schedule_sha256": schedule["schedule_sha256"],
+        "game_results_sha256": result["determinism"]["game_results_sha256"],
+        "games": build_cuda_game_records(schedule, result),
+    }
 
 
 def _run_one(catalog: Any, candidate: Any) -> dict[str, Any]:
@@ -557,6 +636,10 @@ def _refresh(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
             continue
         result = json.loads(result_path.read_text(encoding="utf-8"))
         summary = _summary(catalog, candidate, result)
+        game_evidence_path = OUTPUT_ROOT / "games" / f"{number}.json"
+        _atomic_json(game_evidence_path, _game_evidence(candidate, result))
+        summary["game_records"] = f"games/{number}.json"
+        summary["game_records_sha256"] = _sha256(game_evidence_path)
         report_name = str(candidate.package_manifest["frozen_report_href"])
         report_path = OUTPUT_ROOT / "reports" / report_name
         _atomic_text(report_path, _report_html(catalog, candidate, summary))
@@ -621,12 +704,13 @@ def _refresh(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
     }
     _atomic_json(OUTPUT_ROOT / "manifest.json", manifest)
     _atomic_text(OUTPUT_ROOT / "index.html", index)
-    policy_index = ROOT / "evaluation/arena/combat_mat/policy_0806/index.html"
-    _atomic_text(
-        policy_index,
-        f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Policy-0806 Frozen Evaluation</title><style>
+    if OUTPUT_ROOT == CANONICAL_OUTPUT_ROOT:
+        policy_index = ROOT / "evaluation/arena/combat_mat/policy_0806/index.html"
+        _atomic_text(
+            policy_index,
+            f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Policy-0806 Frozen Evaluation</title><style>
 :root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d}}*{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 system-ui,"PingFang SC",sans-serif}}header{{padding:42px max(22px,calc((100vw - 1050px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:34px}}header p{{margin:8px 0 0;color:#cfe1da}}main{{max-width:1050px;margin:auto;padding:26px 20px}}.current{{display:block;padding:25px 28px;border:1px solid #9fc9b7;border-left:6px solid var(--green);border-radius:8px;background:#fff;color:inherit;text-decoration:none}}.current b{{display:block;color:var(--green);font-size:23px}}.current span{{color:var(--muted)}}h2{{margin:30px 0 10px}}.history{{display:grid;grid-template-columns:1fr 1fr;gap:12px}}.history a{{padding:18px;border:1px solid var(--line);border-radius:7px;background:#fff;color:#315e4d;text-decoration:none}}.history small{{display:block;color:var(--muted)}}@media(max-width:650px){{.history{{grid-template-columns:1fr}}}}</style></head><body><header><h1>Policy-0806 · Frozen Evaluation</h1><p>当前统一合同：CUDA resident · Seeded-2048 · strict FP32 · 每个 slot 8 个独立 seed replica。</p></header><main><a class="current" href="0806_kaggle_top100_plus_v1_cuda_seeded_2048_resident_v2/index.html"><b>进入当前 Seeded-2048 报告 →</b><span>{len(records)}/55 套完成 · {total_games:,}/112,640 局 · 先后手严格平衡</span></a><h2>历史合同</h2><div class="history"><a href="0806_kaggle_top100_plus_v1_cuda_seeded_512_v1/index.html">CUDA Seeded-512 v1<small>12/55，4×128；仅保留历史审计</small></a><a href="0806_kaggle_top100_plus_v1/index.html">Legacy CPU 256<small>2026-08-07，25/55；中断资产</small></a></div></main></body></html>\n''',
-    )
+        )
     return records
 
 
@@ -635,7 +719,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--deck-number", action="append", default=[])
     parser.add_argument("--reproduce-first", action="store_true")
+    parser.add_argument("--output-root", type=Path)
+    parser.add_argument("--temp-root", type=Path)
     args = parser.parse_args(argv)
+    configure_output_roots(output_root=args.output_root, temp_root=args.temp_root)
     catalog, candidates = _catalog()
     requested = (
         candidates

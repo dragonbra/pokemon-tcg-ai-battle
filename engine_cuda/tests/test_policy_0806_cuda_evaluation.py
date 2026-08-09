@@ -10,6 +10,7 @@ import unittest
 from evaluation.frozen_0806 import exact_deck_sha256
 from engine_cuda.tools.evaluate_policy_0806_cuda import (
     build_cuda_schedule,
+    build_cuda_game_records,
     merge_cuda_chunk_results,
     resolve_candidate_deck_path,
 )
@@ -129,6 +130,45 @@ class Policy0806CudaEvaluationTest(unittest.TestCase):
         self.assertNotEqual(
             left["jobs"][0]["engine_seed"], other["jobs"][0]["engine_seed"]
         )
+
+    def test_game_records_preserve_pairing_keys_and_focal_outcome(self) -> None:
+        schedule = {
+            "jobs": [
+                {
+                    "game_id": "first",
+                    "opponent_id": "opponent_a",
+                    "replica": 0,
+                    "slot": 0,
+                    "engine_seed": 11,
+                    "search_seed": 12,
+                    "focal_first": True,
+                },
+                {
+                    "game_id": "second",
+                    "opponent_id": "opponent_a",
+                    "replica": 1,
+                    "slot": 0,
+                    "engine_seed": 21,
+                    "search_seed": 22,
+                    "focal_first": False,
+                },
+            ]
+        }
+        result = {
+            "determinism": {"game_results": [1, 1]},
+            "progress_guard": {
+                "forfeit_schedule_indices": [1],
+                "turn_limit_draw_schedule_indices": [],
+            },
+        }
+
+        records = build_cuda_game_records(schedule, result)
+
+        self.assertEqual(records[0]["focal_outcome"], "win")
+        self.assertEqual(records[1]["focal_outcome"], "loss")
+        self.assertFalse(records[0]["repeat_forfeit"])
+        self.assertTrue(records[1]["repeat_forfeit"])
+        self.assertEqual(records[1]["engine_seed"], 21)
 
 
 if __name__ == "__main__":

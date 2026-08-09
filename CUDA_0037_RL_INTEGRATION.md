@@ -51,9 +51,10 @@ CUDA official-rules runtime（常驻 lanes + masked refill）
 1. **真实 action relation**：skill/effect pooling 必须读取 observation 中实际的 option mask、parent、role；不能从 card prototype 猜测当前 action 是否存在。该修复使 CUDA behavior log-prob 回放 MAE 降到约 `3e-6`，低于 PPO 护栏 `1e-4`。
 2. **逐局无状态采样**：stochastic action 由 policy seed、focal decision counter 和 action step 决定，不依赖 lane 顺序或 refill 时机。
 3. **严格 FP32**：设置 `torch.set_float32_matmul_precision("highest")`，关闭 TF32。当前“相同 seed 两轮逐局完全一致”的证据建立在此配置上。
-4. **循环判负**：同一无意义选择重复 20 次时记录 repeat-forfeit，并判重复方负；报告必须保留该元数据。
-5. **Frozen-0806 合同**：固定 evaluation seed `341512806`；256 个基础槽位 × 8 个独立 seed，共 2048 局，其中先后手各 1024。只有 2048/2048 finished、0 error、0 unfinished 才能作为同合同强度证据。
-6. **官方边界**：没有修改 `engine/source/`。CUDA runtime 实现官方规则语义，但 CUDA 与 CPU official-engine 的逐局 parity 仍是独立证据边界，不能仅凭吞吐 benchmark 宣称二者完全等价。
+4. **循环判负**：同一 physical actor 的同一完整选择在一个官方回合中第 20 次出现时记录 repeat-forfeit，并判重复方负；双方计数独立，交替行动不会互相清空；报告必须保留该元数据。
+5. **50 回合终止**：评测直接读取 raw `OfficialStatePod.turn`，engine turn 100（50 个完整回合）记平局；0037 RL 为对齐已有 CPU rollout 合同使用 engine turn 99。不要从归一化 Semantic0031 feature 反推时钟。
+6. **Frozen-0806 合同**：固定 evaluation seed `341512806`；256 个基础槽位 × 8 个独立 seed，共 2048 局，其中先后手各 1024。只有 2048/2048 terminal、0 error、0 unfinished，且 turn-limit draw / repeat-forfeit 元数据完整，才能作为同合同强度证据。
+7. **官方边界**：没有修改 `engine/source/`。CUDA runtime 实现官方规则语义，但 CUDA 与 CPU official-engine 的逐局 parity 仍是独立证据边界，不能仅凭吞吐 benchmark 宣称二者完全等价。
 
 ## 4. 0038 如何复用
 
