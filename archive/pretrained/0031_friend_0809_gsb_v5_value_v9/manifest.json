@@ -1,0 +1,99 @@
+{
+  "asset_id": "0031-friend-0809-gsb-v5-value-v9",
+  "checkpoint_payload": "paired_model_weights_only_no_optimizer_no_resume_state",
+  "display_name": "0031 Friend 0809 GSB V5 + Value V9",
+  "evidence_boundary": {
+    "official_engine_evaluation_required_for_strength_claims": true,
+    "policy_validation_is_imitation_evidence_only": true,
+    "train_decision_count_embedded": false,
+    "value_validation_is_offline_calibration_evidence_only": true
+  },
+  "file_sha256": {
+    "README.md": "8c675221e0bb2e1aac81dc3b0fa24718ed9333842ca9fe1a51614703cd037feb",
+    "assets/official_full_engine_prototypes_v2.json": "7228b2612da118e1ec353c7a2e08d4a306de0d4128f0c9e68b4075f2c6b54f73",
+    "assets/official_public_prototypes_v1.json": "5b45041cd14beed8a847f2e99ce955a105fbeb63d09256769d41f8cc88bdbc9d",
+    "checkpoint_metadata.json": "8d9955f6b073bcb756e0266cdf36bb171066b91d7ffdbf4991200d4329d382db",
+    "contracts/local_0031_model_contract.json": "afa58858d13b5519dbbaba8c663472964717adb0a04d9cf47df52eb7f08fbc18",
+    "loader.py": "c3cc30af569714d32b0a019083c78c18dfd8d902b9c03cf20e53157358bdb01f",
+    "model.pt": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+    "value_head.pt": "f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486",
+    "verify_archive.py": "f9563bdea4aedb7ba0bbb05676feddf593e33cfca12221047e66c342629bad99"
+  },
+  "implementation_bundle_sha256": {
+    "model_source": "39a7560eb3dbc60f247cf9234974389625ed3e4af834e3d993caf03908502d2d",
+    "value_source": "903663402dafc7ac6c67e0468a1e45027f5c8b0402d39d86ac190d48c102b1a3"
+  },
+  "pair_contract": {
+    "critic_encoder_frozen": true,
+    "critic_source_checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+    "policy_checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+    "status": "exact_sha256_match",
+    "value_output": "2*sigmoid(value_logit)-1"
+  },
+  "policy": {
+    "action_contract": "ordered_legal_option_pointer_plus_stop",
+    "actor_view": "canonical_typed_state_and_option_relations_only",
+    "checkpoint_schema": "0031_model_only_checkpoint_v1",
+    "class": "SemanticPolicy",
+    "dataset_manifest_sha256": "3f9458dc1bf03e88a6b267e4ed6861080dadb7092f2285419d3ffb34f4e91ebf",
+    "epoch": 20,
+    "global_step": 115820,
+    "parameter_count": 56352322,
+    "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
+    "source_identity_actor_visible": false,
+    "validation": {
+      "action_length_accuracy": 0.9956076783732631,
+      "decisions": 1330959,
+      "exact_action": 0.8253635160812617,
+      "legal_action": 1.0,
+      "loss": 0.24142944799295105,
+      "teacher_exact_action": 0.8253650187571518,
+      "token_accuracy": 0.912469179861609,
+      "tokens": 2765643
+    },
+    "version": "V5_medal_zone_gsb_all_days"
+  },
+  "provenance": {
+    "policy_authoritative_design": "experiments/0031_rule_faithful_semantic_foundation_pretraining/DESIGN.md",
+    "source_archive": "new-model-0809.tar.gz",
+    "source_archive_sha256": "8817ad00047a17de89daa4b57604ff7042eefac528326163fb1224e06d42fe67",
+    "source_policy_member": "V5_gsb_best_validation.pt",
+    "source_value_member": "V9_value_head_best_validation_value_loss.pt",
+    "value_authoritative_design": "experiments/0036_dedicated_action_value_network/DESIGN.md"
+  },
+  "release_date": "2026-08-09",
+  "release_stage": "pretrained_policy_and_value",
+  "schema_version": "pretrained_policy_value_archive_v1",
+  "value": {
+    "architecture": "latent_queries",
+    "auxiliary_outputs": {
+      "opponent_archetype_logits": 15,
+      "terminal_prize_difference_logits": 13
+    },
+    "checkpoint_schema": "0036_value_model_only_checkpoint_v1",
+    "dataset_catalog_sha256": "f04233b1da6b86ca2f2122fc5a450fdc1202da1430a6db60848a06ceb4fc0868",
+    "epoch": 9,
+    "parameter_count": 3407389,
+    "project_id": "0036_dedicated_action_value_network",
+    "validation_exact007_value_loss": null,
+    "validation_value_loss": 0.39974688940408915,
+    "version": "V9_rank0_local_validation_fix"
+  },
+  "weights": {
+    "policy": {
+      "bytes": 464776538,
+      "path": "model.pt",
+      "sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f"
+    },
+    "value": {
+      "bytes": 13651904,
+      "path": "value_head.pt",
+      "sha256": "f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486"
+    }
+  },
+  "zero_shot": {
+    "requires_chronological_observations": true,
+    "requires_exact_60_card_deck": true,
+    "requires_reset_between_games": true
+  }
+}
