@@ -72,6 +72,36 @@ class Frozen0806EvaluationContractTests(unittest.TestCase):
             evaluation_coin_winner(**arguments), evaluation_coin_winner(**arguments)
         )
 
+    def test_cpu_replica_zero_is_exact_cuda_replica_zero_subset(self) -> None:
+        common = {
+            "focal_identity": "candidate-002",
+            "opponent_identity": "opponent-007",
+            "slot": 3,
+        }
+        cpu = {
+            "engine_seed": evaluation_game_seed(**common, replica=0),
+            "search_seed": evaluation_game_seed(
+                **common, replica=0, namespace="search"
+            ),
+            "focal_won_toss": evaluation_coin_winner(**common, replica=0),
+        }
+        cuda = [
+            {
+                "engine_seed": evaluation_game_seed(**common, replica=replica),
+                "search_seed": evaluation_game_seed(
+                    **common, replica=replica, namespace="search"
+                ),
+                "focal_won_toss": evaluation_coin_winner(
+                    **common, replica=replica
+                ),
+            }
+            for replica in range(FROZEN_0806_EVALUATION_UNITS)
+        ]
+
+        self.assertEqual(cpu, cuda[0])
+        self.assertEqual(len({row["engine_seed"] for row in cuda}), 8)
+        self.assertEqual(len({row["search_seed"] for row in cuda}), 8)
+
     def test_rejects_schedule_that_is_not_one_256_game_unit(self) -> None:
         with self.assertRaisesRegex(ValueError, "256"):
             evaluation_counts((Entry(255),))

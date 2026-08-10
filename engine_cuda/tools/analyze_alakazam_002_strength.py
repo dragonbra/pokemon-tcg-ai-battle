@@ -20,7 +20,7 @@ from engine_cuda.tools import evaluate_sp_series_cuda as sp
 ANALYSIS_ROOT = ROOT / "docs/reports/sp-series/seeded2048_cuda_v2"
 FROZEN_CANONICAL_MANIFEST = (
     ROOT
-    / "evaluation/arena/combat_mat/policy_0806"
+    / "docs/evaluation/combat_mat/policy_0806"
     / "0806_kaggle_top100_plus_v1_cuda_seeded_2048_resident_v2/manifest.json"
 )
 SP_MANIFEST = ANALYSIS_ROOT / "manifest.json"

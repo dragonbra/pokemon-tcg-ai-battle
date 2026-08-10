@@ -4,17 +4,19 @@ import unittest
 from dataclasses import replace
 
 from evaluation.frozen_0806_full_evaluation import (
-    EXPECTED_FIRST,
     EXPECTED_GAMES,
-    EXPECTED_SECOND,
     LEGACY_POLICY_0806_OUTPUT_ROOT,
     POLICY_0806_TARGET,
+    _formal_identity_audit,
     _schedule_counts,
     _turn_order,
     validate_report_payload,
 )
 from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
-from evaluation.frozen_0806_contract import evaluation_schedule_id
+from evaluation.frozen_0806_contract import (
+    FROZEN_0806_FIRST_PLAYER_CONTRACT,
+    evaluation_schedule_id,
+)
 from evaluation.reporting.html import _matchup_html
 
 
@@ -23,26 +25,21 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.catalog = load_frozen_0806_runtime_catalog()
 
-    def test_schedule_is_exactly_seeded_2048_and_seat_balanced(self) -> None:
+    def test_schedule_is_exactly_one_seeded_256_unit_with_agent_choice(self) -> None:
         counts = _schedule_counts(self.catalog)
         self.assertEqual(len(counts), 55)
         self.assertEqual(sum(counts), EXPECTED_GAMES)
-        games = [
-            {"candidate_first": index % 2 == 0, "winner": 0}
-            for index in range(EXPECTED_GAMES)
-        ]
+        games = [{"candidate_first": index < 129, "winner": 0} for index in range(EXPECTED_GAMES)]
         order = _turn_order(games)
-        self.assertEqual(order["first"]["games"], EXPECTED_FIRST)
-        self.assertEqual(order["second"]["games"], EXPECTED_SECOND)
-        self.assertEqual(EXPECTED_GAMES, 2048)
-        self.assertEqual(EXPECTED_FIRST, 1024)
-        self.assertEqual(EXPECTED_SECOND, 1024)
+        self.assertEqual(order["first"]["games"], 129)
+        self.assertEqual(order["second"]["games"], 127)
+        self.assertEqual(EXPECTED_GAMES, 256)
 
-    def test_policy_0806_seeded2048_output_is_independent_from_legacy(self) -> None:
+    def test_policy_0806_cpu256_output_is_independent_from_legacy(self) -> None:
         self.assertNotEqual(POLICY_0806_TARGET.output_root, LEGACY_POLICY_0806_OUTPUT_ROOT)
         self.assertEqual(
             POLICY_0806_TARGET.output_root.name,
-            "0806_kaggle_top100_plus_v1_seeded_2048_v2",
+            "0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3",
         )
         self.assertEqual(
             LEGACY_POLICY_0806_OUTPUT_ROOT.name,
@@ -182,8 +179,10 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
                             "policy_hash": self.catalog.pool.policies["opponent"]["weights_sha256"],
                         },
                         "opponent_schedule_id": evaluation_schedule_id(
-                            self.catalog.pool.manifest["schedule_sha256"]
+                            self.catalog.pool.manifest["schedule_sha256"],
+                            evaluation_units=1,
                         ),
+                        "first_player_contract": FROZEN_0806_FIRST_PLAYER_CONTRACT,
                         "seed": 341_512_806,
                         "games_per_opponent": list(_schedule_counts(self.catalog)),
                         "opponents": [{}] * 55,
@@ -201,19 +200,24 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
                 self.catalog,
             )
 
-    def test_acceptance_uses_eight_replica_counts_per_opponent(self) -> None:
+    def test_acceptance_uses_one_complete_256_game_unit(self) -> None:
         candidate = self.catalog.candidates[0]
         counts = _schedule_counts(self.catalog)
         games = []
-        for opponent, expanded_games in zip(
+        for opponent, opponent_games in zip(
             self.catalog.pool.schedule, counts, strict=True
         ):
-            base_slots = expanded_games // 8
-            for game_number in range(expanded_games):
-                replica = game_number // base_slots
+            for game_number in range(opponent_games):
                 games.append(
                     {
-                        "candidate_first": replica % 2 == 0,
+                        "candidate_first": game_number % 2 == 0,
+                        "candidate_won_toss": game_number % 2 == 0,
+                        "engine_seed": 1000 + game_number,
+                        "policy_seed": 2000 + game_number,
+                        "search_seed": 3000 + game_number,
+                        "seed_replica": 0,
+                        "seed_slot": game_number,
+                        "toss_winner_selected_first": True,
                         "opponent": opponent.deck_id,
                         "status": "finished",
                         "winner": 0,
@@ -231,8 +235,11 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
                     "policy_hash": POLICY_0806_TARGET.policy_sha256,
                 },
                 "opponent_schedule_id": evaluation_schedule_id(
-                    self.catalog.pool.manifest["schedule_sha256"]
+                    self.catalog.pool.manifest["schedule_sha256"],
+                    evaluation_units=1,
                 ),
+                "first_player_contract": FROZEN_0806_FIRST_PLAYER_CONTRACT,
+                "policy_identity_audit": _formal_identity_audit(POLICY_0806_TARGET),
                 "seed": 341_512_806,
                 "games_per_opponent": list(counts),
                 "opponents": [{}] * 55,
@@ -256,8 +263,30 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
         )
 
         self.assertEqual(record["games"], EXPECTED_GAMES)
-        self.assertEqual(record["turn_order"]["first"]["games"], EXPECTED_FIRST)
-        self.assertEqual(record["turn_order"]["second"]["games"], EXPECTED_SECOND)
+        self.assertEqual(
+            record["turn_order"]["first"]["games"]
+            + record["turn_order"]["second"]["games"],
+            EXPECTED_GAMES,
+        )
+
+    def test_acceptance_rejects_missing_policy_identity_audit(self) -> None:
+        candidate = self.catalog.candidates[0]
+        with self.assertRaisesRegex(ValueError, "identity audit"):
+            validate_report_payload(
+                {
+                    "manifest": {
+                        "candidate": {
+                            "deck": candidate.deck,
+                            "package_manifest": candidate.package_manifest,
+                        }
+                    },
+                    "summary": {},
+                    "games": [],
+                },
+                candidate,
+                self.catalog,
+                POLICY_0806_TARGET,
+            )
 
     def test_acceptance_rejects_wrong_candidate_checkpoint(self) -> None:
         candidate = self.catalog.candidates[0]

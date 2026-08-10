@@ -53,7 +53,7 @@ decisions over 2,550 battles with zero CPU/POD/CUDA state, status, or outcome
 mismatch. The 13 draws are official engine results and remain draws on CUDA.
 
 The durable report is
-`evaluation/arena/combat_mat/0031_latest_frozen_test/cuda_support.html`, with
+`docs/evaluation/combat_mat/0031_latest_frozen_test/cuda_support.html`, with
 machine-readable evidence in the adjacent `cuda_support.json`. This admission
 is finite trajectory evidence for engine semantics; model observation and
 training compatibility are separate contracts.

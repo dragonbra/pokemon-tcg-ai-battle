@@ -13,7 +13,7 @@ class Policy0806CudaOutputIsolationTest(unittest.TestCase):
     def test_custom_evidence_namespace_does_not_replace_canonical_index(self) -> None:
         output = (
             subject.ROOT
-            / "evaluation/arena/combat_mat/policy_0806/postfix_semantic_parity"
+            / "docs/evaluation/combat_mat/policy_0806/postfix_semantic_parity"
         )
         temporary = subject.ROOT / ".tmp/evaluation/postfix_semantic_parity"
 

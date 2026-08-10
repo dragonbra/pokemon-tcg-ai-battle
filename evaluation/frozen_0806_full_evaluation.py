@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import html
+import importlib
 import json
 import os
 import shutil
@@ -14,6 +15,7 @@ from collections import Counter
 from contextlib import ExitStack
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -43,10 +45,10 @@ from evaluation.runner.batch import (
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ROOT = (
     ROOT
-    / "evaluation/arena/combat_mat/policy_0019/0806_kaggle_top100_plus_v1"
+    / "docs/evaluation/combat_mat/policy_0019/0806_kaggle_top100_plus_v1"
 )
 LEGACY_OUTPUT_ROOT = (
-    ROOT / "evaluation/arena/combat_mat/frozen/0806_kaggle_top100_plus_v1"
+    ROOT / "docs/evaluation/combat_mat/frozen/0806_kaggle_top100_plus_v1"
 )
 TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_cpu256_agent_choice_v3_full"
 BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_cpu256_agent_choice_v3_benchmark"
@@ -54,11 +56,11 @@ EXPECTED_DECKS = 55
 EXPECTED_GAMES = FROZEN_0806_CPU_GAMES
 DEFAULT_SEED = FROZEN_0806_EVALUATION_SEED
 LEGACY_POLICY_0806_OUTPUT_ROOT = (
-    ROOT / "evaluation/arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1"
+    ROOT / "docs/evaluation/combat_mat/policy_0806/0806_kaggle_top100_plus_v1"
 )
 POLICY_0806_SEEDED2048_OUTPUT_ROOT = (
     ROOT
-    / "evaluation/arena/combat_mat/policy_0806"
+    / "docs/evaluation/combat_mat/policy_0806"
     / "0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3"
 )
 
@@ -93,6 +95,39 @@ def evaluation_target(policy: str) -> FrozenEvaluationTarget:
         return targets[policy]
     except KeyError as exc:
         raise ValueError("opponent policy must be 0019 or 0806") from exc
+
+
+@lru_cache(maxsize=1)
+def full_0806_identity_audit() -> dict[str, Any]:
+    """Use the training resolver as the single source of Full-0806 identity."""
+
+    identity = importlib.import_module(
+        "train.0040_dragapult_0809_action_boundary_rl.policy_identity"
+    )
+    audit = identity.audit_checkpoint(
+        "Policy-0806", purpose="formal_frozen_cpu256_preflight"
+    ).to_manifest()
+    if (
+        audit.get("status") != "PASS"
+        or audit.get("requested_policy_id") != "Policy-0806"
+        or audit.get("checkpoint_sha256") != POLICY_0806_SHA256
+    ):
+        raise RuntimeError(f"FATAL: Full-0806 identity audit failed: {audit}")
+    return audit
+
+
+def _formal_identity_audit(target: FrozenEvaluationTarget) -> dict[str, Any]:
+    if target.key != "0806":
+        raise RuntimeError(
+            "FATAL: Promote V1 identity audit is only registered for Policy-0806"
+        )
+    audit = full_0806_identity_audit()
+    return {
+        "schema_version": "rl_formal_evaluation_policy_identity_audit_v1",
+        "status": "PASS",
+        "candidate": dict(audit),
+        "opponent": dict(audit),
+    }
 
 
 def _sha256(path: Path) -> str:
@@ -171,6 +206,9 @@ def validate_report_payload(
     )
     pool = manifest.get("opponent_pool")
     expected_counts = list(_schedule_counts(catalog))
+    identity_audit = manifest.get("policy_identity_audit")
+    if target.key == "0806" and identity_audit != _formal_identity_audit(target):
+        raise ValueError("FATAL: Frozen-0806 report policy identity audit mismatch")
     if not isinstance(candidate_record, dict) or not isinstance(package_manifest, dict):
         raise ValueError("Frozen-0806 report lacks candidate identity")
     if (
@@ -221,6 +259,14 @@ def validate_report_payload(
         raise ValueError("Frozen-0806 report game distribution mismatch")
     if any(type(game.get("candidate_won_toss")) is not bool for game in games):
         raise ValueError("Frozen-0806 report lacks seeded toss provenance")
+    if any(
+        type(game.get(field)) is not int
+        for game in games
+        for field in ("engine_seed", "policy_seed", "search_seed", "seed_replica", "seed_slot")
+    ) or any(
+        type(game.get("toss_winner_selected_first")) is not bool for game in games
+    ):
+        raise ValueError("Frozen-0806 report lacks per-game seed/Agent-choice evidence")
     order = _turn_order(games)
     schedule = next(entry for entry in catalog.pool.schedule if entry.deck_id == candidate.name)
     return {
@@ -452,6 +498,11 @@ def run_deck(
             engine_pool_size=engine_pool_size,
         )
     )
+    result.report_data.manifest["policy_identity_audit"] = _formal_identity_audit(
+        target
+    )
+    result.report_data.manifest["selection_mode"] = "greedy"
+    _atomic_text(result.report_path, render_html(result.report_data))
     validate_report_payload(
         {
             "manifest": result.report_data.manifest,
@@ -627,6 +678,10 @@ def refresh_index(
         "policy_0806_sha256": POLICY_0806_SHA256,
         "opponent_policy_label": target.label,
         "opponent_policy_sha256": target.policy_sha256,
+        "selection_mode": "greedy",
+        "policy_identity_audit": (
+            _formal_identity_audit(target) if target.key == "0806" else None
+        ),
         "expected_decks": EXPECTED_DECKS,
         "games_per_deck": EXPECTED_GAMES,
         "expected_games": EXPECTED_DECKS * EXPECTED_GAMES,
@@ -644,17 +699,15 @@ def refresh_index(
     )
     if target.key == "0806":
         _atomic_text(
-            ROOT / "evaluation/arena/combat_mat/policy_0806/index.html",
+            ROOT / "docs/evaluation/combat_mat/policy_0806/index.html",
             '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
             '<title>Policy-0806 Reports</title><body><h1>Policy-0806 Reports</h1><ul>'
-            '<li><a href="0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3/index.html">'
-            'CUDA Seeded-2048 Agent Choice v3（正式强度合同）</a></li>'
             '<li><a href="0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3/index.html">'
             'Official CPU Seeded-256 Agent Choice v3（部署复核合同）</a></li>'
             '</ul></body></html>\n',
         )
     _atomic_text(
-        ROOT / "evaluation/arena/combat_mat/index.html",
+        ROOT / "docs/evaluation/combat_mat/index.html",
         '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
         '<title>Frozen-0806 Reports</title><body><h1>Frozen-0806 Reports</h1><ul>'
         '<li><a href="policy_0806/index.html">Policy-0806 Reports</a></li>'
@@ -857,6 +910,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--opponent-policy", choices=("0019", "0806"), default="0019")
     args = parser.parse_args(argv)
     target = evaluation_target(args.opponent_policy)
+    if target.key == "0806":
+        audit = _formal_identity_audit(target)
+        print(
+            "FULL_0806_IDENTITY_AUDIT "
+            f"status={audit['status']} "
+            f"effective_sha256={audit['opponent']['effective_policy_sha256']}",
+            flush=True,
+        )
     catalog = load_frozen_0806_runtime_catalog(
         opponent_policy_label=args.opponent_policy
     )

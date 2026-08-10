@@ -34,7 +34,7 @@ POLICY_MODEL = (
 BENCHMARK = ROOT / "engine_cuda/tools/benchmark_0037_cuda_resident_refill.py"
 CANONICAL_OUTPUT_ROOT = (
     ROOT
-    / "evaluation/arena/combat_mat/policy_0806"
+    / "docs/evaluation/combat_mat/policy_0806"
     / "0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3"
 )
 CANONICAL_TEMP_ROOT = (
@@ -143,7 +143,7 @@ def configure_output_roots(
     selected_output = (output_root or CANONICAL_OUTPUT_ROOT).resolve()
     selected_temp = (temp_root or CANONICAL_TEMP_ROOT).resolve()
     allowed_output = (
-        ROOT / "evaluation/arena/combat_mat/policy_0806"
+        ROOT / "docs/evaluation/combat_mat/policy_0806"
     ).resolve()
     allowed_temp = (ROOT / ".tmp/evaluation").resolve()
     if not selected_output.is_relative_to(allowed_output):
@@ -987,7 +987,7 @@ def _refresh(catalog: Any, candidates: tuple[Any, ...]) -> list[dict[str, Any]]:
 
 
 def _refresh_policy_root_index() -> None:
-    policy_root = ROOT / "evaluation/arena/combat_mat/policy_0806"
+    policy_root = ROOT / "docs/evaluation/combat_mat/policy_0806"
     cards: list[str] = []
     for child in sorted(path for path in policy_root.iterdir() if path.is_dir()):
         manifest_path = child / "manifest.json"

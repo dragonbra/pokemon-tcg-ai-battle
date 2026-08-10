@@ -23,6 +23,8 @@ class GameRequest:
     engine_library: Path | None = None
     arbitrary_legal_actions: bool = False
     candidate_won_toss: bool | None = None
+    seed_replica: int | None = None
+    seed_slot: int | None = None
 
 
 @dataclass(frozen=True)
@@ -40,3 +42,9 @@ class GameResult:
     trace_path: Path
     performance: dict[str, Any] | None = None
     candidate_won_toss: bool | None = None
+    engine_seed: int | None = None
+    policy_seed: int | None = None
+    search_seed: int | None = None
+    seed_replica: int | None = None
+    seed_slot: int | None = None
+    toss_winner_selected_first: bool | None = None

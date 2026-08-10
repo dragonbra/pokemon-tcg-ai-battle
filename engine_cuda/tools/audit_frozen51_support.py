@@ -26,7 +26,7 @@ DEFAULT_EVIDENCE = (
 )
 DEFAULT_OUTPUT = (
     REPOSITORY_ROOT
-    / "evaluation/arena/combat_mat/0031_latest_frozen_test/cuda_support.json"
+    / "docs/evaluation/combat_mat/0031_latest_frozen_test/cuda_support.json"
 )
 
 

@@ -74,7 +74,7 @@
 - `data/official/` 是只读卡牌参考数据，`engine/source/` 是官方引擎源码；`engine/build/` 只保存本地构建产物。
 - `notes/`、`docs/reports/` 保存事实和研究结论；`experiments/<project_id>/` 保存该项目的 manifest、决策、权威 `DESIGN.html`/`DESIGN.md`、正式评测和项目实验记录；`replays/` 主要保存从 Kaggle 下载的官方 Episode replay/log JSON；本地 simulator 的非报告临时输出写到 `/tmp`，不纳入仓库。
 - Agent 为验证、smoke、benchmark 或临时验收生成的 Evaluation report 必须写到仓库根目录 `.tmp/evaluation/<purpose>/`，不得写到系统 `/tmp`；保留 Evaluation 自动创建的 `run_id/`，并在交付时给出仓库内可点击的 `report.html` 路径，方便直接用 VS Code 查看。`.tmp/` 只用于可删除的本机临时产物，必须保持 Git ignore，禁止提交。自 `0013` 起，正式实验评测写入 `experiments/<project_id>/evaluation/V<n>_<tag>.html`，不得用 `.tmp/` 代替可审计的正式版本产物。
-- `evaluation/arena/combat_mat/` 是正式 opponents 池的长期全量循环评测资产，入口为 `index.html`；`reports/<package>/<run_id>/report.html` 长期保留每套卡组的完整源报告，`matrix.json` 保存聚合数据，不得放到可随时清理的 `.tmp/`。每次更新正式池后，必须让 catalog 中每个启用 package 作为 candidate，对完整启用 catalog（包含自身）逐项运行至少 10 局，形成有向 N×N 矩阵。页面必须同时展示可按胜率和耗时排序的完整评测表、总体/先攻/后攻胜率、package 与按关键宝可梦归类的 archetype 胜率热力图、两级平均完整回合数热力图、代表卡图、总局数、累计耗时和逐 package 耗时。完整回合数必须按官方 engine 最终 turn 的 `ceil(turn / 2)` 计算，先手与后手玩家阶段共同组成一个回合；禁止用 action selection steps 冒充。
+- `docs/evaluation/combat_mat/` 是正式 opponents 池的长期全量循环评测资产，入口为 `index.html`；`reports/<package>/<run_id>/report.html` 长期保留每套卡组的完整源报告，`matrix.json` 保存聚合数据，不得放到可随时清理的 `.tmp/`。每次更新正式池后，必须让 catalog 中每个启用 package 作为 candidate，对完整启用 catalog（包含自身）逐项运行至少 10 局，形成有向 N×N 矩阵。页面必须同时展示可按胜率和耗时排序的完整评测表、总体/先攻/后攻胜率、package 与按关键宝可梦归类的 archetype 胜率热力图、两级平均完整回合数热力图、代表卡图、总局数、累计耗时和逐 package 耗时。完整回合数必须按官方 engine 最终 turn 的 `ceil(turn / 2)` 计算，先手与后手玩家阶段共同组成一个回合；禁止用 action selection steps 冒充。
 
 ## 官方引擎与评测硬约束
 

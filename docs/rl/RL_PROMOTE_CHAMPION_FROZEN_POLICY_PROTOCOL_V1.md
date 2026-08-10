@@ -329,6 +329,34 @@ Both benchmark results must remain separate.
 
 Additional benchmark tracks may be added later without redefining the policy identity rules in this document.
 
+## 6.1.1 Frozen CPU256 / CUDA2048 Seed Contract
+
+Promote Champion V1 uses Frozen contract
+`frozen_0806_seeded_agent_first_player_v3` with master evaluation seed
+`341512806`. The immutable exact-deck/opponent schedule contains 256 slots.
+
+- Frozen CPU256 executes exactly replica `0` of those 256 slots for each candidate.
+- Frozen CUDA2048 executes replicas `0..7` of the same 256 slots for each candidate.
+- CUDA replica `0` must therefore use the same focal identity, opponent identity,
+  slot, engine seed, Search seed, and toss-winner seed as CPU replica `0`.
+- Replicas `1..7` are deterministic, mutually distinct additions; they must not
+  replace, reroll, or modify replica `0`.
+- Engine, Search, and toss-winner seeds are derived from the master seed, focal
+  identity, opponent identity, slot, replica, and namespace. Changing any of these
+  inputs defines different evidence and must not be silently compared as the same run.
+- The seeded toss fixes only the winner of the toss. That Agent must process official
+  context 41 and choose first or second; the harness must not assign, alternate, or
+  balance seats.
+- Failed or unfinished games must not be replaced with new seeds. A formal result is
+  valid only when every scheduled game is terminal with zero error and zero unfinished.
+- Reports must record the master seed, base schedule hash, evaluation schedule hash,
+  every per-game engine/Search seed, replica and slot, toss winner, Agent choice, and
+  actual seat.
+
+Changing the master seed, seed derivation, replica set, schedule, or seat-selection
+rule requires a new versioned Frozen contract ID. Frozen-0806 and Frozen-0809 retain
+separate reports even when they use the same seed contract.
+
 ---
 
 ## 6.2 Manual Promote

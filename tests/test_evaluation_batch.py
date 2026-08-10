@@ -108,6 +108,13 @@ class TraceStoreTests(unittest.TestCase):
             error=None,
             steps=1,
             trace_path=trace_path,
+            candidate_won_toss=True,
+            engine_seed=101,
+            policy_seed=202,
+            search_seed=303,
+            seed_replica=0,
+            seed_slot=4,
+            toss_winner_selected_first=True,
             performance={
                 "worker_wall_seconds": 0.4,
                 "engine_start_seconds": 0.1,
@@ -128,6 +135,12 @@ class TraceStoreTests(unittest.TestCase):
 
         self.assertEqual(json.loads(trace_path.read_text(encoding="utf-8")), trace)
         self.assertEqual(store.game_records[0]["performance"], result.performance)
+        self.assertEqual(store.game_records[0]["engine_seed"], 101)
+        self.assertEqual(store.game_records[0]["policy_seed"], 202)
+        self.assertEqual(store.game_records[0]["search_seed"], 303)
+        self.assertEqual(store.game_records[0]["seed_replica"], 0)
+        self.assertEqual(store.game_records[0]["seed_slot"], 4)
+        self.assertIs(store.game_records[0]["toss_winner_selected_first"], True)
 
 
 class BatchRunnerTests(unittest.TestCase):

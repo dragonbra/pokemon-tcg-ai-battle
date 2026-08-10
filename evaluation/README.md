@@ -45,7 +45,10 @@ actual-seat provenance；只有目标局数全部 finished、0 error、0 unfinis
 
 2026-08-10 以前的 Policy-0806 fixed-seat、seeded-512 和 balanced-seat v2 报告已被新合同废止，
 不得与 v3 报告拼接或用于当前强度比较。当前正式 CUDA 目录固定为
-`arena/combat_mat/policy_0806/0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3/`。
+`docs/evaluation/combat_mat/policy_0806/0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3/`。
+Combat Mat 的位置、Policy-0806 reset 与 Policy Identity Protocol V1 证据边界统一记录在
+[`docs/evaluation/combat_mat/README.md`](../docs/evaluation/combat_mat/README.md)，
+不得仅根据目录中的 `Policy-0806` 名称推断其 identity audit 状态。
 
 `run` 也支持 `--control PACKAGE`（只在报告中展示对比）、调试用 `--visualize` / `--keep-temp`、
 `--max-steps N` 和可重复的 `--metric-module MODULE[:Class]`。默认不生成可视化帧。每次 CLI
@@ -168,9 +171,9 @@ Supporter/手填能量利用、对手攻击受阻、关键主攻成形、Ability
 但不作为可见图表分组。error/unfinished 不进入胜负回合统计，
 observed engine turn 仍保留在单局 payload 中；action selection 次数只用于性能与异常审计。
 
-正式 opponents 全量循环评测长期保存在 `arena/combat_mat/`：`index.html` 是矩阵入口，
+正式 opponents 全量循环评测长期保存在 `docs/evaluation/combat_mat/`：`index.html` 是矩阵入口，
 `reports/<package>/<run_id>/report.html` 保留每个 package 面对完整 catalog 的源报告（这是独立的
-`arena/combat_mat` 矩阵合同，不同于 RL 正式实验报告），
+`docs/evaluation/combat_mat` 矩阵合同，不同于 RL 正式实验报告），
 `matrix.json` 保存聚合数据。正式池变化后需要按新 catalog 重新运行所有 package（包含自身，
 每个有向单元格 10 局）；这些重要结果不得放在 `.tmp/`。页面展示总体、先攻和后攻胜率，
 并将先攻与后攻玩家阶段按 `ceil(engine_turn / 2)` 合成完整回合。

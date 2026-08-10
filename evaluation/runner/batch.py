@@ -330,7 +330,18 @@ def run_batch(config: BatchConfig) -> BatchResult:
             ):
                 result, trace = _read_or_create_trace(request, result, trace_path)
                 result = replace(
-                    result, candidate_won_toss=request.candidate_won_toss
+                    result,
+                    candidate_won_toss=request.candidate_won_toss,
+                    engine_seed=request.seed,
+                    policy_seed=request.policy_seed,
+                    search_seed=request.search_seed,
+                    seed_replica=request.seed_replica,
+                    seed_slot=request.seed_slot,
+                    toss_winner_selected_first=(
+                        result.candidate_first == request.candidate_won_toss
+                        if request.candidate_won_toss is not None
+                        else None
+                    ),
                 )
                 context = GameContext(
                     game_id=result.game_id,
@@ -675,6 +686,12 @@ def _game_jobs(
                 engine_library=config.engine_library,
                 arbitrary_legal_actions=config.arbitrary_legal_actions,
                 candidate_won_toss=candidate_won_toss,
+                seed_replica=(
+                    replica if config.independent_engine_seeds else 0
+                ),
+                seed_slot=(
+                    slot if config.independent_engine_seeds else game_number - 1
+                ),
             )
             jobs.append((request, store.temp_path(game_id)))
     return jobs

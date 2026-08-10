@@ -19,7 +19,7 @@ REPLICATION_SEED = 843573811
 DECK_NUMBER = "002"
 OUTPUT_ROOT = (
     ROOT
-    / "evaluation/arena/combat_mat/policy_0806"
+    / "docs/evaluation/combat_mat/policy_0806"
     / "0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_replication_002_v3"
 )
 TEMP_ROOT = ROOT / ".tmp/evaluation/policy_0806_cuda_seeded2048_agent_choice_replication_002_v3"
