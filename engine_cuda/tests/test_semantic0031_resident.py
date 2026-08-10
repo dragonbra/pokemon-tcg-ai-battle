@@ -73,6 +73,12 @@ class ResidentLaneQueueTest(unittest.TestCase):
 
 
 class ResidentTurnLimitTest(unittest.TestCase):
+    def test_decision_trace_hook_is_default_off(self) -> None:
+        parameter = inspect.signature(run_resident_greedy_jobs).parameters[
+            "decision_trace_sink"
+        ]
+        self.assertIsNone(parameter.default)
+
     def test_default_contract_is_fifty_full_rounds(self) -> None:
         parameter = inspect.signature(run_resident_greedy_jobs).parameters[
             "engine_turn_draw_limit"

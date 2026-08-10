@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 
 module = importlib.import_module(
@@ -15,6 +16,38 @@ module = importlib.import_module(
 
 
 class AcceleratedTransferTest(unittest.TestCase):
+    def test_greedy_collector_requires_kaggle_candidate_deployment(self):
+        runner = importlib.import_module(
+            "train.0040_dragapult_0809_action_boundary_rl.training.run_full_semantic"
+        )
+        opponent = SimpleNamespace(
+            _policy_identity_audit=runner.resolve_policy_identity(
+                "Policy-0806", purpose="unit_test"
+            )
+        )
+        config = runner.RunConfig(version="V999_accelerated_transfer_test")
+        with self.assertRaisesRegex(RuntimeError, "candidate deployment identity"):
+            runner.build_collector(SimpleNamespace(), opponent, config, mode="greedy")
+
+    def test_sample_collector_keeps_live_fp32_training_model(self):
+        runner = importlib.import_module(
+            "train.0040_dragapult_0809_action_boundary_rl.training.run_full_semantic"
+        )
+        opponent = SimpleNamespace(
+            _policy_identity_audit=runner.resolve_policy_identity(
+                "Policy-0806", purpose="unit_test"
+            )
+        )
+        config = runner.RunConfig(version="V999_accelerated_transfer_test")
+        model = SimpleNamespace()
+        sentinel = object()
+        with mock.patch.object(
+            runner, "ChunkedCudaRolloutCollector", return_value=sentinel
+        ) as constructor:
+            result = runner.build_collector(model, opponent, config, mode="sample")
+        self.assertIs(result, sentinel)
+        self.assertIs(constructor.call_args.args[0], model)
+
     def test_schedule_and_group_ownership(self):
         controller = module.AcceleratedTransferController()
         base = {
@@ -252,16 +285,31 @@ class AcceleratedTransferTest(unittest.TestCase):
             ))
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "frozen.json"
+            deployment = importlib.import_module(
+                "train.0040_dragapult_0809_action_boundary_rl.candidate_deployment"
+            )
+            candidate_audit = deployment.CandidateDeploymentAudit(
+                contract_id=deployment.CONTRACT_ID,
+                source_checkpoint_sha256="a" * 64,
+                portable_checkpoint_sha256="b" * 64,
+                effective_candidate_sha256="c" * 64,
+                checkpoint_update=5,
+            )
             outcomes = runner._persist_frozen_results(
                 output, episodes, checkpoint_update=5, panel_version="fixed",
                 opponent_identity_audit=runner.resolve_policy_identity(
                     "Policy-0806", purpose="unit_test"
                 ),
+                candidate_deployment_audit=candidate_audit,
             )
             payload = json.loads(output.read_text())
         self.assertEqual(len(outcomes), 2048)
         self.assertEqual(payload["entries"][17]["seed"], 17)
         self.assertTrue(payload["entries"][17]["chance_boundary"])
+        self.assertEqual(
+            payload["candidate_deployment_identity_audit"]["contract_id"],
+            deployment.CONTRACT_ID,
+        )
         self.assertFalse(payload["entries"][17]["semantic_fallback"])
         self.assertEqual(
             payload["entries"][17]["fallback_reason"],

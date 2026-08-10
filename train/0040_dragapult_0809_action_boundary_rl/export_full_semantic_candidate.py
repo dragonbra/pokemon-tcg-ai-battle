@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
-from typing import Any
+from typing import Any, Mapping
 
 import torch
 
@@ -45,6 +45,13 @@ FOCAL_DECK_PATH = (
 )
 _PROTOTYPE_ALIASES = ("state_encoder.prototypes.", "option_encoder.prototypes.")
 _LORA_MODULES = ("self_attn", "multihead_attn")
+PORTABLE_STATE_FIELDS = (
+    "actor_state_dict",
+    "value_head_state_dict",
+    "allocation_head_state_dict",
+    "opponent_meta_head_state_dict",
+    "opponent_meta_conditioner_state_dict",
+)
 
 
 def _sha256(path: Path) -> str:
@@ -81,6 +88,44 @@ def _load_payload(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"checkpoint is not a mapping: {path}")
     return payload
+
+
+def deployment_effective_sha256(
+    payload: Mapping[str, Any], manifest: Mapping[str, Any]
+) -> str:
+    """Hash semantic deployment content independently of torch.save bytes."""
+
+    digest = hashlib.sha256()
+    digest.update(b"kaggle_fp16_storage_fp32_runtime_v1\0")
+    semantic_metadata = {
+        "schema_version": payload.get("schema_version"),
+        "metadata": payload.get("metadata"),
+        "action_boundary_deployment": manifest.get("action_boundary_deployment"),
+        "storage_dtype": manifest.get("storage_dtype"),
+        "runtime_dtype": manifest.get("runtime_dtype"),
+    }
+    digest.update(json.dumps(
+        semantic_metadata, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    ).encode("ascii"))
+    digest.update(b"\0")
+    for field in PORTABLE_STATE_FIELDS:
+        state = payload.get(field)
+        if not isinstance(state, Mapping):
+            raise ValueError(f"portable checkpoint is missing {field}")
+        for name, value in sorted(state.items()):
+            if not isinstance(value, torch.Tensor):
+                raise ValueError(f"portable tensor is not a Tensor: {field}.{name}")
+            tensor = value.detach().cpu().contiguous()
+            digest.update(f"{field}.{name}".encode("utf-8"))
+            digest.update(b"\0")
+            digest.update(str(tensor.dtype).encode("ascii"))
+            digest.update(b"\0")
+            digest.update(json.dumps(
+                list(tensor.shape), separators=(",", ":")
+            ).encode("ascii"))
+            digest.update(b"\0")
+            digest.update(tensor.view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
 
 
 def _merge_qv_weight(
@@ -165,11 +210,7 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
     entries = payload.get("entries")
     result_schema = payload.get("schema_version")
     if (
-        result_schema not in {
-            "0038_frozen_per_game_results_v1",
-            "0038_frozen_per_game_results_v2",
-            "0040_frozen_per_game_results_policy_identity_v3",
-        }
+        result_schema != "0040_frozen_per_game_results_policy_identity_v4"
         or payload.get("checkpoint_update") != update
         or payload.get("frozen_panel_version")
         != "frozen_0806_seeded_agent_first_player_v3"
@@ -177,43 +218,54 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         or len(entries) != 2048
     ):
         raise ValueError("canonical Frozen evaluation contract mismatch")
-    if result_schema == "0040_frozen_per_game_results_policy_identity_v3":
-        audit = payload.get("policy_identity_audit") or {}
-        if (
-            payload.get("opponent_policy_id") != "Policy-0806"
-            or audit.get("status") != "PASS"
-            or audit.get("requested_policy_id") != "Policy-0806"
-        ):
-            raise ValueError("canonical Frozen evaluation policy identity audit failed")
+    audit = payload.get("policy_identity_audit") or {}
+    if (
+        payload.get("opponent_policy_id") != "Policy-0806"
+        or audit.get("status") != "PASS"
+        or audit.get("requested_policy_id") != "Policy-0806"
+    ):
+        raise ValueError("canonical Frozen evaluation policy identity audit failed")
+    candidate_audit = payload.get("candidate_deployment_identity_audit") or {}
+    if (
+        candidate_audit.get("status") != "PASS"
+        or candidate_audit.get("contract_id")
+        != "kaggle_fp16_storage_fp32_runtime_v1"
+        or candidate_audit.get("storage_dtype") != "fp16"
+        or candidate_audit.get("runtime_dtype") != "fp32"
+        or candidate_audit.get("checkpoint_update") != update
+        or len(str(candidate_audit.get("portable_checkpoint_sha256", ""))) != 64
+        or len(str(candidate_audit.get("effective_candidate_sha256", ""))) != 64
+        or candidate_audit.get("source_checkpoint_sha256")
+        != _sha256(checkpoint)
+    ):
+        raise ValueError(
+            "canonical Frozen evaluation candidate deployment audit failed"
+        )
     valid = [
         row for row in entries
         if row.get("valid") is True and row.get("error") in (None, "")
     ]
     if len(valid) != 2048:
         raise ValueError("canonical Frozen evaluation contains invalid/error games")
-    if result_schema == "0038_frozen_per_game_results_v2":
-        malformed = [
-            row for row in valid
-            if (
-                not isinstance(row.get("chance_boundary"), bool)
-                or not isinstance(row.get("semantic_fallback"), bool)
-                or bool(row.get("fallback")) != bool(
-                    row.get("chance_boundary") or row.get("semantic_fallback")
-                )
-                or bool(row.get("chance_boundary")) != (
-                    row.get("fallback_reason") == "chance_boundary_before_allocation"
-                )
+    malformed = [
+        row for row in valid
+        if (
+            not isinstance(row.get("chance_boundary"), bool)
+            or not isinstance(row.get("semantic_fallback"), bool)
+            or bool(row.get("fallback")) != bool(
+                row.get("chance_boundary") or row.get("semantic_fallback")
             )
-        ]
-        if malformed:
-            raise ValueError("canonical Frozen v2 chance/fallback evidence is malformed")
-        semantic_fallbacks = sum(bool(row["semantic_fallback"]) for row in valid)
-        if semantic_fallbacks:
-            raise ValueError("canonical Frozen evaluation contains semantic fallback")
-        chance_boundaries = sum(bool(row["chance_boundary"]) for row in valid)
-    else:
-        semantic_fallbacks = sum(bool(row.get("fallback")) for row in valid)
-        chance_boundaries = 0
+            or bool(row.get("chance_boundary")) != (
+                row.get("fallback_reason") == "chance_boundary_before_allocation"
+            )
+        )
+    ]
+    if malformed:
+        raise ValueError("canonical Frozen chance/fallback evidence is malformed")
+    semantic_fallbacks = sum(bool(row["semantic_fallback"]) for row in valid)
+    if semantic_fallbacks:
+        raise ValueError("canonical Frozen evaluation contains semantic fallback")
+    chance_boundaries = sum(bool(row["chance_boundary"]) for row in valid)
     wins = sum(row.get("outcome") == 1 for row in valid)
     losses = len(valid) - wins
     first = [row for row in valid if row.get("focal_first") is True]
@@ -235,10 +287,17 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         "second_wins": sum(row.get("outcome") == 1 for row in second),
         "chance_boundaries": chance_boundaries,
         "semantic_fallbacks": semantic_fallbacks,
+        "candidate_deployment_identity_audit": candidate_audit,
     }
 
 
-def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[str, Any]:
+def export_candidate(
+    *,
+    source: Path,
+    checkpoint: Path,
+    output: Path,
+    require_frozen_selection: bool = True,
+) -> dict[str, Any]:
     source = source.resolve()
     checkpoint = checkpoint.resolve()
     output = output.resolve()
@@ -271,7 +330,11 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
     ):
         raise ValueError("checkpoint is not an audited 0040 compound policy")
     checkpoint_sha256 = _checkpoint_sidecar(checkpoint)
-    frozen = _frozen_selection(checkpoint, checkpoint_update)
+    frozen = (
+        _frozen_selection(checkpoint, checkpoint_update)
+        if require_frozen_selection
+        else None
+    )
     if _sha256(BASE_CHECKPOINT) != BASE_SHA256:
         raise ValueError("audited 0809 base checkpoint SHA-256 mismatch")
     base_payload = _load_payload(BASE_CHECKPOINT)
@@ -487,8 +550,22 @@ def export_candidate(*, source: Path, checkpoint: Path, output: Path) -> dict[st
                 f"{metadata.get('version')} update{checkpoint_update} canonical Frozen-0806 greedy "
                 f"{frozen['wins']}-{frozen['losses']} "
                 f"({frozen['win_rate'] * 100:.8f}%), 0 error"
+                if frozen is not None
+                else "pre-evaluation deployment materialization; no strength result attached"
             ),
         }
+        manifest["deployment_effective_sha256"] = deployment_effective_sha256(
+            portable, manifest
+        )
+        if (
+            frozen is not None
+            and frozen["candidate_deployment_identity_audit"][
+                "effective_candidate_sha256"
+            ] != manifest["deployment_effective_sha256"]
+        ):
+            raise ValueError(
+                "final package deployment identity differs from evaluated candidate"
+            )
         manifest["package_file_sha256"] = _package_file_hashes(output)
         (output / "manifest.json").write_text(
             json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"

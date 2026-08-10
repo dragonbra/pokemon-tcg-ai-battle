@@ -10,6 +10,7 @@ from evaluation.frozen_0806_full_evaluation import (
     _formal_identity_audit,
     _schedule_counts,
     _turn_order,
+    validate_candidate_deployment_audit,
     validate_report_payload,
 )
 from evaluation.frozen_0806_runtime import load_frozen_0806_runtime_catalog
@@ -39,7 +40,8 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
         self.assertNotEqual(POLICY_0806_TARGET.output_root, LEGACY_POLICY_0806_OUTPUT_ROOT)
         self.assertEqual(
             POLICY_0806_TARGET.output_root.name,
-            "0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3",
+            "0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3_"
+            "kaggle_fp16_storage_fp32_runtime_v1",
         )
         self.assertEqual(
             LEGACY_POLICY_0806_OUTPUT_ROOT.name,
@@ -240,6 +242,20 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
                 ),
                 "first_player_contract": FROZEN_0806_FIRST_PLAYER_CONTRACT,
                 "policy_identity_audit": _formal_identity_audit(POLICY_0806_TARGET),
+                "candidate_deployment_identity_audit": {
+                    "schema_version": (
+                        "frozen_cpu_candidate_deployment_identity_audit_v1"
+                    ),
+                    "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+                    "status": "PASS",
+                    "source_checkpoint_sha256": (
+                        candidate.package_manifest["checkpoint_sha256"]
+                    ),
+                    "portable_checkpoint_sha256": "a" * 64,
+                    "effective_candidate_sha256": "b" * 64,
+                    "storage_dtype": "fp16",
+                    "runtime_dtype": "fp32",
+                },
                 "seed": 341_512_806,
                 "games_per_opponent": list(counts),
                 "opponents": [{}] * 55,
@@ -268,6 +284,21 @@ class Frozen0806FullEvaluationTests(unittest.TestCase):
             + record["turn_order"]["second"]["games"],
             EXPECTED_GAMES,
         )
+
+    def test_candidate_deployment_gate_rejects_raw_fp32_evidence(self) -> None:
+        with self.assertRaisesRegex(ValueError, "candidate deployment identity"):
+            validate_candidate_deployment_audit(
+                {
+                    "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+                    "status": "PASS",
+                    "source_checkpoint_sha256": POLICY_0806_TARGET.policy_sha256,
+                    "portable_checkpoint_sha256": "a" * 64,
+                    "effective_candidate_sha256": "b" * 64,
+                    "storage_dtype": "fp32",
+                    "runtime_dtype": "fp32",
+                },
+                source_checkpoint_sha256=POLICY_0806_TARGET.policy_sha256,
+            )
 
     def test_acceptance_rejects_missing_policy_identity_audit(self) -> None:
         candidate = self.catalog.candidates[0]

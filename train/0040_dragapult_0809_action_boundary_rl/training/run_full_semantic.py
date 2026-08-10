@@ -49,6 +49,11 @@ from ..policy_identity import (
     materialize_policy,
     resolve_policy_identity,
 )
+from ..candidate_deployment import (
+    CandidateDeploymentAudit,
+    materialize_kaggle_evaluation_candidate,
+    require_kaggle_candidate_deployment,
+)
 from ..evaluation.frozen_jobs import (
     CANONICAL_CONTRACT_ID,
     EXPECTED_007_SCHEDULE_SHA256,
@@ -344,6 +349,8 @@ def build_collector(model, opponent, config: RunConfig, *, mode: str,
             "FATAL: Opponent policy identity violation. "
             "Collector received no passing Policy-0806 materialization audit"
         )
+    if mode == "greedy":
+        require_kaggle_candidate_deployment(model)
     if record_trajectory is None:
         record_trajectory = mode == "sample"
     if config.engine_backend == "accelerated:cuda_resident":
@@ -520,13 +527,23 @@ def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
 
 def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_update: int,
                             panel_version: str,
-                            opponent_identity_audit: Any) -> dict[int, int]:
+                            opponent_identity_audit: Any,
+                            candidate_deployment_audit: CandidateDeploymentAudit,
+                            ) -> dict[int, int]:
     if (
         opponent_identity_audit.status != "PASS"
         or opponent_identity_audit.requested_policy_id != OPPONENT_POLICY_ID
     ):
         raise PolicyIdentityViolation(
             "FATAL: Frozen result cannot be persisted without PASS Policy-0806 audit"
+        )
+    if candidate_deployment_audit.checkpoint_update != checkpoint_update:
+        raise RuntimeError(
+            "FATAL: Frozen result candidate deployment update does not match checkpoint"
+        )
+    if candidate_deployment_audit.status != "PASS":
+        raise RuntimeError(
+            "FATAL: Frozen result cannot be persisted without PASS candidate deployment audit"
         )
     rows = []
     outcomes = {}
@@ -550,11 +567,14 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
     if len(rows) != 2048 or len(outcomes) != len(rows):
         raise RuntimeError("Frozen result persistence requires 2,048 unique games")
     _atomic_json(path, {
-        "schema_version": "0040_frozen_per_game_results_policy_identity_v3",
+        "schema_version": "0040_frozen_per_game_results_policy_identity_v4",
         "frozen_panel_version": panel_version,
         "checkpoint_update": checkpoint_update,
         "opponent_policy_id": OPPONENT_POLICY_ID,
         "policy_identity_audit": opponent_identity_audit.to_manifest(),
+        "candidate_deployment_identity_audit": (
+            candidate_deployment_audit.to_manifest()
+        ),
         "entries": rows,
     })
     return outcomes
@@ -1422,7 +1442,21 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "rollout/source_policy_update": 0,
                 }
             )
-            baseline_evaluator = build_collector(model, opponent, config, mode="greedy")
+            baseline_evaluation_model, baseline_candidate_audit = (
+                materialize_kaggle_evaluation_candidate(
+                    source=CANDIDATE_ROOT,
+                    checkpoint=paths["checkpoint"] / "update-000000.pt",
+                    deck=focal_deck(),
+                    device=device,
+                    temporary_root=(
+                        ROOT / ".tmp/evaluation/0040_candidate_deployment"
+                        / config.version
+                    ),
+                )
+            )
+            baseline_evaluator = build_collector(
+                baseline_evaluation_model, opponent, config, mode="greedy"
+            )
             baseline_started = time.perf_counter()
             baseline_jobs, baseline_schedule_sha = build_frozen_jobs(
                 focal_deck_id=FOCAL_DECK_ID,
@@ -1452,6 +1486,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                 paths["artifact"] / "frozen_results/core-update-000000.json",
                 baseline, checkpoint_update=0, panel_version=CANONICAL_CONTRACT_ID,
                 opponent_identity_audit=opponent._policy_identity_audit,
+                candidate_deployment_audit=baseline_candidate_audit,
             )
             update0_package_parity = _run_attested_update0_package_parity(
                 version=config.version,
@@ -1459,7 +1494,8 @@ def run(config: RunConfig) -> dict[str, Any]:
                 artifact=paths["artifact"],
             )
             diagnostic_evaluator = build_collector(
-                model, opponent, config, mode="greedy", record_trajectory=True
+                baseline_evaluation_model, opponent, config, mode="greedy",
+                record_trajectory=True
             )
             diagnostic_episodes = diagnostic_evaluator.collect(baseline_jobs[:2])
             diagnostic_batch = prepare_episodes(
@@ -1500,10 +1536,16 @@ def run(config: RunConfig) -> dict[str, Any]:
                 "win_rate": baseline_win_rate,
                 "checkpoint": "checkpoint/update-000000.pt",
                 "selection_runtime": "accelerated:cuda_resident",
+                "candidate_deployment_identity_audit": (
+                    baseline_candidate_audit.to_manifest()
+                ),
                 "promotion_status": "NOT_PROMOTED",
                 "human_decision_required": True,
                 "cpu_evaluation_run": False,
             })
+            del baseline, baseline_evaluator, diagnostic_evaluator
+            del diagnostic_episodes, baseline_evaluation_model
+            torch.cuda.empty_cache()
             update_iterator = (
                 itertools.count(1)
                 if config.updates is None
@@ -1747,7 +1789,21 @@ def run(config: RunConfig) -> dict[str, Any]:
                     **ppo_metrics,
                 }
                 if update % config.eval_every == 0:
-                    evaluator = build_collector(model, opponent, config, mode="greedy")
+                    evaluation_model, candidate_deployment_audit = (
+                        materialize_kaggle_evaluation_candidate(
+                            source=CANDIDATE_ROOT,
+                            checkpoint=checkpoint,
+                            deck=focal_deck(),
+                            device=device,
+                            temporary_root=(
+                                ROOT / ".tmp/evaluation/0040_candidate_deployment"
+                                / config.version
+                            ),
+                        )
+                    )
+                    evaluator = build_collector(
+                        evaluation_model, opponent, config, mode="greedy"
+                    )
                     eval_started = time.perf_counter()
                     evaluation_jobs, evaluation_schedule_sha = build_frozen_jobs(
                         focal_deck_id=FOCAL_DECK_ID,
@@ -1775,6 +1831,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                         evaluation, checkpoint_update=update,
                         panel_version=CANONICAL_CONTRACT_ID,
                         opponent_identity_audit=opponent._policy_identity_audit,
+                        candidate_deployment_audit=candidate_deployment_audit,
                     )
                     metrics.update(_episode_metrics(evaluation, "eval/core"))
                     metrics.update(_paired_frozen_metrics(
@@ -1800,6 +1857,9 @@ def run(config: RunConfig) -> dict[str, Any]:
                             "delta_vs_update0": frozen_win_rate - baseline_win_rate,
                             "checkpoint": f"checkpoint/update-{update:06d}.pt",
                             "selection_runtime": "accelerated:cuda_resident",
+                            "candidate_deployment_identity_audit": (
+                                candidate_deployment_audit.to_manifest()
+                            ),
                             "cpu_evaluation_run": False,
                             "promotion_status": "NOT_PROMOTED",
                             "human_decision_required": True,
@@ -1834,7 +1894,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                 # tensors while the next on-policy rollout is being collected.
                 del batch, episodes, collector
                 if update % config.eval_every == 0:
-                    del evaluation, evaluator
+                    del evaluation, evaluator, evaluation_model
                 torch.cuda.empty_cache()
                 if (paths["artifact"] / "STOP_REQUESTED").exists():
                     stop_requested = True

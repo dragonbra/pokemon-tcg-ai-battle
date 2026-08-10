@@ -270,6 +270,7 @@ def run_resident_greedy_jobs(
     focal_greedy: bool = True,
     focal_value_fn: Any | None = None,
     focal_decision_sink: Any | None = None,
+    decision_trace_sink: Any | None = None,
     compact_prefixes: bool = True,
     action_adapter: Any | None = None,
 ) -> ResidentRunResult:
@@ -543,6 +544,18 @@ def run_resident_greedy_jobs(
                 )
             strategic_focal = focal_route if bypass is None else focal_route & ~bypass.bypass_mask
             lane_focal_decisions.add_(strategic_focal.to(dtype=torch.int64))
+            if decision_trace_sink is not None and bool(ready.any().item()):
+                decision_trace_sink(
+                    semantic=semantic,
+                    ready=ready,
+                    actor=actor,
+                    actions=actions,
+                    lengths=routed_lengths,
+                    lane_job=queue.lane_job,
+                    lane_decisions=lane_selections,
+                    turns=lane_turn,
+                    state_bytes=engine.state_bytes(),
+                )
             if (
                 focal_decision_sink is not None
                 and routed is not None

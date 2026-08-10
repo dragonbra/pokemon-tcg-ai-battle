@@ -78,6 +78,38 @@ def _feature_hash(mapping: dict[str, torch.Tensor]) -> str:
     return digest.hexdigest()
 
 
+LEGAL_TENSOR_NAMES = {
+    "min_count", "max_count", "option_cat", "option_num", "option_state",
+    "option_mask", "option_source", "option_target", "option_context",
+    "option_effect_card",
+}
+LEGAL_FAMILIES = {"option", "option_skill", "option_effect"}
+
+
+def _compact_tensor_hash(
+    mapping: dict[str, torch.Tensor], *, legal: bool
+) -> str:
+    digest = hashlib.sha256()
+    for name in GLOBAL_KEYS:
+        if (name in LEGAL_TENSOR_NAMES) != legal:
+            continue
+        tensor = mapping[name][0].detach().cpu().contiguous()
+        digest.update(name.encode())
+        digest.update(tensor.numpy().tobytes())
+    for family, names in FAMILY_KEYS.items():
+        mask = mapping[f"{family}_mask"][0].bool()
+        live = int(mask.sum())
+        selected = list(names) if (family in LEGAL_FAMILIES) == legal else []
+        if not selected:
+            continue
+        digest.update(f"{family}:{live}".encode())
+        for name in selected:
+            tensor = mapping[name][0, :live].detach().cpu().contiguous()
+            digest.update(name.encode())
+            digest.update(tensor.numpy().tobytes())
+    return digest.hexdigest()
+
+
 def _decode_opponent(model, mapping):
     validated, state, options = model.encode(mapping)
     decoded = model.action_decoder.greedy(
@@ -108,6 +140,10 @@ def main() -> None:
     parser.add_argument("--extension-dir", type=Path, required=True)
     parser.add_argument("--rules", type=Path, required=True)
     parser.add_argument("--max-decisions", type=int, default=2048)
+    parser.add_argument(
+        "--focal-first", choices=("both", "true", "false"), default="both"
+    )
+    parser.add_argument("--continue-after-divergence", action="store_true")
     args = parser.parse_args()
     if args.output.exists():
         raise FileExistsError(args.output)
@@ -162,8 +198,11 @@ def main() -> None:
     total_value_forwards = total_focal_forwards = 0
     first_divergence = None
 
+    focal_first_values = {
+        "both": (True, False), "true": (True,), "false": (False,),
+    }[args.focal_first]
     for seed in seeds:
-        for focal_first in (True, False):
+        for focal_first in focal_first_values:
             decks = (focal, opponent) if focal_first else (opponent, focal)
             focal_player = 0 if focal_first else 1
             resident_job = ResidentJob(
@@ -452,6 +491,24 @@ def main() -> None:
                             "cpu_macro": cpu_macro,
                             "cuda_macro": cuda_macro,
                         }
+                        if cpu_mapping is not None:
+                            detail.update({
+                                "cpu_state_hash": _compact_tensor_hash(
+                                    cpu_mapping, legal=False
+                                ),
+                                "cuda_state_hash": _compact_tensor_hash(
+                                    semantic, legal=False
+                                ),
+                                "cpu_observation_hash": _feature_hash(cpu_mapping),
+                                "cuda_observation_hash": _feature_hash(semantic),
+                                "cpu_legal_actions_hash": _compact_tensor_hash(
+                                    cpu_mapping, legal=True
+                                ),
+                                "cuda_legal_actions_hash": _compact_tensor_hash(
+                                    semantic, legal=True
+                                ),
+                                "elementwise_observation_legal_parity": True,
+                            })
                         game["first_divergence"] = detail
                         break
                     if bool(bypass.forced_mask[0]):
@@ -491,19 +548,20 @@ def main() -> None:
             total_forced += game["forced_shortcuts"]
             total_macro += game["macro_actions"]
             games.append(game)
-            if first_divergence is not None:
+            if first_divergence is not None and not args.continue_after_divergence:
                 break
-        if first_divergence is not None:
+        if first_divergence is not None and not args.continue_after_divergence:
             break
 
-    passed = first_divergence is None and len(games) == len(seeds) * 2
+    games_requested = len(seeds) * len(focal_first_values)
+    passed = first_divergence is None and len(games) == games_requested
     report = {
         "schema_version": "0040_gate_d_full_policy_identity_lockstep_v2",
         "gate": "D",
         "status": "PASS" if passed else "FAIL",
         "opponent_policy_id": "Policy-0806",
         "policy_identity_audit": opponent_audit.to_manifest(),
-        "games_requested": len(seeds) * 2,
+        "games_requested": games_requested,
         "games_completed": len(games),
         "first_divergence": first_divergence,
         "totals": {

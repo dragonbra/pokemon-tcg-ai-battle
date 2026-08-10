@@ -9,15 +9,18 @@ import importlib
 import json
 import os
 import shutil
+import tempfile
 import time
 import uuid
 from collections import Counter
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
+
+import torch
 
 from evaluation.frozen_0806 import POLICY_0019_SHA256, POLICY_0806_SHA256
 from evaluation.frozen_0806_contract import (
@@ -45,10 +48,11 @@ from evaluation.runner.batch import (
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_ROOT = (
     ROOT
-    / "docs/evaluation/combat_mat/policy_0019/0806_kaggle_top100_plus_v1"
+    / "docs/evaluation/combat_mat/policy_0019"
+    / "0806_kaggle_top100_plus_v1_kaggle_fp16_storage_fp32_runtime_v1"
 )
 LEGACY_OUTPUT_ROOT = (
-    ROOT / "docs/evaluation/combat_mat/frozen/0806_kaggle_top100_plus_v1"
+    ROOT / "docs/evaluation/combat_mat/policy_0019/0806_kaggle_top100_plus_v1"
 )
 TEMP_ROOT = ROOT / ".tmp/evaluation/frozen_0806_cpu256_agent_choice_v3_full"
 BENCHMARK_ROOT = ROOT / ".tmp/evaluation/frozen_0806_cpu256_agent_choice_v3_benchmark"
@@ -61,7 +65,12 @@ LEGACY_POLICY_0806_OUTPUT_ROOT = (
 POLICY_0806_SEEDED2048_OUTPUT_ROOT = (
     ROOT
     / "docs/evaluation/combat_mat/policy_0806"
-    / "0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3"
+    / "0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3_"
+    "kaggle_fp16_storage_fp32_runtime_v1"
+)
+KAGGLE_CANDIDATE_CONTRACT_ID = "kaggle_fp16_storage_fp32_runtime_v1"
+FP16_FP32_SCHEMA = (
+    "0031_shared_prototype_fp16_storage_fp32_runtime_candidate_checkpoint_v1"
 )
 
 
@@ -79,7 +88,7 @@ POLICY_0019_TARGET = FrozenEvaluationTarget(
     label="Policy-0019",
     policy_sha256=POLICY_0019_SHA256,
     output_root=OUTPUT_ROOT,
-    legacy_output_root=LEGACY_OUTPUT_ROOT,
+    legacy_output_root=None,
 )
 POLICY_0806_TARGET = FrozenEvaluationTarget(
     key="0806",
@@ -136,6 +145,117 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(4 * 1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _candidate_effective_sha256(payload: dict[str, Any]) -> str:
+    state = payload.get("state_dict")
+    if not isinstance(state, dict):
+        raise RuntimeError("FATAL: candidate portable checkpoint has no state_dict")
+    digest = hashlib.sha256()
+    digest.update(KAGGLE_CANDIDATE_CONTRACT_ID.encode("ascii"))
+    digest.update(b"\0")
+    digest.update(str(payload.get("schema_version")).encode("ascii"))
+    digest.update(b"\0")
+    digest.update(json.dumps(
+        payload.get("metadata"), sort_keys=True, separators=(",", ":"),
+        ensure_ascii=True,
+    ).encode("ascii"))
+    digest.update(b"\0")
+    for name, value in sorted(state.items()):
+        if not isinstance(value, torch.Tensor):
+            raise RuntimeError(f"FATAL: candidate state is not a Tensor: {name}")
+        tensor = value.detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(tensor.dtype).encode("ascii"))
+        digest.update(b"\0")
+        digest.update(json.dumps(
+            list(tensor.shape), separators=(",", ":")
+        ).encode("ascii"))
+        digest.update(b"\0")
+        digest.update(tensor.view(torch.uint8).numpy().tobytes())
+    return digest.hexdigest()
+
+
+def validate_candidate_deployment_audit(
+    audit: Any, *, source_checkpoint_sha256: str
+) -> dict[str, Any]:
+    if (
+        not isinstance(audit, dict)
+        or audit.get("status") != "PASS"
+        or audit.get("contract_id") != KAGGLE_CANDIDATE_CONTRACT_ID
+        or audit.get("storage_dtype") != "fp16"
+        or audit.get("runtime_dtype") != "fp32"
+        or audit.get("source_checkpoint_sha256") != source_checkpoint_sha256
+        or len(str(audit.get("portable_checkpoint_sha256", ""))) != 64
+        or len(str(audit.get("effective_candidate_sha256", ""))) != 64
+    ):
+        raise ValueError(
+            "FATAL: Frozen-0806 candidate deployment identity audit mismatch"
+        )
+    return dict(audit)
+
+
+@contextmanager
+def kaggle_candidate_policy_runtime(source_root: Path, *, inference_dtype: str):
+    """Materialize a temporary FP16-storage/FP32-runtime candidate package."""
+
+    if inference_dtype != "fp32":
+        raise RuntimeError(
+            "FATAL: Kaggle-facing candidate evaluation requires FP32 runtime"
+        )
+    TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix="kaggle-fp16-candidate-", dir=TEMP_ROOT
+    ) as directory:
+        root = Path(directory) / "policy"
+        shutil.copytree(
+            source_root.resolve(), root,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
+        model_path = root / "strategy/model.bin"
+        manifest_path = root / "manifest.json"
+        payload = torch.load(model_path, map_location="cpu", weights_only=True)
+        state = payload.get("state_dict") if isinstance(payload, dict) else None
+        if not isinstance(state, dict):
+            raise RuntimeError("FATAL: candidate portable checkpoint is invalid")
+        payload["schema_version"] = FP16_FP32_SCHEMA
+        payload["state_dict"] = {
+            name: value.half() if torch.is_floating_point(value) else value
+            for name, value in state.items()
+        }
+        torch.save(payload, model_path)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        source_checkpoint_sha256 = str(manifest.get("checkpoint_sha256", ""))
+        if len(source_checkpoint_sha256) != 64:
+            raise RuntimeError("FATAL: candidate source checkpoint identity is missing")
+        portable_sha256 = _sha256(model_path)
+        audit = {
+            "schema_version": "frozen_cpu_candidate_deployment_identity_audit_v1",
+            "contract_id": KAGGLE_CANDIDATE_CONTRACT_ID,
+            "status": "PASS",
+            "source_checkpoint_sha256": source_checkpoint_sha256,
+            "portable_checkpoint_sha256": portable_sha256,
+            "effective_candidate_sha256": _candidate_effective_sha256(payload),
+            "storage_dtype": "fp16",
+            "runtime_dtype": "fp32",
+            "conversion_order": (
+                "full_effective_policy_then_fp16_storage_then_fp32_runtime"
+            ),
+        }
+        manifest.update({
+            "portable_checkpoint_schema_version": FP16_FP32_SCHEMA,
+            "portable_checkpoint_sha256": portable_sha256,
+            "deployment_effective_sha256": audit["effective_candidate_sha256"],
+            "storage_dtype": "fp16",
+            "runtime_dtype": "fp32",
+            "candidate_deployment_identity_audit": audit,
+        })
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        yield root, audit
 
 
 def _atomic_json(path: Path, payload: object) -> None:
@@ -248,6 +368,10 @@ def validate_report_payload(
         or any(game.get("status") != "finished" for game in games)
     ):
         raise ValueError("Frozen-0806 report is partial or contains errors")
+    validate_candidate_deployment_audit(
+        manifest.get("candidate_deployment_identity_audit"),
+        source_checkpoint_sha256=str(package_manifest.get("checkpoint_sha256")),
+    )
     observed_counts = Counter(str(game.get("opponent")) for game in games)
     expected_by_name = {
         entry.deck_id: games
@@ -476,6 +600,7 @@ def run_deck(
     inference_dtype: str,
     candidate_socket: Path,
     opponent_socket: Path,
+    candidate_deployment_audit: dict[str, Any],
     engine_pool_size: int = 1,
 ) -> dict[str, Any]:
     report_path = target.output_root / "reports" / str(
@@ -502,6 +627,9 @@ def run_deck(
         target
     )
     result.report_data.manifest["selection_mode"] = "greedy"
+    result.report_data.manifest["candidate_deployment_identity_audit"] = dict(
+        candidate_deployment_audit
+    )
     _atomic_text(result.report_path, render_html(result.report_data))
     validate_report_payload(
         {
@@ -608,11 +736,11 @@ th{{position:sticky;top:0;background:#e9f0ec;color:#486158;font-size:12px;cursor
 .number{{font-size:16px;font-weight:850;color:var(--green);font-variant-numeric:tabular-nums}}.done{{color:var(--green)}}.pending{{color:#8a6b28}}
 .contract{{margin-top:16px;padding:14px 16px;border-left:4px solid var(--green);background:#fff;color:var(--muted)}}
 @media(max-width:760px){{.stats{{grid-template-columns:1fr 1fr}}.stat:nth-child(2){{border-right:0}}header{{padding:22px 16px}}main{{padding:14px}}}}
-</style></head><body><header><h1>{target.label} CPU Seeded-256 · Agent 选择先后手</h1><p>55 套 exact deck 均加载 Policy-0806，对战一个固定 256 局频率单元；evaluation seed 固定为 {DEFAULT_SEED}。抛硬币赢家由对应 Agent 处理 context 41 并自主选择先后手，不做人为坐席分配。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
+</style></head><body><header><h1>{target.label} CPU Seeded-256 · Agent 选择先后手</h1><p>55 套 exact deck 均加载 Policy-0806 的 Kaggle FP16-storage/FP32-runtime candidate，Frozen opponent 保持独立 canonical policy identity；evaluation seed 固定为 {DEFAULT_SEED}。抛硬币赢家由对应 Agent 处理 context 41 并自主选择先后手，不做人为坐席分配。胜负来自 official engine；达到 50 个完整回合仍未结束时记为平局。</p></header><main>
 <div class="stats"><div class="stat"><b>{len(records)}/{EXPECTED_DECKS}</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>正式对局</span></div><div class="stat"><b>{sum(r['wins'] for r in records):,}</b><span>Policy-0806 胜局</span></div><div class="stat"><b>{total_seconds/3600:.2f}h</b><span>累计 wall time</span></div></div>
 <div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div>
 <div class="table"><table id="results"><thead><tr><th>编号</th><th>卡组 / 256 局报告</th><th>W-L-D</th><th>胜率</th><th>实际先攻</th><th>实际后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{rows}</tbody></table></div>
-<div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · first-player <code>{FROZEN_0806_FIRST_PLAYER_CONTRACT}</code> · seed <code>{DEFAULT_SEED}</code> · Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{evaluation_schedule_id(catalog.pool.manifest['schedule_sha256'], evaluation_units=1)}</code> · Candidate Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
+<div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · candidate deployment <code>{KAGGLE_CANDIDATE_CONTRACT_ID}</code> · first-player <code>{FROZEN_0806_FIRST_PLAYER_CONTRACT}</code> · seed <code>{DEFAULT_SEED}</code> · Pool <code>{catalog.pool.pool_id}</code> · Schedule <code>{evaluation_schedule_id(catalog.pool.manifest['schedule_sha256'], evaluation_units=1)}</code> · Candidate source Policy-0806 <code>{POLICY_0806_SHA256}</code> · Opponent {target.label} <code>{target.policy_sha256}</code></div>
 <script>
 const q=document.querySelector('#search'),body=document.querySelector('tbody');
 q.addEventListener('input',()=>{{
@@ -679,6 +807,7 @@ def refresh_index(
         "opponent_policy_label": target.label,
         "opponent_policy_sha256": target.policy_sha256,
         "selection_mode": "greedy",
+        "candidate_deployment_contract_id": KAGGLE_CANDIDATE_CONTRACT_ID,
         "policy_identity_audit": (
             _formal_identity_audit(target) if target.key == "0806" else None
         ),
@@ -702,7 +831,7 @@ def refresh_index(
             ROOT / "docs/evaluation/combat_mat/policy_0806/index.html",
             '<!doctype html><html lang="zh-CN"><meta charset="utf-8">'
             '<title>Policy-0806 Reports</title><body><h1>Policy-0806 Reports</h1><ul>'
-            '<li><a href="0806_kaggle_top100_plus_v1_cpu_seeded_256_agent_choice_v3/index.html">'
+            f'<li><a href="{target.output_root.name}/index.html">'
             'Official CPU Seeded-256 Agent Choice v3（部署复核合同）</a></li>'
             '</ul></body></html>\n',
         )
@@ -735,9 +864,15 @@ def benchmark(
     candidate = catalog.candidates[0]
     records = []
     with ExitStack() as stack:
+        candidate_root, candidate_deployment_audit = stack.enter_context(
+            kaggle_candidate_policy_runtime(
+                catalog.candidate_policy.root,
+                inference_dtype=inference_dtype,
+            )
+        )
         candidate_socket = stack.enter_context(
             _policy_inference_server(
-                root=catalog.candidate_policy.root,
+                root=candidate_root,
                 device="cuda:0",
                 batch_size=batch_size,
                 batch_wait_ms=batch_wait_ms,
@@ -746,19 +881,17 @@ def benchmark(
                 inference_dtype=inference_dtype,
             )
         )
-        opponent_socket = candidate_socket
-        if target.key != "0806":
-            opponent_socket = stack.enter_context(
-                _policy_inference_server(
-                    root=catalog.opponent_policy.root,
-                    device="cuda:0",
-                    batch_size=batch_size,
-                    batch_wait_ms=batch_wait_ms,
-                    label="opponent",
-                    ability_repeat_limit=20,
-                    inference_dtype=inference_dtype,
-                )
+        opponent_socket = stack.enter_context(
+            _policy_inference_server(
+                root=catalog.opponent_policy.root,
+                device="cuda:0",
+                batch_size=batch_size,
+                batch_wait_ms=batch_wait_ms,
+                label="opponent",
+                ability_repeat_limit=20,
+                inference_dtype=inference_dtype,
             )
+        )
         assert candidate_socket is not None and opponent_socket is not None
         for workers in worker_counts:
             started = time.perf_counter()
@@ -789,6 +922,9 @@ def benchmark(
                 "wall_time_seconds": wall,
                 "games_per_second": games / wall,
                 "report": str(result.report_path.relative_to(ROOT)),
+                "candidate_deployment_identity_audit": (
+                    candidate_deployment_audit
+                ),
             }
             records.append(record)
             _atomic_json(BENCHMARK_ROOT / "benchmark.json", {"trials": records})
@@ -817,9 +953,15 @@ def run_full(
     )
     published_ids = {record["deck_id"] for record in published}
     with ExitStack() as stack:
+        candidate_root, candidate_deployment_audit = stack.enter_context(
+            kaggle_candidate_policy_runtime(
+                catalog.candidate_policy.root,
+                inference_dtype=inference_dtype,
+            )
+        )
         candidate_socket = stack.enter_context(
             _policy_inference_server(
-                root=catalog.candidate_policy.root,
+                root=candidate_root,
                 device="cuda:0",
                 batch_size=batch_size,
                 batch_wait_ms=batch_wait_ms,
@@ -828,19 +970,17 @@ def run_full(
                 inference_dtype=inference_dtype,
             )
         )
-        opponent_socket = candidate_socket
-        if target.key != "0806":
-            opponent_socket = stack.enter_context(
-                _policy_inference_server(
-                    root=catalog.opponent_policy.root,
-                    device="cuda:0",
-                    batch_size=batch_size,
-                    batch_wait_ms=batch_wait_ms,
-                    label="opponent",
-                    ability_repeat_limit=20,
-                    inference_dtype=inference_dtype,
-                )
+        opponent_socket = stack.enter_context(
+            _policy_inference_server(
+                root=catalog.opponent_policy.root,
+                device="cuda:0",
+                batch_size=batch_size,
+                batch_wait_ms=batch_wait_ms,
+                label="opponent",
+                ability_repeat_limit=20,
+                inference_dtype=inference_dtype,
             )
+        )
         assert candidate_socket is not None and opponent_socket is not None
         candidate_list = sorted(
             (
@@ -867,6 +1007,7 @@ def run_full(
                         inference_dtype=inference_dtype,
                         candidate_socket=candidate_socket,
                         opponent_socket=opponent_socket,
+                        candidate_deployment_audit=candidate_deployment_audit,
                         engine_pool_size=engine_pool_size,
                     ): candidate
                     for candidate in batch

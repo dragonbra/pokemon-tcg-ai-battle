@@ -4,7 +4,7 @@
 
 **Scope:** RL training, frozen evaluation, opponent-pool sampling, CUDA/CPU evaluation, checkpoint promotion, policy routing and batching
 
-**Version:** 1.0
+**Version:** 1.1
 **Date:** 2026-08-11
 
 ---
@@ -20,6 +20,45 @@ The highest-priority invariant is:
 Routing, batching, encoder sharing, caching, resident CUDA inference, deduplication, and any other performance optimization are subordinate to policy identity. An optimization is valid only when it is proven to preserve the exact effective policy that was requested.
 
 A focal/main-view model change must never silently change any opponent already registered in the opponent pool.
+
+## 0.1 Canonical Entry Point and Project Conformance
+
+This file is the repository-wide canonical entry point for RL policy identity,
+Frozen evaluation, Promote Champion, and Kaggle-facing candidate deployment. It is
+not an implementation note for one numbered experiment. Before creating or changing
+any RL project, an Agent must read this document and adapt that project's training,
+evaluation, promotion, and package-export boundaries to this protocol.
+
+Every current and future RL project that produces a Kaggle-capable policy must provide
+a project-local conformance adapter with all of the following behavior:
+
+1. resolve every focal and opponent `policy_id` to an auditable immutable effective
+   identity before routing or batching;
+2. materialize the project's complete effective candidate under
+   `kaggle_fp16_storage_fp32_runtime_v1`, including its base, trained heads, LoRA, and
+   all other project-specific inference weights in the declared merge order;
+3. use the same candidate materialization and effective-content hashing semantics for
+   periodic RL evaluation, formal Frozen CPU/CUDA evaluation, Promote evidence, and
+   final Kaggle package export/reload;
+4. place a hard preflight identity gate at the narrowest shared evaluation boundary,
+   before official games begin;
+5. persist the required candidate/opponent identity audits and reproducibility fields
+   in the formal evaluation manifest;
+6. prove with regression tests that the qualifying evaluation artifact and exported
+   package reconstruct the same deployment-effective policy;
+7. keep PPO optimization and behavior-policy rollout FP32 unless a later versioned
+   protocol explicitly changes that rule.
+
+The implementation under `train/0040_dragapult_0809_action_boundary_rl/` is the
+current reference implementation, not shared runtime infrastructure and not the
+definition of this protocol. Repository project-isolation rules still apply: a future
+numbered project must not import executable code from 0040. It must implement or
+promote an appropriate self-contained adapter while preserving the identities,
+ordering, audits, and failure semantics defined here.
+
+Architecture-specific field names and module composition may differ. Semantic
+conformance may not: an Agent must not claim compatibility merely because it copied
+an 0040 class name, manifest label, or checkpoint shape.
 
 ---
 
@@ -329,7 +368,85 @@ Both benchmark results must remain separate.
 
 Additional benchmark tracks may be added later without redefining the policy identity rules in this document.
 
-## 6.1.1 Frozen CPU256 / CUDA2048 Seed Contract
+## 6.1.1 Kaggle Candidate Deployment Identity Contract
+
+Every evaluation whose purpose is to estimate the strength of an agent that may be
+submitted to Kaggle must evaluate the candidate under contract:
+
+```text
+kaggle_fp16_storage_fp32_runtime_v1
+```
+
+The required candidate materialization order is:
+
+```text
+immutable base FP32
++ checkpoint decoder / trained heads
++ checkpoint LoRA merged into its declared base modules
+→ complete effective candidate converted to FP16 storage
+→ that exact FP16 artifact strict-loaded into FP32 runtime tensors
+→ greedy official-engine evaluation
+```
+
+Converting the FP16 artifact back to FP32 changes its runtime dtype but does not
+recover the discarded FP32 precision. Therefore the deployment-effective candidate
+is not interchangeable with the source FP32 training checkpoint. Both identities
+must be retained:
+
+- source FP32 checkpoint path and SHA-256;
+- portable FP16 checkpoint/artifact SHA-256;
+- deployment-effective candidate SHA-256;
+- checkpoint update and model/action/observation schema versions;
+- `storage_dtype = fp16`;
+- `runtime_dtype = fp32`;
+- conversion-order/merge contract;
+- explicit candidate deployment identity audit `PASS`.
+
+The final promoted/submission package must recompute this deployment-effective
+content hash and match the hash recorded by the qualifying Frozen evaluation. A
+matching source FP32 checkpoint is necessary but not sufficient; if the final FP16
+content differs, export/promotion must hard fail.
+
+This contract is mandatory for:
+
+1. every RL Frozen evaluation scheduled at the configured cadence, currently every
+   five updates;
+2. every formal Frozen CUDA-2048 candidate evaluation;
+3. every formal Frozen CPU-256 candidate evaluation;
+4. any other CPU or CUDA result presented as evidence of expected Kaggle submission
+   strength.
+
+CPU and CUDA implementations should load the same immutable portable FP16 candidate
+artifact. If they independently materialize it from the same immutable source, they
+must prove the same deployment-effective semantic content hash under the same
+conversion contract and record each concrete artifact file SHA-256. Container-level
+serialization bytes may differ without changing tensor/metadata content, so file SHA
+alone is provenance and is not a substitute for the effective content hash. Both paths
+then run FP32 inference. A raw FP32 checkpoint may
+be used for diagnostics, PPO, ablation, or parity investigation, but its result must
+not be reported as Kaggle-strength, Frozen Promote Champion, or package-strength
+evidence.
+
+This candidate rule does not weaken or replace opponent policy identity. The Frozen
+opponent must still resolve independently to its registered immutable full policy.
+Changing an opponent's storage/runtime representation in a way that changes its
+effective weights requires a new registered effective identity; candidate conversion
+must never silently quantize, rebuild, or otherwise mutate the opponent.
+
+Missing, failed, mismatched, or incomplete candidate deployment audit is fatal. A
+run must abort before games start or be rejected as invalid evidence; warning and
+continue is forbidden. Historical raw-FP32 or Hybrid results remain preserved, but
+must not be retroactively relabeled as compliant evidence under this contract.
+
+### PPO Exception
+
+PPO behavior-policy rollout, loss computation, optimizer master weights, and
+model-only training checkpoints remain FP32. The Kaggle conversion is an immutable
+evaluation/deployment materialization after a checkpoint is saved. It must not be
+inserted into the PPO optimization path or used to silently change the behavior
+policy that generated on-policy trajectories.
+
+## 6.1.2 Frozen CPU256 / CUDA2048 Seed Contract
 
 Promote Champion V1 uses Frozen contract
 `frozen_0806_seeded_agent_first_player_v3` with master evaluation seed
@@ -582,6 +699,11 @@ Recommended fields:
 ```text
 candidate policy ID
 candidate checkpoint hash
+candidate source FP32 checkpoint hash
+candidate portable FP16 artifact hash
+candidate deployment-effective identity/hash
+candidate storage/runtime dtype (`fp16` / `fp32`)
+candidate deployment identity audit (`PASS` required)
 opponent policy ID
 opponent effective-policy hash
 engine implementation/version
@@ -647,6 +769,12 @@ At minimum, maintain tests for:
 5. Grouped/batched routing returns the same policy outputs as independent per-policy inference for fixed inputs.
 6. A deliberate focal/opponent hybrid causes a hard failure unless registered as its own explicit policy.
 7. Training and evaluation resolve the same `policy_id` to the same effective-policy hash.
+8. A Kaggle-facing candidate with FP32 stored weights hard-fails the deployment gate.
+9. A candidate with FP16 stored weights but non-FP32 runtime tensors hard-fails.
+10. Every-five-update and formal Frozen candidate evaluation persist the same
+    deployment-effective identity that the Kaggle package loader materializes.
+11. PPO sampling continues to use the live FP32 policy and does not inherit the
+    candidate deployment conversion.
 
 ---
 
@@ -741,6 +869,9 @@ No throughput gain justifies silently changing the opponent policy.
 10. Policy identity violations are fatal errors.
 11. Formal evaluation results require a passing opponent-policy identity audit.
 12. Promote Champion remains a human decision.
+13. Kaggle-facing candidate evidence requires FP16 storage, FP32 runtime, and a
+    passing candidate deployment identity audit; raw FP32 candidate results are
+    diagnostics only.
 
 ---
 

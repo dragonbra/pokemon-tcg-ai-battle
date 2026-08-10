@@ -119,13 +119,13 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
                 rank=1,
             )
 
-    def test_frozen_selection_accepts_v2_chance_boundary_evidence(self) -> None:
+    def test_frozen_selection_requires_v4_candidate_deployment_evidence(self) -> None:
         (exporter.ROOT / ".tmp").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=exporter.ROOT / ".tmp") as temporary:
             root = Path(temporary)
             checkpoint = root / "checkpoint/update-000005.pt"
             checkpoint.parent.mkdir()
-            checkpoint.touch()
+            checkpoint.write_bytes(b"checkpoint")
             result = root / "artifact/frozen_results/core-update-000005.json"
             result.parent.mkdir(parents=True)
             entries = []
@@ -145,9 +145,24 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
                     "semantic_fallback": False,
                 })
             result.write_text(json.dumps({
-                "schema_version": "0038_frozen_per_game_results_v2",
+                "schema_version": "0040_frozen_per_game_results_policy_identity_v4",
                 "checkpoint_update": 5,
                 "frozen_panel_version": "frozen_0806_seeded_agent_first_player_v3",
+                "opponent_policy_id": "Policy-0806",
+                "policy_identity_audit": {
+                    "status": "PASS",
+                    "requested_policy_id": "Policy-0806",
+                },
+                "candidate_deployment_identity_audit": {
+                    "status": "PASS",
+                    "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+                    "storage_dtype": "fp16",
+                    "runtime_dtype": "fp32",
+                    "checkpoint_update": 5,
+                    "portable_checkpoint_sha256": "b" * 64,
+                    "effective_candidate_sha256": "c" * 64,
+                    "source_checkpoint_sha256": exporter._sha256(checkpoint),
+                },
                 "entries": entries,
             }))
             selection = exporter._frozen_selection(checkpoint, 5)
