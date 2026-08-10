@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Mapping, Sequence
+import copy
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any
@@ -89,6 +90,26 @@ class CausalKnowledge:
         self._unknown_opponent_hand = 0
         self._events: list[TypedEvent] = []
         self._event_index = 0
+
+    def fork(self) -> "CausalKnowledge":
+        """Return an isolated branch context at the current decision boundary."""
+
+        branch = copy.copy(self)
+        branch.initial = Counter(self.initial)
+        branch._exact_deck = (
+            None if self._exact_deck is None else Counter(self._exact_deck)
+        )
+        branch._exact_prize = (
+            None if self._exact_prize is None else Counter(self._exact_prize)
+        )
+        branch._exact_deck_order = (
+            None if self._exact_deck_order is None else list(self._exact_deck_order)
+        )
+        branch._known_opponent_hand = dict(self._known_opponent_hand)
+        branch._possible_opponent_hand = dict(self._possible_opponent_hand)
+        branch._remembered_opponent_cards = dict(self._remembered_opponent_cards)
+        branch._events = list(self._events)
+        return branch
 
     def _consume_opponent_hand(self, log: Mapping[str, Any], opponent: int) -> None:
         log_type = log.get("type")

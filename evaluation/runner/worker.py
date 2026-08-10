@@ -140,24 +140,60 @@ def _isolated_agent(
     return call
 
 
+class _RemotePolicyAgent:
+    def __init__(self, socket_path: str, *, deck: list[int], role: str) -> None:
+        self.connection = Client(socket_path, family="AF_UNIX")
+        self.exact_deck = tuple(int(card_id) for card_id in deck)
+        self.role = role
+
+    def _request(self, payload: dict[str, Any]) -> dict[str, Any]:
+        self.connection.send(payload)
+        response = self.connection.recv()
+        if not isinstance(response, dict) or not response.get("ok"):
+            detail = response.get("error") if isinstance(response, dict) else response
+            raise RuntimeError(f"shared {self.role} inference failed: {detail}")
+        return response
+
+    def __call__(self, observation: dict[str, Any]) -> Any:
+        response = self._request(
+            {"observation": observation, "deck": self.exact_deck}
+        )
+        return response.get("action")
+
+    def value_search_v0_values(
+        self, branch_observations: list[dict[str, Any]]
+    ) -> list[float]:
+        response = self._request(
+            {
+                "command": "value_search_v0_values",
+                "observations": branch_observations,
+                "deck": self.exact_deck,
+            }
+        )
+        values = response.get("values")
+        if not isinstance(values, list) or len(values) != len(branch_observations):
+            raise RuntimeError("shared candidate returned invalid Value Search scores")
+        return [float(value) for value in values]
+
+
 def _remote_policy_agent(
     socket_path: str,
     *,
     deck: list[int],
     role: str,
 ):
-    connection = Client(socket_path, family="AF_UNIX")
-    exact_deck = tuple(int(card_id) for card_id in deck)
+    return _RemotePolicyAgent(socket_path, deck=deck, role=role)
 
-    def call(observation: dict[str, Any]) -> Any:
-        connection.send({"observation": observation, "deck": exact_deck})
-        response = connection.recv()
-        if not isinstance(response, dict) or not response.get("ok"):
-            detail = response.get("error") if isinstance(response, dict) else response
-            raise RuntimeError(f"shared {role} inference failed: {detail}")
-        return response.get("action")
 
-    return call
+def _value_search_v0_runtime(request: GameRequest, candidate_agent: Any) -> Any | None:
+    module_name = os.environ.get("EVALUATION_VALUE_SEARCH_V0_MODULE")
+    if not module_name:
+        return None
+    module = importlib.import_module(module_name)
+    factory = getattr(module, "create_worker_runtime", None)
+    if factory is None:
+        raise RuntimeError(f"Value Search module has no create_worker_runtime: {module_name}")
+    return factory(request=request, candidate_agent=candidate_agent)
 
 
 def _load_game_api_with_runtime(runtime_root: Path) -> object:
@@ -211,7 +247,10 @@ def _preload_local_agent_runtime_dependencies(request: GameRequest) -> None:
         local_packages.append(request.candidate)
     if not os.environ.get("EVALUATION_OPPONENT_INFERENCE_SOCKET"):
         local_packages.append(request.opponent)
-    if any(_package_requires_pytorch(package) for package in local_packages):
+    if (
+        os.environ.get("EVALUATION_VALUE_SEARCH_V0_MODULE")
+        or any(_package_requires_pytorch(package) for package in local_packages)
+    ):
         importlib.import_module("torch")
 
 
@@ -411,6 +450,7 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
             os.environ["PTCG_CG_LIBRARY"] = str(request.engine_library.resolve())
         phase = "load"
         game_module, candidate_agent, opponent_agent = _load_agents(request)
+        value_search_v0 = _value_search_v0_runtime(request, candidate_agent)
         if request.engine_library is not None:
             engine_library = getattr(game_module, "lib", None)
             configure = getattr(engine_library, "ConfigureSeeds", None)
@@ -565,6 +605,19 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                     )
                     break
 
+                value_search_record = None
+                if (
+                    value_search_v0 is not None
+                    and current_player == candidate_physical_index
+                    and not forced_first_player
+                ):
+                    action, value_search_record = value_search_v0.rerank(
+                        game_module=game_module,
+                        observation=observation,
+                        policy_selection=action,
+                        step=step,
+                    )
+
                 selection_count += 1
                 trace_entry = {
                     "step": step,
@@ -577,6 +630,8 @@ def run_game(request: GameRequest, trace_path: Path) -> GameResult:
                 elif forced_first_player:
                     trace_entry["selected_by_agent"] = "first_player"
                     trace_entry["candidate_won_toss"] = request.candidate_won_toss
+                if value_search_record is not None:
+                    trace_entry["value_search_v0"] = value_search_record
                 trace.append(trace_entry)
                 try:
                     engine_selected_ns = time.perf_counter_ns()

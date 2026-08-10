@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Mapping, Sequence
+import copy
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -54,6 +55,13 @@ class OnlineCausalEncoder:
         self.prototypes = _shared_prototypes()
         self.knowledge = CausalKnowledge(actor, self.deck)
         self.deck_manifest = {"counts": sorted(Counter(self.deck).items())}
+
+    def fork(self) -> "OnlineCausalEncoder":
+        """Fork branch-local mutable knowledge while sharing static model metadata."""
+
+        branch = copy.copy(self)
+        branch.knowledge = self.knowledge.fork()
+        return branch
 
     def encode(self, observation: Mapping[str, Any]):
         current = observation.get("current")
