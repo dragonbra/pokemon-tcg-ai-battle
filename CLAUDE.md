@@ -10,6 +10,16 @@
 - 新 BC policy 必须先形成自包含 candidate package，经过 package 验证和官方 engine runtime 真实对局评测，并取得用户明确确认后，才可进入 `evaluation/arena/opponents/`。不得因训练完成、离线指标较高或单一 matchup 表现良好而自动晋级。
 - 每个正式 RL run 必须记录实际 opponent catalog、可复现的 pool snapshot，或足以重建对手集合的 package 标识和版本。opponent 构成、采样权重或 curriculum 阶段变化必须作为显式实验变量，禁止在未记录的情况下跨不同 opponent 池继续同一逻辑版本或直接比较结果。
 
+## RL Policy Identity / Promote Champion — NON-NEGOTIABLE
+
+- 任何涉及 RL training、Frozen evaluation、CUDA routing、frozen opponent、opponent pool 或 promoted snapshot 的工作，开始前必须完整阅读并遵守唯一 canonical 协议：[`docs/rl/RL_PROMOTE_CHAMPION_FROZEN_POLICY_PROTOCOL_V1.md`](docs/rl/RL_PROMOTE_CHAMPION_FROZEN_POLICY_PROTOCOL_V1.md)。
+- `Frozen-0806` 必须是完整 effective `Policy-0806`；`Frozen-0809` 必须是完整 effective `Policy-0809`。Policy identity 覆盖 prototype/state/option encoders、全部 option transformer layers、norm、LoRA、decoder 和重建所需 schema/model metadata，不由 decoder 单独定义。
+- focal policy 与 opponent policy 必须独立；更换或更新 focal 绝不能改变 opponent 的任何 effective weights。未显式注册并拥有独立 manifest/policy ID 的 hybrid opponent 默认禁止。
+- promoted snapshot 是 immutable policy identity；未来必须以 Promote 当时的 immutable base、decoder、LoRA/delta 和 schema 精确重建，不得借用未来 focal 的任一模块。
+- 必须先解析 requested `policy_id`、materialize 并验证 effective identity，再进行 lane routing、batching、resident caching 或 sharing。Cross-policy sharing 只允许在被共享部分的 effective-weight content identity 得到证明时发生；同 architecture/shape、frozen、resident 或性能需求都不是证明。
+- requested 与 materialized effective identity 不一致必须 `FATAL` 并终止 run，不得 warning 后继续。Training rollout 与 Frozen evaluation 必须共享同一 policy resolver；sample/greedy 只能改变选样模式，不能改变 weights。
+- `Frozen-0806 CUDA-2048` 与 `Frozen-0809 CUDA-2048` 是两份独立 benchmark，必须分开保存、报告和审计，不得自动合并。`Promote Champion V1` 最终只能由人工作出 `PROMOTE`、`HOLD` 或 `REJECT` 决定；成绩提升不得自动晋级。
+
 ## 项目结构与模块组织
 
 ### 环境日报 UI 基准

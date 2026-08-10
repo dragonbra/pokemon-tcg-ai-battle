@@ -67,6 +67,7 @@ class RolloutBatchTest(unittest.TestCase):
         job = protocol.RolloutJob(
             "eval-u0000-0000", "opponent", True, 7, 0,
             tuple(range(1, 61)), tuple(range(1, 61)), Path("."),
+            "Policy-0806",
             policy_seed=11, search_seed=13,
         )
         baseline = run._environment_schedule_sha256([job])
@@ -80,6 +81,7 @@ class RolloutBatchTest(unittest.TestCase):
             replace(job, opponent_id="other"), replace(job, focal_first=False),
             replace(job, seed=8), replace(job, policy_seed=12),
             replace(job, search_seed=14),
+            replace(job, opponent_policy_id="Policy-0809"),
         ):
             self.assertNotEqual(baseline, run._environment_schedule_sha256([changed]))
 

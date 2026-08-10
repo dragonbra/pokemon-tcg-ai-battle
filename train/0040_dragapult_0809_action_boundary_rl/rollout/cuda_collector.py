@@ -19,6 +19,7 @@ from .protocol import (
     PolicyTransition,
     RolloutJob,
     TrajectoryDecision,
+    require_opponent_policy_binding,
 )
 
 
@@ -135,6 +136,9 @@ class CudaFullSemanticRolloutCollector:
         record_trajectory: bool = True,
         record_job_indices: set[int] | frozenset[int] | None = None,
         agent_selects_first_player: bool = False,
+        decision_trace_sink: Any | None = None,
+        opponent_policy_id: str | None = None,
+        opponent_identity_audit: Any | None = None,
     ) -> None:
         if device.type != "cuda" or lane_count < 1:
             raise ValueError("0038 CUDA collector requires CUDA and positive lanes")
@@ -165,11 +169,21 @@ class CudaFullSemanticRolloutCollector:
             else frozenset(int(index) for index in record_job_indices)
         )
         self.agent_selects_first_player = bool(agent_selects_first_player)
+        self.decision_trace_sink = decision_trace_sink
+        if opponent_policy_id is None or opponent_identity_audit is None:
+            raise RuntimeError(
+                "FATAL: CUDA rollout requires a resolved opponent policy identity"
+            )
+        self.opponent_policy_id = opponent_policy_id
+        self.opponent_identity_audit = opponent_identity_audit
         self._metrics: dict[str, float] = {}
 
     def collect(self, jobs: list[RolloutJob]) -> list[EpisodeTrajectory]:
         if not jobs:
             return []
+        require_opponent_policy_binding(
+            jobs, materialized_policy_id=self.opponent_policy_id
+        )
         if len({job.game_id for job in jobs}) != len(jobs):
             raise ValueError("rollout game IDs must be unique")
         if len({job.focal_deck for job in jobs}) != 1:
@@ -194,13 +208,15 @@ class CudaFullSemanticRolloutCollector:
         adapter = Semantic0031DeviceAdapter(
             self.model.actor, jobs[0].focal_deck, max_select=self.max_select
         )
-        transformer = self.opponent.option_encoder.cross_attention_transformer
+        opponent_adapter = Semantic0031DeviceAdapter(
+            self.opponent, jobs[0].opponent_deck, max_select=self.max_select
+        )
         router = Semantic0031ResidentRouter(
             focal_adapter=adapter,
-            opponent_last_option_layer=transformer.layers[1],
-            opponent_option_norm=transformer.norm,
-            opponent_decoder=self.opponent.action_decoder,
             same_policy=False,
+            opponent_adapter=opponent_adapter,
+            requested_opponent_policy_id=self.opponent_policy_id,
+            opponent_identity_audit=self.opponent_identity_audit,
             focal_summary_fn=self.model.actor_summary,
         )
         boundary = CudaActionBoundaryAdapter(
@@ -289,6 +305,7 @@ class CudaFullSemanticRolloutCollector:
             focal_greedy=self.mode == "greedy",
             focal_value_fn=value_fn if capture_trajectory else None,
             focal_decision_sink=sink if capture_trajectory else None,
+            decision_trace_sink=self.decision_trace_sink,
             compact_prefixes=True,
             action_adapter=boundary,
         )
@@ -458,6 +475,12 @@ class CudaFullSemanticRolloutCollector:
     def metrics(self) -> dict[str, float]:
         return dict(self._metrics)
 
+    def policy_identity_audit(self) -> dict[str, Any]:
+        audit = self.opponent_identity_audit
+        if hasattr(audit, "to_manifest"):
+            return audit.to_manifest()
+        return dict(audit)
+
 
 class ChunkedCudaRolloutCollector:
     """Bound trajectory staging memory without changing the rollout contract."""
@@ -551,6 +574,14 @@ class ChunkedCudaRolloutCollector:
 
     def metrics(self) -> dict[str, float]:
         return dict(self._metrics)
+
+    def policy_identity_audit(self) -> dict[str, Any]:
+        audit = self.collector_kwargs.get("opponent_identity_audit")
+        if audit is None:
+            raise RuntimeError("FATAL: chunked CUDA collector has no opponent identity audit")
+        if hasattr(audit, "to_manifest"):
+            return audit.to_manifest()
+        return dict(audit)
 
 
 __all__ = [

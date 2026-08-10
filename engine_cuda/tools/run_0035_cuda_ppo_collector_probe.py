@@ -483,6 +483,11 @@ def _focal_reward(game_result: Any, focal_player: Any) -> Any:
 
 
 def main() -> int:
+    raise RuntimeError(
+        "FATAL: legacy 0035 shared-encoder/frozen-decoder routing has no "
+        "Policy Identity Protocol V1 manifest or effective-weight audit; "
+        "historical results are retained, but this entrypoint is disabled"
+    )
     args = parse_args()
     if min(
         args.steps, args.deck_limit, args.max_select, args.ppo_epochs, args.minibatch_size

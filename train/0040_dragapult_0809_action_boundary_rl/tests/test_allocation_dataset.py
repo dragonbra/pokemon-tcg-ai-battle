@@ -22,7 +22,8 @@ class AllocationDatasetTest(unittest.TestCase):
 
     def test_shadow_reconstructs_order_into_one_canonical_label(self):
         job = protocol.RolloutJob("b", "opp", True, 7, 0, (1,) * 60, (2,) * 60,
-                                  __import__("pathlib").Path("."), action_boundary_mode="shadow")
+                                  __import__("pathlib").Path("."), "Policy-0806",
+                                  action_boundary_mode="shadow")
         session = collector._Session(job, torch.Generator())
         bench = [{"serial": 10, "id": 100, "hp": 50},
                  {"serial": 20, "id": 200, "hp": 100}]
@@ -46,7 +47,8 @@ class AllocationDatasetTest(unittest.TestCase):
 
     def test_stale_pending_chain_fails_closed(self):
         job = protocol.RolloutJob("b", "opp", True, 7, 0, (1,) * 60, (2,) * 60,
-                                  __import__("pathlib").Path("."), action_boundary_mode="shadow")
+                                  __import__("pathlib").Path("."), "Policy-0806",
+                                  action_boundary_mode="shadow")
         session = collector._Session(job, torch.Generator())
         bench = [{"serial": 10, "id": 100, "hp": 50}]
         collector.FullSemanticRolloutCollector._observe_shadow_allocation(
@@ -62,7 +64,8 @@ class AllocationDatasetTest(unittest.TestCase):
 
     def test_expanded_bench_remains_one_macro_label(self):
         job = protocol.RolloutJob("b", "opp", True, 7, 0, (1,) * 60, (2,) * 60,
-                                  __import__("pathlib").Path("."), action_boundary_mode="shadow")
+                                  __import__("pathlib").Path("."), "Policy-0806",
+                                  action_boundary_mode="shadow")
         session = collector._Session(job, torch.Generator())
         bench = [{"serial": i, "id": 100 + i, "hp": 100} for i in range(6)]
         collector.FullSemanticRolloutCollector._observe_shadow_allocation(

@@ -223,6 +223,11 @@ def _error_diagnostics(engine: Any, schedule: list[Any]) -> list[dict[str, Any]]
 
 
 def main() -> int:
+    raise RuntimeError(
+        "FATAL: legacy 0035 shared-encoder/frozen-decoder routing has no "
+        "Policy Identity Protocol V1 manifest or effective-weight audit; "
+        "historical results are retained, but this entrypoint is disabled"
+    )
     args = parse_args()
     if not 1 <= args.opponent_limit <= 50:
         raise ValueError("opponent-limit must be in [1, 50]")

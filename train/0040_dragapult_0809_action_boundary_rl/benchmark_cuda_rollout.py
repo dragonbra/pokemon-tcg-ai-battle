@@ -48,6 +48,8 @@ def main() -> int:
         model, opponent, device=device, rules_path=CUDA_RULES,
         extension_dir=CUDA_EXTENSION, lane_count=args.lanes, mode=args.mode,
         check_interval=8, record_trajectory=args.mode == "sample",
+        opponent_policy_id=opponent._policy_id,
+        opponent_identity_audit=opponent._policy_identity_audit,
     )
     started = time.perf_counter()
     episodes = collector.collect(jobs)
@@ -77,6 +79,9 @@ def main() -> int:
             "checkpoint": str(COMMON_UPDATE0_CHECKPOINT.relative_to(ROOT)),
             "checkpoint_sha256": COMMON_UPDATE0_SHA256,
             "source": asdict(identity),
+            "opponent_policy_identity": (
+                opponent._policy_identity_audit.to_manifest()
+            ),
         },
         "cuda": {
             "extension": str((CUDA_EXTENSION / "_ptcg_cuda.so").relative_to(ROOT)),

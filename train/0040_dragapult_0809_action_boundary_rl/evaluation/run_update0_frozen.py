@@ -9,6 +9,7 @@ import html
 import json
 from pathlib import Path
 import statistics
+import subprocess
 import time
 from typing import Any
 
@@ -23,6 +24,7 @@ from ..integrated.presets import preset
 from ..rollout import FullSemanticRolloutCollector
 from ..training.run_full_semantic import (
     FOCAL_DECK_ID,
+    OPPONENT_POLICY_ID,
     _episode_focal_first,
     focal_deck,
     load_frozen_opponent,
@@ -195,6 +197,9 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
         focal_deck(), preset("INTEGRATED"), device=device
     )
     opponent = load_frozen_opponent(device)
+    opponent_audit = opponent._policy_identity_audit
+    if opponent_audit.status != "PASS":
+        raise RuntimeError("FATAL: formal Frozen evaluation policy identity audit failed")
     jobs, schedule_sha = build_frozen_jobs(
         focal_deck_id=FOCAL_DECK_ID,
         focal_deck=focal_deck(), runtime_root=runtime_root(),
@@ -203,6 +208,7 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
     names = {item.deck_id: item.display_name for item in load_frozen_catalog()}
     manifest = {
         "frozen_panel_version": "frozen_0806_seeded_agent_first_player_v3",
+        "master_seed": 341512806,
         "game_list_sha256": schedule_sha,
         "entries": [
             {
@@ -224,20 +230,56 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
     wall = time.perf_counter() - started
     summary, rows = summarize(episodes, manifest)
     runtime = build_seeded_runtime()
+    evaluation_config = {
+        "workers": workers,
+        "engines_per_worker": engines_per_worker,
+        "inference_channels_per_role": inference_channels_per_role,
+        "device": device_name,
+    }
+    evaluation_config_sha256 = hashlib.sha256(
+        json.dumps(
+            evaluation_config, sort_keys=True, separators=(",", ":")
+        ).encode("ascii")
+    ).hexdigest()
     payload = {
         "schema_version": "0038_update0_frozen_2048_report_v1",
         "manifest": {
             "run_id": "0038-v2-update0-frozen-2048", "finished_at": datetime.now(UTC).isoformat(),
-            "candidate": {"name": VERSION, "display_name": "0038 Zero-Shot Action Boundary update-0"},
+            "candidate": {
+                "name": VERSION,
+                "display_name": "0038 Zero-Shot Action Boundary update-0",
+                "policy_id": "Candidate-0040-update000000",
+                "base_policy_id": "Policy-0809",
+            },
             "frozen_panel_version": manifest["frozen_panel_version"],
             "canonical_schedule_sha256": schedule_sha,
             "game_list_sha256": manifest["game_list_sha256"],
             "checkpoint": str(COMMON_UPDATE0_CHECKPOINT.relative_to(ROOT)),
             "checkpoint_sha256": _sha256(COMMON_UPDATE0_CHECKPOINT),
             "source_policy_checkpoint_sha256": identity.checkpoint_sha256,
+            "opponent_policy_id": OPPONENT_POLICY_ID,
+            "opponent_effective_policy_sha256": (
+                opponent_audit.effective_policy_sha256
+            ),
+            "policy_identity_audit": opponent_audit.to_manifest(),
             "v5_or_rl_updated_weights_loaded": False,
             "engine": runtime.json_payload(), "action_protocol": "0038_macro_v1",
+            "execution_path": "official_cpu_engine_gpu_batched_inference",
+            "lane_count": workers * engines_per_worker,
+            "selection_mode": "greedy",
             "greedy": True, "preset": "INTEGRATED",
+            "master_seed": 341512806,
+            "per_game_seeds": [job.seed for job in jobs],
+            "matchup_distribution": {
+                name: sum(job.opponent_id == deck_id for job in jobs)
+                for deck_id, name in names.items()
+            },
+            "repo_commit": subprocess.run(
+                ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True,
+                capture_output=True, text=True,
+            ).stdout.strip(),
+            "evaluation_config": evaluation_config,
+            "evaluation_config_sha256": evaluation_config_sha256,
             "topology": {"workers": workers, "engines_per_worker": engines_per_worker,
                          "inference_channels_per_role": inference_channels_per_role},
         },

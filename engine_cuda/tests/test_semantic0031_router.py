@@ -13,7 +13,11 @@ from ptcg_cuda_engine.semantic0031_bridge import (
     semantic0031_greedy_decode_device,
     semantic0031_mean_pool_by_parent_device,
 )
-from ptcg_cuda_engine.semantic0031_router import branched_option_outputs
+from ptcg_cuda_engine.semantic0031_router import (
+    Semantic0031ResidentRouter,
+    SharedTrunkIdentityProof,
+    branched_option_outputs,
+)
 
 
 class _ActionDecoder(nn.Module):
@@ -27,7 +31,108 @@ class _ActionDecoder(nn.Module):
         self.recurrent = nn.GRUCell(width, width)
 
 
+class _Policy(nn.Module):
+    def __init__(self, width: int, state_offset: float) -> None:
+        super().__init__()
+        self.action_decoder = _ActionDecoder(width)
+        self.state_offset = state_offset
+
+    def validate_batch(self, batch):
+        return batch
+
+    def state_encoder(self, batch, _prototype_memory):
+        rows = batch.option_mask.shape[0]
+        summary = torch.full((rows, 4), self.state_offset)
+        return SimpleNamespace(
+            summary=summary,
+            tokens=summary.unsqueeze(1),
+            mask=torch.ones((rows, 1), dtype=torch.bool),
+        )
+
+
+class _Adapter:
+    def __init__(self, model: _Policy, options: torch.Tensor) -> None:
+        self.model = model
+        self.prototype_memory = None
+        self.options = options
+
+    def _encode_options(self, _batch, _state):
+        return self.options
+
+
 class Semantic0031RouterTest(unittest.TestCase):
+    def test_cross_policy_partial_adapter_hard_fails(self) -> None:
+        focal = SimpleNamespace(model=SimpleNamespace(action_decoder=object()))
+        with self.assertRaisesRegex(RuntimeError, "complete opponent adapter"):
+            Semantic0031ResidentRouter(
+                focal_adapter=focal,
+                opponent_last_option_layer=object(),
+                opponent_option_norm=object(),
+                opponent_decoder=object(),
+                same_policy=False,
+            )
+
+    def test_grouped_full_policy_route_matches_independent_inference(self) -> None:
+        torch.manual_seed(31)
+        batch = SimpleNamespace(
+            option_mask=torch.tensor([
+                [True, True, True], [True, True, False],
+                [True, True, True], [True, True, False],
+            ]),
+            min_count=torch.tensor([1, 1, 1, 1]),
+            max_count=torch.tensor([2, 2, 2, 2]),
+        )
+        focal_model = _Policy(4, 0.25).eval()
+        opponent_model = _Policy(4, -0.75).eval()
+        focal_adapter = _Adapter(focal_model, torch.randn(4, 3, 4))
+        opponent_adapter = _Adapter(opponent_model, torch.randn(4, 3, 4))
+        audit = {
+            "status": "PASS",
+            "requested_policy_id": "Policy-Opponent",
+            "effective_policy_sha256": "f" * 64,
+        }
+        router = Semantic0031ResidentRouter(
+            focal_adapter=focal_adapter,
+            opponent_adapter=opponent_adapter,
+            same_policy=False,
+            requested_opponent_policy_id="Policy-Opponent",
+            opponent_identity_audit=audit,
+        )
+        focal_route = torch.tensor([True, False, True, False])
+        opponent_route = ~focal_route
+
+        grouped = router.route(
+            batch,
+            focal_route=focal_route,
+            opponent_route=opponent_route,
+            max_select=2,
+            focal_greedy=True,
+            compute_stats=False,
+        )
+        focal_state = focal_model.state_encoder(batch, None)
+        opponent_state = opponent_model.state_encoder(batch, None)
+        focal = semantic0031_decode_device(
+            focal_model.action_decoder, batch, focal_adapter.options,
+            focal_state.summary, max_select=2, greedy=True, compute_stats=False,
+        )
+        opponent = semantic0031_decode_device(
+            opponent_model.action_decoder, batch, opponent_adapter.options,
+            opponent_state.summary, max_select=2, greedy=True, compute_stats=False,
+        )
+        expected_actions = torch.where(
+            focal_route[:, None], focal["actions"], opponent["actions"]
+        )
+        expected_lengths = torch.where(
+            focal_route, focal["lengths"], opponent["lengths"]
+        )
+        expected_stopped = torch.where(
+            focal_route, focal["stopped"], opponent["stopped"]
+        )
+
+        torch.testing.assert_close(grouped.actions, expected_actions)
+        torch.testing.assert_close(grouped.lengths, expected_lengths)
+        torch.testing.assert_close(grouped.stopped, expected_stopped)
+
     def test_relation_pool_uses_only_explicit_masked_children(self) -> None:
         values = torch.tensor(
             [[[2.0, 4.0], [100.0, 200.0], [6.0, 8.0], [50.0, 60.0]]]
@@ -191,8 +296,25 @@ class Semantic0031RouterTest(unittest.TestCase):
                 opponent_last(shared, state.tokens, **masks)
             )
             calls = 0
+            proof = SharedTrunkIdentityProof(
+                focal_policy_id="Policy-A",
+                opponent_policy_id="Policy-B",
+                focal_component_sha256={
+                    name: "a" * 64 for name in (
+                        "prototype_encoder", "state_encoder", "option_input_encoder",
+                        "option_transformer_layer_0",
+                    )
+                },
+                opponent_component_sha256={
+                    name: "a" * 64 for name in (
+                        "prototype_encoder", "state_encoder", "option_input_encoder",
+                        "option_transformer_layer_0",
+                    )
+                },
+            )
             focal, opponent = branched_option_outputs(
-                adapter, opponent_last, opponent_norm, batch, state
+                adapter, opponent_last, opponent_norm, batch, state,
+                identity_proof=proof,
             )
         hook.remove()
 
@@ -200,6 +322,16 @@ class Semantic0031RouterTest(unittest.TestCase):
         mask = batch.option_mask.unsqueeze(-1)
         torch.testing.assert_close(focal, expected_focal * mask)
         torch.testing.assert_close(opponent, expected_opponent * mask)
+
+    def test_last_option_branch_rejects_mismatched_shared_weights(self) -> None:
+        proof = SharedTrunkIdentityProof(
+            focal_policy_id="Policy-0809",
+            opponent_policy_id="Policy-0806",
+            focal_component_sha256={"prototype_encoder": "a" * 64},
+            opponent_component_sha256={"prototype_encoder": "b" * 64},
+        )
+        with self.assertRaisesRegex(RuntimeError, "no effective-weight identity proof"):
+            proof.validate()
 
 
 if __name__ == "__main__":

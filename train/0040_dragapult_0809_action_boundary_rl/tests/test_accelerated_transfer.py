@@ -124,6 +124,7 @@ class AcceleratedTransferTest(unittest.TestCase):
                 focal_deck=(1,) * 60,
                 opponent_deck=(2,) * 60,
                 runtime_root=Path(temporary),
+                opponent_policy_id="Policy-0806",
                 policy_seed=12,
                 search_seed=13,
                 action_boundary_mode="enabled",
@@ -172,6 +173,7 @@ class AcceleratedTransferTest(unittest.TestCase):
                 focal_deck=(1,) * 60,
                 opponent_deck=(2,) * 60,
                 runtime_root=Path(temporary),
+                opponent_policy_id="Policy-0806",
                 action_boundary_mode="enabled",
             )
             episode = protocol.EpisodeTrajectory(job)
@@ -251,7 +253,10 @@ class AcceleratedTransferTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "frozen.json"
             outcomes = runner._persist_frozen_results(
-                output, episodes, checkpoint_update=5, panel_version="fixed"
+                output, episodes, checkpoint_update=5, panel_version="fixed",
+                opponent_identity_audit=runner.resolve_policy_identity(
+                    "Policy-0806", purpose="unit_test"
+                ),
             )
             payload = json.loads(output.read_text())
         self.assertEqual(len(outcomes), 2048)

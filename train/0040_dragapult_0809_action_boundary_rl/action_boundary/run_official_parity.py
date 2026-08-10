@@ -12,7 +12,11 @@ from evaluation.runtime.seeded import build_seeded_runtime
 
 from ..initialization import build_update0_model
 from ..rollout import FullSemanticRolloutCollector
-from ..training.run_full_semantic import build_jobs, focal_deck
+from ..training.run_full_semantic import (
+    build_jobs,
+    focal_deck,
+    load_registered_opponent,
+)
 from .official_parity import exhaustive_scenario_parity, scenario_from_sample
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -33,17 +37,19 @@ def main() -> None:
     device = torch.device(args.device)
     deck = focal_deck()
     model, _ = build_update0_model(deck, device=device)
+    opponent = load_registered_opponent("Policy-0809", device)
     found = {}
     searched = errors = 0
     for offset in range(0, args.search_games, args.chunk_games):
         jobs = build_jobs(source_policy_update=0, seed=380_200_000 + offset,
                           count=min(args.chunk_games, args.search_games - offset))
         jobs = [replace(job, game_id=f"parity-search-{offset + index:06d}",
+                        opponent_policy_id="Policy-0809",
                         action_boundary_mode="shadow", trace_policy="compact",
                         include_action_prefix=True)
                 for index, job in enumerate(jobs)]
         collector = FullSemanticRolloutCollector(
-            model, model.actor, device=device, worker_processes=min(args.workers, len(jobs)),
+            model, opponent, device=device, worker_processes=min(args.workers, len(jobs)),
             engines_per_worker=min(args.engines_per_worker, len(jobs)),
             inference_channels_per_role=min(args.engines_per_worker, len(jobs)),
             mode="sample", coalesce_ms=5.0, timeout_seconds=240.0,

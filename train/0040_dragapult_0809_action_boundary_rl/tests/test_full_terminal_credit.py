@@ -20,6 +20,7 @@ class FullTerminalCreditTest(unittest.TestCase):
             focal_deck=tuple(range(1, 61)),
             opponent_deck=tuple(range(1, 61)),
             runtime_root=Path("."),
+            opponent_policy_id="Policy-0806",
         )
         decision_turns = decision_turns or list(range(steps))
         decisions = [

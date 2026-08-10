@@ -19,7 +19,7 @@ from ..policy.batching import cpu_batch, move_batch
 from ..semantic_policy.features.collate import collate_canonical_records
 from .protocol import (
     CanonicalMacroAction, EpisodeTrajectory, PolicyTransition, RolloutJob,
-    TrajectoryDecision,
+    TrajectoryDecision, require_opponent_policy_binding,
 )
 from .pool_worker import run_engine_pool
 from ..action_boundary.dragapult import (
@@ -543,6 +543,10 @@ class FullSemanticRolloutCollector:
     def collect(self, jobs: list[RolloutJob]) -> list[EpisodeTrajectory]:
         if not jobs:
             return []
+        require_opponent_policy_binding(
+            jobs,
+            materialized_policy_id=str(getattr(self.opponent, "_policy_id", "")),
+        )
         if len({job.game_id for job in jobs}) != len(jobs):
             raise ValueError("rollout game IDs must be unique")
         sessions = {job.game_id: self._session(job) for job in jobs}

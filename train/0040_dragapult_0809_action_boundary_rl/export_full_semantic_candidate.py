@@ -168,6 +168,7 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         result_schema not in {
             "0038_frozen_per_game_results_v1",
             "0038_frozen_per_game_results_v2",
+            "0040_frozen_per_game_results_policy_identity_v3",
         }
         or payload.get("checkpoint_update") != update
         or payload.get("frozen_panel_version")
@@ -176,6 +177,14 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         or len(entries) != 2048
     ):
         raise ValueError("canonical Frozen evaluation contract mismatch")
+    if result_schema == "0040_frozen_per_game_results_policy_identity_v3":
+        audit = payload.get("policy_identity_audit") or {}
+        if (
+            payload.get("opponent_policy_id") != "Policy-0806"
+            or audit.get("status") != "PASS"
+            or audit.get("requested_policy_id") != "Policy-0806"
+        ):
+            raise ValueError("canonical Frozen evaluation policy identity audit failed")
     valid = [
         row for row in entries
         if row.get("valid") is True and row.get("error") in (None, "")

@@ -25,6 +25,7 @@ class RolloutJob:
     focal_deck: tuple[int, ...]
     opponent_deck: tuple[int, ...]
     runtime_root: Path
+    opponent_policy_id: str
     policy_seed: int = 0
     search_seed: int = 0
     engine_library: Path | None = None
@@ -46,6 +47,20 @@ class RolloutJob:
             raise ValueError("normal_trace_sample_modulus must be positive")
         if self.full_round_draw_limit < 0:
             raise ValueError("full_round_draw_limit cannot be negative")
+        if not self.opponent_policy_id.strip():
+            raise ValueError("opponent_policy_id must identify a concrete policy")
+
+
+def require_opponent_policy_binding(
+    jobs: list[RolloutJob], *, materialized_policy_id: str
+) -> None:
+    requested = {job.opponent_policy_id for job in jobs}
+    if requested != {materialized_policy_id}:
+        raise RuntimeError(
+            "FATAL: rollout opponent policy binding mismatch: "
+            f"requested={sorted(requested)!r}, "
+            f"materialized={materialized_policy_id!r}"
+        )
 
 
 @dataclass(frozen=True)
@@ -125,4 +140,5 @@ class EpisodeTrajectory:
 __all__ = [
     "CanonicalMacroAction", "DEFAULT_FULL_ROUND_DRAW_LIMIT", "EpisodeTrajectory",
     "PolicyTransition", "RolloutJob", "TrajectoryDecision",
+    "require_opponent_policy_binding",
 ]

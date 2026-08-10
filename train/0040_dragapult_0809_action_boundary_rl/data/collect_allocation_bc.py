@@ -14,7 +14,11 @@ import torch
 
 from ..initialization import build_update0_model, initialization_manifest
 from ..rollout import FullSemanticRolloutCollector
-from ..training.run_full_semantic import build_jobs, focal_deck
+from ..training.run_full_semantic import (
+    build_jobs,
+    focal_deck,
+    load_registered_opponent,
+)
 from .allocation_dataset import AllocationBCSample, split_for_battle
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -49,6 +53,7 @@ def main() -> None:
     chunk_root.mkdir(exist_ok=True)
     device = torch.device(args.device)
     model, identity = build_update0_model(focal_deck(), device=device)
+    opponent = load_registered_opponent("Policy-0809", device)
     samples: list[dict[str, object]] = []
     valid_games = errors = invalid_chains = 0
     invalid_reasons = Counter()
@@ -69,10 +74,11 @@ def main() -> None:
         jobs = build_jobs(source_policy_update=0, seed=380_100_000 + offset, count=count)
         jobs = [replace(
             job, game_id=f"allocation-bc-{offset + index:06d}",
+            opponent_policy_id="Policy-0809",
             action_boundary_mode="shadow", trace_policy="compact"
         ) for index, job in enumerate(jobs)]
         collector = FullSemanticRolloutCollector(
-            model, model.actor, device=device,
+            model, opponent, device=device,
             worker_processes=min(args.workers, count),
             engines_per_worker=min(args.engines_per_worker, count),
             inference_channels_per_role=min(args.engines_per_worker, count),

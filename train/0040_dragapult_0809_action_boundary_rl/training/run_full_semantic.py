@@ -44,7 +44,11 @@ from .accelerated_transfer import (
     AcceleratedTransferConfig,
     AcceleratedTransferController,
 )
-from ..semantic_policy.deployment.inference import PortableSemanticPolicy
+from ..policy_identity import (
+    PolicyIdentityViolation,
+    materialize_policy,
+    resolve_policy_identity,
+)
 from ..evaluation.frozen_jobs import (
     CANONICAL_CONTRACT_ID,
     EXPECTED_007_SCHEDULE_SHA256,
@@ -76,7 +80,8 @@ IMMUTABLE_GATE_C_TRACE_SHA256 = (
     "18c1684a3dc8158494fd9820278a85e60e351b2b274b520bb9fb413b1fa056ca"
 )
 SOURCE_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt"
-OPPONENT_CHECKPOINT = ROOT / "rl_runs/0037_dragapult_value_initialized_rl/source/friend_0806_epoch11/model.pt"
+OPPONENT_POLICY_ID = "Policy-0806"
+OPPONENT_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt"
 CANDIDATE_ROOT = ROOT / "archive/submission/0031_zero_shot_0809_007_dragapult_ex_fp16_storage_fp32_runtime"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
 FOCAL_EXACT_DECK_SHA256 = "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
@@ -329,6 +334,16 @@ def runtime_root() -> Path:
 
 def build_collector(model, opponent, config: RunConfig, *, mode: str,
                     record_trajectory: bool | None = None):
+    audit = getattr(opponent, "_policy_identity_audit", None)
+    if (
+        audit is None
+        or audit.status != "PASS"
+        or audit.requested_policy_id != OPPONENT_POLICY_ID
+    ):
+        raise PolicyIdentityViolation(
+            "FATAL: Opponent policy identity violation. "
+            "Collector received no passing Policy-0806 materialization audit"
+        )
     if record_trajectory is None:
         record_trajectory = mode == "sample"
     if config.engine_backend == "accelerated:cuda_resident":
@@ -350,6 +365,8 @@ def build_collector(model, opponent, config: RunConfig, *, mode: str,
             # winning Agent process context 41.  Stochastic rollout retains its
             # separately configured sampling contract.
             agent_selects_first_player=mode == "greedy",
+            opponent_policy_id=OPPONENT_POLICY_ID,
+            opponent_identity_audit=audit,
         )
     return FullSemanticRolloutCollector(
         model,
@@ -407,6 +424,7 @@ def build_jobs(
                 focal_deck=deck,
                 opponent_deck=opponent.deck,
                 runtime_root=root,
+                opponent_policy_id=OPPONENT_POLICY_ID,
                 policy_seed=(
                     (seed + 1_700_000_009 + update_offset + game_index)
                     & 0x7FFFFFFF
@@ -501,7 +519,15 @@ def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
 
 
 def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_update: int,
-                            panel_version: str) -> dict[int, int]:
+                            panel_version: str,
+                            opponent_identity_audit: Any) -> dict[int, int]:
+    if (
+        opponent_identity_audit.status != "PASS"
+        or opponent_identity_audit.requested_policy_id != OPPONENT_POLICY_ID
+    ):
+        raise PolicyIdentityViolation(
+            "FATAL: Frozen result cannot be persisted without PASS Policy-0806 audit"
+        )
     rows = []
     outcomes = {}
     for episode in episodes:
@@ -524,9 +550,12 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
     if len(rows) != 2048 or len(outcomes) != len(rows):
         raise RuntimeError("Frozen result persistence requires 2,048 unique games")
     _atomic_json(path, {
-        "schema_version": "0038_frozen_per_game_results_v2",
+        "schema_version": "0040_frozen_per_game_results_policy_identity_v3",
         "frozen_panel_version": panel_version,
-        "checkpoint_update": checkpoint_update, "entries": rows,
+        "checkpoint_update": checkpoint_update,
+        "opponent_policy_id": OPPONENT_POLICY_ID,
+        "policy_identity_audit": opponent_identity_audit.to_manifest(),
+        "entries": rows,
     })
     return outcomes
 
@@ -565,6 +594,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
         {
             "game_id": job.game_id,
             "opponent_id": job.opponent_id,
+            "opponent_policy_id": job.opponent_policy_id,
             **_job_seat_payload(job),
             "engine_seed": job.seed,
             "search_seed": job.search_seed,
@@ -577,7 +607,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("ascii")
     environment_sha256 = _environment_schedule_sha256(jobs)
     return {
-        "schema": "0038_dynamic_rollout_schedule_v3_agent_first_player",
+        "schema": "0040_dynamic_rollout_schedule_v4_policy_identity",
         "episodes": len(rows),
         "seed_pairs": len({(row["opponent_id"], row["engine_seed"]) for row in rows}),
         "source_checkpoint_sha256": source_checkpoint_sha256,
@@ -590,6 +620,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
 def _environment_schedule_sha256(jobs: list[RolloutJob]) -> str:
     rows = [{
         "opponent_id": job.opponent_id,
+        "opponent_policy_id": job.opponent_policy_id,
         **_job_seat_payload(job),
         "engine_seed": job.seed,
         "search_seed": job.search_seed,
@@ -602,8 +633,11 @@ def _environment_schedule_sha256(jobs: list[RolloutJob]) -> str:
 
 def _opponent_snapshot() -> dict[str, Any]:
     catalog = load_frozen_catalog()
+    identity_audit = resolve_policy_identity(
+        OPPONENT_POLICY_ID, purpose="rl_opponent_pool_snapshot"
+    )
     return {
-        "schema": "0038_frozen0806_pool_snapshot_v2",
+        "schema": "0040_frozen0806_pool_snapshot_policy_identity_v3",
         "opponent_count": len(catalog),
         "total_games": sum(item.games for item in catalog),
         "seat_contract": (
@@ -612,8 +646,11 @@ def _opponent_snapshot() -> dict[str, Any]:
         ),
         "pool_id": "0806_kaggle_top100_plus_v1",
         "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
+        "policy_id": OPPONENT_POLICY_ID,
         "policy": "0806_large_model_pretrained_immutable",
-        "policy_sha256": _sha256(SOURCE_CHECKPOINT),
+        "policy_sha256": identity_audit.checkpoint_sha256,
+        "opponent_effective_policy_sha256": identity_audit.effective_policy_sha256,
+        "policy_identity_audit": identity_audit.to_manifest(),
         "opponents": [
             {
                 "deck_id": item.deck_id,
@@ -905,11 +942,21 @@ def _run_attested_update0_package_parity(
     return report
 
 
-def load_frozen_opponent(device: torch.device):
-    policy = PortableSemanticPolicy.from_checkpoint(OPPONENT_CHECKPOINT, focal_deck())
-    actor = policy.model.to(device).eval()
-    actor.requires_grad_(False)
+def load_registered_opponent(policy_id: str, device: torch.device):
+    resolved = materialize_policy(
+        policy_id,
+        focal_deck(),
+        device,
+        purpose="shared_training_and_frozen_evaluation_resolver",
+    )
+    actor = resolved.model
+    actor._policy_id = resolved.policy_id
+    actor._policy_identity_audit = resolved.audit
     return actor
+
+
+def load_frozen_opponent(device: torch.device):
+    return load_registered_opponent(OPPONENT_POLICY_ID, device)
 
 
 def run_gate(
@@ -1050,6 +1097,9 @@ def run(config: RunConfig) -> dict[str, Any]:
         if not CUDA_RULES.is_file() or not (CUDA_EXTENSION / "_ptcg_cuda.so").is_file():
             raise RuntimeError("validated CUDA rules/extension artifacts are unavailable")
     source_identity = _git_identity()
+    opponent_identity = resolve_policy_identity(
+        OPPONENT_POLICY_ID, purpose="formal_run_preflight"
+    )
     if config.accelerated_transfer_acceptance and source_identity["git_dirty"]:
         raise RuntimeError("accelerated transfer acceptance requires a clean source commit")
     run_id = "0040-" + config.version.lower().replace("_", "-")
@@ -1085,6 +1135,9 @@ def run(config: RunConfig) -> dict[str, Any]:
         "initialization_checkpoint_sha256": COMMON_UPDATE0_SHA256,
         "base_source_checkpoint": str(SOURCE_CHECKPOINT.relative_to(ROOT)),
         "base_source_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
+        "opponent_policy_id": OPPONENT_POLICY_ID,
+        "opponent_effective_policy_sha256": opponent_identity.effective_policy_sha256,
+        "policy_identity_audit": opponent_identity.to_manifest(),
         "integrated_flags": flags.metadata(),
         **source_identity,
         "cuda_rules_sha256": _sha256(CUDA_RULES),
@@ -1398,6 +1451,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             baseline_core_outcomes = _persist_frozen_results(
                 paths["artifact"] / "frozen_results/core-update-000000.json",
                 baseline, checkpoint_update=0, panel_version=CANONICAL_CONTRACT_ID,
+                opponent_identity_audit=opponent._policy_identity_audit,
             )
             update0_package_parity = _run_attested_update0_package_parity(
                 version=config.version,
@@ -1437,15 +1491,17 @@ def run(config: RunConfig) -> dict[str, Any]:
             baseline_win_rate = sum(
                 value == 1 for value in baseline_core_outcomes.values()
             ) / len(baseline_core_outcomes)
-            best_frozen_update = 0
-            best_frozen_win_rate = baseline_win_rate
+            candidate_leader_update = 0
+            candidate_leader_win_rate = baseline_win_rate
             frozen_below_best_streak = 0
-            _atomic_json(paths["artifact"] / "champion.json", {
-                "schema": "0038_cuda_frozen_champion_v1",
+            _atomic_json(paths["artifact"] / "candidate_leader.json", {
+                "schema": "0040_cuda_frozen_candidate_leader_v2",
                 "checkpoint_update": 0,
                 "win_rate": baseline_win_rate,
                 "checkpoint": "checkpoint/update-000000.pt",
                 "selection_runtime": "accelerated:cuda_resident",
+                "promotion_status": "NOT_PROMOTED",
+                "human_decision_required": True,
                 "cpu_evaluation_run": False,
             })
             update_iterator = (
@@ -1718,6 +1774,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                         paths["artifact"] / f"frozen_results/core-update-{update:06d}.json",
                         evaluation, checkpoint_update=update,
                         panel_version=CANONICAL_CONTRACT_ID,
+                        opponent_identity_audit=opponent._policy_identity_audit,
                     )
                     metrics.update(_episode_metrics(evaluation, "eval/core"))
                     metrics.update(_paired_frozen_metrics(
@@ -1732,24 +1789,26 @@ def run(config: RunConfig) -> dict[str, Any]:
                     frozen_win_rate = sum(
                         value == 1 for value in checkpoint_outcomes.values()
                     ) / len(checkpoint_outcomes)
-                    if frozen_win_rate > best_frozen_win_rate:
-                        best_frozen_win_rate = frozen_win_rate
-                        best_frozen_update = update
+                    if frozen_win_rate > candidate_leader_win_rate:
+                        candidate_leader_win_rate = frozen_win_rate
+                        candidate_leader_update = update
                         frozen_below_best_streak = 0
-                        _atomic_json(paths["artifact"] / "champion.json", {
-                            "schema": "0038_cuda_frozen_champion_v1",
+                        _atomic_json(paths["artifact"] / "candidate_leader.json", {
+                            "schema": "0040_cuda_frozen_candidate_leader_v2",
                             "checkpoint_update": update,
                             "win_rate": frozen_win_rate,
                             "delta_vs_update0": frozen_win_rate - baseline_win_rate,
                             "checkpoint": f"checkpoint/update-{update:06d}.pt",
                             "selection_runtime": "accelerated:cuda_resident",
                             "cpu_evaluation_run": False,
+                            "promotion_status": "NOT_PROMOTED",
+                            "human_decision_required": True,
                         })
                     else:
                         frozen_below_best_streak += 1
                     metrics.update({
-                        "eval/champion_update": float(best_frozen_update),
-                        "eval/champion_win_rate": best_frozen_win_rate,
+                        "eval/candidate_leader_update": float(candidate_leader_update),
+                        "eval/candidate_leader_win_rate": candidate_leader_win_rate,
                         "eval/below_best_consecutive_points": float(
                             frozen_below_best_streak
                         ),
@@ -1793,11 +1852,13 @@ def run(config: RunConfig) -> dict[str, Any]:
             "final_decoder_sha256": model.decoder_sha256(),
             "checkpoint_retention": "all",
             "wandb_url": wandb_url,
-            "cuda_champion_update": best_frozen_update,
-            "cuda_champion_win_rate": best_frozen_win_rate,
-            "cuda_champion_delta_vs_update0": (
-                best_frozen_win_rate - baseline_win_rate
+            "cuda_candidate_leader_update": candidate_leader_update,
+            "cuda_candidate_leader_win_rate": candidate_leader_win_rate,
+            "cuda_candidate_leader_delta_vs_update0": (
+                candidate_leader_win_rate - baseline_win_rate
             ),
+            "promotion_status": "NOT_PROMOTED",
+            "human_decision_required": True,
             "cpu_evaluation_scheduled": False,
             "accelerated_transfer": (
                 transfer_controller.metadata()

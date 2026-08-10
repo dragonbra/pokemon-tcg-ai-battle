@@ -78,6 +78,10 @@ def build_runtime(
     device: str = "cuda",
     learner: PodNativeActorCritic | None = None,
 ) -> RuntimeBundle:
+    raise RuntimeError(
+        "FATAL: legacy POD routed-head runtime has no registered effective-policy "
+        "identity per lane; migrate it to Policy Identity Protocol V1 before use"
+    )
     if copies_per_opponent < 1:
         raise ValueError("copies_per_opponent must be positive")
     for path in (CUDA_ROOT / "python", extension_dir):

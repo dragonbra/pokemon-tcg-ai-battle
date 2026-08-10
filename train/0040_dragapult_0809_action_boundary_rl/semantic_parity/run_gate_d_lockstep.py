@@ -142,16 +142,16 @@ def main() -> None:
     )
     frozen_opponent = run_module.load_frozen_opponent(device)
     adapter = Semantic0031DeviceAdapter(training_model.actor, focal, max_select=64)
+    opponent_adapter = Semantic0031DeviceAdapter(
+        frozen_opponent, opponent, max_select=64
+    )
+    opponent_audit = frozen_opponent._policy_identity_audit
     router = Semantic0031ResidentRouter(
         focal_adapter=adapter,
-        opponent_last_option_layer=(
-            frozen_opponent.option_encoder.cross_attention_transformer.layers[1]
-        ),
-        opponent_option_norm=(
-            frozen_opponent.option_encoder.cross_attention_transformer.norm
-        ),
-        opponent_decoder=frozen_opponent.action_decoder,
         same_policy=False,
+        opponent_adapter=opponent_adapter,
+        requested_opponent_policy_id="Policy-0806",
+        opponent_identity_audit=opponent_audit,
         focal_summary_fn=training_model.actor_summary,
     )
     cpu_library = load_seeded_library(build_seeded_runtime().library_path)
@@ -498,9 +498,11 @@ def main() -> None:
 
     passed = first_divergence is None and len(games) == len(seeds) * 2
     report = {
-        "schema_version": "0038_gate_d_cpu_package_cuda_lockstep_v1",
+        "schema_version": "0040_gate_d_full_policy_identity_lockstep_v2",
         "gate": "D",
         "status": "PASS" if passed else "FAIL",
+        "opponent_policy_id": "Policy-0806",
+        "policy_identity_audit": opponent_audit.to_manifest(),
         "games_requested": len(seeds) * 2,
         "games_completed": len(games),
         "first_divergence": first_divergence,

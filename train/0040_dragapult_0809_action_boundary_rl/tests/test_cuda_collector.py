@@ -24,6 +24,7 @@ def _job(game_id: str, *, full_round_draw_limit: int = 50):
         focal_deck=deck,
         opponent_deck=deck,
         runtime_root=Path("runtime"),
+        opponent_policy_id="Policy-0806",
         policy_seed=17,
         action_boundary_mode="enabled",
         full_round_draw_limit=full_round_draw_limit,
@@ -31,6 +32,19 @@ def _job(game_id: str, *, full_round_draw_limit: int = 50):
 
 
 class CudaCollectorTerminationContractTest(unittest.TestCase):
+    def test_job_requires_concrete_opponent_policy_id(self) -> None:
+        with self.assertRaisesRegex(ValueError, "opponent_policy_id"):
+            protocol.RolloutJob(
+                "a", "opponent", True, 1, 0, (1,) * 60, (2,) * 60,
+                Path("runtime"), "",
+            )
+
+    def test_lane_policy_binding_mismatch_hard_fails(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "FATAL.*binding mismatch"):
+            protocol.require_opponent_policy_binding(
+                [_job("a")], materialized_policy_id="Policy-0809"
+            )
+
     def test_fifty_full_rounds_map_to_engine_turn_99(self) -> None:
         self.assertEqual(collector._engine_turn_draw_limit([_job("a")]), 99)
 

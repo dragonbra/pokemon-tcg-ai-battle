@@ -97,6 +97,7 @@ def build_frozen_jobs(
             focal_deck=focal_deck,
             opponent_deck=catalog[str(row["opponent_id"])].deck,
             runtime_root=runtime_root,
+            opponent_policy_id="Policy-0806",
             policy_seed=evaluation_game_seed(
                 evaluation_seed=FROZEN_0806_EVALUATION_SEED,
                 focal_identity=focal_deck_id,

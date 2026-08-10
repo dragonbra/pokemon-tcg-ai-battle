@@ -216,6 +216,8 @@ def run(
             key: getattr(source_identity, key)
             for key in source_identity.__dataclass_fields__
         },
+        "opponent_policy_id": opponent._policy_id,
+        "policy_identity_audit": opponent._policy_identity_audit.to_manifest(),
         "schedule": {
             "baseline_schedule": str(baseline_schedule.relative_to(ROOT)),
             "environment_sha256": environment_sha256,
