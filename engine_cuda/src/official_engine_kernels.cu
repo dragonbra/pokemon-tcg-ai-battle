@@ -1132,7 +1132,7 @@ __device__ bool semantic0031_add_card_entity(
             ? (master->values[kCardHp] + card->hp_change)
             : 0);
     const std::int32_t damage = is_pokemon && card->damage > 0 ? card->damage : 0;
-    const std::int32_t hp = max_hp > damage ? max_hp - damage : 0;
+    const std::int32_t hp = max_hp - damage;
     std::int32_t energy_count = 0;
     std::int32_t tool_count = 0;
     std::int32_t pre_evolution_count = 0;
