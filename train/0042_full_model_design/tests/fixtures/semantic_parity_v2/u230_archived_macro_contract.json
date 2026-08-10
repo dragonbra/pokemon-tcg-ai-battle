@@ -1,0 +1,7 @@
+{
+  "fixture_schema_version": "0038_archived_macro_contract_v1",
+  "macro_protocol_fail_closed": false,
+  "maximum_macro_targets": 5,
+  "package_manifest_sha256": "74a1d489aef5a1b58b1b8731a7f19a8457bf96a5e59dfa5841b896d2e6315f3e",
+  "source_evidence": "semantic_parity_v1/u230_package_load_report.json: load_report.package.silent_legacy_fallback=true plus the pre-fix package source audit"
+}

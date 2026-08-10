@@ -1,0 +1,1 @@
+{"preset":"BASE","model_schema":"0042_strategy_conditioned_v1","enable_action_boundary":true,"enable_forced_shortcut":true,"enable_dragapult_macro":true,"no_option_lora":true,"enable_prize_aux":false,"pretrained_meta_head_classes":15,"enable_tempo_metrics":true}

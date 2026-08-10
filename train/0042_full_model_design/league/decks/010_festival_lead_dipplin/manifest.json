@@ -1,0 +1,23 @@
+{
+  "archetype": "Festival Lead / Dipplin",
+  "deck_id": "festival_lead_dipplin_d6c573dd89bd",
+  "exact_deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "provenance": {
+    "binding_counts": {
+      "leaderboard_score": 1,
+      "submission_date_exact_score_mismatch": 1
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      22,
+      35
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    93
+  ],
+  "schema_version": "evaluation_frozen_0806_deck_v1"
+}

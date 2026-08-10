@@ -1,0 +1,49 @@
+{
+  "schema_version": "0038_gate_h_execution_identity_v1",
+  "case": {
+    "name": "dragapult_vs_zoroark_munkidori",
+    "seed_start": 1,
+    "seed_count": 1,
+    "decision_limit": 512,
+    "policy": "coverage-first-legal",
+    "case_table_sha256": "9f5f9d76a61c33b63474dcd2ffa05d055e31e282e2d01778571e6864032a1697",
+    "rule_pack_sha256": "e8bb8537ccadc5d77b75c4198ffb1467d9b73d119e1e8c6325a9e5cd503a80e6"
+  },
+  "known_pre_fix_runtime_artifact": {
+    "source_commit_attested": false,
+    "binary_sha256": "84e338c9beb74869f637eb95b688ed64e8d8a7c0f3e34bf7f8c71f5e18f00259",
+    "exit_code": 2,
+    "status": "FAIL",
+    "first_divergence": {
+      "decision": 129,
+      "cuda_error": 20,
+      "cuda_error_detail": 403,
+      "official_terminal": false,
+      "official_continuation": "0:79:0:1:0:0:0:0",
+      "cuda_continuations": []
+    }
+  },
+  "pre_fix_commit_rebuild": {
+    "commit": "c29dd6de81eb785c4788686995a472bd55ee9726",
+    "binary_sha256": "6a809dc0205093c15a81a04a6ba8983075b79504eeb1ff49e4ea8a943342739b",
+    "exit_code": 0,
+    "status": "PASS",
+    "decisions_compared": 213,
+    "state_mismatches": 0,
+    "status_mismatches": 0,
+    "outcome_mismatches": 0,
+    "note": "A clean rebuild of tracked c29dd6 source does not reproduce the stale cached executable failure. The known Gate-A failure therefore belongs to the unprovenanced runtime artifact, not to this tracked source commit."
+  },
+  "post_fix_runtime": {
+    "fix_commit": "bf37545fbf57fb030aaf1152a5c7efe67ec4ff57",
+    "audit_head": "1e29230255a349f623b630640f450632a5de937e",
+    "binary_sha256": "5147f94d47e740f68be047285fec89b0d3455069cf6b07cc0fb4bd8ae8cc0d08",
+    "exit_code": 0,
+    "status": "PASS",
+    "decisions_compared": 213,
+    "state_mismatches": 0,
+    "status_mismatches": 0,
+    "outcome_mismatches": 0
+  },
+  "interpretation": "The suite detects and localizes the historical runtime artifact failure. It must not claim that c29dd6 tracked source itself fails Gate A, because the clean source rebuild passes. Gate-C pre-fix feature failures remain captured separately by immutable semantic_parity_v1 fixtures."
+}

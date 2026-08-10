@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>0042 Strategy-Conditioned Full Model</title>
+  <style>
+    :root { color-scheme:light; --ink:#182128; --muted:#596770; --line:#d7dde1; --paper:#fff; --band:#f4f6f7; --blue:#1769a6; --green:#18734d; --amber:#8a6418; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.58 system-ui,-apple-system,"Segoe UI",sans-serif; letter-spacing:0; }
+    header { color:#fff; background:#17252e; border-bottom:4px solid #2b8a65; }
+    header>div, main { width:min(1160px,calc(100% - 32px)); margin:auto; }
+    header>div { padding:26px 0 22px; }
+    h1 { margin:0 0 5px; font-size:30px; letter-spacing:0; }
+    h2 { margin:0 0 12px; font-size:21px; letter-spacing:0; }
+    p { margin:8px 0; }
+    .sub { color:#d0dbe0; }
+    .status { display:inline-block; margin-top:10px; padding:4px 9px; border:1px solid #6eb997; border-radius:4px; color:#e2f6ec; }
+    section { padding:24px 0; border-bottom:1px solid var(--line); }
+    .band { background:var(--band); margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); padding-left:calc(50vw - 50%); padding-right:calc(50vw - 50%); }
+    .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; }
+    .metric { padding:4px 12px; border-left:3px solid var(--blue); }
+    .metric strong { display:block; font-size:22px; }
+    .metric span { color:var(--muted); font-size:13px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th,td { padding:8px 9px; text-align:left; vertical-align:top; border-bottom:1px solid var(--line); }
+    th { background:#eaf0f3; font-size:13px; }
+    pre { overflow:auto; margin:12px 0; padding:16px; color:#eaf1f4; background:#14242e; border-radius:4px; }
+    code { padding:1px 4px; background:#edf1f3; border-radius:3px; }
+    .good { color:var(--green); font-weight:700; }
+    .note { padding:9px 12px; border-left:3px solid var(--amber); background:#fff9e9; }
+    a { color:var(--blue); }
+    @media (max-width:760px) { .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } table { font-size:12px; } th,td { padding:6px 4px; } }
+  </style>
+</head>
+<body>
+<header><div>
+  <h1>0042 · Strategy-Conditioned Full Model</h1>
+  <div class="sub">Frozen semantic space · trainable Value understanding · detached policy readout</div>
+  <div class="status">Implementation complete · 231 tests pass · no training launched</div>
+</div></header>
+<main>
+  <section class="metrics">
+    <div class="metric"><strong>61,016,835</strong><span>unique model parameters</span></div>
+    <div class="metric"><strong>5,681,447</strong><span>trainable parameters</span></div>
+    <div class="metric"><strong>0</strong><span>trainable OptionEncoder parameters</span></div>
+    <div class="metric"><strong>55</strong><span>exact numbered Frozen decks</span></div>
+  </section>
+
+  <section>
+    <h2>Decision</h2>
+    <p>0042 freezes the semantic geometry learned by 0031, trains the paired latent-query Value
+      network, and lets policy read q1, Meta probabilities, and adapted Value through an explicit
+      stop-gradient Strategy Adapter. Option Q/V LoRA and the dormant 23-class Meta conditioner are
+      absent.</p>
+    <p class="note">No PPO update, formal Frozen evaluation, search change, reward change, or
+      promotion action was performed in this implementation.</p>
+  </section>
+
+  <section class="band">
+    <h2>Actual data flow</h2>
+    <pre>public DecisionBatch
+  -> frozen PrototypeEncoder / StateEncoder -> state.tokens [B,S,320]
+                                          \-> state.summary [B,320]
+  -> frozen OptionEncoder ------------------> options [B,O,320]
+
+[state.tokens, options] -> trainable Value latent decoder -> [B,8,320]
+  q0 [B,320] -> LN + E_V_own -> zero-gated residual -> ValueHead -> V [B]
+  q1 [B,320] -> frozen 15-class MetaHead -> meta logits [B,15]
+
+state.summary -> ActionDecoder -> raw h_t [B,320]
+detached(q1, MetaProb, V) + public side + E_pi_own
+  -> zero-gated Strategy Adapter -> h_readout -> Query/STOP [B,O+1]
+
+selected option + raw h_t -> unchanged legacy GRU transition</pre>
+  </section>
+
+  <section>
+    <h2>Adapter contract</h2>
+    <table>
+      <thead><tr><th>Adapter</th><th>Input</th><th>Residual MLP</th><th>Gate</th><th>Owner</th></tr></thead>
+      <tbody>
+        <tr><td>Value</td><td><code>LN(q0)</code> + <code>E_V_own</code></td><td>336 → 320 → 320</td><td><code>g_V=0</code></td><td>Value side</td></tr>
+        <tr><td>Policy</td><td><code>LN(h_t)</code> + 354-wide context</td><td>674 → 320 → 320</td><td><code>g_pi=0</code></td><td>Policy side</td></tr>
+      </tbody>
+    </table>
+    <p>Both residual MLPs use normal initialization. Adapter LayerNorms are affine but owned by
+      their adapter. The two <code>Embedding(15,16)</code> tables share no Parameter object.</p>
+  </section>
+
+  <section class="band">
+    <h2>Frozen / trainable map</h2>
+    <table>
+      <thead><tr><th>Module</th><th>Parameters</th><th>Trainable</th><th>Optimizer / LR</th></tr></thead>
+      <tbody>
+        <tr><td>PrototypeEncoder</td><td>28,418,560</td><td>0</td><td>none</td></tr>
+        <tr><td>StateEncoder*</td><td>47,115,840</td><td>0</td><td>none</td></tr>
+        <tr><td>OptionEncoder*</td><td>36,627,840</td><td><strong>0</strong></td><td>none</td></tr>
+        <tr><td>ActionDecoder</td><td>1,027,202</td><td>1,027,202</td><td><code>action_decoder</code> / 1e-5</td></tr>
+        <tr><td>Value network</td><td>3,407,389</td><td>3,397,121</td><td><code>value_win</code> / 1e-4</td></tr>
+        <tr><td>Value Adapter</td><td>211,441</td><td>211,441</td><td><code>value_adapter</code> / 1e-4</td></tr>
+        <tr><td>Policy Adapter</td><td>320,241</td><td>320,241</td><td><code>policy_strategy_adapter</code> / 1e-5</td></tr>
+        <tr><td>Allocation / Prize</td><td>725,442</td><td>725,442</td><td>existing groups</td></tr>
+      </tbody>
+    </table>
+    <p><small>* State and Option totals include shared frozen prototype Parameters and must not be summed.</small></p>
+  </section>
+
+  <section>
+    <h2>Measured gradient boundary</h2>
+    <table>
+      <thead><tr><th>Loss</th><th>Frozen encoders</th><th>Value trunk</th><th>Value Adapter</th><th>MetaHead params</th><th>Decoder</th><th>Policy Adapter</th></tr></thead>
+      <tbody>
+        <tr><td>Policy</td><td>no</td><td>no</td><td>no</td><td>no</td><td class="good">yes</td><td class="good">yes</td></tr>
+        <tr><td>Value</td><td>no</td><td class="good">yes</td><td class="good">yes</td><td>no</td><td>no</td><td>no</td></tr>
+        <tr><td>Meta anchor</td><td>no</td><td class="good">yes</td><td>no</td><td>no</td><td>no</td><td>no</td></tr>
+      </tbody>
+    </table>
+    <p>The frozen MetaHead retains an autograd path into q1. Policy context detaches q1, Meta logits,
+      and V before policy-owned normalization.</p>
+  </section>
+
+  <section class="band">
+    <h2>Checkpoint and execution</h2>
+    <p><code>0042_strategy_conditioned_model_only_v1</code> strictly saves decoder, Value,
+      allocation/Prize, and both adapters. Base hashes, taxonomy hash/version, width, embedding
+      dimension, action contracts, and <code>no_option_lora=true</code> are mandatory. Missing adapter
+      keys, taxonomy mismatch, or LoRA keys are fatal.</p>
+    <p>Sampling, greedy, PPO replay, CUDA rollout, compound actions, export, and package inference
+      use the same fixed-root context and readout-only rule. Real FP16 package export and FP32 strict
+      materialization pass.</p>
+  </section>
+
+  <section>
+    <h2>Baseline and leakage probe</h2>
+    <table>
+      <thead><tr><th>Local post-hoc metric</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Value AUROC / explained variance / Pearson</td><td>0.840918 / 0.343675 / 0.588943</td></tr>
+        <tr><td>Value Brier / ECE-10</td><td>0.164131 / 0.030905</td></tr>
+        <tr><td>Meta weighted / macro accuracy</td><td>0.981400 / 0.965780</td></tr>
+        <tr><td>First actor decision Meta accuracy / entropy</td><td>0.3534 / 2.0658 nats</td></tr>
+        <tr><td>No public trigger visible, first decision</td><td>0.3477 accuracy, n=1,001</td></tr>
+      </tbody>
+    </table>
+    <p class="note">The validation catalog differs from the missing original V9 catalog. These are
+      diagnostic calibration numbers, not a formal strength comparison.</p>
+  </section>
+
+  <section>
+    <h2>Source and next stage</h2>
+    <p>Actor SHA-256: <code>926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f</code><br>
+      Value SHA-256: <code>f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486</code></p>
+    <p>The next stage is a fresh versioned V1 PPO run with W&amp;B online logging and model-only
+      checkpoints, followed by the existing Frozen-0806 protocol. It requires a separate explicit
+      launch; this design implementation did not create a run directory.</p>
+    <p><a href="../../docs/rl/0042_full_model_design.md">Read the complete onboarding document</a></p>
+  </section>
+</main>
+</body>
+</html>

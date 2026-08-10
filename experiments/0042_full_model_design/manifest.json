@@ -1,0 +1,37 @@
+{
+  "project_id": "0042_full_model_design",
+  "status": "implementation_complete_no_training_launched",
+  "date": "2026-08-11",
+  "model_schema": "0042_strategy_conditioned_v1",
+  "checkpoint_schema": "0042_strategy_conditioned_model_only_v1",
+  "formal_version": "V1_strategy_conditioned_base",
+  "source_actor": {
+    "path": "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt",
+    "sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f"
+  },
+  "source_value": {
+    "path": "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/value_head.pt",
+    "sha256": "f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486"
+  },
+  "own_archetype": {
+    "version": "0042_own_archetypes_v1",
+    "classes": 15,
+    "embedding_dim": 16,
+    "sha256": "44865cc88612d91154adffe13f523a63103ab0c0d1a3d981af671b96ce4a8c36"
+  },
+  "frozen_pool": {
+    "pool_id": "0806_kaggle_top100_plus_v1",
+    "deck_count": 55,
+    "directory_contract": "001_through_055",
+    "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c"
+  },
+  "verification": {
+    "unit_tests": 231,
+    "skipped": 1,
+    "runtime_audit": ".tmp/strategy_adapter_v2_audit/0042_runtime_audit.json",
+    "value_meta_baseline": ".tmp/strategy_adapter_v2_audit/0042_value_meta_baseline.json",
+    "candidate_materialization": "PASS"
+  },
+  "training_launched": false,
+  "formal_evaluation_launched": false
+}

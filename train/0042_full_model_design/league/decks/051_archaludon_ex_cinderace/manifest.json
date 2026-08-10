@@ -1,0 +1,23 @@
+{
+  "archetype": "Archaludon ex / Cinderace",
+  "deck_id": "archaludon_ex_cinderace_da1d56e33b96",
+  "exact_deck_sha256": "da1d56e33b96abccedb056d4f8b31da68bfd2c224ade3a4914b5709135aa7535",
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "provenance": {
+    "binding_counts": {
+      "submission_date_exact_score_mismatch": 2
+    },
+    "segment": "potential_101_500",
+    "selection_rank": 387,
+    "source_ranks": [
+      387,
+      407
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    190,
+    666
+  ],
+  "schema_version": "evaluation_frozen_0806_deck_v1"
+}

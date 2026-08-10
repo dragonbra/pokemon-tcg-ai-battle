@@ -1,0 +1,1 @@
+{"preset":"FULL_MODEL","base":"BASE","model_schema":"0042_strategy_conditioned_v1","no_option_lora":true,"own_archetype_classes":15,"own_embedding_dim":16,"value_adapter_gate_init":0.0,"policy_adapter_gate_init":0.0,"meta_anchor_coef":0.1,"enable_prize_aux":true,"prize_aux_mode":"directional","prize_aux_scale":0.041666666666666664,"prize_aux_actor_weight":0.1}

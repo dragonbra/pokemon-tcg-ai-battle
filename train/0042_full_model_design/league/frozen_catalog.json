@@ -1,0 +1,975 @@
+{
+  "allocation": {
+    "potential_101_500": {
+      "games": 16,
+      "method": "explicit_fixed_selection"
+    },
+    "top100": {
+      "games": 240,
+      "method": "largest_remainder",
+      "population": 100,
+      "tie_break": [
+        "fractional_remainder_desc",
+        "best_rank_asc",
+        "exact_deck_sha256_asc"
+      ]
+    }
+  },
+  "entries": [
+    {
+      "archetype": "Dragapult ex",
+      "best_rank": 1,
+      "binding_counts": {
+        "date_fallback_score_mismatch": 1,
+        "leaderboard_score": 2
+      },
+      "deck_id": "dragapult_ex_07bedfffbfad",
+      "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+      "games": 7,
+      "observed_players": 3,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        1,
+        3,
+        95
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "best_rank": 2,
+      "binding_counts": {
+        "leaderboard_score": 5,
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c",
+      "exact_deck_sha256": "dd63244cb42c5002bb2c7e415e8224e3dc8440ee02743f0db22d9d44594a72cc",
+      "games": 15,
+      "observed_players": 6,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        2,
+        4,
+        12,
+        17,
+        40,
+        70
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "best_rank": 5,
+      "binding_counts": {
+        "leaderboard_score": 12,
+        "submission_date_exact_score_mismatch": 9
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6",
+      "exact_deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "games": 51,
+      "observed_players": 21,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        5,
+        6,
+        10,
+        13,
+        26,
+        27,
+        29,
+        49,
+        52,
+        57,
+        61,
+        78,
+        80,
+        81,
+        85,
+        86,
+        91,
+        92,
+        93,
+        98,
+        99
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "best_rank": 7,
+      "binding_counts": {
+        "leaderboard_score": 8,
+        "submission_date_exact_score_mismatch": 6
+      },
+      "deck_id": "alakazam_dudunsparce_3f4515092dc5",
+      "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "games": 34,
+      "observed_players": 14,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        7,
+        14,
+        16,
+        30,
+        33,
+        44,
+        54,
+        60,
+        64,
+        75,
+        82,
+        89,
+        97,
+        100
+      ]
+    },
+    {
+      "archetype": "Mega Lucario ex / Solrock",
+      "best_rank": 8,
+      "binding_counts": {
+        "date_fallback_score_mismatch": 1,
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
+      "exact_deck_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
+      "games": 5,
+      "observed_players": 2,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        8,
+        11
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 9,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_310ede704da1",
+      "exact_deck_sha256": "310ede704da1adc09e09efc2b3e4f96cd2201abdbcb3f51ada245472cac2742a",
+      "games": 3,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        9
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 15,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_df6f74437196",
+      "exact_deck_sha256": "df6f7443719675711c2dcead3559087de996f3b8c43192d55ebfe6182e43cb7c",
+      "games": 3,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        15
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "best_rank": 18,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 6
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
+      "exact_deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "games": 15,
+      "observed_players": 6,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        18,
+        19,
+        38,
+        50,
+        51,
+        84
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "best_rank": 20,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a",
+      "exact_deck_sha256": "a9cf3d228c6a32c3c2cfdbf4b42f570fc7d00f081e4e39e395c3a6793271d26c",
+      "games": 3,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        20
+      ]
+    },
+    {
+      "archetype": "Dragapult ex",
+      "best_rank": 21,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "dragapult_ex_daa1cce90790",
+      "exact_deck_sha256": "daa1cce9079016e357f7ab3f1666f0ecc4ddca3b8e4131b88ade164c14ddcb4c",
+      "games": 3,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        21
+      ]
+    },
+    {
+      "archetype": "Festival Lead / Dipplin",
+      "best_rank": 22,
+      "binding_counts": {
+        "leaderboard_score": 1,
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "festival_lead_dipplin_d6c573dd89bd",
+      "exact_deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "games": 5,
+      "observed_players": 2,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        22,
+        35
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "best_rank": 23,
+      "binding_counts": {
+        "leaderboard_score": 3,
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95",
+      "exact_deck_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "games": 10,
+      "observed_players": 4,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        23,
+        43,
+        45,
+        55
+      ]
+    },
+    {
+      "archetype": "Barbaracle / Cornerstone Mask Ogerpon ex",
+      "best_rank": 24,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e",
+      "exact_deck_sha256": "275d23c9ed3eb47996ee9d6a6d7f9c31b77bff0902d881ce30c1d99a223c833b",
+      "games": 3,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        24
+      ]
+    },
+    {
+      "archetype": "Mega Venusaur ex / Meganium",
+      "best_rank": 25,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_venusaur_ex_meganium_8c6c9898455c",
+      "exact_deck_sha256": "8c6c9898455cca1b49e41993e2962051d48c5ffee42cb02f3b18152991c71e2b",
+      "games": 3,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        25
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 28,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 2
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_03822cc73f78",
+      "exact_deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "games": 5,
+      "observed_players": 2,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        28,
+        31
+      ]
+    },
+    {
+      "archetype": "Team Rocket's Mewtwo ex / Spidops",
+      "best_rank": 32,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0",
+      "exact_deck_sha256": "ead283b0f4b07414749ba86b819f00b9c849f32d965178de6629f63d3901505c",
+      "games": 3,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        32
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "best_rank": 34,
+      "binding_counts": {
+        "leaderboard_score": 2,
+        "submission_date_exact_score_mismatch": 2
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9",
+      "exact_deck_sha256": "e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34",
+      "games": 10,
+      "observed_players": 4,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        34,
+        63,
+        72,
+        96
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "best_rank": 36,
+      "binding_counts": {
+        "leaderboard_score": 2
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_053b4950d40b",
+      "exact_deck_sha256": "053b4950d40b4a85f4c63511b1f89f90f82b691754d1aaa57b0a4df9f9806e75",
+      "games": 5,
+      "observed_players": 2,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        36,
+        94
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "best_rank": 37,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_546b39d1d134",
+      "exact_deck_sha256": "546b39d1d1340529eb93a53907f2d46e15f58297902f0c1a68f2563673df8fc6",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        37
+      ]
+    },
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "best_rank": 39,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "hydrapple_ex_meganium_415af0a5541c",
+      "exact_deck_sha256": "415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        39
+      ]
+    },
+    {
+      "archetype": "Crustle / Cornerstone Mask Ogerpon ex",
+      "best_rank": 41,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d",
+      "exact_deck_sha256": "69fc3c54920d906e1784e0e76a35a6688c86a941ac369fc1b0f23f4bc226202b",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        41
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "best_rank": 42,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_5b509baed30a",
+      "exact_deck_sha256": "5b509baed30a8f00d65b15eeaebb8b098cf0cc46b4b37ae685bd563ea5450e02",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        42
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "best_rank": 46,
+      "binding_counts": {
+        "leaderboard_score": 3
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc",
+      "exact_deck_sha256": "5e60b8c7eafc87e69cb063ae0ed7f7351fbf415b4c021567790b977bece49fbf",
+      "games": 7,
+      "observed_players": 3,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        46,
+        48,
+        59
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 47,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_926cc79d2c4e",
+      "exact_deck_sha256": "926cc79d2c4ea4610c7f07fc1de01c64b77b57e32a50794f541d810605cf7159",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        47
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 53,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_f50fa3a23cdf",
+      "exact_deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        53
+      ]
+    },
+    {
+      "archetype": "Cynthia's Garchomp ex / Roserade",
+      "best_rank": 56,
+      "binding_counts": {
+        "leaderboard_score": 1,
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
+      "exact_deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "games": 5,
+      "observed_players": 2,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        56,
+        66
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 58,
+      "binding_counts": {
+        "leaderboard_score": 1,
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_67cf83ea7e09",
+      "exact_deck_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+      "games": 5,
+      "observed_players": 2,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        58,
+        90
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "best_rank": 62,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca",
+      "exact_deck_sha256": "61b9c541b9cacccc78030862f281caee12857f5c3ce5599f3f3f09319e566c39",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        62
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "best_rank": 65,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204",
+      "exact_deck_sha256": "f8a5ec1c82043f715dfa7da982343bcb4d0b67d80827eb74c9640e00efb97766",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        65
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 67,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_747769779b60",
+      "exact_deck_sha256": "747769779b60ad8db730b0b238414abb1e47936349cc72c83ff79c2ffacf31bc",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        67
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "best_rank": 68,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be",
+      "exact_deck_sha256": "de5b9940c5be5708af75d38f0bbb3fd85600e90fea9349a8ab330fb1f4638ffe",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        68
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "best_rank": 69,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_e9911db454f5",
+      "exact_deck_sha256": "e9911db454f518890e3ec43a64ca9c66b6914cdfba5271ec56a6cf9d60e1b5fc",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        69
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 71,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_189395071707",
+      "exact_deck_sha256": "1893950717074f0ee017a94335c6a8df1f0c5ac34b4ec81a16440f2d9b9dcc96",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        71
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "best_rank": 73,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "alakazam_dudunsparce_56024e4e1751",
+      "exact_deck_sha256": "56024e4e17512f2c66e86f08da54552e49b9de9ad7c5df8ab0b8a4fe80f38ea4",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        73
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "best_rank": 74,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_ca60839cba73",
+      "exact_deck_sha256": "ca60839cba73b0054f0854952ec3a5e98cb8178db1f71e264aafceb44ffd7adb",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        74
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "best_rank": 76,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435",
+      "exact_deck_sha256": "f1f687577435fd42c1b3023f8c8903a4d1aa8d7a0742a13504e4870248efd86c",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        76
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "best_rank": 77,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_0043a7493af9",
+      "exact_deck_sha256": "0043a7493af90c24b6662181233a5c9eeedc50892b7940744c82cbac36a55c4f",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        77
+      ]
+    },
+    {
+      "archetype": "Crustle / Cornerstone Mask Ogerpon ex",
+      "best_rank": 79,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c",
+      "exact_deck_sha256": "c385b53bf42c2af2bc8daedde5b28d921dd913e9886c1e86f326ad229ee20e6a",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        79
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "best_rank": 83,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "alakazam_dudunsparce_59c6fdb878b6",
+      "exact_deck_sha256": "59c6fdb878b672309da0db1318640029802b1afdcfd4e23b1dcab3d3a96d61fc",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        83
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "best_rank": 87,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "alakazam_dudunsparce_09b937915fb7",
+      "exact_deck_sha256": "09b937915fb787c62365c02c76bbd2d25b847fbd06f62292dd20f251fbdce19a",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        87
+      ]
+    },
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "best_rank": 88,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "hydrapple_ex_meganium_f1d642b4458b",
+      "exact_deck_sha256": "f1d642b4458ba1a2b3fa21ed6e4cdf14cc00f539d56fd4194d305ab370d227d3",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "top100",
+      "selection_rank": null,
+      "source_ranks": [
+        88
+      ]
+    },
+    {
+      "archetype": "Arboliva ex / Meganium / Teal Mask Ogerpon ex",
+      "best_rank": 101,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f",
+      "exact_deck_sha256": "dd46dbf9735fdf6c36c23bfe060c1092e68e8e7bb17c3c1e616e71045cb524e2",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 101,
+      "source_ranks": [
+        101
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "best_rank": 204,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_starmie_ex_mega_froslass_ex_7b5c56647730",
+      "exact_deck_sha256": "7b5c566477305e7b732b05d3232206fa6686f2c1c734aff1fe305df126012293",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 204,
+      "source_ranks": [
+        204
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "best_rank": 210,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_starmie_ex_mega_froslass_ex_5694d3eb6909",
+      "exact_deck_sha256": "5694d3eb6909e7ff0618c943cd8b7dcac155ed81666d350bf3c7261d70bf119d",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 210,
+      "source_ranks": [
+        210
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "best_rank": 425,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "mega_starmie_ex_mega_froslass_ex_555de3e40ea3",
+      "exact_deck_sha256": "555de3e40ea3ec143dab9dbea23b91a0fe9aebbd25224222f29d7c5b6fdddd7c",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 425,
+      "source_ranks": [
+        425
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Dusknoir",
+      "best_rank": 228,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_starmie_ex_dusknoir_b15853cdfb83",
+      "exact_deck_sha256": "b15853cdfb8304f39f879638102a7fd161f1102d81e6d3f36d5beca4db9e01b0",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 228,
+      "source_ranks": [
+        228
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Dusknoir",
+      "best_rank": 350,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "mega_starmie_ex_dusknoir_46fd6cbdd4d2",
+      "exact_deck_sha256": "46fd6cbdd4d2c750e3abeee10c80be2e499aa4c8c96cb2e35ab704ba3acb8230",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 350,
+      "source_ranks": [
+        350
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "best_rank": 282,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "archaludon_ex_cinderace_56b532d24b01",
+      "exact_deck_sha256": "56b532d24b01cf9561aa4bd99289cb610b62e427eb0f7d625860531855289a66",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 282,
+      "source_ranks": [
+        282
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "best_rank": 387,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 2
+      },
+      "deck_id": "archaludon_ex_cinderace_da1d56e33b96",
+      "exact_deck_sha256": "da1d56e33b96abccedb056d4f8b31da68bfd2c224ade3a4914b5709135aa7535",
+      "games": 1,
+      "observed_players": 2,
+      "segment": "potential_101_500",
+      "selection_rank": 387,
+      "source_ranks": [
+        387,
+        407
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "best_rank": 392,
+      "binding_counts": {
+        "leaderboard_score": 1,
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "archaludon_ex_cinderace_05566aeb4e7e",
+      "exact_deck_sha256": "05566aeb4e7e4b7b574e3b15fb8f0a6d73eaee8e30605560186e1eb9b562dcc6",
+      "games": 1,
+      "observed_players": 2,
+      "segment": "potential_101_500",
+      "selection_rank": 412,
+      "source_ranks": [
+        392,
+        412
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "best_rank": 457,
+      "binding_counts": {
+        "submission_date_exact_score_mismatch": 1
+      },
+      "deck_id": "archaludon_ex_cinderace_ee01ffad9675",
+      "exact_deck_sha256": "ee01ffad96758991132ec4bbc2c56282e6820fabaa7792b312c7e86272062f07",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 457,
+      "source_ranks": [
+        457
+      ]
+    },
+    {
+      "archetype": "Dragapult ex / Dusknoir",
+      "best_rank": 230,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "dragapult_ex_dusknoir_b85bae9f3a21",
+      "exact_deck_sha256": "b85bae9f3a2130375ba8cfef2fec42787b7bfc2289e324bbae0ef28a7486928b",
+      "games": 2,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 230,
+      "source_ranks": [
+        230
+      ]
+    },
+    {
+      "archetype": "Erika's Vileplume ex / Cinderace",
+      "best_rank": 244,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "erika_s_vileplume_ex_cinderace_a982751f90cf",
+      "exact_deck_sha256": "a982751f90cfc560cc52b7a16b5f5da23a0328dbce035b9f37d79ad661ff223e",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 244,
+      "source_ranks": [
+        244
+      ]
+    },
+    {
+      "archetype": "N's Zoroark ex / Munkidori",
+      "best_rank": 347,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "n_s_zoroark_ex_munkidori_11bd8fb9fc18",
+      "exact_deck_sha256": "11bd8fb9fc18f68008df5fd98955516c492f4c1ef5eeca7df5d79d19187ab0ce",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 347,
+      "source_ranks": [
+        347
+      ]
+    },
+    {
+      "archetype": "N's Zoroark ex / Munkidori",
+      "best_rank": 433,
+      "binding_counts": {
+        "leaderboard_score": 1
+      },
+      "deck_id": "n_s_zoroark_ex_munkidori_940bc1f37b2a",
+      "exact_deck_sha256": "940bc1f37b2a0d5bc70210af8bccb99cfdd5c8e823507f53127fdfc494826efc",
+      "games": 1,
+      "observed_players": 1,
+      "segment": "potential_101_500",
+      "selection_rank": 433,
+      "source_ranks": [
+        433
+      ]
+    }
+  ],
+  "pool_id": "0806_kaggle_top100_plus_v1",
+  "schema_version": "evaluation_frozen_schedule_v1",
+  "total_games": 256
+}
