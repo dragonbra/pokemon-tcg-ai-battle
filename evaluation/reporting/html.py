@@ -264,7 +264,7 @@ def render_html(data: ReportData) -> str:
     deck_number = package_manifest.get("frozen_deck_number")
     numbered_title = f"{deck_number} · {candidate_title}" if deck_number else candidate_title
     back_link = (
-        '<a class="back-link" href="../index.html">返回 Frozen-0806 总览</a>'
+        '<a class="back-link" href="../index.html">返回 Combat Mat 总览</a>'
         if deck_number
         else ""
     )
@@ -295,6 +295,7 @@ def render_html(data: ReportData) -> str:
             _profile_html(data.metric_profile),
             _summary_html(summary),
             _matchup_html(summary, manifest),
+            _meta_matchup_html(summary),
             _league_quality_html(data.metric_profile, data.metrics),
             visible_metrics,
             f'<script id="report-data" type="application/json">{document_data}</script>',
@@ -306,8 +307,6 @@ def render_html(data: ReportData) -> str:
 def _candidate_overview_html(
     manifest: Mapping[str, object], profile: Mapping[str, object]
 ) -> str:
-    if as_mapping(profile).get("id") != "league_deck_quality":
-        return ""
     candidate = as_mapping(manifest.get("candidate"))
     cards = candidate.get("deck_cards")
     if not isinstance(cards, list | tuple):
@@ -336,7 +335,7 @@ def _candidate_overview_html(
             f'<div class="deck-list">{rows}</div></div>'
         )
     return (
-        '<section class="candidate-overview">'
+        '<section class="candidate-overview" id="exact-deck">'
         '<div class="candidate-lead"><div><p class="candidate-kicker">主视角卡组</p>'
         f'<h2 class="candidate-title">{_text(numbered_title)}</h2>'
         '<div class="candidate-meta">'
@@ -501,7 +500,7 @@ def _matchup_html(
         if report_href:
             identity = f'<a class="opponent-link" href="{_text(report_href)}">{identity}</a>'
         chart_rows.append(
-            f'<div class="chart-row">{identity}<span class="bar-track">'
+            f'<div class="chart-row opponent-row">{identity}<span class="bar-track">'
             f'<span class="bar" style="width:{_width(rate)}"></span></span>'
             '<span class="chart-result">'
             f'<span class="chart-rate">{_text(percentage(rate))}</span>'
@@ -510,9 +509,68 @@ def _matchup_html(
             f' / {_text(values.get("games", 0))}局</span></span></div>'
         )
     return (
-        '<section class="matchup-section"><h2>对局胜率图</h2><div class="matchup-chart">'
+        '<section class="matchup-section" id="opponent-matchups"><h2>对局胜率图</h2>'
+        '<p class="muted">对 001–055 Exact Deck；每行均由本报告同一批 official-engine 对局按 opponent identity 聚合。</p>'
+        '<div class="matchup-chart">'
         + "".join(chart_rows)
         + "</div></section>"
+    )
+
+
+def _meta_matchup_html(summary: Mapping[str, object]) -> str:
+    rows = summary.get("by_meta_archetype")
+    if not isinstance(rows, list | tuple):
+        return ""
+    chart_rows = []
+    for raw in rows:
+        values = as_mapping(raw)
+        thumbnails = "".join(
+            f'<img class="opponent-thumb" src="{_text(as_mapping(card).get("image_url"))}" '
+            f'alt="{_text(as_mapping(card).get("name", "代表宝可梦"))}" loading="lazy" '
+            'onerror="this.hidden=true">'
+            for card in values.get("representative_cards", ())
+            if as_mapping(card).get("image_url")
+        )
+        identity = (
+            '<span class="opponent-identity">'
+            f'<span class="opponent-thumbnails">{thumbnails}</span>'
+            f'<span class="deck-number">{int(values.get("class_id", 0)) + 1:02d}</span>'
+            f'<span class="opponent-name" title="{_text(values.get("display_name"))}">'
+            f'{_text(values.get("display_name"))}</span></span>'
+        )
+        rate = values.get("win_rate")
+        chart_rows.append(
+            f'<div class="chart-row meta-row">{identity}<span class="bar-track">'
+            f'<span class="bar" style="width:{_width(rate)}"></span></span>'
+            '<span class="chart-result">'
+            f'<span class="chart-rate">{_text(percentage(rate))}</span>'
+            f'<span class="chart-record">{_text(values.get("wins", 0))}-'
+            f'{_text(values.get("losses", 0))}-{_text(values.get("draws", 0))}'
+            f' / {_text(values.get("games", 0))}局</span></span></div>'
+        )
+    other = as_mapping(summary.get("meta_archetype_other"))
+    other_row = ""
+    if other:
+        rate = other.get("win_rate")
+        other_row = (
+            '<div class="chart-row meta-other-row">'
+            '<span class="opponent-identity"><span class="opponent-thumbnails"></span>'
+            '<span class="deck-number">15</span>'
+            f'<span class="opponent-name" title="{_text(other.get("display_name", "Other"))}">'
+            f'{_text(other.get("display_name", "Other"))}</span></span>'
+            '<span class="bar-track">'
+            f'<span class="bar" style="width:{_width(rate)}"></span></span>'
+            '<span class="chart-result">'
+            f'<span class="chart-rate">{_text(percentage(rate))}</span>'
+            f'<span class="chart-record">{_text(other.get("wins", 0))}-'
+            f'{_text(other.get("losses", 0))}-{_text(other.get("draws", 0))}'
+            f' / {_text(other.get("games", 0))}局</span></span></div>'
+        )
+    return (
+        '<section class="matchup-section" id="meta-archetype-matchups">'
+        '<h2>对 14 种 Meta Archetype 的聚合胜率</h2>'
+        '<p class="muted">按 opponent exact deck 的 priority-ordered trigger-card taxonomy 分类并按局数加权。</p>'
+        f'<div class="matchup-chart">{"".join(chart_rows)}{other_row}</div></section>'
     )
 
 

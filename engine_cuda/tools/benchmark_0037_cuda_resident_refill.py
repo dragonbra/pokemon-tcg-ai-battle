@@ -32,11 +32,14 @@ def json_ready(value):
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--actor-mode", choices=("update32", "0806", "pretrained"), default="update32"
+        "--actor-mode",
+        choices=("update32", "0806", "pretrained", "portable"),
+        default="update32",
     )
     parser.add_argument("--actor-package", type=Path, default=legacy.DEFAULT_PACKAGE)
     parser.add_argument("--actor-checkpoint", type=Path, default=legacy.DEFAULT_ACTOR_CHECKPOINT)
     parser.add_argument("--opponent-model", type=Path, default=legacy.DEFAULT_OPPONENT_MODEL)
+    parser.add_argument("--opponent-policy-id", default="Policy-0806")
     parser.add_argument("--focal-deck", type=Path, required=True)
     parser.add_argument("--deck-root", type=Path, default=legacy.DEFAULT_POOL / "decks")
     parser.add_argument("--schedule", type=Path, default=legacy.DEFAULT_SCHEDULE)
@@ -90,6 +93,7 @@ def main() -> int:
         focal_deck,
         device,
         actor_mode=args.actor_mode,
+        opponent_policy_id=args.opponent_policy_id,
     )
     actor_adapter = Semantic0031DeviceAdapter(actor, focal_deck, max_select=args.max_select)
     opponent_adapter = (
@@ -107,6 +111,8 @@ def main() -> int:
         opponent_decoder=opponent.action_decoder,
         same_policy=args.actor_mode == "0806",
         opponent_adapter=opponent_adapter,
+        requested_opponent_policy_id=args.opponent_policy_id,
+        opponent_identity_audit=provenance["opponent_policy_identity_audit"],
     )
     jobs = tuple(
         ResidentJob(
@@ -199,6 +205,12 @@ def main() -> int:
             ),
         },
         "models": json_ready(provenance),
+        "candidate_deployment_identity_audit": provenance.get(
+            "candidate_deployment_identity_audit"
+        ),
+        "opponent_policy_identity_audit": provenance[
+            "opponent_policy_identity_audit"
+        ],
         "schedule": {
             "path": str(args.schedule.resolve()),
             "sha256": legacy.sha256_file(args.schedule.resolve()),

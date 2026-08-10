@@ -411,6 +411,7 @@ def _load_models(
     device: Any,
     *,
     actor_mode: str,
+    opponent_policy_id: str = "Policy-0806",
 ) -> tuple[Any, Any, dict[str, Any]]:
     import torch
 
@@ -462,6 +463,9 @@ def _load_models(
         )
         actor_model.load_state_dict(normalized_actor_state, strict=True)
         actor_checkpoint = actor_checkpoint_path
+    elif actor_mode == "portable":
+        actor_model = actor_policy.model.cpu()
+        actor_checkpoint = portable_checkpoint
     else:
         raise ValueError(f"unsupported actor mode: {actor_mode}")
     actor_model = actor_model.requires_grad_(False).to(
@@ -470,14 +474,77 @@ def _load_models(
     opponent_model = opponent_model.requires_grad_(False).to(
         device=device, dtype=torch.float32
     ).eval()
-    return actor_model, opponent_model, {
+    identity = importlib.import_module(
+        "train.0040_dragapult_0809_action_boundary_rl.policy_identity"
+    )
+    opponent_audit = identity.audit_materialized_state_dict(
+        opponent_policy_id,
+        opponent_model.state_dict(),
+        purpose="formal_frozen_cuda2048_opponent_preflight",
+    ).to_manifest()
+    provenance = {
         "actor_checkpoint": actor_checkpoint,
         "actor_checkpoint_sha256": sha256_file(actor_checkpoint),
         "actor_portable_architecture": portable_checkpoint,
         "actor_portable_architecture_sha256": sha256_file(portable_checkpoint),
         "opponent_checkpoint": opponent_checkpoint,
         "opponent_checkpoint_sha256": sha256_file(opponent_checkpoint),
+        "opponent_policy_identity_audit": opponent_audit,
     }
+    if actor_mode == "portable":
+        from evaluation.frozen_0806_full_evaluation import (
+            _candidate_effective_sha256,
+            validate_candidate_deployment_audit,
+        )
+
+        manifest_path = actor_package / "manifest.json"
+        if not manifest_path.is_file():
+            raise RuntimeError("FATAL: portable candidate manifest is missing")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        payload = torch.load(portable_checkpoint, map_location="cpu", weights_only=True)
+        portable_state = payload.get("state_dict") if isinstance(payload, dict) else None
+        floating = [
+            value for value in (portable_state or {}).values()
+            if torch.is_floating_point(value)
+        ]
+        runtime_floating = [
+            value for value in actor_model.state_dict().values()
+            if torch.is_floating_point(value)
+        ]
+        source_sha256 = sha256_file(actor_checkpoint_path)
+        portable_sha256 = sha256_file(portable_checkpoint)
+        audit = {
+            "schema_version": "frozen_cuda_candidate_deployment_identity_audit_v1",
+            "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+            "status": "PASS",
+            "source_checkpoint_sha256": source_sha256,
+            "portable_checkpoint_sha256": portable_sha256,
+            "effective_candidate_sha256": _candidate_effective_sha256(payload),
+            "storage_dtype": "fp16",
+            "runtime_dtype": "fp32",
+            "conversion_order": (
+                "full_effective_policy_then_fp16_storage_then_fp32_runtime"
+            ),
+        }
+        if (
+            manifest.get("checkpoint_sha256") != source_sha256
+            or manifest.get("portable_checkpoint_sha256") != portable_sha256
+            or manifest.get("storage_dtype") != "fp16"
+            or manifest.get("runtime_dtype") != "fp32"
+            or not floating
+            or any(value.dtype is not torch.float16 for value in floating)
+            or not runtime_floating
+            or any(value.dtype is not torch.float32 for value in runtime_floating)
+        ):
+            raise RuntimeError(
+                "FATAL: candidate deployment identity violation before CUDA games"
+            )
+        provenance["candidate_deployment_identity_audit"] = (
+            validate_candidate_deployment_audit(
+                audit, source_checkpoint_sha256=source_sha256
+            )
+        )
+    return actor_model, opponent_model, provenance
 
 
 def main() -> int:

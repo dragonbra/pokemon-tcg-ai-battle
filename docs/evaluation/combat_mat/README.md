@@ -28,3 +28,24 @@ A formal result must contain the requested candidate reports, the contract's com
 per-candidate game count, zero errors, zero unfinished games, exact schedule and seed
 provenance, and a passing policy-identity audit. Promotion remains a separate human
 decision.
+
+Every new Combat Mat publication must pass
+`evaluation.combat_mat_contract` before any HTML is written. The visual and data
+contract has two required levels:
+
+1. The main `index.html` contains the ordered 001-055 exact-deck catalog, at least one
+   representative card image for every row, explicit `tested` or `pending` semantics,
+   report links only for completed candidates, an ordered 14-row meta-archetype
+   aggregate, and a visibly equivalent class-15 `Other` row. Untested decks use
+   missing results, never synthetic 0% values.
+2. Every completed `reports/*.html` contains the candidate's exact 60-card construction
+   with card art and quantities, one evidence-backed matchup row for each opponent
+   001-055, and an ordered 14-row opponent meta-archetype aggregation followed by a
+   class-15 `Other` row using the same win-rate bar and W-L-D presentation. The opponent
+   rows and the 14 classes plus `Other` must each conserve the report's total W-L-D and
+   game count.
+
+The canonical detail-page visual language is implemented by
+`evaluation/reporting/html.py`. New CPU or CUDA runners must feed their official-engine
+evidence into that shared renderer; a runner-specific simplified detail page is not a
+valid Combat Mat publication.

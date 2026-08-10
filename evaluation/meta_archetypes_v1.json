@@ -1,0 +1,22 @@
+{
+  "schema_version": "evaluation_meta_archetypes_14_axis_v1",
+  "source_provenance": "0036_archetypes_v1; promoted to shared evaluation data",
+  "classification": "priority_ordered_trigger_card_presence",
+  "classes": [
+    {"class_id": 0, "name": "dragapult_ex", "display_name": "Dragapult ex", "trigger_card_ids": [121]},
+    {"class_id": 1, "name": "mega_lopunny_ex", "display_name": "Mega Lopunny ex", "trigger_card_ids": [849]},
+    {"class_id": 2, "name": "marnies_grimmsnarl_ex", "display_name": "Marnie's Grimmsnarl ex", "trigger_card_ids": [648]},
+    {"class_id": 3, "name": "alakazam", "display_name": "Alakazam", "trigger_card_ids": [743]},
+    {"class_id": 4, "name": "mega_lucario_ex", "display_name": "Mega Lucario ex", "trigger_card_ids": [678]},
+    {"class_id": 5, "name": "mega_kangaskhan_ex", "display_name": "Mega Kangaskhan ex", "trigger_card_ids": [756]},
+    {"class_id": 6, "name": "festival_lead", "display_name": "Festival Lead", "trigger_card_ids": [93]},
+    {"class_id": 7, "name": "crustle_barbaracle_wall", "display_name": "Crustle / Barbaracle Wall", "trigger_card_ids": [345, 1052]},
+    {"class_id": 8, "name": "meganium_grass_evolution", "display_name": "Meganium Grass Evolution", "trigger_card_ids": [652, 150, 404]},
+    {"class_id": 9, "name": "team_rockets_mewtwo_ex", "display_name": "Team Rocket's Mewtwo ex", "trigger_card_ids": [431]},
+    {"class_id": 10, "name": "teal_mask_ogerpon_heros_cape", "display_name": "Teal Mask Ogerpon / Hero's Cape", "trigger_card_ids": [96]},
+    {"class_id": 11, "name": "cynthias_garchomp_ex", "display_name": "Cynthia's Garchomp ex", "trigger_card_ids": [381]},
+    {"class_id": 12, "name": "mega_starmie_ex", "display_name": "Mega Starmie ex", "trigger_card_ids": [1031]},
+    {"class_id": 13, "name": "archaludon_ex", "display_name": "Archaludon ex", "trigger_card_ids": [190]}
+  ],
+  "fallback": {"class_id": 14, "name": "other", "display_name": "Other"}
+}
