@@ -50,6 +50,7 @@ data/replays/*
 # Exported model weights and packaged submissions stay local.
 evaluation/arena/candidates/
 evaluation/arena/candidates/**/strategy/model.bin
+archive/submission/*
 archive/submission/**/strategy/model.bin
 archive/submission/dist/*.tar.gz
 
