@@ -21,6 +21,7 @@
 - `Frozen-0806 CUDA-2048` 与 `Frozen-0809 CUDA-2048` 是两份独立 benchmark，必须分开保存、报告和审计，不得自动合并。`Promote Champion V1` 最终只能由人工作出 `PROMOTE`、`HOLD` 或 `REJECT` 决定；成绩提升不得自动晋级。
 - 所有用于预测 Kaggle submission 强度的 candidate 评测，包括每 5 update 的 RL Frozen evaluation、正式 Frozen CPU-256 和 Frozen CUDA-2048，必须遵守 canonical 协议的 `kaggle_fp16_storage_fp32_runtime_v1`：先形成完整 effective candidate，再以 FP16 存储，随后 strict-load 为 FP32 推理；必须同时记录 source FP32 checkpoint、portable FP16 artifact 和 deployment-effective hash。缺少 candidate deployment identity `PASS` 必须 hard fail，raw FP32 candidate 成绩只能作为诊断，不能作为 Promote/Kaggle 强度证据。PPO rollout、optimizer/master weights 和训练 checkpoint 继续保持 FP32；candidate 转换不得污染 PPO behavior policy，也不得静默改变 Frozen opponent identity。
 - 上述协议是所有当前及未来编号 RL 项目的接入合同，不是 0040 专用说明。新项目必须先读 canonical protocol，并在自己的 `train/<project_id>/` 内实现 self-contained conformance adapter，使 periodic RL eval、Frozen CPU/CUDA、Promote evidence 与最终 Kaggle package 共享同一 materialization/hash 语义和 hard gate；0040 只能作为参考实现，禁止为了复用而形成跨编号项目运行时依赖。
+- 任何涉及 `0042_full_model_design` 的 RL、CUDA routing、opponent pool、Frozen evaluation、candidate deployment 或性能优化工作，还必须在开始前完整阅读并遵守根目录项目合同：[`0042_POLICY_0809_RL_FROZEN_CONTRACT.md`](0042_POLICY_0809_RL_FROZEN_CONTRACT.md)。0042 是 Policy-0809-only：training opponent 与全部 Frozen evaluation opponent 均为独立完整 `Policy-0809`；opponent lanes 可共享经审计的 immutable 0809 weights 和 batched compute，但必须按 lane 绑定 exact-deck static fields，且不得与 focal policy 共享 mutable module、tensor storage 或 cache。实现未通过该合同的 hard gate 前不得启动正式 0042 PPO。
 
 ## 项目结构与模块组织
 

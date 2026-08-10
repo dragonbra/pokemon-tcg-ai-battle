@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import hashlib
 import importlib
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -191,36 +192,57 @@ def materialize_kaggle_evaluation_candidate(
             output=package,
             require_frozen_selection=False,
         )
-        portable_checkpoint = package / "strategy/model.bin"
-        portable_sha256 = _sha256_file(portable_checkpoint)
-        payload = torch.load(portable_checkpoint, map_location="cpu", weights_only=True)
-        package_text = str(package)
-        stale = [name for name in sys.modules if name == "strategy" or name.startswith("strategy.")]
-        if stale:
-            raise _fatal(f"stale Kaggle strategy modules are already loaded: {stale[:3]}")
-        sys.path.insert(0, package_text)
-        previous_threads = torch.get_num_threads()
-        try:
-            runtime = importlib.import_module("strategy.deployment.compound_inference")
-            policy = runtime.PortableCompoundSemanticPolicy.from_checkpoint(
-                portable_checkpoint, deck
-            )
-        finally:
-            torch.set_num_threads(previous_threads)
-            sys.path.remove(package_text)
-            for name in tuple(sys.modules):
-                if name == "strategy" or name.startswith("strategy."):
-                    sys.modules.pop(name, None)
-        model = KaggleEvaluationActorCritic(policy).to(
-            device=device, dtype=torch.float32
-        ).eval().requires_grad_(False)
-        audit = audit_candidate_deployment(
-            manifest=manifest,
-            payload=payload,
-            runtime_model=model,
-            source_checkpoint_sha256=source_sha256,
-            portable_checkpoint_sha256=portable_sha256,
+        model, audit = load_kaggle_evaluation_candidate(
+            package=package, checkpoint=checkpoint, deck=deck, device=device
         )
+    return model, audit
+
+
+def load_kaggle_evaluation_candidate(
+    *,
+    package: Path,
+    checkpoint: Path,
+    deck: Sequence[int],
+    device: str | torch.device,
+) -> tuple[KaggleEvaluationActorCritic, CandidateDeploymentAudit]:
+    """Strict-load and audit a persistent Kaggle-equivalent candidate package."""
+
+    package = package.resolve()
+    checkpoint = checkpoint.resolve()
+    manifest_path = package / "manifest.json"
+    portable_checkpoint = package / "strategy/model.bin"
+    if not manifest_path.is_file() or not portable_checkpoint.is_file():
+        raise _fatal("persistent candidate package is incomplete")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    portable_sha256 = _sha256_file(portable_checkpoint)
+    payload = torch.load(portable_checkpoint, map_location="cpu", weights_only=True)
+    package_text = str(package)
+    stale = [name for name in sys.modules if name == "strategy" or name.startswith("strategy.")]
+    if stale:
+        raise _fatal(f"stale Kaggle strategy modules are already loaded: {stale[:3]}")
+    sys.path.insert(0, package_text)
+    previous_threads = torch.get_num_threads()
+    try:
+        runtime = importlib.import_module("strategy.deployment.compound_inference")
+        policy = runtime.PortableCompoundSemanticPolicy.from_checkpoint(
+            portable_checkpoint, deck
+        )
+    finally:
+        torch.set_num_threads(previous_threads)
+        sys.path.remove(package_text)
+        for name in tuple(sys.modules):
+            if name == "strategy" or name.startswith("strategy."):
+                sys.modules.pop(name, None)
+    model = KaggleEvaluationActorCritic(policy).to(
+        device=device, dtype=torch.float32
+    ).eval().requires_grad_(False)
+    audit = audit_candidate_deployment(
+        manifest=manifest,
+        payload=payload,
+        runtime_model=model,
+        source_checkpoint_sha256=_sha256_file(checkpoint),
+        portable_checkpoint_sha256=portable_sha256,
+    )
     model._candidate_deployment_audit = audit
     return model, audit
 
@@ -232,6 +254,7 @@ __all__ = [
     "CandidateDeploymentIdentityViolation",
     "KaggleEvaluationActorCritic",
     "audit_candidate_deployment",
+    "load_kaggle_evaluation_candidate",
     "materialize_kaggle_evaluation_candidate",
     "require_kaggle_candidate_deployment",
 ]

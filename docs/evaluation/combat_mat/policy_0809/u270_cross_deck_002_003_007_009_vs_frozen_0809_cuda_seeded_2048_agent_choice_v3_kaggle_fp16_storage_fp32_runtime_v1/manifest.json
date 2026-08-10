@@ -1,0 +1,1731 @@
+{
+  "candidate_contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+  "catalog": [
+    {
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6",
+      "deck_number": "001",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "alakazam_dudunsparce_3f4515092dc5",
+      "deck_number": "002",
+      "display_name": "Alakazam / Dudunsparce",
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam"
+        },
+        {
+          "card_id": 66,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce"
+        }
+      ],
+      "status": "tested"
+    },
+    {
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c",
+      "deck_number": "003",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        },
+        {
+          "card_id": 861,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex"
+        }
+      ],
+      "status": "tested"
+    },
+    {
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
+      "deck_number": "004",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95",
+      "deck_number": "005",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9",
+      "deck_number": "006",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        },
+        {
+          "card_id": 1159,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "dragapult_ex_07bedfffbfad",
+      "deck_number": "007",
+      "display_name": "Dragapult ex",
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex"
+        }
+      ],
+      "status": "tested"
+    },
+    {
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc",
+      "deck_number": "008",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        },
+        {
+          "card_id": 1159,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
+      "deck_number": "009",
+      "display_name": "Mega Lucario ex / Solrock",
+      "representative_cards": [
+        {
+          "card_id": 678,
+          "image_url": "https://images.pokemontcg.io/me1/77.png",
+          "name": "Mega Lucario ex"
+        },
+        {
+          "card_id": 676,
+          "image_url": "https://images.pokemontcg.io/me1/75.png",
+          "name": "Solrock"
+        }
+      ],
+      "status": "tested"
+    },
+    {
+      "deck_id": "festival_lead_dipplin_d6c573dd89bd",
+      "deck_number": "010",
+      "display_name": "Festival Lead / Dipplin",
+      "representative_cards": [
+        {
+          "card_id": 93,
+          "image_url": "https://images.pokemontcg.io/sv6/18.png",
+          "name": "Dipplin"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_03822cc73f78",
+      "deck_number": "011",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_053b4950d40b",
+      "deck_number": "012",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
+      "deck_number": "013",
+      "display_name": "Cynthia's Garchomp ex / Roserade",
+      "representative_cards": [
+        {
+          "card_id": 381,
+          "image_url": "https://images.pokemontcg.io/sv10/104.png",
+          "name": "Cynthia's Garchomp ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_67cf83ea7e09",
+      "deck_number": "014",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_310ede704da1",
+      "deck_number": "015",
+      "display_name": "Wellspring Mask Ogerpon ex / Teal Mask Ogerpon ex",
+      "representative_cards": [
+        {
+          "card_id": 108,
+          "image_url": "https://images.pokemontcg.io/sv6/64.png",
+          "name": "Wellspring Mask Ogerpon ex"
+        },
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_df6f74437196",
+      "deck_number": "016",
+      "display_name": "Slowking Toolbox",
+      "representative_cards": [
+        {
+          "card_id": 163,
+          "image_url": "https://images.pokemontcg.io/sv7/58.png",
+          "name": "Slowking"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a",
+      "deck_number": "017",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "dragapult_ex_daa1cce90790",
+      "deck_number": "018",
+      "display_name": "Dragapult ex",
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e",
+      "deck_number": "019",
+      "display_name": "Barbaracle / Cornerstone Mask Ogerpon ex",
+      "representative_cards": [
+        {
+          "card_id": 1052,
+          "image_url": "https://images.scrydex.com/pokemon/me3-43/small",
+          "name": "Barbaracle"
+        },
+        {
+          "card_id": 117,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_venusaur_ex_meganium_8c6c9898455c",
+      "deck_number": "020",
+      "display_name": "Mega Venusaur ex / Meganium",
+      "representative_cards": [
+        {
+          "card_id": 652,
+          "image_url": "https://images.pokemontcg.io/me1/3.png",
+          "name": "Mega Venusaur ex"
+        },
+        {
+          "card_id": 710,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0",
+      "deck_number": "021",
+      "display_name": "Team Rocket's Mewtwo ex / Spidops",
+      "representative_cards": [
+        {
+          "card_id": 431,
+          "image_url": "https://images.pokemontcg.io/sv10/81.png",
+          "name": "Team Rocket's Mewtwo ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_546b39d1d134",
+      "deck_number": "022",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "hydrapple_ex_meganium_415af0a5541c",
+      "deck_number": "023",
+      "display_name": "Hydrapple ex / Meganium",
+      "representative_cards": [
+        {
+          "card_id": 150,
+          "image_url": "https://images.pokemontcg.io/sv7/14.png",
+          "name": "Hydrapple ex"
+        },
+        {
+          "card_id": 710,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d",
+      "deck_number": "024",
+      "display_name": "Crustle / Cornerstone Mask Ogerpon ex",
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        },
+        {
+          "card_id": 117,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_5b509baed30a",
+      "deck_number": "025",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_926cc79d2c4e",
+      "deck_number": "026",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_f50fa3a23cdf",
+      "deck_number": "027",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca",
+      "deck_number": "028",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204",
+      "deck_number": "029",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        },
+        {
+          "card_id": 1159,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_747769779b60",
+      "deck_number": "030",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be",
+      "deck_number": "031",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_e9911db454f5",
+      "deck_number": "032",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_189395071707",
+      "deck_number": "033",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "alakazam_dudunsparce_56024e4e1751",
+      "deck_number": "034",
+      "display_name": "Alakazam / Dudunsparce",
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam"
+        },
+        {
+          "card_id": 66,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_kangaskhan_ex_crustle_ca60839cba73",
+      "deck_number": "035",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "representative_cards": [
+        {
+          "card_id": 756,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex"
+        },
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435",
+      "deck_number": "036",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex"
+        },
+        {
+          "card_id": 1159,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_0043a7493af9",
+      "deck_number": "037",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex"
+        },
+        {
+          "card_id": 104,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c",
+      "deck_number": "038",
+      "display_name": "Crustle / Cornerstone Mask Ogerpon ex",
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle"
+        },
+        {
+          "card_id": 117,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "alakazam_dudunsparce_59c6fdb878b6",
+      "deck_number": "039",
+      "display_name": "Alakazam / Dudunsparce",
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam"
+        },
+        {
+          "card_id": 66,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "alakazam_dudunsparce_09b937915fb7",
+      "deck_number": "040",
+      "display_name": "Alakazam / Dudunsparce",
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam"
+        },
+        {
+          "card_id": 66,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "hydrapple_ex_meganium_f1d642b4458b",
+      "deck_number": "041",
+      "display_name": "Hydrapple ex / Meganium",
+      "representative_cards": [
+        {
+          "card_id": 150,
+          "image_url": "https://images.pokemontcg.io/sv7/14.png",
+          "name": "Hydrapple ex"
+        },
+        {
+          "card_id": 710,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f",
+      "deck_number": "042",
+      "display_name": "Arboliva ex / Meganium / Teal Mask Ogerpon ex",
+      "representative_cards": [
+        {
+          "card_id": 404,
+          "image_url": "https://images.pokemontcg.io/sv10/23.png",
+          "name": "Arboliva ex"
+        },
+        {
+          "card_id": 710,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "dragapult_ex_dusknoir_b85bae9f3a21",
+      "deck_number": "043",
+      "display_name": "Dragapult ex / Dusknoir",
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex"
+        },
+        {
+          "card_id": 133,
+          "image_url": "https://images.pokemontcg.io/sv6pt5/20.png",
+          "name": "Dusknoir"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_starmie_ex_mega_froslass_ex_7b5c56647730",
+      "deck_number": "044",
+      "display_name": "Mega Starmie ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 1031,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex"
+        },
+        {
+          "card_id": 861,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_starmie_ex_mega_froslass_ex_5694d3eb6909",
+      "deck_number": "045",
+      "display_name": "Mega Starmie ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 1031,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex"
+        },
+        {
+          "card_id": 861,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_starmie_ex_dusknoir_b15853cdfb83",
+      "deck_number": "046",
+      "display_name": "Mega Starmie ex / Dusknoir",
+      "representative_cards": [
+        {
+          "card_id": 1031,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex"
+        },
+        {
+          "card_id": 133,
+          "image_url": "https://images.pokemontcg.io/sv6pt5/20.png",
+          "name": "Dusknoir"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "erika_s_vileplume_ex_cinderace_a982751f90cf",
+      "deck_number": "047",
+      "display_name": "Erika's Vileplume ex / Cinderace",
+      "representative_cards": [
+        {
+          "card_id": 911,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-3/small",
+          "name": "Erika's Vileplume ex"
+        },
+        {
+          "card_id": 666,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "archaludon_ex_cinderace_56b532d24b01",
+      "deck_number": "048",
+      "display_name": "Archaludon ex / Cinderace",
+      "representative_cards": [
+        {
+          "card_id": 190,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex"
+        },
+        {
+          "card_id": 666,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "n_s_zoroark_ex_munkidori_11bd8fb9fc18",
+      "deck_number": "049",
+      "display_name": "N's Zoroark ex / Munkidori",
+      "representative_cards": [
+        {
+          "card_id": 293,
+          "image_url": "https://images.pokemontcg.io/sv9/98.png",
+          "name": "N’s Zoroark ex"
+        },
+        {
+          "card_id": 112,
+          "image_url": "https://images.pokemontcg.io/sv6/95.png",
+          "name": "Munkidori"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_starmie_ex_dusknoir_46fd6cbdd4d2",
+      "deck_number": "050",
+      "display_name": "Mega Starmie ex / Dusknoir",
+      "representative_cards": [
+        {
+          "card_id": 1031,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex"
+        },
+        {
+          "card_id": 133,
+          "image_url": "https://images.pokemontcg.io/sv6pt5/20.png",
+          "name": "Dusknoir"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "archaludon_ex_cinderace_da1d56e33b96",
+      "deck_number": "051",
+      "display_name": "Archaludon ex / Cinderace",
+      "representative_cards": [
+        {
+          "card_id": 190,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex"
+        },
+        {
+          "card_id": 666,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "archaludon_ex_cinderace_05566aeb4e7e",
+      "deck_number": "052",
+      "display_name": "Archaludon ex / Cinderace",
+      "representative_cards": [
+        {
+          "card_id": 190,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex"
+        },
+        {
+          "card_id": 666,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "mega_starmie_ex_mega_froslass_ex_555de3e40ea3",
+      "deck_number": "053",
+      "display_name": "Mega Starmie ex / Mega Froslass ex",
+      "representative_cards": [
+        {
+          "card_id": 1031,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex"
+        },
+        {
+          "card_id": 861,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "n_s_zoroark_ex_munkidori_940bc1f37b2a",
+      "deck_number": "054",
+      "display_name": "N's Zoroark ex / Munkidori",
+      "representative_cards": [
+        {
+          "card_id": 293,
+          "image_url": "https://images.pokemontcg.io/sv9/98.png",
+          "name": "N’s Zoroark ex"
+        },
+        {
+          "card_id": 112,
+          "image_url": "https://images.pokemontcg.io/sv6/95.png",
+          "name": "Munkidori"
+        }
+      ],
+      "status": "pending"
+    },
+    {
+      "deck_id": "archaludon_ex_cinderace_ee01ffad9675",
+      "deck_number": "055",
+      "display_name": "Archaludon ex / Cinderace",
+      "representative_cards": [
+        {
+          "card_id": 190,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex"
+        },
+        {
+          "card_id": 666,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace"
+        }
+      ],
+      "status": "pending"
+    }
+  ],
+  "catalog_decks": 55,
+  "complete_requested_scope": true,
+  "contract_id": "frozen_0806_seeded_agent_first_player_v3",
+  "evaluation_seed": 341512806,
+  "evidence_note": "U270 was trained with a heterogeneous opponent-deck CUDA batch whose opponent adapter used the first lane's registered-deck static fields. This corrected evaluation is valid strength evidence for the materialized candidate, but it does not validate the declared V2 opponent-pool training semantics.",
+  "first_player_contract": "seeded_coin_winner_then_winning_agent_selects_context_41",
+  "focal_policy_id": "0040-U270",
+  "meta_archetype_aggregates": [
+    {
+      "class_id": 0,
+      "deck_numbers": [
+        "007",
+        "018",
+        "043"
+      ],
+      "display_name": "Dragapult ex",
+      "draws": 0,
+      "games": 2048,
+      "losses": 789,
+      "name": "dragapult_ex",
+      "tested_decks": 1,
+      "total_decks": 3,
+      "trigger_card_ids": [
+        121
+      ],
+      "win_rate": 0.61474609375,
+      "wins": 1259
+    },
+    {
+      "class_id": 1,
+      "deck_numbers": [
+        "003",
+        "004",
+        "012",
+        "022",
+        "025",
+        "028",
+        "032"
+      ],
+      "display_name": "Mega Lopunny ex",
+      "draws": 2,
+      "games": 2048,
+      "losses": 786,
+      "name": "mega_lopunny_ex",
+      "tested_decks": 1,
+      "total_decks": 7,
+      "trigger_card_ids": [
+        849
+      ],
+      "win_rate": 0.615234375,
+      "wins": 1260
+    },
+    {
+      "class_id": 2,
+      "deck_numbers": [
+        "001",
+        "005",
+        "017",
+        "031",
+        "037"
+      ],
+      "display_name": "Marnie's Grimmsnarl ex",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "marnies_grimmsnarl_ex",
+      "tested_decks": 0,
+      "total_decks": 5,
+      "trigger_card_ids": [
+        648
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 3,
+      "deck_numbers": [
+        "002",
+        "034",
+        "039",
+        "040"
+      ],
+      "display_name": "Alakazam",
+      "draws": 7,
+      "games": 2048,
+      "losses": 839,
+      "name": "alakazam",
+      "tested_decks": 1,
+      "total_decks": 4,
+      "trigger_card_ids": [
+        743
+      ],
+      "win_rate": 0.5869140625,
+      "wins": 1202
+    },
+    {
+      "class_id": 4,
+      "deck_numbers": [
+        "009"
+      ],
+      "display_name": "Mega Lucario ex",
+      "draws": 0,
+      "games": 2048,
+      "losses": 850,
+      "name": "mega_lucario_ex",
+      "tested_decks": 1,
+      "total_decks": 1,
+      "trigger_card_ids": [
+        678
+      ],
+      "win_rate": 0.5849609375,
+      "wins": 1198
+    },
+    {
+      "class_id": 5,
+      "deck_numbers": [
+        "011",
+        "014",
+        "015",
+        "016",
+        "026",
+        "027",
+        "030",
+        "033",
+        "035"
+      ],
+      "display_name": "Mega Kangaskhan ex",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "mega_kangaskhan_ex",
+      "tested_decks": 0,
+      "total_decks": 9,
+      "trigger_card_ids": [
+        756
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 6,
+      "deck_numbers": [
+        "010",
+        "023",
+        "041"
+      ],
+      "display_name": "Festival Lead",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "festival_lead",
+      "tested_decks": 0,
+      "total_decks": 3,
+      "trigger_card_ids": [
+        93
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 7,
+      "deck_numbers": [
+        "019",
+        "024",
+        "038"
+      ],
+      "display_name": "Crustle / Barbaracle Wall",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "crustle_barbaracle_wall",
+      "tested_decks": 0,
+      "total_decks": 3,
+      "trigger_card_ids": [
+        345,
+        1052
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 8,
+      "deck_numbers": [
+        "020",
+        "042"
+      ],
+      "display_name": "Meganium Grass Evolution",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "meganium_grass_evolution",
+      "tested_decks": 0,
+      "total_decks": 2,
+      "trigger_card_ids": [
+        652,
+        150,
+        404
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 9,
+      "deck_numbers": [
+        "021"
+      ],
+      "display_name": "Team Rocket's Mewtwo ex",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "team_rockets_mewtwo_ex",
+      "tested_decks": 0,
+      "total_decks": 1,
+      "trigger_card_ids": [
+        431
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 10,
+      "deck_numbers": [
+        "006",
+        "008",
+        "029",
+        "036"
+      ],
+      "display_name": "Teal Mask Ogerpon / Hero's Cape",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "teal_mask_ogerpon_heros_cape",
+      "tested_decks": 0,
+      "total_decks": 4,
+      "trigger_card_ids": [
+        96
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 11,
+      "deck_numbers": [
+        "013"
+      ],
+      "display_name": "Cynthia's Garchomp ex",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "cynthias_garchomp_ex",
+      "tested_decks": 0,
+      "total_decks": 1,
+      "trigger_card_ids": [
+        381
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 12,
+      "deck_numbers": [
+        "044",
+        "045",
+        "046",
+        "050",
+        "053"
+      ],
+      "display_name": "Mega Starmie ex",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "mega_starmie_ex",
+      "tested_decks": 0,
+      "total_decks": 5,
+      "trigger_card_ids": [
+        1031
+      ],
+      "win_rate": null,
+      "wins": 0
+    },
+    {
+      "class_id": 13,
+      "deck_numbers": [
+        "048",
+        "051",
+        "052",
+        "055"
+      ],
+      "display_name": "Archaludon ex",
+      "draws": 0,
+      "games": 0,
+      "losses": 0,
+      "name": "archaludon_ex",
+      "tested_decks": 0,
+      "total_decks": 4,
+      "trigger_card_ids": [
+        190
+      ],
+      "win_rate": null,
+      "wins": 0
+    }
+  ],
+  "meta_archetype_contract": "evaluation/meta_archetypes_v1.json",
+  "meta_archetype_other": {
+    "class_id": 14,
+    "deck_numbers": [
+      "047",
+      "049",
+      "054"
+    ],
+    "display_name": "Other",
+    "draws": 0,
+    "games": 0,
+    "losses": 0,
+    "name": "other",
+    "tested_decks": 0,
+    "total_decks": 3,
+    "win_rate": null,
+    "wins": 0
+  },
+  "opponent_policy_id": "Policy-0809",
+  "policy_identity_audit": {
+    "focal": {
+      "checkpoint_sha256": "c87bcf82ca2b22eed65876da7d0ec0648a85d72d40dd13dd614290e7de002142",
+      "checkpoint_update": 270,
+      "deployment_effective_sha256": "ec1320a82fd11cc5e717d1a2f612a82a509e2c6f67ef618d8de0d6ca2a971cd8",
+      "policy_id": "0040-U270"
+    },
+    "opponent": {
+      "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+      "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+      "components": {
+        "action_decoder": {
+          "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+          "source_policy_id": "Policy-0809"
+        },
+        "final_norm": {
+          "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+          "source_policy_id": "Policy-0809"
+        },
+        "lora": {
+          "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "source_policy_id": "Policy-0809"
+        },
+        "option_input_encoder": {
+          "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+          "source_policy_id": "Policy-0809"
+        },
+        "option_transformer_layer_0": {
+          "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+          "source_policy_id": "Policy-0809"
+        },
+        "option_transformer_layer_1": {
+          "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+          "source_policy_id": "Policy-0809"
+        },
+        "prototype_encoder": {
+          "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+          "source_policy_id": "Policy-0809"
+        },
+        "state_encoder": {
+          "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+          "source_policy_id": "Policy-0809"
+        }
+      },
+      "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+      "model_schema_version": "0031_model_only_checkpoint_v1",
+      "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+      "policy_kind": "immutable_pretrained",
+      "purpose": "0040_u270_cross_deck_policy0809_cuda2048",
+      "requested_policy_id": "Policy-0809",
+      "schema_version": "rl_policy_identity_audit_v1",
+      "status": "PASS"
+    },
+    "schema_version": "0040_u270_policy0809_formal_identity_v1",
+    "status": "PASS",
+    "training_provenance_warning": "U270 was trained with a heterogeneous opponent-deck CUDA batch whose opponent adapter used the first lane's registered-deck static fields. This corrected evaluation is valid strength evidence for the materialized candidate, but it does not validate the declared V2 opponent-pool training semantics."
+  },
+  "published_decks": 4,
+  "published_games": 8192,
+  "reports": [
+    {
+      "actual_first_games": 1050,
+      "actual_first_wins": 679,
+      "actual_second_games": 998,
+      "actual_second_wins": 580,
+      "best_rank": 1,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 270,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "ec1320a82fd11cc5e717d1a2f612a82a509e2c6f67ef618d8de0d6ca2a971cd8",
+        "portable_checkpoint_sha256": "3a11d4dc369a25cd0750f88795fbec48153dc558c4f115666d9023797fe15ad8",
+        "runtime_dtype": "fp32",
+        "schema_version": "0040_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "c87bcf82ca2b22eed65876da7d0ec0648a85d72d40dd13dd614290e7de002142",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "dragapult_ex_07bedfffbfad",
+      "deck_number": "007",
+      "device": {
+        "cuda": "12.8",
+        "cudnn_allow_tf32": false,
+        "float32_matmul_precision": "highest",
+        "matmul_allow_tf32": false,
+        "name": "NVIDIA GeForce RTX 5080",
+        "torch": "2.11.0+cu128"
+      },
+      "display_name": "Dragapult ex",
+      "draws": 0,
+      "engine": {
+        "extension": ".tmp/engine_cuda_benchmark/build_sm120_staged/_ptcg_cuda.so",
+        "extension_sha256": "44e425fa6c050a78ecf286ad60550f098ade6d1951c4e4b0b3856feddbb66f7c",
+        "rules_sha256": "e8bb8537ccadc5d77b75c4198ffb1467d9b73d119e1e8c6325a9e5cd503a80e6"
+      },
+      "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+      "games": 2048,
+      "games_file": "games/007.json",
+      "losses": 789,
+      "observed_players": 3,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "0040_u270_cross_deck_policy0809_cuda2048",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "report": "reports/007.html",
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex"
+        }
+      ],
+      "schedule_games": 7,
+      "schedule_sha256": "d675ec18d9a69ff31e29eda906820dee0afd30b7e033013e74568fc8412e13ba",
+      "segment": "top100",
+      "training_provenance_warning": "U270 was trained with a heterogeneous opponent-deck CUDA batch whose opponent adapter used the first lane's registered-deck static fields. This corrected evaluation is valid strength evidence for the materialized candidate, but it does not validate the declared V2 opponent-pool training semantics.",
+      "wall_seconds": 613.4600417490001,
+      "win_rate": 0.61474609375,
+      "wins": 1259
+    },
+    {
+      "actual_first_games": 1028,
+      "actual_first_wins": 668,
+      "actual_second_games": 1020,
+      "actual_second_wins": 534,
+      "best_rank": 7,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 270,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "ec1320a82fd11cc5e717d1a2f612a82a509e2c6f67ef618d8de0d6ca2a971cd8",
+        "portable_checkpoint_sha256": "3a11d4dc369a25cd0750f88795fbec48153dc558c4f115666d9023797fe15ad8",
+        "runtime_dtype": "fp32",
+        "schema_version": "0040_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "c87bcf82ca2b22eed65876da7d0ec0648a85d72d40dd13dd614290e7de002142",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "alakazam_dudunsparce_3f4515092dc5",
+      "deck_number": "002",
+      "device": {
+        "cuda": "12.8",
+        "cudnn_allow_tf32": false,
+        "float32_matmul_precision": "highest",
+        "matmul_allow_tf32": false,
+        "name": "NVIDIA GeForce RTX 5080",
+        "torch": "2.11.0+cu128"
+      },
+      "display_name": "Alakazam / Dudunsparce",
+      "draws": 7,
+      "engine": {
+        "extension": ".tmp/engine_cuda_benchmark/build_sm120_staged/_ptcg_cuda.so",
+        "extension_sha256": "44e425fa6c050a78ecf286ad60550f098ade6d1951c4e4b0b3856feddbb66f7c",
+        "rules_sha256": "e8bb8537ccadc5d77b75c4198ffb1467d9b73d119e1e8c6325a9e5cd503a80e6"
+      },
+      "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "games": 2048,
+      "games_file": "games/002.json",
+      "losses": 839,
+      "observed_players": 14,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "0040_u270_cross_deck_policy0809_cuda2048",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "report": "reports/002.html",
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam"
+        },
+        {
+          "card_id": 66,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce"
+        }
+      ],
+      "schedule_games": 34,
+      "schedule_sha256": "f3d534348f0775112baaf60b8580f40199dde111ac3799d585ede9d0cbece78e",
+      "segment": "top100",
+      "training_provenance_warning": "U270 was trained with a heterogeneous opponent-deck CUDA batch whose opponent adapter used the first lane's registered-deck static fields. This corrected evaluation is valid strength evidence for the materialized candidate, but it does not validate the declared V2 opponent-pool training semantics.",
+      "wall_seconds": 499.7506658789971,
+      "win_rate": 0.5869140625,
+      "wins": 1202
+    },
+    {
+      "actual_first_games": 1078,
+      "actual_first_wins": 654,
+      "actual_second_games": 970,
+      "actual_second_wins": 544,
+      "best_rank": 8,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 270,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "ec1320a82fd11cc5e717d1a2f612a82a509e2c6f67ef618d8de0d6ca2a971cd8",
+        "portable_checkpoint_sha256": "3a11d4dc369a25cd0750f88795fbec48153dc558c4f115666d9023797fe15ad8",
+        "runtime_dtype": "fp32",
+        "schema_version": "0040_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "c87bcf82ca2b22eed65876da7d0ec0648a85d72d40dd13dd614290e7de002142",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
+      "deck_number": "009",
+      "device": {
+        "cuda": "12.8",
+        "cudnn_allow_tf32": false,
+        "float32_matmul_precision": "highest",
+        "matmul_allow_tf32": false,
+        "name": "NVIDIA GeForce RTX 5080",
+        "torch": "2.11.0+cu128"
+      },
+      "display_name": "Mega Lucario ex / Solrock",
+      "draws": 0,
+      "engine": {
+        "extension": ".tmp/engine_cuda_benchmark/build_sm120_staged/_ptcg_cuda.so",
+        "extension_sha256": "44e425fa6c050a78ecf286ad60550f098ade6d1951c4e4b0b3856feddbb66f7c",
+        "rules_sha256": "e8bb8537ccadc5d77b75c4198ffb1467d9b73d119e1e8c6325a9e5cd503a80e6"
+      },
+      "exact_deck_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
+      "games": 2048,
+      "games_file": "games/009.json",
+      "losses": 850,
+      "observed_players": 2,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "0040_u270_cross_deck_policy0809_cuda2048",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "report": "reports/009.html",
+      "representative_cards": [
+        {
+          "card_id": 678,
+          "image_url": "https://images.pokemontcg.io/me1/77.png",
+          "name": "Mega Lucario ex"
+        },
+        {
+          "card_id": 676,
+          "image_url": "https://images.pokemontcg.io/me1/75.png",
+          "name": "Solrock"
+        }
+      ],
+      "schedule_games": 5,
+      "schedule_sha256": "abee9000cdb703f64953989993134c9c864fe28476a830af319c1de7830ccdd3",
+      "segment": "top100",
+      "training_provenance_warning": "U270 was trained with a heterogeneous opponent-deck CUDA batch whose opponent adapter used the first lane's registered-deck static fields. This corrected evaluation is valid strength evidence for the materialized candidate, but it does not validate the declared V2 opponent-pool training semantics.",
+      "wall_seconds": 425.8786629710012,
+      "win_rate": 0.5849609375,
+      "wins": 1198
+    },
+    {
+      "actual_first_games": 1039,
+      "actual_first_wins": 652,
+      "actual_second_games": 1009,
+      "actual_second_wins": 608,
+      "best_rank": 2,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 270,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "ec1320a82fd11cc5e717d1a2f612a82a509e2c6f67ef618d8de0d6ca2a971cd8",
+        "portable_checkpoint_sha256": "3a11d4dc369a25cd0750f88795fbec48153dc558c4f115666d9023797fe15ad8",
+        "runtime_dtype": "fp32",
+        "schema_version": "0040_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "c87bcf82ca2b22eed65876da7d0ec0648a85d72d40dd13dd614290e7de002142",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c",
+      "deck_number": "003",
+      "device": {
+        "cuda": "12.8",
+        "cudnn_allow_tf32": false,
+        "float32_matmul_precision": "highest",
+        "matmul_allow_tf32": false,
+        "name": "NVIDIA GeForce RTX 5080",
+        "torch": "2.11.0+cu128"
+      },
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 2,
+      "engine": {
+        "extension": ".tmp/engine_cuda_benchmark/build_sm120_staged/_ptcg_cuda.so",
+        "extension_sha256": "44e425fa6c050a78ecf286ad60550f098ade6d1951c4e4b0b3856feddbb66f7c",
+        "rules_sha256": "e8bb8537ccadc5d77b75c4198ffb1467d9b73d119e1e8c6325a9e5cd503a80e6"
+      },
+      "exact_deck_sha256": "dd63244cb42c5002bb2c7e415e8224e3dc8440ee02743f0db22d9d44594a72cc",
+      "games": 2048,
+      "games_file": "games/003.json",
+      "losses": 786,
+      "observed_players": 6,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "0040_u270_cross_deck_policy0809_cuda2048",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "report": "reports/003.html",
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex"
+        },
+        {
+          "card_id": 861,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex"
+        }
+      ],
+      "schedule_games": 15,
+      "schedule_sha256": "3ba0c83eb8975dbf52a14dce724ae2caa2ae1f4cac3e74fcf0687f6d706bb2cc",
+      "segment": "top100",
+      "training_provenance_warning": "U270 was trained with a heterogeneous opponent-deck CUDA batch whose opponent adapter used the first lane's registered-deck static fields. This corrected evaluation is valid strength evidence for the materialized candidate, but it does not validate the declared V2 opponent-pool training semantics.",
+      "wall_seconds": 641.2882515700003,
+      "win_rate": 0.615234375,
+      "wins": 1260
+    }
+  ],
+  "schema": "policy_0809_cuda_seeded2048_index_v1"
+}

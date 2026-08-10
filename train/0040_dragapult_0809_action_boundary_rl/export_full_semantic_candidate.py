@@ -297,12 +297,19 @@ def export_candidate(
     checkpoint: Path,
     output: Path,
     require_frozen_selection: bool = True,
+    deck_path: Path = FOCAL_DECK_PATH,
+    deck_id: str = FOCAL_DECK_ID,
+    deck_display_name: str = "007 · Dragapult ex",
+    expected_deck_sha256: str | None = FOCAL_DECK_SHA256,
 ) -> dict[str, Any]:
     source = source.resolve()
     checkpoint = checkpoint.resolve()
     output = output.resolve()
+    deck_path = deck_path.resolve()
     if output.exists():
         raise FileExistsError(output)
+    if not deck_path.is_file() or not deck_id.strip() or not deck_display_name.strip():
+        raise ValueError("explicit candidate exact-deck identity is incomplete")
     source_model_path = source / "strategy/model.bin"
     source_payload = _load_payload(source_model_path)
     rl_payload = _load_payload(checkpoint)
@@ -467,11 +474,9 @@ def export_candidate(
             output / "strategy",
             ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
         )
-        # The historical portable actor package carries a one-card-different
-        # Dragapult list.  The RL checkpoint was trained and Frozen-evaluated
-        # with the versioned 007 deck below, so the deployment deck must come
-        # from that authority rather than from the actor source package.
-        shutil.copy2(FOCAL_DECK_PATH, output / "deck.csv")
+        # The actor weights and exact-deck conditioning are independent audited
+        # identities.  Copy the caller-selected Frozen deck into the package.
+        shutil.copy2(deck_path, output / "deck.csv")
         shutil.copy2(RUNTIME_ROOT / "main.py", output / "main.py")
         shutil.copy2(
             RUNTIME_ROOT / "compound_inference.py",
@@ -498,18 +503,18 @@ def export_candidate(
         if len(deck) != 60:
             raise ValueError("candidate deck is not exactly 60 cards")
         deck_sha256 = _deck_hash(deck)
-        if deck_sha256 != FOCAL_DECK_SHA256:
-            raise ValueError("candidate deck does not match the Frozen 007 exact deck")
+        if expected_deck_sha256 is not None and deck_sha256 != expected_deck_sha256:
+            raise ValueError("candidate deck does not match the requested Frozen exact deck")
         manifest = {
             "schema_version": OUTPUT_SCHEMA,
             "candidate": output.name,
             "project_id": PROJECT_ID,
             "version": metadata.get("version"),
-            "deck_id": FOCAL_DECK_ID,
-            "deck_display_name": "007 · Dragapult ex",
+            "deck_id": deck_id,
+            "deck_display_name": deck_display_name,
             "deck_sha256": deck_sha256,
             "deck_file_sha256": _sha256(output / "deck.csv"),
-            "deck_source": str(FOCAL_DECK_PATH.relative_to(ROOT)),
+            "deck_source": str(deck_path.relative_to(ROOT)),
             "source_candidate": str(source.relative_to(ROOT)),
             "source_portable_checkpoint_sha256": _sha256(source_model_path),
             "base_checkpoint": str(BASE_CHECKPOINT.relative_to(ROOT)),
@@ -588,6 +593,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--deck-path", type=Path, default=FOCAL_DECK_PATH)
+    parser.add_argument("--deck-id", default=FOCAL_DECK_ID)
+    parser.add_argument("--deck-display-name", default="007 · Dragapult ex")
+    parser.add_argument("--expected-deck-sha256", default=FOCAL_DECK_SHA256)
     args = parser.parse_args(argv)
     print(json.dumps(export_candidate(**vars(args)), indent=2, sort_keys=True))
     return 0
