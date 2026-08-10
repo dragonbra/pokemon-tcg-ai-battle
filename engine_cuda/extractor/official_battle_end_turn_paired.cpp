@@ -34,11 +34,13 @@ enum class BattleReplayPolicy : std::uint8_t {
     kBasicPlayEvolveAttachThenEnd = 3,
     kCoverageFirstLegal = 4,
     kCoverageRandomLegal = 5,
+    kAttackFirstLegal = 6,
 };
 
 bool is_coverage_policy(BattleReplayPolicy policy) {
     return policy == BattleReplayPolicy::kCoverageFirstLegal
-        || policy == BattleReplayPolicy::kCoverageRandomLegal;
+        || policy == BattleReplayPolicy::kCoverageRandomLegal
+        || policy == BattleReplayPolicy::kAttackFirstLegal;
 }
 
 struct BattleReplayStats {
@@ -277,7 +279,8 @@ BattleReplayChoice choose_coverage_action(
     std::uint64_t seed,
     std::uint32_t decision,
     BattleReplayDriverState* driver,
-    bool randomized = false) {
+    bool randomized = false,
+    bool attack_first = false) {
     if (state.options.size() != pod.options.count
         || state.selectMin != pod.select_min
         || state.selectMax != pod.select_max
@@ -311,7 +314,14 @@ BattleReplayChoice choose_coverage_action(
             SelectOptionType::Retreat,
         };
         int selected = -1;
-        if (driver->main_actions_this_turn < 4) {
+        if (attack_first) {
+            // The parity gate must reach terminal states, while still
+            // exercising every nested selection contract.  Prefer the first
+            // legal attack at MainSelect; fall back to the ordinary coverage
+            // ladder only when no attack is currently available.
+            selected = find_option(state, SelectOptionType::Attack);
+        }
+        if (selected < 0 && driver->main_actions_this_turn < 4) {
             if (randomized) {
                 std::vector<int> candidates;
                 for (std::size_t index = 0; index < state.options.size(); ++index) {
@@ -455,6 +465,9 @@ BattleReplayPolicy parse_battle_replay_policy(const std::string& value) {
     if (value == "coverage-random-legal") {
         return BattleReplayPolicy::kCoverageRandomLegal;
     }
+    if (value == "attack-first-legal") {
+        return BattleReplayPolicy::kAttackFirstLegal;
+    }
     throw std::runtime_error("unknown battle replay policy: " + value);
 }
 
@@ -473,6 +486,9 @@ const char* battle_replay_scope(BattleReplayPolicy policy) {
     }
     if (policy == BattleReplayPolicy::kCoverageFirstLegal) {
         return "coverage_first_legal_full_battle";
+    }
+    if (policy == BattleReplayPolicy::kAttackFirstLegal) {
+        return "attack_first_legal_full_battle";
     }
     return "coverage_random_legal_full_battle";
 }
@@ -1220,7 +1236,8 @@ BattleReplayStats run_seed(
                 seed,
                 stats.decisions,
                 &driver,
-                policy == BattleReplayPolicy::kCoverageRandomLegal);
+                policy == BattleReplayPolicy::kCoverageRandomLegal,
+                policy == BattleReplayPolicy::kAttackFirstLegal);
             official_selected = coverage_choice.indices;
             expected_type = coverage_choice.expected_type;
             official_index = official_selected.empty() ? -1 : official_selected.front();

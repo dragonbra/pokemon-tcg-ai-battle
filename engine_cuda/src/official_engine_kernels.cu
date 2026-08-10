@@ -21,6 +21,7 @@ static_assert(
 // enough independent warps to hide that latency at rollout batch sizes; the
 // CMake cache variable retains a hardware-specific escape hatch.
 constexpr std::uint32_t kOfficialThreads = PTCG_CUDA_OFFICIAL_THREADS;
+constexpr std::uint32_t kScratchCloneThreads = 256;
 constexpr std::uint32_t kMaxOfficialCodecOptions = kOfficialOptionCapacity;
 
 constexpr std::uint32_t official_blocks(std::uint32_t count) {
@@ -34,6 +35,502 @@ __global__ void classify_official_states_kernel(
     const std::uint32_t env = blockIdx.x * blockDim.x + threadIdx.x;
     if (env >= batch_size) return;
     statuses[env] = static_cast<std::uint8_t>(official_flow_status(states[env]));
+}
+
+template <typename T>
+__device__ void copy_lane_span(
+    T* destination,
+    const T* source,
+    std::size_t destination_lane,
+    std::size_t source_lane,
+    std::size_t span) {
+    const std::size_t destination_offset = destination_lane * span;
+    const std::size_t source_offset = source_lane * span;
+    for (std::size_t index = threadIdx.x; index < span; index += blockDim.x) {
+        destination[destination_offset + index] = source[source_offset + index];
+    }
+}
+
+template <typename IndexT>
+__global__ void fork_official_lanes_kernel(
+    OfficialDeviceArena source,
+    OfficialDeviceArena destination,
+    const IndexT* source_lane_indices,
+    std::uint32_t lane_count) {
+    const std::uint32_t destination_lane = blockIdx.x;
+    if (destination_lane >= lane_count) return;
+    const std::int64_t source_lane_signed = static_cast<std::int64_t>(
+        source_lane_indices[destination_lane]);
+    if (source_lane_signed < 0
+        || source_lane_signed >= static_cast<std::int64_t>(source.config.batch_size)) {
+        if (threadIdx.x == 0) {
+            destination.statuses[destination_lane] = static_cast<std::uint8_t>(
+                OfficialFlowStatus::kError);
+        }
+        return;
+    }
+    const auto source_lane = static_cast<std::size_t>(source_lane_signed);
+    const auto destination_index = static_cast<std::size_t>(destination_lane);
+    copy_lane_span(
+        reinterpret_cast<std::uint8_t*>(destination.states),
+        reinterpret_cast<const std::uint8_t*>(source.states),
+        destination_index,
+        source_lane,
+        sizeof(OfficialStatePod));
+    copy_lane_span(
+        reinterpret_cast<std::uint8_t*>(destination.actions),
+        reinterpret_cast<const std::uint8_t*>(source.actions),
+        destination_index,
+        source_lane,
+        sizeof(OfficialActionPod));
+    copy_lane_span(
+        destination.statuses, source.statuses, destination_index, source_lane, 1U);
+    copy_lane_span(
+        destination.semantic_history_total_count,
+        source.semantic_history_total_count,
+        destination_index,
+        source_lane,
+        1U);
+    copy_lane_span(
+        destination.semantic_history_write_index,
+        source.semantic_history_write_index,
+        destination_index,
+        source_lane,
+        1U);
+    copy_lane_span(
+        destination.semantic_history_log_type,
+        source.semantic_history_log_type,
+        destination_index,
+        source_lane,
+        kOfficialSemanticHistoryCapacity);
+    copy_lane_span(
+        destination.semantic_history_param_count,
+        source.semantic_history_param_count,
+        destination_index,
+        source_lane,
+        kOfficialSemanticHistoryCapacity);
+    copy_lane_span(
+        destination.semantic_history_params,
+        source.semantic_history_params,
+        destination_index,
+        source_lane,
+        kOfficialSemanticHistoryCapacity * kOfficialSemanticHistoryParamCapacity);
+    constexpr std::size_t kActorSpan = 2U;
+    constexpr std::size_t kSerialSpan =
+        kActorSpan * kOfficialSemanticSerialCapacity;
+    copy_lane_span(
+        destination.semantic_deck_membership_known,
+        source.semantic_deck_membership_known,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    copy_lane_span(
+        destination.semantic_prize_membership_known,
+        source.semantic_prize_membership_known,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    copy_lane_span(
+        destination.semantic_deck_order_known,
+        source.semantic_deck_order_known,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    copy_lane_span(
+        destination.semantic_known_self_deck_serial,
+        source.semantic_known_self_deck_serial,
+        destination_index,
+        source_lane,
+        kSerialSpan);
+    copy_lane_span(
+        destination.semantic_deck_source_event,
+        source.semantic_deck_source_event,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    copy_lane_span(
+        destination.semantic_prize_source_event,
+        source.semantic_prize_source_event,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    copy_lane_span(
+        destination.semantic_known_opponent_hand,
+        source.semantic_known_opponent_hand,
+        destination_index,
+        source_lane,
+        kSerialSpan);
+    copy_lane_span(
+        destination.semantic_possible_opponent_hand,
+        source.semantic_possible_opponent_hand,
+        destination_index,
+        source_lane,
+        kSerialSpan);
+    copy_lane_span(
+        destination.semantic_remembered_opponent_cards,
+        source.semantic_remembered_opponent_cards,
+        destination_index,
+        source_lane,
+        kSerialSpan);
+    copy_lane_span(
+        destination.semantic_unknown_opponent_hand,
+        source.semantic_unknown_opponent_hand,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    copy_lane_span(
+        destination.semantic_possible_hand_lower,
+        source.semantic_possible_hand_lower,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    copy_lane_span(
+        destination.semantic_possible_hand_upper,
+        source.semantic_possible_hand_upper,
+        destination_index,
+        source_lane,
+        kActorSpan);
+    __syncthreads();
+    if (threadIdx.x == 0) {
+        OfficialStatePod* cloned = &destination.states[destination_lane];
+        if (official_semantic_history_enabled(cloned)) {
+            official_semantic_history_bind(cloned, destination.semantic_history_view);
+        } else {
+            cloned->semantic_history = nullptr;
+        }
+    }
+}
+
+template <std::size_t Capacity>
+__device__ void shuffle_official_ref_list(
+    OfficialPodList<OfficialCardRefPod, Capacity>* list,
+    OfficialMt19937* rng) {
+    if (list == nullptr || list->count < 2) return;
+    for (std::uint32_t upper = list->count; upper > 1; --upper) {
+        const std::uint32_t swap_index = official_uniform_below(rng, upper);
+        const OfficialCardRefPod temporary = list->values[upper - 1];
+        list->values[upper - 1] = list->values[swap_index];
+        list->values[swap_index] = temporary;
+    }
+}
+
+template <std::size_t Capacity>
+__device__ void canonical_sort_official_ref_list(
+    OfficialPodList<OfficialCardRefPod, Capacity>* list) {
+    if (list == nullptr || list->count < 2) return;
+    for (std::uint16_t index = 1; index < list->count; ++index) {
+        const OfficialCardRefPod value = list->values[index];
+        std::uint16_t position = index;
+        while (position > 0 && list->values[position - 1].index > value.index) {
+            list->values[position] = list->values[position - 1];
+            --position;
+        }
+        list->values[position] = value;
+    }
+}
+
+__global__ void redeterminize_official_hidden_order_kernel(
+    OfficialStatePod* states,
+    std::uint32_t batch_size,
+    const std::int64_t* hidden_order_seeds,
+    const std::int64_t* future_rng_seeds) {
+    const std::uint32_t env = blockIdx.x * blockDim.x + threadIdx.x;
+    if (env >= batch_size) return;
+    OfficialStatePod* state = &states[env];
+    OfficialMt19937 shuffle_rng{};
+    official_seed_mt19937(
+        &shuffle_rng,
+        static_cast<std::uint64_t>(hidden_order_seeds[env]));
+    for (std::int32_t player = 0; player < 2; ++player) {
+        shuffle_official_ref_list(&state->players[player].deck, &shuffle_rng);
+        shuffle_official_ref_list(&state->players[player].prize, &shuffle_rng);
+    }
+    official_seed_mt19937(
+        &state->rng,
+        static_cast<std::uint64_t>(future_rng_seeds[env]));
+}
+
+__device__ bool official_public_belief_hidden_area(
+    const OfficialCardStatePod& card,
+    std::int32_t observer) {
+    const auto area = static_cast<OfficialArea>(card.area);
+    if (card.player == observer) {
+        return area == OfficialArea::kDeck || area == OfficialArea::kPrize;
+    }
+    if (card.player == (1 ^ observer)) {
+        return area == OfficialArea::kHand
+            || area == OfficialArea::kDeck
+            || area == OfficialArea::kPrize;
+    }
+    return false;
+}
+
+__device__ void official_public_belief_mark_serial(
+    bool* visible_identity,
+    std::int32_t serial) {
+    if (serial > 0
+        && serial < static_cast<std::int32_t>(kOfficialCardCapacity)) {
+        visible_identity[serial] = true;
+    }
+}
+
+__device__ void official_public_belief_mark_visible_event_serials(
+    OfficialSemanticLogType type,
+    const std::int32_t* params,
+    std::uint8_t count,
+    std::int32_t observer,
+    bool* visible_identity) {
+    if (type == OfficialSemanticLogType::kDraw && count >= 3
+        && params[0] == observer) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+    } else if (type == OfficialSemanticLogType::kMoveCard && count >= 5
+        && official_semantic_move_visible_for_observer(
+            params[0], observer, params[3], params[4], count >= 6 ? params[5] : 0)) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+    } else if (type == OfficialSemanticLogType::kMoveCardReverse && count >= 5
+        && params[0] == observer
+        && params[4] != static_cast<std::int32_t>(OfficialArea::kPrize)) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+    } else if ((type == OfficialSemanticLogType::kSwitch
+            || type == OfficialSemanticLogType::kChange)
+        && count >= 5) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+        official_public_belief_mark_serial(visible_identity, params[4]);
+    } else if (type == OfficialSemanticLogType::kPlay && count >= 3) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+    } else if ((type == OfficialSemanticLogType::kAttach
+            || type == OfficialSemanticLogType::kEvolve
+            || type == OfficialSemanticLogType::kDevolve)
+        && count >= 5) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+        official_public_belief_mark_serial(visible_identity, params[4]);
+    } else if (type == OfficialSemanticLogType::kMoveAttached && count >= 7) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+        official_public_belief_mark_serial(visible_identity, params[4]);
+        official_public_belief_mark_serial(visible_identity, params[6]);
+    } else if ((type == OfficialSemanticLogType::kAttack
+            || type == OfficialSemanticLogType::kHpChange)
+        && count >= 3) {
+        official_public_belief_mark_serial(visible_identity, params[2]);
+    } else if (type >= OfficialSemanticLogType::kPoisoned
+        && type <= OfficialSemanticLogType::kConfused
+        && count >= 4) {
+        official_public_belief_mark_serial(visible_identity, params[3]);
+    }
+}
+
+__device__ void official_public_belief_rewrite_pair(
+    OfficialStatePod* state,
+    std::int32_t* params,
+    std::uint8_t count,
+    std::int32_t id_position,
+    std::int32_t serial_position) {
+    if (id_position >= count || serial_position >= count) return;
+    const std::int32_t serial = params[serial_position];
+    if (serial > 0
+        && serial < static_cast<std::int32_t>(kOfficialCardCapacity)) {
+        params[id_position] = state->cards[serial].card_id;
+    }
+}
+
+__device__ void official_public_belief_rewrite_event_ids(
+    OfficialStatePod* state,
+    OfficialSemanticLogType type,
+    std::int32_t* params,
+    std::uint8_t count) {
+    if ((type == OfficialSemanticLogType::kDraw
+            || type == OfficialSemanticLogType::kDrawReverse
+            || type == OfficialSemanticLogType::kMoveCard
+            || type == OfficialSemanticLogType::kMoveCardReverse
+            || type == OfficialSemanticLogType::kPlay
+            || type == OfficialSemanticLogType::kAttack
+            || type == OfficialSemanticLogType::kHpChange)
+        && count >= 3) {
+        official_public_belief_rewrite_pair(state, params, count, 1, 2);
+    } else if ((type == OfficialSemanticLogType::kSwitch
+            || type == OfficialSemanticLogType::kChange
+            || type == OfficialSemanticLogType::kAttach
+            || type == OfficialSemanticLogType::kEvolve
+            || type == OfficialSemanticLogType::kDevolve)
+        && count >= 5) {
+        official_public_belief_rewrite_pair(state, params, count, 1, 2);
+        official_public_belief_rewrite_pair(state, params, count, 3, 4);
+    } else if (type == OfficialSemanticLogType::kMoveAttached && count >= 7) {
+        official_public_belief_rewrite_pair(state, params, count, 1, 2);
+        official_public_belief_rewrite_pair(state, params, count, 3, 4);
+        official_public_belief_rewrite_pair(state, params, count, 5, 6);
+    } else if (type >= OfficialSemanticLogType::kPoisoned
+        && type <= OfficialSemanticLogType::kConfused
+        && count >= 4) {
+        official_public_belief_rewrite_pair(state, params, count, 2, 3);
+    }
+}
+
+__global__ void redeterminize_official_public_belief_clean_kernel(
+    OfficialStatePod* states,
+    std::uint32_t batch_size,
+    const std::int32_t* exact_decks,
+    const std::int64_t* observer_seats,
+    const std::int64_t* hidden_membership_seeds,
+    const std::int64_t* future_rng_seeds,
+    std::uint8_t* result_codes) {
+    const std::uint32_t env = blockIdx.x * blockDim.x + threadIdx.x;
+    if (env >= batch_size) return;
+    OfficialStatePod* state = &states[env];
+    const std::int32_t observer = static_cast<std::int32_t>(observer_seats[env]);
+    if (observer < 0 || observer > 1 || state->select_player != observer
+        || state->select_context != 1 || state->game_result != 0) {
+        result_codes[env] = 2;
+        return;
+    }
+    OfficialSemanticHistoryDeviceView* history = official_semantic_history_view(state);
+    if (history == nullptr) {
+        result_codes[env] = 2;
+        return;
+    }
+    const std::size_t observer_offset = official_semantic_actor_offset(env, observer);
+    if (history->deck_membership_known[observer_offset] != 0
+        || history->prize_membership_known[observer_offset] != 0
+        || history->deck_order_known[observer_offset] != 0) {
+        result_codes[env] = 3;
+        return;
+    }
+
+    bool visible_identity[kOfficialCardCapacity]{};
+    for (std::uint32_t serial = 1; serial < kOfficialCardCapacity; ++serial) {
+        const OfficialCardStatePod& card = state->cards[serial];
+        if (card.card_id <= 0) continue;
+        if (!official_public_belief_hidden_area(card, observer)) {
+            visible_identity[serial] = true;
+        }
+        const std::size_t memory = official_semantic_serial_offset(
+            env, static_cast<std::uint32_t>(observer), serial);
+        if (history->known_opponent_hand[memory] != 0
+            || history->possible_opponent_hand[memory] != 0
+            || history->remembered_opponent_cards[memory] != 0) {
+            visible_identity[serial] = true;
+        }
+    }
+    official_public_belief_mark_serial(visible_identity, state->context_card.index);
+    if (state->effect_state.on_effect != 0) {
+        official_public_belief_mark_serial(
+            visible_identity, state->effect_state.ability.effect_card.card.index);
+    }
+    const std::uint64_t total = history->total_count[env];
+    const std::uint32_t live = total < history->capacity
+        ? static_cast<std::uint32_t>(total)
+        : history->capacity;
+    const std::uint32_t start = total <= history->capacity
+        ? 0U : history->write_index[env] % history->capacity;
+    for (std::uint32_t pos = 0; pos < live; ++pos) {
+        const std::uint32_t slot = (start + pos) % history->capacity;
+        const std::size_t base = static_cast<std::size_t>(env) * history->capacity + slot;
+        const auto type = static_cast<OfficialSemanticLogType>(history->log_type[base]);
+        const std::uint8_t count = history->param_count[base];
+        const std::int32_t* params = history->params
+            + base * kOfficialSemanticHistoryParamCapacity;
+        official_public_belief_mark_visible_event_serials(
+            type, params, count, observer, visible_identity);
+    }
+    for (std::uint32_t serial = 1; serial < kOfficialCardCapacity; ++serial) {
+        if (visible_identity[serial]
+            && official_public_belief_hidden_area(state->cards[serial], observer)) {
+            result_codes[env] = 3;
+            return;
+        }
+    }
+
+    std::int32_t remaining_ids[2][kOfficialSeededDeckSize]{};
+    std::uint16_t remaining_count[2]{};
+    bool used[2][kOfficialSeededDeckSize]{};
+    const std::int32_t* lane_decks = exact_decks
+        + static_cast<std::size_t>(env) * 2U * kOfficialSeededDeckSize;
+    for (std::uint32_t serial = 3; serial < 3 + 2 * kOfficialSeededDeckSize; ++serial) {
+        const OfficialCardStatePod& card = state->cards[serial];
+        if (card.player < 0 || card.player > 1 || card.card_id <= 0) {
+            result_codes[env] = 4;
+            return;
+        }
+        if (official_public_belief_hidden_area(card, observer)) continue;
+        bool matched = false;
+        for (std::uint32_t index = 0; index < kOfficialSeededDeckSize; ++index) {
+            const std::size_t deck_index = static_cast<std::size_t>(card.player)
+                * kOfficialSeededDeckSize + index;
+            if (!used[card.player][index] && lane_decks[deck_index] == card.card_id) {
+                used[card.player][index] = true;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            result_codes[env] = 4;
+            return;
+        }
+    }
+    for (std::int32_t player = 0; player < 2; ++player) {
+        for (std::uint32_t index = 0; index < kOfficialSeededDeckSize; ++index) {
+            if (!used[player][index]) {
+                remaining_ids[player][remaining_count[player]++] = lane_decks[
+                    static_cast<std::size_t>(player) * kOfficialSeededDeckSize + index];
+            }
+        }
+    }
+    std::uint16_t hidden_count[2]{};
+    for (std::uint32_t serial = 3; serial < 3 + 2 * kOfficialSeededDeckSize; ++serial) {
+        const OfficialCardStatePod& card = state->cards[serial];
+        if (official_public_belief_hidden_area(card, observer)) {
+            ++hidden_count[card.player];
+        }
+    }
+    if (hidden_count[0] != remaining_count[0] || hidden_count[1] != remaining_count[1]) {
+        result_codes[env] = 4;
+        return;
+    }
+
+    OfficialMt19937 membership_rng{};
+    official_seed_mt19937(
+        &membership_rng,
+        static_cast<std::uint64_t>(hidden_membership_seeds[env]));
+    for (std::int32_t player = 0; player < 2; ++player) {
+        for (std::uint32_t upper = remaining_count[player]; upper > 1; --upper) {
+            const std::uint32_t swap_index = official_uniform_below(&membership_rng, upper);
+            const std::int32_t temporary = remaining_ids[player][upper - 1];
+            remaining_ids[player][upper - 1] = remaining_ids[player][swap_index];
+            remaining_ids[player][swap_index] = temporary;
+        }
+        std::uint16_t next = 0;
+        for (std::uint32_t serial = 3; serial < 3 + 2 * kOfficialSeededDeckSize; ++serial) {
+            OfficialCardStatePod& card = state->cards[serial];
+            if (card.player == player
+                && official_public_belief_hidden_area(card, observer)) {
+                card.card_id = remaining_ids[player][next++];
+            }
+        }
+    }
+    for (std::uint32_t pos = 0; pos < live; ++pos) {
+        const std::uint32_t slot = (start + pos) % history->capacity;
+        const std::size_t base = static_cast<std::size_t>(env) * history->capacity + slot;
+        const auto type = static_cast<OfficialSemanticLogType>(history->log_type[base]);
+        std::int32_t* params = history->params
+            + base * kOfficialSemanticHistoryParamCapacity;
+        official_public_belief_rewrite_event_ids(
+            state, type, params, history->param_count[base]);
+    }
+    canonical_sort_official_ref_list(&state->players[observer].deck);
+    canonical_sort_official_ref_list(&state->players[observer].prize);
+    shuffle_official_ref_list(&state->players[observer].deck, &membership_rng);
+    shuffle_official_ref_list(&state->players[observer].prize, &membership_rng);
+    const std::int32_t opponent = 1 ^ observer;
+    canonical_sort_official_ref_list(&state->players[opponent].hand);
+    canonical_sort_official_ref_list(&state->players[opponent].deck);
+    canonical_sort_official_ref_list(&state->players[opponent].prize);
+    shuffle_official_ref_list(&state->players[opponent].hand, &membership_rng);
+    shuffle_official_ref_list(&state->players[opponent].deck, &membership_rng);
+    shuffle_official_ref_list(&state->players[opponent].prize, &membership_rng);
+    official_seed_mt19937(
+        &state->rng,
+        static_cast<std::uint64_t>(future_rng_seeds[env]));
+    result_codes[env] = 1;
 }
 
 template <typename DeckT>
@@ -3272,6 +3769,100 @@ cudaError_t upload_official_states_async(
         sizeof(OfficialStatePod) * arena->config.batch_size,
         copy_kind,
         stream);
+}
+
+template <typename IndexT>
+cudaError_t fork_official_lanes_async_impl(
+    const OfficialDeviceArena* source,
+    OfficialDeviceArena* destination,
+    const IndexT* source_lane_indices,
+    std::uint32_t lane_count,
+    cudaStream_t stream) {
+    if (source == nullptr || destination == nullptr || source_lane_indices == nullptr
+        || lane_count == 0 || destination->config.batch_size != lane_count
+        || source->config.state_abi_version != destination->config.state_abi_version
+        || source->config.rule_abi_version != destination->config.rule_abi_version
+        || source->config.rule_pack_bytes != destination->config.rule_pack_bytes) {
+        return cudaErrorInvalidValue;
+    }
+    cudaError_t status = cudaMemcpyAsync(
+        destination->rule_pack,
+        source->rule_pack,
+        source->config.rule_pack_bytes,
+        cudaMemcpyDeviceToDevice,
+        stream);
+    if (status != cudaSuccess) return status;
+    fork_official_lanes_kernel<<<lane_count, kScratchCloneThreads, 0, stream>>>(
+        *source,
+        *destination,
+        source_lane_indices,
+        lane_count);
+    return cudaGetLastError();
+}
+
+cudaError_t fork_official_lanes_i32_async(
+    const OfficialDeviceArena* source,
+    OfficialDeviceArena* destination,
+    const std::int32_t* source_lane_indices,
+    std::uint32_t lane_count,
+    cudaStream_t stream) {
+    return fork_official_lanes_async_impl(
+        source, destination, source_lane_indices, lane_count, stream);
+}
+
+cudaError_t fork_official_lanes_i64_async(
+    const OfficialDeviceArena* source,
+    OfficialDeviceArena* destination,
+    const std::int64_t* source_lane_indices,
+    std::uint32_t lane_count,
+    cudaStream_t stream) {
+    return fork_official_lanes_async_impl(
+        source, destination, source_lane_indices, lane_count, stream);
+}
+
+cudaError_t redeterminize_official_hidden_order_async(
+    OfficialDeviceArena* arena,
+    const std::int64_t* hidden_order_seeds,
+    const std::int64_t* future_rng_seeds,
+    cudaStream_t stream) {
+    if (arena == nullptr || arena->states == nullptr
+        || hidden_order_seeds == nullptr || future_rng_seeds == nullptr
+        || arena->config.batch_size == 0) {
+        return cudaErrorInvalidValue;
+    }
+    redeterminize_official_hidden_order_kernel<<<
+        official_blocks(arena->config.batch_size), kOfficialThreads, 0, stream>>>(
+        arena->states,
+        arena->config.batch_size,
+        hidden_order_seeds,
+        future_rng_seeds);
+    return cudaGetLastError();
+}
+
+cudaError_t redeterminize_official_public_belief_clean_i32_async(
+    OfficialDeviceArena* arena,
+    const std::int32_t* exact_decks,
+    const std::int64_t* observer_seats,
+    const std::int64_t* hidden_membership_seeds,
+    const std::int64_t* future_rng_seeds,
+    std::uint8_t* result_codes,
+    cudaStream_t stream) {
+    if (arena == nullptr || arena->states == nullptr || exact_decks == nullptr
+        || observer_seats == nullptr || hidden_membership_seeds == nullptr
+        || future_rng_seeds == nullptr || result_codes == nullptr
+        || arena->config.batch_size == 0) {
+        return cudaErrorInvalidValue;
+    }
+    redeterminize_official_public_belief_clean_kernel<<<
+        official_blocks(arena->config.batch_size), kOfficialThreads, 0, stream>>>(
+        arena->states,
+        arena->config.batch_size,
+        exact_decks,
+        observer_seats,
+        hidden_membership_seeds,
+        future_rng_seeds,
+        result_codes);
+    return cudaGetLastError();
 }
 
 template <typename DeckT>

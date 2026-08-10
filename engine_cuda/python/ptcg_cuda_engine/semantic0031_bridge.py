@@ -1428,11 +1428,15 @@ def semantic0031_v2_ready_batch(
         raise ValueError("semantic0031 v2 feature attestation must have shape [batch]")
     if feature_schema.dtype != torch.int64:
         raise TypeError("semantic0031 v2 feature schema must be int64")
-    if not bool(feature_schema.eq(SEMANTIC0031_CUDA_FEATURE_SCHEMA_VERSION).all()):
-        raise RuntimeError(
-            "semantic0031 CUDA feature schema mismatch; refusing zero/default fallback"
-        )
-    if not bool(feature_valid.bool().all()):
+    schema_matches = feature_schema.eq(SEMANTIC0031_CUDA_FEATURE_SCHEMA_VERSION)
+    rows_complete = feature_valid.bool()
+    # Keep the success path to one device-to-host attestation sync.  Detailed
+    # classification is only needed after the combined gate has failed.
+    if not bool((schema_matches & rows_complete).all()):
+        if not bool(schema_matches.all()):
+            raise RuntimeError(
+                "semantic0031 CUDA feature schema mismatch; refusing zero/default fallback"
+            )
         raise RuntimeError(
             "semantic0031 CUDA feature codec reported an incomplete row"
         )
@@ -1728,6 +1732,17 @@ class Semantic0031DeviceAdapter:
             memory_key_padding_mask=~state.mask,
         )
         return encoded * batch.option_mask.unsqueeze(-1)
+
+    def encode_options(self, batch: Any, state: Any) -> Any:
+        """Encode options through the cached equivalent of v2 relation tensors.
+
+        The CUDA codec now emits and attests the complete ``option_skill_*`` and
+        ``option_effect_*`` contract.  This production path retains the
+        package-global cache as a semantically equivalent inference
+        optimization; raw tensor parity is validated independently.
+        """
+
+        return self._encode_options(batch, state)
 
     def _inject_static(self, batch: Mapping[str, Any]) -> dict[str, Any]:
         option_mask = batch["option_mask"]

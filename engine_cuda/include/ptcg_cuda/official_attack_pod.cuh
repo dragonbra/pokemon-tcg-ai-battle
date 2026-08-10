@@ -53,7 +53,8 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_after_body(
 
 PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_enter_selected_body(
     OfficialStatePod* state,
-    const OfficialRulePackView& rules);
+    const OfficialRulePackView& rules,
+    bool regular_copy_selection = false);
 
 PTCG_OFFICIAL_ATTACK_HD inline std::uint8_t official_attack_this_turn_flags(
     const OfficialCardStatePod& card) {
@@ -799,7 +800,8 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_prepare_spec
 
 PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_enter_selected_body(
     OfficialStatePod* state,
-    const OfficialRulePackView& rules) {
+    const OfficialRulePackView& rules,
+    bool regular_copy_selection) {
     ++state->turn_attack_count;
     if (state->turn_attack_count > 10000) {
         return official_attack_after_body(state, rules);
@@ -819,7 +821,14 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_attack_enter_select
             return official_attack_after_body(state, rules);
         }
     }
-    return official_attack_prepare_special(state, rules);
+    // A copied attack selected directly from MainSelect already has the
+    // CPU's SelectedAttackId callback on the function stack.  The official
+    // runtime therefore exposes the nested attack choice at the ordinary
+    // Attack boundary (attack_flow_stage == idle), rather than installing
+    // the synthetic CopySelection/AttackEffects/AttackDamage frames used by
+    // a copy choice resumed from a standalone Attack selection.  Preserve
+    // that distinction so CPU/POD continuation stacks remain identical.
+    return official_attack_prepare_special(state, rules, regular_copy_selection);
 }
 
 PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_begin_attack(
@@ -906,7 +915,14 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_begin_attack(
         }
         return prepared;
     }
-    return official_attack_enter_selected_body(state, rules);
+    // This entry point is used only by MainSelect.  The CPU's SelectedAttack
+    // callback remains on the function stack for every main attack, including
+    // attacks whose body exposes a nested copied/deck-top attack choice.  A
+    // nested choice resumed from an existing Attack selection is handled by
+    // official_resume_attack and keeps the staged continuation path.
+    const bool regular_copy_selection = true;
+    return official_attack_enter_selected_body(
+        state, rules, regular_copy_selection);
 }
 
 PTCG_OFFICIAL_ATTACK_HD inline bool official_attack_validate_selection(
@@ -1057,8 +1073,11 @@ PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult official_resume_attack(
 }
 
 // CPU SelectedAttackId resumes a copy attack's nested choice without using
-// the parent CopySelection function frame.  This is observable for an N
-// Zoroark ex copied attack whose selected body has the same id as the source.
+// the parent CopySelection function frame.  If the selected attack is itself
+// a copy/deck-top attack, SpecialAttackProc pushes another SelectedAttackId
+// callback at the same ordinary Attack boundary.  This can recurse (for
+// example Kangaskhan copying another copy attack), so every resume through
+// this function must preserve the regular continuation form.
 PTCG_OFFICIAL_ATTACK_HD inline OfficialAttackResult
 official_resume_regular_attack_selection(
     OfficialStatePod* state,
@@ -1101,7 +1120,8 @@ official_resume_regular_attack_selection(
             state, rules, *attacker, *attack, source_attack_id)) {
         return official_attack_after_body(state, rules);
     }
-    return official_attack_enter_selected_body(state, rules);
+    return official_attack_enter_selected_body(
+        state, rules, true);
 }
 
 }  // namespace ptcg::cuda_engine

@@ -144,6 +144,52 @@ cudaError_t upload_official_states_async(
     cudaMemcpyKind copy_kind,
     cudaStream_t stream);
 
+// Clone selected main-rollout lanes into a separately allocated destination
+// arena. The complete POD (including mt19937 state), resident action/status,
+// and causal semantic history are copied. Semantic pointers are rebound to the
+// destination arena, so counterfactual stepping cannot mutate the source.
+cudaError_t fork_official_lanes_i32_async(
+    const OfficialDeviceArena* source,
+    OfficialDeviceArena* destination,
+    const std::int32_t* source_lane_indices,
+    std::uint32_t lane_count,
+    cudaStream_t stream);
+
+cudaError_t fork_official_lanes_i64_async(
+    const OfficialDeviceArena* source,
+    OfficialDeviceArena* destination,
+    const std::int64_t* source_lane_indices,
+    std::uint32_t lane_count,
+    cudaStream_t stream);
+
+// Privileged-search particle primitive.  It preserves every zone membership
+// and all public state, independently permutes the existing Deck and Prize
+// order for both players, then installs a separate future RNG stream.  It is
+// deliberately not named belief resampling: hidden Hand/Deck/Prize membership
+// is unchanged and callers must record that narrower evidence boundary.
+cudaError_t redeterminize_official_hidden_order_async(
+    OfficialDeviceArena* arena,
+    const std::int64_t* hidden_order_seeds,
+    const std::int64_t* future_rng_seeds,
+    cudaStream_t stream);
+
+// Actor-valid clean-root belief constructor.  It rejects roots carrying any
+// actor-visible identity for a card that is currently in a resampled hidden
+// zone, or known own Deck/Prize membership/order.  For accepted roots it
+// validates the proposed exact decks against all fixed public cards, then
+// resamples the remaining card identities across focal Deck/Prize and opponent
+// Hand/Deck/Prize.  The source arena is never modified; callers invoke this on
+// a forked scratch arena.  result_codes: 1=accepted, 2=invalid observer/root,
+// 3=unsupported visible hidden identity/knowledge, 4=deck inconsistency.
+cudaError_t redeterminize_official_public_belief_clean_i32_async(
+    OfficialDeviceArena* arena,
+    const std::int32_t* exact_decks,
+    const std::int64_t* observer_seats,
+    const std::int64_t* hidden_membership_seeds,
+    const std::int64_t* future_rng_seeds,
+    std::uint8_t* result_codes,
+    cudaStream_t stream);
+
 // Build complete OfficialStatePod lanes directly on the device from 120 card
 // IDs and a seed per lane.  The current setup policy is the frozen official
 // first-min oracle contract; it is deliberately separate from the future

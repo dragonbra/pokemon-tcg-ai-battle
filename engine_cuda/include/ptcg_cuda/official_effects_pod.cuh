@@ -690,6 +690,13 @@ PTCG_OFFICIAL_EFFECT_HD inline void official_effect_move_targets(
     }
 }
 
+PTCG_OFFICIAL_EFFECT_HD inline std::int32_t official_looking_open_type(
+    const OfficialStatePod& state) {
+    return state.looking_player == 2
+        ? 0
+        : static_cast<std::int32_t>(state.looking_player) + 3;
+}
+
 PTCG_OFFICIAL_EFFECT_HD inline bool
 official_effect_move_targets_to_bench(
     OfficialStatePod* state,
@@ -1164,7 +1171,12 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
             state->looking_player = (effect.flags & kEffectOpen) != 0
                 ? 2
                 : state->effect_state.ability.use_player;
-            official_effect_move_targets(state, OfficialArea::kLooking, false, false);
+            official_effect_move_targets(
+                state,
+                OfficialArea::kLooking,
+                false,
+                false,
+                official_looking_open_type(*state));
             break;
         case OfficialEffectTypeId::kToPlayingFirst:
             if (state->targets.count > 0
@@ -1216,9 +1228,7 @@ PTCG_OFFICIAL_EFFECT_HD inline OfficialEffectApplyResult official_apply_effect_p
                     const std::int32_t open_type =
                         type == OfficialEffectTypeId::kLookDeckReverse
                         ? 2
-                        : (state->looking_player == 2
-                            ? 0
-                            : static_cast<std::int32_t>(state->looking_player) + 3);
+                        : official_looking_open_type(*state);
                     official_pod_move_card(
                         state,
                         player,

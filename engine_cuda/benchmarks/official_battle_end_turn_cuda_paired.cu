@@ -81,7 +81,8 @@ BattleReplayStats run_seed_cuda(
                 seed,
                 stats.decisions,
                 &driver,
-                policy == BattleReplayPolicy::kCoverageRandomLegal);
+                policy == BattleReplayPolicy::kCoverageRandomLegal,
+                policy == BattleReplayPolicy::kAttackFirstLegal);
             official_selected = coverage_choice.indices;
             expected_type = coverage_choice.expected_type;
             official_index = official_selected.empty() ? -1 : official_selected.front();
@@ -244,12 +245,32 @@ BattleReplayStats run_seed_cuda(
         }
         if (cpu_status != gpu_status
             || std::memcmp(&pod, &gpu, sizeof(pod)) != 0) {
+            const std::string cpu_gpu_state = first_byte_mismatch(pod, gpu);
             throw std::runtime_error(
                 "CPU POD/CUDA mismatch seed=" + std::to_string(seed)
                 + ".decision=" + std::to_string(stats.decisions)
                 + ".action=" + action_description
                 + ".cpu_status=" + std::to_string(static_cast<int>(cpu_status))
-                + ".gpu_status=" + std::to_string(static_cast<int>(gpu_status)));
+                + ".gpu_status=" + std::to_string(static_cast<int>(gpu_status))
+                + ".cpu_gpu_state_mismatch=" + cpu_gpu_state
+                + ".cpu_attack_stage=" + std::to_string(pod.attack_flow_stage)
+                + ".gpu_attack_stage=" + std::to_string(gpu.attack_flow_stage)
+                + ".cpu_select=" + std::to_string(pod.select_type) + ":"
+                + std::to_string(pod.select_context) + ":"
+                + std::to_string(pod.select_min) + ":"
+                + std::to_string(pod.select_max)
+                + ".gpu_select=" + std::to_string(gpu.select_type) + ":"
+                + std::to_string(gpu.select_context) + ":"
+                + std::to_string(gpu.select_min) + ":"
+                + std::to_string(gpu.select_max)
+                + ".cpu_continuations=" + continuation_sequence(pod)
+                + ".gpu_continuations=" + continuation_sequence(gpu)
+                + ".cpu_effect=" + effect_sequence(pod)
+                + ".gpu_effect=" + effect_sequence(gpu)
+                + ".cpu_current_attack=" + std::to_string(pod.current_attack_id)
+                + ".gpu_current_attack=" + std::to_string(gpu.current_attack_id)
+                + ".cpu_source_attack=" + std::to_string(pod.source_attack_id)
+                + ".gpu_source_attack=" + std::to_string(gpu.source_attack_id));
         }
         const bool terminal = official.state.isFinish();
         if ((terminal && cpu_status != OfficialFlowStatus::kTerminal)
