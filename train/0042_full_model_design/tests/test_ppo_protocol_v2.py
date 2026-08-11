@@ -67,6 +67,9 @@ class PPOProtocolV2Test(unittest.TestCase):
         self.assertEqual(config.epochs, 3)
         self.assertEqual(config.batch_size, 2048)
         self.assertEqual(config.forward_microbatch_size, 1024)
+        self.assertEqual(config.decoder_learning_rate, 5.0e-6)
+        self.assertEqual(config.policy_adapter_learning_rate, 5.0e-6)
+        self.assertEqual(config.allocation_learning_rate, 5.0e-6)
         self.assertEqual(config.actor_learning_rate, 5.0e-6)
         self.assertEqual(config.value_learning_rate, 1.0e-4)
         self.assertEqual(config.clip_ratio, 0.10)
@@ -77,6 +80,33 @@ class PPOProtocolV2Test(unittest.TestCase):
         self.assertEqual(config.behavior_guard_samples, 4096)
         self.assertEqual(config.full_behavior_audit_interval, 10)
         config.validate()
+
+    def test_actor_optimizer_groups_have_independent_explicit_rates(self) -> None:
+        config = ppo.PPOConfig(
+            decoder_learning_rate=1.0e-5,
+            policy_adapter_learning_rate=2.0e-5,
+            allocation_learning_rate=7.5e-6,
+        )
+        self.assertEqual(config.actor_group_learning_rates(), {
+            "action_decoder": 1.0e-5,
+            "policy_strategy_adapter": 2.0e-5,
+            "allocation_head": 7.5e-6,
+        })
+        config.validate()
+
+    def test_strategy_context_zero_rows_are_pre_seat_not_trainable_context(self) -> None:
+        adapters = importlib.import_module(
+            "train.0042_full_model_design.policy.strategy_adapters"
+        )
+        rows, context = adapters.build_defined_strategy_context(
+            relative_first_player=torch.tensor([0, 2, 1]),
+            z_meta=torch.randn(3, 320),
+            meta_logits=torch.randn(3, 15),
+            value=torch.randn(3),
+            own_archetype_id=torch.tensor([1, 1, 1]),
+        )
+        self.assertEqual(rows.tolist(), [1, 2])
+        self.assertIsNotNone(context)
 
     def test_physical_microbatches_preserve_one_logical_weighted_gradient(self) -> None:
         torch.manual_seed(42)

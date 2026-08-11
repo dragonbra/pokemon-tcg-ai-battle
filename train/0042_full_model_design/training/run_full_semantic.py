@@ -39,7 +39,7 @@ from ..rollout import (
 from ..rollout.deck_routing import exact_deck_sha256
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
-from .storage_full_semantic import save_model_only
+from .storage_full_semantic import load_adapted_model_only, save_model_only
 from .metric_frequency import is_sparse_diagnostic_update
 from ..policy_identity import (
     PolicyIdentityViolation,
@@ -83,6 +83,7 @@ FORMAL_VERSION = "V1_ppo_protocol_v2_baseline"
 IMMUTABLE_GATE_C_TRACE_SHA256 = (
     "18c1684a3dc8158494fd9820278a85e60e351b2b274b520bb9fb413b1fa056ca"
 )
+ATTESTED_CPU_CUDA_VALUE_ATOL = 5.0e-6
 SOURCE_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt"
 TRAINING_OPPONENT_POLICY_ID = "Policy-0809"
 OPPONENT_POLICY_ID = TRAINING_OPPONENT_POLICY_ID
@@ -129,6 +130,7 @@ class RunConfig:
     wandb_mode: str = "online"
     launch_formal: bool = False
     resume_update0: bool = False
+    initial_model_checkpoint: str | None = None
     ppo: PPOConfig = PPOConfig()
 
     def validate(self) -> None:
@@ -145,6 +147,8 @@ class RunConfig:
             raise ValueError("updates must be positive when a finite limit is configured")
         if self.resume_update0 and not self.launch_formal:
             raise ValueError("resume_update0 requires the formal launch token")
+        if self.resume_update0 and self.initial_model_checkpoint is not None:
+            raise ValueError("resume_update0 cannot also branch from a checkpoint")
         if self.inference_channels_per_role > self.engines_per_worker:
             raise ValueError(
                 "inference_channels_per_role cannot exceed engines_per_worker"
@@ -931,6 +935,7 @@ def _run_attested_update0_package_parity(
             "--extension-dir", str(CUDA_EXTENSION),
             "--reuse-trace", "--trace", str(trace),
             "--compare-decisions", "283",
+            "--value-atol", str(ATTESTED_CPU_CUDA_VALUE_ATOL),
             "--require-history-wrap", "--strict",
             "--output", str(report_path),
         ],
@@ -1236,7 +1241,11 @@ def run(config: RunConfig) -> dict[str, Any]:
             "contract_id": CANONICAL_CONTRACT_ID,
             "evaluation_seed": 341512806,
             "games": 2048,
-            "schedule_sha256": EXPECTED_007_SCHEDULE_SHA256,
+            "schedule_sha256": (
+                EXPECTED_007_SCHEDULE_SHA256
+                if config.initial_model_checkpoint is None
+                else "identity_bound_at_materialization"
+            ),
             "frequency_unit_games": 256,
             "replicas": 8,
             "reference_report": None,
@@ -1365,6 +1374,20 @@ def run(config: RunConfig) -> dict[str, Any]:
         if not parity["passed"]:
             raise RuntimeError("Policy-0809 runtime parity did not pass")
         trainer = PPOTrainer(model, device=device, config=config.ppo)
+        branch_payload = None
+        branch_checkpoint = None
+        if config.initial_model_checkpoint is not None:
+            branch_checkpoint = Path(config.initial_model_checkpoint)
+            if not branch_checkpoint.is_absolute():
+                branch_checkpoint = ROOT / branch_checkpoint
+            branch_checkpoint = branch_checkpoint.resolve()
+            if not branch_checkpoint.is_file():
+                raise FileNotFoundError(
+                    f"initial model checkpoint does not exist: {branch_checkpoint}"
+                )
+            branch_payload = load_adapted_model_only(model, branch_checkpoint)
+            if model.representation_sha256() != trainer.initial_representation_sha256:
+                raise RuntimeError("branch checkpoint changed frozen Policy-0809 representation")
         trainable_manifest = _trainable_manifest(model, trainer)
         trainable_manifest["optimizer_group_contract"] = trainer.optimizer_group_manifest()
         _atomic_json(
@@ -1393,7 +1416,21 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "canonicalizer_version": CANONICALIZER_VERSION,
                     "trajectory_schema_version": TRAJECTORY_SCHEMA_VERSION,
                     "official_protocol_adapter_version": OFFICIAL_PROTOCOL_ADAPTER_VERSION,
-                    "initialization_contract": "zero_shot_pretrain_common_update0_no_rl_state",
+                    "initialization_contract": (
+                        "fresh_optimizer_branch_from_model_only_checkpoint_"
+                        "with_policy0809_u0_reference"
+                        if branch_payload is not None
+                        else "zero_shot_pretrain_common_update0_no_rl_state"
+                    ),
+                    "branch_source_checkpoint": (
+                        str(branch_checkpoint) if branch_checkpoint is not None else None
+                    ),
+                    "branch_source_checkpoint_sha256": (
+                        _sha256(branch_checkpoint) if branch_checkpoint is not None else None
+                    ),
+                    "branch_source_update": (
+                        int(branch_payload["update"]) if branch_payload is not None else None
+                    ),
                     "option_adaptation": "absent",
                     "strategy_adapter_initialization": "g_V=g_pi=0_normal_residual_mlp",
                 },
@@ -1449,14 +1486,14 @@ def run(config: RunConfig) -> dict[str, Any]:
                     evaluation_opponent._policy_identity_audit.effective_policy_sha256
                 ),
             )
-            if (
+            if (config.initial_model_checkpoint is None and
                 baseline_candidate_audit.effective_candidate_sha256
-                != EXPECTED_007_U0_DEPLOYMENT_SHA256
-            ):
+                != EXPECTED_007_U0_DEPLOYMENT_SHA256):
                 raise RuntimeError(
                     "update-0 deployment-effective candidate is not canonical 007 U0"
                 )
-            if baseline_schedule_sha != EXPECTED_007_SCHEDULE_SHA256:
+            if (config.initial_model_checkpoint is None and
+                    baseline_schedule_sha != EXPECTED_007_SCHEDULE_SHA256):
                 raise RuntimeError("update-0 Frozen schedule is not canonical 007")
             _atomic_json(
                 paths["artifact"] / "schedules/eval_frozen_2048.json",
@@ -1914,6 +1951,9 @@ def main() -> int:
     parser.add_argument("--trajectory-games-per-update", type=int, default=256)
     parser.add_argument("--ppo-minibatch-size", type=int, default=2048)
     parser.add_argument("--ppo-forward-microbatch-size", type=int, default=1024)
+    parser.add_argument("--decoder-lr", type=float, default=5.0e-6)
+    parser.add_argument("--policy-adapter-lr", type=float, default=5.0e-6)
+    parser.add_argument("--allocation-lr", type=float, default=5.0e-6)
     parser.add_argument("--ppo-gradient-accumulation", type=int, default=1)
     parser.add_argument("--ppo-epochs", type=int, default=3)
     parser.add_argument("--eval-every", type=int, default=10)
@@ -1929,6 +1969,7 @@ def main() -> int:
     parser.add_argument("--wandb-mode", choices=("online", "offline"), default="online")
     parser.add_argument("--launch-formal", action="store_true")
     parser.add_argument("--resume-update0", action="store_true")
+    parser.add_argument("--initial-model-checkpoint")
     args = parser.parse_args()
     if args.gate_output is not None:
         report = run_gate(
@@ -1970,6 +2011,7 @@ def main() -> int:
             wandb_mode=args.wandb_mode,
             launch_formal=args.launch_formal,
             resume_update0=args.resume_update0,
+            initial_model_checkpoint=args.initial_model_checkpoint,
             ppo=PPOConfig(
                 gae_lambda=args.gae_lambda,
                 credit_clock=args.credit_clock,
@@ -1978,6 +2020,9 @@ def main() -> int:
                 forward_microbatch_size=args.ppo_forward_microbatch_size,
                 gradient_accumulation=args.ppo_gradient_accumulation,
                 epochs=args.ppo_epochs,
+                decoder_learning_rate=args.decoder_lr,
+                policy_adapter_learning_rate=args.policy_adapter_lr,
+                allocation_learning_rate=args.allocation_lr,
                 meta_anchor_coef=preset(args.preset).meta_anchor_coef,
             ),
         )

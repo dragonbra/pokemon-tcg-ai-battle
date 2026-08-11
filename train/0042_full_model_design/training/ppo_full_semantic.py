@@ -150,7 +150,9 @@ class PPOConfig:
     epochs: int = 3
     batch_size: int = 2048
     forward_microbatch_size: int = 1024
-    actor_learning_rate: float = 5.0e-6
+    decoder_learning_rate: float = 5.0e-6
+    policy_adapter_learning_rate: float = 5.0e-6
+    allocation_learning_rate: float = 5.0e-6
     value_learning_rate: float = 1.0e-4
     prize_learning_rate: float = 1.0e-4
     meta_anchor_coef: float = 0.10
@@ -167,6 +169,18 @@ class PPOConfig:
     behavior_probe_batch_size: int = 512
     full_behavior_audit_interval: int = 10
     gradient_accumulation: int = 1
+
+    @property
+    def actor_learning_rate(self) -> float:
+        """Compatibility summary; actor groups are configured independently."""
+        return self.decoder_learning_rate
+
+    def actor_group_learning_rates(self) -> dict[str, float]:
+        return {
+            "action_decoder": self.decoder_learning_rate,
+            "policy_strategy_adapter": self.policy_adapter_learning_rate,
+            "allocation_head": self.allocation_learning_rate,
+        }
 
     def validate(self) -> None:
         if self.gamma != 1.0:
@@ -198,6 +212,14 @@ class PPOConfig:
             raise ValueError("behavior KL target must be below the hard guard")
         if self.meta_anchor_coef <= 0:
             raise ValueError("0042 meta_anchor_coef must be explicitly positive")
+        if min(
+            self.decoder_learning_rate,
+            self.policy_adapter_learning_rate,
+            self.allocation_learning_rate,
+            self.value_learning_rate,
+            self.prize_learning_rate,
+        ) <= 0:
+            raise ValueError("all PPO optimizer learning rates must be positive")
 
 
 class PPOTrainer:
@@ -229,12 +251,12 @@ class PPOTrainer:
                 {
                     "name": "action_decoder",
                     "params": model.actor.action_decoder.parameters(),
-                    "lr": config.actor_learning_rate,
+                    "lr": config.decoder_learning_rate,
                 },
                 {
                     "name": "policy_strategy_adapter",
                     "params": model.policy_strategy_adapter.parameters(),
-                    "lr": config.actor_learning_rate,
+                    "lr": config.policy_adapter_learning_rate,
                 },
                 {
                     "name": "value_win",
@@ -253,7 +275,7 @@ class PPOTrainer:
                 {
                     "name": "allocation_head",
                     "params": model.allocation_head.parameters(),
-                    "lr": config.actor_learning_rate,
+                    "lr": config.allocation_learning_rate,
                 },
             ]
         if model.prize_aux is not None:
@@ -290,7 +312,7 @@ class PPOTrainer:
             for group in self.optimizer.param_groups
         ]
 
-    def parameter_partition_manifest(self) -> dict[str, dict[str, float | int]]:
+    def parameter_partition_manifest(self) -> dict[str, dict[str, object]]:
         actor_groups = {"action_decoder", "policy_strategy_adapter", "allocation_head"}
         value_groups = {"value_win", "value_adapter", "value_prize"}
         actor_ids = {
@@ -319,7 +341,7 @@ class PPOTrainer:
         return {
             "actor_only": {
                 "parameters": sum(parameter_sizes[item] for item in actor_only),
-                "learning_rate": self.config.actor_learning_rate,
+                "learning_rates": self.config.actor_group_learning_rates(),
             },
             "value_only": {
                 "parameters": sum(parameter_sizes[item] for item in value_only),
@@ -327,7 +349,7 @@ class PPOTrainer:
             },
             "shared_trainable": {
                 "parameters": sum(parameter_sizes[item] for item in shared),
-                "learning_rate": self.config.actor_learning_rate,
+                "learning_rate": self.config.decoder_learning_rate,
             },
         }
 
@@ -394,8 +416,12 @@ class PPOTrainer:
 
     def sparse_gradient_diagnostics(self, batch: PreparedBatch, *, samples: int = 16) -> dict[str, float]:
         """One fixed small graph at scheduled updates; never called per minibatch."""
-        count = min(samples, batch.decisions)
-        indices = torch.arange(count)
+        relative_side = batch.features["global_cat"][:, 2]
+        defined_rows = relative_side.ne(0).nonzero(as_tuple=False).flatten().cpu()
+        count = min(samples, int(defined_rows.numel()))
+        if count < 1:
+            raise ValueError("sparse PPO gradient diagnostic has no post-seat decision")
+        indices = defined_rows[:count]
         features = index_feature_batch(
             batch.features, indices, self.device, batch.feature_widths
         )
@@ -474,6 +500,8 @@ class PPOTrainer:
         probe_count = int(selected_indices.numel())
         weight_sum = 0.0
         kl_sum = 0.0
+        root_kl_sum = macro_kl_sum = 0.0
+        root_weight_sum = macro_weight_sum = 0.0
         clip_sum = 0.0
         entropy_sum = 0.0
         mae_max = 0.0
@@ -511,7 +539,23 @@ class PPOTrainer:
                 log_ratio = current_logprob - old_logprob
                 ratio = log_ratio.exp()
                 weights = batch.episode_weight[indices].to(self.device).float()
-                kl_sum += float((((ratio - 1.0) - log_ratio) * weights).sum())
+                per_row_kl = (ratio - 1.0) - log_ratio
+                kl_sum += float((per_row_kl * weights).sum())
+                micro_macro_mask = torch.tensor(
+                    [batch.macro_actions[int(index)] is not None for index in indices],
+                    device=self.device,
+                    dtype=torch.bool,
+                )
+                if bool((~micro_macro_mask).any()):
+                    root_kl_sum += float(
+                        (per_row_kl[~micro_macro_mask] * weights[~micro_macro_mask]).sum()
+                    )
+                    root_weight_sum += float(weights[~micro_macro_mask].sum())
+                if bool(micro_macro_mask.any()):
+                    macro_kl_sum += float(
+                        (per_row_kl[micro_macro_mask] * weights[micro_macro_mask]).sum()
+                    )
+                    macro_weight_sum += float(weights[micro_macro_mask].sum())
                 clip_sum += float(
                     (((ratio - 1.0).abs() > self.config.clip_ratio).float() * weights).sum()
                 )
@@ -539,6 +583,10 @@ class PPOTrainer:
         root_mask = ~macro_mask
         return {
             "behavior_kl": kl_sum / denominator,
+            "behavior_root_kl": root_kl_sum / max(root_weight_sum, 1.0e-12),
+            "behavior_macro_kl": macro_kl_sum / max(macro_weight_sum, 1.0e-12),
+            "behavior_root_weight_fraction": root_weight_sum / denominator,
+            "behavior_macro_weight_fraction": macro_weight_sum / denominator,
             "clip_fraction": clip_sum / denominator,
             "entropy": entropy_sum / denominator,
             "behavior_logprob_mae_max": mae_max,
@@ -882,12 +930,20 @@ class PPOTrainer:
                 policy_embedding_grad = grad_l2(
                     self.model.policy_strategy_adapter.own_embedding.parameters()
                 )
+                group_gradient_norms = {
+                    str(group["name"]): grad_l2(group["params"])
+                    for group in self.optimizer.param_groups
+                }
                 norm = torch.nn.utils.clip_grad_norm_(
                     [value for value in self.model.parameters() if value.requires_grad],
                     self.config.max_grad_norm,
                 )
                 if not torch.isfinite(norm):
                     raise FloatingPointError("nonfinite full-semantic PPO gradient")
+                clip_scale = min(
+                    1.0,
+                    self.config.max_grad_norm / max(float(norm), 1.0e-12),
+                )
                 self.optimizer.step()
                 self.optimizer.zero_grad(set_to_none=True)
                 optimizer_steps += 1
@@ -935,7 +991,20 @@ class PPOTrainer:
                         item["value_target_sum"] for item in micro_results
                     ]).sum() / count,
                     "gradient_norm": norm,
+                    "gradient_clip_scale": torch.tensor(
+                        clip_scale, device=self.device
+                    ),
                 }
+                for group in self.optimizer.param_groups:
+                    group_name = str(group["name"])
+                    group_norm = group_gradient_norms[group_name]
+                    metrics[f"gradient_group_{group_name}_preclip_l2"] = group_norm
+                    metrics[f"gradient_group_{group_name}_postclip_l2"] = (
+                        group_norm * clip_scale
+                    )
+                    metrics[f"learning_rate_{group_name}"] = torch.tensor(
+                        float(group["lr"]), device=self.device
+                    )
                 metrics["physical_microbatches"] = torch.tensor(
                     float(len(micro_results)), device=self.device
                 )

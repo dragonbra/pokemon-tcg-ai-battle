@@ -21,15 +21,29 @@ class LongRun0042ContractTest(unittest.TestCase):
         self.assertEqual(config.ppo_minibatch_size, 2048)
         self.assertEqual(config.ppo_epochs, 3)
         self.assertEqual(config.eval_every, 10)
-        self.assertEqual(config.ppo.actor_learning_rate, 5.0e-6)
+        self.assertEqual(config.ppo.decoder_learning_rate, 5.0e-6)
+        self.assertEqual(config.ppo.policy_adapter_learning_rate, 5.0e-6)
+        self.assertEqual(config.ppo.allocation_learning_rate, 5.0e-6)
         self.assertEqual(config.ppo.value_learning_rate, 1.0e-4)
         self.assertEqual(config.ppo.prize_learning_rate, 1.0e-4)
 
     def test_optimizer_base_rates_are_not_accelerated(self) -> None:
-        self.assertEqual(PPO.PPOConfig().actor_learning_rate, 5.0e-6)
+        self.assertEqual(PPO.PPOConfig().decoder_learning_rate, 5.0e-6)
+        self.assertEqual(PPO.PPOConfig().policy_adapter_learning_rate, 5.0e-6)
+        self.assertEqual(PPO.PPOConfig().allocation_learning_rate, 5.0e-6)
         self.assertEqual(PPO.PPOConfig().value_learning_rate, 1.0e-4)
         self.assertEqual(PPO.PPOConfig().prize_learning_rate, 1.0e-4)
         self.assertEqual(PPO.PPOConfig().meta_anchor_coef, 0.10)
+
+    def test_fresh_checkpoint_branch_cannot_alias_update0_resume(self) -> None:
+        config = RUNNER.RunConfig(
+            version="V2_checkpoint_branch_test",
+            launch_formal=True,
+            resume_update0=True,
+            initial_model_checkpoint="sealed-u250.pt",
+        )
+        with self.assertRaisesRegex(ValueError, "cannot also branch"):
+            config.validate()
 
     def test_frozen_contract_is_policy0809_identity_bound(self) -> None:
         self.assertEqual(
@@ -50,6 +64,10 @@ class LongRun0042ContractTest(unittest.TestCase):
         self.assertEqual(schedule, FROZEN.EXPECTED_007_SCHEDULE_SHA256)
         self.assertTrue(all(job.focal_won_toss is not None for job in jobs))
         self.assertEqual(len({job.seed for job in jobs}), 2048)
+
+    def test_cpu_cuda_value_parity_tolerance_covers_observed_reduction_jitter(self) -> None:
+        self.assertEqual(RUNNER.ATTESTED_CPU_CUDA_VALUE_ATOL, 5.0e-6)
+        self.assertLess(2.2649765014648438e-6, RUNNER.ATTESTED_CPU_CUDA_VALUE_ATOL)
 
 
 if __name__ == "__main__":

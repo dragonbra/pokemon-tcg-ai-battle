@@ -1,6 +1,6 @@
 # 0042 Strategy-Conditioned Full Model
 
-Status: **PPO Protocol V2 smoke passed; unbounded formal V1 training active**
+Status: **V1 sealed at U250; U250 fresh-optimizer LR branch is in final smoke**
 
 Date: 2026-08-11
 
@@ -96,12 +96,12 @@ Meta logits, Value, and policy logits.
 | PrototypeEncoder | 28,418,560 | 0 | none |
 | StateEncoder, including shared prototypes | 47,115,840 | 0 | none |
 | OptionEncoder, including shared prototypes | 36,627,840 | **0** | none |
-| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder`, `5e-6` |
+| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder`, explicit per-run LR |
 | Value latent decoder and heads | 3,407,389 | 3,397,121 | `value_win`, `1e-4` |
 | MetaHead subset | 5,455 | 0 | none |
 | Value Adapter | 211,441 | 211,441 | `value_adapter`, `1e-4` |
-| Policy Strategy Adapter | 320,241 | 320,241 | `policy_strategy_adapter`, `5e-6` |
-| Allocation head | 621,761 | 621,761 | `allocation_head`, `5e-6` |
+| Policy Strategy Adapter | 320,241 | 320,241 | `policy_strategy_adapter`, explicit per-run LR |
+| Allocation head | 621,761 | 621,761 | `allocation_head`, explicit per-run LR |
 | Prize Value auxiliary | 103,681 | 103,681 | `value_prize`, `1e-4` |
 
 The complete model has 61,016,835 unique Parameters and 5,681,447 trainable Parameters. Weight
@@ -166,7 +166,8 @@ Temporary machine-local evidence:
 
 The formal focal policy is exact deck `007_dragapult_ex`. Training has no update cap. Every update
 collects one complete 256-game frequency unit and retains every valid decision. PPO uses FP32
-AdamW, logical 2,048-decision minibatches, actor LR `5e-6`, Value-only LR `1e-4`, and up to three complete
+AdamW, logical 2,048-decision minibatches, independently explicit decoder/Policy-Adapter/allocation
+LRs, Value-only LR `1e-4`, and up to three complete
 shuffle-without-replacement data epochs. Epoch 2/3 are admitted by a fixed rollout-wide behavior
 KL guard set containing 4,096 shuffled rows plus every compound/macro row, with target/hard guards
 `0.015/0.025`; rollout old logprob, old Value, normalized advantage, and returns stay frozen.
@@ -214,6 +215,16 @@ and failed `dxgkio_make_resident`; it is not the production execution path.
 
 ## 12. Current and next stage
 
-Current stage is the final non-candidate smoke. On a passing smoke, the next stage is the fresh,
-unbounded V1 Protocol V2 W&B run with model-only checkpoint retention and Frozen-0809 CUDA-2048
-at every 10-update milestone. Promotion remains a separate human decision.
+V1 is sealed at model-only U250 (formal Frozen-0809 CUDA-2048: 1,251-797, 61.083984%). A diagnostic
+256-game rollout with 22,719 decisions compared three fresh-optimizer arms on identical data.
+The selected branch uses decoder `2e-5`, Policy Strategy Adapter `4e-5`, allocation `2e-5`, and
+unchanged Value groups `1e-4`; its three-epoch behavior KL was `4.30e-4`, clip fraction `0.253%`,
+and all decisions received exactly 3 optimizer opportunities. The diagnostic artifact is
+`.tmp/evaluation/0042_u250_lr_probe/report.json` and is not promotion evidence.
+
+The branch loads U250 focal weights only after `PPOTrainer` snapshots immutable Policy-0809/U0 as
+the reference-KL policy. It starts a fresh AdamW state and fresh on-policy rollout; it never resets
+the reference anchor to U250 and never imports V1 optimizer/RNG/replay state. After the isolated
+smoke passes, the next version runs without an update cap, retains every model-only checkpoint,
+and performs identity-bound Frozen-0809 CUDA-2048 evaluation every 10 updates. Promotion remains
+a separate human decision.

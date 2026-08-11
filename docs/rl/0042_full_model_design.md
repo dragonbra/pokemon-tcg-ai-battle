@@ -1,6 +1,6 @@
 # 0042 Full Model Design
 
-Status: PPO Protocol V2 preflight and 16-update smoke passed; unbounded formal V1 training is active.
+Status: V1 sealed at U250; a fresh-optimizer U250 LR branch is in final smoke.
 
 从新 clone、环境与 CUDA Engine 准备、preflight、正式 PPO、Frozen-0809 评测到安全停止的
 完整操作流程见 [`0042_full_model_design_operations_manual.md`](0042_full_model_design_operations_manual.md)。
@@ -176,12 +176,12 @@ of which 5,681,447 are trainable.
 | PrototypeEncoder | 28,418,560 | 0 | none | - | - |
 | StateEncoder (includes shared prototypes) | 47,115,840 | 0 | none | - | - |
 | OptionEncoder (includes shared prototypes) | 36,627,840 | 0 | none | - | - |
-| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder` | `5e-6` | 0 |
+| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder` | explicit per run | 0 |
 | Value latent decoder + heads | 3,407,389 | 3,397,121 | `value_win` | `1e-4` | 0 |
 | frozen 15-class MetaHead subset | 5,455 | 0 | none | - | - |
 | Value Adapter / `E_V_own` | 211,441 | 211,441 | `value_adapter` | `1e-4` | 0 |
-| Policy Adapter / `E_pi_own` | 320,241 | 320,241 | `policy_strategy_adapter` | `5e-6` | 0 |
-| allocation head | 621,761 | 621,761 | `allocation_head` | `5e-6` | 0 |
+| Policy Adapter / `E_pi_own` | 320,241 | 320,241 | `policy_strategy_adapter` | explicit per run | 0 |
+| allocation head | 621,761 | 621,761 | `allocation_head` | explicit per run | 0 |
 | Prize Value auxiliary | 103,681 | 103,681 | `value_prize` | `1e-4` | 0 |
 
 No frozen Parameter is held by the optimizer, no Parameter appears in two optimizer groups, and no
@@ -282,7 +282,8 @@ target/hard guards are `0.015/0.025`. Update 1 and every tenth update perform an
 all-decision pre-update old-logprob audit, while intervening updates audit the same guard set.
 Probe rows never count as optimizer samples.
 
-Training is FP32 with AdamW, actor-only LR `5e-6`, Value-only LR `1e-4`, no shared trainable
+Training is FP32 with AdamW, independently configured decoder/Policy-Adapter/allocation LRs,
+Value-only LR `1e-4`, no shared trainable
 parameters, minibatch size 2,048 decisions, clip `0.10`, entropy coefficient `0.003`, Value
 coefficient `0.5`, max grad norm `0.5`, no scheduler, and zero weight decay. Frozen old logprob,
 old Value, normalized advantage, and return targets are computed once per rollout and never
@@ -326,6 +327,13 @@ The post-reset one-update validation completed all 33 logical optimizer steps at
 100% coverage and 3x reuse. PPO peak allocated/reserved memory was 6,783,030,272 / 8,516,534,272
 bytes, compared with about 15.8 GB and `dxgkio_make_resident -12` for the rejected physical
 2,048-row path. Frozen Prototype/State/Option encoders and MetaHead remained bit-identical.
+
+V1 is sealed at U250. The selected fresh branch uses decoder LR `2e-5`, Policy Strategy Adapter LR
+`4e-5`, and allocation LR `2e-5`, while Value groups stay at `1e-4`. This choice came from one
+identical 256-game, 22,719-decision U250 rollout: the selected arm completed all three epochs with
+behavior KL `4.30e-4`, root KL `5.62e-5`, macro KL `2.36e-3`, clip fraction `0.253%`, and no
+meaningful global clipping. U250 model weights are strict-loaded only after the trainer snapshots
+Policy-0809/U0 as the reference-KL policy; optimizer state, RNG state, and rollout data start fresh.
 
 ## 16. Deck pool and diagnostics
 

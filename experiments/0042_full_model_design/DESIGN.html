@@ -37,7 +37,7 @@
 <header><div>
   <h1>0042 · Strategy-Conditioned Full Model</h1>
   <div class="sub">Frozen semantic space · trainable Value understanding · detached policy readout</div>
-  <div class="status">Protocol V2 smoke passed · 267 tests pass · formal V1 training active</div>
+  <div class="status">V1 sealed at U250 · fresh U250 LR branch in final smoke · 278 tests pass</div>
 </div></header>
 <main>
   <section class="metrics">
@@ -53,8 +53,8 @@
       network, and lets policy read q1, Meta probabilities, and adapted Value through an explicit
       stop-gradient Strategy Adapter. Option Q/V LoRA and the dormant 23-class Meta conditioner are
       absent.</p>
-    <p class="note">The completed smoke remains diagnostic only. Formal V1 has completed U0
-      Frozen-0809 CUDA-2048 and PPO update 1; no score triggers promotion automatically.</p>
+    <p class="note">V1 is sealed at U250 (Frozen-0809 CUDA-2048: 1,251-797, 61.083984%).
+      The selected fresh branch remains non-promoted; no score triggers promotion automatically.</p>
   </section>
 
   <section class="band">
@@ -96,10 +96,10 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
         <tr><td>PrototypeEncoder</td><td>28,418,560</td><td>0</td><td>none</td></tr>
         <tr><td>StateEncoder*</td><td>47,115,840</td><td>0</td><td>none</td></tr>
         <tr><td>OptionEncoder*</td><td>36,627,840</td><td><strong>0</strong></td><td>none</td></tr>
-        <tr><td>ActionDecoder</td><td>1,027,202</td><td>1,027,202</td><td><code>action_decoder</code> / 5e-6</td></tr>
+        <tr><td>ActionDecoder</td><td>1,027,202</td><td>1,027,202</td><td><code>action_decoder</code> / explicit per-run LR</td></tr>
         <tr><td>Value network</td><td>3,407,389</td><td>3,397,121</td><td><code>value_win</code> / 1e-4</td></tr>
         <tr><td>Value Adapter</td><td>211,441</td><td>211,441</td><td><code>value_adapter</code> / 1e-4</td></tr>
-        <tr><td>Policy Adapter</td><td>320,241</td><td>320,241</td><td><code>policy_strategy_adapter</code> / 5e-6</td></tr>
+        <tr><td>Policy Adapter</td><td>320,241</td><td>320,241</td><td><code>policy_strategy_adapter</code> / explicit per-run LR</td></tr>
         <tr><td>Allocation / Prize</td><td>725,442</td><td>725,442</td><td>existing groups</td></tr>
       </tbody>
     </table>
@@ -110,7 +110,13 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
     <h2>PPO Protocol V2 and Frozen-0809</h2>
     <p>Exact focal deck <code>007_dragapult_ex</code>; 256 games per update; all valid decisions;
       2,048-decision minibatches; up to three complete shuffled data epochs; target/hard behavior
-      KL guards 0.015/0.025; FP32 AdamW; actor LR 5e-6; Value-only LR 1e-4; no update cap.</p>
+      KL guards 0.015/0.025; FP32 AdamW; independently explicit actor-group LRs; Value-only LR
+      1e-4; no update cap.</p>
+    <p>The U250 identical-rollout diagnostic selected decoder 2e-5, Policy Adapter 4e-5, and
+      allocation 2e-5. Across 22,719 decisions and three epochs it measured behavior KL 4.30e-4,
+      root/macro KL 5.62e-5/2.36e-3, clip fraction 0.253%, and complete 3x reuse. The branch loads
+      U250 focal weights after snapshotting Policy-0809/U0 as the immutable reference-KL policy;
+      AdamW state and rollout data start fresh.</p>
     <p>Each logical 2,048-decision optimizer step uses at most two 1,024-row physical graphs with
       one shared loss denominator, one accumulated gradient, one clip, and one AdamW step. This
       retains 11 logical steps for 21,203 decisions while avoiding the WSL DXG residency failure

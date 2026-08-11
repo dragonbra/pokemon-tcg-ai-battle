@@ -60,6 +60,22 @@
   `meta_head + meta_conditioner` interface and failed before comparing logits. The fixed 283-record
   replay reports zero greedy divergence, package root tolerance failures, and Value sign divergence;
   subprocess failures now preserve diagnostic stdout/stderr in the formal log.
+- Seal V1 at model-only U250 and branch with a fresh optimizer from that immutable checkpoint.
+  Preserve Policy-0809/U0—not U250—as the reference-KL snapshot by constructing the trainer before
+  strict-loading focal U250 weights. Never load V1 optimizer, RNG, replay, or rollout state.
+- Select explicit actor-group LRs from one identical 256-game, 22,719-decision diagnostic:
+  ActionDecoder `2e-5`, Policy Strategy Adapter `4e-5`, allocation head `2e-5`; keep Value groups
+  `1e-4`. The selected arm completed 3x coverage with behavior KL `4.30e-4` and clip fraction
+  `0.253%`; its artifact is diagnostic-only.
+- Split behavior telemetry into root and compound/macro KL, and record each optimizer group's
+  pre/post-clip gradient norm and effective LR. A macro KL larger than aggregate KL must remain
+  visible even when macro rows have lower total weight.
+- Exclude pre-seat context-41 rows (`relative_first_player=0`) from sparse gradient diagnostics;
+  this does not filter PPO training data because stochastic training rollout does not delegate
+  context 41. Keep `0` legal only in the explicit pre-seat runtime path.
+- Set immutable-trace CPU/CUDA Value numeric tolerance to explicit `5e-6`. This covers observed
+  reduction jitter (`1.43e-6` versus `2.265e-6` on repeated identical U250 traces) while retaining
+  zero greedy divergence, root-logit tolerance, package parity, and Value-sign hard gates.
 
 ## Evidence
 

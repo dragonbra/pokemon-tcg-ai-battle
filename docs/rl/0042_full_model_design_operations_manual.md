@@ -2,8 +2,8 @@
 
 **面向读者：**刚 clone 仓库、对 0042 没有上下文的开发 Agent / 运维 Agent  
 **项目 ID：**`0042_full_model_design`  
-**当前正式版本名：**`V1_ppo_protocol_v2_baseline`  
-**当前状态（2026-08-11）：**PPO Protocol V2 preflight 与 16-update non-candidate smoke 已通过；正式 U0 Frozen-0809 CUDA-2048 与 PPO update 1 已完成；无上限正式训练正在运行
+**当前正式版本名：**`V5_u250_faster_actor_lr`
+**当前状态（2026-08-11）：**V1 已封存在 U250；U250 identical-rollout LR probe 与独立 V4 one-update smoke 已通过；V5 从同一 U250 model-only checkpoint、fresh optimizer 和 fresh rollout 启动
 **本手册性质：**操作说明，不取代任何强制合同
 
 ## 0. 先读结论
@@ -579,7 +579,7 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 
 ## 11. 正式训练的特殊配置和行为
 
-### 11.1 Formal V1 固定配置
+### 11.1 当前 U250 fresh branch 固定配置
 
 | 配置 | 值 |
 |---|---:|
@@ -592,7 +592,9 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 | PPO physical forward microbatch | 1,024 decisions（每个 logical step 最多 2 次 forward/backward） |
 | behavior probe chunk | 512 decisions |
 | PPO epochs | 最多 3 |
-| actor LR | `5e-6` |
+| ActionDecoder LR | `2e-5` |
+| Policy Strategy Adapter LR | `4e-5` |
+| allocation head LR | `2e-5` |
 | Value-side LR | `1e-4` |
 | PPO clip | `0.10` |
 | entropy coefficient | `0.003` |
@@ -606,7 +608,9 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 | checkpoint | model-only，每 update 全量保留 |
 | formal update limit | none；人工 stop |
 
-`V1_ppo_protocol_v2_baseline` 的 runner 会拒绝 `--updates`、非 `FULL_MODEL`、非 256 games、非 2,048 minibatch、非 3 epochs 或非 eval-every 10。不要通过换一个 version string 偷渡另一套 V1 语义。
+V5 从 `V1_ppo_protocol_v2_baseline/checkpoint/update-000250.pt` strict-load focal model-only
+权重，但在加载前先以 Policy-0809/U0 建立 immutable reference-KL snapshot。AdamW、RNG、rollout
+和 targets 全部重新开始；不得把 reference 偷换成 U250，也不得加载 V1 optimizer state。
 
 ### 11.2 完整 data epochs 与 KL guard
 
@@ -661,14 +665,15 @@ experiments/0042_full_model_design/evaluation/V1_ppo_protocol_v2_baseline.html
 
 ```bash
 python3 -m train.0042_full_model_design.monitor_training \
-  --version V1_ppo_protocol_v2_baseline \
+  --version V5_u250_faster_actor_lr \
   --first-metrics-grace-seconds 7200 \
   --metrics-stale-seconds 7200 \
   --minimum-free-gib 100 \
   -- \
   env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
   python3 -m train.0042_full_model_design.training.run_full_semantic \
-    --version V1_ppo_protocol_v2_baseline \
+    --version V5_u250_faster_actor_lr \
+    --initial-model-checkpoint rl_runs/0042_full_model_design/versions/V1_ppo_protocol_v2_baseline/checkpoint/update-000250.pt \
     --preset FULL_MODEL \
     --engine-backend accelerated:cuda_resident \
     --games-per-update 256 \
@@ -677,19 +682,22 @@ python3 -m train.0042_full_model_design.monitor_training \
     --rollout-batch-size 256 \
     --ppo-minibatch-size 2048 \
     --ppo-forward-microbatch-size 1024 \
+    --decoder-lr 2e-5 \
+    --policy-adapter-lr 4e-5 \
+    --allocation-lr 2e-5 \
     --ppo-epochs 3 \
     --eval-every 10 \
     --wandb-mode online \
     --launch-formal
 ```
 
-V1 formal run 不传 `--updates`。`--launch-formal` 是显式授权 token；缺少它，runner 会拒绝创建 run。
+V5 formal run 不传 `--updates`。`--launch-formal` 是显式授权 token；缺少它，runner 会拒绝创建 run。
 formal runner 同时会拒绝缺少 `expandable_segments:True` 的 CUDA allocator 配置。
 
 watchdog 输出位于：
 
 ```text
-.tmp/training_monitor/0042_full_model_design/V1_ppo_protocol_v2_baseline/
+.tmp/training_monitor/0042_full_model_design/V5_u250_faster_actor_lr/
   training.log
   heartbeat.json
   alert.json（只有告警时）
@@ -698,7 +706,7 @@ watchdog 输出位于：
 ### 12.3 观察训练
 
 ```bash
-tail -f .tmp/training_monitor/0042_full_model_design/V1_ppo_protocol_v2_baseline/training.log
+tail -f .tmp/training_monitor/0042_full_model_design/V5_u250_faster_actor_lr/training.log
 
 python3 -m train.0042_full_model_design.monitor_training --help
 
@@ -722,7 +730,7 @@ python3 -m train.0042_full_model_design.monitor_training --help
 正式 run 在每个完整 update 结束后检查 stop sentinel。请求安全停止：
 
 ```bash
-touch rl_runs/0042_full_model_design/versions/V1_ppo_protocol_v2_baseline/artifact/STOP_REQUESTED
+touch rl_runs/0042_full_model_design/versions/V5_u250_faster_actor_lr/artifact/STOP_REQUESTED
 ```
 
 不要用 `kill -9` 作为正常停止方式。等待当前 update 完成并确认：
