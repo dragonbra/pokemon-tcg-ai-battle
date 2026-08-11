@@ -42,6 +42,11 @@
   graphs with a shared logical loss denominator and one accumulated optimizer step. Use 512-row
   behavior-probe chunks and expandable CUDA allocator segments. This is a memory-execution detail,
   not a change to data epochs, sample coverage, optimizer-step count, or PPO target semantics.
+- Preserve candidate deployment's stale-module hard gate. The first formal update-0 attempt exposed
+  that the preceding Policy0809 parity loader left its temporary `strategy.*` namespace cached.
+  Fix the parity loader to reject preexisting namespaces and remove only its temporary package
+  modules/path immediately after importing the required runtime types. The failed V1 status remains
+  recorded; resume uses the dedicated update-0 path and reruns the deployment/Frozen baseline.
 
 ## Evidence
 

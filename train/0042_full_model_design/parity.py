@@ -96,12 +96,31 @@ def collect_official_observations(
 
 def _load_evaluated_runtime(candidate_root: Path):
     root = str(candidate_root.resolve())
-    if root not in sys.path:
+    stale = [
+        name for name in sys.modules
+        if name == "strategy" or name.startswith("strategy.")
+    ]
+    if stale:
+        raise RuntimeError(
+            f"runtime parity refuses stale strategy modules: {stale[:3]}"
+        )
+    added_path = root not in sys.path
+    if added_path:
         sys.path.insert(0, root)
-    return (
-        importlib.import_module("strategy.deployment.online_runtime").OnlineCausalEncoder,
-        importlib.import_module("strategy.deployment.inference").PortableSemanticPolicy,
-    )
+    try:
+        encoder_type = importlib.import_module(
+            "strategy.deployment.online_runtime"
+        ).OnlineCausalEncoder
+        policy_type = importlib.import_module(
+            "strategy.deployment.inference"
+        ).PortableSemanticPolicy
+        return encoder_type, policy_type
+    finally:
+        if added_path:
+            sys.path.remove(root)
+        for name in tuple(sys.modules):
+            if name == "strategy" or name.startswith("strategy."):
+                sys.modules.pop(name, None)
 
 
 def _base_actor_state(state: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]:
