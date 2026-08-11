@@ -17,12 +17,15 @@ from .integrated.config import IntegratedFlags
 
 
 INITIALIZATION_SCHEMA = "0042_strategy_conditioned_update0_initialization_v1"
+ALLOCATION_HEAD_SCHEMA = "0042_allocation_head_bc_sidecar_v1"
 UPDATE0_RNG_SEED = 420_042_001
-COMMON_UPDATE0_CHECKPOINT = (
-    Path(__file__).resolve().parents[2]
-    / "rl_runs/0038_action_boundary_rl/versions/V3_update0_chance_boundary_fallback/checkpoint/update-000000.pt"
+ALLOCATION_HEAD_CHECKPOINT = (
+    Path(__file__).resolve().parent / "assets/allocation_head_bc_v1.pt"
 )
-COMMON_UPDATE0_SHA256 = "d572c8673fcf16c39fb17d8d261bec6578885a69c227e579bc4e6f616bb22820"
+ALLOCATION_HEAD_SHA256 = "5d77f0ee9e47c15d9e896649daed71a00bd73e68c36c6eabbd30f3243d30e3c6"
+ALLOCATION_HEAD_SOURCE_SHA256 = (
+    "d572c8673fcf16c39fb17d8d261bec6578885a69c227e579bc4e6f616bb22820"
+)
 NEW_MODULE_MISSING_PREFIX_ALLOWLIST = (
     "allocation_head.", "prize_aux.", "prize_query_head.",
     "value_adapter.", "policy_strategy_adapter.", "tempo_aux_head.",
@@ -99,6 +102,8 @@ def initialization_manifest(config: InitializationConfig = InitializationConfig(
         "checkpoint_hashes": {
             "policy_sha256": ACTOR_SHA256,
             "value_sha256": VALUE_SHA256,
+            "allocation_head_sha256": ALLOCATION_HEAD_SHA256,
+            "allocation_head_source_sha256": ALLOCATION_HEAD_SOURCE_SHA256,
         },
         "base_encoder_source": "Policy-0809 / 0031 V5 GSB epoch-20; exact weights frozen",
         "option_encoder_source": "Policy-0809 / 0031 V5 GSB epoch-20",
@@ -131,39 +136,49 @@ def build_preset_from_common_update0(
 ) -> tuple[SemanticActorCritic, SourceIdentity]:
     """Build paired-0809 core and overlay only the pre-PPO allocation BC head."""
     from .policy.actor_critic import _sha256
-    if _sha256(COMMON_UPDATE0_CHECKPOINT) != COMMON_UPDATE0_SHA256:
-        raise ValueError("0038 allocation BC source checkpoint hash mismatch")
+    if _sha256(ALLOCATION_HEAD_CHECKPOINT) != ALLOCATION_HEAD_SHA256:
+        raise ValueError("0042 allocation-head sidecar hash mismatch")
     model, identity = build_update0_model(
         deck, device=device, integrated_flags=integrated_flags,
         config=InitializationConfig(),
     )
-    payload = torch.load(COMMON_UPDATE0_CHECKPOINT, map_location="cpu", weights_only=True)
+    payload = torch.load(ALLOCATION_HEAD_CHECKPOINT, map_location="cpu", weights_only=True)
+    if set(payload) != {"schema_version", "allocation_head_state_dict", "metadata"}:
+        raise ValueError("allocation-head sidecar top-level inventory mismatch")
+    if payload.get("schema_version") != ALLOCATION_HEAD_SCHEMA:
+        raise ValueError("allocation-head sidecar schema mismatch")
     metadata = payload.get("metadata") or {}
-    if payload.get("update") != 0 or metadata.get("ppo_updates") != 0:
-        raise ValueError("common update-0 must not contain PPO-updated weights")
-    current = model.state_dict()
-    source_state = payload.get("state_dict") or {}
-    state = {
-        name: value for name, value in source_state.items()
-        if name.startswith("allocation_head.")
-    }
-    expected = {name for name in current if name.startswith("allocation_head.")}
-    if set(state) != expected:
-        missing = sorted(expected - set(state))
-        unexpected = sorted(set(state) - expected)
+    if (
+        metadata.get("ppo_updates") != 0
+        or metadata.get("source_checkpoint_sha256") != ALLOCATION_HEAD_SOURCE_SHA256
+        or metadata.get("tensor_prefix_removed") != "allocation_head."
+    ):
+        raise ValueError("allocation-head sidecar provenance mismatch")
+    state = payload.get("allocation_head_state_dict") or {}
+    expected = model.allocation_head.state_dict()
+    if set(state) != set(expected):
+        missing = sorted(set(expected) - set(state))
+        unexpected = sorted(set(state) - set(expected))
         raise ValueError(
             "allocation BC tensor inventory mismatch: "
             f"missing={missing[:8]} unexpected={unexpected[:8]}"
         )
-    with torch.no_grad():
-        for name, value in state.items():
-            current[name].copy_(value.to(current[name].device, current[name].dtype))
+    for name, value in state.items():
+        reference = expected[name]
+        if value.shape != reference.shape or value.dtype != reference.dtype:
+            raise ValueError(
+                f"allocation BC tensor contract mismatch for {name}: "
+                f"got shape={tuple(value.shape)} dtype={value.dtype}; "
+                f"expected shape={tuple(reference.shape)} dtype={reference.dtype}"
+            )
+    model.allocation_head.load_state_dict(state, strict=True, assign=False)
     assert_zero_gate_base(model)
     return model, identity
 
 
 __all__ = [
-    "COMMON_UPDATE0_CHECKPOINT", "COMMON_UPDATE0_SHA256", "INITIALIZATION_SCHEMA",
+    "ALLOCATION_HEAD_CHECKPOINT", "ALLOCATION_HEAD_SCHEMA", "ALLOCATION_HEAD_SHA256",
+    "ALLOCATION_HEAD_SOURCE_SHA256", "INITIALIZATION_SCHEMA",
     "InitializationConfig", "NEW_MODULE_MISSING_PREFIX_ALLOWLIST",
     "UPDATE0_RNG_SEED", "assert_no_rl_checkpoint_source", "assert_only_new_missing_keys",
     "assert_zero_gate_base", "build_preset_from_common_update0", "build_update0_model",

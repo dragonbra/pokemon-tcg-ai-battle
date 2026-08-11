@@ -105,6 +105,12 @@ class RolloutPoolTest(unittest.TestCase):
             chance_before_allocation=False,
         ))
 
+    def test_cpu_chance_boundary_reason_matches_canonical_contract(self) -> None:
+        self.assertEqual(
+            COLLECTOR.CHANCE_BOUNDARY_FALLBACK,
+            "chance_boundary_before_allocation",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

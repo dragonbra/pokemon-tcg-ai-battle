@@ -140,7 +140,10 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual({job.full_round_draw_limit for job in jobs}, {50})
 
     def test_formal_ppo_is_blocked_before_manual_update0_approval(self) -> None:
-        self.assertIn("V3_update0_chance_boundary_fallback", str(full_runner.COMMON_UPDATE0_CHECKPOINT))
+        self.assertEqual(
+            full_runner.ALLOCATION_HEAD_CHECKPOINT.parent,
+            full_runner.ROOT / "train/0042_full_model_design/assets",
+        )
         with self.assertRaisesRegex(RuntimeError, "explicit user approval"):
             full_runner.run(full_runner.RunConfig(updates=1))
 

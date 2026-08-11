@@ -19,7 +19,7 @@ import torch
 from evaluation.reporting.index import write_evaluation_index
 from evaluation.runtime.seeded import build_seeded_runtime
 
-from ..initialization import COMMON_UPDATE0_CHECKPOINT, build_preset_from_common_update0
+from ..initialization import ALLOCATION_HEAD_CHECKPOINT, build_preset_from_common_update0
 from ..integrated.presets import preset
 from ..rollout import FullSemanticRolloutCollector
 from ..training.run_full_semantic import (
@@ -290,8 +290,8 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
             "frozen_panel_version": manifest["frozen_panel_version"],
             "canonical_schedule_sha256": schedule_sha,
             "game_list_sha256": manifest["game_list_sha256"],
-            "checkpoint": str(COMMON_UPDATE0_CHECKPOINT.relative_to(ROOT)),
-            "checkpoint_sha256": _sha256(COMMON_UPDATE0_CHECKPOINT),
+            "allocation_head_checkpoint": str(ALLOCATION_HEAD_CHECKPOINT.relative_to(ROOT)),
+            "allocation_head_checkpoint_sha256": _sha256(ALLOCATION_HEAD_CHECKPOINT),
             "source_policy_checkpoint_sha256": identity.checkpoint_sha256,
             "opponent_policy_id": OPPONENT_POLICY_ID,
             "opponent_effective_policy_sha256": (

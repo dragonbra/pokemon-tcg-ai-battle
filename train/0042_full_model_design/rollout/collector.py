@@ -31,6 +31,9 @@ from ..action_boundary.public_card_features import card_prize_counts, with_publi
 from ..data.allocation_dataset import AllocationBCSample
 
 
+CHANCE_BOUNDARY_FALLBACK = "chance_boundary_before_allocation"
+
+
 def phantom_macro_eligible(
     *, phantom_root: int | None, target_count: int, action_boundary_mode: str,
     chance_before_allocation: bool,
@@ -88,6 +91,7 @@ class FullSemanticRolloutCollector:
         mode: Literal["sample", "greedy"] = "sample",
         coalesce_ms: float = 0.5,
         timeout_seconds: float = 120.0,
+        record_trajectory: bool = True,
     ) -> None:
         if worker_processes is None:
             worker_processes = workers if workers is not None else 8
@@ -107,6 +111,7 @@ class FullSemanticRolloutCollector:
         self.engines_per_worker = engines_per_worker
         self.inference_channels_per_role = inference_channels_per_role
         self.mode = mode
+        self.record_trajectory = bool(record_trajectory)
         self.prizes = card_prize_counts(
             Path(__file__).resolve().parents[1]
             / "semantic_policy/assets/official_full_engine_prototypes_v2.json"
@@ -395,32 +400,33 @@ class FullSemanticRolloutCollector:
             elif (phantom_root is not None and item.job.action_boundary_mode == "enabled"
                   and chance_before_allocation):
                 item.invalid_macro_episode = True
-                item.macro_fallback_reason = "phantom_chance_boundary_before_allocation"
+                item.macro_fallback_reason = CHANCE_BOUNDARY_FALLBACK
             elif (phantom_root is not None and item.job.action_boundary_mode == "enabled"
                   and len(raw_bench) > PHANTOM_DIVE_MAX_TARGETS):
                 item.invalid_macro_episode = True
                 item.macro_fallback_reason = "phantom_target_count_above_v1_limit"
-            item.decisions.append(
-                TrajectoryDecision(
-                    cpu_batch({
-                        name: value[index : index + 1]
-                        for name, value in cpu_features.items()
-                    }),
-                    tuple(action.indices),
-                    bool(action.stopped),
-                    float(action.log_prob) + parameter_log_prob,
-                    float(action.entropy) + parameter_entropy,
-                    float(action.value),
-                    item.job.source_policy_update,
-                    turn, parameter_log_prob, parameter_entropy, macro_action,
-                    int(message.get("selection_index", -1)),
-                    {
-                        name: (float(value[index]) if value.ndim == 1
-                               else value[index].detach().float().cpu().tolist())
-                        for name, value in auxiliary.items()
-                    },
+            if self.record_trajectory:
+                item.decisions.append(
+                    TrajectoryDecision(
+                        cpu_batch({
+                            name: value[index : index + 1]
+                            for name, value in cpu_features.items()
+                        }),
+                        tuple(action.indices),
+                        bool(action.stopped),
+                        float(action.log_prob) + parameter_log_prob,
+                        float(action.entropy) + parameter_entropy,
+                        float(action.value),
+                        item.job.source_policy_update,
+                        turn, parameter_log_prob, parameter_entropy, macro_action,
+                        int(message.get("selection_index", -1)),
+                        {
+                            name: (float(value[index]) if value.ndim == 1
+                                   else value[index].detach().float().cpu().tolist())
+                            for name, value in auxiliary.items()
+                        },
+                    )
                 )
-            )
             routed.append((action, macro_wire, per_request_timing))
         return routed
 

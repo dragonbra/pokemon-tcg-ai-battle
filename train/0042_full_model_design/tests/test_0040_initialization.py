@@ -81,19 +81,47 @@ class Initialization0042Test(unittest.TestCase):
             )
 
         allocation_payload = torch.load(
-            INITIALIZATION.COMMON_UPDATE0_CHECKPOINT,
+            INITIALIZATION.ALLOCATION_HEAD_CHECKPOINT,
             map_location="cpu",
             weights_only=True,
         )
-        expected = {
-            name.removeprefix("allocation_head."): value
-            for name, value in allocation_payload["state_dict"].items()
-            if name.startswith("allocation_head.")
-        }
+        expected = allocation_payload["allocation_head_state_dict"]
         self.assertEqual(set(model.allocation_head.state_dict()), set(expected))
         for name, value in model.allocation_head.state_dict().items():
             torch.testing.assert_close(value, expected[name], rtol=0, atol=0)
         INITIALIZATION.assert_zero_gate_base(model)
+
+    def test_allocation_sidecar_is_project_local_and_allocation_only(self) -> None:
+        self.assertEqual(
+            INITIALIZATION.ALLOCATION_HEAD_CHECKPOINT.parent,
+            PROJECT_ROOT / "assets",
+        )
+        self.assertEqual(
+            sha256(INITIALIZATION.ALLOCATION_HEAD_CHECKPOINT),
+            INITIALIZATION.ALLOCATION_HEAD_SHA256,
+        )
+        payload = torch.load(
+            INITIALIZATION.ALLOCATION_HEAD_CHECKPOINT,
+            map_location="cpu",
+            weights_only=True,
+        )
+        self.assertEqual(
+            set(payload),
+            {"schema_version", "allocation_head_state_dict", "metadata"},
+        )
+        self.assertEqual(payload["metadata"]["ppo_updates"], 0)
+        self.assertEqual(
+            payload["metadata"]["source_checkpoint_sha256"],
+            INITIALIZATION.ALLOCATION_HEAD_SOURCE_SHA256,
+        )
+        self.assertTrue(payload["allocation_head_state_dict"])
+        self.assertFalse(
+            any("action_decoder" in name for name in payload["allocation_head_state_dict"])
+        )
+
+    def test_initialization_has_no_cross_project_run_asset_dependency(self) -> None:
+        source = (PROJECT_ROOT / "initialization.py").read_text(encoding="utf-8")
+        self.assertNotIn("rl_runs/0038_action_boundary_rl", source)
 
     def test_runtime_has_no_numbered_project_import(self) -> None:
         project_root = ROOT / "train/0042_full_model_design"

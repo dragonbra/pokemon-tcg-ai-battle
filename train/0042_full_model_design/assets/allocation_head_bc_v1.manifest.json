@@ -1,0 +1,14 @@
+{
+  "allocation_bc_best_validation_nll": 1.976963418429015,
+  "allocation_bc_dataset_sha256": "6ac49afd87434a36ebdccff87323d7a34f46f04d46d61e18cc56a2c4c04d7546",
+  "file": "allocation_head_bc_v1.pt",
+  "file_sha256": "5d77f0ee9e47c15d9e896649daed71a00bd73e68c36c6eabbd30f3243d30e3c6",
+  "ppo_updates": 0,
+  "schema_version": "0042_allocation_head_bc_sidecar_v1",
+  "source_checkpoint_sha256": "d572c8673fcf16c39fb17d8d261bec6578885a69c227e579bc4e6f616bb22820",
+  "source_project_id": "0038_action_boundary_rl",
+  "source_version": "V3_update0_chance_boundary_fallback",
+  "tensor_content_sha256": "95f2f7f8e363f440039b7fecde2088931ba96857f743d4769aa20a228714ad9d",
+  "tensor_count": 10,
+  "tensor_payload_bytes": 2487044
+}

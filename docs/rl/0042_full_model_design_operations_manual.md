@@ -159,7 +159,7 @@ W&B 失败不能回滚本地指标或 checkpoint，但必须留在 `status.json`
 |---|---|---|
 | Policy-0809 actor | `archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt` | `926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f` |
 | paired V9 Value | `archive/pretrained/0031_friend_0809_gsb_v5_value_v9/value_head.pt` | `f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486` |
-| pre-PPO allocation sidecar | `rl_runs/0038_action_boundary_rl/versions/V3_update0_chance_boundary_fallback/checkpoint/update-000000.pt` | `d572c8673fcf16c39fb17d8d261bec6578885a69c227e579bc4e6f616bb22820` |
+| pre-PPO allocation sidecar | `train/0042_full_model_design/assets/allocation_head_bc_v1.pt` | `5d77f0ee9e47c15d9e896649daed71a00bd73e68c36c6eabbd30f3243d30e3c6` |
 | FP16 portable base package | `archive/submission/0031_zero_shot_0809_007_dragapult_ex_fp16_storage_fp32_runtime/strategy/model.bin` | `3f6683b0d916c72a31f3f487edb597c0cec4aedf529a236a4effacb177de89db` |
 
 核验：
@@ -168,13 +168,33 @@ W&B 失败不能回滚本地指标或 checkpoint，但必须留在 `status.json`
 sha256sum \
   archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt \
   archive/pretrained/0031_friend_0809_gsb_v5_value_v9/value_head.pt \
-  rl_runs/0038_action_boundary_rl/versions/V3_update0_chance_boundary_fallback/checkpoint/update-000000.pt \
+  train/0042_full_model_design/assets/allocation_head_bc_v1.pt \
   archive/submission/0031_zero_shot_0809_007_dragapult_ex_fp16_storage_fp32_runtime/strategy/model.bin
 
 python3 archive/pretrained/0031_friend_0809_gsb_v5_value_v9/verify_archive.py
 ```
 
-allocation sidecar 只提供 update-0 的 `allocation_head.*`。0042 会重新从 immutable actor/value 建模，严格只覆盖 allocation head；它不会加载 0038 的 PPO decoder、optimizer、rollout 或 RNG 状态。
+allocation sidecar 是 Git 跟踪的 0042 自包含资产，只提供 update-0 的十个
+`allocation_head` tensor。0042 会重新从 immutable actor/value 建模，先校验 sidecar
+文件 hash、schema、0038 source provenance、`ppo_updates=0`、tensor inventory、shape 和
+dtype，再严格覆盖 allocation head；它不会加载 0038 的 PPO decoder、optimizer、rollout
+或 RNG 状态。相邻的 `allocation_head_bc_v1.manifest.json` 保存原始 checkpoint、dataset
+和 tensor-content provenance。
+
+从 clean clone 看，资产边界如下：
+
+| 类别 | Git 状态 | 准备方式 |
+|---|---|---|
+| 0042 Python/CUDA 源码、55-deck catalog、regression fixtures、allocation head | 已跟踪 | clone 即有 |
+| Policy-0809 actor/Value 与 FP16 portable base | 有意不进 Git | 从项目模型资产存储同步并校验第 4 节 hash |
+| `_ptcg_cuda.so` | 有意不进 Git | 在目标 Python/PyTorch/CUDA/GPU 环境按第 6.3 节编译 |
+| `official_rules.bin` | 私有派生产物，禁止进 Git | 从 official source/oracle 提取并跑 parity gate |
+| seeded CPU `libcg.so` | 有意不进 Git | `python3 -m evaluation.runtime.seeded` 构建 |
+| Gate C 本机 manifest 与解压 trace | 有意不进 Git | 按第 7 节从已跟踪 gzip fixture 恢复并重新 attest |
+| official card CSV、W&B credentials、run checkpoints | 有意不进 Git | 仅在相应诊断、online logging 或训练时本地提供 |
+
+因此 clean clone 报 “缺 `.so`” 不是漏提交二进制；真正的 Git 边界缺陷曾是 allocation
+head 依赖 ignored 的跨项目 0038 checkpoint，现已由项目本地 sidecar 消除。
 
 ### 4.1 Policy registry 自检
 
@@ -247,7 +267,28 @@ sha256sum .tmp/cuda_0032_rules/official_rules.bin
 
 ### 6.3 编译 PyTorch CUDA extension
 
-先查询 GPU compute capability，再把 `CMAKE_CUDA_ARCHITECTURES` 设置为对应整数。例如当前 RTX 5080 使用 `120`；RTX 3060 使用 `86`。不要在未知硬件上照抄 `120`。
+推荐使用 0042 自己的构建入口。它从当前 PyTorch 环境取得 Torch CMake package，默认
+检测 active GPU compute capability，构建到 runner 审计的固定本机目录，验证 exact
+extension import/ABI，并写出 `0042_build_manifest.json`：
+
+```bash
+python3 -m train.0042_full_model_design.tools.build_cuda_extension
+```
+
+无 active GPU 的编译节点必须显式给 architecture，例如 RTX 3060 为 `86`：
+
+```bash
+python3 -m train.0042_full_model_design.tools.build_cuda_extension \
+  --architecture 86 --jobs 3
+```
+
+该命令只构建 `_ptcg_cuda.so`，不会生成或打包 private `official_rules.bin`。默认 build
+directory 的历史名字包含 `sm120`，但 manifest 中的 `cuda_architecture` 才是本次真实
+编译 architecture；不要仅凭目录名判断 binary compatibility。
+
+手工流程仍可用于排障。先查询 GPU compute capability，再把
+`CMAKE_CUDA_ARCHITECTURES` 设置为对应整数。例如当前 RTX 5080 使用 `120`；RTX 3060
+使用 `86`。不要在未知硬件上照抄 `120`。
 
 ```bash
 python3 -c 'import torch; print(torch.cuda.get_device_name(0), torch.cuda.get_device_capability(0))'

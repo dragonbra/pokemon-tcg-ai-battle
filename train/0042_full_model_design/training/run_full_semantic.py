@@ -59,8 +59,9 @@ from ..evaluation.frozen_jobs import (
 )
 from ..evaluation.frozen_panel import wilson_interval
 from ..initialization import (
-    COMMON_UPDATE0_CHECKPOINT,
-    COMMON_UPDATE0_SHA256,
+    ALLOCATION_HEAD_CHECKPOINT,
+    ALLOCATION_HEAD_SHA256,
+    ALLOCATION_HEAD_SOURCE_SHA256,
     build_preset_from_common_update0,
 )
 from ..integrated.presets import PRESETS, preset
@@ -356,6 +357,7 @@ def build_collector(model, opponent, config: RunConfig, *, mode: str,
         inference_channels_per_role=config.inference_channels_per_role,
         mode=mode,
         coalesce_ms=config.coalesce_ms,
+        record_trajectory=record_trajectory,
     )
 
 
@@ -729,7 +731,8 @@ def _run_static_update0_contract(model, output: Path) -> dict[str, Any]:
         "official_cpu_engine_scheduled": False,
         "source_policy_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
         "source_value_checkpoint": "paired_0809_0036_v9_epoch9_pre_rl",
-        "allocation_bc_source_sha256": COMMON_UPDATE0_SHA256,
+        "allocation_bc_source_sha256": ALLOCATION_HEAD_SOURCE_SHA256,
+        "allocation_head_sidecar_sha256": ALLOCATION_HEAD_SHA256,
         "representation_sha256": model.representation_sha256(),
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
         "followup_gate": "immutable_283_decision_cuda_training_package_parity",
@@ -1149,8 +1152,9 @@ def run(config: RunConfig) -> dict[str, Any]:
         "schema": "0042_ppo_protocol_v2_config_v1",
         "project_id": PROJECT,
         **asdict(config),
-        "initialization_checkpoint": str(COMMON_UPDATE0_CHECKPOINT.relative_to(ROOT)),
-        "initialization_checkpoint_sha256": COMMON_UPDATE0_SHA256,
+        "allocation_head_checkpoint": str(ALLOCATION_HEAD_CHECKPOINT.relative_to(ROOT)),
+        "allocation_head_checkpoint_sha256": ALLOCATION_HEAD_SHA256,
+        "allocation_head_source_checkpoint_sha256": ALLOCATION_HEAD_SOURCE_SHA256,
         "base_source_checkpoint": str(SOURCE_CHECKPOINT.relative_to(ROOT)),
         "base_source_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
         "opponent_policy_id": OPPONENT_POLICY_ID,
@@ -1378,7 +1382,8 @@ def run(config: RunConfig) -> dict[str, Any]:
                     "project": PROJECT,
                     "version": config.version,
                     "source_checkpoint_sha256": identity.checkpoint_sha256,
-                    "allocation_bc_source_sha256": COMMON_UPDATE0_SHA256,
+                    "allocation_bc_source_sha256": ALLOCATION_HEAD_SOURCE_SHA256,
+                    "allocation_head_sidecar_sha256": ALLOCATION_HEAD_SHA256,
                     "integrated_flags": flags.metadata(),
                     "representation_sha256": representation,
                     **source_identity,

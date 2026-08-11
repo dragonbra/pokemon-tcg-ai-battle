@@ -12,6 +12,7 @@ venv/
 *.pth
 *.ckpt
 *.safetensors
+!train/0042_full_model_design/assets/allocation_head_bc_v1.pt
 engine/build/
 data/competition/
 data/raw/episodes/archives/

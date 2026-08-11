@@ -12,7 +12,11 @@ import time
 
 import torch
 
-from .initialization import COMMON_UPDATE0_CHECKPOINT, COMMON_UPDATE0_SHA256, build_preset_from_common_update0
+from .initialization import (
+    ALLOCATION_HEAD_CHECKPOINT,
+    ALLOCATION_HEAD_SHA256,
+    build_preset_from_common_update0,
+)
 from .integrated.presets import preset
 from .rollout.cuda_collector import CudaFullSemanticRolloutCollector
 from .training.run_full_semantic import (
@@ -76,8 +80,8 @@ def main() -> int:
         "primitive_selects": sum(int(episode.diagnostics["engine_selections"]) for episode in episodes),
         "metrics": metrics,
         "initialization": {
-            "checkpoint": str(COMMON_UPDATE0_CHECKPOINT.relative_to(ROOT)),
-            "checkpoint_sha256": COMMON_UPDATE0_SHA256,
+            "allocation_head_checkpoint": str(ALLOCATION_HEAD_CHECKPOINT.relative_to(ROOT)),
+            "allocation_head_checkpoint_sha256": ALLOCATION_HEAD_SHA256,
             "source": asdict(identity),
             "opponent_policy_identity": (
                 opponent._policy_identity_audit.to_manifest()
