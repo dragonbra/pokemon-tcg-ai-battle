@@ -3,7 +3,7 @@
 **面向读者：**刚 clone 仓库、对 0042 没有上下文的开发 Agent / 运维 Agent  
 **项目 ID：**`0042_full_model_design`  
 **当前正式版本名：**`V1_ppo_protocol_v2_baseline`  
-**当前状态（2026-08-11）：**PPO Protocol V2 preflight 已通过；16-update non-candidate smoke 尚在进行；正式训练和正式评测尚未启动  
+**当前状态（2026-08-11）：**PPO Protocol V2 preflight 与 16-update non-candidate smoke 已通过；正式 U0 Frozen-0809 CUDA-2048 与 PPO update 1 已完成；无上限正式训练正在运行
 **本手册性质：**操作说明，不取代任何强制合同
 
 ## 0. 先读结论

@@ -1,6 +1,6 @@
 {
   "project_id": "0042_full_model_design",
-  "status": "preflight_passed_smoke_in_progress",
+  "status": "formal_training_active",
   "date": "2026-08-11",
   "model_schema": "0042_strategy_conditioned_v1",
   "checkpoint_schema": "0042_strategy_conditioned_model_only_v1",
@@ -50,14 +50,33 @@
     "formal_update_limit": null
   },
   "verification": {
-    "unit_tests": 248,
+    "unit_tests": 267,
     "skipped": 1,
     "runtime_audit": ".tmp/strategy_adapter_v2_audit/0042_runtime_audit.json",
     "value_meta_baseline": ".tmp/strategy_adapter_v2_audit/0042_value_meta_baseline.json",
     "protocol_v2_preflight": ".tmp/0042_protocol_v2_preflight/run-20260811-policy0809-final/report.json",
     "candidate_materialization": "PASS",
-    "smoke": ".tmp/0042_smoke_ppo/run-20260811-policy0809-v2-layout6"
+    "smoke": ".tmp/0042_smoke_ppo/run-20260811-protocol-v2-final16-memory-safe/report.json",
+    "formal_u0_frozen": {
+      "games": 2048,
+      "wins": 1204,
+      "losses": 844,
+      "draws": 0,
+      "errors": 0,
+      "win_rate": 0.587890625,
+      "deployment_effective_sha256": "fa12d34716c4f81a0f88ab361e0b28f7978f7fe2a82f68aeb2a62ec7b8739005",
+      "schedule_sha256": "d8760089f480c846c1213421d5155e908966c5a216f8ccbda6b979e37a5a3b3b"
+    },
+    "formal_update_1": {
+      "games": 256,
+      "valid_decisions": 22449,
+      "epochs_completed": 3,
+      "coverage_ratio": 1.0,
+      "reuse_ratio": 3.0,
+      "behavior_kl": 0.00018575959988085297
+    }
   },
-  "training_launched": false,
-  "formal_evaluation_launched": false
+  "training_launched": true,
+  "formal_evaluation_launched": true,
+  "wandb_url": "https://wandb.ai/dragon_bra/pokemon-tcg-policy-learning/runs/0042-v1-ppo-protocol-v2-baseline"
 }

@@ -1,6 +1,6 @@
 # 0042 Full Model Design
 
-Status: PPO Protocol V2 role-compacted preflight passed; 16-update non-candidate smoke is pending.
+Status: PPO Protocol V2 preflight and 16-update smoke passed; unbounded formal V1 training is active.
 
 从新 clone、环境与 CUDA Engine 准备、preflight、正式 PPO、Frozen-0809 评测到安全停止的
 完整操作流程见 [`0042_full_model_design_operations_manual.md`](0042_full_model_design_operations_manual.md)。

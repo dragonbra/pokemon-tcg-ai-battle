@@ -1,6 +1,6 @@
 # 0042 Strategy-Conditioned Full Model
 
-Status: **PPO Protocol V2 preflight passed; non-candidate 16-update smoke in progress**
+Status: **PPO Protocol V2 smoke passed; unbounded formal V1 training active**
 
 Date: 2026-08-11
 
@@ -20,7 +20,8 @@ This document is the authoritative project contract. The onboarding explanation 
 - The 0042 code and real-checkpoint backward tests define the implemented gradient boundary.
 - The 106,307-decision local Value/Meta baseline is post-hoc evidence from a non-original catalog;
   it is not formal strength or model-selection evidence.
-- No PPO update, W&B run, candidate promotion, or formal Frozen evaluation was performed here.
+- The non-candidate 16-update smoke passed. Formal V1 completed its U0 Frozen-0809 CUDA-2048
+  baseline and PPO update 1; no candidate has been promoted and promotion remains human-only.
 
 ## 3. Immutable sources
 

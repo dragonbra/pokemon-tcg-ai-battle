@@ -37,7 +37,7 @@
 <header><div>
   <h1>0042 · Strategy-Conditioned Full Model</h1>
   <div class="sub">Frozen semantic space · trainable Value understanding · detached policy readout</div>
-  <div class="status">Protocol V2 preflight passed · 248 tests pass · smoke in progress</div>
+  <div class="status">Protocol V2 smoke passed · 267 tests pass · formal V1 training active</div>
 </div></header>
 <main>
   <section class="metrics">
@@ -53,8 +53,8 @@
       network, and lets policy read q1, Meta probabilities, and adapted Value through an explicit
       stop-gradient Strategy Adapter. Option Q/V LoRA and the dormant 23-class Meta conditioner are
       absent.</p>
-    <p class="note">The active smoke is diagnostic only. It cannot create a candidate, formal
-      score, promotion action, or reusable partial checkpoint.</p>
+    <p class="note">The completed smoke remains diagnostic only. Formal V1 has completed U0
+      Frozen-0809 CUDA-2048 and PPO update 1; no score triggers promotion automatically.</p>
   </section>
 
   <section class="band">
@@ -184,9 +184,9 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
     <h2>Source and next stage</h2>
     <p>Actor SHA-256: <code>926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f</code><br>
       Value SHA-256: <code>f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486</code></p>
-    <p>The current stage is the final 16-update non-candidate smoke. A passing result authorizes the
-      fresh unbounded V1 Protocol V2 W&amp;B run with model-only checkpoints and Frozen-0809
-      CUDA-2048 every 10 updates.</p>
+    <p>The unbounded V1 Protocol V2 W&amp;B run is active after a passing smoke, U0 Frozen-0809
+      CUDA-2048, and PPO update 1. Model-only checkpoints are retained and Frozen-0809 CUDA-2048
+      remains scheduled every 10 updates.</p>
     <p><a href="../../docs/rl/0042_full_model_design.md">Read the complete onboarding document</a></p>
   </section>
 </main>
