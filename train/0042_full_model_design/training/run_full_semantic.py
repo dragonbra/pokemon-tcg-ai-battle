@@ -1335,6 +1335,7 @@ def run(config: RunConfig) -> dict[str, Any]:
         _atomic_json(previous_config_path, config_payload)
         _merge_status(paths["artifact"] / "status.json", {
             "state": "resuming_update0",
+            "error": None,
             "resume_reason": "interrupted test-triggered baseline before PPO update 1",
             "resume_time": time.time(),
             "run_duration_mode": "manual_stop" if config.updates is None else "finite_updates",
@@ -1396,6 +1397,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             paths["artifact"] / "status.json",
             {
                 "state": "running",
+                "error": None,
                 "pid": os.getpid(),
                 "checkpoint_update": 0,
                 "rollout_source_policy_update": 0,
