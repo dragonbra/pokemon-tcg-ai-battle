@@ -917,7 +917,7 @@ def _run_attested_update0_package_parity(
         or sum(bool(line.strip()) for line in trace.read_text(encoding="utf-8").splitlines()) != 283
     ):
         raise RuntimeError("immutable 283-decision Gate C trace identity mismatch")
-    subprocess.run(
+    completed = subprocess.run(
         [
             sys.executable,
             str(ROOT / "engine_cuda/tools/run_official_semantic0031_v2_parity_scaffold.py"),
@@ -932,10 +932,17 @@ def _run_attested_update0_package_parity(
             "--output", str(report_path),
         ],
         cwd=ROOT,
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
     )
+    if completed.returncode:
+        raise RuntimeError(
+            "attested U0 package parity subprocess failed: "
+            f"returncode={completed.returncode}\n"
+            f"stdout_tail={completed.stdout[-4000:]}\n"
+            f"stderr_tail={completed.stderr[-4000:]}"
+        )
     report = json.loads(report_path.read_text(encoding="utf-8"))
     if not _attested_package_parity_passed(report):
         raise RuntimeError("attested U0 CUDA/package fixed-snapshot parity failed")

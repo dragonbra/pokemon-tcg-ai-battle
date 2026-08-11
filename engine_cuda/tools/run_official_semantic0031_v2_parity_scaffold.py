@@ -10,6 +10,7 @@ import sys
 from collections import Counter, defaultdict
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 
@@ -522,9 +523,71 @@ def load_compound_policy(package_root: Path, deck: Sequence[int], device: Any) -
     policy.actor.to(device).eval()
     policy.value_head.to(device).eval()
     policy.allocation_head.to(device).eval()
-    policy.meta_head.to(device).eval()
-    policy.meta_conditioner.to(device).eval()
+    if hasattr(policy, "policy_strategy_adapter"):
+        policy.value_adapter.to(device).eval()
+        policy.policy_strategy_adapter.to(device).eval()
+    else:
+        policy.meta_head.to(device).eval()
+        policy.meta_conditioner.to(device).eval()
     return policy
+
+
+def decode_strategy_conditioned(policy: Any, mapping: Mapping[str, Any]):
+    """Decode the real 0042 Value-to-Policy path for parity comparisons."""
+
+    import torch
+
+    validated, state, options, value, _, context = policy.encode_with_strategy(mapping)
+    decoder = policy.actor.action_decoder
+
+    def logits(decoder_state):
+        readout, _ = policy.policy_strategy_adapter(decoder_state.hidden, context)
+        return decoder.logits(
+            validated, options, decoder_state, readout_hidden=readout
+        )
+
+    decoder_state = decoder.initialize(validated, state.summary)
+    root_logits = logits(decoder_state)
+    maximum_steps = min(
+        decoder.config.max_action_steps,
+        validated.option_count,
+        int(validated.max_count.max()),
+    )
+    sequences = torch.full(
+        (validated.batch_size, maximum_steps), -1,
+        dtype=torch.long, device=options.device,
+    )
+    lengths = torch.zeros(
+        validated.batch_size, dtype=torch.long, device=options.device
+    )
+    legal = torch.ones(
+        validated.batch_size, dtype=torch.bool, device=options.device
+    )
+    active = torch.ones_like(legal)
+    for step in range(maximum_steps):
+        choice = logits(decoder_state).argmax(dim=1)
+        chose_stop = choice.eq(validated.option_count)
+        selecting = active & ~chose_stop
+        legal &= ~(active & chose_stop & lengths.lt(validated.min_count))
+        active &= ~chose_stop
+        if not bool(selecting.any()):
+            break
+        chosen = choice.clamp_max(validated.option_count - 1)
+        sequences[selecting, step] = chosen[selecting]
+        decoder_state = decoder.consume(
+            options, decoder_state, torch.where(selecting, chosen, -1)
+        )
+        lengths += selecting.long()
+        active &= ~lengths.ge(validated.max_count)
+    legal &= lengths.ge(validated.min_count) & lengths.le(validated.max_count)
+    return (
+        validated,
+        state,
+        options,
+        root_logits,
+        SimpleNamespace(sequences=sequences, lengths=lengths, legal=legal),
+        value,
+    )
 
 
 def compare_compound_model_chunks(
@@ -558,6 +621,11 @@ def compare_compound_model_chunks(
     decisions = 0
 
     def decode(mapping: Mapping[str, Any]) -> tuple[Any, Any, Any]:
+        if hasattr(policy, "policy_strategy_adapter"):
+            _, state, _, root_logits, greedy, _ = decode_strategy_conditioned(
+                policy, mapping
+            )
+            return root_logits, greedy, state.summary
         validated, state, options = actor.encode(mapping)
         meta_logits = policy.meta_head(state.summary)
         summary = policy.meta_conditioner(state.summary, meta_logits)
@@ -709,11 +777,21 @@ def load_training_actor_critic(
     )
     source = importlib.import_module(f"{training_project}.source")
     payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    adaptation_payload = payload["adaptation"]
+    strategy_conditioned_adaptation = {
+        "no_option_lora": True,
+        "value_adapter": "zero_gated_residual",
+        "policy_strategy_adapter": "readout_only_zero_gated_residual",
+    }
+    if adaptation_payload == strategy_conditioned_adaptation:
+        adaptation = adaptation_module.AdaptationConfig()
+    else:
+        adaptation = adaptation_module.AdaptationConfig(**adaptation_payload)
     model, _ = actor_critic.load_actor_critic(
         source.ACTOR_CHECKPOINT,
         tuple(int(card) for card in deck),
         device,
-        adaptation=adaptation_module.AdaptationConfig(**payload["adaptation"]),
+        adaptation=adaptation,
         integrated_flags=integrated_module.IntegratedFlags(
             **payload["integrated_flags"]
         ),
@@ -849,6 +927,8 @@ def compare_training_to_package_chunks(
     dragapult = importlib.import_module("strategy.action_boundary.dragapult")
 
     def decode_package(mapping):
+        if hasattr(package_policy, "policy_strategy_adapter"):
+            return decode_strategy_conditioned(package_policy, mapping)
         validated, state, options = package_actor.encode(mapping)
         meta_logits = package_policy.meta_head(state.summary)
         summary = package_policy.meta_conditioner(state.summary, meta_logits)
@@ -859,6 +939,8 @@ def compare_training_to_package_chunks(
         return validated, state, options, logits, greedy, value
 
     def decode_training(mapping):
+        if hasattr(training_model, "policy_strategy_adapter"):
+            return decode_strategy_conditioned(training_model, mapping)
         validated, state, options = training_model.actor.encode(mapping)
         summary = training_model.actor_summary(state)
         decoder = training_model.actor.action_decoder.initialize(validated, summary)

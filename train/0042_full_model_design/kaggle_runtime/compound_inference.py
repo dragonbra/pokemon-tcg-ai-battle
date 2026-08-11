@@ -212,16 +212,41 @@ class PortableCompoundSemanticPolicy:
 
     def value_from_encoded(self, validated, state, options):
         """Expose the same adapted q0 Value used to build strategy context."""
+        value, _ = self.value_and_aux_from_encoded(validated, state, options)
+        return value
+
+    def value_and_aux_from_encoded(self, validated, state, options):
+        """Expose q0/q1 tensors for deployment-parity diagnostics."""
         memory = torch.cat((state.tokens, options), dim=1)
         memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
         queries = self.value_head.decode(memory, memory_mask)
+        z_meta = queries[:, 1]
+        meta_logits = self.value_head.heads.archetype(z_meta)
         own_id = torch.full(
             (queries.shape[0],), int(self.metadata["own_archetype_id"]),
             dtype=torch.long, device=queries.device,
         )
         value_query, _ = self.value_adapter(queries[:, 0], own_id)
         logit = self.value_head.heads.value(value_query).squeeze(-1)
-        return 2.0 * logit.sigmoid() - 1.0
+        value = 2.0 * logit.sigmoid() - 1.0
+        return value, {
+            "z_meta": z_meta,
+            "meta_logits": meta_logits,
+            "own_archetype_id": own_id,
+        }
+
+    def encode_with_strategy(self, features):
+        """Mirror the training actor-critic boundary for parity tooling."""
+        validated, state, options = self.actor.encode(features)
+        value, auxiliary = self.value_and_aux_from_encoded(validated, state, options)
+        context = StrategyContext.build(
+            validated.global_cat[:, 2],
+            auxiliary["z_meta"],
+            auxiliary["meta_logits"],
+            value,
+            auxiliary["own_archetype_id"],
+        )
+        return validated, state, options, value, auxiliary, context
 
     def _greedy_strategy(self, validated, state, options, context):
         decoder = self.actor.action_decoder

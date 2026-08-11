@@ -703,7 +703,7 @@ training_metrics.jsonl 最后一行完整
 
 ### 13.1 正式 CUDA-2048
 
-formal runner 在 update 0 和每 10 updates 自动使用同一个 candidate materializer、Policy-0809 resolver、hard gate 和 Frozen schedule。权威逐局结果位于：
+formal runner 在 update 0 和每 10 updates 自动使用同一个 candidate materializer、Policy-0809 resolver、hard gate 和 Frozen schedule。Update 0 的 package parity 必须执行真实 0042 Value/Meta/Strategy Adapter 路径；旧 0038 `meta_head + meta_conditioner` 接口不能作为替代。权威逐局结果位于：
 
 ```text
 rl_runs/0042_full_model_design/versions/<version>/artifact/frozen_results/

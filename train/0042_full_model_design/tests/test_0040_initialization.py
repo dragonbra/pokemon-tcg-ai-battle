@@ -34,6 +34,9 @@ class Initialization0042Test(unittest.TestCase):
         self.assertIn('"--training-project", f"train.{PROJECT}"', runner_source)
         self.assertIn('"--training-project"', scaffold_source)
         self.assertIn("training_project: str", scaffold_source)
+        self.assertIn("def decode_strategy_conditioned", scaffold_source)
+        self.assertIn('hasattr(policy, "policy_strategy_adapter")', scaffold_source)
+        self.assertIn('"no_option_lora": True', scaffold_source)
 
     def test_sources_are_the_strict_paired_0809_checkpoints(self) -> None:
         self.assertEqual(

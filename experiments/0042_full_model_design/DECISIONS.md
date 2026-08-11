@@ -54,6 +54,12 @@
   the same deterministic U0 tensors acquired a new source checkpoint hash. U0 now hard-pins the
   corrected effective identity and its derived 007/Full0809 CUDA-2048 schedule; later checkpoints
   derive their own identity-bound schedule instead of being compared to the U0 schedule.
+- Make the immutable-trace CUDA/package parity scaffold execute the real 0042 path
+  (`q0/q1 -> frozen MetaHead -> adapted V -> Strategy Context -> Policy Adapter`) when the package
+  declares Strategy Adapter modules. The earlier scaffold only knew the historical 0038
+  `meta_head + meta_conditioner` interface and failed before comparing logits. The fixed 283-record
+  replay reports zero greedy divergence, package root tolerance failures, and Value sign divergence;
+  subprocess failures now preserve diagnostic stdout/stderr in the formal log.
 
 ## Evidence
 
