@@ -66,6 +66,7 @@ class PPOProtocolV2Test(unittest.TestCase):
         self.assertEqual(config.protocol_version, "ppo_protocol_v2")
         self.assertEqual(config.epochs, 3)
         self.assertEqual(config.batch_size, 2048)
+        self.assertEqual(config.forward_microbatch_size, 1024)
         self.assertEqual(config.actor_learning_rate, 5.0e-6)
         self.assertEqual(config.value_learning_rate, 1.0e-4)
         self.assertEqual(config.clip_ratio, 0.10)
@@ -76,6 +77,31 @@ class PPOProtocolV2Test(unittest.TestCase):
         self.assertEqual(config.behavior_guard_samples, 4096)
         self.assertEqual(config.full_behavior_audit_interval, 10)
         config.validate()
+
+    def test_physical_microbatches_preserve_one_logical_weighted_gradient(self) -> None:
+        torch.manual_seed(42)
+        inputs = torch.randn(2_048, 7)
+        targets = torch.randn(2_048)
+        weights = torch.linspace(0.5, 1.5, 2_048)
+        full = torch.nn.Linear(7, 1)
+        split = torch.nn.Linear(7, 1)
+        split.load_state_dict(full.state_dict())
+        full_loss = (
+            (full(inputs).squeeze(-1) - targets).square() * weights
+        ).sum() / weights.sum()
+        full_loss.backward()
+        order = torch.arange(2_048)
+        logical_weight_sum = weights.sum()
+        physical = ppo.epoch_minibatches(order, 1_024)
+        self.assertEqual([len(item) for item in physical], [1_024, 1_024])
+        for indices in physical:
+            loss = (
+                (split(inputs[indices]).squeeze(-1) - targets[indices]).square()
+                * weights[indices]
+            ).sum() / logical_weight_sum
+            loss.backward()
+        for actual, expected in zip(split.parameters(), full.parameters()):
+            torch.testing.assert_close(actual.grad, expected.grad, rtol=2e-6, atol=2e-7)
 
     def test_complete_epoch_batches_cover_once_and_keep_tail(self) -> None:
         generator = torch.Generator().manual_seed(420042)

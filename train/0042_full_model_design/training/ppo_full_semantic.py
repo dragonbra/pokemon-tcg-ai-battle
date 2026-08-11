@@ -149,6 +149,7 @@ class PPOConfig:
     loss_weighting: str = "episode_equal_decisions"
     epochs: int = 3
     batch_size: int = 2048
+    forward_microbatch_size: int = 1024
     actor_learning_rate: float = 5.0e-6
     value_learning_rate: float = 1.0e-4
     prize_learning_rate: float = 1.0e-4
@@ -163,6 +164,7 @@ class PPOConfig:
     max_grad_norm: float = 0.5
     behavior_logprob_mae_limit: float = 1.0e-4
     behavior_guard_samples: int = 4096
+    behavior_probe_batch_size: int = 512
     full_behavior_audit_interval: int = 10
     gradient_accumulation: int = 1
 
@@ -183,7 +185,9 @@ class PPOConfig:
         if min(
             self.epochs,
             self.batch_size,
+            self.forward_microbatch_size,
             self.behavior_guard_samples,
+            self.behavior_probe_batch_size,
             self.full_behavior_audit_interval,
             self.gradient_accumulation,
         ) < 1:
@@ -477,9 +481,12 @@ class PPOTrainer:
         absolute_errors = torch.empty(probe_count, dtype=torch.float32)
         self.model.eval()
         with torch.no_grad():
-            for start in range(0, probe_count, self.config.batch_size):
+            probe_batch_size = min(
+                self.config.batch_size, self.config.behavior_probe_batch_size
+            )
+            for start in range(0, probe_count, probe_batch_size):
                 positions = torch.arange(
-                    start, min(start + self.config.batch_size, probe_count)
+                    start, min(start + probe_batch_size, probe_count)
                 )
                 indices = selected_indices.index_select(0, positions)
                 features = index_feature_batch(
@@ -589,6 +596,164 @@ class PPOTrainer:
             old = batch.rollout_log_prob[indices].to(self.device)
             return float((current - old).abs().max())
 
+    def _backward_microbatch(
+        self,
+        batch: PreparedBatch,
+        indices: torch.Tensor,
+        *,
+        logical_weight_sum: torch.Tensor,
+    ) -> dict[str, object]:
+        """Accumulate one physical graph toward one logical PPO optimizer step."""
+        features = index_feature_batch(
+            batch.features, indices, self.device, batch.feature_widths
+        )
+        sequences = batch.sequences[indices].to(self.device)
+        lengths = batch.lengths[indices].to(self.device)
+        stopped = batch.stopped[indices].to(self.device)
+        rollout_log_prob = batch.rollout_log_prob[indices].to(self.device)
+        advantage = batch.advantage[indices].to(self.device)
+        if self.model.integrated_flags.enable_prize_aux:
+            advantage = advantage + (
+                self.model.integrated_flags.prize_aux_actor_weight
+                * batch.prize_advantage[indices].to(self.device)
+            )
+        returns = batch.gae_return[indices].to(self.device)
+        weights = batch.episode_weight[indices].to(self.device) / logical_weight_sum
+        validated, state, options = self.model.actor.encode(features)
+        current_value, auxiliary = self.model.value_and_aux_from_encoded(
+            validated, state, options
+        )
+        context = self.model.strategy_context(validated, current_value, auxiliary)
+        diagnostic_state = self.model.actor.action_decoder.initialize(
+            validated, self.model.actor_summary(state)
+        )
+        _, policy_delta = self.model.policy_strategy_adapter(
+            diagnostic_state.hidden, context
+        )
+        policy_residual_ratio = (
+            self.model.policy_strategy_adapter.effective_residual_ratio(
+                diagnostic_state.hidden, policy_delta
+            )
+        )
+        with torch.no_grad():
+            reference_eval = evaluate_actions_encoded(
+                self.reference, validated, self.model.actor_summary(state), options,
+                sequences, lengths, stopped, torch.zeros_like(returns), context,
+            )
+        evaluated = evaluate_actions_encoded(
+            self.model.head, validated, self.model.actor_summary(state), options,
+            sequences, lengths, stopped, current_value, context,
+        )
+        parameter_logprob, parameter_entropy = evaluate_parameter_actions(
+            self.model, validated, state, options,
+            tuple(batch.macro_actions[int(index)] for index in indices),
+        )
+        current_joint_logprob = evaluated.log_prob + parameter_logprob
+        log_ratio = current_joint_logprob - rollout_log_prob
+        ratio = log_ratio.exp()
+        approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
+        unclipped = ratio * advantage
+        clipped = ratio.clamp(
+            1.0 - self.config.clip_ratio, 1.0 + self.config.clip_ratio
+        ) * advantage
+        policy_loss = -(torch.minimum(unclipped, clipped) * weights).sum()
+        value_loss = ((evaluated.value - returns).square() * weights).sum()
+        root_entropy = (evaluated.entropy * weights).sum()
+        allocation_entropy = (parameter_entropy * weights).sum()
+        entropy = root_entropy + allocation_entropy
+        reference_delta = evaluated.log_prob - reference_eval.log_prob
+        reference_kl = (0.5 * reference_delta.square() * weights).sum()
+        prize_value_loss = current_value.new_zeros(())
+        if self.model.integrated_flags.enable_prize_aux:
+            prize_value_loss = (
+                (auxiliary["v_prize"] - batch.prize_return[indices].to(self.device)).square()
+                * weights
+            ).sum()
+        labels = batch.opponent_meta_label[indices].to(self.device)
+        per_row_meta = torch.nn.functional.cross_entropy(
+            auxiliary["meta_logits"], labels, reduction="none"
+        )
+        opponent_meta_loss = (per_row_meta * weights).sum()
+        registry = LossRegistry()
+        registry.register(LossTerm("L_policy_win", policy_loss, 1.0, "actor"))
+        registry.register(LossTerm(
+            "L_value_win", value_loss, self.config.value_coefficient, "value_win"
+        ))
+        registry.register(LossTerm(
+            "L_value_prize", prize_value_loss,
+            self.model.integrated_flags.prize_value_loss_weight, "value_prize",
+            self.model.integrated_flags.enable_prize_aux,
+        ))
+        registry.register(LossTerm(
+            "L_meta_anchor", opponent_meta_loss,
+            self.config.meta_anchor_coef, "value_win",
+        ))
+        registry.register(LossTerm(
+            "L_entropy_root", -root_entropy,
+            self.config.entropy_coefficient, "actor",
+        ))
+        registry.register(LossTerm(
+            "L_entropy_allocation", -allocation_entropy,
+            self.config.entropy_coefficient, "allocation",
+        ))
+        registry.register(LossTerm(
+            "L_reference_kl", reference_kl,
+            self.config.reference_kl_coefficient, "actor",
+        ))
+        total_loss = registry.total()
+        if not torch.isfinite(total_loss):
+            raise FloatingPointError("nonfinite full-semantic PPO loss")
+        total_loss.backward()
+        value_ratio = auxiliary["value_adapter_residual_ratio"].detach().float()
+        policy_ratio = policy_residual_ratio.detach().float()
+        detached_ratio = ratio.detach().float()
+        scalars = {
+            "policy_loss": policy_loss.detach(),
+            "value_loss": value_loss.detach(),
+            "v_prize_loss": prize_value_loss.detach(),
+            "opponent_meta_loss": opponent_meta_loss.detach(),
+            "opponent_meta_accuracy": (
+                auxiliary["meta_logits"].argmax(dim=-1).eq(labels).float() * weights
+            ).sum().detach(),
+            "opponent_meta_entropy": (
+                torch.distributions.Categorical(
+                    logits=auxiliary["meta_logits"].float()
+                ).entropy() * weights
+            ).sum().detach(),
+            "value_adapter_residual_ratio": (value_ratio * weights).sum(),
+            "policy_adapter_residual_ratio": (policy_ratio * weights).sum(),
+            "entropy": entropy.detach(),
+            "entropy_weighted_contribution": (
+                -self.config.entropy_coefficient * entropy
+            ).detach(),
+            "root_entropy": root_entropy.detach(),
+            "allocation_entropy": allocation_entropy.detach(),
+            "total_loss": total_loss.detach(),
+            "behavior_kl": approximate_kl.detach(),
+            "reference_kl": reference_kl.detach(),
+            "reference_kl_weighted_contribution": (
+                self.config.reference_kl_coefficient * reference_kl
+            ).detach(),
+            "value_loss_weighted_contribution": (
+                self.config.value_coefficient * value_loss
+            ).detach(),
+            "meta_anchor_raw": opponent_meta_loss.detach(),
+            "meta_anchor_weighted_contribution": (
+                self.config.meta_anchor_coef * opponent_meta_loss
+            ).detach(),
+            "clip_fraction": (
+                ((ratio - 1.0).abs() > self.config.clip_ratio).float() * weights
+            ).sum().detach(),
+        }
+        return {
+            "scalars": scalars,
+            "ratio": detached_ratio,
+            "value_ratio": value_ratio,
+            "policy_ratio": policy_ratio,
+            "value_prediction_sum": evaluated.value.detach().sum(),
+            "value_target_sum": returns.detach().sum(),
+        }
+
     def update(self, batch: PreparedBatch, *, update: int = 0) -> dict[str, float]:
         if batch.source_policy_update < 0:
             raise ValueError("source_policy_update must be nonnegative")
@@ -671,126 +836,45 @@ class PPOTrainer:
             for indices in epoch_minibatches(order, self.config.batch_size):
                 count = int(indices.numel())
                 samples_examined += count
-                features = index_feature_batch(
-                    batch.features, indices, self.device, batch.feature_widths
-                )
-                sequences = batch.sequences[indices].to(self.device)
-                lengths = batch.lengths[indices].to(self.device)
-                stopped = batch.stopped[indices].to(self.device)
-                rollout_log_prob = batch.rollout_log_prob[indices].to(self.device)
-                advantage = batch.advantage[indices].to(self.device)
-                if self.model.integrated_flags.enable_prize_aux:
-                    advantage = advantage + (
-                        self.model.integrated_flags.prize_aux_actor_weight
-                        * batch.prize_advantage[indices].to(self.device)
-                    )
-                returns = batch.gae_return[indices].to(self.device)
-                weights = batch.episode_weight[indices].to(self.device)
-                weights = weights / weights.sum()
-                validated, state, options = self.model.actor.encode(features)
-                current_value, auxiliary = self.model.value_and_aux_from_encoded(
-                    validated, state, options
-                )
-                context = self.model.strategy_context(validated, current_value, auxiliary)
-                diagnostic_state = self.model.actor.action_decoder.initialize(
-                    validated, self.model.actor_summary(state)
-                )
-                _, policy_delta = self.model.policy_strategy_adapter(
-                    diagnostic_state.hidden, context
-                )
-                policy_residual_ratio = self.model.policy_strategy_adapter.effective_residual_ratio(
-                    diagnostic_state.hidden, policy_delta
-                )
-                with torch.no_grad():
-                    reference_eval = evaluate_actions_encoded(
-                        self.reference, validated, self.model.actor_summary(state), options, sequences, lengths, stopped,
-                        torch.zeros_like(returns), context,
-                    )
-                evaluated = evaluate_actions_encoded(
-                    self.model.head,
-                    validated,
-                    self.model.actor_summary(state),
-                    options,
-                    sequences,
-                    lengths,
-                    stopped,
-                    current_value,
-                    context,
-                )
-                parameter_logprob, parameter_entropy = evaluate_parameter_actions(
-                    self.model, validated, state, options,
-                    tuple(batch.macro_actions[int(index)] for index in indices),
-                )
-                old_log_prob = rollout_log_prob
-                current_joint_logprob = evaluated.log_prob + parameter_logprob
-                log_ratio = current_joint_logprob - old_log_prob
-                ratio = log_ratio.exp()
-                detached_ratio = ratio.detach().float()
-                ratio_sum += float(detached_ratio.sum())
-                ratio_square_sum += float(detached_ratio.square().sum())
-                ratio_count += detached_ratio.numel()
-                ratio_min = min(ratio_min, float(detached_ratio.min()))
-                ratio_max = max(ratio_max, float(detached_ratio.max()))
-                approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
-                unclipped = ratio * advantage
-                clipped = ratio.clamp(
-                    1.0 - self.config.clip_ratio, 1.0 + self.config.clip_ratio
-                ) * advantage
-                policy_loss = -(torch.minimum(unclipped, clipped) * weights).sum()
-                value_loss = ((evaluated.value - returns).square() * weights).sum()
-                root_entropy = (evaluated.entropy * weights).sum()
-                allocation_entropy = (parameter_entropy * weights).sum()
-                entropy = root_entropy + allocation_entropy
-                reference_delta = evaluated.log_prob - reference_eval.log_prob
-                reference_kl = (0.5 * reference_delta.square() * weights).sum()
-                prize_value_loss = current_value.new_zeros(())
-                if self.model.integrated_flags.enable_prize_aux:
-                    prize_value_loss = (
-                        (auxiliary["v_prize"] - batch.prize_return[indices].to(self.device)).square()
-                        * weights
-                    ).sum()
-                per_row_meta = torch.nn.functional.cross_entropy(
-                    auxiliary["meta_logits"],
-                    batch.opponent_meta_label[indices].to(self.device), reduction="none",
-                )
-                opponent_meta_loss = (per_row_meta * weights).sum()
-                registry = LossRegistry()
-                registry.register(LossTerm("L_policy_win", policy_loss, 1.0, "actor"))
-                registry.register(LossTerm("L_value_win", value_loss,
-                                           self.config.value_coefficient, "value_win"))
-                registry.register(LossTerm("L_value_prize", prize_value_loss,
-                    self.model.integrated_flags.prize_value_loss_weight, "value_prize",
-                    self.model.integrated_flags.enable_prize_aux))
-                registry.register(LossTerm(
-                    "L_meta_anchor", opponent_meta_loss,
-                    self.config.meta_anchor_coef, "value_win",
-                ))
-                registry.register(LossTerm("L_entropy_root", -root_entropy,
-                                           self.config.entropy_coefficient, "actor"))
-                registry.register(LossTerm("L_entropy_allocation", -allocation_entropy,
-                                           self.config.entropy_coefficient, "allocation"))
-                registry.register(LossTerm("L_reference_kl", reference_kl,
-                                           self.config.reference_kl_coefficient, "actor"))
-                total_loss = registry.total()
-                if not torch.isfinite(total_loss):
-                    raise FloatingPointError("nonfinite full-semantic PPO loss")
-                total_loss.backward()
+                logical_weight_sum = batch.episode_weight[indices].to(
+                    self.device
+                ).sum()
+                micro_results = []
+                for micro_indices in epoch_minibatches(
+                    indices, self.config.forward_microbatch_size
+                ):
+                    micro_results.append(self._backward_microbatch(
+                        batch,
+                        micro_indices,
+                        logical_weight_sum=logical_weight_sum,
+                    ))
+                detached_ratios = torch.cat([
+                    item["ratio"] for item in micro_results
+                ])
+                ratio_sum += float(detached_ratios.sum())
+                ratio_square_sum += float(detached_ratios.square().sum())
+                ratio_count += detached_ratios.numel()
+                ratio_min = min(ratio_min, float(detached_ratios.min()))
+                ratio_max = max(ratio_max, float(detached_ratios.max()))
                 value_gate_grad = (
                     self.model.value_adapter.gate.grad.detach().abs()
                     if self.model.value_adapter.gate.grad is not None
-                    else total_loss.new_zeros(())
+                    else logical_weight_sum.new_zeros(())
                 )
                 policy_gate_grad = (
                     self.model.policy_strategy_adapter.gate.grad.detach().abs()
                     if self.model.policy_strategy_adapter.gate.grad is not None
-                    else total_loss.new_zeros(())
+                    else logical_weight_sum.new_zeros(())
                 )
                 def grad_l2(parameters) -> torch.Tensor:
                     present = [
                         parameter.grad.detach().float().square().sum()
                         for parameter in parameters if parameter.grad is not None
                     ]
-                    return torch.stack(present).sum().sqrt() if present else total_loss.new_zeros(())
+                    return (
+                        torch.stack(present).sum().sqrt()
+                        if present else logical_weight_sum.new_zeros(())
+                    )
 
                 value_mlp_grad = grad_l2(self.model.value_adapter.mlp.parameters())
                 value_embedding_grad = grad_l2(self.model.value_adapter.own_embedding.parameters())
@@ -811,35 +895,27 @@ class PPOTrainer:
                 minibatches += 1
                 samples_optimized += count
                 usage[indices.cpu()] += 1
-                value_ratio = auxiliary["value_adapter_residual_ratio"].detach().float()
-                policy_ratio = policy_residual_ratio.detach().float()
+                value_ratio = torch.cat([
+                    item["value_ratio"] for item in micro_results
+                ])
+                policy_ratio = torch.cat([
+                    item["policy_ratio"] for item in micro_results
+                ])
+                scalar_names = tuple(micro_results[0]["scalars"])
+                logical_scalars = {
+                    name: torch.stack([
+                        item["scalars"][name] for item in micro_results
+                    ]).sum()
+                    for name in scalar_names
+                }
                 metrics = {
-                    "policy_loss": policy_loss,
-                    "value_loss": value_loss,
-                    "v_prize_loss": prize_value_loss,
-                    "opponent_meta_loss": opponent_meta_loss,
-                    "opponent_meta_accuracy": (
-                        auxiliary["meta_logits"].argmax(dim=-1)
-                        .eq(batch.opponent_meta_label[indices].to(self.device)).float()
-                        * weights
-                    ).sum(),
-                    "opponent_meta_entropy": (
-                        torch.distributions.Categorical(
-                            logits=auxiliary["meta_logits"].float()
-                        ).entropy() * weights
-                    ).sum(),
+                    **logical_scalars,
                     "value_adapter_gate_raw": self.model.value_adapter.gate,
                     "value_adapter_gate_effective": self.model.value_adapter.gate.tanh(),
                     "policy_adapter_gate_raw": self.model.policy_strategy_adapter.gate,
                     "policy_adapter_gate_effective": self.model.policy_strategy_adapter.gate.tanh(),
                     "value_adapter_gate": self.model.value_adapter.gate.tanh(),
                     "policy_adapter_gate": self.model.policy_strategy_adapter.gate.tanh(),
-                    "value_adapter_residual_ratio": (
-                        value_ratio * weights
-                    ).sum(),
-                    "policy_adapter_residual_ratio": (
-                        policy_ratio * weights
-                    ).sum(),
                     "value_adapter_residual_ratio_p50": value_ratio.quantile(0.50),
                     "value_adapter_residual_ratio_p95": value_ratio.quantile(0.95),
                     "value_adapter_residual_ratio_max": value_ratio.max(),
@@ -852,30 +928,17 @@ class PPOTrainer:
                     "value_adapter_own_embedding_grad_l2": value_embedding_grad,
                     "policy_adapter_mlp_grad_l2": policy_mlp_grad,
                     "policy_adapter_own_embedding_grad_l2": policy_embedding_grad,
-                    "value_prediction_mean": evaluated.value.mean(),
-                    "value_target_mean": returns.mean(),
-                    "entropy": entropy,
-                    "entropy_weighted_contribution": -self.config.entropy_coefficient * entropy,
-                    "root_entropy": root_entropy,
-                    "allocation_entropy": allocation_entropy,
-                    "total_loss": total_loss,
-                    "behavior_kl": approximate_kl,
-                    "reference_kl": reference_kl,
-                    "reference_kl_weighted_contribution": (
-                        self.config.reference_kl_coefficient * reference_kl
-                    ),
-                    "value_loss_weighted_contribution": (
-                        self.config.value_coefficient * value_loss
-                    ),
-                    "meta_anchor_raw": opponent_meta_loss,
-                    "meta_anchor_weighted_contribution": (
-                        self.config.meta_anchor_coef * opponent_meta_loss
-                    ),
-                    "clip_fraction": (
-                        ((ratio - 1.0).abs() > self.config.clip_ratio).float() * weights
-                    ).sum(),
+                    "value_prediction_mean": torch.stack([
+                        item["value_prediction_sum"] for item in micro_results
+                    ]).sum() / count,
+                    "value_target_mean": torch.stack([
+                        item["value_target_sum"] for item in micro_results
+                    ]).sum() / count,
                     "gradient_norm": norm,
                 }
+                metrics["physical_microbatches"] = torch.tensor(
+                    float(len(micro_results)), device=self.device
+                )
                 for name, value in metrics.items():
                     numeric = float(value.detach())
                     epoch_sums[name] = epoch_sums.get(name, 0.0) + numeric * count
@@ -942,6 +1005,15 @@ class PPOTrainer:
             "ppo/value_loss_coefficient": self.config.value_coefficient,
             "ppo/entropy_coefficient": self.config.entropy_coefficient,
             "ppo/optimizer_iterations_per_second": optimizer_steps / optimizer_elapsed,
+            "system/ppo_peak_allocated_bytes": float(
+                torch.cuda.max_memory_allocated(self.device)
+            ),
+            "system/ppo_peak_reserved_bytes": float(
+                torch.cuda.max_memory_reserved(self.device)
+            ),
+            "ppo/behavior_probe_batch_size": float(
+                min(self.config.batch_size, self.config.behavior_probe_batch_size)
+            ),
         })
         usage_metrics = sample_usage_metrics(
             usage,
@@ -974,8 +1046,13 @@ class PPOTrainer:
                 "ppo/hard_behavior_kl_guard": self.config.hard_behavior_kl_guard,
                 "ppo/minibatches_completed": float(minibatches),
                 "ppo/optimizer_steps": float(optimizer_steps),
-                "ppo/physical_minibatch": float(self.config.batch_size),
-                "ppo/gradient_accumulation": float(self.config.gradient_accumulation),
+                "ppo/physical_minibatch": float(
+                    min(self.config.batch_size, self.config.forward_microbatch_size)
+                ),
+                "ppo/gradient_accumulation": float(math.ceil(
+                    self.config.batch_size
+                    / min(self.config.batch_size, self.config.forward_microbatch_size)
+                )),
                 "ppo/effective_minibatch": float(self.config.batch_size),
                 "ppo/fixed_optimizer_budget": 0.0,
                 "ppo/decisions": float(batch.decisions),

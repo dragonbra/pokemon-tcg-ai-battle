@@ -63,7 +63,9 @@ def _frequency_fingerprint(jobs: list[Any]) -> str:
     ).hexdigest()
 
 
-def _instrumented_epoch_contract(decisions: int, batch_size: int) -> dict[str, Any]:
+def _instrumented_epoch_contract(
+    decisions: int, batch_size: int, forward_microbatch_size: int = 1024
+) -> dict[str, Any]:
     generator = torch.Generator().manual_seed(420_042_002)
     usage = torch.zeros(decisions, dtype=torch.int16)
     rows = []
@@ -71,6 +73,11 @@ def _instrumented_epoch_contract(decisions: int, batch_size: int) -> dict[str, A
         complete_epoch_orders(decisions, 3, generator=generator), start=1
     ):
         batches = epoch_minibatches(order, batch_size)
+        physical_batches = [
+            micro
+            for logical in batches
+            for micro in epoch_minibatches(logical, forward_microbatch_size)
+        ]
         usage[order] += 1
         expected = torch.full_like(usage, epoch)
         exact = torch.equal(usage, expected)
@@ -79,6 +86,9 @@ def _instrumented_epoch_contract(decisions: int, batch_size: int) -> dict[str, A
             "optimizer_steps": len(batches),
             "sample_slots": sum(int(batch.numel()) for batch in batches),
             "last_minibatch_size": int(batches[-1].numel()),
+            "logical_minibatch_size": batch_size,
+            "physical_microbatch_size": forward_microbatch_size,
+            "physical_forward_backward_passes": len(physical_batches),
             "unique_decisions": int(torch.unique(order).numel()),
             "coverage_ratio": float(usage.gt(0).float().mean()),
             "cumulative_usage_min": int(usage.min()),
@@ -152,7 +162,9 @@ def run(output: Path, *, seed: int = 420_042_002) -> dict[str, Any]:
     targets = snapshot_frozen_targets(batch)
     assert_frozen_targets(batch, targets)
     epoch_contract = _instrumented_epoch_contract(
-        batch.decisions, ppo_config.batch_size
+        batch.decisions,
+        ppo_config.batch_size,
+        ppo_config.forward_microbatch_size,
     )
     collector_metrics = collector.metrics()
     performance_gates = {

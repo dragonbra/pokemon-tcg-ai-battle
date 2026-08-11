@@ -38,6 +38,10 @@
   bulk feature D2H must be zero. Compact action/control/trajectory scalars may cross to the host for
   official-engine stepping and Episode/GAE construction; they must never trigger CPU feature
   recompilation followed by feature H2D.
+- Keep the Protocol V2 logical minibatch at 2,048 decisions, but execute it as 1,024-row physical
+  graphs with a shared logical loss denominator and one accumulated optimizer step. Use 512-row
+  behavior-probe chunks and expandable CUDA allocator segments. This is a memory-execution detail,
+  not a change to data epochs, sample coverage, optimizer-step count, or PPO target semantics.
 
 ## Evidence
 

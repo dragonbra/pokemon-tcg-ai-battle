@@ -288,6 +288,12 @@ coefficient `0.5`, max grad norm `0.5`, no scheduler, and zero weight decay. Fro
 old Value, normalized advantage, and return targets are computed once per rollout and never
 refreshed across epochs.
 
+The 2,048 decisions are one logical optimizer minibatch. On the current 16 GB WSL host it is
+executed as at most two 1,024-row physical forward/backward graphs using the same logical weight
+denominator, followed by exactly one gradient clip and one AdamW step. Thus optimizer-step count,
+coverage, PPO ratio semantics, and the 723-row tail remain unchanged. Behavior probes use 512-row
+inference chunks. Formal launch hard-requires `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`.
+
 All training opponents resolve independently as full immutable `Policy-0809`, effective identity
 `0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96`. Focal and opponent
 materializations share no Parameter or tensor storage. Resident CUDA receives no batch-global
@@ -315,6 +321,11 @@ The preflight kept 1,119,219,772 feature bytes on CUDA and transferred 2,839,059
 control/trajectory scalars to the host. Thus there is no CPU semantic feature compiler followed by
 feature re-upload; the remaining scalar transfer is required for engine control and Episode/GAE
 materialization and is not a feature round trip.
+
+The post-reset one-update validation completed all 33 logical optimizer steps at 0.94 iter/s,
+100% coverage and 3x reuse. PPO peak allocated/reserved memory was 6,783,030,272 / 8,516,534,272
+bytes, compared with about 15.8 GB and `dxgkio_make_resident -12` for the rejected physical
+2,048-row path. Frozen Prototype/State/Option encoders and MetaHead remained bit-identical.
 
 ## 16. Deck pool and diagnostics
 

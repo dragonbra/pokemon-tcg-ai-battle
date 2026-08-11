@@ -130,7 +130,7 @@ cmake --version
 ninja --version
 ```
 
-0042 当前默认 `cuda:0`、256 CUDA lanes、256-game rollout batch 和 2,048-decision PPO minibatch。不同显卡不能照抄另一台机器的编译 architecture 或吞吐结论。先做本机 smoke 和 peak-memory 检查。
+0042 当前默认 `cuda:0`、256 CUDA lanes、256-game rollout batch 和 2,048-decision logical PPO minibatch。当前 16 GB WSL 主机用 1,024-row physical graphs 累积出每个 logical step；不同显卡不能照抄另一台机器的编译 architecture 或吞吐结论。先做本机 smoke 和 peak-memory 检查。
 
 ### 3.2 W&B
 
@@ -548,6 +548,8 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 | retained trajectories/update | 256（全部） |
 | CUDA lanes / rollout batch | 256 / 256 |
 | PPO minibatch | 2,048 decisions |
+| PPO physical forward microbatch | 1,024 decisions（每个 logical step 最多 2 次 forward/backward） |
+| behavior probe chunk | 512 decisions |
 | PPO epochs | 最多 3 |
 | actor LR | `5e-6` |
 | Value-side LR | `1e-4` |
@@ -623,6 +625,7 @@ python3 -m train.0042_full_model_design.monitor_training \
   --metrics-stale-seconds 7200 \
   --minimum-free-gib 100 \
   -- \
+  env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
   python3 -m train.0042_full_model_design.training.run_full_semantic \
     --version V1_ppo_protocol_v2_baseline \
     --preset FULL_MODEL \
@@ -632,6 +635,7 @@ python3 -m train.0042_full_model_design.monitor_training \
     --cuda-lane-count 256 \
     --rollout-batch-size 256 \
     --ppo-minibatch-size 2048 \
+    --ppo-forward-microbatch-size 1024 \
     --ppo-epochs 3 \
     --eval-every 10 \
     --wandb-mode online \
@@ -639,6 +643,7 @@ python3 -m train.0042_full_model_design.monitor_training \
 ```
 
 V1 formal run 不传 `--updates`。`--launch-formal` 是显式授权 token；缺少它，runner 会拒绝创建 run。
+formal runner 同时会拒绝缺少 `expandable_segments:True` 的 CUDA allocator 配置。
 
 watchdog 输出位于：
 
@@ -816,7 +821,7 @@ model-only checkpoint 禁止包含 optimizer、scheduler、GradScaler、RNG、Da
 
 ### CUDA OOM
 
-保存错误、GPU peak metrics 和当前 version status。不要静默改变 V1 lane count、rollout batch、minibatch 或 gradient accumulation 后继续写同一 version。调整 scaling 是新实验变量，必须新版本并同步设计记录。
+保存错误、GPU peak metrics 和当前 version status。当前合同固定 logical minibatch 2,048、physical microbatch 1,024、expandable segments。不要静默改变 lane count、rollout batch 或这些 memory-execution 参数后继续写同一 version。WSL 下禁止 `gpustat -i 1`；使用训练内 telemetry 或至少 10 秒采样。出现 `dxgvmb_send_*` D-state、`make_resident -12` 或 `device not ready` 时先停止训练并从 Windows 执行 `wsl --shutdown`。
 
 ### metrics 长时间不出现
 

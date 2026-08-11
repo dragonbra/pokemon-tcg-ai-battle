@@ -111,6 +111,11 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
     <p>Exact focal deck <code>007_dragapult_ex</code>; 256 games per update; all valid decisions;
       2,048-decision minibatches; up to three complete shuffled data epochs; target/hard behavior
       KL guards 0.015/0.025; FP32 AdamW; actor LR 5e-6; Value-only LR 1e-4; no update cap.</p>
+    <p>Each logical 2,048-decision optimizer step uses at most two 1,024-row physical graphs with
+      one shared loss denominator, one accumulated gradient, one clip, and one AdamW step. This
+      retains 11 logical steps for 21,203 decisions while avoiding the WSL DXG residency failure
+      observed with a physical 2,048-row graph. A one-update validation completed 33 steps at
+      0.94 iter/s with peak allocated/reserved memory 6.78/8.52 GB.</p>
     <p>The behavior guard is one deterministic set of 4,096 shuffled rollout rows plus every
       compound/macro row, fixed across epochs. Update 1 and every tenth update also audit
       pre-update old-logprob parity over every decision; other updates audit the guard set.

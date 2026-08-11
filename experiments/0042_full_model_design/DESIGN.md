@@ -165,12 +165,18 @@ Temporary machine-local evidence:
 
 The formal focal policy is exact deck `007_dragapult_ex`. Training has no update cap. Every update
 collects one complete 256-game frequency unit and retains every valid decision. PPO uses FP32
-AdamW, 2,048-decision minibatches, actor LR `5e-6`, Value-only LR `1e-4`, and up to three complete
+AdamW, logical 2,048-decision minibatches, actor LR `5e-6`, Value-only LR `1e-4`, and up to three complete
 shuffle-without-replacement data epochs. Epoch 2/3 are admitted by a fixed rollout-wide behavior
 KL guard set containing 4,096 shuffled rows plus every compound/macro row, with target/hard guards
 `0.015/0.025`; rollout old logprob, old Value, normalized advantage, and returns stay frozen.
 Update 1 and every tenth update additionally audit pre-update old-logprob parity over all decisions;
 intervening updates audit the guard set. Probe rows never count as optimized samples.
+
+On the 16 GB WSL CUDA host, each logical 2,048-decision optimizer step is evaluated as at most two
+1,024-row physical graphs with one shared logical weight denominator, one accumulated gradient,
+one clip, and one AdamW step. The 723-row tail remains one graph. This preserves the 11 logical
+optimizer steps and exact decision coverage while avoiding DXG residency failure. Behavior probes
+use 512-row inference chunks. Formal launch requires expandable CUDA allocator segments.
 
 All opponents are independent materializations of full immutable `Policy-0809`, effective hash
 `0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96`. Resident CUDA audits
@@ -194,6 +200,11 @@ the former double-full-batch route passed over 46,061 decisions and improved thr
 6.04 to 6.68 games/s (+10.6%). The only host transfer is compact control/trajectory data
 (2,839,059 bytes in the preflight); 1,119,219,772 bytes of semantic feature tensors remained on
 CUDA with zero bulk feature D2H and no CPU feature recompilation/re-upload path.
+
+A post-reset one-update PPO validation completed all 3 epochs and 33 logical optimizer steps at
+0.94 iter/s, with 100% coverage, 3x reuse, peak allocated/reserved 6.78/8.52 GB, no NaN/Inf, and
+bit-identical frozen encoders/MetaHead. The previous 2,048-row physical graph reached about 15.8 GB
+and failed `dxgkio_make_resident`; it is not the production execution path.
 
 ## 12. Current and next stage
 

@@ -1083,6 +1083,15 @@ def run(config: RunConfig) -> dict[str, Any]:
             "tests and imports must remain side-effect free"
         )
     config.validate()
+    allocator_config = os.environ.get(
+        "PYTORCH_CUDA_ALLOC_CONF",
+        os.environ.get("PYTORCH_ALLOC_CONF", ""),
+    )
+    if "expandable_segments:True" not in allocator_config:
+        raise RuntimeError(
+            "0042 formal PPO requires PYTORCH_CUDA_ALLOC_CONF="
+            "expandable_segments:True to avoid WSL CUDA residency fragmentation"
+        )
     flags = preset(config.preset_name)
     flags.validate()
     adaptation = AdaptationConfig()
@@ -1657,6 +1666,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                 ppo_metrics = {}
                 if is_sparse_diagnostic_update(update):
                     ppo_metrics.update(trainer.sparse_gradient_diagnostics(diagnostic_batch))
+                torch.cuda.reset_peak_memory_stats(device)
                 ppo_metrics.update(trainer.update(batch, update=update))
                 ppo_seconds = time.perf_counter() - ppo_started
                 checkpoint = paths["checkpoint"] / f"update-{update:06d}.pt"
@@ -1881,6 +1891,7 @@ def main() -> int:
     parser.add_argument("--rollout-batch-size", type=int, default=256)
     parser.add_argument("--trajectory-games-per-update", type=int, default=256)
     parser.add_argument("--ppo-minibatch-size", type=int, default=2048)
+    parser.add_argument("--ppo-forward-microbatch-size", type=int, default=1024)
     parser.add_argument("--ppo-gradient-accumulation", type=int, default=1)
     parser.add_argument("--ppo-epochs", type=int, default=3)
     parser.add_argument("--eval-every", type=int, default=10)
@@ -1942,6 +1953,7 @@ def main() -> int:
                 credit_clock=args.credit_clock,
                 loss_weighting=args.loss_weighting,
                 batch_size=args.ppo_minibatch_size,
+                forward_microbatch_size=args.ppo_forward_microbatch_size,
                 gradient_accumulation=args.ppo_gradient_accumulation,
                 epochs=args.ppo_epochs,
                 meta_anchor_coef=preset(args.preset).meta_anchor_coef,

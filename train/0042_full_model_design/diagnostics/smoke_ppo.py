@@ -472,6 +472,7 @@ def run(output: Path, *, seed: int = 420_042_911, updates: int = 16) -> dict[str
         ):
             raise RuntimeError("trajectory feature left CUDA before PPO")
         gradient_probe = trainer.sparse_gradient_diagnostics(batch, samples=64)
+        torch.cuda.reset_peak_memory_stats(torch.device("cuda:0"))
         ppo_started = time.perf_counter()
         ppo_metrics = trainer.update(batch, update=update)
         ppo_seconds = time.perf_counter() - ppo_started

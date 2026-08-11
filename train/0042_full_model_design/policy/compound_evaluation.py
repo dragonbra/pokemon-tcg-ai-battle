@@ -24,30 +24,64 @@ class _AllocationEvaluation:
 
 def _prepare_evaluations(model, validated, state, options: Tensor,
                          macro_actions: tuple[dict | None, ...]) -> list[_AllocationEvaluation]:
+    """Prepare macros with one batched device lookup instead of scalar GPU syncs."""
     planner = MacroPlanner(model.allocation_head)
-    prepared = []
+    specifications = []
     for row, macro in enumerate(macro_actions):
         if not macro:
             continue
         serials = tuple(int(value) for value in macro["targets"])
         counters = tuple(int(value) for value in macro["counters"])
-        identities = []
-        raw_targets = []
-        embeddings = []
         stored_visible = macro.get("visible_targets")
         if stored_visible is not None and len(stored_visible) != len(serials):
             raise ValueError("stored Phantom visible-target snapshot has the wrong length")
-        for serial in serials:
-            match = (
-                validated.card_mask[row]
-                & validated.card_cat[row, :, 1].eq(serial + 1)
-                & validated.card_cat[row, :, 2].eq(2)
-                & validated.card_cat[row, :, 3].eq(6)
-            ).nonzero(as_tuple=False).flatten()
-            if match.numel() != 1:
-                raise ValueError(f"stored Phantom target serial {serial} is not uniquely visible")
-            index = int(match[0])
-            cat, numeric = validated.card_cat[row, index], validated.card_num[row, index]
+        specifications.append((row, macro, serials, counters, stored_visible))
+    if not specifications:
+        return []
+
+    flat_rows = [
+        row for row, _macro, serials, _counters, _stored in specifications
+        for _serial in serials
+    ]
+    flat_serials = [
+        serial for _row, _macro, serials, _counters, _stored in specifications
+        for serial in serials
+    ]
+    row_index = torch.tensor(flat_rows, dtype=torch.long, device=options.device)
+    serial_index = torch.tensor(flat_serials, dtype=torch.long, device=options.device)
+    selected_mask = validated.card_mask.index_select(0, row_index)
+    selected_cat_rows = validated.card_cat.index_select(0, row_index)
+    matches = (
+        selected_mask
+        & selected_cat_rows[:, :, 1].eq(serial_index.unsqueeze(1) + 1)
+        & selected_cat_rows[:, :, 2].eq(2)
+        & selected_cat_rows[:, :, 3].eq(6)
+    )
+    match_counts = matches.sum(dim=1)
+    if not bool(match_counts.eq(1).all()):
+        invalid = int(match_counts.ne(1).nonzero(as_tuple=False)[0])
+        raise ValueError(
+            f"stored Phantom target serial {flat_serials[invalid]} is not uniquely visible"
+        )
+    card_indices = matches.to(torch.int8).argmax(dim=1)
+    selected_cat = selected_cat_rows[
+        torch.arange(len(flat_rows), device=options.device), card_indices
+    ].detach().cpu()
+    selected_num = validated.card_num.index_select(0, row_index)[
+        torch.arange(len(flat_rows), device=options.device), card_indices
+    ].detach().cpu()
+    selected_embeddings = state.cards[row_index, card_indices]
+
+    prepared = []
+    offset = 0
+    for row, macro, serials, counters, stored_visible in specifications:
+        identities = []
+        raw_targets = []
+        embeddings = []
+        for target_offset, serial in enumerate(serials):
+            flat_index = offset + target_offset
+            cat = selected_cat[flat_index]
+            numeric = selected_num[flat_index]
             identities.append(StableTargetIdentity(1, serial, int(cat[0]), int(cat[4]) - 1))
             if stored_visible is None:
                 raw_targets.append({
@@ -58,7 +92,7 @@ def _prepare_evaluations(model, validated, state, options: Tensor,
                     "statusBits": max(0, int(cat[6]) - 1),
                 })
             else:
-                visible = dict(stored_visible[len(raw_targets)])
+                visible = dict(stored_visible[target_offset])
                 if (
                     int(visible.get("serial", -1)) != serial
                     or int(visible.get("id", -1)) != int(cat[0])
@@ -66,7 +100,8 @@ def _prepare_evaluations(model, validated, state, options: Tensor,
                 ):
                     raise ValueError("stored Phantom visible-target identity drifted")
                 raw_targets.append(visible)
-            embeddings.append(state.cards[row, index])
+            embeddings.append(selected_embeddings[flat_index])
+        offset += len(serials)
         allocations = enumerate_allocations(identities)
         if len(allocations) == 1:
             continue
