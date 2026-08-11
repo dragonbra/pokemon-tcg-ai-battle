@@ -47,7 +47,7 @@ class ScalingAndPanelTest(unittest.TestCase):
         self.assertEqual(schedule_sha, frozen_jobs.EXPECTED_007_SCHEDULE_SHA256)
         self.assertEqual(Counter(job.opponent_id for job in jobs), expected)
         self.assertTrue(all(type(job.focal_won_toss) is bool for job in jobs))
-        self.assertEqual(sum(bool(job.focal_won_toss) for job in jobs), 1007)
+        self.assertEqual(sum(bool(job.focal_won_toss) for job in jobs), 1044)
         self.assertEqual(len({job.seed for job in jobs}), 2048)
         self.assertEqual({job.full_round_draw_limit for job in jobs}, {50})
 

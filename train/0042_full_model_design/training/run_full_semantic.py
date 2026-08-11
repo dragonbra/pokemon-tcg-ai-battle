@@ -54,6 +54,7 @@ from ..candidate_deployment import (
 from ..evaluation.frozen_jobs import (
     CANONICAL_CONTRACT_ID,
     EXPECTED_007_SCHEDULE_SHA256,
+    EXPECTED_007_U0_DEPLOYMENT_SHA256,
     build_frozen_jobs,
 )
 from ..evaluation.frozen_panel import wilson_interval
@@ -1434,6 +1435,13 @@ def run(config: RunConfig) -> dict[str, Any]:
                     evaluation_opponent._policy_identity_audit.effective_policy_sha256
                 ),
             )
+            if (
+                baseline_candidate_audit.effective_candidate_sha256
+                != EXPECTED_007_U0_DEPLOYMENT_SHA256
+            ):
+                raise RuntimeError(
+                    "update-0 deployment-effective candidate is not canonical 007 U0"
+                )
             if baseline_schedule_sha != EXPECTED_007_SCHEDULE_SHA256:
                 raise RuntimeError("update-0 Frozen schedule is not canonical 007")
             _atomic_json(

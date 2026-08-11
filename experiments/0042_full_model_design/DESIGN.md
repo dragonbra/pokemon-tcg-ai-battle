@@ -192,6 +192,11 @@ Update 0 and every 10 updates use the same formal path: merge/export FP16 candid
 strict-load FP32 runtime, verify deployment identity, then execute an identity-bound Frozen-0809
 CUDA-2048 schedule. Results cannot promote a policy automatically.
 
+Deployment-effective identity hashes the deployed FP16 tensors and runtime-semantic schema only.
+Source checkpoint/file hashes, update numbers, version names, and training provenance remain
+separate mandatory audit fields. U0 pins the corrected content identity and its derived schedule;
+each later checkpoint derives a distinct schedule from its own effective content identity.
+
 The real preflight completed 256 games and 21,203 valid decisions, audited all 55 exact opponent
 decks and 512 job-role ledgers, recorded zero feature D2H, and proved exact cumulative decision
 usage 1/2/3 across three 11-minibatch epochs. The production role-compacted preflight reached

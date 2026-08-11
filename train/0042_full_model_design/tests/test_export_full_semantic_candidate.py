@@ -93,6 +93,66 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
         })
         self.assertEqual(len(digest), 64)
 
+    def test_effective_hash_excludes_checkpoint_provenance(self) -> None:
+        state = {"weight": torch.ones(2, dtype=torch.float16)}
+        payload = {
+            "schema_version": exporter.OUTPUT_SCHEMA,
+            "metadata": {
+                "project_id": "0042_full_model_design",
+                "version": "V1_a",
+                "checkpoint_update": 0,
+                "checkpoint_sha256": "a" * 64,
+                "source_policy_update": 0,
+                "actor_metadata": {
+                    "epoch": 11,
+                    "model_config": {"model": "SemanticPolicy", "width": 320},
+                },
+                "own_archetype_id": 3,
+                "no_option_lora": True,
+            },
+            **{field: dict(state) for field in exporter.PORTABLE_STATE_FIELDS},
+        }
+        manifest = {
+            "action_boundary_deployment": {"decision_gate": True},
+            "storage_dtype": "fp16",
+            "runtime_dtype": "fp32",
+        }
+        first = exporter.deployment_effective_sha256(payload, manifest)
+        payload["metadata"] = {
+            **payload["metadata"],
+            "version": "V99_same_effective_policy",
+            "checkpoint_update": 99,
+            "checkpoint_sha256": "b" * 64,
+            "source_policy_update": 98,
+            "actor_metadata": {
+                "epoch": 999,
+                "model_config": {"model": "SemanticPolicy", "width": 320},
+            },
+        }
+        second = exporter.deployment_effective_sha256(payload, manifest)
+        self.assertEqual(first, second)
+
+    def test_effective_hash_includes_runtime_semantics(self) -> None:
+        state = {"weight": torch.ones(2, dtype=torch.float16)}
+        payload = {
+            "schema_version": exporter.OUTPUT_SCHEMA,
+            "metadata": {
+                "actor_metadata": {"model_config": {"width": 320}},
+                "own_archetype_id": 3,
+                "no_option_lora": True,
+            },
+            **{field: dict(state) for field in exporter.PORTABLE_STATE_FIELDS},
+        }
+        manifest = {
+            "action_boundary_deployment": {"decision_gate": True},
+            "storage_dtype": "fp16",
+            "runtime_dtype": "fp32",
+        }
+        first = exporter.deployment_effective_sha256(payload, manifest)
+        payload["metadata"] = {**payload["metadata"], "own_archetype_id": 4}
+        second = exporter.deployment_effective_sha256(payload, manifest)
+        self.assertNotEqual(first, second)
+
     def test_frozen_selection_requires_v4_candidate_deployment_evidence(self) -> None:
         (exporter.ROOT / ".tmp").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=exporter.ROOT / ".tmp") as temporary:

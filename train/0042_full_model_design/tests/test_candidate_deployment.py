@@ -143,6 +143,11 @@ class CandidateDeploymentTest(unittest.TestCase):
             self.assertTrue(hasattr(materialized, "policy_strategy_adapter"))
             self.assertEqual(float(materialized.value_adapter.gate), 0.0)
             self.assertEqual(float(materialized.policy_strategy_adapter.gate), 0.0)
+            frozen = importlib.import_module(f"{PROJECT}.evaluation.frozen_jobs")
+            self.assertEqual(
+                audit.effective_candidate_sha256,
+                frozen.EXPECTED_007_U0_DEPLOYMENT_SHA256,
+            )
 
     def test_canonical_protocol_and_root_agent_rule_bind_the_contract(self) -> None:
         protocol = (

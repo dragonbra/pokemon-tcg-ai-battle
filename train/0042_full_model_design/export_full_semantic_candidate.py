@@ -98,9 +98,40 @@ def deployment_effective_sha256(
 
     digest = hashlib.sha256()
     digest.update(b"kaggle_fp16_storage_fp32_runtime_v1\0")
+    metadata = payload.get("metadata")
+    if not isinstance(metadata, Mapping):
+        raise ValueError("portable checkpoint metadata is missing")
+    actor_metadata = metadata.get("actor_metadata")
+    if not isinstance(actor_metadata, Mapping):
+        actor_metadata = {}
+    # This is an effective-content identity, not a provenance identity.  Source
+    # checkpoint/file hashes, update numbers, version names, and training
+    # metadata are audited separately and must not change the identity of the
+    # exact same deployed tensors and runtime semantics.
+    semantic_portable_metadata = {
+        "actor_model_config": actor_metadata.get("model_config"),
+        **{
+            key: metadata.get(key)
+            for key in (
+                "opponent_meta_class_count",
+                "own_archetype_id",
+                "own_archetype_vocabulary_version",
+                "own_archetype_taxonomy_sha256",
+                "no_option_lora",
+                "action_schema_version",
+                "decision_gate_version",
+                "canonicalizer_version",
+                "trajectory_schema_version",
+                "official_protocol_adapter_version",
+                "feature_preprocessing_version",
+                "source_checkpoint_contracts",
+                "inference_contract",
+            )
+        },
+    }
     semantic_metadata = {
         "schema_version": payload.get("schema_version"),
-        "metadata": payload.get("metadata"),
+        "metadata": semantic_portable_metadata,
         "action_boundary_deployment": manifest.get("action_boundary_deployment"),
         "storage_dtype": manifest.get("storage_dtype"),
         "runtime_dtype": manifest.get("runtime_dtype"),

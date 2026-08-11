@@ -47,6 +47,13 @@
   Fix the parity loader to reject preexisting namespaces and remove only its temporary package
   modules/path immediately after importing the required runtime types. The failed V1 status remains
   recorded; resume uses the dedicated update-0 path and reruns the deployment/Frozen baseline.
+- Define `deployment-effective` as the hash of deployed FP16 tensors plus runtime-semantic schema
+  fields only. Source checkpoint SHA, portable file SHA, repository version, checkpoint update,
+  and training provenance remain separately audited fields; changing those fields cannot rename an
+  otherwise identical effective policy. The third update-0 attempt exposed the old conflation when
+  the same deterministic U0 tensors acquired a new source checkpoint hash. U0 now hard-pins the
+  corrected effective identity and its derived 007/Full0809 CUDA-2048 schedule; later checkpoints
+  derive their own identity-bound schedule instead of being compared to the U0 schedule.
 
 ## Evidence
 

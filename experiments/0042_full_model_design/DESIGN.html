@@ -133,6 +133,10 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
       CUDA feature store, and Phantom allocation evaluation is batched by allocation/target shape.</p>
     <p>Update 0 and every 10 updates export FP16 candidate storage, strict-load FP32 runtime, audit
       effective identity, and run an identity-bound Frozen-0809 CUDA-2048 evaluation.</p>
+    <p>Deployment-effective identity hashes deployed FP16 tensors and runtime-semantic schema only.
+      Source checkpoint/file hashes, update numbers, version names, and training provenance remain
+      separate audit fields. U0 pins its corrected content identity and derived schedule; later
+      checkpoints derive schedules from their own effective content identity.</p>
   </section>
 
   <section>

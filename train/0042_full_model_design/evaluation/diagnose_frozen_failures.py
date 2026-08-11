@@ -16,7 +16,7 @@ from ..training.run_full_semantic import (
     load_frozen_opponent,
     runtime_root,
 )
-from .frozen_jobs import build_frozen_jobs
+from .frozen_jobs import EXPECTED_007_U0_DEPLOYMENT_SHA256, build_frozen_jobs
 from .run_update0_frozen import RESULTS
 
 
@@ -35,9 +35,7 @@ def main() -> None:
         focal_deck_id=FOCAL_DECK_ID,
         focal_deck=focal_deck(), runtime_root=runtime_root(),
         source_policy_update=0,
-        focal_deployment_identity=(
-            "b9b4b162915ba64d1156e6724df9bfa29633c41ae5e6caf5afbc923202add995"
-        ),
+        focal_deployment_identity=EXPECTED_007_U0_DEPLOYMENT_SHA256,
         opponent_effective_policy_sha256=(
             "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96"
         ),

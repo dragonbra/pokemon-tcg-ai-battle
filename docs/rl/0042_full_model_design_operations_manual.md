@@ -460,7 +460,7 @@ source FP32 checkpoint
   -> greedy official-engine evaluation
 ```
 
-FP16 转回 FP32 不会恢复被舍弃的精度。因此 source FP32 hash、portable FP16 file hash 和 deployment-effective content hash 是三个不同的 provenance/identity 字段。正式 package 必须重算并匹配 qualifying Frozen report 的 deployment-effective hash。
+FP16 转回 FP32 不会恢复被舍弃的精度。因此 source FP32 hash、portable FP16 file hash 和 deployment-effective content hash 是三个不同的 provenance/identity 字段。deployment-effective hash 只覆盖部署 tensor 内容和 runtime-semantic schema；version、update、source checkpoint/file hash 等 provenance 单独记录，不能让完全相同的 effective policy 被重新命名。正式 package 必须重算并匹配 qualifying Frozen report 的 deployment-effective hash。
 
 ### 9.3 冻结 schedule
 

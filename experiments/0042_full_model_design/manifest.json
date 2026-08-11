@@ -30,7 +30,7 @@
     "directory_contract": "001_through_055",
     "catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c",
     "base_schedule_sha256": "74ee1527686c8b2344b15a1fd2c49a7dc2386da5c8164fb92fbd969cba8900ec",
-    "u0_schedule_sha256": "c8d48d03d70e40332598ea14f49e1847b7e09c0e0f8f2a6130d4cd7c00a05712"
+    "u0_schedule_sha256": "d8760089f480c846c1213421d5155e908966c5a216f8ccbda6b979e37a5a3b3b"
   },
   "opponent_policy": {
     "policy_id": "Policy-0809",
