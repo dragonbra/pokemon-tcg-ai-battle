@@ -92,6 +92,16 @@ def _emit(name: str, payload: dict[str, Any]) -> None:
     print(f"{name} {json.dumps(payload, sort_keys=True)}", flush=True)
 
 
+def _is_current_failed_status(
+    state: object, modified_at: float | None, monitor_started_at: float
+) -> bool:
+    return (
+        str(state).startswith("failed")
+        and modified_at is not None
+        and modified_at >= monitor_started_at
+    )
+
+
 def monitor(args: argparse.Namespace) -> int:
     if not args.command:
         raise ValueError("training command is required after --")
@@ -116,6 +126,9 @@ def monitor(args: argparse.Namespace) -> int:
                 last_lines = lines
                 last_change = now
             status = _read_json(status_path)
+            status_modified_at = (
+                status_path.stat().st_mtime if status_path.is_file() else None
+            )
             tail = _tail(log_path)
             fatal = [pattern for pattern in FATAL_PATTERNS if pattern in tail]
             returncode = process.poll()
@@ -125,6 +138,7 @@ def monitor(args: argparse.Namespace) -> int:
                 "pid": process.pid,
                 "process_returncode": returncode,
                 "status_state": status.get("state"),
+                "status_modified_at": status_modified_at,
                 "checkpoint_update": status.get("checkpoint_update"),
                 "metrics_lines": lines,
                 "seconds_since_metrics_change": now - last_change,
@@ -146,7 +160,9 @@ def monitor(args: argparse.Namespace) -> int:
             alert_reason = None
             if fatal:
                 alert_reason = "fatal_pattern_in_log"
-            elif str(status.get("state", "")).startswith("failed"):
+            elif _is_current_failed_status(
+                status.get("state"), status_modified_at, started
+            ):
                 alert_reason = "status_failed"
             elif lines == 0 and now - started > args.first_metrics_grace_seconds:
                 alert_reason = "first_metrics_missing"
