@@ -2,7 +2,7 @@
   "archetype": "Mega Kangaskhan ex / Crustle",
   "deck_id": "mega_kangaskhan_ex_crustle_189395071707",
   "exact_deck_sha256": "1893950717074f0ee017a94335c6a8df1f0c5ac34b4ec81a16440f2d9b9dcc96",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 1
@@ -18,5 +18,5 @@
     756,
     345
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

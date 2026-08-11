@@ -9,6 +9,7 @@ PrizeMode = Literal["off", "directional", "terminal_neutral"]
 
 @dataclass(frozen=True, slots=True)
 class IntegratedFlags:
+    meta_anchor_coef: float = 0.10
     enable_action_boundary: bool = True
     enable_forced_shortcut: bool = True
     enable_dragapult_macro: bool = True
@@ -22,6 +23,8 @@ class IntegratedFlags:
     enable_tempo_aux_loss: bool = False
 
     def validate(self) -> None:
+        if self.meta_anchor_coef <= 0:
+            raise ValueError("0042 meta_anchor_coef must be explicitly positive")
         if not self.enable_action_boundary and (
             self.enable_forced_shortcut or self.enable_dragapult_macro
         ):

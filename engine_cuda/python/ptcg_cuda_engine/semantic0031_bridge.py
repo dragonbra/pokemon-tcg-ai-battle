@@ -1503,6 +1503,7 @@ def semantic0031_decode_device(
     compute_stats: bool = True,
     sampling_seeds: Any | None = None,
     sampling_counters: Any | None = None,
+    readout_fn: Any | None = None,
 ) -> dict[str, Any]:
     """Fixed-shape ordered decode with actions and statistics kept on device."""
 
@@ -1534,14 +1535,17 @@ def semantic0031_decode_device(
         sampling_counters = sampling_counters.long().view(batch_size)
 
     for step in range(max_select):
-        pointer = (action_decoder.query(hidden).unsqueeze(1) * option_keys).sum(-1) / math.sqrt(
+        readout_hidden = hidden if readout_fn is None else readout_fn(hidden)
+        if readout_hidden.shape != hidden.shape:
+            raise ValueError("semantic0031 decoder readout shape mismatch")
+        pointer = (action_decoder.query(readout_hidden).unsqueeze(1) * option_keys).sum(-1) / math.sqrt(
             options.shape[-1]
         )
         pointer = pointer + option_bias
         pointer = pointer.masked_fill(
             ~(available & active.unsqueeze(1)), torch.finfo(pointer.dtype).min
         )
-        stop = action_decoder.stop(hidden).squeeze(-1)
+        stop = action_decoder.stop(readout_hidden).squeeze(-1)
         stop = stop.masked_fill(~(active & lengths.ge(minimum)), torch.finfo(stop.dtype).min)
         logits = torch.cat((pointer, stop.unsqueeze(1)), dim=1)
         logits = torch.where(route_mask[:, None], logits, torch.zeros_like(logits))
@@ -1640,7 +1644,7 @@ class Semantic0031DeviceAdapter:
     def __init__(
         self,
         model: Any,
-        registered_deck: Sequence[int],
+        registered_deck: Sequence[int] | None,
         *,
         max_select: int = 64,
     ) -> None:
@@ -1662,7 +1666,11 @@ class Semantic0031DeviceAdapter:
         if dtypes != {torch.float32}:
             raise ValueError("semantic0031 runtime model must remain FP32")
         self.max_select = max_select
-        self._static_fields = semantic0031_static_fields(registered_deck, self.device)
+        self._static_fields = (
+            None
+            if registered_deck is None
+            else semantic0031_static_fields(registered_deck, self.device)
+        )
         with torch.inference_mode():
             self.prototype_memory = model.prototype_encoder.encode_all()
 
@@ -1672,6 +1680,10 @@ class Semantic0031DeviceAdapter:
 
     @property
     def shared_static_fields(self) -> Mapping[str, Any]:
+        if self._static_fields is None:
+            raise RuntimeError(
+                "resident Semantic0031 adapter has no shared deck-static fields"
+            )
         return self._static_fields
 
     def _encode_option_inputs(self, batch: Any, state: Any) -> Any:
@@ -1730,6 +1742,10 @@ class Semantic0031DeviceAdapter:
         return encoded * batch.option_mask.unsqueeze(-1)
 
     def _inject_static(self, batch: Mapping[str, Any]) -> dict[str, Any]:
+        if self._static_fields is None:
+            raise RuntimeError(
+                "resident Semantic0031 adapter requires engine-provided per-lane static fields"
+            )
         option_mask = batch["option_mask"]
         output = dict(batch)
         for name, value in self._static_fields.items():

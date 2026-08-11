@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import importlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -58,6 +59,28 @@ class StrategyArchitectureTest(unittest.TestCase):
         policy_ids = {id(p) for p in self.model.policy_strategy_adapter.parameters()}
         self.assertTrue(value_ids.isdisjoint(policy_ids))
         self.assertFalse(any(p.requires_grad for p in self.model.value_head.heads.archetype.parameters()))
+        self.assertEqual(self.model.value_adapter.own_embedding.num_embeddings, 15)
+        self.assertEqual(self.model.policy_strategy_adapter.own_embedding.num_embeddings, 15)
+        self.assertEqual(self.model.value_adapter.own_embedding.embedding_dim, 16)
+        self.assertEqual(self.model.policy_strategy_adapter.own_embedding.embedding_dim, 16)
+        self.assertIsNot(
+            self.model.value_adapter.own_embedding.weight,
+            self.model.policy_strategy_adapter.own_embedding.weight,
+        )
+
+    def test_own_and_opponent_archetype_ids_are_distinct_semantic_types(self) -> None:
+        own_module = importlib.import_module(f"{PROJECT}.policy.own_archetype")
+        opponent_module = importlib.import_module(f"{PROJECT}.policy.opponent_archetype")
+        vocabulary = own_module.OwnArchetypeVocabulary.load()
+        own = vocabulary.classify_own_deck(self.deck)
+        opponent = opponent_module.OpponentArchetypeTaxonomy.load().classify_target(
+            self.deck
+        )
+        self.assertIsInstance(own, own_module.OwnArchetypeId)
+        self.assertIsInstance(opponent, opponent_module.OpponentArchetypeTarget)
+        self.assertNotIsInstance(opponent, own_module.OwnArchetypeId)
+        self.assertFalse(hasattr(vocabulary, "classify_opponent_target"))
+        self.assertEqual(int(self.model.default_own_archetype_id), own.value)
 
     def test_numbered_deck_copy_matches_authoritative_frozen_pool(self) -> None:
         target = ROOT / "train/0042_full_model_design/league/decks"
@@ -68,8 +91,21 @@ class StrategyArchitectureTest(unittest.TestCase):
         self.assertEqual(len(target_dirs), 55)
         self.assertEqual([name[:3] for name in target_dirs], [f"{i:03d}" for i in range(1, 56)])
         for name in target_dirs:
-            for filename in ("deck.csv", "manifest.json"):
-                self.assertEqual((target / name / filename).read_bytes(), (source / name / filename).read_bytes())
+            self.assertEqual(
+                (target / name / "deck.csv").read_bytes(),
+                (source / name / "deck.csv").read_bytes(),
+            )
+            target_manifest = json.loads(
+                (target / name / "manifest.json").read_text(encoding="utf-8")
+            )
+            source_manifest = json.loads(
+                (source / name / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                target_manifest["pool_id"], "0042_policy_0809_neutral_55_v1"
+            )
+            for field in ("deck_id", "exact_deck_sha256", "provenance"):
+                self.assertEqual(target_manifest[field], source_manifest[field])
 
     def test_zero_gate_is_exact_0042_base(self) -> None:
         self.model.eval()
@@ -78,22 +114,22 @@ class StrategyArchitectureTest(unittest.TestCase):
             memory = torch.cat((state.tokens, options), dim=1)
             mask = torch.cat((state.mask, validated.option_mask), dim=1)
             queries = self.model.value_head.decode(memory, mask)
-            legacy_value = 2.0 * self.model.value_head.heads.value(
+            base_value = 2.0 * self.model.value_head.heads.value(
                 queries[:, 0]
             ).squeeze(-1).sigmoid() - 1.0
-            legacy_meta = self.model.value_head.heads.archetype(queries[:, 1])
+            base_meta = self.model.value_head.heads.archetype(queries[:, 1])
             value, auxiliary = self.model.value_and_aux_from_encoded(validated, state, options)
             context = self.model.strategy_context(validated, value, auxiliary)
             decoder_state = self.model.actor.action_decoder.initialize(validated, state.summary)
-            legacy_logits = self.model.actor.action_decoder.logits(validated, options, decoder_state)
+            base_logits = self.model.actor.action_decoder.logits(validated, options, decoder_state)
             adapted_logits = self.model.head.logits(validated, options, decoder_state, context)
-            legacy_action = self.model.actor.action_decoder.greedy(validated, options, state.summary)
+            base_action = self.model.actor.action_decoder.greedy(validated, options, state.summary)
             adapted_action = self.actions.greedy_actions(self.model, self.features)[0]
-        torch.testing.assert_close(value, legacy_value, rtol=0, atol=0)
-        torch.testing.assert_close(auxiliary["meta_logits"], legacy_meta, rtol=0, atol=0)
-        torch.testing.assert_close(adapted_logits, legacy_logits, rtol=0, atol=0)
+        torch.testing.assert_close(value, base_value, rtol=0, atol=0)
+        torch.testing.assert_close(auxiliary["meta_logits"], base_meta, rtol=0, atol=0)
+        torch.testing.assert_close(adapted_logits, base_logits, rtol=0, atol=0)
         self.assertEqual(adapted_action.indices, tuple(
-            legacy_action.sequences[0, : legacy_action.lengths[0]].tolist()
+            base_action.sequences[0, : base_action.lengths[0]].tolist()
         ))
 
     def test_policy_adapter_changes_readout_not_recurrent_transition(self) -> None:
@@ -113,6 +149,26 @@ class StrategyArchitectureTest(unittest.TestCase):
         expected = decoder.recurrent(selected, hidden_before)
         consumed = decoder.consume(options, decoder_state, choice)
         torch.testing.assert_close(consumed.hidden, expected, rtol=0, atol=0)
+
+    def test_undefined_first_player_row_keeps_base_readout(self) -> None:
+        adapters = importlib.import_module(f"{PROJECT}.policy.strategy_adapters")
+        self.model.policy_strategy_adapter.gate.data.fill_(0.7)
+        hidden = torch.randn(3, 320)
+        rows, context = adapters.build_defined_strategy_context(
+            relative_first_player=torch.tensor([0, 1, 2]),
+            z_meta=torch.randn(3, 320),
+            meta_logits=torch.randn(3, 15),
+            value=torch.randn(3),
+            own_archetype_id=torch.zeros(3, dtype=torch.long),
+        )
+        self.assertEqual(rows.tolist(), [1, 2])
+        self.assertIsNotNone(context)
+        adapted_rows = self.model.policy_strategy_adapter(
+            hidden.index_select(0, rows), context
+        )[0]
+        readout = hidden.index_copy(0, rows, adapted_rows)
+        torch.testing.assert_close(readout[0], hidden[0], rtol=0, atol=0)
+        self.assertFalse(torch.equal(readout[1:], hidden[1:]))
 
     def _startup(self, module, call) -> None:
         optimizer = torch.optim.SGD(module.parameters(), lr=0.1)

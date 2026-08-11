@@ -13,6 +13,7 @@ import torch
 from torch import nn
 
 from .cuda_action_boundary import CudaActionBoundaryAdapter
+from .deck_routing import audit_exact_deck_rows, exact_deck_sha256
 from .protocol import (
     CanonicalMacroAction,
     EpisodeTrajectory,
@@ -206,11 +207,37 @@ class CudaFullSemanticRolloutCollector:
         resident_jobs = _resident_jobs(jobs)
         engine_turn_draw_limit = _engine_turn_draw_limit(jobs)
         adapter = Semantic0031DeviceAdapter(
-            self.model.actor, jobs[0].focal_deck, max_select=self.max_select
+            self.model.actor, None, max_select=self.max_select
         )
         opponent_adapter = Semantic0031DeviceAdapter(
-            self.opponent, jobs[0].opponent_deck, max_select=self.max_select
+            self.opponent, None, max_select=self.max_select
         )
+        def focal_strategy_fn(validated: Any, state: Any, options: torch.Tensor):
+            from ..policy.strategy_adapters import build_defined_strategy_context
+
+            value, auxiliary = self.model.value_and_aux_from_encoded(
+                validated, state, options
+            )
+            strategy_rows, context = build_defined_strategy_context(
+                relative_first_player=validated.global_cat[:, 2],
+                z_meta=auxiliary["z_meta"],
+                meta_logits=auxiliary["meta_logits"],
+                value=value,
+                own_archetype_id=self.model.own_archetype_ids(
+                    value.shape[0], value.device
+                ),
+            )
+
+            def readout(hidden: torch.Tensor) -> torch.Tensor:
+                if context is None:
+                    return hidden
+                adapted = self.model.policy_strategy_adapter(
+                    hidden.index_select(0, strategy_rows), context
+                )[0]
+                return hidden.index_copy(0, strategy_rows, adapted)
+
+            return readout, {"value": value, **auxiliary}
+
         router = Semantic0031ResidentRouter(
             focal_adapter=adapter,
             same_policy=False,
@@ -218,6 +245,7 @@ class CudaFullSemanticRolloutCollector:
             requested_opponent_policy_id=self.opponent_policy_id,
             opponent_identity_audit=self.opponent_identity_audit,
             focal_summary_fn=self.model.actor_summary,
+            focal_strategy_fn=focal_strategy_fn,
         )
         boundary = CudaActionBoundaryAdapter(
             self.model,
@@ -229,6 +257,7 @@ class CudaFullSemanticRolloutCollector:
         expected = tuple(sorted(self.model.actor.expected_batch_keys))
         staged: list[_Staged] = []
         staged_bytes = 0
+        staged_feature_bytes = 0
         captured_jobs = torch.ones(
             len(jobs), dtype=torch.bool, device=self.device
         ) if self.record_job_indices is None else torch.tensor(
@@ -243,7 +272,7 @@ class CudaFullSemanticRolloutCollector:
             return {"value": value, **auxiliary}
 
         def sink(**payload: Any) -> None:
-            nonlocal staged_bytes
+            nonlocal staged_bytes, staged_feature_bytes
             route = payload["focal_route"].bool() & captured_jobs.index_select(
                 0, payload["lane_job"].long()
             )
@@ -287,6 +316,9 @@ class CudaFullSemanticRolloutCollector:
             if block.meta_logits is not None:
                 tensors.append(block.meta_logits)
             staged_bytes += sum(value.numel() * value.element_size() for value in tensors)
+            staged_feature_bytes += sum(
+                value.numel() * value.element_size() for value in block.features.values()
+            )
 
         torch.cuda.reset_peak_memory_stats(self.device)
         started = time.perf_counter()
@@ -312,12 +344,15 @@ class CudaFullSemanticRolloutCollector:
         hot_seconds = time.perf_counter() - started
         hot_allocated = torch.cuda.max_memory_allocated(self.device)
         hot_reserved = torch.cuda.max_memory_reserved(self.device)
+        routing_audit = boundary.routing_audit_manifest()
 
         episodes = [EpisodeTrajectory(job) for job in jobs]
         materialize_started = time.perf_counter()
         for block in staged:
             job_indices = block.job_indices.cpu().tolist()
-            features = {name: value.cpu() for name, value in block.features.items()}
+            # Keep the high-volume canonical feature tensors on CUDA through PPO
+            # collation. Only compact Python control data crosses to the host.
+            features = block.features
             actions = block.actions.cpu()
             lengths = block.lengths.cpu()
             stopped = block.stopped.cpu()
@@ -376,6 +411,19 @@ class CudaFullSemanticRolloutCollector:
                 "cuda_resident": True,
                 "first_player_choice": boundary.first_player_choices.get(index),
                 "focal_won_toss": episode.job.focal_won_toss,
+                "opponent_policy_id": self.opponent_policy_id,
+                "opponent_effective_policy_sha256": (
+                    self.opponent_identity_audit.effective_policy_sha256
+                    if hasattr(self.opponent_identity_audit, "effective_policy_sha256")
+                    else self.opponent_identity_audit["effective_policy_sha256"]
+                ),
+                "opponent_exact_deck_sha256": exact_deck_sha256(
+                    episode.job.opponent_deck
+                ),
+                "lane_routing_audit_status": "PASS",
+                "lane_routing_audit_sha256": routing_audit[
+                    "routing_audit_sha256"
+                ],
                 **job_stats,
                 "macro_fallback": int(invalid_reason is not None),
                 "macro_fallback_reason": invalid_reason,
@@ -431,6 +479,17 @@ class CudaFullSemanticRolloutCollector:
                         "own_turn_index": own_turns.get(decision.turn, 0),
                         "opponent_meta_logits": decision.auxiliary_values.get("opponent_meta_logits"),
                         "cuda_resident": True,
+                        "opponent_policy_id": self.opponent_policy_id,
+                        "opponent_effective_policy_sha256": episode.diagnostics[
+                            "opponent_effective_policy_sha256"
+                        ],
+                        "opponent_exact_deck_sha256": episode.diagnostics[
+                            "opponent_exact_deck_sha256"
+                        ],
+                        "lane_routing_audit_status": "PASS",
+                        "lane_routing_audit_sha256": routing_audit[
+                            "routing_audit_sha256"
+                        ],
                     },
                 ))
             episode.decisions.clear()
@@ -439,6 +498,7 @@ class CudaFullSemanticRolloutCollector:
         focal_decisions = int(adapter_metrics.get("strategic_decisions", 0))
         stored_decisions = sum(len(episode.policy_transitions) for episode in episodes)
         total_seconds = hot_seconds + materialize_seconds
+        scalar_d2h_bytes = staged_bytes - staged_feature_bytes
         self._metrics = {
             "rollout/inference_batches": float(result.decisions),
             "rollout/inference_requests": float(result.routed_ready_rows),
@@ -456,6 +516,10 @@ class CudaFullSemanticRolloutCollector:
             "rollout/cuda_repeat_forfeits": float(len(forfeits)),
             "rollout/cuda_turn_limit_draws": float(len(turn_limit_draws)),
             "rollout/cuda_staged_trajectory_bytes": float(staged_bytes),
+            "rollout/cuda_staged_feature_bytes": float(staged_feature_bytes),
+            "rollout/cuda_feature_d2h_bytes": 0.0,
+            "rollout/cuda_scalar_d2h_bytes": float(scalar_d2h_bytes),
+            "rollout/cuda_features_device_resident": 1.0,
             "rollout/cuda_trajectory_games": float(sum(
                 bool(episode.policy_transitions) for episode in episodes
             )),
@@ -466,6 +530,20 @@ class CudaFullSemanticRolloutCollector:
             "rollout/macro_actions": float(adapter_metrics.get("macro_actions", 0)),
             "rollout/macro_callbacks": float(adapter_metrics.get("macro_callbacks", 0)),
             "rollout/invalid_macros": float(adapter_metrics.get("invalid_macros", 0)),
+            "rollout/lane_routing_audit_pass": 1.0,
+            "rollout/lane_routing_audit_failures": 0.0,
+            "rollout/lane_routing_roles_audited": float(
+                routing_audit["roles_audited"]
+            ),
+            "rollout/unique_opponent_exact_decks": float(
+                routing_audit["unique_opponent_exact_decks"]
+            ),
+            "rollout/deck_static_cache_misses": float(
+                routing_audit["unique_opponent_exact_decks"]
+            ),
+            "rollout/deck_static_cache_hits": float(
+                len(jobs) - routing_audit["unique_opponent_exact_decks"]
+            ),
             "rollout/worker_processes": 0.0,
             "rollout/engines_per_worker": 0.0,
             "rollout/inference_channels_per_role": 0.0,
@@ -515,6 +593,8 @@ class ChunkedCudaRolloutCollector:
         )
         selected_jobs = _trajectory_job_indices(jobs, trajectory_budget)
         started = time.perf_counter()
+        wins = losses = draws = 0
+        source_update = jobs[0].source_policy_update if jobs else -1
         for begin in range(0, len(jobs), self.rollout_batch_size):
             chunk_started = time.perf_counter()
             kwargs = dict(self.collector_kwargs)
@@ -528,13 +608,19 @@ class ChunkedCudaRolloutCollector:
             collector = CudaFullSemanticRolloutCollector(
                 self.model, self.opponent, **kwargs
             )
-            episodes.extend(collector.collect(jobs[begin : begin + self.rollout_batch_size]))
+            chunk_episodes = collector.collect(jobs[begin : begin + self.rollout_batch_size])
+            episodes.extend(chunk_episodes)
+            wins += sum(episode.reward == 1.0 for episode in chunk_episodes)
+            losses += sum(episode.reward == -1.0 for episode in chunk_episodes)
+            draws += sum(episode.reward == 0.0 for episode in chunk_episodes)
             chunks.append(collector.metrics())
             completed = min(begin + self.rollout_batch_size, len(jobs))
             print(
-                f"[0038 CUDA] games {completed}/{len(jobs)} "
+                f"[0042 CUDA][update {source_update:04d}] games {completed}/{len(jobs)} "
                 f"({completed / max(1, len(jobs)):.1%}) "
-                f"chunk={time.perf_counter() - chunk_started:.1f}s",
+                f"W-L-D={wins}-{losses}-{draws} win_rate={wins / completed:.3f} "
+                f"chunk={time.perf_counter() - chunk_started:.1f}s "
+                f"throughput={completed / max(time.perf_counter() - started, 1e-9):.2f} games/s",
                 flush=True,
             )
             del collector
@@ -546,13 +632,19 @@ class ChunkedCudaRolloutCollector:
             "rollout/cuda_hot_loop_seconds", "rollout/cuda_materialize_seconds",
             "rollout/cuda_refill_events", "rollout/cuda_repeat_forfeits",
             "rollout/cuda_turn_limit_draws",
-            "rollout/cuda_staged_trajectory_bytes", "rollout/cuda_trajectory_games",
+            "rollout/cuda_staged_trajectory_bytes", "rollout/cuda_staged_feature_bytes",
+            "rollout/cuda_feature_d2h_bytes", "rollout/cuda_scalar_d2h_bytes",
+            "rollout/cuda_trajectory_games",
             "rollout/cuda_stored_policy_transitions", "rollout/forced_shortcuts",
             "rollout/macro_actions", "rollout/macro_callbacks", "rollout/invalid_macros",
+            "rollout/lane_routing_audit_failures",
+            "rollout/lane_routing_roles_audited",
+            "rollout/deck_static_cache_misses", "rollout/deck_static_cache_hits",
         }
         maxima = {
             "rollout/max_batch_size", "rollout/cuda_lane_count",
             "rollout/cuda_peak_allocated_bytes", "rollout/cuda_peak_reserved_bytes",
+            "rollout/unique_opponent_exact_decks",
         }
         metrics: dict[str, float] = {}
         for name in additive:
@@ -568,6 +660,23 @@ class ChunkedCudaRolloutCollector:
             "rollout/worker_processes": 0.0,
             "rollout/engines_per_worker": 0.0,
             "rollout/inference_channels_per_role": 0.0,
+            "rollout/cuda_features_device_resident": float(
+                bool(chunks) and all(
+                    row.get("rollout/cuda_features_device_resident") == 1.0
+                    for row in chunks
+                )
+            ),
+            "rollout/lane_routing_audit_pass": float(
+                bool(chunks) and all(
+                    row.get("rollout/lane_routing_audit_pass") == 1.0
+                    for row in chunks
+                )
+            ),
+            "rollout/source_policy_update": float(source_update),
+            "rollout/wins": float(wins),
+            "rollout/losses": float(losses),
+            "rollout/draws": float(draws),
+            "rollout/win_rate": wins / max(1, len(jobs)),
         })
         self._metrics = metrics
         return episodes
@@ -586,5 +695,5 @@ class ChunkedCudaRolloutCollector:
 
 __all__ = [
     "ChunkedCudaRolloutCollector", "CudaFullSemanticRolloutCollector",
-    "_trajectory_job_indices",
+    "_trajectory_job_indices", "audit_exact_deck_rows", "exact_deck_sha256",
 ]

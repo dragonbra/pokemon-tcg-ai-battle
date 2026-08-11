@@ -55,7 +55,7 @@ class RolloutTerminationTest(unittest.TestCase):
             connection = _Connection()
             job = protocol.RolloutJob(
                 "test", "deck", True, 1, 0, (1,) * 60, (2,) * 60, Path("."),
-                "Policy-0806",
+                "Policy-0809",
             )
             worker.run_engine_episode(connection, job)
             return connection.messages[-1], connection.action_requests

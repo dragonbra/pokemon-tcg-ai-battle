@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import math
 from types import SimpleNamespace
 import unittest
 from unittest import mock
@@ -60,7 +61,252 @@ class _Adapter:
         return self.options
 
 
+class _DeckAwarePolicy(_Policy):
+    """Small exact-arithmetic policy used to audit heterogeneous deck rows."""
+
+    def state_encoder(self, batch, _prototype_memory):
+        deck_signal = (
+            batch.resource_cat[..., 0].float()
+            * batch.resource_num[..., 0]
+            * batch.resource_mask.float()
+        ).sum(dim=1)
+        summary = torch.stack(
+            (deck_signal, deck_signal * 2, deck_signal * 4, deck_signal * 8),
+            dim=1,
+        )
+        return SimpleNamespace(
+            summary=summary,
+            tokens=summary.unsqueeze(1),
+            mask=torch.ones((summary.shape[0], 1), dtype=torch.bool),
+        )
+
+
+class _DeckAwareAdapter(_Adapter):
+    def _encode_options(self, batch, state):
+        option_signal = batch.option_values.float()
+        return option_signal.unsqueeze(-1) * torch.tensor(
+            [1.0, 2.0, 4.0, 8.0]
+        ).view(1, 1, 4) + state.summary.unsqueeze(1)
+
+
+def _slice_namespace(batch, indices):
+    return SimpleNamespace(**{
+        name: value.index_select(0, indices)
+        for name, value in vars(batch).items()
+    })
+
+
+def _first_step_logits(decoder, batch, options, summary):
+    hidden = torch.tanh(decoder.initial(summary))
+    pointer = (
+        decoder.query(hidden).unsqueeze(1) * decoder.key(options)
+    ).sum(-1) / math.sqrt(options.shape[-1])
+    pointer = pointer + decoder.option_bias(options).squeeze(-1)
+    pointer = pointer.masked_fill(
+        ~batch.option_mask, torch.finfo(pointer.dtype).min
+    )
+    stop = decoder.stop(hidden).squeeze(-1)
+    stop = stop.masked_fill(
+        ~batch.min_count.eq(0), torch.finfo(stop.dtype).min
+    )
+    return torch.cat((pointer, stop.unsqueeze(1)), dim=1)
+
+
 class Semantic0031RouterTest(unittest.TestCase):
+    def test_focal_strategy_readout_is_used_at_every_cuda_decode_step(self) -> None:
+        decoder = _ActionDecoder(4).eval()
+        with torch.no_grad():
+            for parameter in decoder.parameters():
+                parameter.zero_()
+            decoder.key.weight.copy_(torch.eye(4))
+            decoder.query.weight.copy_(torch.eye(4))
+        batch = SimpleNamespace(
+            option_mask=torch.tensor([[True, True]]),
+            min_count=torch.tensor([1]),
+            max_count=torch.tensor([1]),
+        )
+        options = torch.tensor([[[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]]])
+        summary = torch.zeros((1, 4))
+        base = semantic0031_decode_device(
+            decoder,
+            batch,
+            options,
+            summary,
+            max_select=1,
+            greedy=True,
+            compute_stats=False,
+        )
+        adapted = semantic0031_decode_device(
+            decoder,
+            batch,
+            options,
+            summary,
+            max_select=1,
+            greedy=True,
+            compute_stats=False,
+            readout_fn=lambda hidden: hidden + torch.tensor(
+                [[0.0, 2.0, 0.0, 0.0]]
+            ),
+        )
+        self.assertEqual(base["actions"].tolist(), [[0]])
+        self.assertEqual(adapted["actions"].tolist(), [[1]])
+
+    def test_router_applies_focal_strategy_and_reuses_auxiliary(self) -> None:
+        focal_model = _Policy(4, 0.0).eval()
+        opponent_model = _Policy(4, 0.0).eval()
+        for model in (focal_model, opponent_model):
+            with torch.no_grad():
+                for parameter in model.action_decoder.parameters():
+                    parameter.zero_()
+                model.action_decoder.key.weight.copy_(torch.eye(4))
+                model.action_decoder.query.weight.copy_(torch.eye(4))
+        options = torch.tensor(
+            [[[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]]]
+        )
+        auxiliary = {"value": torch.tensor([0.25])}
+
+        def focal_strategy(_validated, _state, _options):
+            return (
+                lambda hidden: hidden + torch.tensor([[0.0, 2.0, 0.0, 0.0]]),
+                auxiliary,
+            )
+
+        router = Semantic0031ResidentRouter(
+            focal_adapter=_Adapter(focal_model, options),
+            opponent_adapter=_Adapter(opponent_model, options),
+            same_policy=False,
+            requested_opponent_policy_id="Policy-0809",
+            opponent_identity_audit={
+                "status": "PASS",
+                "requested_policy_id": "Policy-0809",
+                "effective_policy_sha256": "8" * 64,
+            },
+            focal_strategy_fn=focal_strategy,
+        )
+        batch = SimpleNamespace(
+            option_mask=torch.tensor([[True, True]]),
+            min_count=torch.tensor([1]),
+            max_count=torch.tensor([1]),
+        )
+        routed = router.route(
+            batch,
+            focal_route=torch.tensor([True]),
+            opponent_route=torch.tensor([False]),
+            max_select=1,
+            focal_greedy=True,
+            compute_stats=True,
+        )
+        self.assertEqual(routed.actions.tolist(), [[1]])
+        self.assertIs(routed.focal_auxiliary, auxiliary)
+        expected_logprob = torch.log_softmax(torch.tensor([[0.0, 1.0]]), dim=1)[
+            0, 1
+        ]
+        torch.testing.assert_close(routed.focal_logprob[0], expected_logprob)
+
+    def test_heterogeneous_deck_batch_matches_grouped_and_permuted_reference(self) -> None:
+        torch.manual_seed(809)
+        model = _DeckAwarePolicy(4, 0.0).eval()
+        adapter = _DeckAwareAdapter(model, torch.empty(0))
+        router = Semantic0031ResidentRouter(
+            focal_adapter=adapter,
+            same_policy=True,
+        )
+        batch = SimpleNamespace(
+            option_mask=torch.tensor([
+                [True, True, False],
+                [True, True, True],
+                [True, False, False],
+                [True, True, True],
+            ]),
+            min_count=torch.ones(4, dtype=torch.long),
+            max_count=torch.ones(4, dtype=torch.long),
+            option_values=torch.tensor([
+                [1, 3, 0], [4, 2, 1], [5, 0, 0], [2, 6, 3]
+            ]),
+            resource_cat=torch.tensor([
+                [[1], [2]], [[3], [4]], [[1], [2]], [[3], [4]]
+            ]),
+            resource_num=torch.tensor([
+                [[30.0], [30.0]], [[20.0], [40.0]],
+                [[45.0], [15.0]], [[10.0], [50.0]],
+            ]),
+            resource_mask=torch.ones((4, 2), dtype=torch.bool),
+        )
+        route = torch.ones(4, dtype=torch.bool)
+
+        validated, state, options, _ = router.encode(batch)
+        logits = _first_step_logits(
+            model.action_decoder, validated, options, state.summary
+        )
+        heterogeneous = router.route(
+            batch,
+            focal_route=route,
+            opponent_route=~route,
+            max_select=1,
+            focal_greedy=True,
+            compute_stats=False,
+        )
+
+        grouped_logits = torch.empty_like(logits)
+        grouped_actions = torch.empty_like(heterogeneous.actions)
+        grouped_masks = torch.empty_like(batch.option_mask)
+        # Rows 0/2 and 1/3 represent two exact-deck groups.
+        for indices in (torch.tensor([0, 2]), torch.tensor([1, 3])):
+            group = _slice_namespace(batch, indices)
+            group_route = torch.ones(len(indices), dtype=torch.bool)
+            group_validated, group_state, group_options, _ = router.encode(group)
+            grouped_logits.index_copy_(
+                0,
+                indices,
+                _first_step_logits(
+                    model.action_decoder,
+                    group_validated,
+                    group_options,
+                    group_state.summary,
+                ),
+            )
+            grouped_masks.index_copy_(0, indices, group_validated.option_mask)
+            grouped_actions.index_copy_(
+                0,
+                indices,
+                router.route(
+                    group,
+                    focal_route=group_route,
+                    opponent_route=~group_route,
+                    max_select=1,
+                    focal_greedy=True,
+                    compute_stats=False,
+                ).actions,
+            )
+
+        self.assertTrue(torch.equal(logits, grouped_logits))
+        self.assertTrue(torch.equal(validated.option_mask, grouped_masks))
+        self.assertTrue(torch.equal(heterogeneous.actions, grouped_actions))
+
+        permutation = torch.tensor([3, 0, 2, 1])
+        inverse = torch.argsort(permutation)
+        permuted = _slice_namespace(batch, permutation)
+        permuted_validated, permuted_state, permuted_options, _ = router.encode(permuted)
+        permuted_logits = _first_step_logits(
+            model.action_decoder,
+            permuted_validated,
+            permuted_options,
+            permuted_state.summary,
+        ).index_select(0, inverse)
+        permuted_actions = router.route(
+            permuted,
+            focal_route=route,
+            opponent_route=~route,
+            max_select=1,
+            focal_greedy=True,
+            compute_stats=False,
+        ).actions.index_select(0, inverse)
+        permuted_masks = permuted.option_mask.index_select(0, inverse)
+
+        self.assertTrue(torch.equal(logits, permuted_logits))
+        self.assertTrue(torch.equal(validated.option_mask, permuted_masks))
+        self.assertTrue(torch.equal(heterogeneous.actions, permuted_actions))
+
     def test_cross_policy_partial_adapter_hard_fails(self) -> None:
         focal = SimpleNamespace(model=SimpleNamespace(action_decoder=object()))
         with self.assertRaisesRegex(RuntimeError, "complete opponent adapter"):

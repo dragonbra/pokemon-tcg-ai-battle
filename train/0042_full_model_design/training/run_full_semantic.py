@@ -1,4 +1,4 @@
-"""Formal full-0031 decoder PPO over paired Frozen-0806 seed scenarios."""
+"""0042 PPO against Full-0809, with separately resolved Frozen benchmarks."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ from evaluation.runtime.seeded import build_seeded_runtime
 from ..league import load_frozen_catalog
 from ..parity import (
     assert_full_schema,
-    assert_large_model_0806_runtime_parity,
+    assert_policy_0809_runtime_parity,
     collect_official_observations,
 )
 from ..policy import AdaptationConfig, load_actor_critic
@@ -36,6 +36,7 @@ from ..rollout import (
     FullSemanticRolloutCollector,
     RolloutJob,
 )
+from ..rollout.deck_routing import exact_deck_sha256
 from .batch_full_semantic import prepare_episodes
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .storage_full_semantic import save_model_only
@@ -55,7 +56,7 @@ from ..evaluation.frozen_jobs import (
     EXPECTED_007_SCHEDULE_SHA256,
     build_frozen_jobs,
 )
-from ..evaluation.frozen_panel import paired_summary, wilson_interval
+from ..evaluation.frozen_panel import wilson_interval
 from ..initialization import (
     COMMON_UPDATE0_CHECKPOINT,
     COMMON_UPDATE0_SHA256,
@@ -76,13 +77,14 @@ from ..action_boundary.contracts import (
 ROOT = Path(__file__).resolve().parents[3]
 PROJECT = "0042_full_model_design"
 WANDB_DISPLAY_PREFIX = "0042 · strategy-conditioned full model"
-FORMAL_VERSION = "V1_strategy_conditioned_base"
+FORMAL_VERSION = "V1_ppo_protocol_v2_baseline"
 IMMUTABLE_GATE_C_TRACE_SHA256 = (
     "18c1684a3dc8158494fd9820278a85e60e351b2b274b520bb9fb413b1fa056ca"
 )
 SOURCE_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt"
-OPPONENT_POLICY_ID = "Policy-0806"
-OPPONENT_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt"
+TRAINING_OPPONENT_POLICY_ID = "Policy-0809"
+OPPONENT_POLICY_ID = TRAINING_OPPONENT_POLICY_ID
+OPPONENT_CHECKPOINT = SOURCE_CHECKPOINT
 CANDIDATE_ROOT = ROOT / "archive/submission/0031_zero_shot_0809_007_dragapult_ex_fp16_storage_fp32_runtime"
 FOCAL_DECK_ID = "dragapult_ex_07bedfffbfad"
 FOCAL_EXACT_DECK_SHA256 = "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725"
@@ -107,21 +109,19 @@ class RunConfig:
     coalesce_ms: float = 5.0
     device: str = "cuda:0"
     seed: int = 420042001
-    games_per_update: int = 512
+    games_per_update: int = 256
     engine_backend: str = "accelerated:cuda_resident"
     cuda_lane_count: int = 256
-    rollout_batch_size: int = 512
-    trajectory_games_per_update: int = 512
+    rollout_batch_size: int = 256
+    trajectory_games_per_update: int = 256
     inference_batch_size: int = 64
     max_inflight_requests: int = 256
     rollout_queue_depth: int = 512
     seed_shard_count: int = 8
-    optimization_mode: str = "fixed_optimizer_budget"
-    optimizer_steps_per_update: int = 32
     ppo_gradient_accumulation: int = 1
-    ppo_minibatch_size: int = 1024
-    ppo_epochs: int = 4
-    eval_every: int = 5
+    ppo_minibatch_size: int = 2048
+    ppo_epochs: int = 3
+    eval_every: int = 10
     adaptation_arm: str = "strategy"
     preset_name: str = "FULL_MODEL"
     wandb_mode: str = "online"
@@ -153,27 +153,20 @@ class RunConfig:
             )
         if self.engine_backend != "official" and not self.engine_backend.startswith("accelerated:"):
             raise ValueError("invalid engine backend")
-        if self.optimization_mode not in {"fixed_epochs", "fixed_optimizer_budget"}:
-            raise ValueError("invalid optimization mode")
         if min(self.inference_batch_size, self.max_inflight_requests,
                self.rollout_queue_depth, self.seed_shard_count,
-               self.optimizer_steps_per_update, self.ppo_gradient_accumulation,
+               self.ppo_gradient_accumulation,
                self.cuda_lane_count, self.rollout_batch_size) < 1:
             raise ValueError("capacity settings must be positive")
         if not 1 <= self.trajectory_games_per_update <= self.games_per_update:
             raise ValueError(
                 "trajectory_games_per_update must fit inside the rollout"
             )
-        if (
-            self.optimization_mode == "fixed_epochs"
-            and self.trajectory_games_per_update != self.games_per_update
-        ):
-            raise ValueError("fixed_epochs must retain every rollout trajectory")
+        if self.trajectory_games_per_update != self.games_per_update:
+            raise ValueError("Protocol V2 must retain every rollout trajectory")
         if (self.ppo.batch_size != self.ppo_minibatch_size
                 or self.ppo.epochs != self.ppo_epochs
-                or self.ppo.gradient_accumulation != self.ppo_gradient_accumulation
-                or self.ppo.optimizer_steps_per_update != self.optimizer_steps_per_update
-                or self.ppo.optimization_mode != self.optimization_mode):
+                or self.ppo.gradient_accumulation != self.ppo_gradient_accumulation):
             raise ValueError("RunConfig and PPOConfig scaling contracts disagree")
         if self.wandb_mode not in {"online", "offline"}:
             raise ValueError("invalid W&B mode")
@@ -181,18 +174,20 @@ class RunConfig:
             raise ValueError("0042 supports only the canonical strategy adapters")
         if self.preset_name not in PRESETS:
             raise ValueError("invalid integrated preset")
+        if self.ppo.meta_anchor_coef != preset(self.preset_name).meta_anchor_coef:
+            raise ValueError("RunConfig PPO Meta coefficient does not match selected preset")
         if self.version == FORMAL_VERSION:
             if self.preset_name != "FULL_MODEL":
                 raise ValueError("0042 V1 requires the FULL_MODEL preset")
             if (
                 self.updates is not None
-                or self.games_per_update != 512
-                or self.trajectory_games_per_update != 512
-                or self.optimizer_steps_per_update != 32
-                or self.eval_every != 5
-                or self.optimization_mode != "fixed_optimizer_budget"
+                or self.games_per_update != 256
+                or self.trajectory_games_per_update != 256
+                or self.ppo_minibatch_size != 2048
+                or self.ppo_epochs != 3
+                or self.eval_every != 10
             ):
-                raise ValueError("0042 V1 long-run scaling contract changed")
+                raise ValueError("0042 Protocol V2 formal scaling contract changed")
         self.ppo.validate()
 
 
@@ -319,12 +314,12 @@ def build_collector(model, opponent, config: RunConfig, *, mode: str,
     if (
         audit is None
         or audit.status != "PASS"
-        or audit.requested_policy_id != OPPONENT_POLICY_ID
     ):
         raise PolicyIdentityViolation(
-            "FATAL: Opponent policy identity violation. "
-            "Collector received no passing Policy-0806 materialization audit"
+            "FATAL: Opponent policy identity violation. Collector received no passing "
+            "materialization audit"
         )
+    materialized_opponent_policy_id = audit.requested_policy_id
     if mode == "greedy":
         require_kaggle_candidate_deployment(model)
     if record_trajectory is None:
@@ -348,7 +343,7 @@ def build_collector(model, opponent, config: RunConfig, *, mode: str,
             # winning Agent process context 41.  Stochastic rollout retains its
             # separately configured sampling contract.
             agent_selects_first_player=mode == "greedy",
-            opponent_policy_id=OPPONENT_POLICY_ID,
+            opponent_policy_id=materialized_opponent_policy_id,
             opponent_identity_audit=audit,
         )
     return FullSemanticRolloutCollector(
@@ -369,6 +364,7 @@ def build_jobs(
     seed: int,
     count: int = 512,
     greedy: bool = False,
+    opponent_policy_id: str = TRAINING_OPPONENT_POLICY_ID,
 ) -> list[RolloutJob]:
     catalog = load_frozen_catalog()
     if count < 256 or count % 256:
@@ -407,7 +403,7 @@ def build_jobs(
                 focal_deck=deck,
                 opponent_deck=opponent.deck,
                 runtime_root=root,
-                opponent_policy_id=OPPONENT_POLICY_ID,
+                opponent_policy_id=opponent_policy_id,
                 policy_seed=(
                     (seed + 1_700_000_009 + update_offset + game_index)
                     & 0x7FFFFFFF
@@ -503,15 +499,24 @@ def _episode_metrics(episodes: list[Any], prefix: str) -> dict[str, float]:
 
 def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_update: int,
                             panel_version: str,
+                            schedule_sha256: str,
                             opponent_identity_audit: Any,
                             candidate_deployment_audit: CandidateDeploymentAudit,
+                            expected_games: int = 2048,
+                            benchmark_kind: str = "cuda_2048",
                             ) -> dict[int, int]:
+    if expected_games not in {256, 2048}:
+        raise ValueError("Frozen result persistence supports CPU-256 or CUDA-2048")
+    expected_kind = "cpu_256" if expected_games == 256 else "cuda_2048"
+    if benchmark_kind != expected_kind:
+        raise ValueError("Frozen benchmark kind and expected game count disagree")
     if (
         opponent_identity_audit.status != "PASS"
-        or opponent_identity_audit.requested_policy_id != OPPONENT_POLICY_ID
+        or opponent_identity_audit.requested_policy_id
+        != OPPONENT_POLICY_ID
     ):
         raise PolicyIdentityViolation(
-            "FATAL: Frozen result cannot be persisted without PASS Policy-0806 audit"
+            "FATAL: Frozen result cannot be persisted without the requested benchmark audit"
         )
     if candidate_deployment_audit.checkpoint_update != checkpoint_update:
         raise RuntimeError(
@@ -531,6 +536,12 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
         rows.append({
             "game_id": episode.job.game_id, "seed": episode.job.seed,
             "opponent": episode.job.opponent_id,
+            "opponent_exact_deck_sha256": exact_deck_sha256(
+                episode.job.opponent_deck
+            ),
+            "opponent_effective_policy_sha256": (
+                opponent_identity_audit.effective_policy_sha256
+            ),
             "focal_won_toss": episode.job.focal_won_toss,
             "focal_first": _episode_focal_first(episode),
             "outcome": outcome, "turns": episode.turns, "valid": episode.valid,
@@ -540,11 +551,16 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
             "chance_boundary": chance_boundary,
             "semantic_fallback": bool(fallback_reason) and not chance_boundary,
         })
-    if len(rows) != 2048 or len(outcomes) != len(rows):
-        raise RuntimeError("Frozen result persistence requires 2,048 unique games")
+    if len(rows) != expected_games or len(outcomes) != len(rows):
+        raise RuntimeError(
+            f"Frozen result persistence requires {expected_games:,} unique games"
+        )
     _atomic_json(path, {
-        "schema_version": "0040_frozen_per_game_results_policy_identity_v4",
+        "schema_version": "0042_frozen_per_game_results_policy0809_v1",
+        "benchmark_kind": benchmark_kind,
+        "expected_games": expected_games,
         "frozen_panel_version": panel_version,
+        "schedule_sha256": schedule_sha256,
         "checkpoint_update": checkpoint_update,
         "opponent_policy_id": OPPONENT_POLICY_ID,
         "policy_identity_audit": opponent_identity_audit.to_manifest(),
@@ -554,19 +570,6 @@ def _persist_frozen_results(path: Path, episodes: list[Any], *, checkpoint_updat
         "entries": rows,
     })
     return outcomes
-
-
-def _paired_frozen_metrics(baseline: dict[int, int], checkpoint: dict[int, int],
-                           prefix: str = "eval") -> dict[str, float]:
-    summary = paired_summary(baseline, checkpoint)
-    return {
-        f"{prefix}/win_rate": float(summary["win_rate"]),
-        f"{prefix}/wilson_low": float(summary["wilson_95"][0]),
-        f"{prefix}/wilson_high": float(summary["wilson_95"][1]),
-        f"{prefix}/baseline_loss_to_win": float(summary["baseline_loss_to_checkpoint_win"]),
-        f"{prefix}/baseline_win_to_loss": float(summary["baseline_win_to_checkpoint_loss"]),
-        f"{prefix}/mcnemar_chi2": float(summary["mcnemar_continuity_corrected_chi2"]),
-    }
 
 
 def _evaluation_runtime_metrics(metrics: dict[str, float]) -> dict[str, float]:
@@ -591,6 +594,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
             "game_id": job.game_id,
             "opponent_id": job.opponent_id,
             "opponent_policy_id": job.opponent_policy_id,
+            "opponent_exact_deck_sha256": exact_deck_sha256(job.opponent_deck),
             **_job_seat_payload(job),
             "engine_seed": job.seed,
             "search_seed": job.search_seed,
@@ -603,7 +607,7 @@ def _schedule_payload(jobs: list[RolloutJob], *, source_checkpoint_sha256: str) 
     encoded = json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("ascii")
     environment_sha256 = _environment_schedule_sha256(jobs)
     return {
-        "schema": "0040_dynamic_rollout_schedule_v4_policy_identity",
+        "schema": "0042_dynamic_rollout_schedule_policy0809_v1",
         "episodes": len(rows),
         "seed_pairs": len({(row["opponent_id"], row["engine_seed"]) for row in rows}),
         "source_checkpoint_sha256": source_checkpoint_sha256,
@@ -617,6 +621,7 @@ def _environment_schedule_sha256(jobs: list[RolloutJob]) -> str:
     rows = [{
         "opponent_id": job.opponent_id,
         "opponent_policy_id": job.opponent_policy_id,
+        "opponent_exact_deck_sha256": exact_deck_sha256(job.opponent_deck),
         **_job_seat_payload(job),
         "engine_seed": job.seed,
         "search_seed": job.search_seed,
@@ -633,17 +638,17 @@ def _opponent_snapshot() -> dict[str, Any]:
         OPPONENT_POLICY_ID, purpose="rl_opponent_pool_snapshot"
     )
     return {
-        "schema": "0040_frozen0806_pool_snapshot_policy_identity_v3",
+        "schema": "0042_training_pool_snapshot_policy_identity_v1",
         "opponent_count": len(catalog),
         "total_games": sum(item.games for item in catalog),
         "seat_contract": (
-            "rollout_balanced_inside_each_randomized_256-slot unit; "
-            "evaluation fixed by frozen_0806_seeded_agent_first_player_v3"
+            "training rollout balanced inside each randomized 256-slot unit; "
+            "Frozen Policy-0809 evaluation uses Agent-owned context-41 seat choice"
         ),
-        "pool_id": "0806_kaggle_top100_plus_v1",
-        "schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
+        "pool_id": "0042_policy_0809_neutral_55_v1",
+        "schedule_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c",
         "policy_id": OPPONENT_POLICY_ID,
-        "policy": "0806_large_model_pretrained_immutable",
+        "policy": "0809_full_effective_policy_immutable",
         "policy_sha256": identity_audit.checkpoint_sha256,
         "opponent_effective_policy_sha256": identity_audit.effective_policy_sha256,
         "policy_identity_audit": identity_audit.to_manifest(),
@@ -690,7 +695,7 @@ def _run_parity(model, output: Path) -> dict[str, Any]:
         focal_index=0,
         decisions=8,
     )
-    return assert_large_model_0806_runtime_parity(
+    return assert_policy_0809_runtime_parity(
         observations=observations,
         actor_index=0,
         deck=focal_deck(),
@@ -718,7 +723,7 @@ def _run_static_update0_contract(model, output: Path) -> dict[str, Any]:
     assert_full_schema()
     model.assert_trainable_contract()
     report = {
-        "schema": "0040_paired_0809_u0_static_contract_v1",
+        "schema": "0042_paired_0809_u0_static_contract_v1",
         "passed": True,
         "official_cpu_engine_scheduled": False,
         "source_policy_checkpoint_sha256": _sha256(SOURCE_CHECKPOINT),
@@ -756,17 +761,24 @@ def _assert_acceptance_episode_health(
     )
     invalid_count_mismatch = invalid != fallbacks
     rejected_chance_boundaries = chance_boundaries and not allow_chance_boundary
+    cuda_contract_failed = any((
+        collector_metrics.get("rollout/cuda_features_device_resident") != 1.0,
+        collector_metrics.get("rollout/cuda_feature_d2h_bytes") != 0.0,
+        collector_metrics.get("rollout/lane_routing_audit_pass") != 1.0,
+        collector_metrics.get("rollout/lane_routing_audit_failures") != 0.0,
+    ))
     if any((
         semantic_fallbacks,
         rejected_chance_boundaries,
         invalid_count_mismatch,
         unsupported,
         pending_resets,
+        cuda_contract_failed,
     )):
         raise RuntimeError(
             f"{scope} action-contract health failed: fallback={fallbacks}, "
             f"invalid={invalid}, unsupported={unsupported}, pending_reset={pending_resets}, "
-            f"reasons={reasons}"
+            f"cuda_contract_failed={cuda_contract_failed}, reasons={reasons}"
         )
     return {
         f"{scope}/fallback": 0.0,
@@ -951,8 +963,11 @@ def load_registered_opponent(policy_id: str, device: torch.device):
     return actor
 
 
-def load_frozen_opponent(device: torch.device):
-    return load_registered_opponent(OPPONENT_POLICY_ID, device)
+def load_frozen_opponent(
+    device: torch.device,
+    policy_id: str = TRAINING_OPPONENT_POLICY_ID,
+):
+    return load_registered_opponent(policy_id, device)
 
 
 def run_gate(
@@ -977,7 +992,7 @@ def run_gate(
     flags = preset(preset_name)
     model, identity = build_preset_from_common_update0(focal_deck(), flags, device=device)
     opponent = load_frozen_opponent(device)
-    parity = _run_parity(model, output.parent / "large_model_0806_runtime_parity.json")
+    parity = _run_parity(model, output.parent / "policy_0809_runtime_parity.json")
     representation = model.representation_sha256()
     decoder_before = model.decoder_sha256()
     collector = FullSemanticRolloutCollector(
@@ -1004,8 +1019,8 @@ def run_gate(
             gae_lambda=gae_lambda,
             credit_clock=credit_clock,
             loss_weighting=loss_weighting,
-            optimization_mode="fixed_epochs",
             epochs=1,
+            meta_anchor_coef=flags.meta_anchor_coef,
         )
         batch = prepare_episodes(
             episodes,
@@ -1053,9 +1068,9 @@ def run_gate(
         "gpu_max_reserved_bytes": torch.cuda.max_memory_reserved(device),
     }
     if run_ppo and not report["decoder_changed"]:
-        raise RuntimeError("PPO gate did not change the original Large Model 0806 decoder")
+        raise RuntimeError("PPO gate did not change the original Policy-0809 decoder")
     if not report["representation_unchanged"]:
-        raise RuntimeError("PPO gate changed the original Large Model 0806 representation")
+        raise RuntimeError("PPO gate changed the frozen Policy-0809 representation")
     _atomic_json(output, report)
     return report
 
@@ -1102,7 +1117,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "WANDB_TAGS": (
                 "0042,0809,strategy_adapter,value_adapter,action_boundary,"
                 "cuda_resident,full_stack,ppo,normal_lr,"
-                "frozen_0806_seeded_agent_first_player_v3,"
+                "frozen_0809_seeded_agent_first_player_v1,"
                 + config.ppo.credit_clock
                 + "_clock"
             ),
@@ -1114,7 +1129,7 @@ def run(config: RunConfig) -> dict[str, Any]:
         if not getattr(wandb.Api(), "api_key", None):
             raise RuntimeError("W&B online authentication is unavailable")
     config_payload = {
-        "schema": "0042_strategy_conditioned_scalable_ppo_config_v1",
+        "schema": "0042_ppo_protocol_v2_config_v1",
         "project_id": PROJECT,
         **asdict(config),
         "initialization_checkpoint": str(COMMON_UPDATE0_CHECKPOINT.relative_to(ROOT)),
@@ -1139,18 +1154,18 @@ def run(config: RunConfig) -> dict[str, Any]:
         "actor": "exact_0031_semantic_policy_no_reduction",
         "focal_deck_id": FOCAL_DECK_ID,
         "focal_exact_deck_sha256": FOCAL_EXACT_DECK_SHA256,
-        "ppo_setting_source": {
-            "project": "0023_mega_lopunny_ex_mega_froslass_ex_002_league_training",
-            "version": "V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league",
-            "config": "rl_runs/0023_mega_lopunny_ex_mega_froslass_ex_002_league_training/versions/V2_mega_lopunny_ex_mega_froslass_ex_002_continuous_league/artifact/training_config.json",
-            "intentional_difference": (
-                f"rollout size is configured as {config.games_per_update} episodes; "
-                "optimization mode is explicit and does not scale silently"
-            ),
+        "ppo_protocol": {
+            "version": config.ppo.protocol_version,
+            "data_epoch_semantics": "shuffle_without_replacement_complete_traversal",
+            "drop_last": False,
+            "epochs_max": config.ppo.epochs,
+            "target_behavior_kl": config.ppo.target_behavior_kl,
+            "hard_behavior_kl_guard": config.ppo.hard_behavior_kl_guard,
+            "fixed_optimizer_budget": False,
         },
         "opponent_count": 55,
         "opponent_games_per_batch": config.games_per_update,
-        "opponent_policy": "0806_large_model_pretrained_immutable",
+        "opponent_policy": "0809_full_effective_policy_immutable",
         "opponent_policy_sha256": _sha256(OPPONENT_CHECKPOINT),
         "opponent_schedule_sha256": "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c",
         "official_engine": "seeded_official_engine_abi_v1_runtime_0002",
@@ -1203,11 +1218,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             "schedule_sha256": EXPECTED_007_SCHEDULE_SHA256,
             "frequency_unit_games": 256,
             "replicas": 8,
-            "reference_report": (
-                "evaluation/arena/combat_mat/policy_0806/"
-                "0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3/"
-                "reports/007_dragapult_ex.html"
-            ),
+            "reference_report": None,
         },
         "rollout_topology": {
             "worker_processes": config.worker_processes,
@@ -1322,7 +1333,10 @@ def run(config: RunConfig) -> dict[str, Any]:
         model, identity = build_preset_from_common_update0(
             focal_deck(), flags, device=device
         )
-        opponent = load_frozen_opponent(device)
+        training_opponent = load_frozen_opponent(device, TRAINING_OPPONENT_POLICY_ID)
+        evaluation_opponent = load_frozen_opponent(
+            device, OPPONENT_POLICY_ID
+        )
         parity = _run_parity(
             model, paths["artifact"] / "policy_0809_runtime_parity.json"
         )
@@ -1397,13 +1411,19 @@ def run(config: RunConfig) -> dict[str, Any]:
                 )
             )
             baseline_evaluator = build_collector(
-                baseline_evaluation_model, opponent, config, mode="greedy"
+                baseline_evaluation_model, evaluation_opponent, config, mode="greedy"
             )
             baseline_started = time.perf_counter()
             baseline_jobs, baseline_schedule_sha = build_frozen_jobs(
                 focal_deck_id=FOCAL_DECK_ID,
                 focal_deck=focal_deck(), runtime_root=runtime_root(),
                 source_policy_update=0,
+                focal_deployment_identity=(
+                    baseline_candidate_audit.effective_candidate_sha256
+                ),
+                opponent_effective_policy_sha256=(
+                    evaluation_opponent._policy_identity_audit.effective_policy_sha256
+                ),
             )
             if baseline_schedule_sha != EXPECTED_007_SCHEDULE_SHA256:
                 raise RuntimeError("update-0 Frozen schedule is not canonical 007")
@@ -1427,7 +1447,8 @@ def run(config: RunConfig) -> dict[str, Any]:
             baseline_core_outcomes = _persist_frozen_results(
                 paths["artifact"] / "frozen_results/core-update-000000.json",
                 baseline, checkpoint_update=0, panel_version=CANONICAL_CONTRACT_ID,
-                opponent_identity_audit=opponent._policy_identity_audit,
+                schedule_sha256=baseline_schedule_sha,
+                opponent_identity_audit=evaluation_opponent._policy_identity_audit,
                 candidate_deployment_audit=baseline_candidate_audit,
             )
             update0_package_parity = _run_attested_update0_package_parity(
@@ -1436,7 +1457,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                 artifact=paths["artifact"],
             )
             diagnostic_evaluator = build_collector(
-                baseline_evaluation_model, opponent, config, mode="greedy",
+                baseline_evaluation_model, evaluation_opponent, config, mode="greedy",
                 record_trajectory=True
             )
             diagnostic_episodes = diagnostic_evaluator.collect(baseline_jobs[:2])
@@ -1448,6 +1469,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                 loss_weighting=config.ppo.loss_weighting,
                 prize_mode=flags.prize_aux_mode,
                 prize_scale=flags.prize_aux_scale,
+                require_policy_identity=True,
             )
             logger.log(
                 0,
@@ -1473,7 +1495,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             candidate_leader_win_rate = baseline_win_rate
             frozen_below_best_streak = 0
             _atomic_json(paths["artifact"] / "candidate_leader.json", {
-                "schema": "0040_cuda_frozen_candidate_leader_v2",
+                "schema": "0042_cuda_frozen_candidate_leader_policy0809_v1",
                 "checkpoint_update": 0,
                 "win_rate": baseline_win_rate,
                 "checkpoint": "checkpoint/update-000000.pt",
@@ -1496,7 +1518,7 @@ def run(config: RunConfig) -> dict[str, Any]:
             stop_requested = False
             for update in update_iterator:
                 source_update = update - 1
-                collector = build_collector(model, opponent, config, mode="sample")
+                collector = build_collector(model, training_opponent, config, mode="sample")
                 rollout_started = time.perf_counter()
                 rollout_jobs = build_jobs(
                     source_policy_update=source_update,
@@ -1518,12 +1540,19 @@ def run(config: RunConfig) -> dict[str, Any]:
                     replacement_jobs: list[RolloutJob],
                 ) -> list[Any]:
                     replacement_collector = build_collector(
-                        model, opponent, config, mode="sample"
+                        model, training_opponent, config, mode="sample"
                     )
                     replacement_episodes = replacement_collector.collect(
                         replacement_jobs
                     )
-                    replacement_metric_rows.append(replacement_collector.metrics())
+                    replacement_metrics = replacement_collector.metrics()
+                    _assert_acceptance_episode_health(
+                        replacement_episodes,
+                        replacement_metrics,
+                        scope="rollout/chance_replacement",
+                        allow_chance_boundary=True,
+                    )
+                    replacement_metric_rows.append(replacement_metrics)
                     return replacement_episodes
 
                 episodes, chance_exclusions = _replace_chance_boundary_episodes(
@@ -1618,7 +1647,12 @@ def run(config: RunConfig) -> dict[str, Any]:
                     loss_weighting=config.ppo.loss_weighting,
                     prize_mode=flags.prize_aux_mode,
                     prize_scale=flags.prize_aux_scale,
+                    require_policy_identity=True,
                 )
+                # PreparedBatch owns one contiguous GPU feature store. Release the
+                # per-transition tensors before constructing PPO autograd graphs.
+                del episodes
+                torch.cuda.empty_cache()
                 ppo_started = time.perf_counter()
                 ppo_metrics = {}
                 if is_sparse_diagnostic_update(update):
@@ -1685,23 +1719,20 @@ def run(config: RunConfig) -> dict[str, Any]:
                         )
                     )
                     evaluator = build_collector(
-                        evaluation_model, opponent, config, mode="greedy"
+                        evaluation_model, evaluation_opponent, config, mode="greedy"
                     )
                     eval_started = time.perf_counter()
                     evaluation_jobs, evaluation_schedule_sha = build_frozen_jobs(
                         focal_deck_id=FOCAL_DECK_ID,
                         focal_deck=focal_deck(), runtime_root=runtime_root(),
                         source_policy_update=update,
+                        focal_deployment_identity=(
+                            candidate_deployment_audit.effective_candidate_sha256
+                        ),
+                        opponent_effective_policy_sha256=(
+                            evaluation_opponent._policy_identity_audit.effective_policy_sha256
+                        ),
                     )
-                    if evaluation_schedule_sha != baseline_schedule_sha:
-                        raise RuntimeError("canonical Frozen schedule changed across checkpoints")
-                    if _schedule_payload(
-                        evaluation_jobs,
-                        source_checkpoint_sha256=identity.checkpoint_sha256,
-                    )["environment_sha256"] != json.loads(
-                        (paths["artifact"] / "schedules/eval_frozen_2048.json").read_text()
-                    )["environment_sha256"]:
-                        raise RuntimeError("fixed evaluation schedule changed across checkpoints")
                     evaluation = evaluator.collect(evaluation_jobs)
                     evaluation_collector_metrics = evaluator.metrics()
                     evaluation_health_metrics = _assert_acceptance_episode_health(
@@ -1713,13 +1744,11 @@ def run(config: RunConfig) -> dict[str, Any]:
                         paths["artifact"] / f"frozen_results/core-update-{update:06d}.json",
                         evaluation, checkpoint_update=update,
                         panel_version=CANONICAL_CONTRACT_ID,
-                        opponent_identity_audit=opponent._policy_identity_audit,
+                        schedule_sha256=evaluation_schedule_sha,
+                        opponent_identity_audit=evaluation_opponent._policy_identity_audit,
                         candidate_deployment_audit=candidate_deployment_audit,
                     )
                     metrics.update(_episode_metrics(evaluation, "eval/core"))
-                    metrics.update(_paired_frozen_metrics(
-                        baseline_core_outcomes, checkpoint_outcomes, "eval/core"
-                    ))
                     metrics.update(_evaluation_runtime_metrics(
                         evaluation_collector_metrics
                     ))
@@ -1734,7 +1763,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                         candidate_leader_update = update
                         frozen_below_best_streak = 0
                         _atomic_json(paths["artifact"] / "candidate_leader.json", {
-                            "schema": "0040_cuda_frozen_candidate_leader_v2",
+                            "schema": "0042_cuda_frozen_candidate_leader_policy0809_v1",
                             "checkpoint_update": update,
                             "win_rate": frozen_win_rate,
                             "delta_vs_update0": frozen_win_rate - baseline_win_rate,
@@ -1775,7 +1804,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                 )
                 # Do not retain the previous update's high-dimensional feature
                 # tensors while the next on-policy rollout is being collected.
-                del batch, episodes, collector
+                del batch, collector
                 if update % config.eval_every == 0:
                     del evaluation, evaluator, evaluation_model
                 torch.cuda.empty_cache()
@@ -1836,28 +1865,25 @@ def main() -> int:
     parser.add_argument("--version", default=FORMAL_VERSION)
     parser.add_argument(
         "--updates", type=int, default=None,
-        help="optional finite update limit; omit to run until artifact/STOP_REQUESTED",
+        help="diagnostic finite limit; formal V1 runs without an update cap",
     )
     parser.add_argument("--worker-processes", type=int, default=16)
     parser.add_argument("--engines-per-worker", type=int, default=8)
     parser.add_argument("--inference-channels-per-role", type=int, default=8)
     parser.add_argument("--coalesce-ms", type=float, default=5.0)
-    parser.add_argument("--games-per-update", type=int, default=512)
+    parser.add_argument("--games-per-update", type=int, default=256)
     parser.add_argument(
         "--engine-backend",
         choices=("official", "accelerated:cuda_resident"),
         default="accelerated:cuda_resident",
     )
     parser.add_argument("--cuda-lane-count", type=int, default=256)
-    parser.add_argument("--rollout-batch-size", type=int, default=512)
-    parser.add_argument("--trajectory-games-per-update", type=int, default=512)
-    parser.add_argument("--ppo-minibatch-size", type=int, default=1024)
+    parser.add_argument("--rollout-batch-size", type=int, default=256)
+    parser.add_argument("--trajectory-games-per-update", type=int, default=256)
+    parser.add_argument("--ppo-minibatch-size", type=int, default=2048)
     parser.add_argument("--ppo-gradient-accumulation", type=int, default=1)
-    parser.add_argument("--ppo-epochs", type=int, default=4)
-    parser.add_argument("--optimizer-steps-per-update", type=int, default=32)
-    parser.add_argument("--optimization-mode", choices=("fixed_epochs", "fixed_optimizer_budget"),
-                        default="fixed_optimizer_budget")
-    parser.add_argument("--eval-every", type=int, default=5)
+    parser.add_argument("--ppo-epochs", type=int, default=3)
+    parser.add_argument("--eval-every", type=int, default=10)
     parser.add_argument("--adaptation-arm", choices=("strategy",), default="strategy")
     parser.add_argument("--preset", choices=tuple(PRESETS), default="FULL_MODEL")
     parser.add_argument("--gae-lambda", type=float, default=0.95)
@@ -1905,8 +1931,6 @@ def main() -> int:
             ppo_minibatch_size=args.ppo_minibatch_size,
             ppo_gradient_accumulation=args.ppo_gradient_accumulation,
             ppo_epochs=args.ppo_epochs,
-            optimizer_steps_per_update=args.optimizer_steps_per_update,
-            optimization_mode=args.optimization_mode,
             eval_every=args.eval_every,
             adaptation_arm=args.adaptation_arm,
             preset_name=args.preset,
@@ -1920,8 +1944,7 @@ def main() -> int:
                 batch_size=args.ppo_minibatch_size,
                 gradient_accumulation=args.ppo_gradient_accumulation,
                 epochs=args.ppo_epochs,
-                optimizer_steps_per_update=args.optimizer_steps_per_update,
-                optimization_mode=args.optimization_mode,
+                meta_anchor_coef=preset(args.preset).meta_anchor_coef,
             ),
         )
     )

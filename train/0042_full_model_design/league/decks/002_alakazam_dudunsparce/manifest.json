@@ -2,7 +2,7 @@
   "archetype": "Alakazam / Dudunsparce",
   "deck_id": "alakazam_dudunsparce_3f4515092dc5",
   "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 8,
@@ -32,5 +32,5 @@
     743,
     66
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

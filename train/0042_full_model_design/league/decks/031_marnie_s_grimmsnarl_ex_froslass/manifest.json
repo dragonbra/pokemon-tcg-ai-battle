@@ -2,7 +2,7 @@
   "archetype": "Marnie's Grimmsnarl ex / Froslass",
   "deck_id": "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be",
   "exact_deck_sha256": "de5b9940c5be5708af75d38f0bbb3fd85600e90fea9349a8ab330fb1f4638ffe",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 1
@@ -18,5 +18,5 @@
     648,
     104
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

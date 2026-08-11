@@ -32,6 +32,12 @@ class ScalingAndPanelTest(unittest.TestCase):
             focal_deck=runner.focal_deck(),
             runtime_root=runner.runtime_root(),
             source_policy_update=0,
+            focal_deployment_identity=(
+                frozen_jobs.EXPECTED_007_U0_DEPLOYMENT_SHA256
+            ),
+            opponent_effective_policy_sha256=(
+                "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96"
+            ),
         )
         expected = {
             item.deck_id: item.games * 8 for item in league.load_frozen_catalog()
@@ -41,7 +47,7 @@ class ScalingAndPanelTest(unittest.TestCase):
         self.assertEqual(schedule_sha, frozen_jobs.EXPECTED_007_SCHEDULE_SHA256)
         self.assertEqual(Counter(job.opponent_id for job in jobs), expected)
         self.assertTrue(all(type(job.focal_won_toss) is bool for job in jobs))
-        self.assertEqual(sum(bool(job.focal_won_toss) for job in jobs), 1002)
+        self.assertEqual(sum(bool(job.focal_won_toss) for job in jobs), 1007)
         self.assertEqual(len({job.seed for job in jobs}), 2048)
         self.assertEqual({job.full_round_draw_limit for job in jobs}, {50})
 

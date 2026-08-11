@@ -434,7 +434,7 @@ def _official_frozen_2048_engine_seeds(
     """Reconstruct seeds only after validating the formal eight-replica layout.
 
     Historical official reports did not persist ``GameRequest.seed`` per game.
-    A Frozen-0806 2,048 report is nevertheless deterministic from its manifest:
+    A Frozen-0809 2,048 report is nevertheless deterministic from its manifest:
     each opponent count is eight times its base-slot count, replicas 0/2/4/6 put
     the candidate first, and :func:`evaluation_game_seed` defines the seed.  Any
     ambiguity makes this helper return ``None`` rather than invent provenance.

@@ -10,7 +10,8 @@ from pathlib import Path
 
 import torch
 
-from ..initialization import build_update0_model
+from ..initialization import build_preset_from_common_update0
+from ..integrated.config import IntegratedFlags
 from ..policy.strategy_adapters import StrategyContext
 from ..training.storage_full_semantic import load_adapted_model_only
 
@@ -65,7 +66,13 @@ def _comparison(reference: torch.Tensor, candidate: torch.Tensor) -> dict[str, o
 
 def run(checkpoint: Path, replay: Path = DEFAULT_REPLAY) -> dict[str, object]:
     deck = tuple(int(value) for value in DEFAULT_DECK.read_text().splitlines() if value)
-    model, _ = build_update0_model(deck)
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    raw_flags = payload.get("integrated_flags")
+    if not isinstance(raw_flags, dict):
+        raise ValueError("0042 sensitivity checkpoint is missing integrated_flags")
+    flags = IntegratedFlags(**raw_flags)
+    flags.validate()
+    model, _ = build_preset_from_common_update0(deck, flags)
     load_adapted_model_only(model, checkpoint)
     model.eval()
     features = _features(replay, deck)

@@ -18,6 +18,7 @@ class RoutedDecisionBatch:
     validated: Any
     state: Any
     focal_options: Any
+    focal_auxiliary: Any | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +106,7 @@ class Semantic0031ResidentRouter:
         opponent_identity_audit: Any | None = None,
         shared_trunk_identity_proof: SharedTrunkIdentityProof | None = None,
         focal_summary_fn: Any | None = None,
+        focal_strategy_fn: Any | None = None,
     ) -> None:
         self.focal_adapter = focal_adapter
         self.opponent_last_option_layer = opponent_last_option_layer
@@ -116,6 +118,7 @@ class Semantic0031ResidentRouter:
         self.opponent_identity_audit = opponent_identity_audit
         self.shared_trunk_identity_proof = shared_trunk_identity_proof
         self.focal_summary_fn = focal_summary_fn
+        self.focal_strategy_fn = focal_strategy_fn
         if self.same_policy:
             if opponent_adapter is not None:
                 raise RuntimeError("same-policy routing must use the focal full adapter")
@@ -207,7 +210,23 @@ class Semantic0031ResidentRouter:
             self.focal_summary_fn(state)
             if self.focal_summary_fn is not None else state.summary
         )
+        focal_readout_fn = None
+        focal_auxiliary = None
+        if self.focal_strategy_fn is not None:
+            focal_readout_fn, focal_auxiliary = self.focal_strategy_fn(
+                validated, state, focal_options
+            )
+            if not callable(focal_readout_fn) or not isinstance(
+                focal_auxiliary, dict
+            ):
+                raise RuntimeError(
+                    "focal strategy function must return (readout_fn, auxiliary dict)"
+                )
         if self.same_policy and focal_greedy:
+            if focal_readout_fn is not None:
+                raise RuntimeError(
+                    "same-policy shared decode cannot apply a focal-only strategy adapter"
+                )
             shared = semantic0031_decode_device(
                 focal_decoder,
                 validated,
@@ -232,6 +251,7 @@ class Semantic0031ResidentRouter:
                 compute_stats=compute_stats,
                 sampling_seeds=focal_sampling_seeds,
                 sampling_counters=focal_sampling_counters,
+                readout_fn=focal_readout_fn,
             )
             opponent = semantic0031_decode_device(
                 self.opponent_decoder,
@@ -261,6 +281,7 @@ class Semantic0031ResidentRouter:
             validated=validated,
             state=state,
             focal_options=focal_options,
+            focal_auxiliary=focal_auxiliary,
         )
 
 

@@ -2,7 +2,7 @@
   "archetype": "Barbaracle / Cornerstone Mask Ogerpon ex",
   "deck_id": "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e",
   "exact_deck_sha256": "275d23c9ed3eb47996ee9d6a6d7f9c31b77bff0902d881ce30c1d99a223c833b",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 1
@@ -18,5 +18,5 @@
     1052,
     117
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

@@ -1,4 +1,9 @@
-"""Seeded 512-game comparison of selected 0034 V6 decoder checkpoints."""
+"""Disabled historical checkpoint comparison helpers.
+
+The executable evaluator predates the 0042 full Policy-0809 Frozen contract and
+is deliberately fail-closed.  Formal 0042 evaluation is owned exclusively by
+``training.run_full_semantic`` and ``evaluation.frozen_jobs``.
+"""
 
 from __future__ import annotations
 
@@ -242,13 +247,18 @@ def _render(payload: dict[str, Any]) -> str:
 table{{border-collapse:collapse;width:100%}}th,td{{padding:9px;border-bottom:1px solid #d9e0ea;text-align:right}}
 th:first-child,td:first-child{{text-align:left}}code{{background:#f2f4f7;padding:2px 5px}}a{{color:#3157d5}}</style></head><body>
 <h1>0034 V6 · Seeded 512 checkpoint comparison</h1>
-<p>六个 decoder 使用同一 exact007 主视角卡组、同一 Frozen-0806 对手分布、同一 256 组 engine seed 正反先后手配对。旧 win rate 仅用于预先选点；本表的 official-engine frozen greedy 才是强度证据。</p>
+<p>六个 decoder 使用同一 exact007 主视角卡组、同一 Frozen-0809 对手分布、同一 256 组 engine seed 正反先后手配对。旧 win rate 仅用于预先选点；本表的 official-engine frozen greedy 才是强度证据。</p>
 <p>Schedule <code>{payload['contract']['schedule']['request_schedule_sha256']}</code> · evaluation seed <code>{EVALUATION_SEED}</code></p>
 <table><thead><tr><th>Arm</th><th>Update</th><th>旧参考</th><th>新胜率</th><th>W-L-D</th><th>先攻</th><th>后攻</th><th>Wilson 95%</th><th>源报告</th></tr></thead><tbody>{rows}</tbody></table>
 {_REPORT_DATA_START}{embedded}</script></body></html>"""
 
 
 def run(output_root: Path = OUTPUT_ROOT) -> dict[str, Any]:
+    raise RuntimeError(
+        "FATAL: legacy seeded checkpoint-series evaluation is disabled; "
+        "use the 0042 Policy-0809 CUDA-2048 evaluator"
+    )
+    # Historical implementation retained below only for provenance.
     catalog = load_frozen_0806_runtime_catalog(opponent_policy_label="0806")
     arms = select_comparison_arms(METRICS_PATH, CHECKPOINT_DIR)
     schedule = _build_schedule(catalog)

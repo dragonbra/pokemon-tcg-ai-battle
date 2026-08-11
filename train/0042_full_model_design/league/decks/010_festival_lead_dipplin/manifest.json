@@ -2,7 +2,7 @@
   "archetype": "Festival Lead / Dipplin",
   "deck_id": "festival_lead_dipplin_d6c573dd89bd",
   "exact_deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 1,
@@ -19,5 +19,5 @@
   "representative_card_ids": [
     93
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

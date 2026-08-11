@@ -2,7 +2,7 @@
   "archetype": "Dragapult ex / Dusknoir",
   "deck_id": "dragapult_ex_dusknoir_b85bae9f3a21",
   "exact_deck_sha256": "b85bae9f3a2130375ba8cfef2fec42787b7bfc2289e324bbae0ef28a7486928b",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 1
@@ -18,5 +18,5 @@
     121,
     133
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

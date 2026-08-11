@@ -16,6 +16,7 @@ from ..action_boundary.dragapult import (
 from ..action_boundary.macro_planner import MacroPlanner
 from ..action_boundary.macro_protocol import MacroProtocolError
 from ..action_boundary.public_card_features import card_prize_counts
+from .deck_routing import audit_exact_deck_rows, exact_deck_sha256
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -86,6 +87,7 @@ class CudaActionBoundaryAdapter:
         }
         self.generators: dict[int, torch.Generator] = {}
         self.first_player_choices: dict[int, dict[str, int | bool]] = {}
+        self.audited_deck_roles: set[tuple[int, str]] = set()
         for index, job in enumerate(jobs):
             generator = torch.Generator(device=model.device)
             generator.manual_seed(int(job.policy_seed))
@@ -148,6 +150,15 @@ class CudaActionBoundaryAdapter:
         lengths = torch.zeros(lane_count, dtype=torch.long, device=device)
         forced = torch.zeros(lane_count, dtype=torch.bool, device=device)
         macro = torch.zeros_like(forced)
+
+        self.audited_deck_roles.update(audit_exact_deck_rows(
+            semantic=semantic,
+            ready=ready,
+            focal_route=focal_route,
+            lane_job=lane_job,
+            jobs=self.jobs,
+            already_audited=self.audited_deck_roles,
+        ))
 
         option_count = semantic["option_mask"].long().sum(dim=1)
         minimum = semantic["min_count"].long()
@@ -441,6 +452,52 @@ class CudaActionBoundaryAdapter:
                 if name != "invalid_macros":
                     totals[name] += row.get(name, 0)
         return totals
+
+    def routing_audit_manifest(self) -> dict[str, Any]:
+        expected = {
+            (job, role)
+            for job in range(len(self.jobs))
+            for role in ("focal", "opponent")
+        }
+        missing = sorted(expected - self.audited_deck_roles)
+        if missing:
+            raise RuntimeError(
+                "FATAL: incomplete per-lane exact-deck routing audit: "
+                f"missing={missing[:16]} count={len(missing)}"
+            )
+        rows = [
+            {
+                "job_index": index,
+                "focal_player": int(job.focal_player),
+                "focal_exact_deck_sha256": exact_deck_sha256(
+                    job.decks[int(job.focal_player)]
+                ),
+                "opponent_exact_deck_sha256": exact_deck_sha256(
+                    job.decks[1 - int(job.focal_player)]
+                ),
+                "roles_audited": ["focal", "opponent"],
+                "status": "PASS",
+            }
+            for index, job in enumerate(self.jobs)
+        ]
+        import hashlib
+        import json
+
+        digest = hashlib.sha256(
+            json.dumps(rows, sort_keys=True, separators=(",", ":")).encode("ascii")
+        ).hexdigest()
+        return {
+            "schema": "0042_policy0809_exact_deck_lane_routing_v1",
+            "status": "PASS",
+            "same_policy": False,
+            "jobs": len(rows),
+            "roles_audited": len(self.audited_deck_roles),
+            "unique_opponent_exact_decks": len({
+                row["opponent_exact_deck_sha256"] for row in rows
+            }),
+            "routing_audit_sha256": digest,
+            "rows": rows,
+        }
 
 
 __all__ = ["CudaActionBoundaryAdapter", "_first_player_harness_mask"]

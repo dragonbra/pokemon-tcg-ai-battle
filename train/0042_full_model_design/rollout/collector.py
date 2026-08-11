@@ -529,7 +529,7 @@ class FullSemanticRolloutCollector:
         with torch.inference_mode():
             decoded = self.opponent.deterministic_action_tensors(batch)
         if not bool(decoded.legal.all()):
-            raise RuntimeError("Frozen Policy-0806 opponent produced an illegal action")
+            raise RuntimeError("Frozen Policy-0809 opponent produced an illegal action")
         actions = [
             tuple(int(value) for value in decoded.sequences[index, : decoded.lengths[index]].tolist())
             for index in range(len(requests))

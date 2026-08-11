@@ -4,8 +4,9 @@ from .config import IntegratedFlags
 
 
 PRESETS = {
-    "BASE": IntegratedFlags(),
+    "BASE": IntegratedFlags(meta_anchor_coef=0.10),
     "FULL_MODEL": IntegratedFlags(
+        meta_anchor_coef=0.10,
         enable_prize_aux=True, prize_aux_mode="directional",
         prize_aux_actor_weight=0.10,
     ),

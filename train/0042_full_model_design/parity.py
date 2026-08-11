@@ -1,4 +1,4 @@
-"""Fail-closed parity between the evaluated Large Model 0806 package and V3 runtime."""
+"""Fail-closed parity between the evaluated full Policy-0809 package and runtime."""
 
 from __future__ import annotations
 
@@ -118,7 +118,7 @@ def _base_actor_state(state: dict[str, torch.Tensor]) -> dict[str, torch.Tensor]
     return canonical
 
 
-def assert_large_model_0806_runtime_parity(
+def assert_policy_0809_runtime_parity(
     *,
     observations: Sequence[dict[str, Any]],
     actor_index: int,
@@ -139,7 +139,7 @@ def assert_large_model_0806_runtime_parity(
     if set(local_state) != set(package_state) or any(
         not torch.equal(local_state[name], package_state[name]) for name in local_state
     ):
-        raise RuntimeError("update-0 Large Model 0806 actor tensors are not bitwise identical")
+        raise RuntimeError("update-0 full Policy-0809 actor tensors are not bitwise identical")
     compared_tensors = 0
     compared_values = 0
     maximum_logit_error = 0.0
@@ -179,7 +179,7 @@ def assert_large_model_0806_runtime_parity(
                 f"update-0 greedy action mismatch at decision {decision_index}"
             )
     report = {
-        "schema": "0038_large_model_0806_full_semantic_runtime_parity_v1",
+        "schema": "0042_policy_0809_full_semantic_runtime_parity_v1",
         "passed": True,
         "actor_schema": SCHEMA_VERSION,
         "observations": len(observations),
@@ -203,6 +203,6 @@ def assert_large_model_0806_runtime_parity(
 __all__ = [
     "EXPECTED_WIDTHS",
     "assert_full_schema",
-    "assert_large_model_0806_runtime_parity",
+    "assert_policy_0809_runtime_parity",
     "collect_official_observations",
 ]

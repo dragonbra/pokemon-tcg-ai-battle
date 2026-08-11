@@ -1,4 +1,4 @@
-"""Fail-closed loader for the 55-deck Frozen-0806 rollout schedule."""
+"""Fail-closed loader for the neutral 55-deck Policy-0809 schedule."""
 
 from __future__ import annotations
 
@@ -10,8 +10,8 @@ from pathlib import Path
 
 CATALOG_PATH = Path(__file__).with_name("frozen_catalog.json")
 DECK_ROOT = Path(__file__).with_name("decks")
-EXPECTED_CATALOG_FILE_SHA256 = "16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c"
-EXPECTED_POOL_ID = "0806_kaggle_top100_plus_v1"
+EXPECTED_CATALOG_FILE_SHA256 = "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+EXPECTED_POOL_ID = "0042_policy_0809_neutral_55_v1"
 EXPECTED_COUNT = 55
 EXPECTED_GAMES = 256
 
@@ -61,7 +61,7 @@ def load_frozen_catalog() -> tuple[DeckIdentity, ...]:
         or len(rows) != EXPECTED_COUNT
     ):
         raise ValueError(
-            f"Frozen-0806 catalog must contain {EXPECTED_COUNT} decks and {EXPECTED_GAMES} games"
+            f"0042 Policy-0809 catalog must contain {EXPECTED_COUNT} decks and {EXPECTED_GAMES} games"
         )
     numbered_roots = sorted(path for path in DECK_ROOT.iterdir() if path.is_dir())
     if len(numbered_roots) != EXPECTED_COUNT:
@@ -80,7 +80,7 @@ def load_frozen_catalog() -> tuple[DeckIdentity, ...]:
     output: list[DeckIdentity] = []
     for row in rows:
         if not isinstance(row, dict):
-            raise ValueError("Frozen-0806 catalog contains a malformed schedule row")
+            raise ValueError("0042 Policy-0809 catalog contains a malformed schedule row")
         deck_id = str(row.get("deck_id") or "")
         root = roots_by_id.get(deck_id)
         if root is None:

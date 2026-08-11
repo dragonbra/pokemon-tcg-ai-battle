@@ -2,7 +2,7 @@
   "archetype": "Mega Lucario ex / Solrock",
   "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
   "exact_deck_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "date_fallback_score_mismatch": 1,
@@ -20,5 +20,5 @@
     678,
     676
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

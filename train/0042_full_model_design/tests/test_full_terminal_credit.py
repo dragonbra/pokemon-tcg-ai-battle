@@ -20,7 +20,7 @@ class FullTerminalCreditTest(unittest.TestCase):
             focal_deck=tuple(range(1, 61)),
             opponent_deck=tuple(range(1, 61)),
             runtime_root=Path("."),
-            opponent_policy_id="Policy-0806",
+            opponent_policy_id="Policy-0809",
         )
         decision_turns = decision_turns or list(range(steps))
         decisions = [
@@ -55,8 +55,8 @@ class FullTerminalCreditTest(unittest.TestCase):
         self.assertEqual(ppo.PPOConfig().gamma, 1.0)
         self.assertEqual(ppo.PPOConfig().gae_lambda, 0.95)
         self.assertEqual(ppo.PPOConfig().credit_clock, "turn")
-        self.assertEqual(ppo.PPOConfig().batch_size, 1024)
-        self.assertEqual(ppo.PPOConfig().epochs, 4)
+        self.assertEqual(ppo.PPOConfig().batch_size, 2048)
+        self.assertEqual(ppo.PPOConfig().epochs, 3)
 
     def test_turn_clock_decays_only_across_official_turn_boundaries(self) -> None:
         batch_module = importlib.import_module(f"{PROJECT}.training.batch_full_semantic")

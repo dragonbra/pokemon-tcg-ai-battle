@@ -26,7 +26,7 @@ SOURCE_DATASET = ROOT / (
     "dragapult_focal_all_dates_weighted_exact10k"
 )
 OUTPUT = ROOT / ".tmp/strategy_adapter_v2_audit/value_meta_baseline.json"
-ARCHETYPES = ROOT / "train/0042_full_model_design/policy/assets/own_archetypes_v1.json"
+ARCHETYPES = ROOT / "train/0042_full_model_design/policy/assets/opponent_archetypes_v1.json"
 
 
 _LABEL_FIELDS = {
@@ -324,6 +324,7 @@ def run_baseline(
     *,
     batch_size: int = 256,
     device: str = "cuda",
+    checkpoint: Path | None = None,
 ) -> dict[str, Any]:
     initialization = importlib.import_module(f"{PROJECT}.initialization")
     presets = importlib.import_module(f"{PROJECT}.integrated.presets")
@@ -334,6 +335,9 @@ def run_baseline(
         device=device,
         integrated_flags=presets.preset("FULL_MODEL"),
     )
+    if checkpoint is not None:
+        storage = importlib.import_module(f"{PROJECT}.training.storage_full_semantic")
+        storage.load_adapted_model_only(model, checkpoint)
     model.eval()
     collected: dict[str, list[Tensor]] = {
         name: [] for name in (
@@ -345,14 +349,14 @@ def run_baseline(
         for batch in dataset.batches(batch_size):
             batch = batch.to(device, non_blocking=True)
             validated, state, options = model.actor.encode(batch.features)
-            memory = torch.cat((state.tokens, options), dim=1)
-            memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
-            outputs = model.value_head(memory, memory_mask)
+            adapted_value, auxiliary = model.value_and_aux_from_encoded(
+                validated, state, options
+            )
             values = {
-                "probability": outputs.value_logit.sigmoid(),
+                "probability": (adapted_value + 1.0) / 2.0,
                 "target": batch.value_target,
                 "weight": batch.episode_weight,
-                "meta_probability": outputs.archetype_logits.softmax(dim=-1),
+                "meta_probability": auxiliary["meta_logits"].softmax(dim=-1),
                 "meta_target": batch.archetype_target,
                 "turn": batch.features["global_num"][:, 0],
                 "is_exact_007": batch.is_exact_007,
@@ -372,6 +376,7 @@ def run_baseline(
 
     turn_buckets = []
     for name, low, high in (
+        ("raw_turn_0", 0, 1),
         ("early_raw_turn_0_5", 0, 6),
         ("middle_raw_turn_6_11", 6, 12),
         ("late_raw_turn_12_plus", 12, None),
@@ -430,6 +435,7 @@ def run_baseline(
                 "source_checkpoint_required_sha256"
             ],
             "deployed_actor_checkpoint_sha256": identity.checkpoint_sha256,
+            "0042_model_only_checkpoint": str(checkpoint) if checkpoint is not None else None,
             "warning": (
                 "The local validation feature split predates the paired-0809 V9 run and does "
                 "not reproduce the checkpoint's unavailable original catalog."
@@ -460,8 +466,12 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--checkpoint", type=Path)
     args = parser.parse_args()
-    report = run_baseline(args.output, batch_size=args.batch_size, device=args.device)
+    report = run_baseline(
+        args.output, batch_size=args.batch_size, device=args.device,
+        checkpoint=args.checkpoint,
+    )
     print(json.dumps({
         "output": str(args.output),
         "value_overall": report["value_overall"],

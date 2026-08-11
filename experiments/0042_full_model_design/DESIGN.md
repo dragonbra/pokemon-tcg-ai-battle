@@ -1,6 +1,6 @@
 # 0042 Strategy-Conditioned Full Model
 
-Status: **implementation complete; local regressions pass; no training or formal evaluation run**
+Status: **PPO Protocol V2 preflight passed; non-candidate 16-update smoke in progress**
 
 Date: 2026-08-11
 
@@ -29,7 +29,7 @@ This document is the authoritative project contract. The onboarding explanation 
 | 0031 Policy-0809 actor | `archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt` | `926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f` |
 | paired V9 Value | `archive/pretrained/0031_friend_0809_gsb_v5_value_v9/value_head.pt` | `f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486` |
 | own taxonomy | `train/0042_full_model_design/policy/assets/own_archetypes_v1.json` | `44865cc88612d91154adffe13f523a63103ab0c0d1a3d981af671b96ce4a8c36` |
-| Frozen schedule | `train/0042_full_model_design/league/frozen_catalog.json` | `16dbd18ce417405571c88997c9e97f9b2ec2adf96db544d1a9af988bb3c3cc3c` |
+| neutral 55-deck schedule | `train/0042_full_model_design/league/frozen_catalog.json` | `b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c` |
 
 The 55 local deck directories are byte-identical to
 `evaluation/arena/frozen_pools/0806_kaggle_top100_plus_v1/decks` and numbered `001` to `055`.
@@ -95,12 +95,12 @@ Meta logits, Value, and policy logits.
 | PrototypeEncoder | 28,418,560 | 0 | none |
 | StateEncoder, including shared prototypes | 47,115,840 | 0 | none |
 | OptionEncoder, including shared prototypes | 36,627,840 | **0** | none |
-| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder`, `1e-5` |
+| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder`, `5e-6` |
 | Value latent decoder and heads | 3,407,389 | 3,397,121 | `value_win`, `1e-4` |
 | MetaHead subset | 5,455 | 0 | none |
 | Value Adapter | 211,441 | 211,441 | `value_adapter`, `1e-4` |
-| Policy Strategy Adapter | 320,241 | 320,241 | `policy_strategy_adapter`, `1e-5` |
-| Allocation head | 621,761 | 621,761 | `allocation_head`, `1e-5` |
+| Policy Strategy Adapter | 320,241 | 320,241 | `policy_strategy_adapter`, `5e-6` |
+| Allocation head | 621,761 | 621,761 | `allocation_head`, `5e-6` |
 | Prize Value auxiliary | 103,681 | 103,681 | `value_prize`, `1e-4` |
 
 The complete model has 61,016,835 unique Parameters and 5,681,447 trainable Parameters. Weight
@@ -129,7 +129,7 @@ build one fixed Strategy Context per root decision and use the same readout-only
 
 ## 9. Initialization and checkpoint
 
-Formal version identity is `V1_strategy_conditioned_base`. Update 0 strict-loads the paired
+Formal version identity is `V1_ppo_protocol_v2_baseline`. Update 0 strict-loads the paired
 pretrained actor and Value plus the hash-pinned pre-PPO allocation sidecar, initializes both
 adapters under a private RNG stream, and asserts `g_V=g_pi=0`. Optimizer and on-policy data start
 fresh.
@@ -161,10 +161,33 @@ Temporary machine-local evidence:
 - `.tmp/strategy_adapter_v2_audit/0042_value_meta_baseline.json`
 - `.tmp/evaluation/0042_export_smoke/`
 
-## 11. Current and next stage
+## 11. PPO Protocol V2 and Frozen-0809
 
-Current stage is implemented architecture plus local validation. No `rl_runs/0042_full_model_design`
-version was created because no training run was launched. The next authorized stage is a fresh,
-versioned V1 PPO run with W&B online logging, model-only checkpoint retention, and the existing
-Frozen-0806 evaluation protocol. Promotion remains a separate human decision and is not part of
-0042 model implementation.
+The formal focal policy is exact deck `007_dragapult_ex`. Training has no update cap. Every update
+collects one complete 256-game frequency unit and retains every valid decision. PPO uses FP32
+AdamW, 2,048-decision minibatches, actor LR `5e-6`, Value-only LR `1e-4`, and up to three complete
+shuffle-without-replacement data epochs. Epoch 2/3 are admitted by a fixed rollout-wide behavior
+KL guard set containing 4,096 shuffled rows plus every compound/macro row, with target/hard guards
+`0.015/0.025`; rollout old logprob, old Value, normalized advantage, and returns stay frozen.
+Update 1 and every tenth update additionally audit pre-update old-logprob parity over all decisions;
+intervening updates audit the guard set. Probe rows never count as optimized samples.
+
+All opponents are independent materializations of full immutable `Policy-0809`, effective hash
+`0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96`. Resident CUDA audits
+every focal/opponent job role against its own exact 60-card resource ledger and rejects any
+batch-global deck substitution. Bulk rollout features remain GPU resident. PPO gathers from that
+contiguous device store, and allocation-head evaluation batches Phantom macros by tensor shape.
+
+Update 0 and every 10 updates use the same formal path: merge/export FP16 candidate storage,
+strict-load FP32 runtime, verify deployment identity, then execute an identity-bound Frozen-0809
+CUDA-2048 schedule. Results cannot promote a policy automatically.
+
+The real preflight completed 256 games and 21,203 valid decisions, audited all 55 exact opponent
+decks and 512 job-role ledgers, recorded zero feature D2H, and proved exact cumulative decision
+usage 1/2/3 across three 11-minibatch epochs.
+
+## 12. Current and next stage
+
+Current stage is the final non-candidate smoke. On a passing smoke, the next stage is the fresh,
+unbounded V1 Protocol V2 W&B run with model-only checkpoint retention and Frozen-0809 CUDA-2048
+at every 10-update milestone. Promotion remains a separate human decision.

@@ -13,6 +13,21 @@ from engine_cuda.tools.run_official_semantic0031_v2_parity_scaffold import (
 
 
 class ImmutableTraceReuseTest(unittest.TestCase):
+    def test_switch_recovery_retains_the_departing_active_identity(self) -> None:
+        source = Path(
+            "engine_cuda/include/ptcg_cuda/official_core_pod.cuh"
+        ).read_text(encoding="utf-8")
+        begin = source.index("inline bool official_pod_switch_active(")
+        end = source.index("template <typename T>", begin)
+        switch = source[begin:end]
+        history = switch.index("OfficialSemanticLogType::kSwitch")
+        recovery = switch.index(
+            "official_pod_clear_special_conditions_for_ref(state, player, active)"
+        )
+        exchange = switch.index("ps->active.values[0] = bench")
+        self.assertLess(history, recovery)
+        self.assertLess(recovery, exchange)
+
     def test_reuse_trace_neither_builds_nor_overwrites_capture(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

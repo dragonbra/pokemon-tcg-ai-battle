@@ -37,7 +37,7 @@
 <header><div>
   <h1>0042 · Strategy-Conditioned Full Model</h1>
   <div class="sub">Frozen semantic space · trainable Value understanding · detached policy readout</div>
-  <div class="status">Implementation complete · 231 tests pass · no training launched</div>
+  <div class="status">Protocol V2 preflight passed · 248 tests pass · smoke in progress</div>
 </div></header>
 <main>
   <section class="metrics">
@@ -53,8 +53,8 @@
       network, and lets policy read q1, Meta probabilities, and adapted Value through an explicit
       stop-gradient Strategy Adapter. Option Q/V LoRA and the dormant 23-class Meta conditioner are
       absent.</p>
-    <p class="note">No PPO update, formal Frozen evaluation, search change, reward change, or
-      promotion action was performed in this implementation.</p>
+    <p class="note">The active smoke is diagnostic only. It cannot create a candidate, formal
+      score, promotion action, or reusable partial checkpoint.</p>
   </section>
 
   <section class="band">
@@ -96,14 +96,33 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
         <tr><td>PrototypeEncoder</td><td>28,418,560</td><td>0</td><td>none</td></tr>
         <tr><td>StateEncoder*</td><td>47,115,840</td><td>0</td><td>none</td></tr>
         <tr><td>OptionEncoder*</td><td>36,627,840</td><td><strong>0</strong></td><td>none</td></tr>
-        <tr><td>ActionDecoder</td><td>1,027,202</td><td>1,027,202</td><td><code>action_decoder</code> / 1e-5</td></tr>
+        <tr><td>ActionDecoder</td><td>1,027,202</td><td>1,027,202</td><td><code>action_decoder</code> / 5e-6</td></tr>
         <tr><td>Value network</td><td>3,407,389</td><td>3,397,121</td><td><code>value_win</code> / 1e-4</td></tr>
         <tr><td>Value Adapter</td><td>211,441</td><td>211,441</td><td><code>value_adapter</code> / 1e-4</td></tr>
-        <tr><td>Policy Adapter</td><td>320,241</td><td>320,241</td><td><code>policy_strategy_adapter</code> / 1e-5</td></tr>
+        <tr><td>Policy Adapter</td><td>320,241</td><td>320,241</td><td><code>policy_strategy_adapter</code> / 5e-6</td></tr>
         <tr><td>Allocation / Prize</td><td>725,442</td><td>725,442</td><td>existing groups</td></tr>
       </tbody>
     </table>
     <p><small>* State and Option totals include shared frozen prototype Parameters and must not be summed.</small></p>
+  </section>
+
+  <section>
+    <h2>PPO Protocol V2 and Frozen-0809</h2>
+    <p>Exact focal deck <code>007_dragapult_ex</code>; 256 games per update; all valid decisions;
+      2,048-decision minibatches; up to three complete shuffled data epochs; target/hard behavior
+      KL guards 0.015/0.025; FP32 AdamW; actor LR 5e-6; Value-only LR 1e-4; no update cap.</p>
+    <p>The behavior guard is one deterministic set of 4,096 shuffled rollout rows plus every
+      compound/macro row, fixed across epochs. Update 1 and every tenth update also audit
+      pre-update old-logprob parity over every decision; other updates audit the guard set.
+      Probe rows never count as optimized samples.</p>
+    <p>Training and evaluation opponents are separately materialized complete immutable
+      <code>Policy-0809</code> instances. Resident CUDA audits every job-role resource ledger
+      against its own exact deck and rejects any batch-global deck substitution. The measured
+      256-game preflight covered all 55 exact decks, 512 job-role ledgers, 21,203 decisions, and
+      zero bulk feature D2H. PPO gathers from the contiguous CUDA feature store, and Phantom
+      allocation evaluation is batched by allocation/target shape.</p>
+    <p>Update 0 and every 10 updates export FP16 candidate storage, strict-load FP32 runtime, audit
+      effective identity, and run an identity-bound Frozen-0809 CUDA-2048 evaluation.</p>
   </section>
 
   <section>
@@ -151,9 +170,9 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
     <h2>Source and next stage</h2>
     <p>Actor SHA-256: <code>926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f</code><br>
       Value SHA-256: <code>f8cb92f45f625e6519b6f103deb6d4ef68323fca93037ebd4c25db9da122a486</code></p>
-    <p>The next stage is a fresh versioned V1 PPO run with W&amp;B online logging and model-only
-      checkpoints, followed by the existing Frozen-0806 protocol. It requires a separate explicit
-      launch; this design implementation did not create a run directory.</p>
+    <p>The current stage is the final 16-update non-candidate smoke. A passing result authorizes the
+      fresh unbounded V1 Protocol V2 W&amp;B run with model-only checkpoints and Frozen-0809
+      CUDA-2048 every 10 updates.</p>
     <p><a href="../../docs/rl/0042_full_model_design.md">Read the complete onboarding document</a></p>
   </section>
 </main>

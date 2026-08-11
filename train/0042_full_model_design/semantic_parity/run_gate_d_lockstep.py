@@ -20,7 +20,6 @@ from engine_cuda.tools.run_official_semantic0031_v2_parity_scaffold import (
     FAMILY_KEYS,
     GLOBAL_KEYS,
     compare_compiled_to_cuda,
-    load_training_actor_critic,
 )
 from ..action_boundary.decision_gate import DecisionClass, DecisionGate
 from ..action_boundary.macro_protocol import MacroProtocolError
@@ -45,6 +44,49 @@ def _deck(path: Path) -> tuple[int, ...]:
     if len(cards) != 60:
         raise ValueError(f"deck must have 60 cards: {path}")
     return cards
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _load_0042_actor_critic(checkpoint: Path, deck: tuple[int, ...], device: Any):
+    actor_critic = importlib.import_module(
+        "train.0042_full_model_design.policy.actor_critic"
+    )
+    adaptation = importlib.import_module(
+        "train.0042_full_model_design.policy.adaptation"
+    )
+    integrated = importlib.import_module(
+        "train.0042_full_model_design.integrated.config"
+    )
+    source = importlib.import_module("train.0042_full_model_design.source")
+    storage = importlib.import_module(
+        "train.0042_full_model_design.training.storage_full_semantic"
+    )
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    expected_adaptation = {
+        "no_option_lora": True,
+        "value_adapter": "zero_gated_residual",
+        "policy_strategy_adapter": "readout_only_zero_gated_residual",
+    }
+    if payload.get("adaptation") != expected_adaptation:
+        raise RuntimeError("0042 lockstep checkpoint adaptation contract mismatch")
+    model, _ = actor_critic.load_actor_critic(
+        source.ACTOR_CHECKPOINT,
+        deck,
+        device,
+        adaptation=adaptation.AdaptationConfig(),
+        integrated_flags=integrated.IntegratedFlags(
+            **payload["integrated_flags"]
+        ),
+    )
+    storage.load_adapted_model_only(model, checkpoint)
+    return model.eval()
 
 
 def _legal_hash(observation: dict[str, Any]) -> str:
@@ -161,6 +203,17 @@ def main() -> None:
     from ptcg_cuda_engine.semantic0031_router import Semantic0031ResidentRouter
 
     package_root = args.package.resolve()
+    package_manifest = json.loads(
+        (package_root / "manifest.json").read_text(encoding="utf-8")
+    )
+    if (
+        package_manifest.get("storage_dtype") != "fp16"
+        or package_manifest.get("runtime_dtype") != "fp32"
+        or not package_manifest.get("portable_checkpoint_sha256")
+    ):
+        raise RuntimeError(
+            "FATAL: lockstep candidate must be FP16 storage / FP32 runtime"
+        )
     sys.path.insert(0, str(package_root))
     namespace = runpy.run_path(str(package_root / "main.py"))
     package_policy = namespace["POLICY"]
@@ -170,7 +223,7 @@ def main() -> None:
     focal = _deck(DEFAULT_FOCAL)
     opponent = _deck(args.opponent_deck.resolve())
     device = torch.device("cuda:0")
-    training_model = load_training_actor_critic(
+    training_model = _load_0042_actor_critic(
         args.checkpoint.resolve(), focal, device
     )
     run_module = importlib.import_module(
@@ -182,13 +235,40 @@ def main() -> None:
         frozen_opponent, opponent, max_select=64
     )
     opponent_audit = frozen_opponent._policy_identity_audit
+    def focal_strategy_fn(validated, state, options):
+        from ..policy.strategy_adapters import build_defined_strategy_context
+
+        value, auxiliary = training_model.value_and_aux_from_encoded(
+            validated, state, options
+        )
+        strategy_rows, context = build_defined_strategy_context(
+            relative_first_player=validated.global_cat[:, 2],
+            z_meta=auxiliary["z_meta"],
+            meta_logits=auxiliary["meta_logits"],
+            value=value,
+            own_archetype_id=training_model.own_archetype_ids(
+                value.shape[0], value.device
+            ),
+        )
+
+        def readout(hidden):
+            if context is None:
+                return hidden
+            adapted = training_model.policy_strategy_adapter(
+                hidden.index_select(0, strategy_rows), context
+            )[0]
+            return hidden.index_copy(0, strategy_rows, adapted)
+
+        return readout, {"value": value, **auxiliary}
+
     router = Semantic0031ResidentRouter(
         focal_adapter=adapter,
         same_policy=False,
         opponent_adapter=opponent_adapter,
-        requested_opponent_policy_id="Policy-0806",
+        requested_opponent_policy_id="Policy-0809",
         opponent_identity_audit=opponent_audit,
         focal_summary_fn=training_model.actor_summary,
+        focal_strategy_fn=focal_strategy_fn,
     )
     cpu_library = load_seeded_library(build_seeded_runtime().library_path)
     cpu_lock = threading.Lock()
@@ -220,8 +300,10 @@ def main() -> None:
                 args.rules.read_bytes(), batch_size=1, device_index=0
             )
             cuda_decks = torch.tensor([decks], dtype=torch.int32, device=device)
-            cuda.reset_seeded_interactive_semantic(
-                cuda_decks, torch.tensor([seed], dtype=torch.int64, device=device)
+            cuda.reset_seeded_interactive_semantic_masked(
+                cuda_decks,
+                torch.tensor([seed], dtype=torch.int64, device=device),
+                torch.ones(1, dtype=torch.bool, device=device),
             )
             cuda.advance_to_decision()
             lane = torch.tensor([0], dtype=torch.int32, device=device)
@@ -556,10 +638,30 @@ def main() -> None:
     games_requested = len(seeds) * len(focal_first_values)
     passed = first_divergence is None and len(games) == games_requested
     report = {
-        "schema_version": "0040_gate_d_full_policy_identity_lockstep_v2",
+        "schema_version": "0042_gate_d_policy0809_lockstep_v1",
         "gate": "D",
         "status": "PASS" if passed else "FAIL",
-        "opponent_policy_id": "Policy-0806",
+        "focal_deck_sha256": hashlib.sha256(
+            ",".join(str(card) for card in sorted(focal)).encode("ascii")
+        ).hexdigest(),
+        "opponent_deck_sha256": hashlib.sha256(
+            ",".join(str(card) for card in sorted(opponent)).encode("ascii")
+        ).hexdigest(),
+        "candidate_deployment_identity_audit": {
+            "status": "PASS",
+            "storage_dtype": package_manifest["storage_dtype"],
+            "runtime_dtype": package_manifest["runtime_dtype"],
+            "source_checkpoint_sha256": package_manifest[
+                "rl_checkpoint_sha256"
+            ],
+            "portable_checkpoint_sha256": package_manifest[
+                "portable_checkpoint_sha256"
+            ],
+            "training_checkpoint_sha256": _sha256_file(
+                args.checkpoint.resolve()
+            ),
+        },
+        "opponent_policy_id": "Policy-0809",
         "policy_identity_audit": opponent_audit.to_manifest(),
         "games_requested": games_requested,
         "games_completed": len(games),

@@ -2,31 +2,6 @@
   "schema_version": "0040_policy_identity_registry_v1",
   "policies": [
     {
-      "policy_id": "Policy-0806",
-      "policy_kind": "immutable_pretrained",
-      "parent_policy_id": null,
-      "model_schema_version": "0031_model_only_checkpoint_v1",
-      "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
-      "action_schema_version": "ordered_legal_option_pointer_plus_stop",
-      "base_checkpoint": {
-        "path": "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt",
-        "sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
-      },
-      "trained_checkpoint": null,
-      "components": {
-        "prototype_encoder": {"source_policy_id": "Policy-0806", "effective_sha256": "b9ebb343a0927b32d6d463ba4ffd663c2a2a66acd202c343c0da2a04e140db1a"},
-        "state_encoder": {"source_policy_id": "Policy-0806", "effective_sha256": "5390ea441c7a55e3d33c53e758c636d8e73f8b9ee69dce8b3981f3d63a27702b"},
-        "option_input_encoder": {"source_policy_id": "Policy-0806", "effective_sha256": "c3e072cab84b235d3d002b4c581b43d7db7d32b679ac807cc317aeae69bf5448"},
-        "option_transformer_layer_0": {"source_policy_id": "Policy-0806", "effective_sha256": "55b4a4395b3813db8c2b9d78afbccd46c2bd9c3d31bfee56b03226e48b0934fa"},
-        "option_transformer_layer_1": {"source_policy_id": "Policy-0806", "effective_sha256": "959cc16d21a4552f4afb3b2bf07fe86eab8489f600ab49d1cc39951d720e5321"},
-        "final_norm": {"source_policy_id": "Policy-0806", "effective_sha256": "290db2885b4647f6640cd5ec235cbfce2c0baf9c7d43b20553a0b16ec524b8b2"},
-        "lora": {"source_policy_id": "Policy-0806", "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
-        "action_decoder": {"source_policy_id": "Policy-0806", "effective_sha256": "84a13800b2ab100a26d632409fa9c641df56d6364062e1948bf91d9c52047697"}
-      },
-      "created_from_update": null,
-      "effective_policy_sha256": "94a9aff63de8e2e728413e84d0647c1409326b2e5e41876a5df9062107dd2d5b"
-    },
-    {
       "policy_id": "Policy-0809",
       "policy_kind": "immutable_pretrained",
       "parent_policy_id": null,
@@ -39,14 +14,38 @@
       },
       "trained_checkpoint": null,
       "components": {
-        "prototype_encoder": {"source_policy_id": "Policy-0809", "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297"},
-        "state_encoder": {"source_policy_id": "Policy-0809", "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270"},
-        "option_input_encoder": {"source_policy_id": "Policy-0809", "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083"},
-        "option_transformer_layer_0": {"source_policy_id": "Policy-0809", "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe"},
-        "option_transformer_layer_1": {"source_policy_id": "Policy-0809", "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1"},
-        "final_norm": {"source_policy_id": "Policy-0809", "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d"},
-        "lora": {"source_policy_id": "Policy-0809", "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
-        "action_decoder": {"source_policy_id": "Policy-0809", "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff"}
+        "prototype_encoder": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297"
+        },
+        "state_encoder": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270"
+        },
+        "option_input_encoder": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083"
+        },
+        "option_transformer_layer_0": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe"
+        },
+        "option_transformer_layer_1": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1"
+        },
+        "final_norm": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d"
+        },
+        "lora": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "action_decoder": {
+          "source_policy_id": "Policy-0809",
+          "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff"
+        }
       },
       "created_from_update": null,
       "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96"

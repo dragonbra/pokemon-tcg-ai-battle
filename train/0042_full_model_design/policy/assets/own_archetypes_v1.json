@@ -1,5 +1,5 @@
 {
-  "schema_version": "0036_opponent_archetypes_v1",
+  "schema_version": "0042_own_archetypes_v1",
   "other_class_id": 14,
   "classes": [
     {"class_id": 0, "name": "dragapult_ex", "trigger_card_ids": [121]},
@@ -21,7 +21,9 @@
   "provenance": {
     "environment_pool": "0806_kaggle_top100_plus_v1",
     "environment_exact_decks": 55,
-    "rule": "priority-ordered main-axis card presence; class label is training-only and never actor-visible",
+    "semantic_role": "actor-visible own strategic archetype shortcut",
+    "rule": "priority-ordered main-axis card presence resolved once from the acting policy exact deck",
+    "independent_from": "0036 opponent Meta classification target API",
     "known_other_pool_axes": ["erikas_vileplume_ex", "ns_zoroark_ex"]
   }
 }

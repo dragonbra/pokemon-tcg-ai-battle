@@ -179,19 +179,20 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
     entries = payload.get("entries")
     result_schema = payload.get("schema_version")
     if (
-        result_schema != "0040_frozen_per_game_results_policy_identity_v4"
+        result_schema != "0042_frozen_per_game_results_policy0809_v1"
         or payload.get("checkpoint_update") != update
         or payload.get("frozen_panel_version")
-        != "frozen_0806_seeded_agent_first_player_v3"
+        != "0042_frozen_0809_seeded_agent_first_player_v1"
+        or len(str(payload.get("schedule_sha256", ""))) != 64
         or not isinstance(entries, list)
         or len(entries) != 2048
     ):
         raise ValueError("canonical Frozen evaluation contract mismatch")
     audit = payload.get("policy_identity_audit") or {}
     if (
-        payload.get("opponent_policy_id") != "Policy-0806"
+        payload.get("opponent_policy_id") != "Policy-0809"
         or audit.get("status") != "PASS"
-        or audit.get("requested_policy_id") != "Policy-0806"
+        or audit.get("requested_policy_id") != "Policy-0809"
     ):
         raise ValueError("canonical Frozen evaluation policy identity audit failed")
     candidate_audit = payload.get("candidate_deployment_identity_audit") or {}
@@ -216,6 +217,13 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
     ]
     if len(valid) != 2048:
         raise ValueError("canonical Frozen evaluation contains invalid/error games")
+    if any(
+        len(str(row.get("opponent_exact_deck_sha256", ""))) != 64
+        or row.get("opponent_effective_policy_sha256")
+        != audit.get("effective_policy_sha256")
+        for row in valid
+    ):
+        raise ValueError("canonical Frozen evaluation per-game identity audit failed")
     malformed = [
         row for row in valid
         if (
@@ -276,7 +284,7 @@ def export_candidate(
     source_payload = _load_payload(source_model_path)
     rl_payload = _load_payload(checkpoint)
     if source_payload.get("schema_version") not in SOURCE_SCHEMAS:
-        raise ValueError("source candidate is not the audited fp16 Large Model 0806 package")
+        raise ValueError("source candidate is not the audited FP16 Policy-0809 package")
     metadata = rl_payload.get("metadata") or {}
     adaptation = rl_payload.get("adaptation") or {}
     flags = rl_payload.get("integrated_flags") or {}
@@ -495,7 +503,7 @@ def export_candidate(
             ),
             "frozen_evaluation": frozen,
             "selection": (
-                f"{metadata.get('version')} update{checkpoint_update} canonical Frozen-0806 greedy "
+                f"{metadata.get('version')} update{checkpoint_update} canonical Frozen-0809 greedy "
                 f"{frozen['wins']}-{frozen['losses']} "
                 f"({frozen['win_rate'] * 100:.8f}%), 0 error"
                 if frozen is not None

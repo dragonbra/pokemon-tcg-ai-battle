@@ -35,6 +35,12 @@ def main() -> None:
         focal_deck_id=FOCAL_DECK_ID,
         focal_deck=focal_deck(), runtime_root=runtime_root(),
         source_policy_update=0,
+        focal_deployment_identity=(
+            "b9b4b162915ba64d1156e6724df9bfa29633c41ae5e6caf5afbc923202add995"
+        ),
+        opponent_effective_policy_sha256=(
+            "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96"
+        ),
     )
     jobs = [replace(job, trace_policy="full") for job in jobs if job.seed in seeds]
     collector = FullSemanticRolloutCollector(

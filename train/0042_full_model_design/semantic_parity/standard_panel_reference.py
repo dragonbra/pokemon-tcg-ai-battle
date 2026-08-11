@@ -1,4 +1,4 @@
-"""Compare official-CPU and CUDA results on the shared Frozen-0806 panel.
+"""Compare official-CPU and CUDA results on the shared Frozen-0809 panel.
 
 This is deliberately *not* Gate G evidence.  The two inputs use the same
 committed 8 x 256 schedule and are useful as a release diagnostic, but they do
@@ -194,9 +194,9 @@ def _validate_and_pair(
         or cuda.get("contract_id") != FROZEN_0806_LEGACY_BALANCED_SEAT_CONTRACT_ID
         or cuda.get("evaluation_seed") != FROZEN_0806_EVALUATION_SEED
     ):
-        raise ValueError("Frozen-0806 evaluation contract or seed mismatch")
+        raise ValueError("Frozen-0809 evaluation contract or seed mismatch")
     if cpu_manifest.get("opponent_schedule_id") != _FROZEN_0806_SCHEDULE_ID:
-        raise ValueError("official CPU opponent schedule identity is not Frozen-0806 v2")
+        raise ValueError("official CPU opponent schedule identity is not Frozen-0809 v2")
     if not _HEX64.fullmatch(str(cuda.get("schedule_sha256", ""))):
         raise ValueError("CUDA schedule identity is invalid")
 

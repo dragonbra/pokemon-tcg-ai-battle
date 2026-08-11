@@ -1,6 +1,6 @@
 # 0042 Full Model Design
 
-Status: implementation and local regressions complete; no PPO run or formal Frozen evaluation has been launched.
+Status: PPO Protocol V2 preflight passed; 16-update non-candidate smoke is in progress.
 
 ## 1. Overview
 
@@ -173,12 +173,12 @@ of which 5,681,447 are trainable.
 | PrototypeEncoder | 28,418,560 | 0 | none | - | - |
 | StateEncoder (includes shared prototypes) | 47,115,840 | 0 | none | - | - |
 | OptionEncoder (includes shared prototypes) | 36,627,840 | 0 | none | - | - |
-| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder` | `1e-5` | 0 |
+| ActionDecoder | 1,027,202 | 1,027,202 | `action_decoder` | `5e-6` | 0 |
 | Value latent decoder + heads | 3,407,389 | 3,397,121 | `value_win` | `1e-4` | 0 |
 | frozen 15-class MetaHead subset | 5,455 | 0 | none | - | - |
 | Value Adapter / `E_V_own` | 211,441 | 211,441 | `value_adapter` | `1e-4` | 0 |
-| Policy Adapter / `E_pi_own` | 320,241 | 320,241 | `policy_strategy_adapter` | `1e-5` | 0 |
-| allocation head | 621,761 | 621,761 | `allocation_head` | `1e-5` | 0 |
+| Policy Adapter / `E_pi_own` | 320,241 | 320,241 | `policy_strategy_adapter` | `5e-6` | 0 |
+| allocation head | 621,761 | 621,761 | `allocation_head` | `5e-6` | 0 |
 | Prize Value auxiliary | 103,681 | 103,681 | `value_prize` | `1e-4` | 0 |
 
 No frozen Parameter is held by the optimizer, no Parameter appears in two optimizer groups, and no
@@ -267,11 +267,50 @@ Evidence limitation: this is a post-hoc local split whose source catalog differs
 original catalog used for the paired V9 checkpoint. It is calibration evidence, not a formal model
 selection or strength result.
 
-## 15. Deck pool and diagnostics
+## 15. PPO Protocol V2 and Policy-0809 Frozen contract
 
-`league/decks/` is an exact byte-for-byte copy of
+The formal focal policy uses exact deck `007_dragapult_ex` and runs without a configured update
+limit. Each update collects one complete 256-game frequency unit, retains every valid decision,
+and performs up to three complete data epochs. Each epoch uses a fresh permutation, sampling
+without replacement, keeps the final short minibatch, and gives every valid decision exactly one
+optimizer opportunity. Epoch 2 and 3 are admitted only after a deterministic rollout-wide
+behavior-policy KL guard containing 4,096 shuffled decisions plus every compound/macro decision;
+target/hard guards are `0.015/0.025`. Update 1 and every tenth update perform an additional
+all-decision pre-update old-logprob audit, while intervening updates audit the same guard set.
+Probe rows never count as optimizer samples.
+
+Training is FP32 with AdamW, actor-only LR `5e-6`, Value-only LR `1e-4`, no shared trainable
+parameters, minibatch size 2,048 decisions, clip `0.10`, entropy coefficient `0.003`, Value
+coefficient `0.5`, max grad norm `0.5`, no scheduler, and zero weight decay. Frozen old logprob,
+old Value, normalized advantage, and return targets are computed once per rollout and never
+refreshed across epochs.
+
+All training opponents resolve independently as full immutable `Policy-0809`, effective identity
+`0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96`. Focal and opponent
+materializations share no Parameter or tensor storage. Resident CUDA receives no batch-global
+deck adapter: every job/role resource ledger is checked on GPU against its own exact 60-card deck,
+and a mismatch is fatal before PPO. The contiguous rollout feature store remains on CUDA through
+minibatch gathering, and Phantom allocation-head evaluation is grouped by shape instead of
+launching one GPU operation per macro.
+
+At update 0 and every 10 updates, the candidate is merged and exported with FP16 floating storage,
+strictly rematerialized as FP32 runtime, assigned an effective deployment hash, and evaluated by
+the independent Frozen-0809 CUDA-2048 contract. The identity-bound schedule includes candidate
+effective identity, opponent effective identity, exact opponent deck, slot, replica, and seed
+namespace. Smoke artifacts are never candidates and promotion remains manual.
+
+The real 256-game preflight completed 21,203 valid decisions (82.824/game), observed all 55 exact
+opponent decks, audited all 512 focal/opponent job roles, and reported zero bulk feature D2H. Each
+of three instrumented epochs used all 21,203 decisions exactly once in 11 minibatches with a final
+723-decision tail.
+
+## 16. Deck pool and diagnostics
+
+`league/decks/` uses the exact 60-card contents and numbering from
 `evaluation/arena/frozen_pools/0806_kaggle_top100_plus_v1/decks`: exactly 55 directories numbered
-`001` through `055`. `frozen_catalog.json` is byte-identical to that pool's schedule. The focal
+`001` through `055`. Its local manifests deliberately identify the policy-neutral
+`0042_policy_0809_neutral_55_v1` environment pool; this deck distribution does not define or
+weaken the full Policy-0809 opponent weights. The focal
 Dragapult deck is numbered `007_dragapult_ex` and keeps semantic ID
 `dragapult_ex_07bedfffbfad`.
 
@@ -280,7 +319,7 @@ Value adapter gradient norms, Meta accuracy/entropy by turn and class, and Value
 `python3 -m train.0042_full_model_design.diagnostics.strategy_sensitivity --help` for controlled V,
 Meta-probability, and q1 sensitivity probes.
 
-## 16. Code map
+## 17. Code map
 
 | Contract | Path |
 |---|---|
@@ -289,6 +328,9 @@ Meta-probability, and q1 sensitivity probes.
 | readout-only decoder | `train/0042_full_model_design/semantic_policy/model/action_decoder.py` |
 | rollout/replay distribution | `train/0042_full_model_design/policy/action_distribution.py` |
 | PPO and optimizer | `train/0042_full_model_design/training/ppo_full_semantic.py` |
+| full Policy-0809 resolver | `train/0042_full_model_design/policy_identity.py` |
+| identity-bound Frozen schedule | `train/0042_full_model_design/evaluation/frozen_jobs.py` |
+| per-lane exact-deck audit | `train/0042_full_model_design/rollout/deck_routing.py` |
 | checkpoint contract | `train/0042_full_model_design/checkpoint.py` |
 | strict storage | `train/0042_full_model_design/training/storage_full_semantic.py` |
 | portable runtime | `train/0042_full_model_design/kaggle_runtime/compound_inference.py` |

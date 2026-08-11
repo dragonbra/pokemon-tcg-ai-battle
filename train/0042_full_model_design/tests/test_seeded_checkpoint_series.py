@@ -20,6 +20,10 @@ wilson_interval = series.wilson_interval
 
 
 class SeededCheckpointSeriesTest(unittest.TestCase):
+    def test_legacy_executable_is_fail_closed(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "legacy.*disabled"):
+            series.run()
+
     def test_current_zero_shot_schema_is_exportable(self) -> None:
         exporter = importlib.import_module(
             "train.0042_full_model_design.export_full_semantic_candidate"

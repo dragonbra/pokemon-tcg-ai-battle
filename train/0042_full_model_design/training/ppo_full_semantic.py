@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
+import sys
+import time
 
 import torch
 
 from ..policy.action_distribution import evaluate_actions_encoded
 from ..policy.actor_critic import DecoderPolicyHead, SemanticActorCritic
-from ..policy.batching import collate_feature_batches, move_batch
 from .batch_full_semantic import PreparedBatch, training_batch_metrics
 from ..policy.compound_evaluation import evaluate_parameter_actions
 from ..integrated.loss_registry import LossRegistry, LossTerm
@@ -16,28 +18,152 @@ from .metric_frequency import is_sparse_diagnostic_update
 from ..integrated.diagnostics import gradient_diagnostics
 
 
+FROZEN_TARGET_NAMES = (
+    "rollout_log_prob",
+    "old_value",
+    "advantage",
+    "gae_return",
+)
+
+
+def index_feature_batch(
+    features: dict[str, torch.Tensor],
+    indices: torch.Tensor,
+    device: torch.device,
+    feature_widths: dict[str, torch.Tensor] | None = None,
+) -> dict[str, torch.Tensor]:
+    """Gather a minibatch from one rollout-collated, device-resident feature store."""
+    output: dict[str, torch.Tensor] = {}
+    per_device_indices: dict[torch.device, torch.Tensor] = {}
+    for name, value in features.items():
+        index = per_device_indices.get(value.device)
+        if index is None:
+            index = indices.to(value.device, non_blocking=True)
+            per_device_indices[value.device] = index
+        selected = value.index_select(0, index)
+        if feature_widths is not None and name in feature_widths:
+            width = int(feature_widths[name].index_select(0, indices).max())
+            selected = selected[:, :width].contiguous()
+        output[name] = selected.to(device, non_blocking=True)
+    return output
+
+
+def complete_epoch_orders(
+    decisions: int,
+    epochs: int,
+    *,
+    generator: torch.Generator | None = None,
+) -> tuple[torch.Tensor, ...]:
+    if decisions < 1 or epochs < 1:
+        raise ValueError("decisions and epochs must be positive")
+    return tuple(torch.randperm(decisions, generator=generator) for _ in range(epochs))
+
+
+def epoch_minibatches(order: torch.Tensor, batch_size: int) -> tuple[torch.Tensor, ...]:
+    if order.ndim != 1 or batch_size < 1:
+        raise ValueError("epoch order must be rank one and batch_size positive")
+    return tuple(order[start : start + batch_size] for start in range(0, len(order), batch_size))
+
+
+def behavior_guard_indices(
+    decisions: int,
+    max_samples: int,
+    *,
+    source_policy_update: int,
+    required_indices: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Choose one deterministic rollout-wide KL sample shared by all epochs."""
+    if min(decisions, max_samples) < 1 or source_policy_update < 0:
+        raise ValueError("behavior guard dimensions and source update must be valid")
+    if decisions <= max_samples:
+        sampled = torch.arange(decisions)
+    else:
+        generator = torch.Generator(device="cpu")
+        generator.manual_seed(4_200_420_911 + source_policy_update)
+        sampled = torch.randperm(decisions, generator=generator)[:max_samples]
+    required = (
+        torch.empty(0, dtype=torch.long)
+        if required_indices is None
+        else required_indices.detach().to(device="cpu", dtype=torch.long)
+    )
+    if required.numel() and (int(required.min()) < 0 or int(required.max()) >= decisions):
+        raise ValueError("required behavior guard index is outside the rollout")
+    return torch.cat((sampled, required)).unique().sort().values
+
+
+def snapshot_frozen_targets(
+    targets: object | dict[str, torch.Tensor],
+) -> dict[str, torch.Tensor]:
+    source = targets if isinstance(targets, dict) else {
+        name: getattr(targets, name) for name in FROZEN_TARGET_NAMES
+    }
+    return {name: source[name].detach().clone() for name in FROZEN_TARGET_NAMES}
+
+
+def assert_frozen_targets(
+    targets: object | dict[str, torch.Tensor],
+    snapshot: dict[str, torch.Tensor],
+) -> None:
+    source = targets if isinstance(targets, dict) else {
+        name: getattr(targets, name) for name in FROZEN_TARGET_NAMES
+    }
+    for name in FROZEN_TARGET_NAMES:
+        if not torch.equal(source[name], snapshot[name]):
+            raise RuntimeError(f"rollout-frozen PPO target changed during update: {name}")
+
+
+def sample_usage_metrics(
+    usage: torch.Tensor,
+    *,
+    samples_examined: int,
+    samples_optimized: int,
+) -> dict[str, float]:
+    valid = int(usage.numel())
+    unique = int(usage.gt(0).sum())
+    return {
+        "samples_examined": float(samples_examined),
+        "samples_optimized": float(samples_optimized),
+        "unique_decisions_optimized": float(unique),
+        "coverage_ratio": unique / max(1, valid),
+        "optimized_slots_per_valid_decision": samples_optimized / max(1, valid),
+        "optimized_slots_per_unique_decision": samples_optimized / max(1, unique),
+        "usage_count_0": float(usage.eq(0).sum()),
+        "usage_count_1": float(usage.eq(1).sum()),
+        "usage_count_2": float(usage.eq(2).sum()),
+        "usage_count_3": float(usage.eq(3).sum()),
+        "usage_count_4_plus": float(usage.ge(4).sum()),
+        "usage_fraction_0": float(usage.eq(0).float().mean()),
+        "usage_fraction_1": float(usage.eq(1).float().mean()),
+        "usage_fraction_2": float(usage.eq(2).float().mean()),
+        "usage_fraction_3": float(usage.eq(3).float().mean()),
+        "usage_fraction_4_plus": float(usage.ge(4).float().mean()),
+    }
+
+
 @dataclass(frozen=True, slots=True)
 class PPOConfig:
+    protocol_version: str = "ppo_protocol_v2"
     gamma: float = 1.0
     gae_lambda: float = 0.95
     credit_clock: str = "turn"
     loss_weighting: str = "episode_equal_decisions"
-    epochs: int = 4
-    batch_size: int = 1024
-    actor_learning_rate: float = 1.0e-5
+    epochs: int = 3
+    batch_size: int = 2048
+    actor_learning_rate: float = 5.0e-6
     value_learning_rate: float = 1.0e-4
     prize_learning_rate: float = 1.0e-4
     meta_anchor_coef: float = 0.10
     weight_decay: float = 0.0
     clip_ratio: float = 0.10
     value_coefficient: float = 0.5
-    entropy_coefficient: float = 0.01
+    entropy_coefficient: float = 0.003
     reference_kl_coefficient: float = 0.02
-    target_behavior_kl: float = 0.02
+    target_behavior_kl: float = 0.015
+    hard_behavior_kl_guard: float = 0.025
     max_grad_norm: float = 0.5
     behavior_logprob_mae_limit: float = 1.0e-4
-    optimization_mode: str = "fixed_optimizer_budget"
-    optimizer_steps_per_update: int = 32
+    behavior_guard_samples: int = 4096
+    full_behavior_audit_interval: int = 10
     gradient_accumulation: int = 1
 
     def validate(self) -> None:
@@ -52,11 +178,20 @@ class PPOConfig:
             "episode_equal_turns",
         }:
             raise ValueError("invalid loss_weighting")
-        if self.optimization_mode not in {"fixed_epochs", "fixed_optimizer_budget"}:
-            raise ValueError("invalid PPO optimization mode")
-        if min(self.epochs, self.batch_size, self.optimizer_steps_per_update,
-               self.gradient_accumulation) < 1:
+        if self.protocol_version != "ppo_protocol_v2":
+            raise ValueError("0042 formal PPO must use ppo_protocol_v2")
+        if min(
+            self.epochs,
+            self.batch_size,
+            self.behavior_guard_samples,
+            self.full_behavior_audit_interval,
+            self.gradient_accumulation,
+        ) < 1:
             raise ValueError("PPO capacity settings must be positive")
+        if self.gradient_accumulation != 1:
+            raise ValueError("Protocol V2 uses one optimizer step per data minibatch")
+        if not 0.0 < self.target_behavior_kl < self.hard_behavior_kl_guard:
+            raise ValueError("behavior KL target must be below the hard guard")
         if self.meta_anchor_coef <= 0:
             raise ValueError("0042 meta_anchor_coef must be explicitly positive")
 
@@ -73,6 +208,11 @@ class PPOTrainer:
         self.device = device
         self.config = config
         config.validate()
+        if config.meta_anchor_coef != model.integrated_flags.meta_anchor_coef:
+            raise ValueError(
+                "PPO meta_anchor_coef must match the selected 0042 preset: "
+                f"ppo={config.meta_anchor_coef} preset={model.integrated_flags.meta_anchor_coef}"
+            )
         model.freeze_representation()
         model.assert_trainable_contract()
         self.initial_representation_sha256 = model.representation_sha256()
@@ -146,6 +286,47 @@ class PPOTrainer:
             for group in self.optimizer.param_groups
         ]
 
+    def parameter_partition_manifest(self) -> dict[str, dict[str, float | int]]:
+        actor_groups = {"action_decoder", "policy_strategy_adapter", "allocation_head"}
+        value_groups = {"value_win", "value_adapter", "value_prize"}
+        actor_ids = {
+            id(parameter)
+            for group in self.optimizer.param_groups
+            if str(group["name"]) in actor_groups
+            for parameter in group["params"]
+        }
+        value_ids = {
+            id(parameter)
+            for group in self.optimizer.param_groups
+            if str(group["name"]) in value_groups
+            for parameter in group["params"]
+        }
+        parameter_sizes = {
+            id(parameter): int(parameter.numel())
+            for parameter in self.model.parameters() if parameter.requires_grad
+        }
+        shared = actor_ids.intersection(value_ids)
+        actor_only = actor_ids - shared
+        value_only = value_ids - shared
+        categorized = actor_ids.union(value_ids)
+        uncategorized = set(parameter_sizes) - categorized
+        if uncategorized:
+            raise RuntimeError("trainable parameters are missing from PPO optimizer partitions")
+        return {
+            "actor_only": {
+                "parameters": sum(parameter_sizes[item] for item in actor_only),
+                "learning_rate": self.config.actor_learning_rate,
+            },
+            "value_only": {
+                "parameters": sum(parameter_sizes[item] for item in value_only),
+                "learning_rate": self.config.value_learning_rate,
+            },
+            "shared_trainable": {
+                "parameters": sum(parameter_sizes[item] for item in shared),
+                "learning_rate": self.config.actor_learning_rate,
+            },
+        }
+
     def set_group_learning_rates(self, rates: dict[str, float]) -> None:
         names = {str(group["name"]) for group in self.optimizer.param_groups}
         if set(rates) != names:
@@ -211,8 +392,8 @@ class PPOTrainer:
         """One fixed small graph at scheduled updates; never called per minibatch."""
         count = min(samples, batch.decisions)
         indices = torch.arange(count)
-        features = move_batch(
-            collate_feature_batches([batch.features[int(index)] for index in indices]), self.device
+        features = index_feature_batch(
+            batch.features, indices, self.device, batch.feature_widths
         )
         validated, state, options = self.model.actor.encode(features)
         value, auxiliary = self.model.value_and_aux_from_encoded(validated, state, options)
@@ -257,7 +438,156 @@ class PPOTrainer:
         metrics = gradient_diagnostics({"win": win_loss, "prize": prize_loss}, shared)
         metrics["gradient/meta/value_trunk_norm"] = meta_norm
         metrics["gradient/critic/value_trunk_norm"] = critic_norm
+        effective_meta = self.config.meta_anchor_coef * meta_norm
+        effective_critic = self.config.value_coefficient * critic_norm
+        metrics["gradient/meta/value_trunk_effective_norm"] = effective_meta
+        metrics["gradient/critic/value_trunk_effective_norm"] = effective_critic
+        metrics["gradient/meta_to_critic_effective_ratio"] = (
+            effective_meta / max(effective_critic, 1.0e-12)
+        )
         return metrics
+
+    def _behavior_probe(
+        self,
+        batch: PreparedBatch,
+        *,
+        probe_indices: torch.Tensor | None = None,
+    ) -> dict[str, float]:
+        """Measure current-vs-behavior policy on a fixed rollout subset."""
+        selected_indices = (
+            torch.arange(batch.decisions)
+            if probe_indices is None
+            else probe_indices.detach().to(device="cpu", dtype=torch.long)
+        )
+        if (
+            selected_indices.ndim != 1
+            or selected_indices.numel() < 1
+            or int(selected_indices.min()) < 0
+            or int(selected_indices.max()) >= batch.decisions
+            or selected_indices.unique().numel() != selected_indices.numel()
+        ):
+            raise ValueError("behavior probe indices must be unique valid rollout rows")
+        probe_count = int(selected_indices.numel())
+        weight_sum = 0.0
+        kl_sum = 0.0
+        clip_sum = 0.0
+        entropy_sum = 0.0
+        mae_max = 0.0
+        predictions = torch.empty(probe_count, dtype=torch.float32)
+        absolute_errors = torch.empty(probe_count, dtype=torch.float32)
+        self.model.eval()
+        with torch.no_grad():
+            for start in range(0, probe_count, self.config.batch_size):
+                positions = torch.arange(
+                    start, min(start + self.config.batch_size, probe_count)
+                )
+                indices = selected_indices.index_select(0, positions)
+                features = index_feature_batch(
+                    batch.features, indices, self.device, batch.feature_widths
+                )
+                sequences = batch.sequences[indices].to(self.device)
+                lengths = batch.lengths[indices].to(self.device)
+                stopped = batch.stopped[indices].to(self.device)
+                old_logprob = batch.rollout_log_prob[indices].to(self.device)
+                validated, state, options, value, auxiliary, context = (
+                    self.model.encode_with_strategy(features)
+                )
+                evaluated = evaluate_actions_encoded(
+                    self.model.head, validated, self.model.actor_summary(state), options,
+                    sequences, lengths, stopped, value, context,
+                )
+                parameter_logprob, parameter_entropy = evaluate_parameter_actions(
+                    self.model, validated, state, options,
+                    tuple(batch.macro_actions[int(index)] for index in indices),
+                )
+                current_logprob = evaluated.log_prob + parameter_logprob
+                log_ratio = current_logprob - old_logprob
+                ratio = log_ratio.exp()
+                weights = batch.episode_weight[indices].to(self.device).float()
+                kl_sum += float((((ratio - 1.0) - log_ratio) * weights).sum())
+                clip_sum += float(
+                    (((ratio - 1.0).abs() > self.config.clip_ratio).float() * weights).sum()
+                )
+                entropy_sum += float(
+                    ((evaluated.entropy + parameter_entropy) * weights).sum()
+                )
+                weight_sum += float(weights.sum())
+                absolute_error = log_ratio.abs().detach().float().cpu()
+                absolute_errors[positions] = absolute_error
+                mae_max = max(mae_max, float(absolute_error.max()))
+                predictions[positions] = evaluated.value.detach().float().cpu()
+        targets = batch.gae_return.index_select(0, selected_indices).detach().float().cpu()
+        residual = targets - predictions
+        target_variance = float(targets.var(unbiased=False))
+        explained_variance = (
+            1.0 - float(residual.var(unbiased=False)) / target_variance
+            if target_variance > 1.0e-12 else 0.0
+        )
+        denominator = max(weight_sum, 1.0e-12)
+        worst_position = int(absolute_errors.argmax())
+        worst_index = int(selected_indices[worst_position])
+        macro_mask = torch.tensor([
+            batch.macro_actions[int(index)] is not None for index in selected_indices
+        ], dtype=torch.bool)
+        root_mask = ~macro_mask
+        return {
+            "behavior_kl": kl_sum / denominator,
+            "clip_fraction": clip_sum / denominator,
+            "entropy": entropy_sum / denominator,
+            "behavior_logprob_mae_max": mae_max,
+            "behavior_logprob_abs_error_mean": float(absolute_errors.mean()),
+            "behavior_logprob_abs_error_p95": float(
+                absolute_errors.quantile(0.95)
+            ),
+            "behavior_logprob_worst_index": float(worst_index),
+            "behavior_logprob_worst_is_macro": float(macro_mask[worst_position]),
+            "behavior_logprob_root_error_max": float(
+                absolute_errors[root_mask].max() if bool(root_mask.any()) else 0.0
+            ),
+            "behavior_logprob_macro_error_max": float(
+                absolute_errors[macro_mask].max() if bool(macro_mask.any()) else 0.0
+            ),
+            "explained_variance": explained_variance,
+            "value_prediction_mean": float(predictions.mean()),
+            "value_prediction_std": float(predictions.std(unbiased=False)),
+            "sample_count": float(probe_count),
+            "sample_fraction": probe_count / batch.decisions,
+        }
+
+    def _singleton_behavior_logprob_error(
+        self, batch: PreparedBatch, index: int
+    ) -> float:
+        """Replay one row at its original collection widths for parity diagnosis."""
+        indices = torch.tensor([index], dtype=torch.long)
+        features = index_feature_batch(
+            batch.features, indices, self.device, batch.feature_widths
+        )
+        self.model.eval()
+        with torch.no_grad():
+            validated, state, options, value, auxiliary, context = (
+                self.model.encode_with_strategy(features)
+            )
+            evaluated = evaluate_actions_encoded(
+                self.model.head,
+                validated,
+                self.model.actor_summary(state),
+                options,
+                batch.sequences[indices].to(self.device),
+                batch.lengths[indices].to(self.device),
+                batch.stopped[indices].to(self.device),
+                value,
+                context,
+            )
+            parameter_logprob, _ = evaluate_parameter_actions(
+                self.model,
+                validated,
+                state,
+                options,
+                (batch.macro_actions[index],),
+            )
+            current = evaluated.log_prob + parameter_logprob
+            old = batch.rollout_log_prob[indices].to(self.device)
+            return float((current - old).abs().max())
 
     def update(self, batch: PreparedBatch, *, update: int = 0) -> dict[str, float]:
         if batch.source_policy_update < 0:
@@ -270,71 +600,79 @@ class PPOTrainer:
         ):
             raise ValueError("prepared batch credit contract does not match PPO config")
         if self.model.representation_sha256() != self.initial_representation_sha256:
-            raise RuntimeError("frozen Large Model 0806 representation changed before PPO")
+            raise RuntimeError("frozen Policy-0809 representation changed before PPO")
         behavior_parameters = {
             name: tensor.detach().clone()
             for name, tensor in self.model.actor.action_decoder.named_parameters()
         }
-        accumulators: dict[str, float] = {}
+        frozen_targets = snapshot_frozen_targets(batch)
+        macro_indices = torch.tensor([
+            index for index, value in enumerate(batch.macro_actions) if value is not None
+        ], dtype=torch.long)
+        guard_indices = behavior_guard_indices(
+            batch.decisions,
+            self.config.behavior_guard_samples,
+            source_policy_update=batch.source_policy_update,
+            required_indices=macro_indices,
+        )
+        full_preupdate_audit = (
+            update <= 1 or update % self.config.full_behavior_audit_interval == 0
+        )
+        preupdate = self._behavior_probe(
+            batch,
+            probe_indices=None if full_preupdate_audit else guard_indices,
+        )
+        preupdate_mae_max = preupdate["behavior_logprob_mae_max"]
+        optimizer_steps = 0
         minibatches = 0
         epochs_completed = 0
-        early_stop = False
-        rejected_kl = 0.0
-        preupdate_mae_max = 0.0
-        optimizer_steps = 0
-        accumulation_count = 0
-        samples_consumed = 0
-        covered = torch.zeros(batch.decisions, dtype=torch.bool)
-        self.model.eval()
-        with torch.no_grad():
-            for start in range(0, batch.decisions, self.config.batch_size):
-                indices = torch.arange(start, min(start + self.config.batch_size, batch.decisions))
-                features = move_batch(
-                    collate_feature_batches([batch.features[int(index)] for index in indices]),
-                    self.device,
-                )
-                sequences = batch.sequences[indices].to(self.device)
-                lengths = batch.lengths[indices].to(self.device)
-                stopped = batch.stopped[indices].to(self.device)
-                rollout_log_prob = batch.rollout_log_prob[indices].to(self.device)
-                validated, state, options, current_value, auxiliary, context = (
-                    self.model.encode_with_strategy(features)
-                )
-                replay = evaluate_actions_encoded(
-                    self.model.head, validated, self.model.actor_summary(state), options,
-                    sequences, lengths, stopped, current_value, context,
-                )
-                parameter_logprob, _ = evaluate_parameter_actions(
-                    self.model, validated, state, options,
-                    tuple(batch.macro_actions[int(index)] for index in indices),
-                )
-                preupdate_mae_max = max(
-                    preupdate_mae_max,
-                    float((rollout_log_prob - (replay.log_prob + parameter_logprob)).abs().max()),
-                )
+        samples_examined = 0
+        samples_optimized = 0
+        usage = torch.zeros(batch.decisions, dtype=torch.int16)
+        overall_sums: dict[str, float] = {}
+        overall_samples = 0
+        ratio_sum = ratio_square_sum = 0.0
+        ratio_count = 0
+        ratio_min = float("inf")
+        ratio_max = float("-inf")
         if preupdate_mae_max > self.config.behavior_logprob_mae_limit:
-            raise RuntimeError(
-                f"behavior log-prob parity failed: {preupdate_mae_max}"
+            worst_index = int(preupdate["behavior_logprob_worst_index"])
+            singleton_error = self._singleton_behavior_logprob_error(
+                batch, worst_index
             )
-        minibatches_per_epoch = (batch.decisions + self.config.batch_size - 1) // self.config.batch_size
-        loop_epochs = self.config.epochs
-        if self.config.optimization_mode == "fixed_optimizer_budget":
-            required_microbatches = self.config.optimizer_steps_per_update * self.config.gradient_accumulation
-            loop_epochs = (required_microbatches + minibatches_per_epoch - 1) // minibatches_per_epoch
+            raise RuntimeError(
+                "behavior log-prob parity failed: "
+                f"max={preupdate_mae_max} "
+                f"mean={preupdate['behavior_logprob_abs_error_mean']} "
+                f"p95={preupdate['behavior_logprob_abs_error_p95']} "
+                f"worst_index={worst_index} "
+                f"worst_is_macro={bool(preupdate['behavior_logprob_worst_is_macro'])} "
+                f"root_max={preupdate['behavior_logprob_root_error_max']} "
+                f"macro_max={preupdate['behavior_logprob_macro_error_max']} "
+                f"singleton_original_width_error={singleton_error}"
+            )
+        minibatches_per_epoch = math.ceil(batch.decisions / self.config.batch_size)
         self.optimizer.zero_grad(set_to_none=True)
-        for epoch in range(loop_epochs):
-            order = torch.randperm(batch.decisions)
-            epoch_kls: list[float] = []
-            for start in range(0, batch.decisions, self.config.batch_size):
-                if (self.config.optimization_mode == "fixed_optimizer_budget"
-                        and optimizer_steps >= self.config.optimizer_steps_per_update):
-                    break
-                indices = order[start : start + self.config.batch_size]
-                samples_consumed += int(indices.numel())
-                covered[indices.cpu()] = True
-                features = move_batch(
-                    collate_feature_batches([batch.features[int(index)] for index in indices]),
-                    self.device,
+        progress_started = time.perf_counter()
+        expected_optimizer_steps = self.config.epochs * minibatches_per_epoch
+        early_stop = False
+        hard_guard_triggered = False
+        stop_kl = 0.0
+        result: dict[str, float] = {}
+        orders = complete_epoch_orders(batch.decisions, self.config.epochs)
+        for epoch, order in enumerate(orders, start=1):
+            epoch_sums: dict[str, float] = {}
+            epoch_samples = 0
+            epoch_steps = 0
+            progression_thresholds = {
+                max(1, math.ceil(minibatches_per_epoch * fraction / 4)): fraction * 25
+                for fraction in range(1, 5)
+            }
+            for indices in epoch_minibatches(order, self.config.batch_size):
+                count = int(indices.numel())
+                samples_examined += count
+                features = index_feature_batch(
+                    batch.features, indices, self.device, batch.feature_widths
                 )
                 sequences = batch.sequences[indices].to(self.device)
                 lengths = batch.lengths[indices].to(self.device)
@@ -387,12 +725,13 @@ class PPOTrainer:
                 current_joint_logprob = evaluated.log_prob + parameter_logprob
                 log_ratio = current_joint_logprob - old_log_prob
                 ratio = log_ratio.exp()
+                detached_ratio = ratio.detach().float()
+                ratio_sum += float(detached_ratio.sum())
+                ratio_square_sum += float(detached_ratio.square().sum())
+                ratio_count += detached_ratio.numel()
+                ratio_min = min(ratio_min, float(detached_ratio.min()))
+                ratio_max = max(ratio_max, float(detached_ratio.max()))
                 approximate_kl = (((ratio - 1.0) - log_ratio) * weights).sum()
-                approximate_kl_value = float(approximate_kl.detach())
-                if minibatches > 0 and approximate_kl_value > self.config.target_behavior_kl:
-                    early_stop = True
-                    rejected_kl = approximate_kl_value
-                    break
                 unclipped = ratio * advantage
                 clipped = ratio.clamp(
                     1.0 - self.config.clip_ratio, 1.0 + self.config.clip_ratio
@@ -435,7 +774,7 @@ class PPOTrainer:
                 total_loss = registry.total()
                 if not torch.isfinite(total_loss):
                     raise FloatingPointError("nonfinite full-semantic PPO loss")
-                (total_loss / self.config.gradient_accumulation).backward()
+                total_loss.backward()
                 value_gate_grad = (
                     self.model.value_adapter.gate.grad.detach().abs()
                     if self.model.value_adapter.gate.grad is not None
@@ -446,19 +785,34 @@ class PPOTrainer:
                     if self.model.policy_strategy_adapter.gate.grad is not None
                     else total_loss.new_zeros(())
                 )
-                accumulation_count += 1
-                norm = total_loss.new_zeros(())
-                if accumulation_count == self.config.gradient_accumulation:
-                    norm = torch.nn.utils.clip_grad_norm_(
-                        [value for value in self.model.parameters() if value.requires_grad],
-                        self.config.max_grad_norm,
-                    )
-                    if not torch.isfinite(norm):
-                        raise FloatingPointError("nonfinite full-semantic PPO gradient")
-                    self.optimizer.step()
-                    self.optimizer.zero_grad(set_to_none=True)
-                    optimizer_steps += 1
-                    accumulation_count = 0
+                def grad_l2(parameters) -> torch.Tensor:
+                    present = [
+                        parameter.grad.detach().float().square().sum()
+                        for parameter in parameters if parameter.grad is not None
+                    ]
+                    return torch.stack(present).sum().sqrt() if present else total_loss.new_zeros(())
+
+                value_mlp_grad = grad_l2(self.model.value_adapter.mlp.parameters())
+                value_embedding_grad = grad_l2(self.model.value_adapter.own_embedding.parameters())
+                policy_mlp_grad = grad_l2(self.model.policy_strategy_adapter.mlp.parameters())
+                policy_embedding_grad = grad_l2(
+                    self.model.policy_strategy_adapter.own_embedding.parameters()
+                )
+                norm = torch.nn.utils.clip_grad_norm_(
+                    [value for value in self.model.parameters() if value.requires_grad],
+                    self.config.max_grad_norm,
+                )
+                if not torch.isfinite(norm):
+                    raise FloatingPointError("nonfinite full-semantic PPO gradient")
+                self.optimizer.step()
+                self.optimizer.zero_grad(set_to_none=True)
+                optimizer_steps += 1
+                epoch_steps += 1
+                minibatches += 1
+                samples_optimized += count
+                usage[indices.cpu()] += 1
+                value_ratio = auxiliary["value_adapter_residual_ratio"].detach().float()
+                policy_ratio = policy_residual_ratio.detach().float()
                 metrics = {
                     "policy_loss": policy_loss,
                     "value_loss": value_loss,
@@ -474,85 +828,163 @@ class PPOTrainer:
                             logits=auxiliary["meta_logits"].float()
                         ).entropy() * weights
                     ).sum(),
+                    "value_adapter_gate_raw": self.model.value_adapter.gate,
+                    "value_adapter_gate_effective": self.model.value_adapter.gate.tanh(),
+                    "policy_adapter_gate_raw": self.model.policy_strategy_adapter.gate,
+                    "policy_adapter_gate_effective": self.model.policy_strategy_adapter.gate.tanh(),
                     "value_adapter_gate": self.model.value_adapter.gate.tanh(),
                     "policy_adapter_gate": self.model.policy_strategy_adapter.gate.tanh(),
                     "value_adapter_residual_ratio": (
-                        auxiliary["value_adapter_residual_ratio"] * weights
+                        value_ratio * weights
                     ).sum(),
                     "policy_adapter_residual_ratio": (
-                        policy_residual_ratio * weights
+                        policy_ratio * weights
                     ).sum(),
+                    "value_adapter_residual_ratio_p50": value_ratio.quantile(0.50),
+                    "value_adapter_residual_ratio_p95": value_ratio.quantile(0.95),
+                    "value_adapter_residual_ratio_max": value_ratio.max(),
+                    "policy_adapter_residual_ratio_p50": policy_ratio.quantile(0.50),
+                    "policy_adapter_residual_ratio_p95": policy_ratio.quantile(0.95),
+                    "policy_adapter_residual_ratio_max": policy_ratio.max(),
                     "value_adapter_gate_grad_abs": value_gate_grad,
                     "policy_adapter_gate_grad_abs": policy_gate_grad,
+                    "value_adapter_mlp_grad_l2": value_mlp_grad,
+                    "value_adapter_own_embedding_grad_l2": value_embedding_grad,
+                    "policy_adapter_mlp_grad_l2": policy_mlp_grad,
+                    "policy_adapter_own_embedding_grad_l2": policy_embedding_grad,
+                    "value_prediction_mean": evaluated.value.mean(),
+                    "value_target_mean": returns.mean(),
                     "entropy": entropy,
+                    "entropy_weighted_contribution": -self.config.entropy_coefficient * entropy,
                     "root_entropy": root_entropy,
                     "allocation_entropy": allocation_entropy,
                     "total_loss": total_loss,
                     "behavior_kl": approximate_kl,
                     "reference_kl": reference_kl,
+                    "reference_kl_weighted_contribution": (
+                        self.config.reference_kl_coefficient * reference_kl
+                    ),
+                    "value_loss_weighted_contribution": (
+                        self.config.value_coefficient * value_loss
+                    ),
+                    "meta_anchor_raw": opponent_meta_loss,
+                    "meta_anchor_weighted_contribution": (
+                        self.config.meta_anchor_coef * opponent_meta_loss
+                    ),
                     "clip_fraction": (
                         ((ratio - 1.0).abs() > self.config.clip_ratio).float() * weights
                     ).sum(),
                     "gradient_norm": norm,
                 }
                 for name, value in metrics.items():
-                    accumulators[name] = accumulators.get(name, 0.0) + float(value.detach())
-                epoch_kls.append(approximate_kl_value)
-                minibatches += 1
-            epochs_completed = epoch + 1
-            if early_stop:
-                break
-            if (self.config.optimization_mode == "fixed_optimizer_budget"
-                    and optimizer_steps >= self.config.optimizer_steps_per_update):
-                break
-            if epoch_kls and sum(epoch_kls) / len(epoch_kls) > self.config.target_behavior_kl:
-                early_stop = True
-                break
-        if accumulation_count:
-            if early_stop:
-                self.optimizer.zero_grad(set_to_none=True)
-                accumulation_count = 0
-            elif self.config.optimization_mode == "fixed_optimizer_budget":
-                raise RuntimeError("fixed optimizer budget ended on a partial accumulation")
-            else:
-                correction = self.config.gradient_accumulation / accumulation_count
-                for parameter in self.model.parameters():
-                    if parameter.grad is not None:
-                        parameter.grad.mul_(correction)
-                norm = torch.nn.utils.clip_grad_norm_(
-                    [value for value in self.model.parameters() if value.requires_grad],
-                    self.config.max_grad_norm,
+                    numeric = float(value.detach())
+                    epoch_sums[name] = epoch_sums.get(name, 0.0) + numeric * count
+                    overall_sums[name] = overall_sums.get(name, 0.0) + numeric * count
+                epoch_samples += count
+                overall_samples += count
+                elapsed = max(time.perf_counter() - progress_started, 1.0e-9)
+                width = 20
+                completed = min(width, int(width * optimizer_steps / expected_optimizer_steps))
+                print(
+                    f"\r[0042 PPO][update {update:04d} epoch {epoch}/{self.config.epochs}] "
+                    f"[{'#' * completed}{'.' * (width - completed)}] "
+                    f"step {epoch_steps}/{minibatches_per_epoch} "
+                    f"global {optimizer_steps}/{expected_optimizer_steps} "
+                    f"{optimizer_steps / elapsed:.2f} iter/s",
+                    end="\n" if epoch_steps == minibatches_per_epoch else "",
+                    flush=True,
+                    file=sys.stderr,
                 )
-                if not torch.isfinite(norm):
-                    raise FloatingPointError("nonfinite accumulated PPO gradient")
-                self.optimizer.step()
-                self.optimizer.zero_grad(set_to_none=True)
-                optimizer_steps += 1
+                if epoch_steps in progression_thresholds:
+                    progress = int(progression_thresholds[epoch_steps])
+                    for name in (
+                        "behavior_kl", "clip_fraction", "entropy", "policy_loss",
+                        "value_loss", "gradient_norm",
+                    ):
+                        result[f"ppo/epoch_{epoch}/progress_{progress}/{name}"] = (
+                            epoch_sums[name] / epoch_samples
+                        )
+            epochs_completed = epoch
+            expected_usage = torch.full_like(usage, epoch)
+            if not torch.equal(usage, expected_usage):
+                raise RuntimeError(f"PPO epoch {epoch} did not cover every decision exactly once")
+            assert_frozen_targets(batch, frozen_targets)
+            probe = self._behavior_probe(batch, probe_indices=guard_indices)
+            for name, total in epoch_sums.items():
+                result[f"ppo/epoch_{epoch}/{name}"] = total / epoch_samples
+            for name, value in probe.items():
+                result[f"ppo/epoch_{epoch}/end_{name}"] = value
+            result[f"ppo/epoch_{epoch}/optimizer_steps"] = float(epoch_steps)
+            result[f"ppo/epoch_{epoch}/samples_optimized"] = float(epoch_samples)
+            result[f"ppo/epoch_{epoch}/coverage_ratio"] = 1.0
+            result[f"ppo/epoch_{epoch}/cumulative_reuse"] = float(epoch)
+            stop_kl = probe["behavior_kl"]
+            hard_guard_triggered = stop_kl >= self.config.hard_behavior_kl_guard
+            if stop_kl >= self.config.target_behavior_kl:
+                early_stop = epoch < self.config.epochs
+                break
         if minibatches == 0:
             raise RuntimeError("full-semantic PPO produced no minibatches")
+        assert_frozen_targets(batch, frozen_targets)
         if self.model.representation_sha256() != self.initial_representation_sha256:
-            raise RuntimeError("frozen Large Model 0806 representation changed during PPO")
-        result = {f"ppo/{name}": value / minibatches for name, value in accumulators.items()}
+            raise RuntimeError("frozen pretrained representation changed during PPO")
+        for name, value in overall_sums.items():
+            result[f"ppo/{name}"] = value / max(1, overall_samples)
+        ratio_mean = ratio_sum / max(1, ratio_count)
+        optimizer_elapsed = max(time.perf_counter() - progress_started, 1.0e-9)
+        result.update({
+            "ppo/ratio_mean": ratio_mean,
+            "ppo/ratio_std": max(0.0, ratio_square_sum / max(1, ratio_count) - ratio_mean ** 2) ** 0.5,
+            "ppo/ratio_min": ratio_min if ratio_count else 0.0,
+            "ppo/ratio_max": ratio_max if ratio_count else 0.0,
+            "ppo/meta_anchor_coef": self.config.meta_anchor_coef,
+            "ppo/reference_kl_coefficient": self.config.reference_kl_coefficient,
+            "ppo/value_loss_coefficient": self.config.value_coefficient,
+            "ppo/entropy_coefficient": self.config.entropy_coefficient,
+            "ppo/optimizer_iterations_per_second": optimizer_steps / optimizer_elapsed,
+        })
+        usage_metrics = sample_usage_metrics(
+            usage,
+            samples_examined=samples_examined,
+            samples_optimized=samples_optimized,
+        )
         result.update(
             {
                 "ppo/behavior_logprob_mae_preupdate": preupdate_mae_max,
+                "ppo/behavior_logprob_abs_error_mean_preupdate": preupdate[
+                    "behavior_logprob_abs_error_mean"
+                ],
+                "ppo/behavior_logprob_abs_error_p95_preupdate": preupdate[
+                    "behavior_logprob_abs_error_p95"
+                ],
+                "ppo/behavior_logprob_root_error_max_preupdate": preupdate[
+                    "behavior_logprob_root_error_max"
+                ],
+                "ppo/behavior_logprob_macro_error_max_preupdate": preupdate[
+                    "behavior_logprob_macro_error_max"
+                ],
+                "ppo/behavior_logprob_audit_samples_preupdate": preupdate["sample_count"],
+                "ppo/behavior_logprob_audit_fraction_preupdate": preupdate["sample_fraction"],
+                "ppo/behavior_logprob_full_audit_preupdate": float(full_preupdate_audit),
                 "ppo/epochs_completed": float(epochs_completed),
                 "ppo/target_kl_early_stop": float(early_stop),
-                "ppo/rejected_behavior_kl": rejected_kl,
+                "ppo/hard_behavior_kl_guard_triggered": float(hard_guard_triggered),
+                "ppo/epoch_end_behavior_kl": stop_kl,
+                "ppo/target_behavior_kl": self.config.target_behavior_kl,
+                "ppo/hard_behavior_kl_guard": self.config.hard_behavior_kl_guard,
                 "ppo/minibatches_completed": float(minibatches),
                 "ppo/optimizer_steps": float(optimizer_steps),
                 "ppo/physical_minibatch": float(self.config.batch_size),
                 "ppo/gradient_accumulation": float(self.config.gradient_accumulation),
-                "ppo/effective_minibatch": float(
-                    self.config.batch_size * self.config.gradient_accumulation
-                ),
-                "ppo/fixed_optimizer_budget": float(
-                    self.config.optimization_mode == "fixed_optimizer_budget"
-                ),
+                "ppo/effective_minibatch": float(self.config.batch_size),
+                "ppo/fixed_optimizer_budget": 0.0,
                 "ppo/decisions": float(batch.decisions),
-                "ppo/optimizer_samples_consumed": float(samples_consumed),
-                "ppo/sample_coverage_ratio": float(covered.float().mean()),
-                "ppo/sample_reuse_ratio": float(samples_consumed / max(1, batch.decisions)),
+                **{f"ppo/{name}": value for name, value in usage_metrics.items()},
+                "ppo/optimizer_samples_consumed": float(samples_optimized),
+                "ppo/sample_coverage_ratio": usage_metrics["coverage_ratio"],
+                "ppo/sample_reuse_ratio": usage_metrics[
+                    "optimized_slots_per_valid_decision"
+                ],
                 **{
                     f"optimizer/lr/{group.get('name', index)}": float(group["lr"])
                     for index, group in enumerate(self.optimizer.param_groups)
@@ -568,6 +1000,9 @@ class PPOTrainer:
                 "ppo/loss_weighting_turn_equal_config": float(
                     self.config.loss_weighting == "episode_equal_turns"
                 ),
+                "ppo/protocol_v2": 1.0,
+                "ppo/drop_last": 0.0,
+                "ppo/sampling_without_replacement": 1.0,
             }
         )
         result.update(training_batch_metrics(
@@ -576,4 +1011,13 @@ class PPOTrainer:
         return result
 
 
-__all__ = ["PPOConfig", "PPOTrainer"]
+__all__ = [
+    "PPOConfig",
+    "PPOTrainer",
+    "assert_frozen_targets",
+    "complete_epoch_orders",
+    "epoch_minibatches",
+    "index_feature_batch",
+    "sample_usage_metrics",
+    "snapshot_frozen_targets",
+]

@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 DEFAULT_TAXONOMY = Path(__file__).resolve().parent / "assets/own_archetypes_v1.json"
-EXPECTED_TAXONOMY_SHA256 = "44865cc88612d91154adffe13f523a63103ab0c0d1a3d981af671b96ce4a8c36"
+EXPECTED_TAXONOMY_SHA256 = "2d942cb6c6b1509e0effcb4d06cda18f1a53ccabab1a5a432c1437a18f81e48b"
 OWN_ARCHETYPE_VOCABULARY_VERSION = "0042_own_archetypes_v1"
 
 
@@ -70,11 +70,6 @@ class OwnArchetypeVocabulary:
             if cards.intersection(item.trigger_card_ids):
                 return OwnArchetypeId(item.class_id)
         return OwnArchetypeId(self.others_id)
-
-    def classify_opponent_target(self, deck: Sequence[int]) -> int:
-        """Training-only label under the pretrained q1 Meta taxonomy."""
-        return self.classify_own_deck(deck).value
-
 
 __all__ = [
     "ArchetypeClass",

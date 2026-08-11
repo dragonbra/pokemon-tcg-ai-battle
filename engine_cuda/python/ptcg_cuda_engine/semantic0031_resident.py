@@ -561,15 +561,13 @@ def run_resident_greedy_jobs(
                 and routed is not None
                 and bool(local_focal.any().item())
             ):
-                focal_value = (
-                    focal_value_fn(
+                focal_value = routed.focal_auxiliary
+                if focal_value is None and focal_value_fn is not None:
+                    focal_value = focal_value_fn(
                         routed.validated,
                         routed.state,
                         routed.focal_options,
                     )
-                    if focal_value_fn is not None
-                    else None
-                )
                 focal_decision_sink(
                     semantic=policy_semantic,
                     routed=routed,

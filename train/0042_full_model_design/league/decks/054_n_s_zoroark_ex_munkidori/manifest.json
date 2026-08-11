@@ -2,7 +2,7 @@
   "archetype": "N's Zoroark ex / Munkidori",
   "deck_id": "n_s_zoroark_ex_munkidori_940bc1f37b2a",
   "exact_deck_sha256": "940bc1f37b2a0d5bc70210af8bccb99cfdd5c8e823507f53127fdfc494826efc",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 1
@@ -18,5 +18,5 @@
     293,
     112
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

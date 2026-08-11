@@ -2,7 +2,7 @@
   "archetype": "Mega Starmie ex / Dusknoir",
   "deck_id": "mega_starmie_ex_dusknoir_b15853cdfb83",
   "exact_deck_sha256": "b15853cdfb8304f39f879638102a7fd161f1102d81e6d3f36d5beca4db9e01b0",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "submission_date_exact_score_mismatch": 1
@@ -18,5 +18,5 @@
     1031,
     133
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

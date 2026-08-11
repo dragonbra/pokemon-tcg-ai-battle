@@ -2,7 +2,7 @@
   "archetype": "Hydrapple ex / Meganium",
   "deck_id": "hydrapple_ex_meganium_415af0a5541c",
   "exact_deck_sha256": "415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "submission_date_exact_score_mismatch": 1
@@ -18,5 +18,5 @@
     150,
     710
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

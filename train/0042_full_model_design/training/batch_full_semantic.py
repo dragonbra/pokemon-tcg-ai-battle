@@ -10,12 +10,15 @@ from torch import Tensor
 from ..rollout.protocol import EpisodeTrajectory
 from .compound_gae import compound_gae
 from ..integrated.prize import prize_gae
-from ..policy.own_archetype import OwnArchetypeVocabulary
+from ..policy.opponent_archetype import OpponentArchetypeTaxonomy
+from ..policy.batching import collate_feature_batches
+from ..rollout.deck_routing import exact_deck_sha256
 
 
 @dataclass(frozen=True)
 class PreparedBatch:
-    features: tuple[dict[str, Tensor], ...]
+    features: dict[str, Tensor]
+    feature_widths: dict[str, Tensor]
     sequences: Tensor
     lengths: Tensor
     stopped: Tensor
@@ -48,7 +51,8 @@ class PreparedBatch:
 
     @property
     def decisions(self) -> int:
-        return len(self.features)
+        first = next(iter(self.features.values()), None)
+        return 0 if first is None else int(first.shape[0])
 
 
 def _episode_gae(
@@ -105,9 +109,43 @@ def prepare_episodes(
     gamma_prize: float = 0.97,
     lambda_prize: float = 0.97,
     prize_scale: float = 1.0 / 24.0,
+    require_policy_identity: bool = False,
 ) -> PreparedBatch:
     if loss_weighting not in {"episode_equal_decisions", "episode_equal_turns"}:
         raise ValueError(f"unsupported loss_weighting: {loss_weighting}")
+    if require_policy_identity:
+        violations = []
+        for episode in episodes:
+            diagnostics = episode.diagnostics
+            expected_deck = exact_deck_sha256(episode.job.opponent_deck)
+            transition_metadata = [
+                transition.metadata for transition in episode.policy_transitions
+            ]
+            if (
+                episode.job.opponent_policy_id != "Policy-0809"
+                or diagnostics.get("opponent_policy_id") != "Policy-0809"
+                or not isinstance(
+                    diagnostics.get("opponent_effective_policy_sha256"), str
+                )
+                or len(diagnostics["opponent_effective_policy_sha256"]) != 64
+                or diagnostics.get("opponent_exact_deck_sha256") != expected_deck
+                or diagnostics.get("lane_routing_audit_status") != "PASS"
+                or not transition_metadata
+                or any(
+                    metadata.get("opponent_policy_id") != "Policy-0809"
+                    or metadata.get("opponent_effective_policy_sha256")
+                    != diagnostics["opponent_effective_policy_sha256"]
+                    or metadata.get("opponent_exact_deck_sha256") != expected_deck
+                    or metadata.get("lane_routing_audit_status") != "PASS"
+                    for metadata in transition_metadata
+                )
+            ):
+                violations.append(episode.job.game_id)
+        if violations:
+            raise ValueError(
+                "PPO rejected episodes without complete Policy-0809/exact-deck "
+                f"routing identity: {violations[:8]}"
+            )
     valid = [
         episode for episode in episodes
         if episode.valid and episode.reward is not None
@@ -150,7 +188,7 @@ def prepare_episodes(
     opponent_prize_rewards: list[float] = []
     prize_returns: list[float] = []
     prize_advantages: list[float] = []
-    taxonomy = OwnArchetypeVocabulary.load()
+    taxonomy = OpponentArchetypeTaxonomy.load()
     meta_labels: list[int] = []
     meta_logits: list[list[float]] = []
     semantic_boundaries = 0
@@ -255,7 +293,7 @@ def prepare_episodes(
             prize_returns.append(prize_return)
             prize_advantages.append(prize_advantage)
             meta_labels.append(
-                taxonomy.classify_opponent_target(episode.job.opponent_deck)
+                taxonomy.classify_target(episode.job.opponent_deck).value
             )
             raw_meta = (
                 record.metadata.get("opponent_meta_logits")
@@ -288,8 +326,17 @@ def prepare_episodes(
         (raw_prize_advantage - prize_mean) / prize_variance.sqrt().clamp_min(1e-6)
         if prize_mode != "off" else torch.zeros_like(raw_prize_advantage)
     )
+    feature_widths = {
+        name: torch.tensor(
+            [int(feature[name].shape[1]) for feature in features],
+            dtype=torch.int32,
+        )
+        for name, value in features[0].items()
+        if value.ndim >= 2
+    }
     return PreparedBatch(
-        features=tuple(features),
+        features=collate_feature_batches(features),
+        feature_widths=feature_widths,
         sequences=sequences,
         lengths=lengths,
         stopped=torch.tensor(stopped, dtype=torch.bool),

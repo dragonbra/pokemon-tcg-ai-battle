@@ -28,22 +28,13 @@ class PolicyIdentityTest(unittest.TestCase):
         cls.identity = importlib.import_module(f"{PROJECT}.policy_identity")
         cls.registry = cls.identity.load_policy_registry()
 
-    def test_policy_0806_registry_is_full_0806(self) -> None:
-        entry = self.registry["Policy-0806"]
+    def test_policy_0809_registry_is_full_0809(self) -> None:
+        self.assertEqual(set(self.registry), {"Policy-0809"})
+        entry = self.registry["Policy-0809"]
         self.assertEqual(entry["policy_kind"], "immutable_pretrained")
         self.assertEqual(
             set(entry["components"]), set(self.identity.EFFECTIVE_COMPONENTS)
         )
-        self.assertTrue(all(
-            component["source_policy_id"] == "Policy-0806"
-            for component in entry["components"].values()
-        ))
-        audit = self.identity.audit_checkpoint("Policy-0806")
-        self.assertEqual(audit.status, "PASS")
-        self.assertEqual(audit.effective_policy_sha256, entry["effective_policy_sha256"])
-
-    def test_policy_0809_registry_is_full_0809(self) -> None:
-        entry = self.registry["Policy-0809"]
         self.assertTrue(all(
             component["source_policy_id"] == "Policy-0809"
             for component in entry["components"].values()
@@ -52,28 +43,66 @@ class PolicyIdentityTest(unittest.TestCase):
         self.assertEqual(audit.status, "PASS")
         self.assertEqual(audit.effective_policy_sha256, entry["effective_policy_sha256"])
 
-    def test_focal_switch_does_not_change_frozen_0806_identity(self) -> None:
+    def test_focal_switch_does_not_change_frozen_0809_identity(self) -> None:
         before = self.identity.audit_checkpoint(
-            "Policy-0806", focal_policy_id="Policy-0809"
+            "Policy-0809", focal_policy_id="Policy-0809"
         )
         after = self.identity.audit_checkpoint(
-            "Policy-0806", focal_policy_id="Policy-future-0812"
+            "Policy-0809", focal_policy_id="Policy-future-0812"
         )
         self.assertEqual(before.effective_policy_sha256, after.effective_policy_sha256)
         self.assertEqual(before.components, after.components)
 
-    def test_focal_trunk_plus_0806_decoder_hard_fails(self) -> None:
-        frozen = self.identity.checkpoint_state_dict("Policy-0806")
-        focal = self.identity.checkpoint_state_dict("Policy-0809")
-        hybrid = dict(frozen)
-        for name in tuple(hybrid):
-            if not name.startswith("action_decoder."):
-                hybrid[name] = focal[name]
+    def test_any_hybrid_component_hard_fails(self) -> None:
+        hybrid = dict(self.identity.checkpoint_state_dict("Policy-0809"))
+        name = next(name for name in hybrid if name.startswith("state_encoder."))
+        hybrid[name] = hybrid[name].clone()
+        hybrid[name].view(-1)[0] += 1
         with self.assertRaisesRegex(
             self.identity.PolicyIdentityViolation,
             "FATAL: Opponent policy identity violation",
         ):
-            self.identity.audit_materialized_state_dict("Policy-0806", hybrid)
+            self.identity.audit_materialized_state_dict("Policy-0809", hybrid)
+
+    def test_focal_and_opponent_materializations_share_no_tensor_storage(self) -> None:
+        initialization = importlib.import_module(f"{PROJECT}.initialization")
+        presets = importlib.import_module(f"{PROJECT}.integrated.presets")
+        focal, _ = initialization.build_preset_from_common_update0(
+            DECK, presets.preset("FULL_MODEL"), device="cpu"
+        )
+        opponent = self.identity.materialize_policy(
+            "Policy-0809", DECK, "cpu", purpose="storage_independence_test"
+        )
+        focal_ptrs = {
+            value.untyped_storage().data_ptr()
+            for value in focal.state_dict().values()
+        }
+        opponent_ptrs = {
+            value.untyped_storage().data_ptr()
+            for value in opponent.model.state_dict().values()
+        }
+        self.assertTrue(focal_ptrs.isdisjoint(opponent_ptrs))
+        before = {
+            name: value.detach().clone()
+            for name, value in opponent.model.state_dict().items()
+        }
+        focal_parameter = next(
+            value for value in focal.parameters() if value.requires_grad
+        )
+        optimizer = torch.optim.AdamW([focal_parameter], lr=1e-3)
+        optimizer.zero_grad(set_to_none=True)
+        focal_parameter.sum().backward()
+        optimizer.step()
+        self.assertTrue(all(
+            torch.equal(before[name], value)
+            for name, value in opponent.model.state_dict().items()
+        ))
+        self.assertEqual(
+            self.identity.audit_materialized_state_dict(
+                "Policy-0809", opponent.model.state_dict()
+            ).effective_policy_sha256,
+            opponent.audit.effective_policy_sha256,
+        )
 
     def test_promoted_snapshot_manifest_round_trip_is_immutable(self) -> None:
         base = self.registry["Policy-0809"]
@@ -169,10 +198,10 @@ class PolicyIdentityTest(unittest.TestCase):
 
     def test_training_and_evaluation_share_one_resolver(self) -> None:
         training = self.identity.resolve_policy_identity(
-            "Policy-0806", purpose="rl_rollout"
+            "Policy-0809", purpose="rl_rollout"
         )
         evaluation = self.identity.resolve_policy_identity(
-            "Policy-0806", purpose="frozen_evaluation"
+            "Policy-0809", purpose="frozen_evaluation"
         )
         self.assertEqual(
             training.effective_policy_sha256, evaluation.effective_policy_sha256

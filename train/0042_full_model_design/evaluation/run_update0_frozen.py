@@ -31,7 +31,7 @@ from ..training.run_full_semantic import (
     runtime_root,
 )
 from ..league import load_frozen_catalog
-from ..policy.own_archetype import OwnArchetypeVocabulary
+from ..policy.opponent_archetype import OpponentArchetypeTaxonomy
 from .frozen_jobs import build_frozen_jobs
 from .frozen_panel import wilson_interval
 
@@ -110,7 +110,7 @@ def summarize(episodes: list[Any], manifest: dict[str, Any]) -> tuple[dict[str, 
     attack_streaks: list[int] = []
     meta_logits: list[torch.Tensor] = []
     meta_labels: list[int] = []
-    meta_vocabulary = OwnArchetypeVocabulary.load()
+    meta_vocabulary = OpponentArchetypeTaxonomy.load()
     for episode in episodes:
         contract = by_seed[episode.job.seed]
         matchup[contract["opponent_archetype"]].append(episode)
@@ -132,7 +132,7 @@ def summarize(episodes: list[Any], manifest: dict[str, Any]) -> tuple[dict[str, 
         second_turn_opportunities += int(opportunity)
         second_turn_conversions += int(attacked and opportunity)
         attack_streaks.append(_longest_streak(tempo))
-        label = meta_vocabulary.classify_opponent_target(episode.job.opponent_deck)
+        label = meta_vocabulary.classify_target(episode.job.opponent_deck).value
         for decision in episode.decisions:
             logits = decision.auxiliary_values.get("opponent_meta_logits")
             if isinstance(logits, (torch.Tensor, list, tuple)):
@@ -218,13 +218,19 @@ def _render(report_data: dict[str, Any]) -> str:
 
 def run(*, workers: int = 16, engines_per_worker: int = 8,
         inference_channels_per_role: int = 8, device_name: str = "cuda:0") -> dict[str, Any]:
+    raise RuntimeError(
+        "FATAL: this historical CPU update-0 evaluator is disabled for 0042. "
+        "Formal Frozen-0809 evaluation must use training.run_full_semantic so the "
+        "candidate is exported as FP16 storage, rematerialized as FP32 runtime, "
+        "identity-audited, and evaluated through CUDA-2048."
+    )
     if REPORT.exists() or RESULTS.exists():
         raise FileExistsError("update-0 Frozen evaluation output already exists")
     device = torch.device(device_name)
     model, identity = build_preset_from_common_update0(
         focal_deck(), preset("FULL_MODEL"), device=device
     )
-    opponent = load_frozen_opponent(device)
+    opponent = load_frozen_opponent(device, OPPONENT_POLICY_ID)
     opponent_audit = opponent._policy_identity_audit
     if opponent_audit.status != "PASS":
         raise RuntimeError("FATAL: formal Frozen evaluation policy identity audit failed")
@@ -232,10 +238,12 @@ def run(*, workers: int = 16, engines_per_worker: int = 8,
         focal_deck_id=FOCAL_DECK_ID,
         focal_deck=focal_deck(), runtime_root=runtime_root(),
         source_policy_update=0,
+        focal_deployment_identity="Candidate-0042-update000000",
+        opponent_effective_policy_sha256=opponent_audit.effective_policy_sha256,
     )
     names = {item.deck_id: item.display_name for item in load_frozen_catalog()}
     manifest = {
-        "frozen_panel_version": "frozen_0806_seeded_agent_first_player_v3",
+        "frozen_panel_version": "0042_frozen_0809_seeded_agent_first_player_v1",
         "master_seed": 341512806,
         "game_list_sha256": schedule_sha,
         "entries": [

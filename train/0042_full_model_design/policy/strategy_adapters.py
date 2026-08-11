@@ -60,6 +60,37 @@ class StrategyContext:
         ))
 
 
+def build_defined_strategy_context(
+    *,
+    relative_first_player: Tensor,
+    z_meta: Tensor,
+    meta_logits: Tensor,
+    value: Tensor,
+    own_archetype_id: Tensor,
+) -> tuple[Tensor, StrategyContext | None]:
+    """Build context only where the Agent's first/second role is established."""
+
+    if relative_first_player.ndim != 1:
+        raise ValueError("relative_first_player must have shape [B]")
+    if not bool(
+        relative_first_player.eq(0)
+        .logical_or(relative_first_player.eq(1))
+        .logical_or(relative_first_player.eq(2))
+        .all()
+    ):
+        raise ValueError("relative_first_player contains an invalid category")
+    rows = relative_first_player.ne(0).nonzero(as_tuple=False).flatten()
+    if not rows.numel():
+        return rows, None
+    return rows, StrategyContext.build(
+        relative_first_player=relative_first_player.index_select(0, rows),
+        z_meta=z_meta.index_select(0, rows),
+        meta_logits=meta_logits.index_select(0, rows),
+        value=value.index_select(0, rows),
+        own_archetype_id=own_archetype_id.index_select(0, rows),
+    )
+
+
 class ValueResidualAdapter(nn.Module):
     def __init__(self, width: int = 320, embedding_dim: int = 16) -> None:
         super().__init__()

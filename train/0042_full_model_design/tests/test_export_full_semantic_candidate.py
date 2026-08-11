@@ -15,6 +15,14 @@ exporter = importlib.import_module(
 
 
 class ExportFullSemanticCandidateTest(unittest.TestCase):
+    def test_kaggle_entrypoint_accepts_the_0042_export_schema(self) -> None:
+        entrypoint = (
+            exporter.ROOT
+            / "train/0042_full_model_design/kaggle_runtime/main.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn(exporter.OUTPUT_SCHEMA, entrypoint)
+        self.assertNotIn("0038 package manifest schema mismatch", entrypoint)
+
     def test_portable_value_network_matches_training_state_contract(self) -> None:
         training_value = importlib.import_module(
             "train.0042_full_model_design.policy.value_network"
@@ -109,15 +117,19 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
                     ),
                     "chance_boundary": chance,
                     "semantic_fallback": False,
+                    "opponent_exact_deck_sha256": "d" * 64,
+                    "opponent_effective_policy_sha256": "e" * 64,
                 })
             result.write_text(json.dumps({
-                "schema_version": "0040_frozen_per_game_results_policy_identity_v4",
+                "schema_version": "0042_frozen_per_game_results_policy0809_v1",
                 "checkpoint_update": 5,
-                "frozen_panel_version": "frozen_0806_seeded_agent_first_player_v3",
-                "opponent_policy_id": "Policy-0806",
+                "frozen_panel_version": "0042_frozen_0809_seeded_agent_first_player_v1",
+                "schedule_sha256": "a" * 64,
+                "opponent_policy_id": "Policy-0809",
                 "policy_identity_audit": {
                     "status": "PASS",
-                    "requested_policy_id": "Policy-0806",
+                    "requested_policy_id": "Policy-0809",
+                    "effective_policy_sha256": "e" * 64,
                 },
                 "candidate_deployment_identity_audit": {
                     "status": "PASS",

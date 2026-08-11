@@ -2,7 +2,7 @@
   "archetype": "Dragapult ex",
   "deck_id": "dragapult_ex_07bedfffbfad",
   "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "date_fallback_score_mismatch": 1,
@@ -20,5 +20,5 @@
   "representative_card_ids": [
     121
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

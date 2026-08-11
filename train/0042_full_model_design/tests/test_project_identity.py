@@ -119,15 +119,15 @@ class ProjectIdentityTest(unittest.TestCase):
 
         self.assertEqual(config.ppo.credit_clock, "turn")
         self.assertEqual(config.ppo.gae_lambda, 0.95)
-        self.assertEqual(config.ppo.batch_size, 1024)
-        self.assertEqual(config.ppo.epochs, 4)
+        self.assertEqual(config.ppo.batch_size, 2048)
+        self.assertEqual(config.ppo.epochs, 3)
         self.assertEqual(
-            config.version, "V1_strategy_conditioned_base"
+            config.version, "V1_ppo_protocol_v2_baseline"
         )
-        self.assertEqual(config.games_per_update, 512)
-        self.assertEqual(config.trajectory_games_per_update, 512)
+        self.assertEqual(config.games_per_update, 256)
+        self.assertEqual(config.trajectory_games_per_update, 256)
         self.assertIsNone(config.updates)
-        self.assertEqual(config.eval_every, 5)
+        self.assertEqual(config.eval_every, 10)
         self.assertEqual(config.adaptation_arm, "strategy")
         self.assertEqual(config.preset_name, "FULL_MODEL")
         self.assertEqual(config.worker_processes, 16)

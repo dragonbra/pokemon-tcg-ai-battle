@@ -2,7 +2,7 @@
   "archetype": "Arboliva ex / Meganium / Teal Mask Ogerpon ex",
   "deck_id": "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f",
   "exact_deck_sha256": "dd46dbf9735fdf6c36c23bfe060c1092e68e8e7bb17c3c1e616e71045cb524e2",
-  "pool_id": "0806_kaggle_top100_plus_v1",
+  "pool_id": "0042_policy_0809_neutral_55_v1",
   "provenance": {
     "binding_counts": {
       "leaderboard_score": 1
@@ -18,5 +18,5 @@
     404,
     710
   ],
-  "schema_version": "evaluation_frozen_0806_deck_v1"
+  "schema_version": "0042_policy0809_neutral_deck_v1"
 }

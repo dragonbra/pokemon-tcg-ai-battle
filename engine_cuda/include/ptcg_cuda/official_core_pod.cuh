@@ -58,6 +58,11 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_clear_special_conditions(
     OfficialStatePod* state,
     std::int32_t player);
 
+PTCG_OFFICIAL_CORE_HD inline bool official_pod_clear_special_conditions_for_ref(
+    OfficialStatePod* state,
+    std::int32_t player,
+    OfficialCardRefPod active_ref);
+
 PTCG_OFFICIAL_CORE_HD inline bool official_pod_ok(const OfficialStatePod* state) {
     return state->error == static_cast<std::int32_t>(OfficialPodError::kNone);
 }
@@ -625,9 +630,12 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_switch_active(
         active.index,
         official_pod_card_id_or_zero(state, bench),
         bench.index);
+    // The official log reports recovered conditions against the Pokemon that
+    // left Active.  Keep the switch row first, but clear conditions before the
+    // card references are exchanged so semantic history retains that identity.
+    official_pod_clear_special_conditions_for_ref(state, player, active);
     ps->active.values[0] = bench;
     ps->bench.values[bench_index] = active;
-    official_pod_clear_special_conditions(state, player);
     official_pod_card_moved(state, bench, OfficialArea::kActive);
     official_pod_card_moved(state, active, OfficialArea::kBench);
     OfficialCardStatePod* active_card = official_pod_card(state, bench);
@@ -949,13 +957,27 @@ PTCG_OFFICIAL_CORE_HD inline bool official_pod_clear_special_conditions(
         return false;
     }
     OfficialPlayerStatePod* ps = &state->players[player];
+    if (ps->active.count == 0) {
+        const bool changed = ps->active_state != 0;
+        ps->active_state = 0;
+        return changed;
+    }
+    const OfficialCardRefPod active_ref = ps->active.values[0];
+    return official_pod_clear_special_conditions_for_ref(
+        state, player, active_ref);
+}
+
+PTCG_OFFICIAL_CORE_HD inline bool official_pod_clear_special_conditions_for_ref(
+    OfficialStatePod* state,
+    std::int32_t player,
+    OfficialCardRefPod active_ref) {
+    if (player < 0 || player > 1) {
+        official_pod_fail(state, OfficialPodError::kInvalidPlayer, player);
+        return false;
+    }
+    OfficialPlayerStatePod* ps = &state->players[player];
     const bool changed = ps->active_state != 0;
-    const OfficialCardRefPod active_ref = ps->active.count > 0
-        ? ps->active.values[0]
-        : OfficialCardRefPod{};
-    const OfficialCardStatePod* active = ps->active.count > 0
-        ? official_pod_card(state, active_ref)
-        : nullptr;
+    const OfficialCardStatePod* active = official_pod_card(state, active_ref);
     if (active != nullptr) {
         const OfficialBadStatus status = official_pod_bad_status(*ps);
         if (status != OfficialBadStatus::kNone) {

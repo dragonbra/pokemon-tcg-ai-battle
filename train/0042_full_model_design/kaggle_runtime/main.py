@@ -1,4 +1,4 @@
-"""Kaggle-compatible entrypoint for the self-contained 0038 compound policy."""
+"""Kaggle-compatible entrypoint for the self-contained 0042 compound policy."""
 
 import hashlib
 import json
@@ -29,11 +29,11 @@ def _sha256(path):
 def _validate_package_manifest():
     manifest_path = ROOT / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != "0038_compound_kaggle_candidate_v4":
-        raise RuntimeError("0038 package manifest schema mismatch")
+    if manifest.get("schema_version") != "0042_strategy_conditioned_kaggle_candidate_v1":
+        raise RuntimeError("0042 package manifest schema mismatch")
     expected = manifest.get("package_file_sha256")
     if not isinstance(expected, dict) or not expected:
-        raise RuntimeError("0038 package has no immutable file inventory")
+        raise RuntimeError("0042 package has no immutable file inventory")
     actual_paths = {
         str(path.relative_to(ROOT))
         for path in ROOT.rglob("*")
@@ -46,14 +46,14 @@ def _validate_package_manifest():
         missing = sorted(set(expected) - actual_paths)
         unexpected = sorted(actual_paths - set(expected))
         raise RuntimeError(
-            f"0038 package file inventory mismatch: missing={missing}, unexpected={unexpected}"
+            f"0042 package file inventory mismatch: missing={missing}, unexpected={unexpected}"
         )
     mismatched = [
         relative for relative, digest in expected.items()
         if _sha256(ROOT / relative) != digest
     ]
     if mismatched:
-        raise RuntimeError(f"0038 package file hash mismatch: {mismatched}")
+        raise RuntimeError(f"0042 package file hash mismatch: {mismatched}")
     return manifest
 
 
