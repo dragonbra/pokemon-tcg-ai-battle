@@ -2,6 +2,9 @@
 
 Status: PPO Protocol V2 preflight passed; 16-update non-candidate smoke is in progress.
 
+从新 clone、环境与 CUDA Engine 准备、preflight、正式 PPO、Frozen-0809 评测到安全停止的
+完整操作流程见 [`0042_full_model_design_operations_manual.md`](0042_full_model_design_operations_manual.md)。
+
 ## 1. Overview
 
 0042 preserves the semantic action space learned by the 0031 pretrained model, lets the paired
