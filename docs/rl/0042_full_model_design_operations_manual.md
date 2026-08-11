@@ -2,8 +2,10 @@
 
 **面向读者：**刚 clone 仓库、对 0042 没有上下文的开发 Agent / 运维 Agent  
 **项目 ID：**`0042_full_model_design`  
-**当前正式版本名：**`V5_u250_faster_actor_lr`
-**当前状态（2026-08-11）：**V1 已封存在 U250；U250 identical-rollout LR probe 与独立 V4 one-update smoke 已通过；无上限 V5 已从同一 U250 model-only checkpoint、fresh optimizer 和 fresh rollout 启动
+**当前正式版本名：** `V5_u250_faster_actor_lr`
+
+**当前状态（2026-08-11）：** V1 已封存在 U250；U250 identical-rollout LR probe 与独立 V4 one-update smoke 已通过；无上限 V5 已从同一 U250 model-only checkpoint、fresh optimizer 和 fresh rollout 启动。本文最近一次 runtime 核对时，V5 已完成 U88，进程继续运行。
+
 **本手册性质：**操作说明，不取代任何强制合同
 
 ## 0. 先读结论
@@ -601,7 +603,11 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 | Value coefficient | `0.5` |
 | max grad norm | `0.5` |
 | GAE | `gamma=1`, `lambda=0.95`, turn clock |
+| same-turn lambda | `1.0` |
+| terminal / bootstrap | reward `-1/0/+1`；terminal bootstrap `0` |
+| reward / return normalization | none / none |
 | Meta anchor | `0.10` |
+| reference KL coefficient | `0.02`（固定指向 V5 创建时的 immutable U0/Policy-0809 reference） |
 | weight decay / scheduler | `0` / none |
 | training dtype | FP32 |
 | Frozen evaluation | update 0 和每 10 updates，CUDA-2048 |
@@ -611,6 +617,62 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 V5 从 `V1_ppo_protocol_v2_baseline/checkpoint/update-000250.pt` strict-load focal model-only
 权重，但在加载前先以 Policy-0809/U0 建立 immutable reference-KL snapshot。AdamW、RNG、rollout
 和 targets 全部重新开始；不得把 reference 偷换成 U250，也不得加载 V1 optimizer state。
+
+#### 11.1.1 Runtime-verified optimizer inventory
+
+下面不是 config default 的转抄，而是 2026-08-11 从 V5 的实际
+`artifact/training_config.json`、`artifact/trainable_parameters.json`、运行进程 CLI 和
+`training_metrics.jsonl` 交叉核对得到的 effective inventory。CLI override 优先于 dataclass
+default；后续若创建新版本，必须以新版本 artifact 为准，不能继续引用这张表。
+
+| optimizer group | 参数量 | effective LR | 梯度来源 |
+|---|---:|---:|---|
+| `action_decoder` | 1,027,202 | `2e-5` | PPO policy、entropy、reference KL、Prize actor advantage |
+| `policy_strategy_adapter` | 320,241 | `4e-5` | PPO policy；Value/Meta context 已 detach |
+| `allocation_head` | 621,761 | `2e-5` | Phantom allocation policy、entropy、Prize actor advantage |
+| `value_win` | 3,397,121 | `1e-4` | terminal Value loss 与经 frozen MetaHead 回传的 Meta anchor |
+| `value_adapter` | 211,441 | `1e-4` | terminal Value loss |
+| `value_prize` | 103,681 | `1e-4` | directional Prize Value loss |
+
+分区合计：actor-only `1,969,204`，value-only `3,712,243`，shared trainable `0`，总 trainable
+`5,681,447`。因此没有任何 actor/value shared trainable tensor 被误放进 `1e-4` Value group。
+PrototypeEncoder、StateEncoder、OptionEncoder 和 pretrained MetaHead 均冻结且不在 optimizer；
+Option LoRA 未安装。
+
+Optimizer 是 PyTorch `AdamW`，V5 未覆盖其数值默认值：`betas=(0.9, 0.999)`、`eps=1e-8`、
+`amsgrad=False`；所有 group `weight_decay=0`，无 LR scheduler、warmup、GradScaler 或 mixed
+precision。PPO master weights、rollout 与更新均为 FP32。candidate 的 FP16 storage → strict
+FP32 runtime 转换只发生在 Frozen/Kaggle strength evaluation，不回写训练模型。
+
+#### 11.1.2 Rollout、minibatch 与 target 的精确定义
+
+- 一个 update 是一个完整 256-game frequency unit；55 套 exact decks 的 slot 数来自
+  `league/frozen_catalog.json`，合计严格为 256，全部 256 条 trajectory 保留。
+- `2,048` 是 decision 维度的 logical minibatch，不是 games。`1,024` 是显存约束下的
+  physical forward/backward microbatch；一个满 logical minibatch 在两个 microbatch 上累计
+  loss 后只执行一次 optimizer step。配置中的 `gradient_accumulation=1` 指“一份 logical
+  minibatch 对应一个 optimizer step”，telemetry 会另报实际 physical microbatch 数。
+- 每个 data epoch 使用新的 `torch.randperm(valid_decisions)`，without replacement、
+  `drop_last=false`；最后不足 2,048 的 short minibatch仍参与 backward。没有 fixed optimizer
+  budget。epoch 1 必须完整覆盖，epoch 2/3 由 rollout-wide behavior KL 决定是否进入。
+- old logprob、old Value、GAE return 与 advantage 在完整 rollout 上计算并冻结；advantage 只按
+  episode-equal decision 权重做一次 rollout-level normalization，epoch 2/3 不刷新 target，
+  不重新定义 behavior policy。
+- 当前 behavior guard 是 4,096 个确定性 sampled rows 加全部 compound/macro rows；probe 以
+  512 decisions 分块，仅用于统计，不计入 optimizer coverage。epoch 结束以整个固定 guard 的
+  KL 作判断，不因单个 noisy minibatch spike 静默截断完整 epoch。
+
+#### 11.1.3 V5 启动来源与持续运行语义
+
+V5 的 source model 是
+`rl_runs/0042_full_model_design/versions/V1_ppo_protocol_v2_baseline/checkpoint/update-000250.pt`。
+这是 model-only strict load；V5 重新建立 AdamW state、RNG、on-policy rollout、GAE targets 和
+reference snapshot。V5 没有 `--updates`，因此不会在某个 update 自动结束，只在完整 update
+边界响应 `artifact/STOP_REQUESTED` 或遇到 fail-closed 错误。
+
+截至本文 runtime 核对的 U88，实际 telemetry 仍显示：epoch 1/2/3 各 100% coverage、累计
+reuse `1x/2x/3x`、33 optimizer steps、22,275 valid decisions、66,825 optimized slots；该行是
+运行健康证据而非永久超参数，后续 update 的 decision 数会随 episode length 变化。
 
 ### 11.2 完整 data epochs 与 KL guard
 
