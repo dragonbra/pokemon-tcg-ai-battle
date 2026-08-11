@@ -164,7 +164,10 @@ Temporary machine-local evidence:
 
 ## 11. PPO Protocol V2 and Frozen-0809
 
-The formal focal policy is exact deck `007_dragapult_ex`. Training has no update cap. Every update
+The current V6 formal focal policy is exact deck `dragapult_ex_0042_v6`, with exact-deck SHA256
+`7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3`. It remains own-archetype
+class 0 (`dragapult_ex`) while its exact 60-card identity is independently bound in runtime and
+candidate deployment metadata. Training has no update cap. Every update
 collects one complete 256-game frequency unit and retains every valid decision. PPO uses FP32
 AdamW, logical 2,048-decision minibatches, independently explicit decoder/Policy-Adapter/allocation
 LRs, Value-only LR `1e-4`, and up to three complete
@@ -224,9 +227,9 @@ and all decisions received exactly 3 optimizer opportunities. The diagnostic art
 
 The V4 one-update smoke completed 256 games, 22,182 decisions, 33 optimizer steps, 100% coverage,
 3x reuse, behavior KL `3.82e-4`, and clip fraction `0.344%`, with unchanged frozen representation.
-The V5 formal branch loads U250 focal weights only after `PPOTrainer` snapshots immutable Policy-0809/U0 as
-the reference-KL policy. It starts a fresh AdamW state and fresh on-policy rollout; it never resets
-the reference anchor to U250 and never imports V1 optimizer/RNG/replay state. After the isolated
-smoke passed; V5 now runs without an update cap, retains every model-only checkpoint,
-and performs identity-bound Frozen-0809 CUDA-2048 evaluation every 10 updates. Promotion remains
-a separate human decision.
+The V6 formal branch loads V5 U130 focal weights only after `PPOTrainer` snapshots immutable
+Policy-0809/U0 as the reference-KL policy. It starts a fresh AdamW state and fresh on-policy
+rollout; it never resets the reference anchor to U130 and never imports V5 optimizer/RNG/replay
+state. V6 runs without an update cap, retains every model-only checkpoint, and performs
+identity-bound Frozen-0809 CUDA-2048 evaluation every 10 updates. Promotion remains a separate
+human decision.

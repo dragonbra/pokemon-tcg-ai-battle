@@ -272,8 +272,9 @@ selection or strength result.
 
 ## 15. PPO Protocol V2 and Policy-0809 Frozen contract
 
-The formal focal policy uses exact deck `007_dragapult_ex` and runs without a configured update
-limit. Each update collects one complete 256-game frequency unit, retains every valid decision,
+The current V6 formal focal policy uses exact deck `dragapult_ex_0042_v6` (exact-deck SHA256
+`7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3`) and runs without a configured
+update limit. Each update collects one complete 256-game frequency unit, retains every valid decision,
 and performs up to three complete data epochs. Each epoch uses a fresh permutation, sampling
 without replacement, keeps the final short minibatch, and gives every valid decision exactly one
 optimizer opportunity. Epoch 2 and 3 are admitted only after a deterministic rollout-wide
@@ -328,7 +329,9 @@ The post-reset one-update validation completed all 33 logical optimizer steps at
 bytes, compared with about 15.8 GB and `dxgkio_make_resident -12` for the rejected physical
 2,048-row path. Frozen Prototype/State/Option encoders and MetaHead remained bit-identical.
 
-V1 is sealed at U250. The selected fresh branch uses decoder LR `2e-5`, Policy Strategy Adapter LR
+V1 is sealed at U250 and V5 remains the prior 007-deck branch. V6 strict-loads V5 U130 focal
+model-only weights, binds the new focal exact deck, and creates a fresh optimizer and fresh
+on-policy rollout. The selected protocol uses decoder LR `2e-5`, Policy Strategy Adapter LR
 `4e-5`, and allocation LR `2e-5`, while Value groups stay at `1e-4`. This choice came from one
 identical 256-game, 22,719-decision U250 rollout: the selected arm completed all three epochs with
 behavior KL `4.30e-4`, root KL `5.62e-5`, macro KL `2.36e-3`, clip fraction `0.253%`, and no
@@ -336,8 +339,8 @@ meaningful global clipping. U250 model weights are strict-loaded only after the 
 Policy-0809/U0 as the reference-KL policy; optimizer state, RNG state, and rollout data start fresh.
 The independent V4 one-update smoke then completed 22,182 decisions, 33 optimizer steps, 100%
 coverage and 3x reuse with behavior KL `3.82e-4`, clip fraction `0.344%`, and unchanged frozen
-representation. V5 uses the same U250 branch point—not the V4 U1 smoke checkpoint—and has no
-configured update limit.
+representation. V6 has no configured update limit and retains the same 256-game / three-epoch
+Protocol V2 settings.
 
 ## 16. Deck pool and diagnostics
 
@@ -345,9 +348,9 @@ configured update limit.
 `evaluation/arena/frozen_pools/0806_kaggle_top100_plus_v1/decks`: exactly 55 directories numbered
 `001` through `055`. Its local manifests deliberately identify the policy-neutral
 `0042_policy_0809_neutral_55_v1` environment pool; this deck distribution does not define or
-weaken the full Policy-0809 opponent weights. The focal
-Dragapult deck is numbered `007_dragapult_ex` and keeps semantic ID
-`dragapult_ex_07bedfffbfad`.
+weaken the full Policy-0809 opponent weights. V6 focal is a separate explicit training identity,
+`dragapult_ex_0042_v6`, stored under `focal_decks/`; it is not substituted into the opponent
+catalog and does not change any full Policy-0809 opponent weights.
 
 Operational diagnostics include gate values, effective residual ratios, gate gradients, policy and
 Value adapter gradient norms, Meta accuracy/entropy by turn and class, and Value calibration. Run

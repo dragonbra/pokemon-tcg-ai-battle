@@ -2,15 +2,15 @@
 
 **面向读者：**刚 clone 仓库、对 0042 没有上下文的开发 Agent / 运维 Agent  
 **项目 ID：**`0042_full_model_design`  
-**当前正式版本名：** `V5_u250_faster_actor_lr`
+**当前正式版本名：** `V6_dragapult_ex_0042_v6`
 
-**当前状态（2026-08-11）：** V1 已封存在 U250；U250 identical-rollout LR probe 与独立 V4 one-update smoke 已通过；无上限 V5 已从同一 U250 model-only checkpoint、fresh optimizer 和 fresh rollout 启动。本文最近一次 runtime 核对时，V5 已完成 U88，进程继续运行。
+**当前状态（2026-08-12）：** V5 已安全停止并保留全部 model-only checkpoint；无上限 V6 从 V5 U130 focal model-only checkpoint、fresh optimizer 和 fresh rollout 启动。V6 focal 改为用户确认的 exact-60 `dragapult_ex_0042_v6`，所有训练与 Frozen 对手仍是独立完整 immutable `Policy-0809`。
 
 **本手册性质：**操作说明，不取代任何强制合同
 
 ## 0. 先读结论
 
-0042 是一个以 exact Dragapult deck 为 focal、以完整且不可变的 `Policy-0809` 为全部对手权重、使用 55 套 exact 60-card deck 构成训练环境的 FP32 PPO 项目。
+0042 是一个以显式配置的 exact focal deck、以完整且不可变的 `Policy-0809` 为全部对手权重、使用 55 套 exact 60-card deck 构成训练环境的 FP32 PPO 项目。当前 V6 focal 是 `dragapult_ex_0042_v6`。
 
 最短的正确执行顺序是：
 
@@ -581,11 +581,11 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 
 ## 11. 正式训练的特殊配置和行为
 
-### 11.1 当前 U250 fresh branch 固定配置
+### 11.1 当前 V6 U130 fresh branch 固定配置
 
 | 配置 | 值 |
 |---|---:|
-| focal deck | `007_dragapult_ex` / `dragapult_ex_07bedfffbfad` |
+| focal deck | `dragapult_ex_0042_v6` / `7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3` |
 | opponent policy | full immutable `Policy-0809` |
 | games/update | 256 |
 | retained trajectories/update | 256（全部） |
@@ -607,20 +607,28 @@ CUDA codec 会将每个 ready lane 的 `resource_cat/resource_num/resource_mask`
 | terminal / bootstrap | reward `-1/0/+1`；terminal bootstrap `0` |
 | reward / return normalization | none / none |
 | Meta anchor | `0.10` |
-| reference KL coefficient | `0.02`（固定指向 V5 创建时的 immutable U0/Policy-0809 reference） |
+| reference KL coefficient | `0.02`（固定指向 V6 创建时的 immutable U0/Policy-0809 reference） |
 | weight decay / scheduler | `0` / none |
 | training dtype | FP32 |
 | Frozen evaluation | update 0 和每 10 updates，CUDA-2048 |
 | checkpoint | model-only，每 update 全量保留 |
 | formal update limit | none；人工 stop |
 
-V5 从 `V1_ppo_protocol_v2_baseline/checkpoint/update-000250.pt` strict-load focal model-only
+V6 从 `V5_u250_faster_actor_lr/checkpoint/update-000130.pt` strict-load focal model-only
 权重，但在加载前先以 Policy-0809/U0 建立 immutable reference-KL snapshot。AdamW、RNG、rollout
-和 targets 全部重新开始；不得把 reference 偷换成 U250，也不得加载 V1 optimizer state。
+和 targets 全部重新开始；不得把 reference 偷换成 U130，也不得加载 V5 optimizer state。
+V6 exact deck 存于 `train/0042_full_model_design/focal_decks/dragapult_ex_0042_v6/`；
+manifest 的 deck ID、display name、source 和 exact-deck SHA256 必须与 CLI 全部一致，否则启动 hard fail。
+
+启动前跨卡组证据归档在
+`docs/evaluation/combat_mat/policy_0809/0042_v5_u130_custom_focal_decks_vs_frozen_0809_cuda_seeded_2048_agent_choice_v3_kaggle_fp16_storage_fp32_runtime_v1/reports/`：
+V6 focal U0/U130 分别为 41.94%/47.41%，Frozen slot 023 Hydrapple ex / Meganium
+U0/U130 分别为 50.00%/48.49%。四份都是 2,048 terminal、0 error、完整 Policy-0809 opponent、
+FP16 storage → strict FP32 runtime；这些是诊断证据，不构成 Promote。
 
 #### 11.1.1 Runtime-verified optimizer inventory
 
-下面不是 config default 的转抄，而是 2026-08-11 从 V5 的实际
+下面不是 config default 的转抄，而是 2026-08-12 从 V6 的实际
 `artifact/training_config.json`、`artifact/trainable_parameters.json`、运行进程 CLI 和
 `training_metrics.jsonl` 交叉核对得到的 effective inventory。CLI override 优先于 dataclass
 default；后续若创建新版本，必须以新版本 artifact 为准，不能继续引用这张表。
@@ -639,7 +647,7 @@ default；后续若创建新版本，必须以新版本 artifact 为准，不能
 PrototypeEncoder、StateEncoder、OptionEncoder 和 pretrained MetaHead 均冻结且不在 optimizer；
 Option LoRA 未安装。
 
-Optimizer 是 PyTorch `AdamW`，V5 未覆盖其数值默认值：`betas=(0.9, 0.999)`、`eps=1e-8`、
+Optimizer 是 PyTorch `AdamW`，V6 未覆盖其数值默认值：`betas=(0.9, 0.999)`、`eps=1e-8`、
 `amsgrad=False`；所有 group `weight_decay=0`，无 LR scheduler、warmup、GradScaler 或 mixed
 precision。PPO master weights、rollout 与更新均为 FP32。candidate 的 FP16 storage → strict
 FP32 runtime 转换只发生在 Frozen/Kaggle strength evaluation，不回写训练模型。
@@ -727,15 +735,20 @@ experiments/0042_full_model_design/evaluation/V1_ppo_protocol_v2_baseline.html
 
 ```bash
 python3 -m train.0042_full_model_design.monitor_training \
-  --version V5_u250_faster_actor_lr \
+  --version V6_dragapult_ex_0042_v6 \
   --first-metrics-grace-seconds 7200 \
   --metrics-stale-seconds 7200 \
   --minimum-free-gib 100 \
   -- \
   env PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
   python3 -m train.0042_full_model_design.training.run_full_semantic \
-    --version V5_u250_faster_actor_lr \
-    --initial-model-checkpoint rl_runs/0042_full_model_design/versions/V1_ppo_protocol_v2_baseline/checkpoint/update-000250.pt \
+    --version V6_dragapult_ex_0042_v6 \
+    --initial-model-checkpoint rl_runs/0042_full_model_design/versions/V5_u250_faster_actor_lr/checkpoint/update-000130.pt \
+    --focal-deck-path train/0042_full_model_design/focal_decks/dragapult_ex_0042_v6/deck.csv \
+    --focal-deck-id dragapult_ex_0042_v6 \
+    --focal-exact-deck-sha256 7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3 \
+    --focal-deck-display-name 'Dragapult ex 0042 V6' \
+    --focal-deck-source user_supplied_2026-08-12 \
     --preset FULL_MODEL \
     --engine-backend accelerated:cuda_resident \
     --games-per-update 256 \
@@ -753,13 +766,13 @@ python3 -m train.0042_full_model_design.monitor_training \
     --launch-formal
 ```
 
-V5 formal run 不传 `--updates`。`--launch-formal` 是显式授权 token；缺少它，runner 会拒绝创建 run。
+V6 formal run 不传 `--updates`。`--launch-formal` 是显式授权 token；缺少它，runner 会拒绝创建 run。
 formal runner 同时会拒绝缺少 `expandable_segments:True` 的 CUDA allocator 配置。
 
 watchdog 输出位于：
 
 ```text
-.tmp/training_monitor/0042_full_model_design/V5_u250_faster_actor_lr/
+.tmp/training_monitor/0042_full_model_design/V6_dragapult_ex_0042_v6/
   training.log
   heartbeat.json
   alert.json（只有告警时）
@@ -768,7 +781,7 @@ watchdog 输出位于：
 ### 12.3 观察训练
 
 ```bash
-tail -f .tmp/training_monitor/0042_full_model_design/V5_u250_faster_actor_lr/training.log
+tail -f .tmp/training_monitor/0042_full_model_design/V6_dragapult_ex_0042_v6/training.log
 
 python3 -m train.0042_full_model_design.monitor_training --help
 
@@ -792,7 +805,7 @@ python3 -m train.0042_full_model_design.monitor_training --help
 正式 run 在每个完整 update 结束后检查 stop sentinel。请求安全停止：
 
 ```bash
-touch rl_runs/0042_full_model_design/versions/V5_u250_faster_actor_lr/artifact/STOP_REQUESTED
+touch rl_runs/0042_full_model_design/versions/V6_dragapult_ex_0042_v6/artifact/STOP_REQUESTED
 ```
 
 不要用 `kill -9` 作为正常停止方式。等待当前 update 完成并确认：

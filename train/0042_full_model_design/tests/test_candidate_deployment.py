@@ -98,6 +98,24 @@ class CandidateDeploymentTest(unittest.TestCase):
         self.assertEqual(audit.runtime_dtype, "fp32")
         self.assertEqual(len(audit.effective_candidate_sha256), 64)
 
+    def test_custom_focal_deck_manifest_mismatch_is_rejected(self) -> None:
+        payload = self.payload()
+        payload["metadata"] = {
+            **payload["metadata"], "focal_exact_deck_sha256": "c" * 64,
+        }
+        manifest = {**self.manifest(), "deck_sha256": "d" * 64}
+        with self.assertRaisesRegex(
+            self.deployment.CandidateDeploymentIdentityViolation,
+            "FATAL.*custom focal exact-deck",
+        ):
+            self.deployment.audit_candidate_deployment(
+                manifest=manifest,
+                payload=payload,
+                runtime_model=nn.Linear(2, 2, dtype=torch.float32),
+                source_checkpoint_sha256="a" * 64,
+                portable_checkpoint_sha256="b" * 64,
+            )
+
     def test_formal_gate_rejects_missing_audit(self) -> None:
         with self.assertRaisesRegex(
             self.deployment.CandidateDeploymentIdentityViolation,
@@ -148,6 +166,26 @@ class CandidateDeploymentTest(unittest.TestCase):
                 audit.effective_candidate_sha256,
                 frozen.EXPECTED_007_U0_DEPLOYMENT_SHA256,
             )
+            custom_deck = list(runner.focal_deck())
+            custom_deck[-1] = 2
+            custom_model, custom_audit = (
+                self.deployment.materialize_kaggle_evaluation_candidate(
+                    source=runner.CANDIDATE_ROOT,
+                    checkpoint=checkpoint,
+                    deck=custom_deck,
+                    deck_id="test_custom_exact_60",
+                    deck_display_name="Test custom exact 60",
+                    deck_source="unit_test",
+                    device="cpu",
+                    temporary_root=root / "custom_materialized",
+                )
+            )
+            self.assertEqual(custom_audit.status, "PASS")
+            self.assertNotEqual(
+                custom_audit.effective_candidate_sha256,
+                audit.effective_candidate_sha256,
+            )
+            self.assertEqual(int(custom_model.default_own_archetype_id), 0)
 
     def test_canonical_protocol_and_root_agent_rule_bind_the_contract(self) -> None:
         protocol = (

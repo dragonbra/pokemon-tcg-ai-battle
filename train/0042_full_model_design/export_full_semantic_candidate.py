@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import torch
 
@@ -129,6 +129,13 @@ def deployment_effective_sha256(
             )
         },
     }
+    # Historical 007 packages predate explicit focal-deck binding in this
+    # semantic hash.  Keep their identity byte-for-byte stable, while requiring
+    # every custom-deck export to bind the exact 60-card identity.
+    if "focal_exact_deck_sha256" in metadata:
+        semantic_portable_metadata["focal_exact_deck_sha256"] = metadata[
+            "focal_exact_deck_sha256"
+        ]
     semantic_metadata = {
         "schema_version": payload.get("schema_version"),
         "metadata": semantic_portable_metadata,
@@ -305,12 +312,46 @@ def export_candidate(
     checkpoint: Path,
     output: Path,
     require_frozen_selection: bool = True,
+    deployment_deck: Sequence[int] | None = None,
+    deployment_deck_id: str | None = None,
+    deployment_deck_display_name: str | None = None,
+    deployment_deck_source: str | None = None,
 ) -> dict[str, Any]:
     source = source.resolve()
     checkpoint = checkpoint.resolve()
     output = output.resolve()
     if output.exists():
         raise FileExistsError(output)
+    custom_deck = deployment_deck is not None
+    if custom_deck and require_frozen_selection:
+        raise ValueError(
+            "custom focal decks cannot inherit a Frozen selection produced by 007"
+        )
+    if custom_deck:
+        focal_cards = tuple(int(value) for value in deployment_deck or ())
+        if (
+            len(focal_cards) != 60
+            or any(value <= 0 for value in focal_cards)
+            or not deployment_deck_id
+            or not deployment_deck_display_name
+            or not deployment_deck_source
+        ):
+            raise ValueError(
+                "custom candidate deployment requires an exact-60 positive deck, "
+                "deck ID, display name, and source"
+            )
+        focal_deck_id = deployment_deck_id
+        focal_deck_display_name = deployment_deck_display_name
+        focal_deck_source = deployment_deck_source
+        focal_deck_sha256 = _deck_hash(list(focal_cards))
+    else:
+        focal_cards = tuple(
+            int(value) for value in FOCAL_DECK_PATH.read_text().splitlines() if value
+        )
+        focal_deck_id = FOCAL_DECK_ID
+        focal_deck_display_name = "007 · Dragapult ex"
+        focal_deck_source = str(FOCAL_DECK_PATH.relative_to(ROOT))
+        focal_deck_sha256 = FOCAL_DECK_SHA256
     source_model_path = source / "strategy/model.bin"
     source_payload = _load_payload(source_model_path)
     rl_payload = _load_payload(checkpoint)
@@ -392,7 +433,6 @@ def export_candidate(
             for name, value in rl_state.items() if name.startswith(prefix)
         }
 
-    focal_cards = [int(value) for value in FOCAL_DECK_PATH.read_text().splitlines() if value]
     own_archetype_id = OwnArchetypeVocabulary.load().classify_own_deck(focal_cards).value
     portable_metadata = {
         "project_id": PROJECT_ID,
@@ -421,6 +461,8 @@ def export_candidate(
         },
         "inference_contract": "greedy_root_plus_allocation_with_primitive_expansion",
     }
+    if custom_deck:
+        portable_metadata["focal_exact_deck_sha256"] = focal_deck_sha256
     portable = {
         "schema_version": OUTPUT_SCHEMA,
         "actor_state_dict": portable_actor_state,
@@ -455,7 +497,13 @@ def export_candidate(
         # Dragapult list.  The RL checkpoint was trained and Frozen-evaluated
         # with the versioned 007 deck below, so the deployment deck must come
         # from that authority rather than from the actor source package.
-        shutil.copy2(FOCAL_DECK_PATH, output / "deck.csv")
+        if custom_deck:
+            (output / "deck.csv").write_text(
+                "".join(f"{card_id}\n" for card_id in focal_cards),
+                encoding="utf-8",
+            )
+        else:
+            shutil.copy2(FOCAL_DECK_PATH, output / "deck.csv")
         shutil.copy2(RUNTIME_ROOT / "main.py", output / "main.py")
         shutil.copy2(
             RUNTIME_ROOT / "compound_inference.py",
@@ -482,18 +530,18 @@ def export_candidate(
         if len(deck) != 60:
             raise ValueError("candidate deck is not exactly 60 cards")
         deck_sha256 = _deck_hash(deck)
-        if deck_sha256 != FOCAL_DECK_SHA256:
-            raise ValueError("candidate deck does not match the Frozen 007 exact deck")
+        if deck_sha256 != focal_deck_sha256:
+            raise ValueError("candidate deck does not match the requested exact deck")
         manifest = {
             "schema_version": OUTPUT_SCHEMA,
             "candidate": output.name,
             "project_id": PROJECT_ID,
             "version": metadata.get("version"),
-            "deck_id": FOCAL_DECK_ID,
-            "deck_display_name": "007 · Dragapult ex",
+            "deck_id": focal_deck_id,
+            "deck_display_name": focal_deck_display_name,
             "deck_sha256": deck_sha256,
             "deck_file_sha256": _sha256(output / "deck.csv"),
-            "deck_source": str(FOCAL_DECK_PATH.relative_to(ROOT)),
+            "deck_source": focal_deck_source,
             "source_candidate": str(source.relative_to(ROOT)),
             "source_portable_checkpoint_sha256": _sha256(source_model_path),
             "base_checkpoint": str(BASE_CHECKPOINT.relative_to(ROOT)),

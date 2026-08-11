@@ -84,6 +84,7 @@ IMMUTABLE_GATE_C_TRACE_SHA256 = (
     "18c1684a3dc8158494fd9820278a85e60e351b2b274b520bb9fb413b1fa056ca"
 )
 ATTESTED_CPU_CUDA_VALUE_ATOL = 5.0e-6
+ATTESTED_FP16_DEPLOYMENT_VALUE_ATOL = 3.0e-3
 SOURCE_CHECKPOINT = ROOT / "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt"
 TRAINING_OPPONENT_POLICY_ID = "Policy-0809"
 OPPONENT_POLICY_ID = TRAINING_OPPONENT_POLICY_ID
@@ -131,6 +132,11 @@ class RunConfig:
     launch_formal: bool = False
     resume_update0: bool = False
     initial_model_checkpoint: str | None = None
+    focal_deck_path: str | None = None
+    focal_deck_id: str = FOCAL_DECK_ID
+    focal_exact_deck_sha256: str = FOCAL_EXACT_DECK_SHA256
+    focal_deck_display_name: str = "007 · Dragapult ex"
+    focal_deck_source: str = "frozen_0809_catalog_007"
     ppo: PPOConfig = PPOConfig()
 
     def validate(self) -> None:
@@ -149,6 +155,10 @@ class RunConfig:
             raise ValueError("resume_update0 requires the formal launch token")
         if self.resume_update0 and self.initial_model_checkpoint is not None:
             raise ValueError("resume_update0 cannot also branch from a checkpoint")
+        if not self.focal_deck_id or not self.focal_deck_display_name or not self.focal_deck_source:
+            raise ValueError("focal exact-deck identity fields must be non-empty")
+        if re.fullmatch(r"[0-9a-f]{64}", self.focal_exact_deck_sha256) is None:
+            raise ValueError("focal_exact_deck_sha256 must be a lowercase SHA256")
         if self.inference_channels_per_role > self.engines_per_worker:
             raise ValueError(
                 "inference_channels_per_role cannot exceed engines_per_worker"
@@ -295,15 +305,33 @@ def assert_update0_resume(version: str) -> dict[str, Path]:
     return paths
 
 
-def focal_deck() -> tuple[int, ...]:
-    cards = tuple(int(line) for line in FOCAL_DECK_PATH.read_text().splitlines())
+def focal_deck(config: RunConfig | None = None) -> tuple[int, ...]:
+    path = FOCAL_DECK_PATH
+    expected_id = FOCAL_DECK_ID
+    expected_sha256 = FOCAL_EXACT_DECK_SHA256
+    if config is not None:
+        expected_id = config.focal_deck_id
+        expected_sha256 = config.focal_exact_deck_sha256
+        if config.focal_deck_path is not None:
+            path = Path(config.focal_deck_path)
+            if not path.is_absolute():
+                path = ROOT / path
+            path = path.resolve()
+    cards = tuple(int(line) for line in path.read_text().splitlines())
     if len(cards) != 60 or any(card <= 0 for card in cards):
-        raise ValueError("0034 focal deck is not exact 60")
-    manifest = json.loads(FOCAL_DECK_PATH.with_name("manifest.json").read_text())
-    if manifest.get("deck_id") != FOCAL_DECK_ID:
-        raise ValueError("0034 focal deck ID does not match Frozen 007")
-    if manifest.get("exact_deck_sha256") != FOCAL_EXACT_DECK_SHA256:
-        raise ValueError("0034 focal deck hash does not match Frozen 007")
+        raise ValueError("0042 focal deck is not exact 60")
+    manifest = json.loads(path.with_name("manifest.json").read_text())
+    if manifest.get("deck_id") != expected_id:
+        raise ValueError("0042 focal deck ID does not match configured identity")
+    if manifest.get("exact_deck_sha256") != expected_sha256:
+        raise ValueError("0042 focal deck manifest hash does not match configured identity")
+    if exact_deck_sha256(cards) != expected_sha256:
+        raise ValueError("0042 focal deck contents do not match configured identity")
+    if config is not None and (
+        manifest.get("display_name") != config.focal_deck_display_name
+        or manifest.get("source") != config.focal_deck_source
+    ):
+        raise ValueError("0042 focal deck provenance does not match configured identity")
     return cards
 
 
@@ -372,6 +400,7 @@ def build_jobs(
     count: int = 512,
     greedy: bool = False,
     opponent_policy_id: str = TRAINING_OPPONENT_POLICY_ID,
+    focal_cards: tuple[int, ...] | None = None,
 ) -> list[RolloutJob]:
     catalog = load_frozen_catalog()
     if count < 256 or count % 256:
@@ -390,7 +419,9 @@ def build_jobs(
         seats.extend(unit_seats)
     engine_seeds = scenario_rng.sample(range(1, 0x80000000), count)
     jobs: list[RolloutJob] = []
-    deck = focal_deck()
+    deck = focal_deck() if focal_cards is None else tuple(focal_cards)
+    if len(deck) != 60:
+        raise ValueError("rollout focal deck must contain exactly 60 cards")
     root = runtime_root()
     runtime = build_seeded_runtime()
     for game_index, (opponent, focal_first, engine_seed) in enumerate(
@@ -693,11 +724,14 @@ def _trainable_manifest(model, trainer) -> dict[str, Any]:
     }
 
 
-def _run_parity(model, output: Path) -> dict[str, Any]:
+def _run_parity(
+    model, output: Path, deck: tuple[int, ...] | None = None
+) -> dict[str, Any]:
+    deck = focal_deck() if deck is None else tuple(deck)
     catalog = load_frozen_catalog()
     observations = collect_official_observations(
         runtime_root(),
-        focal_deck(),
+        deck,
         catalog[0].deck,
         focal_index=0,
         decisions=8,
@@ -705,7 +739,7 @@ def _run_parity(model, output: Path) -> dict[str, Any]:
     return assert_policy_0809_runtime_parity(
         observations=observations,
         actor_index=0,
-        deck=focal_deck(),
+        deck=deck,
         checkpoint=SOURCE_CHECKPOINT,
         candidate_root=CANDIDATE_ROOT,
         model=model,
@@ -896,7 +930,11 @@ def _attested_package_parity_passed(report: dict[str, Any]) -> bool:
 
 
 def _run_attested_update0_package_parity(
-    *, version: str, checkpoint: Path, artifact: Path
+    *, version: str, checkpoint: Path, artifact: Path,
+    deck: tuple[int, ...] | None = None,
+    deck_id: str | None = None,
+    deck_display_name: str | None = None,
+    deck_source: str | None = None,
 ) -> dict[str, Any]:
     temporary_root = (
         ROOT / ".tmp/evaluation/0042_update0_package_parity" / version
@@ -905,8 +943,18 @@ def _run_attested_update0_package_parity(
     report_path = artifact / "update0_cuda_package_fixed_snapshot_parity.json"
     if package.exists():
         raise FileExistsError(f"attested U0 package path already exists: {package}")
+    export_kwargs: dict[str, Any] = {}
+    if deck is not None:
+        export_kwargs = {
+            "require_frozen_selection": False,
+            "deployment_deck": deck,
+            "deployment_deck_id": deck_id,
+            "deployment_deck_display_name": deck_display_name,
+            "deployment_deck_source": deck_source,
+        }
     manifest = export_candidate(
-        source=CANDIDATE_ROOT, checkpoint=checkpoint, output=package
+        source=CANDIDATE_ROOT, checkpoint=checkpoint, output=package,
+        **export_kwargs,
     )
     trace = (
         ROOT
@@ -936,9 +984,14 @@ def _run_attested_update0_package_parity(
             "--reuse-trace", "--trace", str(trace),
             "--compare-decisions", "283",
             "--value-atol", str(ATTESTED_CPU_CUDA_VALUE_ATOL),
+            "--deployment-value-atol",
+            str(ATTESTED_FP16_DEPLOYMENT_VALUE_ATOL),
             "--require-history-wrap", "--strict",
             "--output", str(report_path),
-        ],
+        ] + (
+            ["--training-deck", str(package / "deck.csv")]
+            if deck is not None else []
+        ),
         cwd=ROOT,
         check=False,
         capture_output=True,
@@ -966,10 +1019,13 @@ def _run_attested_update0_package_parity(
     return report
 
 
-def load_registered_opponent(policy_id: str, device: torch.device):
+def load_registered_opponent(
+    policy_id: str, device: torch.device,
+    deck: tuple[int, ...] | None = None,
+):
     resolved = materialize_policy(
         policy_id,
-        focal_deck(),
+        focal_deck() if deck is None else tuple(deck),
         device,
         purpose="shared_training_and_frozen_evaluation_resolver",
     )
@@ -982,8 +1038,9 @@ def load_registered_opponent(policy_id: str, device: torch.device):
 def load_frozen_opponent(
     device: torch.device,
     policy_id: str = TRAINING_OPPONENT_POLICY_ID,
+    deck: tuple[int, ...] | None = None,
 ):
-    return load_registered_opponent(policy_id, device)
+    return load_registered_opponent(policy_id, device, deck)
 
 
 def run_gate(
@@ -1111,6 +1168,20 @@ def run(config: RunConfig) -> dict[str, Any]:
     flags = preset(config.preset_name)
     flags.validate()
     adaptation = AdaptationConfig()
+    run_focal_deck = focal_deck(config)
+    run_focal_deck_id = config.focal_deck_id
+    run_focal_deck_sha256 = exact_deck_sha256(run_focal_deck)
+    custom_focal_deck = (
+        run_focal_deck_id != FOCAL_DECK_ID
+        or run_focal_deck_sha256 != FOCAL_EXACT_DECK_SHA256
+    )
+    candidate_deck_kwargs: dict[str, Any] = {}
+    if custom_focal_deck:
+        candidate_deck_kwargs = {
+            "deck_id": run_focal_deck_id,
+            "deck_display_name": config.focal_deck_display_name,
+            "deck_source": config.focal_deck_source,
+        }
     resuming = config.resume_update0
     paths = assert_update0_resume(config.version) if resuming else assert_fresh_version(config.version)
     if not resuming:
@@ -1178,8 +1249,10 @@ def run(config: RunConfig) -> dict[str, Any]:
         "cpu_evaluation_contract": "unchanged",
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
         "actor": "exact_0031_semantic_policy_no_reduction",
-        "focal_deck_id": FOCAL_DECK_ID,
-        "focal_exact_deck_sha256": FOCAL_EXACT_DECK_SHA256,
+        "focal_deck_id": run_focal_deck_id,
+        "focal_exact_deck_sha256": run_focal_deck_sha256,
+        "focal_deck_display_name": config.focal_deck_display_name,
+        "focal_deck_source": config.focal_deck_source,
         "ppo_protocol": {
             "version": config.ppo.protocol_version,
             "data_epoch_semantics": "shuffle_without_replacement_complete_traversal",
@@ -1362,14 +1435,17 @@ def run(config: RunConfig) -> dict[str, Any]:
     cumulative_decisions = 0
     try:
         model, identity = build_preset_from_common_update0(
-            focal_deck(), flags, device=device
+            run_focal_deck, flags, device=device
         )
-        training_opponent = load_frozen_opponent(device, TRAINING_OPPONENT_POLICY_ID)
+        training_opponent = load_frozen_opponent(
+            device, TRAINING_OPPONENT_POLICY_ID, run_focal_deck
+        )
         evaluation_opponent = load_frozen_opponent(
-            device, OPPONENT_POLICY_ID
+            device, OPPONENT_POLICY_ID, run_focal_deck
         )
         parity = _run_parity(
-            model, paths["artifact"] / "policy_0809_runtime_parity.json"
+            model, paths["artifact"] / "policy_0809_runtime_parity.json",
+            run_focal_deck,
         )
         if not parity["passed"]:
             raise RuntimeError("Policy-0809 runtime parity did not pass")
@@ -1463,12 +1539,13 @@ def run(config: RunConfig) -> dict[str, Any]:
                 materialize_kaggle_evaluation_candidate(
                     source=CANDIDATE_ROOT,
                     checkpoint=paths["checkpoint"] / "update-000000.pt",
-                    deck=focal_deck(),
+                    deck=run_focal_deck,
                     device=device,
                     temporary_root=(
                         ROOT / ".tmp/evaluation/0042_candidate_deployment"
                         / config.version
                     ),
+                    **candidate_deck_kwargs,
                 )
             )
             baseline_evaluator = build_collector(
@@ -1476,8 +1553,8 @@ def run(config: RunConfig) -> dict[str, Any]:
             )
             baseline_started = time.perf_counter()
             baseline_jobs, baseline_schedule_sha = build_frozen_jobs(
-                focal_deck_id=FOCAL_DECK_ID,
-                focal_deck=focal_deck(), runtime_root=runtime_root(),
+                focal_deck_id=run_focal_deck_id,
+                focal_deck=run_focal_deck, runtime_root=runtime_root(),
                 source_policy_update=0,
                 focal_deployment_identity=(
                     baseline_candidate_audit.effective_candidate_sha256
@@ -1523,6 +1600,12 @@ def run(config: RunConfig) -> dict[str, Any]:
                 version=config.version,
                 checkpoint=paths["checkpoint"] / "update-000000.pt",
                 artifact=paths["artifact"],
+                deck=run_focal_deck if custom_focal_deck else None,
+                deck_id=run_focal_deck_id if custom_focal_deck else None,
+                deck_display_name=(
+                    config.focal_deck_display_name if custom_focal_deck else None
+                ),
+                deck_source=config.focal_deck_source if custom_focal_deck else None,
             )
             diagnostic_evaluator = build_collector(
                 baseline_evaluation_model, evaluation_opponent, config, mode="greedy",
@@ -1592,6 +1675,7 @@ def run(config: RunConfig) -> dict[str, Any]:
                     source_policy_update=source_update,
                     seed=config.seed,
                     count=config.games_per_update,
+                    focal_cards=run_focal_deck,
                 )
                 _record_training_schedule(
                     paths["artifact"] / "schedules/train_schedules.json",
@@ -1779,12 +1863,13 @@ def run(config: RunConfig) -> dict[str, Any]:
                         materialize_kaggle_evaluation_candidate(
                             source=CANDIDATE_ROOT,
                             checkpoint=checkpoint,
-                            deck=focal_deck(),
+                            deck=run_focal_deck,
                             device=device,
                             temporary_root=(
                                 ROOT / ".tmp/evaluation/0042_candidate_deployment"
                                 / config.version
                             ),
+                            **candidate_deck_kwargs,
                         )
                     )
                     evaluator = build_collector(
@@ -1792,8 +1877,8 @@ def run(config: RunConfig) -> dict[str, Any]:
                     )
                     eval_started = time.perf_counter()
                     evaluation_jobs, evaluation_schedule_sha = build_frozen_jobs(
-                        focal_deck_id=FOCAL_DECK_ID,
-                        focal_deck=focal_deck(), runtime_root=runtime_root(),
+                        focal_deck_id=run_focal_deck_id,
+                        focal_deck=run_focal_deck, runtime_root=runtime_root(),
                         source_policy_update=update,
                         focal_deployment_identity=(
                             candidate_deployment_audit.effective_candidate_sha256
@@ -1970,6 +2055,17 @@ def main() -> int:
     parser.add_argument("--launch-formal", action="store_true")
     parser.add_argument("--resume-update0", action="store_true")
     parser.add_argument("--initial-model-checkpoint")
+    parser.add_argument("--focal-deck-path")
+    parser.add_argument("--focal-deck-id", default=FOCAL_DECK_ID)
+    parser.add_argument(
+        "--focal-exact-deck-sha256", default=FOCAL_EXACT_DECK_SHA256
+    )
+    parser.add_argument(
+        "--focal-deck-display-name", default="007 · Dragapult ex"
+    )
+    parser.add_argument(
+        "--focal-deck-source", default="frozen_0809_catalog_007"
+    )
     args = parser.parse_args()
     if args.gate_output is not None:
         report = run_gate(
@@ -2012,6 +2108,11 @@ def main() -> int:
             launch_formal=args.launch_formal,
             resume_update0=args.resume_update0,
             initial_model_checkpoint=args.initial_model_checkpoint,
+            focal_deck_path=args.focal_deck_path,
+            focal_deck_id=args.focal_deck_id,
+            focal_exact_deck_sha256=args.focal_exact_deck_sha256,
+            focal_deck_display_name=args.focal_deck_display_name,
+            focal_deck_source=args.focal_deck_source,
             ppo=PPOConfig(
                 gae_lambda=args.gae_lambda,
                 credit_clock=args.credit_clock,

@@ -153,6 +153,29 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
         second = exporter.deployment_effective_sha256(payload, manifest)
         self.assertNotEqual(first, second)
 
+    def test_custom_focal_deck_changes_effective_identity(self) -> None:
+        state = {"weight": torch.ones(2, dtype=torch.float16)}
+        payload = {
+            "schema_version": exporter.OUTPUT_SCHEMA,
+            "metadata": {
+                "actor_metadata": {"model_config": {"width": 320}},
+                "own_archetype_id": 3,
+                "focal_exact_deck_sha256": "a" * 64,
+            },
+            **{field: dict(state) for field in exporter.PORTABLE_STATE_FIELDS},
+        }
+        manifest = {
+            "action_boundary_deployment": {"decision_gate": True},
+            "storage_dtype": "fp16",
+            "runtime_dtype": "fp32",
+        }
+        first = exporter.deployment_effective_sha256(payload, manifest)
+        payload["metadata"] = {
+            **payload["metadata"], "focal_exact_deck_sha256": "b" * 64,
+        }
+        second = exporter.deployment_effective_sha256(payload, manifest)
+        self.assertNotEqual(first, second)
+
     def test_frozen_selection_requires_v4_candidate_deployment_evidence(self) -> None:
         (exporter.ROOT / ".tmp").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=exporter.ROOT / ".tmp") as temporary:

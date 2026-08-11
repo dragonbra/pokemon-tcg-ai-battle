@@ -114,6 +114,34 @@ class ProjectIdentityTest(unittest.TestCase):
             "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
         )
 
+    def test_full_semantic_custom_focal_exact_deck_is_explicit_and_routed(self) -> None:
+        config = full_runner.RunConfig(
+            version="V6_dragapult_ex_0042_v6",
+            focal_deck_path=(
+                "train/0042_full_model_design/focal_decks/"
+                "dragapult_ex_0042_v6/deck.csv"
+            ),
+            focal_deck_id="dragapult_ex_0042_v6",
+            focal_exact_deck_sha256=(
+                "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3"
+            ),
+            focal_deck_display_name="Dragapult ex 0042 V6",
+            focal_deck_source="user_supplied_2026-08-12",
+        )
+        config.validate()
+        deck = full_runner.focal_deck(config)
+        jobs = full_runner.build_jobs(
+            source_policy_update=0,
+            seed=123,
+            count=256,
+            focal_cards=deck,
+        )
+
+        self.assertEqual(len(deck), 60)
+        self.assertEqual(full_runner.exact_deck_sha256(deck), config.focal_exact_deck_sha256)
+        self.assertEqual({job.focal_deck for job in jobs}, {deck})
+        self.assertNotEqual(deck, full_runner.focal_deck())
+
     def test_formal_run_uses_0042_strategy_identity(self) -> None:
         config = full_runner.RunConfig()
 

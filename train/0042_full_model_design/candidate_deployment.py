@@ -109,6 +109,18 @@ def audit_candidate_deployment(
     checkpoint_update = manifest.get("checkpoint_update")
     if not isinstance(checkpoint_update, int) or checkpoint_update < 0:
         raise _fatal("checkpoint update identity is missing")
+    metadata = payload.get("metadata")
+    if isinstance(metadata, Mapping) and "focal_exact_deck_sha256" in metadata:
+        focal_deck_sha256 = metadata["focal_exact_deck_sha256"]
+        if (
+            not isinstance(focal_deck_sha256, str)
+            or len(focal_deck_sha256) != 64
+            or manifest.get("deck_sha256") != focal_deck_sha256
+        ):
+            raise _fatal(
+                "custom focal exact-deck identity differs between portable metadata "
+                "and package manifest"
+            )
     return CandidateDeploymentAudit(
         contract_id=CONTRACT_ID,
         source_checkpoint_sha256=source_checkpoint_sha256,
@@ -207,6 +219,9 @@ def materialize_kaggle_evaluation_candidate(
     deck: Sequence[int],
     device: str | torch.device,
     temporary_root: Path,
+    deck_id: str | None = None,
+    deck_display_name: str | None = None,
+    deck_source: str | None = None,
 ) -> tuple[KaggleEvaluationActorCritic, CandidateDeploymentAudit]:
     source = source.resolve()
     checkpoint = checkpoint.resolve()
@@ -222,6 +237,10 @@ def materialize_kaggle_evaluation_candidate(
             checkpoint=checkpoint,
             output=package,
             require_frozen_selection=False,
+            deployment_deck=(deck if deck_id is not None else None),
+            deployment_deck_id=deck_id,
+            deployment_deck_display_name=deck_display_name,
+            deployment_deck_source=deck_source,
         )
         portable_checkpoint = package / "strategy/model.bin"
         portable_sha256 = _sha256_file(portable_checkpoint)

@@ -108,18 +108,20 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
 
   <section>
     <h2>PPO Protocol V2 and Frozen-0809</h2>
-    <p>Exact focal deck <code>007_dragapult_ex</code>; 256 games per update; all valid decisions;
+    <p>Current V6 exact focal deck <code>dragapult_ex_0042_v6</code>
+      (<code>7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3</code>);
+      own-archetype class 0 (<code>dragapult_ex</code>); 256 games per update; all valid decisions;
       2,048-decision minibatches; up to three complete shuffled data epochs; target/hard behavior
       KL guards 0.015/0.025; FP32 AdamW; independently explicit actor-group LRs; Value-only LR
       1e-4; no update cap.</p>
-    <p>The U250 identical-rollout diagnostic selected decoder 2e-5, Policy Adapter 4e-5, and
+    <p>V6 strict-loads V5 U130 focal model-only weights after snapshotting immutable Policy-0809/U0
+      as the reference-KL policy, then starts a fresh AdamW state and fresh rollout. The selected
+      protocol uses decoder 2e-5, Policy Adapter 4e-5, and
       allocation 2e-5. Across 22,719 decisions and three epochs it measured behavior KL 4.30e-4,
       root/macro KL 5.62e-5/2.36e-3, clip fraction 0.253%, and complete 3x reuse. The branch loads
-      U250 focal weights after snapshotting Policy-0809/U0 as the immutable reference-KL policy;
-      AdamW state and rollout data start fresh.</p>
+      optimizer state and rollout data are never imported from V5.</p>
     <p>The independent V4 smoke completed 22,182 decisions, 33 optimizer steps, 100% coverage and
-      3x reuse with behavior KL 3.82e-4 and clip fraction 0.344%. V5 starts again from sealed U250,
-      not from smoke U1, and runs without an update cap.</p>
+      3x reuse with behavior KL 3.82e-4 and clip fraction 0.344%. V6 runs without an update cap.</p>
     <p>Each logical 2,048-decision optimizer step uses at most two 1,024-row physical graphs with
       one shared loss denominator, one accumulated gradient, one clip, and one AdamW step. This
       retains 11 logical steps for 21,203 decisions while avoiding the WSL DXG residency failure

@@ -1,0 +1,10 @@
+{
+  "schema": "0042_focal_exact_deck_v1",
+  "deck_id": "dragapult_ex_0042_v6",
+  "display_name": "Dragapult ex 0042 V6",
+  "exact_deck_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+  "own_archetype_id": 0,
+  "own_archetype_name": "dragapult_ex",
+  "source": "user_supplied_2026-08-12",
+  "cards": 60
+}

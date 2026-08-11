@@ -103,6 +103,14 @@ def parse_args() -> argparse.Namespace:
         help="Numbered project package that strictly reconstructs --training-checkpoint.",
     )
     parser.add_argument(
+        "--training-deck",
+        type=Path,
+        help=(
+            "Optional exact-60 deck used to reconstruct the numbered-project model. "
+            "When omitted, preserve legacy semantics by using the trace focal deck."
+        ),
+    )
+    parser.add_argument(
         "--extension-dir",
         type=Path,
         default=CUDA_ENGINE_ROOT / "build" / "torch_0031_linux",
@@ -1489,9 +1497,20 @@ def main() -> int:
         checkpoint = args.training_checkpoint.resolve()
         if not checkpoint.is_file():
             raise FileNotFoundError(checkpoint)
+        training_deck = deck_rows[0]
+        if args.training_deck is not None:
+            training_deck = tuple(
+                int(line.strip())
+                for line in args.training_deck.resolve().read_text(
+                    encoding="utf-8"
+                ).splitlines()
+                if line.strip()
+            )
+            if len(training_deck) != 60 or any(card <= 0 for card in training_deck):
+                raise ValueError("--training-deck must contain exactly 60 positive card IDs")
         training_model = load_training_actor_critic(
             checkpoint,
-            deck_rows[0],
+            training_deck,
             device,
             training_project=args.training_project,
         )
