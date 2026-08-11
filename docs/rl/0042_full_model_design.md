@@ -1,6 +1,6 @@
 # 0042 Full Model Design
 
-Status: V1 sealed at U250; a fresh-optimizer U250 LR branch is in final smoke.
+Status: V1 sealed at U250; unbounded V5 U250 fresh-optimizer branch is active.
 
 从新 clone、环境与 CUDA Engine 准备、preflight、正式 PPO、Frozen-0809 评测到安全停止的
 完整操作流程见 [`0042_full_model_design_operations_manual.md`](0042_full_model_design_operations_manual.md)。
@@ -334,6 +334,10 @@ identical 256-game, 22,719-decision U250 rollout: the selected arm completed all
 behavior KL `4.30e-4`, root KL `5.62e-5`, macro KL `2.36e-3`, clip fraction `0.253%`, and no
 meaningful global clipping. U250 model weights are strict-loaded only after the trainer snapshots
 Policy-0809/U0 as the reference-KL policy; optimizer state, RNG state, and rollout data start fresh.
+The independent V4 one-update smoke then completed 22,182 decisions, 33 optimizer steps, 100%
+coverage and 3x reuse with behavior KL `3.82e-4`, clip fraction `0.344%`, and unchanged frozen
+representation. V5 uses the same U250 branch point—not the V4 U1 smoke checkpoint—and has no
+configured update limit.
 
 ## 16. Deck pool and diagnostics
 

@@ -37,7 +37,7 @@
 <header><div>
   <h1>0042 · Strategy-Conditioned Full Model</h1>
   <div class="sub">Frozen semantic space · trainable Value understanding · detached policy readout</div>
-  <div class="status">V1 sealed at U250 · fresh U250 LR branch in final smoke · 278 tests pass</div>
+  <div class="status">V1 sealed at U250 · unbounded V5 U250 branch active · 281 tests pass</div>
 </div></header>
 <main>
   <section class="metrics">
@@ -117,6 +117,9 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
       root/macro KL 5.62e-5/2.36e-3, clip fraction 0.253%, and complete 3x reuse. The branch loads
       U250 focal weights after snapshotting Policy-0809/U0 as the immutable reference-KL policy;
       AdamW state and rollout data start fresh.</p>
+    <p>The independent V4 smoke completed 22,182 decisions, 33 optimizer steps, 100% coverage and
+      3x reuse with behavior KL 3.82e-4 and clip fraction 0.344%. V5 starts again from sealed U250,
+      not from smoke U1, and runs without an update cap.</p>
     <p>Each logical 2,048-decision optimizer step uses at most two 1,024-row physical graphs with
       one shared loss denominator, one accumulated gradient, one clip, and one AdamW step. This
       retains 11 logical steps for 21,203 decisions while avoiding the WSL DXG residency failure

@@ -1,6 +1,6 @@
 # 0042 Strategy-Conditioned Full Model
 
-Status: **V1 sealed at U250; U250 fresh-optimizer LR branch is in final smoke**
+Status: **V1 sealed at U250; unbounded V5 U250 fresh-optimizer branch active**
 
 Date: 2026-08-11
 
@@ -222,9 +222,11 @@ unchanged Value groups `1e-4`; its three-epoch behavior KL was `4.30e-4`, clip f
 and all decisions received exactly 3 optimizer opportunities. The diagnostic artifact is
 `.tmp/evaluation/0042_u250_lr_probe/report.json` and is not promotion evidence.
 
-The branch loads U250 focal weights only after `PPOTrainer` snapshots immutable Policy-0809/U0 as
+The V4 one-update smoke completed 256 games, 22,182 decisions, 33 optimizer steps, 100% coverage,
+3x reuse, behavior KL `3.82e-4`, and clip fraction `0.344%`, with unchanged frozen representation.
+The V5 formal branch loads U250 focal weights only after `PPOTrainer` snapshots immutable Policy-0809/U0 as
 the reference-KL policy. It starts a fresh AdamW state and fresh on-policy rollout; it never resets
 the reference anchor to U250 and never imports V1 optimizer/RNG/replay state. After the isolated
-smoke passes, the next version runs without an update cap, retains every model-only checkpoint,
+smoke passed; V5 now runs without an update cap, retains every model-only checkpoint,
 and performs identity-bound Frozen-0809 CUDA-2048 evaluation every 10 updates. Promotion remains
 a separate human decision.

@@ -3,7 +3,7 @@
 **面向读者：**刚 clone 仓库、对 0042 没有上下文的开发 Agent / 运维 Agent  
 **项目 ID：**`0042_full_model_design`  
 **当前正式版本名：**`V5_u250_faster_actor_lr`
-**当前状态（2026-08-11）：**V1 已封存在 U250；U250 identical-rollout LR probe 与独立 V4 one-update smoke 已通过；V5 从同一 U250 model-only checkpoint、fresh optimizer 和 fresh rollout 启动
+**当前状态（2026-08-11）：**V1 已封存在 U250；U250 identical-rollout LR probe 与独立 V4 one-update smoke 已通过；无上限 V5 已从同一 U250 model-only checkpoint、fresh optimizer 和 fresh rollout 启动
 **本手册性质：**操作说明，不取代任何强制合同
 
 ## 0. 先读结论
