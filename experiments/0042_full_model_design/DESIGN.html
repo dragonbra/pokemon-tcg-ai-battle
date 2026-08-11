@@ -119,8 +119,13 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
       <code>Policy-0809</code> instances. Resident CUDA audits every job-role resource ledger
       against its own exact deck and rejects any batch-global deck substitution. The measured
       256-game preflight covered all 55 exact decks, 512 job-role ledgers, 21,203 decisions, and
-      zero bulk feature D2H. PPO gathers from the contiguous CUDA feature store, and Phantom
-      allocation evaluation is batched by allocation/target shape.</p>
+      zero bulk feature D2H. Ready lanes are compacted by actor role before each complete policy
+      forward and scattered back afterward, so focal and opponent identities remain independent
+      while neither model evaluates the other role's rows. A 46,061-decision parity benchmark
+      passed exactly and improved throughput from 6.04 to 6.68 games/s (+10.6%). The production
+      preflight reached 7.77 games/s; 1.119 GB of semantic features stayed on CUDA while only
+      2.84 MB of compact control/trajectory data moved to the host. PPO gathers from the contiguous
+      CUDA feature store, and Phantom allocation evaluation is batched by allocation/target shape.</p>
     <p>Update 0 and every 10 updates export FP16 candidate storage, strict-load FP32 runtime, audit
       effective identity, and run an identity-bound Frozen-0809 CUDA-2048 evaluation.</p>
   </section>

@@ -30,10 +30,20 @@
   Run the all-decision pre-update old-logprob audit at update 1 and every tenth update; all other
   updates use the guard set. This changes diagnostic cost only, not PPO data traversal, frozen
   targets, or optimizer coverage.
+- Compact heterogeneous ready lanes by current actor role before complete-policy forward. Focal
+  and opponent models evaluate only their assigned rows, then scatter results back to lane order.
+  This optimization must preserve independent Full0809 opponent materialization, exact-deck static
+  fields, and per-decision output parity; it is not permission for cross-policy weight sharing.
+- Define the CUDA residency contract precisely: semantic rollout features remain on device and
+  bulk feature D2H must be zero. Compact action/control/trajectory scalars may cross to the host for
+  official-engine stepping and Episode/GAE construction; they must never trigger CPU feature
+  recompilation followed by feature H2D.
 
 ## Evidence
 
 - `train/0042_full_model_design/tests/test_strategy_architecture.py`
 - `.tmp/strategy_adapter_v2_audit/0042_runtime_audit.json`
 - `.tmp/strategy_adapter_v2_audit/0042_value_meta_baseline.json`
+- `.tmp/evaluation/0042_policy0809_contract/mixed_deck_role_compacted_parity.json`
+- `.tmp/0042_protocol_v2_preflight/role_compacted_retry_20260811/report.json`
 - `docs/rl/0042_full_model_design.md`

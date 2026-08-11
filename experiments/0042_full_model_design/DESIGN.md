@@ -175,8 +175,12 @@ intervening updates audit the guard set. Probe rows never count as optimized sam
 All opponents are independent materializations of full immutable `Policy-0809`, effective hash
 `0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96`. Resident CUDA audits
 every focal/opponent job role against its own exact 60-card resource ledger and rejects any
-batch-global deck substitution. Bulk rollout features remain GPU resident. PPO gathers from that
-contiguous device store, and allocation-head evaluation batches Phantom macros by tensor shape.
+batch-global deck substitution. Ready lanes are compacted by actor role before forward: the focal
+model evaluates only focal rows and the independent immutable opponent evaluates only opponent
+rows, after which outputs are scattered back to lane order. This removes the prior double
+full-batch forward without merging policy identities or changing per-lane deck fields. Bulk
+rollout features remain GPU resident. PPO gathers from that contiguous device store, and
+allocation-head evaluation batches Phantom macros by tensor shape.
 
 Update 0 and every 10 updates use the same formal path: merge/export FP16 candidate storage,
 strict-load FP32 runtime, verify deployment identity, then execute an identity-bound Frozen-0809
@@ -184,7 +188,12 @@ CUDA-2048 schedule. Results cannot promote a policy automatically.
 
 The real preflight completed 256 games and 21,203 valid decisions, audited all 55 exact opponent
 decks and 512 job-role ledgers, recorded zero feature D2H, and proved exact cumulative decision
-usage 1/2/3 across three 11-minibatch epochs.
+usage 1/2/3 across three 11-minibatch epochs. The production role-compacted preflight reached
+7.77 games/s with mean ready batch 131.85. A same-schedule, per-decision parity benchmark against
+the former double-full-batch route passed over 46,061 decisions and improved throughput from
+6.04 to 6.68 games/s (+10.6%). The only host transfer is compact control/trajectory data
+(2,839,059 bytes in the preflight); 1,119,219,772 bytes of semantic feature tensors remained on
+CUDA with zero bulk feature D2H and no CPU feature recompilation/re-upload path.
 
 ## 12. Current and next stage
 

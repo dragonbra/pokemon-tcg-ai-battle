@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import fields, is_dataclass, replace
+from types import SimpleNamespace
 from typing import Any
 
 from .semantic0031_bridge import semantic0031_decode_device
@@ -19,6 +21,54 @@ class RoutedDecisionBatch:
     state: Any
     focal_options: Any
     focal_auxiliary: Any | None = None
+
+
+def _select_rows(batch: Any, rows: Any, *, batch_size: int) -> Any:
+    """Gather one role without changing scalar/schema metadata."""
+
+    def selected(value: Any) -> Any:
+        if hasattr(value, "ndim") and value.ndim > 0 and value.shape[0] == batch_size:
+            return value.index_select(0, rows)
+        return value
+
+    if isinstance(batch, dict):
+        return {name: selected(value) for name, value in batch.items()}
+    if is_dataclass(batch):
+        return replace(batch, **{
+            field.name: selected(getattr(batch, field.name)) for field in fields(batch)
+        })
+    return SimpleNamespace(**{
+        name: selected(value) for name, value in vars(batch).items()
+    })
+
+
+def _scatter_rows(value: Any, rows: Any, *, batch_size: int) -> Any:
+    """Restore compact role outputs to mixed-batch row coordinates."""
+    import torch
+
+    role_size = int(rows.numel())
+
+    def scattered(item: Any) -> Any:
+        if (
+            isinstance(item, torch.Tensor)
+            and item.ndim > 0
+            and item.shape[0] == role_size
+        ):
+            output = torch.zeros(
+                (batch_size, *item.shape[1:]), dtype=item.dtype, device=item.device
+            )
+            return output.index_copy(0, rows, item)
+        return item
+
+    if isinstance(value, dict):
+        return {name: scattered(item) for name, item in value.items()}
+    if is_dataclass(value):
+        return replace(value, **{
+            field.name: scattered(getattr(value, field.name)) for field in fields(value)
+        })
+    return SimpleNamespace(**{
+        name: scattered(item) for name, item in vars(value).items()
+    })
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,6 +157,7 @@ class Semantic0031ResidentRouter:
         shared_trunk_identity_proof: SharedTrunkIdentityProof | None = None,
         focal_summary_fn: Any | None = None,
         focal_strategy_fn: Any | None = None,
+        role_compacted: bool = False,
     ) -> None:
         self.focal_adapter = focal_adapter
         self.opponent_last_option_layer = opponent_last_option_layer
@@ -119,6 +170,7 @@ class Semantic0031ResidentRouter:
         self.shared_trunk_identity_proof = shared_trunk_identity_proof
         self.focal_summary_fn = focal_summary_fn
         self.focal_strategy_fn = focal_strategy_fn
+        self.role_compacted = bool(role_compacted)
         if self.same_policy:
             if opponent_adapter is not None:
                 raise RuntimeError("same-policy routing must use the focal full adapter")
@@ -159,6 +211,146 @@ class Semantic0031ResidentRouter:
                 )
             self.opponent_decoder = adapter_decoder
 
+    def _route_compacted(
+        self,
+        batch: Any,
+        *,
+        focal_route: Any,
+        opponent_route: Any,
+        max_select: int,
+        focal_greedy: bool,
+        compute_stats: bool,
+        focal_sampling_seeds: Any | None,
+        focal_sampling_counters: Any | None,
+    ) -> RoutedDecisionBatch:
+        """Run each complete policy only on rows assigned to that role."""
+        import torch
+
+        batch_size = int(focal_route.numel())
+        focal_rows = focal_route.bool().nonzero(as_tuple=False).flatten()
+        opponent_rows = opponent_route.bool().nonzero(as_tuple=False).flatten()
+        if focal_rows.numel() + opponent_rows.numel() != batch_size:
+            raise RuntimeError("role-compacted routing requires exactly one role per row")
+
+        focal_model = self.focal_adapter.model
+        validated_full = focal_model.validate_batch(batch)
+        focal_decoded = None
+        focal_state_full = None
+        focal_options_full = None
+        focal_auxiliary_full = None
+        if focal_rows.numel():
+            focal_batch = _select_rows(batch, focal_rows, batch_size=batch_size)
+            focal_validated = focal_model.validate_batch(focal_batch)
+            focal_state = focal_model.state_encoder(
+                focal_validated, self.focal_adapter.prototype_memory
+            )
+            focal_options = self.focal_adapter._encode_options(
+                focal_validated, focal_state
+            )
+            focal_summary = (
+                self.focal_summary_fn(focal_state)
+                if self.focal_summary_fn is not None else focal_state.summary
+            )
+            focal_readout_fn = None
+            focal_auxiliary = None
+            if self.focal_strategy_fn is not None:
+                focal_readout_fn, focal_auxiliary = self.focal_strategy_fn(
+                    focal_validated, focal_state, focal_options
+                )
+                if not callable(focal_readout_fn) or not isinstance(
+                    focal_auxiliary, dict
+                ):
+                    raise RuntimeError(
+                        "focal strategy function must return (readout_fn, auxiliary dict)"
+                    )
+            focal_decoded = semantic0031_decode_device(
+                focal_model.action_decoder,
+                focal_validated,
+                focal_options,
+                focal_summary,
+                max_select=max_select,
+                greedy=focal_greedy,
+                compute_stats=compute_stats,
+                sampling_seeds=(
+                    None if focal_sampling_seeds is None
+                    else focal_sampling_seeds.index_select(0, focal_rows)
+                ),
+                sampling_counters=(
+                    None if focal_sampling_counters is None
+                    else focal_sampling_counters.index_select(0, focal_rows)
+                ),
+                readout_fn=focal_readout_fn,
+            )
+            focal_state_full = _scatter_rows(
+                focal_state, focal_rows, batch_size=batch_size
+            )
+            focal_options_full = _scatter_rows(
+                {"options": focal_options}, focal_rows, batch_size=batch_size
+            )["options"]
+            if focal_auxiliary is not None:
+                focal_auxiliary_full = _scatter_rows(
+                    focal_auxiliary, focal_rows, batch_size=batch_size
+                )
+
+        opponent_decoded = None
+        if opponent_rows.numel():
+            opponent_batch = _select_rows(batch, opponent_rows, batch_size=batch_size)
+            opponent_model = self.opponent_adapter.model
+            opponent_validated = opponent_model.validate_batch(opponent_batch)
+            opponent_state = opponent_model.state_encoder(
+                opponent_validated, self.opponent_adapter.prototype_memory
+            )
+            opponent_options = self.opponent_adapter._encode_options(
+                opponent_validated, opponent_state
+            )
+            opponent_decoded = semantic0031_decode_device(
+                self.opponent_decoder,
+                opponent_validated,
+                opponent_options,
+                opponent_state.summary,
+                max_select=max_select,
+                greedy=True,
+                compute_stats=False,
+            )
+
+        exemplar = focal_decoded if focal_decoded is not None else opponent_decoded
+        width = int(exemplar["actions"].shape[1])
+        actions = torch.zeros(
+            (batch_size, width), dtype=exemplar["actions"].dtype,
+            device=exemplar["actions"].device,
+        )
+        lengths = torch.zeros(
+            batch_size, dtype=exemplar["lengths"].dtype,
+            device=exemplar["lengths"].device,
+        )
+        stopped = torch.zeros(
+            batch_size, dtype=exemplar["stopped"].dtype,
+            device=exemplar["stopped"].device,
+        )
+        focal_logprob = torch.zeros(batch_size, device=actions.device)
+        focal_entropy = torch.zeros(batch_size, device=actions.device)
+        if focal_decoded is not None:
+            actions.index_copy_(0, focal_rows, focal_decoded["actions"])
+            lengths.index_copy_(0, focal_rows, focal_decoded["lengths"])
+            stopped.index_copy_(0, focal_rows, focal_decoded["stopped"])
+            focal_logprob.index_copy_(0, focal_rows, focal_decoded["logprob"])
+            focal_entropy.index_copy_(0, focal_rows, focal_decoded["entropy"])
+        if opponent_decoded is not None:
+            actions.index_copy_(0, opponent_rows, opponent_decoded["actions"])
+            lengths.index_copy_(0, opponent_rows, opponent_decoded["lengths"])
+            stopped.index_copy_(0, opponent_rows, opponent_decoded["stopped"])
+        return RoutedDecisionBatch(
+            actions=actions,
+            lengths=lengths,
+            stopped=stopped,
+            focal_logprob=focal_logprob,
+            focal_entropy=focal_entropy,
+            validated=validated_full,
+            state=focal_state_full,
+            focal_options=focal_options_full,
+            focal_auxiliary=focal_auxiliary_full,
+        )
+
     def encode(self, batch: Any) -> tuple[Any, Any, Any, Any]:
         model = self.focal_adapter.model
         validated = model.validate_batch(batch)
@@ -191,6 +383,18 @@ class Semantic0031ResidentRouter:
         focal_sampling_counters: Any | None = None,
     ) -> RoutedDecisionBatch:
         import torch
+
+        if self.role_compacted and not self.same_policy:
+            return self._route_compacted(
+                batch,
+                focal_route=focal_route,
+                opponent_route=opponent_route,
+                max_select=max_select,
+                focal_greedy=focal_greedy,
+                compute_stats=compute_stats,
+                focal_sampling_seeds=focal_sampling_seeds,
+                focal_sampling_counters=focal_sampling_counters,
+            )
 
         validated, state, focal_options, opponent_options = self.encode(batch)
         opponent_state = state

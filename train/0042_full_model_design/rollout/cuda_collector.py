@@ -140,6 +140,7 @@ class CudaFullSemanticRolloutCollector:
         decision_trace_sink: Any | None = None,
         opponent_policy_id: str | None = None,
         opponent_identity_audit: Any | None = None,
+        role_compacted: bool = True,
     ) -> None:
         if device.type != "cuda" or lane_count < 1:
             raise ValueError("0038 CUDA collector requires CUDA and positive lanes")
@@ -177,6 +178,7 @@ class CudaFullSemanticRolloutCollector:
             )
         self.opponent_policy_id = opponent_policy_id
         self.opponent_identity_audit = opponent_identity_audit
+        self.role_compacted = bool(role_compacted)
         self._metrics: dict[str, float] = {}
 
     def collect(self, jobs: list[RolloutJob]) -> list[EpisodeTrajectory]:
@@ -246,6 +248,7 @@ class CudaFullSemanticRolloutCollector:
             opponent_identity_audit=self.opponent_identity_audit,
             focal_summary_fn=self.model.actor_summary,
             focal_strategy_fn=focal_strategy_fn,
+            role_compacted=self.role_compacted,
         )
         boundary = CudaActionBoundaryAdapter(
             self.model,
@@ -547,6 +550,7 @@ class CudaFullSemanticRolloutCollector:
             "rollout/worker_processes": 0.0,
             "rollout/engines_per_worker": 0.0,
             "rollout/inference_channels_per_role": 0.0,
+            "rollout/role_compacted_routing": float(self.role_compacted),
         }
         return episodes
 
@@ -669,6 +673,12 @@ class ChunkedCudaRolloutCollector:
             "rollout/lane_routing_audit_pass": float(
                 bool(chunks) and all(
                     row.get("rollout/lane_routing_audit_pass") == 1.0
+                    for row in chunks
+                )
+            ),
+            "rollout/role_compacted_routing": float(
+                bool(chunks) and all(
+                    row.get("rollout/role_compacted_routing") == 1.0
                     for row in chunks
                 )
             ),

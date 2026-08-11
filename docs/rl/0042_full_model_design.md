@@ -1,6 +1,6 @@
 # 0042 Full Model Design
 
-Status: PPO Protocol V2 preflight passed; 16-update non-candidate smoke is in progress.
+Status: PPO Protocol V2 role-compacted preflight passed; 16-update non-candidate smoke is pending.
 
 从新 clone、环境与 CUDA Engine 准备、preflight、正式 PPO、Frozen-0809 评测到安全停止的
 完整操作流程见 [`0042_full_model_design_operations_manual.md`](0042_full_model_design_operations_manual.md)。
@@ -292,9 +292,12 @@ All training opponents resolve independently as full immutable `Policy-0809`, ef
 `0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96`. Focal and opponent
 materializations share no Parameter or tensor storage. Resident CUDA receives no batch-global
 deck adapter: every job/role resource ledger is checked on GPU against its own exact 60-card deck,
-and a mismatch is fatal before PPO. The contiguous rollout feature store remains on CUDA through
-minibatch gathering, and Phantom allocation-head evaluation is grouped by shape instead of
-launching one GPU operation per macro.
+and a mismatch is fatal before PPO. Before neural forward, heterogeneous ready lanes are compacted
+by current actor role. The focal model processes only focal rows; the independent immutable
+Full0809 opponent processes only opponent rows; outputs are scattered back to original lane order.
+This is request batching, not cross-policy weight sharing. The contiguous rollout feature store
+remains on CUDA through minibatch gathering, and Phantom allocation-head evaluation is grouped by
+shape instead of launching one GPU operation per macro.
 
 At update 0 and every 10 updates, the candidate is merged and exported with FP16 floating storage,
 strictly rematerialized as FP32 runtime, assigned an effective deployment hash, and evaluated by
@@ -305,7 +308,13 @@ namespace. Smoke artifacts are never candidates and promotion remains manual.
 The real 256-game preflight completed 21,203 valid decisions (82.824/game), observed all 55 exact
 opponent decks, audited all 512 focal/opponent job roles, and reported zero bulk feature D2H. Each
 of three instrumented epochs used all 21,203 decisions exactly once in 11 minibatches with a final
-723-decision tail.
+723-decision tail. The role-compacted production preflight reached 7.77 games/s with mean ready
+batch 131.85. A 256-game, 46,061-decision exact parity benchmark against the previous
+double-full-batch routing passed with no divergence and improved 6.04 to 6.68 games/s (+10.6%).
+The preflight kept 1,119,219,772 feature bytes on CUDA and transferred 2,839,059 bytes of compact
+control/trajectory scalars to the host. Thus there is no CPU semantic feature compiler followed by
+feature re-upload; the remaining scalar transfer is required for engine control and Episode/GAE
+materialization and is not a feature round trip.
 
 ## 16. Deck pool and diagnostics
 

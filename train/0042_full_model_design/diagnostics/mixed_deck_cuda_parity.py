@@ -101,6 +101,8 @@ def _collector(
     opponent: Any,
     jobs: Sequence[Any],
     traces: dict[str, list[dict[str, Any]]],
+    *,
+    role_compacted: bool,
 ) -> ChunkedCudaRolloutCollector:
     return ChunkedCudaRolloutCollector(
         model,
@@ -118,6 +120,7 @@ def _collector(
         decision_trace_sink=_trace_sink(jobs, traces),
         opponent_policy_id=runner.TRAINING_OPPONENT_POLICY_ID,
         opponent_identity_audit=opponent._policy_identity_audit,
+        role_compacted=role_compacted,
     )
 
 
@@ -171,7 +174,9 @@ def run(*, checkpoint: Path, output: Path) -> dict[str, Any]:
 
     mixed_traces: dict[str, list[dict[str, Any]]] = defaultdict(list)
     started = time.perf_counter()
-    mixed_collector = _collector(model, opponent, jobs, mixed_traces)
+    mixed_collector = _collector(
+        model, opponent, jobs, mixed_traces, role_compacted=True
+    )
     mixed = mixed_collector.collect(list(jobs))
     mixed_seconds = time.perf_counter() - started
     mixed_metrics = mixed_collector.metrics()
@@ -189,7 +194,9 @@ def run(*, checkpoint: Path, output: Path) -> dict[str, Any]:
     if len(grouped_jobs) != 256:
         raise RuntimeError("grouped reference changed job cardinality")
     started = time.perf_counter()
-    grouped_collector = _collector(model, opponent, grouped_jobs, grouped_traces)
+    grouped_collector = _collector(
+        model, opponent, grouped_jobs, grouped_traces, role_compacted=False
+    )
     grouped_episodes = grouped_collector.collect(grouped_jobs)
     grouped_metrics = grouped_collector.metrics()
     grouped_seconds = time.perf_counter() - started

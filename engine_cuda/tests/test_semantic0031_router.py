@@ -89,6 +89,21 @@ class _DeckAwareAdapter(_Adapter):
         ).view(1, 1, 4) + state.summary.unsqueeze(1)
 
 
+class _CountingPolicy(_Policy):
+    def __init__(self, width: int, state_offset: float) -> None:
+        super().__init__(width, state_offset)
+        self.encoded_batch_sizes: list[int] = []
+
+    def state_encoder(self, batch, prototype_memory):
+        self.encoded_batch_sizes.append(int(batch.option_mask.shape[0]))
+        return super().state_encoder(batch, prototype_memory)
+
+
+class _RowAwareAdapter(_Adapter):
+    def _encode_options(self, batch, _state):
+        return self.options.index_select(0, batch.row_id)
+
+
 def _slice_namespace(batch, indices):
     return SimpleNamespace(**{
         name: value.index_select(0, indices)
@@ -113,6 +128,60 @@ def _first_step_logits(decoder, batch, options, summary):
 
 
 class Semantic0031RouterTest(unittest.TestCase):
+    def test_cross_policy_role_compaction_matches_legacy_and_avoids_double_rows(self) -> None:
+        torch.manual_seed(8_090_042)
+        focal_model = _CountingPolicy(4, 0.25).eval()
+        opponent_model = _CountingPolicy(4, -0.75).eval()
+        options = torch.randn(4, 3, 4)
+        audit = {
+            "status": "PASS",
+            "requested_policy_id": "Policy-0809",
+            "effective_policy_sha256": "8" * 64,
+        }
+        kwargs = {
+            "focal_adapter": _RowAwareAdapter(focal_model, options),
+            "opponent_adapter": _RowAwareAdapter(opponent_model, options),
+            "same_policy": False,
+            "requested_opponent_policy_id": "Policy-0809",
+            "opponent_identity_audit": audit,
+        }
+        batch = SimpleNamespace(
+            row_id=torch.arange(4),
+            option_mask=torch.tensor([
+                [True, True, False], [True, True, True],
+                [True, False, False], [True, True, True],
+            ]),
+            min_count=torch.ones(4, dtype=torch.long),
+            max_count=torch.full((4,), 2, dtype=torch.long),
+        )
+        focal_route = torch.tensor([True, False, True, False])
+        opponent_route = ~focal_route
+        legacy = Semantic0031ResidentRouter(**kwargs).route(
+            batch,
+            focal_route=focal_route,
+            opponent_route=opponent_route,
+            max_select=2,
+            focal_greedy=True,
+            compute_stats=False,
+        )
+        focal_model.encoded_batch_sizes.clear()
+        opponent_model.encoded_batch_sizes.clear()
+        compacted = Semantic0031ResidentRouter(
+            **kwargs, role_compacted=True
+        ).route(
+            batch,
+            focal_route=focal_route,
+            opponent_route=opponent_route,
+            max_select=2,
+            focal_greedy=True,
+            compute_stats=False,
+        )
+        self.assertTrue(torch.equal(compacted.actions, legacy.actions))
+        self.assertTrue(torch.equal(compacted.lengths, legacy.lengths))
+        self.assertTrue(torch.equal(compacted.stopped, legacy.stopped))
+        self.assertEqual(focal_model.encoded_batch_sizes, [2])
+        self.assertEqual(opponent_model.encoded_batch_sizes, [2])
+
     def test_focal_strategy_readout_is_used_at_every_cuda_decode_step(self) -> None:
         decoder = _ActionDecoder(4).eval()
         with torch.no_grad():

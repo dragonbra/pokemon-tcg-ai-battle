@@ -169,6 +169,9 @@ def run(output: Path, *, seed: int = 420_042_002) -> dict[str, Any]:
         "full_frequency_pool_observed": (
             collector_metrics.get("rollout/unique_opponent_exact_decks") == 55.0
         ),
+        "heterogeneous_roles_are_compacted_before_model_forward": (
+            collector_metrics.get("rollout/role_compacted_routing") == 1.0
+        ),
     }
     if not all(performance_gates.values()):
         raise RuntimeError(f"CUDA residency/routing preflight failed: {performance_gates}")
