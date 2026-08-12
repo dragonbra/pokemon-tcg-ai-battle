@@ -1,0 +1,31 @@
+{
+  "arm": "rule_faithful_semantic",
+  "candidate": "policy_0806",
+  "checkpoint": "/home/cyd/repos/pokemon-tcg-ai-battle/archive/pretrained/0031_friend_0806_epoch11_best_validation_loss/model.pt",
+  "checkpoint_epoch": 11,
+  "checkpoint_global_step": 141878,
+  "checkpoint_schema_version": "0031_model_only_checkpoint_v1",
+  "checkpoint_selection": "model",
+  "checkpoint_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
+  "deck_id": "frozen_0806_shared_runtime",
+  "deck_sha256": "09b937915fb787c62365c02c76bbd2d25b847fbd06f62292dd20f251fbdce19a",
+  "model_only": true,
+  "optimizer_state_saved": false,
+  "portable_checkpoint_schema_version": "0031_shared_prototype_candidate_checkpoint_v1",
+  "portable_checkpoint_sha256": "4c63d25565bfef255e1dc1819bfc2041174a20a12eb00b3e63bf35af95ae7912",
+  "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
+  "runtime_dtype": "fp32",
+  "schema_version": "0031_rule_faithful_semantic_candidate_v1",
+  "storage_dtype": "fp32",
+  "validation": {
+    "action_length_accuracy": 0.9950725551185957,
+    "decisions": 1459580,
+    "exact_action": 0.8140225270283232,
+    "legal_action": 1.0,
+    "loss": 0.25827361053759834,
+    "teacher_exact_action": 0.8140238972855205,
+    "token_accuracy": 0.9063849634124811,
+    "tokens": 3036008
+  },
+  "version": "V2_full_winners_bs1024_20260616_20260803"
+}
