@@ -12,6 +12,9 @@ REQUIRED_FIELDS = {
     "result", "focal_prizes_taken", "opponent_prizes_taken", "full_turns",
     "opponent_deck_id", "opponent_policy_id", "branch",
 }
+FORMAL_REQUIRED_FIELDS = REQUIRED_FIELDS | {
+    "focal_deck_id", "error", "unfinished", "engine_decisions",
+}
 
 
 def _average(values: list[float]) -> float:
@@ -90,4 +93,107 @@ def aggregate_rollout(
     }
 
 
-__all__ = ["aggregate_rollout"]
+class RolloutHistory:
+    """Episode-ordered strength diagnostics for W&B candidate localization."""
+
+    def __init__(self) -> None:
+        self._games: list[dict[str, Any]] = []
+
+    def append(self, games: Iterable[Mapping[str, Any]]) -> None:
+        self._games.extend(dict(row) for row in games)
+
+    def metrics(self) -> dict[str, float]:
+        output: dict[str, float] = {}
+        for width in (100, 500, 2000):
+            rows = self._games[-width:]
+            wins = sum(row["result"] == "win" for row in rows)
+            losses = sum(row["result"] == "loss" for row in rows)
+            draws = sum(row["result"] == "draw" for row in rows)
+            prefix = f"rollout/rolling_{width}"
+            output[f"{prefix}/games"] = float(len(rows))
+            output[f"{prefix}/wins"] = float(wins)
+            output[f"{prefix}/losses"] = float(losses)
+            output[f"{prefix}/draws"] = float(draws)
+            output[f"{prefix}/win_rate"] = wins / max(1, len(rows))
+            output[f"{prefix}/terminal_prize_margin"] = _average([
+                float(row["focal_prizes_taken"] - row["opponent_prizes_taken"])
+                for row in rows
+            ])
+        return output
+
+
+def aggregate_training_rollout(
+    games: Iterable[Mapping[str, Any]], *, source_policy_update: int,
+    checkpoint_update: int, curriculum_version: str,
+    deck_weights: Mapping[str, float], policy_weights: Mapping[str, float],
+    history: RolloutHistory, runtime_metrics: Mapping[str, float],
+) -> dict[str, Any]:
+    """Formal scalar telemetry mirrored unchanged to JSONL/TensorBoard/W&B."""
+
+    rows = list(games)
+    if checkpoint_update != source_policy_update + 1:
+        raise ValueError("rollout/checkpoint policy chronology mismatch")
+    for index, row in enumerate(rows):
+        missing = FORMAL_REQUIRED_FIELDS - set(row)
+        if missing:
+            raise ValueError(f"formal rollout game {index} missing fields: {sorted(missing)}")
+    metrics = aggregate_rollout(
+        rows, curriculum_version=curriculum_version,
+        deck_weights=deck_weights, policy_weights=policy_weights,
+    )
+    history.append(rows)
+    metrics.update(history.metrics())
+    metrics.update({
+        "rollout/source_policy_update": int(source_policy_update),
+        "checkpoint/update": int(checkpoint_update),
+        "rollout/wins": float(sum(row["result"] == "win" for row in rows)),
+        "rollout/losses": float(sum(row["result"] == "loss" for row in rows)),
+        "rollout/draws": float(sum(row["result"] == "draw" for row in rows)),
+        "rollout/error_games": float(sum(bool(row["error"]) for row in rows)),
+        "rollout/unfinished_games": float(sum(bool(row["unfinished"]) for row in rows)),
+        "rollout/engine_decisions": float(sum(int(row["engine_decisions"]) for row in rows)),
+        "rollout/strength_evidence": 0.0,
+        "rollout/candidate_localization_only": 1.0,
+    })
+    for group_field, namespace in (
+        ("focal_deck_id", "focal_deck"),
+        ("opponent_deck_id", "opponent_deck"),
+        ("opponent_policy_id", "opponent_policy"),
+        ("branch", "branch"),
+    ):
+        values = sorted({str(row[group_field]) for row in rows})
+        for value in values:
+            group = [row for row in rows if str(row[group_field]) == value]
+            metrics[f"rollout/{namespace}/{value}/games"] = float(len(group))
+            metrics[f"rollout/{namespace}/{value}/win_rate"] = (
+                sum(row["result"] == "win" for row in group) / len(group)
+            )
+            metrics[f"rollout/{namespace}/{value}/prize_margin"] = _average([
+                float(row["focal_prizes_taken"] - row["opponent_prizes_taken"])
+                for row in group
+            ])
+    for key, value in runtime_metrics.items():
+        if not key.startswith(("rollout/", "system/")):
+            raise ValueError(f"runtime metric lacks rollout/system namespace: {key}")
+        metrics[key] = float(value)
+    required_runtime = {
+        "rollout/cuda_games_per_second", "rollout/strategic_decisions_per_second",
+        "rollout/cuda_features_device_resident", "rollout/cuda_feature_d2h_bytes",
+        "rollout/lane_routing_audit_pass", "rollout/lane_routing_audit_failures",
+        "rollout/policy_weight_loads", "rollout/deck_static_cache_hits",
+        "rollout/deck_static_cache_misses",
+    }
+    if required_runtime - set(metrics):
+        raise ValueError(f"formal rollout runtime metrics missing: {sorted(required_runtime-set(metrics))}")
+    if (
+        metrics["rollout/cuda_features_device_resident"] != 1.0
+        or metrics["rollout/cuda_feature_d2h_bytes"] != 0.0
+        or metrics["rollout/lane_routing_audit_pass"] != 1.0
+        or metrics["rollout/lane_routing_audit_failures"] != 0.0
+        or metrics["rollout/policy_weight_loads"] != 3.0
+    ):
+        raise ValueError("formal rollout resident policy/feature health gate failed")
+    return metrics
+
+
+__all__ = ["RolloutHistory", "aggregate_rollout", "aggregate_training_rollout"]

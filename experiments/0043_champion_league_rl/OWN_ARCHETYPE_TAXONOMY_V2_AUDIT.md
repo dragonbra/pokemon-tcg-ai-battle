@@ -8,7 +8,7 @@ Status: **PASS — taxonomy/migration gates complete; no RL update was launched.
 - Audited all exact lists 001–067 against official card data: Pokémon/evolution lines, Trainers/Stadiums, Energy, Rare Candy, Prize/tempo, bench allocation, resource engines, and attack/win routes.
 - V1 had 15 classes. V2 has 29 append-only classes: 15 meanings preserved and 14 added strategic rows. No exact-deck-per-class naming was introduced.
 - All known decks are explicitly mapped; `other` remains fallback-only and currently maps no 001–067 deck.
-- Champion-G1 remains unchanged. Champion-G2-Seed expands both own embeddings from `[15,16]` to `[29,16]` by exact old-row preservation and parent-copy initialization.
+- Champion-G1 remains unchanged. V1-Focal-Seed expands both own embeddings from `[15,16]` to `[29,16]` by exact old-row preservation and parent-copy initialization.
 - Zero-step parity: **PASS** for logits, probabilities, greedy action, Value, and both adapter paths.
 
 ## Repository audit
@@ -20,7 +20,7 @@ Status: **PASS — taxonomy/migration gates complete; no RL update was launched.
 5. OwnArchetypeId enters `ValueResidualAdapter` and `PolicyStrategyAdapter`. Those are the only own embedding tables found; both are width 16.
 6. G1 checkpoint metadata stores vocabulary version and taxonomy SHA-256; loader/export historically constructed 15-row tables. 0043 runtime now derives rows from checkpoint tensors and validates version/schema.
 7. CPU/Kaggle project-local compound runtime shares that loader. CUDA routes complete policy identity after materialization; the Frozen evaluation registry is unchanged.
-8. G1 source is `archive/pretrained/0042_champion_g1`, copied into 0043 and pinned by two artifact hashes. Optimizers train both adapters; G2 explicitly starts with empty optimizer state.
+8. G1 source is `archive/pretrained/0042_champion_g1`, copied into 0043 and pinned by two artifact hashes. Optimizers train both adapters; the V1 focal seed explicitly starts with empty optimizer state.
 9. Active own-vocabulary magic numbers were removed from runtime construction. Remaining literal 15 values occur only in the explicit V1→V2 migration/parity contract.
 
 ## 67-deck decision table
@@ -142,8 +142,8 @@ Status: **PASS — taxonomy/migration gates complete; no RL update was launched.
 - Policy own embedding: `[15,16]` → `[29,16]`; Value own embedding: `[15,16]` → `[29,16]`.
 - Old rows: bitwise equal in FP32 and portable FP16 artifacts. New rows: exactly equal to declared parent. No unrelated model tensor changed.
 - G1 artifact SHA-256 remains `aea408e...20fe3` (model-only) and `cd5c057...de84` (portable).
-- G2 Seed deployment-effective tensor hash: `ffdb3caa42777fd67d6ee3edbb5f9eb8f6d5f9463c4a086a2521c4a33ebde7d3`.
-- G2 optimizer is fresh with zero state entries, both expanded embeddings included, and the frozen opponent Meta head excluded.
+- V1 focal seed deployment-effective tensor hash: `ffdb3caa42777fd67d6ee3edbb5f9eb8f6d5f9463c4a086a2521c4a33ebde7d3`.
+- V1 focal optimizer is fresh with zero state entries, both expanded embeddings included, and the frozen opponent Meta head excluded.
 
 ## Zero-step parity
 
@@ -153,12 +153,12 @@ Status: **PASS — taxonomy/migration gates complete; no RL update was launched.
 - Policy logits: EXACT; action probabilities: EXACT; greedy actions: EXACT.
 - Value: EXACT; Policy adapter output/delta: EXACT; Value adapter output/delta: EXACT.
 - G1 unchanged audit: PASS; V1 and V2 strict-load: PASS.
-- Evidence: `experiments/0043_champion_league_rl/g2_seed_zero_step_parity.json`.
+- Evidence: `experiments/0043_champion_league_rl/focal_seed_zero_step_parity.json`.
 
 ## Readiness
 
 - `OWN ARCHETYPE TAXONOMY V2 READY: YES`
-- `G2 SEED READY FOR RL: YES` for the taxonomy/migration gate.
+- `V1 FOCAL SEED READY FOR RL: YES` for the taxonomy/migration gate.
 - Overall 0043 formal launch remains governed by the already-existing independent official-engine CPU/CUDA observation/action parity and fresh-version/W&B preflight in DESIGN; this task did not bypass or execute those gates.
 
 ## Human-review boundaries

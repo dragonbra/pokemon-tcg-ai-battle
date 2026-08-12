@@ -8,11 +8,12 @@ module = importlib.import_module("train.0043_champion_league_rl.cuda_engine_2.pe
 ROOT = Path(__file__).resolve().parents[3]
 
 
-def test_0042_and_cuda_2_production_hot_path_is_byte_identical() -> None:
+def test_cuda_2_kernel_codec_are_identical_and_routing_is_pinned() -> None:
     audit = module.audit_source_hot_path(ROOT)
     assert audit["status"] == "PASS"
     assert audit["cpu_feature_compiler_imports"] == 0
-    assert len(audit["hot_path_files"]) == 3
+    assert len(audit["hot_path_files"]) == 2
+    assert len(audit["audited_routing_files"]) == 2
 
 
 def test_cuda_2_extension_keeps_official_resident_api() -> None:

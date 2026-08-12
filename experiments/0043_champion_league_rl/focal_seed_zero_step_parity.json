@@ -1,0 +1,461 @@
+{
+  "action_probabilities": "EXACT",
+  "fresh_optimizer": {
+    "opponent_meta_excluded": true,
+    "optimizer_state_migrated": false,
+    "own_embeddings_included": true,
+    "state_entries": 0
+  },
+  "g1_artifacts_unchanged": {
+    "model_only_delta": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+    "portable_fp16_artifact": "cd5c05741aadf16db8bb8ca4f527e02eae431db75c33eba30f291fe89f57de84"
+  },
+  "greedy_action": "EXACT",
+  "old_deck_resolution": [
+    {
+      "deck_id": "001",
+      "g1_own_archetype_id": 2
+    },
+    {
+      "deck_id": "002",
+      "g1_own_archetype_id": 3
+    },
+    {
+      "deck_id": "003",
+      "g1_own_archetype_id": 1
+    },
+    {
+      "deck_id": "004",
+      "g1_own_archetype_id": 1
+    },
+    {
+      "deck_id": "005",
+      "g1_own_archetype_id": 2
+    },
+    {
+      "deck_id": "006",
+      "g1_own_archetype_id": 10
+    },
+    {
+      "deck_id": "007",
+      "g1_own_archetype_id": 0
+    },
+    {
+      "deck_id": "008",
+      "g1_own_archetype_id": 10
+    },
+    {
+      "deck_id": "009",
+      "g1_own_archetype_id": 4
+    },
+    {
+      "deck_id": "010",
+      "g1_own_archetype_id": 6
+    },
+    {
+      "deck_id": "011",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "012",
+      "g1_own_archetype_id": 1
+    },
+    {
+      "deck_id": "013",
+      "g1_own_archetype_id": 11
+    },
+    {
+      "deck_id": "014",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "015",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "016",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "017",
+      "g1_own_archetype_id": 2
+    },
+    {
+      "deck_id": "018",
+      "g1_own_archetype_id": 0
+    },
+    {
+      "deck_id": "019",
+      "g1_own_archetype_id": 7
+    },
+    {
+      "deck_id": "020",
+      "g1_own_archetype_id": 8
+    },
+    {
+      "deck_id": "021",
+      "g1_own_archetype_id": 9
+    },
+    {
+      "deck_id": "022",
+      "g1_own_archetype_id": 1
+    },
+    {
+      "deck_id": "023",
+      "g1_own_archetype_id": 6
+    },
+    {
+      "deck_id": "024",
+      "g1_own_archetype_id": 7
+    },
+    {
+      "deck_id": "025",
+      "g1_own_archetype_id": 1
+    },
+    {
+      "deck_id": "026",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "027",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "028",
+      "g1_own_archetype_id": 1
+    },
+    {
+      "deck_id": "029",
+      "g1_own_archetype_id": 10
+    },
+    {
+      "deck_id": "030",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "031",
+      "g1_own_archetype_id": 2
+    },
+    {
+      "deck_id": "032",
+      "g1_own_archetype_id": 1
+    },
+    {
+      "deck_id": "033",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "034",
+      "g1_own_archetype_id": 3
+    },
+    {
+      "deck_id": "035",
+      "g1_own_archetype_id": 5
+    },
+    {
+      "deck_id": "036",
+      "g1_own_archetype_id": 10
+    },
+    {
+      "deck_id": "037",
+      "g1_own_archetype_id": 2
+    },
+    {
+      "deck_id": "038",
+      "g1_own_archetype_id": 7
+    },
+    {
+      "deck_id": "039",
+      "g1_own_archetype_id": 3
+    },
+    {
+      "deck_id": "040",
+      "g1_own_archetype_id": 3
+    },
+    {
+      "deck_id": "041",
+      "g1_own_archetype_id": 6
+    },
+    {
+      "deck_id": "042",
+      "g1_own_archetype_id": 8
+    },
+    {
+      "deck_id": "043",
+      "g1_own_archetype_id": 0
+    },
+    {
+      "deck_id": "044",
+      "g1_own_archetype_id": 12
+    },
+    {
+      "deck_id": "045",
+      "g1_own_archetype_id": 12
+    },
+    {
+      "deck_id": "046",
+      "g1_own_archetype_id": 12
+    },
+    {
+      "deck_id": "047",
+      "g1_own_archetype_id": 14
+    },
+    {
+      "deck_id": "048",
+      "g1_own_archetype_id": 13
+    },
+    {
+      "deck_id": "049",
+      "g1_own_archetype_id": 14
+    },
+    {
+      "deck_id": "050",
+      "g1_own_archetype_id": 12
+    },
+    {
+      "deck_id": "051",
+      "g1_own_archetype_id": 13
+    },
+    {
+      "deck_id": "052",
+      "g1_own_archetype_id": 13
+    },
+    {
+      "deck_id": "053",
+      "g1_own_archetype_id": 12
+    },
+    {
+      "deck_id": "054",
+      "g1_own_archetype_id": 14
+    },
+    {
+      "deck_id": "055",
+      "g1_own_archetype_id": 13
+    }
+  ],
+  "old_decks_tested": 55,
+  "opponent_meta": {
+    "class_count": 15,
+    "trainable": false,
+    "weights_exact_to_g1": true
+  },
+  "own_deck_only": true,
+  "policy_adapter_output": "EXACT",
+  "policy_logits": "EXACT",
+  "rows": [
+    {
+      "own_archetype_id": 0,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 1,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 2,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 3,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 4,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 5,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 6,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 7,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 8,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 9,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 10,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 11,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 12,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 13,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    },
+    {
+      "own_archetype_id": 14,
+      "status": "PASS",
+      "tensor_exact": {
+        "action_probabilities": true,
+        "greedy_action": true,
+        "policy_adapter_delta": true,
+        "policy_adapter_output": true,
+        "policy_logits": true,
+        "value": true,
+        "value_adapter_delta": true,
+        "value_adapter_output": true
+      }
+    }
+  ],
+  "schema_version": "0043_v1_focal_seed_zero_step_parity_v1",
+  "status": "PASS",
+  "value": "EXACT",
+  "value_adapter_output": "EXACT"
+}

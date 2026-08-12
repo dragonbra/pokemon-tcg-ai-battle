@@ -73,10 +73,13 @@ class DragapultAllocationHead(nn.Module):
 
 
 class ValueResidualAdapter(nn.Module):
-    def __init__(self, width: int = 320, embedding_dim: int = 16) -> None:
+    def __init__(self, width: int = 320, embedding_dim: int = 16,
+                 own_archetype_classes: int | None = None) -> None:
         super().__init__()
+        if own_archetype_classes is None or own_archetype_classes < 1:
+            raise ValueError("own_archetype_classes must come from checkpoint taxonomy metadata")
         self.norm = nn.LayerNorm(width)
-        self.own_embedding = nn.Embedding(15, embedding_dim)
+        self.own_embedding = nn.Embedding(own_archetype_classes, embedding_dim)
         self.mlp = nn.Sequential(
             nn.Linear(width + embedding_dim, width), nn.GELU(), nn.Linear(width, width)
         )
@@ -112,11 +115,14 @@ class StrategyContext:
 
 
 class PolicyStrategyAdapter(nn.Module):
-    def __init__(self, width: int = 320, embedding_dim: int = 16) -> None:
+    def __init__(self, width: int = 320, embedding_dim: int = 16,
+                 own_archetype_classes: int | None = None) -> None:
         super().__init__()
+        if own_archetype_classes is None or own_archetype_classes < 1:
+            raise ValueError("own_archetype_classes must come from checkpoint taxonomy metadata")
         self.hidden_norm = nn.LayerNorm(width)
         self.meta_context_norm = nn.LayerNorm(width)
-        self.own_embedding = nn.Embedding(15, embedding_dim)
+        self.own_embedding = nn.Embedding(own_archetype_classes, embedding_dim)
         self.mlp = nn.Sequential(
             nn.Linear(width + 2 + width + 15 + 1 + embedding_dim, width),
             nn.GELU(), nn.Linear(width, width),
@@ -177,7 +183,8 @@ class PortableCompoundSemanticPolicy:
             "value_adapter_state_dict", "policy_strategy_adapter_state_dict",
             "metadata",
         }
-        if set(payload) != expected or payload.get("schema_version") != SCHEMA_VERSION:
+        supported_schemas = {SCHEMA_VERSION, "0043_focal_v1_kaggle_candidate_v1"}
+        if set(payload) != expected or payload.get("schema_version") not in supported_schemas:
             raise ValueError("checkpoint is not the 0042 compound Kaggle contract")
         metadata = payload["metadata"]
         actor_metadata = metadata.get("actor_metadata")
@@ -200,9 +207,21 @@ class PortableCompoundSemanticPolicy:
         allocation_head.load_state_dict(payload["allocation_head_state_dict"], strict=True)
         if metadata.get("no_option_lora") is not True:
             raise ValueError("0042 portable checkpoint must declare no_option_lora=true")
-        value_adapter = ValueResidualAdapter(width)
+        own_classes = int(payload["value_adapter_state_dict"]["own_embedding.weight"].shape[0])
+        declared_classes = metadata.get("own_archetype_class_count")
+        if declared_classes is not None and int(declared_classes) != own_classes:
+            raise ValueError("declared own-taxonomy size disagrees with checkpoint tensor")
+        own_version = metadata.get("own_archetype_vocabulary_version")
+        if own_classes == 15 and own_version != "0042_own_archetypes_v1":
+            raise ValueError("G1 own-taxonomy identity mismatch")
+        if own_classes != 15 and (
+            payload.get("schema_version") != "0043_focal_v1_kaggle_candidate_v1"
+            or own_version != "own_archetypes_v2"
+        ):
+            raise ValueError("dynamic own-taxonomy checkpoint identity mismatch")
+        value_adapter = ValueResidualAdapter(width, own_archetype_classes=own_classes)
         value_adapter.load_state_dict(payload["value_adapter_state_dict"], strict=True)
-        policy_adapter = PolicyStrategyAdapter(width)
+        policy_adapter = PolicyStrategyAdapter(width, own_archetype_classes=own_classes)
         policy_adapter.load_state_dict(
             payload["policy_strategy_adapter_state_dict"], strict=True
         )
@@ -210,22 +229,32 @@ class PortableCompoundSemanticPolicy:
             actor, value_head, allocation_head, value_adapter, policy_adapter, deck, metadata
         )
 
-    def value_from_encoded(self, validated, state, options):
+    def value_from_encoded(self, validated, state, options, own_archetype_id=None):
         """Expose the same adapted q0 Value used to build strategy context."""
-        value, _ = self.value_and_aux_from_encoded(validated, state, options)
+        value, _ = self.value_and_aux_from_encoded(
+            validated, state, options, own_archetype_id=own_archetype_id
+        )
         return value
 
-    def value_and_aux_from_encoded(self, validated, state, options):
+    def value_and_aux_from_encoded(
+        self, validated, state, options, own_archetype_id=None
+    ):
         """Expose q0/q1 tensors for deployment-parity diagnostics."""
         memory = torch.cat((state.tokens, options), dim=1)
         memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
         queries = self.value_head.decode(memory, memory_mask)
         z_meta = queries[:, 1]
         meta_logits = self.value_head.heads.archetype(z_meta)
-        own_id = torch.full(
-            (queries.shape[0],), int(self.metadata["own_archetype_id"]),
-            dtype=torch.long, device=queries.device,
+        own_id = (
+            torch.full(
+                (queries.shape[0],), int(self.metadata["own_archetype_id"]),
+                dtype=torch.long, device=queries.device,
+            )
+            if own_archetype_id is None
+            else own_archetype_id.to(device=queries.device, dtype=torch.long)
         )
+        if own_id.shape != (queries.shape[0],):
+            raise ValueError("own_archetype_id must have shape [B]")
         value_query, _ = self.value_adapter(queries[:, 0], own_id)
         logit = self.value_head.heads.value(value_query).squeeze(-1)
         value = 2.0 * logit.sigmoid() - 1.0
@@ -235,10 +264,12 @@ class PortableCompoundSemanticPolicy:
             "own_archetype_id": own_id,
         }
 
-    def encode_with_strategy(self, features):
+    def encode_with_strategy(self, features, own_archetype_id=None):
         """Mirror the training actor-critic boundary for parity tooling."""
         validated, state, options = self.actor.encode(features)
-        value, auxiliary = self.value_and_aux_from_encoded(validated, state, options)
+        value, auxiliary = self.value_and_aux_from_encoded(
+            validated, state, options, own_archetype_id=own_archetype_id
+        )
         context = StrategyContext.build(
             validated.global_cat[:, 2],
             auxiliary["z_meta"],

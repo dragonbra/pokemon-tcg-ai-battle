@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-EXPECTED_CONFIG_SHA256 = "fe6e1862a9f8660b3b19505898dacf55a2955a07385958639a5cb1f80d94264c"
+EXPECTED_CONFIG_SHA256 = "cbf7bc6b80869a56ecbd35c48091f2cb74d038f204ea657eff4266cbfb920099"
 EXPECTED_TRAINABLE = (
     "actor.action_decoder.*", "policy_strategy_adapter.*", "value_head.queries",
     "value_head.blocks.*", "value_head.final_norm.*", "value_head.heads.value.*",
@@ -71,6 +71,17 @@ def audit_training_config(path: Path) -> TrainingRegressionAudit:
         mismatches["trainable_contract"] = trainable
     if mismatches:
         raise ValueError(f"0043 PPO regression mismatch: {mismatches}")
+    if (
+        config.get("focal_deck_ids") != ["002", "007"]
+        or config.get("opponent_policy_ids") != ["Policy-0809", "Champion-G1"]
+        or config.get("opponent_deck_ids") != "001-067"
+        or config.get("own_deck", {}).get("class_count") != 29
+        or config.get("opponent_meta") != {
+            "class_count": 15, "weights": "frozen_champion_g1", "trainable": False
+        }
+        or config.get("launch_formal") is not False
+    ):
+        raise ValueError("0043 V1 focal/opponent/taxonomy launch contract changed")
     return TrainingRegressionAudit(
         config_sha256=digest,
         games_per_update=256,

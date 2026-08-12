@@ -1,6 +1,18 @@
 # 0043 Champion League RL Design
 
-Status: **CPU implementation and synthetic CUDA forward smoke PASS; `BLOCKED_FORMAL_TRAINING_PREFLIGHT`**
+Status: **CUDA Engine 2.0, focal-seed parity, policy isolation, PFSP and PPO launch gates PASS; `READY_AWAITING_USER_LAUNCH`**
+
+## Own Archetype Taxonomy V2 (2026-08-13)
+
+Own strategy and opponent Meta are separate schemas. Opponent Meta remains the frozen 15-way pretrained head and still contributes 15 probabilities to the Strategy Adapter. Own strategy now uses the append-only `own_archetypes_v2` registry: 29 rows × 16 dimensions in both `ValueResidualAdapter.own_embedding` and `PolicyStrategyAdapter.own_embedding`. The row-count increase changes only each adapter embedding table; it does not alter either downstream MLP input/output width, and source/team identity remains absent from actor inputs.
+
+Known decks resolve by `(deck_id, exact content SHA-256)` through `deck_own_archetype_mapping_v2.json`. Trigger-card priority is compatibility fallback only and is never source of truth for 001–067. IDs 0–14 retain their exact V1 meanings; IDs 15–28 are append-only strategic splits. `other` (14) remains the unknown/unmodeled fallback, and no known deck in 001–067 maps to it.
+
+Champion-G1 remains byte-for-byte frozen with V1 tensors `[15,16]`. V1-Focal-Seed is a mutable, unpromoted run-local initialization with V2 tensors `[29,16]`: rows 0–14 are exact copies, and each appended row is copied from its declared G1 parent. The FP32 model-only training seed and portable FP16 artifact were migrated independently; no optimizer state exists or was migrated. A fresh optimizer includes both expanded own embeddings under the unchanged approved parameter groups and learning rates.
+
+Zero-update parity exercised all 15 historical rows through complete portable inference and obtained exact policy logits, action probabilities, greedy actions, value outputs, and both adapter outputs. It separately verified all 55 historical exact decks resolve to their G1 row and all 67 decks resolve through V2 exact mapping. This is schema-migration correctness evidence, not official-engine policy-strength evidence.
+
+The canonical human-readable catalog is published inside the asset tree at `train/0043_champion_league_rl/assets/decks/index.html`, backed by image-rich `definitions/<deck_id>/index.html` pages and deterministic text records `text/001.txt` through `text/067.txt`. Each record contains the complete counted 60-card list, official card names/types, exact hashes, V2 mapping, strategic characteristics, and source provenance. Deck 062's 0043 display name is content-corrected to `Mega Starmie ex / Mega Froslass ex`; its upstream Dusknoir label remains provenance only. User-approved exact lists 066/067 append Dragapult/Dusknoir control and ordinary Dragapult/Munkidori control without changing the 29-row vocabulary.
 
 ## Purpose and evidence boundary
 
@@ -22,11 +34,11 @@ one-time approved historical source
 
 There are three independent domains:
 
-- Training Deck Pool: initially the 55 exact meta decks; append-only through new versioned assets.
+- Training Deck Pool: 67 exact decks, numbered `001`–`067`; append-only through new versioned assets.
 - Active Policy Pool: Policy-0809 historical anchor and frozen Champion-G1.
 - Frozen Evaluation Pool: FrozenMeta256-V1, the unchanged 55-deck/256-game integer-frequency composition using independently resolved Policy-0809.
 
-Within 0043, the sole canonical deck identity is the zero-padded numeric `deck_id`: the initial immutable set is `001`–`055`, and future decks append from `056`. Archetype names, exact-deck hashes, and historical semantic IDs remain audit metadata and never replace this identity. Filesystem directories likewise carry stable semantic names rather than hashes: decks live under `definitions/<deck_id>`, while policies live under `definitions/policy_0809`, `definitions/champion_g001`, and future equivalent generation names. SHA-256 remains mandatory in manifests for integrity but has no directory-name semantics.
+Within 0043, the sole canonical deck identity is the zero-padded numeric `deck_id`: the initial immutable set was `001`–`055`, the frozen-pool extension is `056`–`065`, and user-approved Dragapult exact lists are appended as `066`–`067`. Archetype names, exact-deck hashes, and historical semantic IDs remain audit metadata and never replace this identity. Decks 056–067 are training-only; FrozenMeta256-V1 still resolves exactly `001`–`055`, so this is not an implicit Frozen67 benchmark migration. Filesystem directories likewise carry stable semantic names rather than hashes: decks live under `definitions/<deck_id>`, while policies live under `definitions/policy_0809`, `definitions/champion_g001`, and future equivalent generation names. SHA-256 remains mandatory in manifests for integrity but has no directory-name semantics.
 
 ## Model and training contract
 
@@ -58,7 +70,7 @@ PFSP uses Beta(1,1) smoothing and produces a new immutable curriculum manifest e
 
 ## Telemetry and strength claims
 
-Every completed rollout will aggregate raw WR, curriculum identity, deck/policy distributions, terminal prize margin, loss-only focal prizes, win-only opponent prizes, win/loss turns, PFSP entropy/difficulty, p10 tail WR, and red counts from the same 256 games. Existing PPO and runtime health metrics remain. Sampled rollout metrics are training diagnostics, not frozen greedy checkpoint strength.
+Every completed rollout will aggregate raw WR, curriculum identity, deck/policy distributions, terminal prize margin, loss-only focal prizes, win-only opponent prizes, win/loss turns, PFSP entropy/difficulty, p10 tail WR, and red counts from the same 256 games. Existing PPO and runtime health metrics remain. Sampled rollout metrics are training diagnostics, not frozen greedy checkpoint strength. Formal W&B mirrors rolling 100/500/2000 windows; per-focal-deck, per-opponent-policy, per-opponent-deck and per-branch win/prize strata; source-policy/checkpoint chronology; CUDA games/s and strategic decisions/s; resident-load/cache counts; feature D2H bytes; routing failures; PPO behavior/reference KL, clipping, losses and optimizer health. `training_metrics.jsonl` remains canonical and is flushed before TensorBoard and W&B.
 
 Formal Kaggle-strength evidence materializes a complete candidate as FP16 storage and strict-loads that artifact into FP32 runtime. Candidate and opponent identities are independently audited. CPU-256 and CUDA-2048 remain separate reports with all games terminal and zero error, unfinished, or semantic fallback.
 
@@ -74,6 +86,6 @@ CUDA 12.8 compilation of the optional `official_continuation_dispatch_smoke` tra
 
 - Complete: project-local assets/runtime, complete policy materialization and isolation, league sampler, PFSP persistence, one-pass telemetry, frozen schedule materialization, candidate evaluation gates, and explicit human-decision Promote workflow.
 - Complete diagnostic: real CPU forward plus small RTX 5080 FP32 forward parity for Policy-0809 and Champion-G1; greedy actions matched, with maximum absolute errors below `6e-5`. CUDA Engine 2.0 native runtime and PyTorch official-arena reset/classify smokes also pass. These are implementation evidence only, not policy strength evidence.
-- Remaining before formal training: complete official-game CPU/CUDA observation/action first-divergence audit and allocation of a fresh formal `V<n>_<tag>` with W&B online preflight.
+- Ready: `V1_focal_002_007` is allocated with its run-local model-only update 0 seed, self-contained PPO entrypoint, CUDA Engine 2.0 extension, exact 002/007 focal schedule, 001–067 × {Policy-0809, Champion-G1} opponent routing, W&B online credentials, and manual-stop/checkpoint-retention contracts. The default entrypoint performs readiness only; `--launch-formal` is the explicit user launch token. A non-formal full-update acceptance completed 256 real CUDA-2.0 games, 20,673 policy boundaries and all three PPO epochs with zero feature D2H and passing routing; it wrote no formal checkpoint, metrics, or W&B run.
 
-No formal 0043 training version exists yet, and `formal_training_authorized` remains false. Research smoke output must remain under `.tmp/`; formal versions will use `rl_runs/0043_champion_league_rl/versions/V<n>_<tag>/` and W&B private project `dragon_bra/pokemon-tcg-policy-learning`.
+No long 0043 rollout or PPO update has started. `formal_training_authorized` remains false only as the deliberate user-owned launch latch; all machine-verifiable launch gates report `READY_AWAITING_USER_LAUNCH`. Research smoke output remains under `.tmp/`; the prepared formal version is `rl_runs/0043_champion_league_rl/versions/V1_focal_002_007/`.

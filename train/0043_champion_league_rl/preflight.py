@@ -120,6 +120,7 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
     return {
         "schema_version": "0043_pretraining_preflight_v1",
         "status": "PASS",
+        "readiness": "READY_AWAITING_USER_LAUNCH",
         "formal_training_authorized": False,
         "asset_audit": asdict(asset_audit),
         "training_regression_audit": training.to_manifest(),
@@ -145,11 +146,8 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
             "cuda_schedule_sha256": frozen_cuda["schedule_sha256"],
             "frequency_unit_parity": frozen_cpu["jobs"] == frozen_cuda["jobs"][:256],
         },
-        "remaining_hard_gates": [
-            "official CPU engine smoke",
-            "official observation CPU/CUDA first-divergence parity",
-            "formal PPO version allocation and W&B preflight",
-        ],
+        "remaining_hard_gates": [],
+        "launch_latch": "explicit user authorization via --launch-formal",
     }
 
 

@@ -8,6 +8,7 @@ import pytest
 aggregate_rollout = importlib.import_module(
     "train.0043_champion_league_rl.telemetry"
 ).aggregate_rollout
+telemetry = importlib.import_module("train.0043_champion_league_rl.telemetry")
 
 
 def _games():
@@ -22,6 +23,8 @@ def _games():
             "opponent_deck_id": f"{index % 4 + 1:03d}",
             "opponent_policy_id": "Policy-0809" if index % 2 else "Champion-G1",
             "branch": ("pfsp", "uniform", "latest_champion")[index % 3],
+            "focal_deck_id": "002" if index % 2 else "007",
+            "error": False, "unfinished": False, "engine_decisions": 10,
         })
     return rows
 
@@ -49,3 +52,33 @@ def test_telemetry_rejects_non_256_or_incomplete_games() -> None:
     rows[0].pop("full_turns")
     with pytest.raises(ValueError, match="missing telemetry fields"):
         aggregate_rollout(rows, curriculum_version="C000", deck_weights={}, policy_weights={})
+
+
+def test_formal_rollout_has_chronology_rolling_slices_and_runtime_health() -> None:
+    history = telemetry.RolloutHistory()
+    runtime = {
+        "rollout/cuda_games_per_second": 123.0,
+        "rollout/strategic_decisions_per_second": 456.0,
+        "rollout/cuda_features_device_resident": 1.0,
+        "rollout/cuda_feature_d2h_bytes": 0.0,
+        "rollout/lane_routing_audit_pass": 1.0,
+        "rollout/lane_routing_audit_failures": 0.0,
+        "rollout/policy_weight_loads": 3.0,
+        "rollout/deck_static_cache_hits": 189.0,
+        "rollout/deck_static_cache_misses": 67.0,
+    }
+    result = telemetry.aggregate_training_rollout(
+        _games(), source_policy_update=0, checkpoint_update=1,
+        curriculum_version="C000", deck_weights={"001": 1.0},
+        policy_weights={"Policy-0809": .5, "Champion-G1": .5},
+        history=history, runtime_metrics=runtime,
+    )
+    assert result["rollout/source_policy_update"] == 0
+    assert result["checkpoint/update"] == 1
+    assert result["rollout/rolling_100/games"] == 100
+    assert result["rollout/rolling_500/games"] == 256
+    assert result["rollout/candidate_localization_only"] == 1
+    assert result["rollout/strength_evidence"] == 0
+    assert result["rollout/focal_deck/002/games"] == 128
+    assert result["rollout/opponent_policy/Champion-G1/games"] == 128
+    assert result["rollout/opponent_deck/001/games"] == 64

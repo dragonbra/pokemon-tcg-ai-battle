@@ -6,7 +6,7 @@ Status: <strong>PASS — taxonomy/migration gates complete; no RL update was lau
 <li>Audited all exact lists 001–067 against official card data: Pokémon/evolution lines, Trainers/Stadiums, Energy, Rare Candy, Prize/tempo, bench allocation, resource engines, and attack/win routes.</li>
 <li>V1 had 15 classes. V2 has 29 append-only classes: 15 meanings preserved and 14 added strategic rows. No exact-deck-per-class naming was introduced.</li>
 <li>All known decks are explicitly mapped; <code>other</code> remains fallback-only and currently maps no 001–067 deck.</li>
-<li>Champion-G1 remains unchanged. Champion-G2-Seed expands both own embeddings from <code>[15,16]</code> to <code>[29,16]</code> by exact old-row preservation and parent-copy initialization.</li>
+<li>Champion-G1 remains unchanged. V1-Focal-Seed expands both own embeddings from <code>[15,16]</code> to <code>[29,16]</code> by exact old-row preservation and parent-copy initialization.</li>
 <li>Zero-step parity: <strong>PASS</strong> for logits, probabilities, greedy action, Value, and both adapter paths.</li>
 </ul>
 <h2>Repository audit</h2>
@@ -18,7 +18,7 @@ Status: <strong>PASS — taxonomy/migration gates complete; no RL update was lau
 <li>OwnArchetypeId enters <code>ValueResidualAdapter</code> and <code>PolicyStrategyAdapter</code>. Those are the only own embedding tables found; both are width 16.</li>
 <li>G1 checkpoint metadata stores vocabulary version and taxonomy SHA-256; loader/export historically constructed 15-row tables. 0043 runtime now derives rows from checkpoint tensors and validates version/schema.</li>
 <li>CPU/Kaggle project-local compound runtime shares that loader. CUDA routes complete policy identity after materialization; the Frozen evaluation registry is unchanged.</li>
-<li>G1 source is <code>archive/pretrained/0042_champion_g1</code>, copied into 0043 and pinned by two artifact hashes. Optimizers train both adapters; G2 explicitly starts with empty optimizer state.</li>
+<li>G1 source is <code>archive/pretrained/0042_champion_g1</code>, copied into 0043 and pinned by two artifact hashes. Optimizers train both adapters; the V1 focal seed explicitly starts with empty optimizer state.</li>
 <li>Active own-vocabulary magic numbers were removed from runtime construction. Remaining literal 15 values occur only in the explicit V1→V2 migration/parity contract.</li>
 </ol>
 <h2>67-deck decision table</h2>
@@ -685,8 +685,8 @@ Status: <strong>PASS — taxonomy/migration gates complete; no RL update was lau
 <li>Policy own embedding: <code>[15,16]</code> → <code>[29,16]</code>; Value own embedding: <code>[15,16]</code> → <code>[29,16]</code>.</li>
 <li>Old rows: bitwise equal in FP32 and portable FP16 artifacts. New rows: exactly equal to declared parent. No unrelated model tensor changed.</li>
 <li>G1 artifact SHA-256 remains <code>aea408e...20fe3</code> (model-only) and <code>cd5c057...de84</code> (portable).</li>
-<li>G2 Seed deployment-effective tensor hash: <code>ffdb3caa42777fd67d6ee3edbb5f9eb8f6d5f9463c4a086a2521c4a33ebde7d3</code>.</li>
-<li>G2 optimizer is fresh with zero state entries, both expanded embeddings included, and the frozen opponent Meta head excluded.</li>
+<li>V1 focal seed deployment-effective tensor hash: <code>ffdb3caa42777fd67d6ee3edbb5f9eb8f6d5f9463c4a086a2521c4a33ebde7d3</code>.</li>
+<li>V1 focal optimizer is fresh with zero state entries, both expanded embeddings included, and the frozen opponent Meta head excluded.</li>
 </ul>
 <h2>Zero-step parity</h2>
 <p><strong>PASS</strong></p>
@@ -695,12 +695,12 @@ Status: <strong>PASS — taxonomy/migration gates complete; no RL update was lau
 <li>Policy logits: EXACT; action probabilities: EXACT; greedy actions: EXACT.</li>
 <li>Value: EXACT; Policy adapter output/delta: EXACT; Value adapter output/delta: EXACT.</li>
 <li>G1 unchanged audit: PASS; V1 and V2 strict-load: PASS.</li>
-<li>Evidence: <code>experiments/0043_champion_league_rl/g2_seed_zero_step_parity.json</code>.</li>
+<li>Evidence: <code>experiments/0043_champion_league_rl/focal_seed_zero_step_parity.json</code>.</li>
 </ul>
 <h2>Readiness</h2>
 <ul>
 <li><code>OWN ARCHETYPE TAXONOMY V2 READY: YES</code></li>
-<li><code>G2 SEED READY FOR RL: YES</code> for the taxonomy/migration gate.</li>
+<li><code>V1 FOCAL SEED READY FOR RL: YES</code> for the taxonomy/migration gate.</li>
 <li>Overall 0043 formal launch remains governed by the already-existing independent official-engine CPU/CUDA observation/action parity and fresh-version/W&amp;B preflight in DESIGN; this task did not bypass or execute those gates.</li>
 </ul>
 <h2>Human-review boundaries</h2>

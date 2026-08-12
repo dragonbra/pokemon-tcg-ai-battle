@@ -460,6 +460,7 @@ def run_resident_greedy_jobs(
                         compute_stats=not focal_greedy,
                         focal_sampling_seeds=lane_policy_seeds.index_select(0, policy_lanes),
                         focal_sampling_counters=lane_focal_decisions.index_select(0, policy_lanes),
+                        job_indices=queue.lane_job.index_select(0, policy_lanes),
                     )
                     if hasattr(action_adapter, "post_route"):
                         decision_metadata = action_adapter.post_route(
@@ -508,6 +509,7 @@ def run_resident_greedy_jobs(
                     compute_stats=not focal_greedy,
                     focal_sampling_seeds=lane_policy_seeds,
                     focal_sampling_counters=lane_focal_decisions,
+                    job_indices=queue.lane_job,
                 )
                 actions, routed_lengths = routed.actions, routed.lengths
                 decision_metadata = None

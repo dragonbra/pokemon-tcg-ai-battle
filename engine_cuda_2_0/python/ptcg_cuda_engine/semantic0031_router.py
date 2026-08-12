@@ -157,6 +157,7 @@ class Semantic0031ResidentRouter:
         shared_trunk_identity_proof: SharedTrunkIdentityProof | None = None,
         focal_summary_fn: Any | None = None,
         focal_strategy_fn: Any | None = None,
+        opponent_strategy_fn: Any | None = None,
         role_compacted: bool = False,
     ) -> None:
         self.focal_adapter = focal_adapter
@@ -170,6 +171,7 @@ class Semantic0031ResidentRouter:
         self.shared_trunk_identity_proof = shared_trunk_identity_proof
         self.focal_summary_fn = focal_summary_fn
         self.focal_strategy_fn = focal_strategy_fn
+        self.opponent_strategy_fn = opponent_strategy_fn
         self.role_compacted = bool(role_compacted)
         if self.same_policy:
             if opponent_adapter is not None:
@@ -222,6 +224,7 @@ class Semantic0031ResidentRouter:
         compute_stats: bool,
         focal_sampling_seeds: Any | None,
         focal_sampling_counters: Any | None,
+        job_indices: Any | None,
     ) -> RoutedDecisionBatch:
         """Run each complete policy only on rows assigned to that role."""
         import torch
@@ -303,6 +306,12 @@ class Semantic0031ResidentRouter:
             opponent_options = self.opponent_adapter._encode_options(
                 opponent_validated, opponent_state
             )
+            opponent_readout_fn = None
+            if self.opponent_strategy_fn is not None:
+                opponent_readout_fn, _ = self.opponent_strategy_fn(
+                    opponent_validated, opponent_state, opponent_options,
+                    None if job_indices is None else job_indices.index_select(0, opponent_rows),
+                )
             opponent_decoded = semantic0031_decode_device(
                 self.opponent_decoder,
                 opponent_validated,
@@ -311,6 +320,7 @@ class Semantic0031ResidentRouter:
                 max_select=max_select,
                 greedy=True,
                 compute_stats=False,
+                readout_fn=opponent_readout_fn,
             )
 
         exemplar = focal_decoded if focal_decoded is not None else opponent_decoded
@@ -381,6 +391,7 @@ class Semantic0031ResidentRouter:
         compute_stats: bool = True,
         focal_sampling_seeds: Any | None = None,
         focal_sampling_counters: Any | None = None,
+        job_indices: Any | None = None,
     ) -> RoutedDecisionBatch:
         import torch
 
@@ -394,6 +405,7 @@ class Semantic0031ResidentRouter:
                 compute_stats=compute_stats,
                 focal_sampling_seeds=focal_sampling_seeds,
                 focal_sampling_counters=focal_sampling_counters,
+                job_indices=job_indices,
             )
 
         validated, state, focal_options, opponent_options = self.encode(batch)
@@ -407,6 +419,11 @@ class Semantic0031ResidentRouter:
             )
             opponent_options = self.opponent_adapter._encode_options(
                 opponent_validated, opponent_state
+            )
+        opponent_readout_fn = None
+        if self.opponent_strategy_fn is not None:
+            opponent_readout_fn, _ = self.opponent_strategy_fn(
+                opponent_validated, opponent_state, opponent_options, job_indices
             )
         ready = focal_route.bool() | opponent_route.bool()
         focal_decoder = self.focal_adapter.model.action_decoder
@@ -466,6 +483,7 @@ class Semantic0031ResidentRouter:
                 greedy=True,
                 route_mask=opponent_route,
                 compute_stats=False,
+                readout_fn=opponent_readout_fn,
             )
         actions = torch.where(
             focal_route.bool().view(-1, 1), focal["actions"], opponent["actions"]

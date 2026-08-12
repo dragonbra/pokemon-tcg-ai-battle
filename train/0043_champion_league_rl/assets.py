@@ -138,6 +138,7 @@ class AssetRegistry:
     policies: tuple[PolicyAsset, ...]
     evaluations: tuple[EvaluationAsset, ...]
     latest_champion_policy_id: str
+    active_policy_ids: tuple[str, ...]
 
     @classmethod
     def load(cls, project_root: Path) -> "AssetRegistry":
@@ -190,6 +191,7 @@ class AssetRegistry:
             policies=policies,
             evaluations=evaluations,
             latest_champion_policy_id=policy_payload.get("latest_champion_policy_id", ""),
+            active_policy_ids=tuple(policy_payload.get("active_policy_pool", ())),
         )
 
     def validate_all(self) -> AssetAudit:
@@ -229,7 +231,9 @@ class AssetRegistry:
         policies = {policy.policy_id: policy for policy in self.policies}
         for policy in self.policies:
             if not policy.frozen:
-                raise AssetIntegrityError(f"registered opponent policy is not frozen: {policy.policy_id}")
+                raise AssetIntegrityError(
+                    f"policy assets may contain only immutable admitted policies: {policy.policy_id}"
+                )
             manifest_path = _safe_path(self.project_root, policy.manifest_path)
             if sha256_file(manifest_path) != policy.manifest_sha256:
                 raise AssetIntegrityError(f"policy manifest SHA-256 mismatch: {policy.policy_id}")
@@ -237,7 +241,7 @@ class AssetRegistry:
             if (
                 manifest.get("policy_id") != policy.policy_id
                 or manifest.get("effective_policy_sha256") != policy.effective_policy_sha256
-                or manifest.get("frozen") is not True
+                or manifest.get("frozen") is not policy.frozen
             ):
                 raise AssetIntegrityError(f"policy manifest identity mismatch: {policy.policy_id}")
             allowed_roots = {
@@ -264,6 +268,12 @@ class AssetRegistry:
         champion = policies.get(self.latest_champion_policy_id)
         if champion is None or champion.role != "latest_champion" or not champion.frozen:
             raise AssetIntegrityError("latest champion pointer must reference a frozen champion")
+        if self.active_policy_ids != ("Policy-0809", "Champion-G1"):
+            raise AssetIntegrityError(
+                "initial active opponent pool must be exactly Policy-0809 and Champion-G1"
+            )
+        if set(self.active_policy_ids) != set(policies):
+            raise AssetIntegrityError("policy assets contain a non-opponent policy")
 
         deck_by_id = {deck.deck_id: deck for deck in self.decks}
         evaluation_games = 0

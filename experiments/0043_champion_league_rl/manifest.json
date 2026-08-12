@@ -1,11 +1,6 @@
 {
-  "schema_version": "0043_experiment_manifest_v1",
-  "project_id": "0043_champion_league_rl",
-  "deck_identity_contract": "0043_numeric_deck_identity_v1: 001-055 immutable; append from 056; hashes and names are metadata only",
-  "policy_directory_contract": "semantic_policy_directories_v1: policy_0809, champion_g001; hashes are integrity metadata only",
-  "status": "BLOCKED_FORMAL_TRAINING_PREFLIGHT",
   "active_training_config": "experiments/0043_champion_league_rl/active_training_config.json",
-  "active_training_config_sha256": "fe6e1862a9f8660b3b19505898dacf55a2955a07385958639a5cb1f80d94264c",
+  "active_training_config_sha256": "cbf7bc6b80869a56ecbd35c48091f2cb74d038f204ea657eff4266cbfb920099",
   "approved_trainable_contract": [
     "actor.action_decoder.*",
     "policy_strategy_adapter.*",
@@ -17,20 +12,74 @@
     "allocation_head.*",
     "prize_aux.* when FULL_MODEL prize auxiliary is enabled"
   ],
+  "asset_registries": {
+    "decks": {
+      "path": "train/0043_champion_league_rl/assets/decks/registry.json",
+      "sha256": "d8e54d3f66f150325ce783982a07f0e3d17e273b138e8b4e6bb7e96cdd6d1996"
+    },
+    "evaluation": {
+      "path": "train/0043_champion_league_rl/assets/evaluation/registry.json",
+      "sha256": "0fe0b4cc55f8966a93a33fde2e80565406be93a62250eda2556f41d687908b5b"
+    },
+    "policies": {
+      "path": "train/0043_champion_league_rl/assets/policies/registry.json",
+      "sha256": "454c7c7286afc10f5523cf637a5abd4662fb594f1bc718549d54cca453859055"
+    }
+  },
+  "cuda_engine_2": {
+    "backend": "engine_cuda_2_0",
+    "build_parallel": 1,
+    "default_targets": [
+      "ptcg_cuda_smoke",
+      "_ptcg_cuda"
+    ],
+    "official_rule_abi": 1,
+    "official_state_abi": 7,
+    "required_compute_capability": [
+      12,
+      0
+    ],
+    "runtime_smoke": "PASS",
+    "source_sha256": "b455daed309bb239bf94815a1235dd2500a8aed22c6fb490785d9a7efe511437",
+    "strength_evidence": false
+  },
+  "deck_identity_contract": "0043_numeric_deck_identity_v1: 001-067 immutable training set; 056-067 append-only; hashes and names are metadata only",
+  "deck_taxonomy_catalog": {
+    "detail_pages": 67,
+    "html": "train/0043_champion_league_rl/assets/decks/index.html",
+    "path": "train/0043_champion_league_rl/assets/decks/manifest.json",
+    "sha256": "acd746409892be409513f19a141c4463e047d773cae95dd5df08ac36a078860d",
+    "status": "PASS",
+    "text_profiles": 67
+  },
+  "formal_training_authorized": false,
+  "human_promotion_decision": "NONE",
+  "launch_readiness": {
+    "entrypoint": "python3 -m train.0043_champion_league_rl.training.run_v1 --launch-formal",
+    "full_update_acceptance": ".tmp/evaluation/0043_initial_run_acceptance/full_update_smoke.json",
+    "long_training_started": false,
+    "status": "READY_AWAITING_USER_LAUNCH"
+  },
+  "own_archetype_taxonomy_v2": {
+    "deck_mapping_path": "train/0043_champion_league_rl/assets/taxonomy/deck_own_archetype_mapping_v2.json",
+    "deck_mapping_sha256": "6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120",
+    "focal_seed_identity": "V1-Focal-Seed",
+    "path": "train/0043_champion_league_rl/assets/taxonomy/own_archetypes_v2.json",
+    "sha256": "9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60",
+    "zero_step_parity": "PASS"
+  },
   "phase_status": {
+    "own_archetype_taxonomy_v2": "PASS",
     "phase_0_audit": "PASS",
     "phase_1_assets": "PASS",
     "phase_2_sampler": "IMPLEMENTED_TESTED",
     "phase_3_pfsp": "IMPLEMENTED_TESTED",
-    "phase_4_telemetry": "IMPLEMENTED_TESTED",
-    "phase_5_frozen_evaluation": "SCHEDULE_AND_HARD_GATES_IMPLEMENTED_OFFICIAL_GAMES_PENDING",
+    "phase_4_telemetry": "PASS_FORMAL_WANDB_CONTRACT",
+    "phase_5_frozen_evaluation": "PASS_CUDA2_PREFLIGHT_AND_REAL_GAME_ROUTING",
     "phase_6_promote": "WORKFLOW_IMPLEMENTED_HUMAN_DECISION_REQUIRED"
   },
-  "asset_registries": {
-    "decks": {"path": "train/0043_champion_league_rl/assets/decks/registry.json", "sha256": "ade615417d0a4d73db2d42aebdebb9b6c32abd93b5c39f647170d4b5bfb58ece"},
-    "policies": {"path": "train/0043_champion_league_rl/assets/policies/registry.json", "sha256": "454c7c7286afc10f5523cf637a5abd4662fb594f1bc718549d54cca453859055"},
-    "evaluation": {"path": "train/0043_champion_league_rl/assets/evaluation/registry.json", "sha256": "0fe0b4cc55f8966a93a33fde2e80565406be93a62250eda2556f41d687908b5b"}
-  },
-  "formal_training_authorized": false,
-  "human_promotion_decision": "NONE"
+  "policy_directory_contract": "immutable opponent assets contain only policy_0809 and champion_g001; mutable V1 focal checkpoints live under rl_runs",
+  "project_id": "0043_champion_league_rl",
+  "schema_version": "0043_experiment_manifest_v1",
+  "status": "READY_AWAITING_USER_LAUNCH"
 }

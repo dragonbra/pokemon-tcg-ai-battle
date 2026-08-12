@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 import torch
 
 from ..policy_identity import materialize_policy_bundle
-from ..runtime import load_policy
+from ..runtime import load_focal_seed, load_policy
 from ..semantic_runtime.contracts.batch import DecisionBatch
 from ..semantic_runtime.contracts.fields import EXPECTED_BATCH_KEYS
 from ..semantic_runtime.deployment.inference import PortableSemanticPolicy
@@ -80,7 +80,26 @@ class CudaPolicyCohort:
             policy=policy, device=resolved,
         )
 
-    def greedy(self, encoded: Mapping[str, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
+    @classmethod
+    def load_focal(
+        cls, project_root, *, deck_id: str = "002",
+        device: str | torch.device = "cuda:0",
+    ) -> "CudaPolicyCohort":
+        resolved = torch.device(device)
+        if resolved.type != "cuda" or not torch.cuda.is_available():
+            raise RuntimeError("CUDA focal cohort requires an available CUDA device")
+        policy = load_focal_seed(deck_id=deck_id)
+        for module in _modules(policy):
+            module.to(resolved).eval()
+        from ..assets import sha256_file
+        seed = (project_root.parents[1] / "rl_runs/0043_champion_league_rl/versions/"
+                "V1_focal_002_007/artifact/focal_seed/model.bin")
+        return cls("V1-Focal-Seed", deck_id, sha256_file(seed), policy, resolved)
+
+    def greedy(
+        self, encoded: Mapping[str, torch.Tensor], *,
+        own_archetype_ids: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         batch = decision_batch_from_cuda_codec(encoded)
         if batch.option_mask.device != self.device:
             raise ValueError("CUDA cohort received tensors on the wrong device")
@@ -90,7 +109,9 @@ class CudaPolicyCohort:
                 if not bool(result.legal.all()):
                     raise RuntimeError("Policy-0809 CUDA greedy decode is illegal")
                 return result.sequences, result.lengths
-            validated, state, options, _, _, context = self.policy.encode_with_strategy(batch)
+            validated, state, options, _, _, context = self.policy.encode_with_strategy(
+                batch, own_archetype_id=own_archetype_ids
+            )
             sequences, lengths, legal = self.policy._greedy_strategy(
                 validated, state, options, context
             )
@@ -99,4 +120,56 @@ class CudaPolicyCohort:
             return sequences, lengths
 
 
-__all__ = ["CudaPolicyCohort", "decision_batch_from_cuda_codec"]
+class ResidentPolicyPool:
+    """Run-scoped policy cache; deck routing never reloads effective weights."""
+
+    def __init__(self, project_root, *, device: str | torch.device = "cuda:0") -> None:
+        self.project_root = project_root
+        self.device = torch.device(device)
+        self._cohorts: dict[str, CudaPolicyCohort] = {}
+        self._loads: dict[str, int] = {}
+
+    def get(self, policy_id: str) -> CudaPolicyCohort:
+        if policy_id not in {"V1-Focal-Seed", "Policy-0809", "Champion-G1"}:
+            raise ValueError(f"non-admitted resident policy: {policy_id}")
+        if policy_id not in self._cohorts:
+            self._cohorts[policy_id] = (
+                CudaPolicyCohort.load_focal(self.project_root, device=self.device)
+                if policy_id == "V1-Focal-Seed" else
+                CudaPolicyCohort.load(
+                    self.project_root, policy_id=policy_id, deck_id="001", device=self.device
+                )
+            )
+            self._loads[policy_id] = self._loads.get(policy_id, 0) + 1
+        return self._cohorts[policy_id]
+
+    def warm(self) -> None:
+        for policy_id in ("V1-Focal-Seed", "Policy-0809", "Champion-G1"):
+            self.get(policy_id)
+
+    @property
+    def load_counts(self) -> dict[str, int]:
+        return dict(self._loads)
+
+    def own_ids(self, policy_id: str, deck_ids: Sequence[str]) -> torch.Tensor | None:
+        if policy_id == "Policy-0809":
+            return None
+        from ..own_archetype import OwnArchetypeVocabulary
+
+        vocabulary = OwnArchetypeVocabulary.load_version(
+            "own_archetypes_v2", project_root=self.project_root
+        )
+        mapping = {
+            row.deck_id: vocabulary.classes[row.archetype_id].embedding_init_from
+            for row in vocabulary.mappings
+        }
+        try:
+            values = [mapping[deck_id] for deck_id in deck_ids]
+        except KeyError as error:
+            raise ValueError(f"unmapped exact opponent deck: {error.args[0]}") from error
+        return torch.tensor(values, dtype=torch.long, device=self.device)
+
+
+__all__ = [
+    "CudaPolicyCohort", "ResidentPolicyPool", "decision_batch_from_cuda_codec",
+]

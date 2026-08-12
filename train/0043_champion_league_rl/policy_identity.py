@@ -166,32 +166,38 @@ def materialize_policy_bundle(
         tensors = {name: value.detach().clone() for name, value in state.items()}
         storage_dtype = "fp32"
     elif policy_id == "Champion-G1":
+        delta_purpose = "model_only_delta"
         delta = torch.load(
-            _artifact(policy, "model_only_delta", project_root),
+            _artifact(policy, delta_purpose, project_root),
             map_location="cpu", weights_only=True,
         )
         portable = torch.load(
             _artifact(policy, "portable_fp16_artifact", project_root),
             map_location="cpu", weights_only=True,
         )
+        expected_delta_schema = "0042_strategy_conditioned_model_only_v1"
+        expected_portable_schema = "0042_strategy_conditioned_kaggle_candidate_v1"
         if (
-            delta.get("schema_version") != "0042_strategy_conditioned_model_only_v1"
-            or portable.get("schema_version") != "0042_strategy_conditioned_kaggle_candidate_v1"
+            delta.get("schema_version") != expected_delta_schema
+            or portable.get("schema_version") != expected_portable_schema
             or portable.get("metadata", {}).get("checkpoint_sha256")
-            != artifacts["model_only_delta"]
-            or delta.get("metadata", {}).get("source_actor_sha256")
+            != artifacts[delta_purpose]
+        ):
+            raise PolicyIdentityViolation(f"{policy_id} reconstruction provenance mismatch")
+        if (
+            delta.get("metadata", {}).get("source_actor_sha256")
             != artifacts["complete_base_checkpoint"]
         ):
-            raise PolicyIdentityViolation("Champion-G1 reconstruction provenance mismatch")
+            raise PolicyIdentityViolation("Champion-G1 base provenance mismatch")
         tensors = {}
         components = {}
         for field in PORTABLE_FIELDS:
             state = portable.get(field)
             if not isinstance(state, dict) or not state:
-                raise PolicyIdentityViolation(f"Champion-G1 missing portable field: {field}")
+                raise PolicyIdentityViolation(f"{policy_id} missing portable field: {field}")
             floating = [value for value in state.values() if torch.is_floating_point(value)]
             if not floating or any(value.dtype != torch.float16 for value in floating):
-                raise PolicyIdentityViolation("Champion-G1 portable floating tensors must be FP16")
+                raise PolicyIdentityViolation(f"{policy_id} portable floating tensors must be FP16")
             components[field] = _tensor_hash(state)
             tensors.update({f"{field}.{name}": value.detach().clone() for name, value in state.items()})
         storage_dtype = "fp16"

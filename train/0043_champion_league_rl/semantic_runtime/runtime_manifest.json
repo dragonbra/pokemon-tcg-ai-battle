@@ -1,9 +1,4 @@
 {
-  "excluded": [
-    "model.bin",
-    "__pycache__",
-    "*.pyc"
-  ],
   "files": [
     {
       "path": "__init__.py",
@@ -67,7 +62,7 @@
     },
     {
       "path": "deployment/compound_inference.py",
-      "sha256": "5bbaf248df6d316703532f5182d8e6fd19c85fdd35fc42b7eda33f306e87b307"
+      "sha256": "375b510e299ccf5d6c35388fb039d0fc14c37efa054fdff95cbb55c0a6755e77"
     },
     {
       "path": "deployment/inference.py",
@@ -162,8 +157,6 @@
       "sha256": "d5bec9271c4f3fbee91ff9601d65e180783c2a7668528527c88bff3beecea69d"
     }
   ],
-  "imported_at": "2026-08-12T00:00:00+00:00",
-  "runtime_tree_sha256": "75e6b808273b02fb0d1a0b2a71e24f25d067045fef9a1b91c9e7b93ceab3c251",
-  "schema_version": "0043_semantic_runtime_manifest_v1",
-  "source": "archive/pretrained/0042_champion_g1/fp16_reference_048_package/strategy"
+  "runtime_tree_sha256": "7c8de141d0d8a0a0684d5c685c60cbfb4c67ad148624f87d4e1ca6a01b56c4ef",
+  "schema_version": "0043_semantic_runtime_manifest_v1"
 }

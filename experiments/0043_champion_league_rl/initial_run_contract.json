@@ -1,0 +1,40 @@
+{
+  "schema_version": "0043_initial_run_contract_v1",
+  "run_version": "V1_focal_002_007",
+  "readiness": "READY_AWAITING_USER_LAUNCH",
+  "formal_launch_authorized": false,
+  "focal": {
+    "identity": "V1-Focal-Seed",
+    "role": "mutable_focal",
+    "parent_policy_id": "Champion-G1",
+    "promoted_policy_id": null,
+    "model_only_checkpoint": "rl_runs/0043_champion_league_rl/versions/V1_focal_002_007/checkpoint/update-000000.pt",
+    "model_only_checkpoint_sha256": "deb117e8d9647c3408b3eadb9fee5872f487d1963445f7123bb66de325a0ee78",
+    "portable_seed": "rl_runs/0043_champion_league_rl/versions/V1_focal_002_007/artifact/focal_seed/model.bin",
+    "portable_seed_sha256": "bf5780c58bca0f3e4ef82e4ccde2b4dc84643fda5fe2216edc8c1b1005c2368a",
+    "deck_ids": ["002", "007"],
+    "deck_sampling": "uniform_exact_128_each_per_256_game_update",
+    "own_deck_taxonomy": "own_archetypes_v2",
+    "own_deck_class_count": 29,
+    "own_deck_embedding_width": 16,
+    "embedding_initialization": "copy_declared_g1_parent_row",
+    "opponent_meta_class_count": 15,
+    "opponent_meta_weights": "frozen_exact_champion_g1",
+    "opponent_meta_trainable": false
+  },
+  "opponents": {
+    "active_policy_pool": ["Policy-0809", "Champion-G1"],
+    "deck_ids": "001-067",
+    "deck_count": 67,
+    "weights_frozen": true,
+    "resident_loads_per_effective_policy_per_run": 1,
+    "policy_and_deck_sampling": "independent"
+  },
+  "rollout": {
+    "games_per_update": 256,
+    "branches": {"pfsp": 128, "uniform": 64, "latest_champion": 64},
+    "feature_path": "cuda_device_resident_semantic0031_v2",
+    "feature_d2h_bytes": 0,
+    "source_policy_update_required": true
+  }
+}

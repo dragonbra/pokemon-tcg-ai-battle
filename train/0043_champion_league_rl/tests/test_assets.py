@@ -115,6 +115,7 @@ def test_policy_paths_use_semantic_directories_not_hash_directories() -> None:
         "assets/policies/definitions/champion_g001/source_update_000010.pt",
         "assets/policies/definitions/champion_g001/model.bin",
     }
+    assert set(paths) == {"Policy-0809", "Champion-G1"}
     assert not (PROJECT_ROOT / "assets/policies/blobs").exists()
 
 

@@ -16,8 +16,11 @@ REPOSITORY_ROOT = PROJECT_ROOT.parents[1]
 HOT_PATH_FILES = (
     "src/official_engine_kernels.cu",
     "python/ptcg_cuda_engine/semantic0031_bridge.py",
-    "python/ptcg_cuda_engine/semantic0031_resident.py",
 )
+AUDITED_ROUTING_FILES = {
+    "python/ptcg_cuda_engine/semantic0031_resident.py": "e1ab47a23d933fe2e02c173d53615beb1585da9cd950891f482cfcff395ba6f8",
+    "python/ptcg_cuda_engine/semantic0031_router.py": "0291422ae40b7adaa8e5e7af1ad63276da93e4fad928711bdba060b8778f7573",
+}
 EXPECTED_OFFICIAL_API = frozenset({
     "action_bytes", "advance_to_decision", "allocated_bytes", "apply_actions",
     "apply_packed_actions", "apply_packed_setup_actions", "batch_size", "classify",
@@ -45,6 +48,12 @@ def audit_source_hot_path(repository_root: Path = REPOSITORY_ROOT) -> dict[str, 
         if old_hash != new_hash:
             raise RuntimeError(f"CUDA 2.0 hot-path drift requires a performance review: {relative}")
         rows.append({"path": relative, "0042_sha256": old_hash, "0043_sha256": new_hash})
+    routing_rows = []
+    for relative, expected in AUDITED_ROUTING_FILES.items():
+        actual = _sha(root / "engine_cuda_2_0" / relative)
+        if actual != expected:
+            raise RuntimeError(f"CUDA 2.0 audited multi-policy routing drift: {relative}")
+        routing_rows.append({"path": relative, "0043_sha256": actual})
     integration = (PROJECT_ROOT / "cuda_engine_2/inference.py").read_text()
     resident_loader = (PROJECT_ROOT / "cuda_engine_2/resident.py").read_text()
     forbidden = (
@@ -58,6 +67,7 @@ def audit_source_hot_path(repository_root: Path = REPOSITORY_ROOT) -> dict[str, 
     return {
         "status": "PASS",
         "hot_path_files": rows,
+        "audited_routing_files": routing_rows,
         "device_feature_entry": "OfficialCudaEngine.encode_semantic0031_v2_lanes",
         "resident_runner": "ptcg_cuda_engine.semantic0031_resident.run_resident_greedy_jobs",
         "resident_backend_loader": "cuda_engine_2.resident.load_resident_backend",

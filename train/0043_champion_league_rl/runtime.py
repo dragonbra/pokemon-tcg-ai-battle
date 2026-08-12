@@ -15,6 +15,7 @@ from .semantic_runtime.contracts.batch import DecisionBatch
 from .semantic_runtime.contracts.fields import WIDTHS
 from .semantic_runtime.deployment.compound_inference import PortableCompoundSemanticPolicy
 from .semantic_runtime.deployment.inference import PortableSemanticPolicy
+from .own_archetype import OwnArchetypeVocabulary
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -68,8 +69,36 @@ def load_policy(policy_id: str, *, deck_id: str):
     if policy_id == "Policy-0809":
         return PortableSemanticPolicy.from_checkpoint(path, cards)
     if policy_id == "Champion-G1":
-        return PortableCompoundSemanticPolicy.from_checkpoint(path, cards)
+        loaded = PortableCompoundSemanticPolicy.from_checkpoint(path, cards)
+        vocabulary = OwnArchetypeVocabulary.load_version(
+            "own_archetypes_v2", project_root=PROJECT_ROOT
+        )
+        mapping = next(row for row in vocabulary.mappings if row.deck_id == deck_id)
+        loaded.metadata["own_archetype_id"] = vocabulary.classes[
+            mapping.archetype_id
+        ].embedding_init_from
+        return loaded
     raise AssetIntegrityError(f"0043 has no executable loader for {policy_id}")
+
+
+def load_focal_seed(*, deck_id: str):
+    """Load the mutable V1 focal seed from rl_runs, never policy assets."""
+    path = (
+        PROJECT_ROOT.parents[1]
+        / "rl_runs/0043_champion_league_rl/versions/V1_focal_002_007"
+        / "artifact/focal_seed/model.bin"
+    )
+    if not path.is_file():
+        raise AssetIntegrityError(f"0043 V1 focal seed is missing: {path}")
+    cards = _deck(deck_id)
+    vocabulary = OwnArchetypeVocabulary.load_version(
+        "own_archetypes_v2", project_root=PROJECT_ROOT
+    )
+    loaded = PortableCompoundSemanticPolicy.from_checkpoint(path, cards)
+    loaded.metadata["own_archetype_id"] = vocabulary.resolve_exact_deck(deck_id, cards).value
+    if loaded.value_adapter.own_embedding.num_embeddings != vocabulary.class_count:
+        raise AssetIntegrityError("V1 focal own-taxonomy runtime shape mismatch")
+    return loaded
 
 
 def synthetic_batch(*, batch_size: int = 2) -> DecisionBatch:
@@ -172,4 +201,7 @@ def forward_parity(policy_id: str, *, deck_id: str, gpu: bool) -> ForwardParity:
     return ForwardParity(policy_id, deck_id, tuple(cpu_output.shape), actions_equal, maximum, "PASS")
 
 
-__all__ = ["ForwardParity", "audit_runtime_tree", "forward_parity", "load_policy", "synthetic_batch"]
+__all__ = [
+    "ForwardParity", "audit_runtime_tree", "forward_parity", "load_focal_seed",
+    "load_policy", "synthetic_batch",
+]
