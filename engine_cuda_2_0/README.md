@@ -5,8 +5,12 @@ validation suite used by this repository. It includes the CUDA/POD runtime,
 PyTorch bindings, Docker runners, the audited 0022 40-deck fixture, and CPU vs
 CUDA semantic/outcome parity tests.
 
-For installation, private rule-pack preparation, Docker commands, Python API,
-and Frozen51 validation, read [docs/usage_guide_zh.md](docs/usage_guide_zh.md).
+For native Linux GPU server or RTX 5080 + WSL2 setup, the 0809 model,
+Frozen65 evaluation, and CPU/CUDA parity, read
+[docs/server_native_usage_zh.md](docs/server_native_usage_zh.md). The older
+Docker/Frozen51 workflow remains in [docs/usage_guide_zh.md](docs/usage_guide_zh.md).
+For an RTX 5080-specific WSL2 quick start, use
+[docs/rtx5080_wsl2_quickstart_zh.md](docs/rtx5080_wsl2_quickstart_zh.md).
 
 ## Engine CUDA 2.0 checkpoint
 
