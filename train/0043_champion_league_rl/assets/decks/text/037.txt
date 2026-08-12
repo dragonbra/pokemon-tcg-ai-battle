@@ -1,0 +1,83 @@
+0043 DECK 037 — Marnie's Grimmsnarl ex / Froslass
+==============================================================================
+
+IDENTITY
+deck_id: 037
+display_name: Marnie's Grimmsnarl ex / Froslass
+upstream_name: Marnie's Grimmsnarl ex / Froslass
+display_name_correction: none
+exact_deck_sha256: 0043a7493af90c24b6662181233a5c9eeedc50892b7940744c82cbac36a55c4f
+deck_file_sha256: 78321f666809ba75d06fda5da553c17744f283cac041526beaf1e9406e6412c2
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 2
+own_archetype_id: 2
+own_archetype_name: marnies_grimmsnarl_ex
+own_archetype_display_name: Marnie's Grimmsnarl ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 2
+tags: stage2, energy_acceleration
+
+STRATEGIC CHARACTERISTICS
+axis: Punk Up energy acceleration
+definition: Stage-2 dark-energy acceleration with Froslass/Munkidori damage support.
+rationale: Punk Up evolution timing allocates the deck's energy economy.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=18, Trainer=32, Energy=10
+evolution_lines:
+  Snorunt:
+    - 2× Froslass [104] (Stage 1 Pokémon)
+  Basic / root:
+    - 4× Munkidori [112] (Basic Pokémon)
+    - 4× Marnie's Impidimp [646] (Basic Pokémon)
+    - 2× Snorunt [860] (Basic Pokémon)
+  Marnie's Impidimp:
+    - 3× Marnie's Morgrem [647] (Stage 1 Pokémon)
+  Marnie's Morgrem:
+    - 3× Marnie's Grimmsnarl ex [648] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 1× Boss’s Orders [1182] (Supporter)
+  - 2× Judge [1213] (Supporter)
+  - 4× Team Rocket's Petrel [1219] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 1× Dawn [1231] (Supporter)
+  - 4× Spikemuth Gym [1259] (Stadium)
+energy:
+  - 10× Basic {D} Energy [7]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+   10 |       7 | Basic {D} Energy | SVE 7 | Energy | Basic Energy
+    2 |     104 | Froslass | TWM 53 | Pokémon | Stage 1 Pokémon
+    4 |     112 | Munkidori | TWM 95 | Pokémon | Basic Pokémon
+    4 |     646 | Marnie's Impidimp | DRI 134 | Pokémon | Basic Pokémon
+    3 |     647 | Marnie's Morgrem | DRI 135 | Pokémon | Stage 1 Pokémon
+    3 |     648 | Marnie's Grimmsnarl ex | DRI 136 | Pokémon | Stage 2 Pokémon
+    2 |     860 | Snorunt | ASC 46 | Pokémon | Basic Pokémon
+    3 |    1079 | Rare Candy | SVI 191 | Trainer | Item
+    1 |    1080 | Unfair Stamp | TWM 165 | Trainer | Item
+    3 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    3 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    2 |    1116 | Energy Switch | SVI 173 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    1 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    2 |    1213 | Judge | SVI 176 | Trainer | Supporter
+    4 |    1219 | Team Rocket's Petrel | DRI 176 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    1 |    1231 | Dawn | PFL 87 | Trainer | Supporter
+    4 |    1259 | Spikemuth Gym | DRI 169 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 77, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/037_marnie_s_grimmsnarl_ex_froslass", "legacy_semantic_deck_id": "marnie_s_grimmsnarl_ex_froslass_0043a7493af9", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

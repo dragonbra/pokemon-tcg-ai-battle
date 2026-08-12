@@ -5873,9 +5873,1589 @@
         "meta",
         "potential_101_500"
       ]
+    },
+    {
+      "archetype": "Chandelure Sylveon",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 16,
+          "count": 4
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 97,
+          "count": 3
+        },
+        {
+          "card_id": 98,
+          "count": 3
+        },
+        {
+          "card_id": 145,
+          "count": 2
+        },
+        {
+          "card_id": 164,
+          "count": 4
+        },
+        {
+          "card_id": 330,
+          "count": 2
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 1
+        },
+        {
+          "card_id": 506,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 3
+        },
+        {
+          "card_id": 1087,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1123,
+          "count": 2
+        },
+        {
+          "card_id": 1129,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1222,
+          "count": 3
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1242,
+          "count": 2
+        },
+        {
+          "card_id": 1247,
+          "count": 1
+        }
+      ],
+      "content_sha256": "17872b59494a351c03599017c4c978889d941745c83f75be61ff1d47ae746048",
+      "deck_id": "056",
+      "deck_path": "assets/decks/definitions/056/deck.csv",
+      "file_sha256": "c70ed4a993397162af585f98641bafc14512a81c9a80f35af997c68475c58bb0",
+      "name": "Chandelure Sylveon",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Chandelure Sylveon",
+        "source_manifest": {
+          "archetype": "Chandelure / Sylveon",
+          "deck_id": "chandelure_sylveon_17872b59494a",
+          "exact_deck_sha256": "17872b59494a351c03599017c4c978889d941745c83f75be61ff1d47ae746048",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top100_new_archetype",
+            "source_ranks": [
+              48
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-12-top100-exact.json"
+          },
+          "representative_card_ids": [
+            164,
+            145
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\056_chandelure_sylveon\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Dragapult Ex Dusknoir Self Destruct",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 2
+        },
+        {
+          "card_id": 133,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 2
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1240,
+          "count": 1
+        },
+        {
+          "card_id": 1246,
+          "count": 1
+        },
+        {
+          "card_id": 1260,
+          "count": 2
+        }
+      ],
+      "content_sha256": "d8454cc8351f6170cfb17d05b3603684ff10b1e707684f05e44a8f7f0f853078",
+      "deck_id": "057",
+      "deck_path": "assets/decks/definitions/057/deck.csv",
+      "file_sha256": "0de59597f795acd1d71cf22058a20692a574ef19f0198eb08cad7f26fbf84d36",
+      "name": "Dragapult Ex Dusknoir Self Destruct",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Dragapult Ex Dusknoir Self Destruct",
+        "source_manifest": {
+          "archetype": "Dragapult ex / Dusknoir (Self-Destruct)",
+          "deck_id": "dragapult_ex_dusknoir_self_destruct_d8454cc8351f",
+          "exact_deck_sha256": "d8454cc8351f6170cfb17d05b3603684ff10b1e707684f05e44a8f7f0f853078",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "event": "Regional Los Angeles 0063",
+            "placement": 3,
+            "player": "Nicholas Moffitt",
+            "record": "13-3",
+            "segment": "limitless_representative",
+            "source_url": "https://labs.limitlesstcg.com/0063/player/1074/decklist"
+          },
+          "representative_card_ids": [
+            121,
+            133
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\057_dragapult_ex_dusknoir_self_destruct\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan Ex Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 10
+        },
+        {
+          "card_id": 12,
+          "count": 1
+        },
+        {
+          "card_id": 16,
+          "count": 4
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 184,
+          "count": 2
+        },
+        {
+          "card_id": 230,
+          "count": 4
+        },
+        {
+          "card_id": 272,
+          "count": 2
+        },
+        {
+          "card_id": 318,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 1
+        },
+        {
+          "card_id": 756,
+          "count": 2
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1116,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1127,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1221,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1250,
+          "count": 3
+        }
+      ],
+      "content_sha256": "15f87ee2cd1150c0404210c59bf7ec88e40efc0fc953002f534370dd711a17e5",
+      "deck_id": "058",
+      "deck_path": "assets/decks/definitions/058/deck.csv",
+      "file_sha256": "908844684f6405eb4603e5f3ad7e72592e3ccd3d22ec4bcc0db157bf6ad94dac",
+      "name": "Mega Kangaskhan Ex Crustle",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Kangaskhan Ex Crustle",
+        "source_manifest": {
+          "archetype": "Mega Kangaskhan ex / Crustle",
+          "deck_id": "mega_kangaskhan_ex_crustle_15f87ee2cd11",
+          "exact_deck_sha256": "15f87ee2cd1150c0404210c59bf7ec88e40efc0fc953002f534370dd711a17e5",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "dragapult_counter",
+            "source_ranks": [
+              159
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            756,
+            96
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\058_mega_kangaskhan_ex_crustle\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Team Rocket S Mewtwo Ex Spidops",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 7
+        },
+        {
+          "card_id": 15,
+          "count": 4
+        },
+        {
+          "card_id": 400,
+          "count": 4
+        },
+        {
+          "card_id": 401,
+          "count": 4
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 431,
+          "count": 2
+        },
+        {
+          "card_id": 434,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 2
+        },
+        {
+          "card_id": 1134,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1175,
+          "count": 1
+        },
+        {
+          "card_id": 1216,
+          "count": 4
+        },
+        {
+          "card_id": 1217,
+          "count": 1
+        },
+        {
+          "card_id": 1218,
+          "count": 3
+        },
+        {
+          "card_id": 1220,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 3
+        },
+        {
+          "card_id": 1257,
+          "count": 3
+        }
+      ],
+      "content_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+      "deck_id": "059",
+      "deck_path": "assets/decks/definitions/059/deck.csv",
+      "file_sha256": "96d2f981fd42562f986649c4adce6e98115b652ed841aac9c70629b2aa28de75",
+      "name": "Team Rocket S Mewtwo Ex Spidops",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Team Rocket S Mewtwo Ex Spidops",
+        "source_manifest": {
+          "archetype": "Team Rocket's Mewtwo ex / Spidops",
+          "deck_id": "team_rocket_s_mewtwo_ex_spidops_fba1f87c7115",
+          "exact_deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "lucario_counter",
+            "source_ranks": [
+              193
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            431,
+            401
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\059_team_rocket_s_mewtwo_ex_spidops\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Cynthia S Garchomp Ex Roserade",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 6,
+          "count": 4
+        },
+        {
+          "card_id": 20,
+          "count": 4
+        },
+        {
+          "card_id": 341,
+          "count": 4
+        },
+        {
+          "card_id": 342,
+          "count": 3
+        },
+        {
+          "card_id": 379,
+          "count": 4
+        },
+        {
+          "card_id": 380,
+          "count": 4
+        },
+        {
+          "card_id": 381,
+          "count": 3
+        },
+        {
+          "card_id": 387,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1122,
+          "count": 1
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1173,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1261,
+          "count": 2
+        }
+      ],
+      "content_sha256": "3f8ee4b51dd39a464b9ca5bbda6c84fad383a50c04ee0c43c74df9a989893c04",
+      "deck_id": "060",
+      "deck_path": "assets/decks/definitions/060/deck.csv",
+      "file_sha256": "539483827e2b5e3c03e88554d57fc8be00c1dcd0a8d2aae1f00598a4791c005b",
+      "name": "Cynthia S Garchomp Ex Roserade",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Cynthia S Garchomp Ex Roserade",
+        "source_manifest": {
+          "archetype": "Cynthia's Garchomp ex / Roserade",
+          "deck_id": "cynthia_s_garchomp_ex_roserade_3f8ee4b51dd3",
+          "exact_deck_sha256": "3f8ee4b51dd39a464b9ca5bbda6c84fad383a50c04ee0c43c74df9a989893c04",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "dragapult_and_lucario_counter",
+            "source_ranks": [
+              222
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            381,
+            342
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\060_cynthia_s_garchomp_ex_roserade\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Dragapult Ex Blaziken Ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 2
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 272,
+          "count": 1
+        },
+        {
+          "card_id": 326,
+          "count": 2
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 410,
+          "count": 2
+        },
+        {
+          "card_id": 411,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 2
+        },
+        {
+          "card_id": 1250,
+          "count": 1
+        },
+        {
+          "card_id": 1256,
+          "count": 1
+        }
+      ],
+      "content_sha256": "b4ed553f1dc4a6ac4d7835eb521b78bde2f25e7c32673438c9d364652554ff73",
+      "deck_id": "061",
+      "deck_path": "assets/decks/definitions/061/deck.csv",
+      "file_sha256": "2719ebee410ea94e5c9368909d83f2f8fe3adcb33746edcea7ca36681cc45a8d",
+      "name": "Dragapult Ex Blaziken Ex",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Dragapult Ex Blaziken Ex",
+        "source_manifest": {
+          "archetype": "Dragapult ex / Blaziken ex",
+          "deck_id": "dragapult_ex_blaziken_ex_b4ed553f1dc4",
+          "exact_deck_sha256": "b4ed553f1dc4a6ac4d7835eb521b78bde2f25e7c32673438c9d364652554ff73",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "alakazam_counter",
+            "source_ranks": [
+              240
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            121,
+            326
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\061_dragapult_ex_blaziken_ex\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 12
+        },
+        {
+          "card_id": 17,
+          "count": 4
+        },
+        {
+          "card_id": 860,
+          "count": 4
+        },
+        {
+          "card_id": 861,
+          "count": 4
+        },
+        {
+          "card_id": 1030,
+          "count": 4
+        },
+        {
+          "card_id": 1031,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1119,
+          "count": 2
+        },
+        {
+          "card_id": 1145,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1189,
+          "count": 4
+        },
+        {
+          "card_id": 1219,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 2
+        },
+        {
+          "card_id": 1226,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1262,
+          "count": 4
+        }
+      ],
+      "content_sha256": "654f54a66c951ab2b6f4a714286552a614ecb94e84752b47bf03770c4cd7c933",
+      "deck_id": "062",
+      "deck_path": "assets/decks/definitions/062/deck.csv",
+      "file_sha256": "5807f82f5472c15f6148c66ff81ad912fb80e0cb1f94b9f896b7b7c93248b04a",
+      "name": "Mega Starmie ex / Mega Froslass ex",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": "exact-list correction: Starmie/Froslass lines; no Duskull-family card",
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Starmie Ex Dusknoir",
+        "source_manifest": {
+          "archetype": "Mega Starmie ex / Dusknoir",
+          "deck_id": "mega_starmie_ex_dusknoir_654f54a66c95",
+          "exact_deck_sha256": "654f54a66c951ab2b6f4a714286552a614ecb94e84752b47bf03770c4cd7c933",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "lucario_counter",
+            "source_ranks": [
+              294
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            1031,
+            861
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\062_mega_starmie_ex_dusknoir\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Lucario Ex Solrock",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 6,
+          "count": 9
+        },
+        {
+          "card_id": 20,
+          "count": 4
+        },
+        {
+          "card_id": 66,
+          "count": 2
+        },
+        {
+          "card_id": 305,
+          "count": 3
+        },
+        {
+          "card_id": 675,
+          "count": 2
+        },
+        {
+          "card_id": 676,
+          "count": 2
+        },
+        {
+          "card_id": 677,
+          "count": 4
+        },
+        {
+          "card_id": 678,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 2
+        },
+        {
+          "card_id": 1141,
+          "count": 4
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 2
+        },
+        {
+          "card_id": 1252,
+          "count": 2
+        }
+      ],
+      "content_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b",
+      "deck_id": "063",
+      "deck_path": "assets/decks/definitions/063/deck.csv",
+      "file_sha256": "9b51fe451fac36b6ec7fca09ff6649eedd859dcf522a9496da885a79331c32a0",
+      "name": "Mega Lucario Ex Solrock",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Lucario Ex Solrock",
+        "source_manifest": {
+          "archetype": "Mega Lucario ex / Solrock",
+          "deck_id": "mega_lucario_ex_solrock_5b1e19a2e025",
+          "exact_deck_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_stadium_coverage",
+            "selection_purpose": "stadium_coverage_gravity_mountain",
+            "source_ranks": [
+              170
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            675,
+            1252
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\063_mega_lucario_ex_solrock\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny Ex Mega Froslass Ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 5,
+          "count": 7
+        },
+        {
+          "card_id": 16,
+          "count": 2
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 24,
+          "count": 1
+        },
+        {
+          "card_id": 112,
+          "count": 1
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 145,
+          "count": 3
+        },
+        {
+          "card_id": 184,
+          "count": 1
+        },
+        {
+          "card_id": 236,
+          "count": 3
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 745,
+          "count": 4
+        },
+        {
+          "card_id": 746,
+          "count": 3
+        },
+        {
+          "card_id": 747,
+          "count": 3
+        },
+        {
+          "card_id": 848,
+          "count": 1
+        },
+        {
+          "card_id": 849,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1194,
+          "count": 4
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 1
+        },
+        {
+          "card_id": 1249,
+          "count": 1
+        },
+        {
+          "card_id": 1267,
+          "count": 1
+        }
+      ],
+      "content_sha256": "236786f63c7a461f9ec384064539ada5c6d7342bef4b7f22d7833ace76bdec8c",
+      "deck_id": "064",
+      "deck_path": "assets/decks/definitions/064/deck.csv",
+      "file_sha256": "00bc829731489d1e5787d36fb256d3283977a53050517f1606d7a04e0ba94664",
+      "name": "Mega Lopunny Ex Mega Froslass Ex",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Lopunny Ex Mega Froslass Ex",
+        "source_manifest": {
+          "archetype": "Mega Lopunny ex / Mega Froslass ex",
+          "deck_id": "mega_lopunny_ex_mega_froslass_ex_236786f63c7a",
+          "exact_deck_sha256": "236786f63c7a461f9ec384064539ada5c6d7342bef4b7f22d7833ace76bdec8c",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_stadium_coverage",
+            "selection_purpose": "stadium_coverage_lumiose_city",
+            "source_ranks": [
+              399
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            849,
+            1267
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\064_mega_lopunny_ex_mega_froslass_ex\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Crustle Great Tusk",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 20,
+          "count": 4
+        },
+        {
+          "card_id": 58,
+          "count": 4
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 4
+        },
+        {
+          "card_id": 607,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 1
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 4
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 4
+        },
+        {
+          "card_id": 1185,
+          "count": 4
+        },
+        {
+          "card_id": 1194,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 4
+        },
+        {
+          "card_id": 1204,
+          "count": 2
+        },
+        {
+          "card_id": 1247,
+          "count": 1
+        }
+      ],
+      "content_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210",
+      "deck_id": "065",
+      "deck_path": "assets/decks/definitions/065/deck.csv",
+      "file_sha256": "ff46397011bcaf0b2651950382d5777c0a36a907961ba5290a5f2441f2574343",
+      "name": "Crustle Great Tusk",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Crustle Great Tusk",
+        "source_manifest": {
+          "archetype": "Crustle / Great Tusk",
+          "deck_id": "crustle_great_tusk_5822b67f77ee",
+          "exact_deck_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_mill_coverage",
+            "selection_purpose": "great_tusk_mill_coverage",
+            "source_ranks": [
+              360
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            345,
+            58,
+            1247
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\065_crustle_great_tusk\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex / Dusknoir Control",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 4
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 1
+        },
+        {
+          "card_id": 112,
+          "count": 1
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 2
+        },
+        {
+          "card_id": 133,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 791,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1256,
+          "count": 2
+        }
+      ],
+      "content_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+      "deck_id": "066",
+      "deck_path": "assets/decks/definitions/066/deck.csv",
+      "file_sha256": "98d92a7fefbb0511edb30b2cd2f944835b9b5ce8b9e989c939c719c2a2f40959",
+      "name": "Dragapult ex / Dusknoir Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-13T00:00:00+08:00",
+        "set_code_resolution": {
+          "ASC": "SFA engine identity",
+          "MEE": "SVE engine identity",
+          "MEG_114_boss": "PAL 172 engine identity",
+          "MEG_131_ultra_ball": "SVI 196 engine identity",
+          "POR_71_crushing_hammer": "SVI 168 engine identity",
+          "POR_76_judge": "SVI 176 engine identity",
+          "PRE": "SFA engine identity"
+        },
+        "source_list": "user-provided 2026-08-13: Dragapult/Dusknoir control exact 60",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_13",
+        "dragapult_control"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex / Munkidori Control",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 4
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 2
+        },
+        {
+          "card_id": 791,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1256,
+          "count": 2
+        },
+        {
+          "card_id": 1260,
+          "count": 1
+        }
+      ],
+      "content_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+      "deck_id": "067",
+      "deck_path": "assets/decks/definitions/067/deck.csv",
+      "file_sha256": "de79ebd0993c6defff13128b7ab5ada903ba2a8a7638cf38dd468df87b17bdcc",
+      "name": "Dragapult ex / Munkidori Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-13T00:00:00+08:00",
+        "set_code_resolution": {
+          "ASC": "SFA engine identity",
+          "MEE": "SVE engine identity",
+          "MEG_114_boss": "PAL 172 engine identity",
+          "MEG_131_ultra_ball": "SVI 196 engine identity",
+          "POR_71_crushing_hammer": "SVI 168 engine identity",
+          "POR_76_judge": "SVI 176 engine identity",
+          "PRE": "SFA engine identity"
+        },
+        "source_list": "user-provided 2026-08-13: Dragapult/Munkidori control exact 60",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_13",
+        "dragapult_control"
+      ]
     }
   ],
-  "identity_contract": "deck_id is the unique zero-padded numeric identity; 001-055 are immutable and future decks append from 056",
+  "identity_contract": "deck_id is append-only; 001-067 are immutable",
   "immutability": "content change requires a new deck_id",
-  "schema_version": "0043_deck_registry_v2_numeric_identity"
+  "schema_version": "0043_deck_registry_v2_numeric_identity",
+  "training_pool_append": {
+    "added_deck_ids": [
+      "066",
+      "067"
+    ],
+    "base": "FrozenPool_65_decks_2026-08-12",
+    "frozen_evaluation_changed": false
+  },
+  "training_pool_source_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee",
+  "training_pool_version": "FrozenPool65_plus_user_dragapult_066_067_2026-08-13"
 }

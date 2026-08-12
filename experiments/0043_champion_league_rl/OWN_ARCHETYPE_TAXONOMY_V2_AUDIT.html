@@ -1,0 +1,719 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0043 Own Archetype Taxonomy V2 Audit</title><style>body{font:15px/1.6 system-ui,sans-serif;max-width:1500px;margin:auto;padding:28px;color:#172033}h1,h2{line-height:1.25}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #ccd4e0;padding:6px;vertical-align:top}th{position:sticky;top:0;background:#edf3fa}code{background:#eef2f6;padding:.1em .3em;border-radius:4px}li{margin:.25em 0}</style></head><body><h1>0043 Own Archetype Taxonomy V2 Audit</h1>
+<p>Date: 2026-08-13<br />
+Status: <strong>PASS — taxonomy/migration gates complete; no RL update was launched.</strong></p>
+<h2>Executive conclusion</h2>
+<ul>
+<li>Audited all exact lists 001–067 against official card data: Pokémon/evolution lines, Trainers/Stadiums, Energy, Rare Candy, Prize/tempo, bench allocation, resource engines, and attack/win routes.</li>
+<li>V1 had 15 classes. V2 has 29 append-only classes: 15 meanings preserved and 14 added strategic rows. No exact-deck-per-class naming was introduced.</li>
+<li>All known decks are explicitly mapped; <code>other</code> remains fallback-only and currently maps no 001–067 deck.</li>
+<li>Champion-G1 remains unchanged. Champion-G2-Seed expands both own embeddings from <code>[15,16]</code> to <code>[29,16]</code> by exact old-row preservation and parent-copy initialization.</li>
+<li>Zero-step parity: <strong>PASS</strong> for logits, probabilities, greedy action, Value, and both adapter paths.</li>
+</ul>
+<h2>Repository audit</h2>
+<ol>
+<li>Formal base source: root <code>FrozenPool_65_decks_2026-08-12.zip</code>, SHA-256 <code>2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee</code>; user-approved Dragapult lists were appended as 066/067 with exact-list provenance.</li>
+<li>Deck registry: <code>train/0043_champion_league_rl/assets/decks/registry.json</code>; all 67 training decks are exact 60-card assets. FrozenMeta256-V1 remains 55 decks.</li>
+<li>V1 own taxonomy: 0042 trigger-priority JSON with fallback class 14; it hard-coded 15 in ID validation and both embeddings.</li>
+<li>Opponent Meta is a separate vocabulary/type and the pretrained Value head remains 15-way. It was not retrained or expanded.</li>
+<li>OwnArchetypeId enters <code>ValueResidualAdapter</code> and <code>PolicyStrategyAdapter</code>. Those are the only own embedding tables found; both are width 16.</li>
+<li>G1 checkpoint metadata stores vocabulary version and taxonomy SHA-256; loader/export historically constructed 15-row tables. 0043 runtime now derives rows from checkpoint tensors and validates version/schema.</li>
+<li>CPU/Kaggle project-local compound runtime shares that loader. CUDA routes complete policy identity after materialization; the Frozen evaluation registry is unchanged.</li>
+<li>G1 source is <code>archive/pretrained/0042_champion_g1</code>, copied into 0043 and pinned by two artifact hashes. Optimizers train both adapters; G2 explicitly starts with empty optimizer state.</li>
+<li>Active own-vocabulary magic numbers were removed from runtime construction. Remaining literal 15 values occur only in the explicit V1→V2 migration/parity contract.</li>
+</ol>
+<h2>67-deck decision table</h2>
+<table>
+<thead>
+<tr>
+<th>Deck</th>
+<th>Name</th>
+<th>Old</th>
+<th>New</th>
+<th>Decision</th>
+<th>Parent</th>
+<th>Strategic axis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>001</td>
+<td>Marnie's Grimmsnarl ex / Froslass</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Punk Up energy acceleration</td>
+</tr>
+<tr>
+<td>002</td>
+<td>Alakazam / Dudunsparce</td>
+<td>alakazam</td>
+<td>alakazam</td>
+<td>keep</td>
+<td>—</td>
+<td>hand-size damage and draw</td>
+</tr>
+<tr>
+<td>003</td>
+<td>Mega Lopunny ex / Mega Froslass ex</td>
+<td>mega_lopunny_ex</td>
+<td>mega_lopunny_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>switch-tempo attacker</td>
+</tr>
+<tr>
+<td>004</td>
+<td>Mega Lopunny ex / Mega Froslass ex</td>
+<td>mega_lopunny_ex</td>
+<td>mega_lopunny_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>switch-tempo attacker</td>
+</tr>
+<tr>
+<td>005</td>
+<td>Marnie's Grimmsnarl ex / Froslass</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Punk Up energy acceleration</td>
+</tr>
+<tr>
+<td>006</td>
+<td>Teal Mask Ogerpon ex / Hero’s Cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>keep</td>
+<td>—</td>
+<td>Ogerpon energy stacking</td>
+</tr>
+<tr>
+<td>007</td>
+<td>Dragapult ex</td>
+<td>dragapult_ex</td>
+<td>dragapult_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Phantom Dive spread</td>
+</tr>
+<tr>
+<td>008</td>
+<td>Teal Mask Ogerpon ex / Hero’s Cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>keep</td>
+<td>—</td>
+<td>Ogerpon energy stacking</td>
+</tr>
+<tr>
+<td>009</td>
+<td>Mega Lucario ex / Solrock</td>
+<td>mega_lucario_ex</td>
+<td>mega_lucario_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Fighting attack rotation</td>
+</tr>
+<tr>
+<td>010</td>
+<td>Festival Lead / Dipplin</td>
+<td>festival_lead</td>
+<td>festival_lead</td>
+<td>keep</td>
+<td>—</td>
+<td>Festival double attack</td>
+</tr>
+<tr>
+<td>011</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>mega_kangaskhan_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Kangaskhan active draw with wall</td>
+</tr>
+<tr>
+<td>012</td>
+<td>Mega Lopunny ex / Mega Froslass ex</td>
+<td>mega_lopunny_ex</td>
+<td>mega_lopunny_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>switch-tempo attacker</td>
+</tr>
+<tr>
+<td>013</td>
+<td>Cynthia's Garchomp ex / Roserade</td>
+<td>cynthias_garchomp_ex</td>
+<td>cynthias_garchomp_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Cynthia evolution engine</td>
+</tr>
+<tr>
+<td>014</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>mega_kangaskhan_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Kangaskhan active draw with wall</td>
+</tr>
+<tr>
+<td>015</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>area_zero_tera_toolbox</td>
+<td>split</td>
+<td>mega_kangaskhan_ex</td>
+<td>Area Zero eight-bench toolbox</td>
+</tr>
+<tr>
+<td>016</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>slowking_toolbox</td>
+<td>split</td>
+<td>mega_kangaskhan_ex</td>
+<td>top-deck copied-attack toolbox</td>
+</tr>
+<tr>
+<td>017</td>
+<td>Marnie's Grimmsnarl ex / Froslass</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Punk Up energy acceleration</td>
+</tr>
+<tr>
+<td>018</td>
+<td>Dragapult ex</td>
+<td>dragapult_ex</td>
+<td>dragapult_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Phantom Dive spread</td>
+</tr>
+<tr>
+<td>019</td>
+<td>Barbaracle / Cornerstone Mask Ogerpon ex</td>
+<td>crustle_barbaracle_wall</td>
+<td>crustle_barbaracle_wall</td>
+<td>keep</td>
+<td>—</td>
+<td>single-prize wall and denial</td>
+</tr>
+<tr>
+<td>020</td>
+<td>Mega Venusaur ex / Meganium</td>
+<td>meganium_grass_evolution</td>
+<td>meganium_grass_evolution</td>
+<td>keep</td>
+<td>—</td>
+<td>Meganium Grass evolution</td>
+</tr>
+<tr>
+<td>021</td>
+<td>Team Rocket's Mewtwo ex / Spidops</td>
+<td>team_rockets_mewtwo_ex</td>
+<td>team_rockets_mewtwo_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Rocket board and energy sacrifice</td>
+</tr>
+<tr>
+<td>022</td>
+<td>Mega Lopunny ex / Mega Froslass ex</td>
+<td>mega_lopunny_ex</td>
+<td>mega_lopunny_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>switch-tempo attacker</td>
+</tr>
+<tr>
+<td>023</td>
+<td>Hydrapple ex / Meganium</td>
+<td>festival_lead</td>
+<td>hydrapple_meganium</td>
+<td>split</td>
+<td>festival_lead</td>
+<td>Hydrapple energy-wide scaling</td>
+</tr>
+<tr>
+<td>024</td>
+<td>Crustle / Cornerstone Mask Ogerpon ex</td>
+<td>crustle_barbaracle_wall</td>
+<td>crustle_barbaracle_wall</td>
+<td>keep</td>
+<td>—</td>
+<td>single-prize wall and denial</td>
+</tr>
+<tr>
+<td>025</td>
+<td>Mega Lopunny ex / Mega Froslass ex</td>
+<td>mega_lopunny_ex</td>
+<td>teal_mask_ogerpon_toolbox</td>
+<td>split</td>
+<td>mega_lopunny_ex</td>
+<td>Ogerpon toolbox with thin Lopunny</td>
+</tr>
+<tr>
+<td>026</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>mega_venusaur_meganium</td>
+<td>split</td>
+<td>mega_kangaskhan_ex</td>
+<td>dual Stage-2 Grass energy transfer</td>
+</tr>
+<tr>
+<td>027</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>area_zero_tera_toolbox</td>
+<td>split</td>
+<td>mega_kangaskhan_ex</td>
+<td>Area Zero eight-bench toolbox</td>
+</tr>
+<tr>
+<td>028</td>
+<td>Mega Lopunny ex / Mega Froslass ex</td>
+<td>mega_lopunny_ex</td>
+<td>mega_lopunny_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>switch-tempo attacker</td>
+</tr>
+<tr>
+<td>029</td>
+<td>Teal Mask Ogerpon ex / Hero’s Cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>keep</td>
+<td>—</td>
+<td>Ogerpon energy stacking</td>
+</tr>
+<tr>
+<td>030</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>mega_kangaskhan_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Kangaskhan active draw with wall</td>
+</tr>
+<tr>
+<td>031</td>
+<td>Marnie's Grimmsnarl ex / Froslass</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Punk Up energy acceleration</td>
+</tr>
+<tr>
+<td>032</td>
+<td>Mega Lopunny ex / Mega Froslass ex</td>
+<td>mega_lopunny_ex</td>
+<td>teal_mask_ogerpon_toolbox</td>
+<td>split</td>
+<td>mega_lopunny_ex</td>
+<td>Ogerpon toolbox with thin Lopunny</td>
+</tr>
+<tr>
+<td>033</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>mega_kangaskhan_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Kangaskhan active draw with wall</td>
+</tr>
+<tr>
+<td>034</td>
+<td>Alakazam / Dudunsparce</td>
+<td>alakazam</td>
+<td>alakazam</td>
+<td>keep</td>
+<td>—</td>
+<td>hand-size damage and draw</td>
+</tr>
+<tr>
+<td>035</td>
+<td>Mega Kangaskhan ex / Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>mega_kangaskhan_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Kangaskhan active draw with wall</td>
+</tr>
+<tr>
+<td>036</td>
+<td>Teal Mask Ogerpon ex / Hero’s Cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>teal_mask_ogerpon_heros_cape</td>
+<td>keep</td>
+<td>—</td>
+<td>Ogerpon energy stacking</td>
+</tr>
+<tr>
+<td>037</td>
+<td>Marnie's Grimmsnarl ex / Froslass</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>marnies_grimmsnarl_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Punk Up energy acceleration</td>
+</tr>
+<tr>
+<td>038</td>
+<td>Crustle / Cornerstone Mask Ogerpon ex</td>
+<td>crustle_barbaracle_wall</td>
+<td>crustle_barbaracle_wall</td>
+<td>keep</td>
+<td>—</td>
+<td>single-prize wall and denial</td>
+</tr>
+<tr>
+<td>039</td>
+<td>Alakazam / Dudunsparce</td>
+<td>alakazam</td>
+<td>alakazam</td>
+<td>keep</td>
+<td>—</td>
+<td>hand-size damage and draw</td>
+</tr>
+<tr>
+<td>040</td>
+<td>Alakazam / Dudunsparce</td>
+<td>alakazam</td>
+<td>alakazam</td>
+<td>keep</td>
+<td>—</td>
+<td>hand-size damage and draw</td>
+</tr>
+<tr>
+<td>041</td>
+<td>Hydrapple ex / Meganium</td>
+<td>festival_lead</td>
+<td>hydrapple_meganium</td>
+<td>split</td>
+<td>festival_lead</td>
+<td>Hydrapple energy-wide scaling</td>
+</tr>
+<tr>
+<td>042</td>
+<td>Arboliva ex / Meganium / Teal Mask Ogerpon ex</td>
+<td>meganium_grass_evolution</td>
+<td>meganium_grass_evolution</td>
+<td>keep</td>
+<td>—</td>
+<td>Meganium Grass evolution</td>
+</tr>
+<tr>
+<td>043</td>
+<td>Dragapult ex / Dusknoir</td>
+<td>dragapult_ex</td>
+<td>dragapult_dusknoir</td>
+<td>split</td>
+<td>dragapult_ex</td>
+<td>Dusknoir self-KO and damage placement</td>
+</tr>
+<tr>
+<td>044</td>
+<td>Mega Starmie ex / Mega Froslass ex</td>
+<td>mega_starmie_ex</td>
+<td>mega_starmie_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Starmie fast spread</td>
+</tr>
+<tr>
+<td>045</td>
+<td>Mega Starmie ex / Mega Froslass ex</td>
+<td>mega_starmie_ex</td>
+<td>mega_starmie_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Starmie fast spread</td>
+</tr>
+<tr>
+<td>046</td>
+<td>Mega Starmie ex / Dusknoir</td>
+<td>mega_starmie_ex</td>
+<td>mega_starmie_dusknoir</td>
+<td>split</td>
+<td>mega_starmie_ex</td>
+<td>Dusknoir self-KO and Starmie breakpoints</td>
+</tr>
+<tr>
+<td>047</td>
+<td>Erika's Vileplume ex / Cinderace</td>
+<td>other</td>
+<td>erikas_vileplume_ex</td>
+<td>split</td>
+<td>other</td>
+<td>team healing and status control</td>
+</tr>
+<tr>
+<td>048</td>
+<td>Archaludon ex / Cinderace</td>
+<td>archaludon_ex</td>
+<td>archaludon_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>metal discard acceleration</td>
+</tr>
+<tr>
+<td>049</td>
+<td>N's Zoroark ex / Munkidori</td>
+<td>other</td>
+<td>ns_zoroark_ex</td>
+<td>split</td>
+<td>other</td>
+<td>benched attack library and copying</td>
+</tr>
+<tr>
+<td>050</td>
+<td>Mega Starmie ex / Dusknoir</td>
+<td>mega_starmie_ex</td>
+<td>mega_starmie_dusknoir</td>
+<td>split</td>
+<td>mega_starmie_ex</td>
+<td>Dusknoir self-KO and Starmie breakpoints</td>
+</tr>
+<tr>
+<td>051</td>
+<td>Archaludon ex / Cinderace</td>
+<td>archaludon_ex</td>
+<td>archaludon_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>metal discard acceleration</td>
+</tr>
+<tr>
+<td>052</td>
+<td>Archaludon ex / Cinderace</td>
+<td>archaludon_ex</td>
+<td>archaludon_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>metal discard acceleration</td>
+</tr>
+<tr>
+<td>053</td>
+<td>Mega Starmie ex / Mega Froslass ex</td>
+<td>mega_starmie_ex</td>
+<td>mega_starmie_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Starmie fast spread</td>
+</tr>
+<tr>
+<td>054</td>
+<td>N's Zoroark ex / Munkidori</td>
+<td>other</td>
+<td>ns_zoroark_ex</td>
+<td>split</td>
+<td>other</td>
+<td>benched attack library and copying</td>
+</tr>
+<tr>
+<td>055</td>
+<td>Archaludon ex / Cinderace</td>
+<td>archaludon_ex</td>
+<td>archaludon_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>metal discard acceleration</td>
+</tr>
+<tr>
+<td>056</td>
+<td>Chandelure Sylveon</td>
+<td>other</td>
+<td>chandelure_hand_control</td>
+<td>split</td>
+<td>other</td>
+<td>opponent-hand control and safeguard</td>
+</tr>
+<tr>
+<td>057</td>
+<td>Dragapult Ex Dusknoir Self Destruct</td>
+<td>dragapult_ex</td>
+<td>dragapult_dusknoir</td>
+<td>split</td>
+<td>dragapult_ex</td>
+<td>Dusknoir self-KO and damage placement</td>
+</tr>
+<tr>
+<td>058</td>
+<td>Mega Kangaskhan Ex Crustle</td>
+<td>mega_kangaskhan_ex</td>
+<td>pecharunt_area_zero_poison</td>
+<td>split</td>
+<td>mega_kangaskhan_ex</td>
+<td>Area Zero poison checkup route</td>
+</tr>
+<tr>
+<td>059</td>
+<td>Team Rocket S Mewtwo Ex Spidops</td>
+<td>team_rockets_mewtwo_ex</td>
+<td>team_rockets_mewtwo_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Rocket board and energy sacrifice</td>
+</tr>
+<tr>
+<td>060</td>
+<td>Cynthia S Garchomp Ex Roserade</td>
+<td>cynthias_garchomp_ex</td>
+<td>cynthias_garchomp_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Cynthia evolution engine</td>
+</tr>
+<tr>
+<td>061</td>
+<td>Dragapult Ex Blaziken Ex</td>
+<td>dragapult_ex</td>
+<td>dragapult_blaziken</td>
+<td>split</td>
+<td>dragapult_ex</td>
+<td>Blaziken energy recursion and dual Stage-2</td>
+</tr>
+<tr>
+<td>062</td>
+<td>Mega Starmie ex / Mega Froslass ex</td>
+<td>mega_starmie_ex</td>
+<td>mega_starmie_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Starmie/Froslass fast spread</td>
+</tr>
+<tr>
+<td>063</td>
+<td>Mega Lucario Ex Solrock</td>
+<td>mega_lucario_ex</td>
+<td>mega_lucario_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Fighting attack rotation</td>
+</tr>
+<tr>
+<td>064</td>
+<td>Mega Lopunny Ex Mega Froslass Ex</td>
+<td>mega_lopunny_ex</td>
+<td>mega_gardevoir_leafeon</td>
+<td>split</td>
+<td>mega_lopunny_ex</td>
+<td>Grand Tree and board-wide Psychic energy</td>
+</tr>
+<tr>
+<td>065</td>
+<td>Crustle Great Tusk</td>
+<td>crustle_barbaracle_wall</td>
+<td>crustle_great_tusk_mill</td>
+<td>split</td>
+<td>crustle_barbaracle_wall</td>
+<td>Great Tusk alternate deck-out route</td>
+</tr>
+<tr>
+<td>066</td>
+<td>Dragapult ex / Dusknoir Control</td>
+<td>dragapult_dusknoir</td>
+<td>dragapult_dusknoir</td>
+<td>keep</td>
+<td>dragapult_ex</td>
+<td>Dusknoir self-KO, spread breakpoints, and Hammer/Watchtower control</td>
+</tr>
+<tr>
+<td>067</td>
+<td>Dragapult ex / Munkidori Control</td>
+<td>dragapult_ex</td>
+<td>dragapult_ex</td>
+<td>keep</td>
+<td>—</td>
+<td>Phantom Dive spread with Munkidori and Hammer/Stadium control</td>
+</tr>
+</tbody>
+</table>
+<h2>Existing classes retained</h2>
+<ul>
+<li><code>0</code> <code>dragapult_ex</code> — decks 007, 018, 067; Dragapult ex Stage-2 spread-damage plan without a second structural Stage-2 engine.</li>
+<li><code>1</code> <code>mega_lopunny_ex</code> — decks 003, 004, 012, 022, 028, 064; Switch-tempo Mega Lopunny plan centered on moving from Bench to Active.</li>
+<li><code>2</code> <code>marnies_grimmsnarl_ex</code> — decks 001, 005, 017, 031, 037; Stage-2 dark-energy acceleration with Froslass/Munkidori damage support.</li>
+<li><code>3</code> <code>alakazam</code> — decks 002, 034, 039, 040; Hand-size damage and evolution-trigger draw with Dudunsparce cycling.</li>
+<li><code>4</code> <code>mega_lucario_ex</code> — decks 009, 063; Fast Fighting attacker with discard-to-bench energy acceleration.</li>
+<li><code>5</code> <code>mega_kangaskhan_ex</code> — decks 011, 014, 030, 033, 035; Active-position draw/attack shell with resilient secondary lines.</li>
+<li><code>6</code> <code>festival_lead</code> — decks 010; Festival Grounds bench-scaling double-attack strategy.</li>
+<li><code>7</code> <code>crustle_barbaracle_wall</code> — decks 019, 024, 038; Single-prize wall and denial plans centered on Crustle or Barbaracle.</li>
+<li><code>8</code> <code>meganium_grass_evolution</code> — decks 020, 042; Multi-line Grass evolution board using Meganium and Forest of Vitality.</li>
+<li><code>9</code> <code>team_rockets_mewtwo_ex</code> — decks 021, 059; Team Rocket board-count and benched-energy sacrifice strategy.</li>
+<li><code>10</code> <code>teal_mask_ogerpon_heros_cape</code> — decks 006, 008, 029, 036; Four-Ogerpon energy-stacking beatdown with repeated Teal Dance.</li>
+<li><code>11</code> <code>cynthias_garchomp_ex</code> — decks 013, 060; Cynthia-tagged evolution and Fighting-energy attack engine.</li>
+<li><code>12</code> <code>mega_starmie_ex</code> — decks 044, 045, 053, 062; Water Stage-1 spread attacker paired with Mega Froslass hand-pressure variants.</li>
+<li><code>13</code> <code>archaludon_ex</code> — decks 048, 051, 052, 055; Metal discard-recovery acceleration and durable Stage-1 attacker.</li>
+<li><code>14</code> <code>other</code> — decks none (fallback); Unknown, unmodeled, or not-yet-justified fallback only.</li>
+</ul>
+<h2>Newly appended classes</h2>
+<ul>
+<li><code>15</code> <code>dragapult_dusknoir</code> ← <code>dragapult_ex</code> row 0; decks 043, 057, 066. Rare Candy, bench slots, self-KO Prize concessions, and damage-counter breakpoints systematically change optimal sequencing.</li>
+<li><code>16</code> <code>dragapult_blaziken</code> ← <code>dragapult_ex</code> row 0; decks 061. Rare Candy allocation, bench evolution timing, and persistent energy recovery create a distinct resource plan.</li>
+<li><code>17</code> <code>mega_starmie_dusknoir</code> ← <code>mega_starmie_ex</code> row 12; decks 046, 050. Self-KO Prize tempo and a second evolution line change bench and KO sequencing.</li>
+<li><code>18</code> <code>slowking_toolbox</code> ← <code>mega_kangaskhan_ex</code> row 5; decks 016. Top-deck control and copied-attack selection are structurally unlike Kangaskhan beatdown.</li>
+<li><code>19</code> <code>area_zero_tera_toolbox</code> ← <code>mega_kangaskhan_ex</code> row 5; decks 015, 027. Expanded bench capacity, Tera retention, and cross-board energy routing define decisions.</li>
+<li><code>20</code> <code>pecharunt_area_zero_poison</code> ← <code>mega_kangaskhan_ex</code> row 5; decks 058. Active Pecharunt placement, poison checkup timing, and eight-bench allocation change the win route.</li>
+<li><code>21</code> <code>teal_mask_ogerpon_toolbox</code> ← <code>mega_lopunny_ex</code> row 1; decks 025, 032. Energy stacking/search dominates; the one-copy Lopunny is a matchup option, not the strategy axis.</li>
+<li><code>22</code> <code>mega_gardevoir_leafeon</code> ← <code>mega_lopunny_ex</code> row 1; decks 064. Grand Tree evolution, bench-wide energy allocation, and distributed-energy damage are structural axes.</li>
+<li><code>23</code> <code>erikas_vileplume_ex</code> ← <code>other</code> row 14; decks 047. Multi-line evolution, all-board healing, and sleep/poison tempo merit an explicit prior.</li>
+<li><code>24</code> <code>ns_zoroark_ex</code> ← <code>other</code> row 14; decks 049, 054. Bench attack library construction and copied-attack choice systematically alter actions.</li>
+<li><code>25</code> <code>chandelure_hand_control</code> ← <code>other</code> row 14; decks 056. The policy manages both players' hand sizes, Rare Candy, lock pieces, and nonstandard damage scaling.</li>
+<li><code>26</code> <code>crustle_great_tusk_mill</code> ← <code>crustle_barbaracle_wall</code> row 7; decks 065. Supporter timing and attacks target deck-out progress instead of ordinary Prize tempo.</li>
+<li><code>27</code> <code>hydrapple_meganium</code> ← <code>festival_lead</code> row 6; decks 023, 041. Energy-wide damage, healing attachment, and evolution acceleration replace Festival double attacks.</li>
+<li><code>28</code> <code>mega_venusaur_meganium</code> ← <code>mega_kangaskhan_ex</code> row 5; decks 026. Evolution-line allocation and movable Grass energy dominate; the thin Kangaskhan line is secondary.</li>
+</ul>
+<h2>Other</h2>
+<p><code>other</code> (ID 14) remains an unknown/unmodeled fallback. The audit found every 001–067 deck sufficiently modeled by a stable strategic class, so none remains in Other. Newly promoted classes 23–25 inherit the G1 Other row only because that is the exact historical prior those decks received; RL may now differentiate them.</p>
+<h2>Migration and identity</h2>
+<ul>
+<li>Taxonomy SHA-256: <code>9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60</code></li>
+<li>Exact mapping SHA-256: <code>6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120</code></li>
+<li>Old/new size: 15 → 29; added rows: 14; width: 16 unchanged.</li>
+<li>Policy own embedding: <code>[15,16]</code> → <code>[29,16]</code>; Value own embedding: <code>[15,16]</code> → <code>[29,16]</code>.</li>
+<li>Old rows: bitwise equal in FP32 and portable FP16 artifacts. New rows: exactly equal to declared parent. No unrelated model tensor changed.</li>
+<li>G1 artifact SHA-256 remains <code>aea408e...20fe3</code> (model-only) and <code>cd5c057...de84</code> (portable).</li>
+<li>G2 Seed deployment-effective tensor hash: <code>ffdb3caa42777fd67d6ee3edbb5f9eb8f6d5f9463c4a086a2521c4a33ebde7d3</code>.</li>
+<li>G2 optimizer is fresh with zero state entries, both expanded embeddings included, and the frozen opponent Meta head excluded.</li>
+</ul>
+<h2>Zero-step parity</h2>
+<p><strong>PASS</strong></p>
+<ul>
+<li>Historical own rows tested: 15/15; exact-deck G1 resolution checked: 55/55.</li>
+<li>Policy logits: EXACT; action probabilities: EXACT; greedy actions: EXACT.</li>
+<li>Value: EXACT; Policy adapter output/delta: EXACT; Value adapter output/delta: EXACT.</li>
+<li>G1 unchanged audit: PASS; V1 and V2 strict-load: PASS.</li>
+<li>Evidence: <code>experiments/0043_champion_league_rl/g2_seed_zero_step_parity.json</code>.</li>
+</ul>
+<h2>Readiness</h2>
+<ul>
+<li><code>OWN ARCHETYPE TAXONOMY V2 READY: YES</code></li>
+<li><code>G2 SEED READY FOR RL: YES</code> for the taxonomy/migration gate.</li>
+<li>Overall 0043 formal launch remains governed by the already-existing independent official-engine CPU/CUDA observation/action parity and fresh-version/W&amp;B preflight in DESIGN; this task did not bypass or execute those gates.</li>
+</ul>
+<h2>Human-review boundaries</h2>
+<ul>
+<li><code>062</code> 的上游名称是 “Starmie/Dusknoir”，但 exact list 包含完整 Starmie/Froslass line 且没有 Duskull line；0043 正式显示名已纠正为 <code>Mega Starmie ex / Mega Froslass ex</code>，上游名称仅保留为 provenance。</li>
+</ul>
+<h2>Per-deck lookup assets</h2>
+<ul>
+<li>浏览入口：<code>train/0043_champion_league_rl/assets/decks/index.html</code></li>
+<li>逐套图文详情：<code>train/0043_champion_league_rl/assets/decks/definitions/001/index.html</code> 至 <code>067/index.html</code></li>
+<li>逐套纯文本：<code>train/0043_champion_league_rl/assets/decks/text/001.txt</code> 至 <code>067.txt</code></li>
+<li>每份档案记录 exact 60-card list、官方卡名/类型、Own Archetype V2 分类、战略特点和来源边界。</li>
+<li><code>025/032</code> and <code>064</code> expose old trigger-priority misclassification (thin Lopunny before their actual Ogerpon/Gardevoir axes). V2 corrects them with append rows parent-copied from the exact G1 row for parity.</li>
+<li><code>020</code> stays in the broad Meganium Grass class while <code>026</code> splits: 020 matches that class’s existing multi-line Grass definition, whereas 026 was historically mislabeled Kangaskhan and adds explicit Venusaur energy-transfer sequencing.</li>
+<li>Taxonomy granularity should be revisited only if official-game training evidence shows a stable action-function collision; do not split on card-count tuning alone.</li>
+</ul></body></html>

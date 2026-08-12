@@ -404,6 +404,12 @@ def main() -> int:
     import_phase0_config()
     import_semantic_runtime()
     _, entries = import_decks()
+    # Re-apply the approved append-only training extension after reconstructing
+    # the historical 55-deck FrozenMeta source. This does not alter evaluation.
+    from .import_frozen_pool65 import import_pool
+    import_pool()
+    from .append_user_dragapult_decks import append
+    append()
     import_policies()
     import_evaluation(entries)
     audit = AssetRegistry.load(PROJECT_ROOT).validate_all()

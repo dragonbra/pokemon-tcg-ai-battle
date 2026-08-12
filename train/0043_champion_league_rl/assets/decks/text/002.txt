@@ -1,0 +1,89 @@
+0043 DECK 002 — Alakazam / Dudunsparce
+==============================================================================
+
+IDENTITY
+deck_id: 002
+display_name: Alakazam / Dudunsparce
+upstream_name: Alakazam / Dudunsparce
+display_name_correction: none
+exact_deck_sha256: 3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf
+deck_file_sha256: 0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 3
+own_archetype_id: 3
+own_archetype_name: alakazam
+own_archetype_display_name: Alakazam
+decision: keep
+parent_archetype: none
+embedding_init_from: 3
+tags: stage2, hand_size
+
+STRATEGIC CHARACTERISTICS
+axis: hand-size damage and draw
+definition: Hand-size damage and evolution-trigger draw with Dudunsparce cycling.
+rationale: Hand/deck budget and evolution timing jointly determine attack value.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=19, Trainer=34, Energy=7
+evolution_lines:
+  Dunsparce:
+    - 2× Dudunsparce [66] (Stage 1 Pokémon)
+  Basic / root:
+    - 1× Fezandipiti ex [140] (Basic Pokémon)
+    - 3× Dunsparce [305] (Basic Pokémon)
+    - 1× Shaymin [343] (Basic Pokémon)
+    - 4× Abra [741] (Basic Pokémon)
+  Abra:
+    - 4× Kadabra [742] (Stage 1 Pokémon)
+  Kadabra:
+    - 4× Alakazam [743] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 3× Boss’s Orders [1182] (Supporter)
+  - 1× Lana’s Aid [1184] (Supporter)
+  - 3× Xerosic’s Machinations [1197] (Supporter)
+  - 4× Hilda [1225] (Supporter)
+  - 4× Dawn [1231] (Supporter)
+  - 2× Nighttime Mine [1266] (Stadium)
+energy:
+  - 2× Basic {P} Energy [5]
+  - 1× Enriching Energy [13]
+  - 4× Telepath Psychic Energy [19]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    2 |       5 | Basic {P} Energy | SVE 5 | Energy | Basic Energy
+    1 |      13 | Enriching Energy | SSP 191 | Energy | Special Energy
+    4 |      19 | Telepath Psychic Energy | POR 87 | Energy | Special Energy
+    2 |      66 | Dudunsparce | TEF 129 | Pokémon | Stage 1 Pokémon
+    1 |     140 | Fezandipiti ex | SFA 38 | Pokémon | Basic Pokémon
+    3 |     305 | Dunsparce | JTG 120 | Pokémon | Basic Pokémon
+    1 |     343 | Shaymin | DRI 10 | Pokémon | Basic Pokémon
+    4 |     741 | Abra | MEG 54 | Pokémon | Basic Pokémon
+    4 |     742 | Kadabra | MEG 55 | Pokémon | Stage 1 Pokémon
+    4 |     743 | Alakazam | MEG 56 | Pokémon | Stage 2 Pokémon
+    3 |    1079 | Rare Candy | SVI 191 | Trainer | Item
+    4 |    1081 | Enhanced Hammer | TWM 148 | Trainer | Item
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    1 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    1 |    1129 | Sacred Ash | DRI 168 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    3 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    1 |    1184 | Lana’s Aid | TWM 155 | Trainer | Supporter
+    3 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    4 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1231 | Dawn | PFL 87 | Trainer | Supporter
+    2 |    1266 | Nighttime Mine | ASC 197 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 7, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/002_alakazam_dudunsparce", "legacy_semantic_deck_id": "alakazam_dudunsparce_3f4515092dc5", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

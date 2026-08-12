@@ -9,7 +9,7 @@
   "runtime_dtype": "fp32",
   "semantic_codec": "semantic0031_v2",
   "official_cpu_oracle": "engine/source/ptcgProgram 22",
-  "training_deck_ids": {"first": "001", "last": "065"},
+  "training_deck_ids": {"first": "001", "last": "067"},
   "frozen_evaluation_deck_ids": {"first": "001", "last": "055"},
   "frozen65_evaluation_contract_enabled": false
 }

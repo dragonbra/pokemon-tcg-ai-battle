@@ -1,0 +1,86 @@
+0043 DECK 021 — Team Rocket's Mewtwo ex / Spidops
+==============================================================================
+
+IDENTITY
+deck_id: 021
+display_name: Team Rocket's Mewtwo ex / Spidops
+upstream_name: Team Rocket's Mewtwo ex / Spidops
+display_name_correction: none
+exact_deck_sha256: ead283b0f4b07414749ba86b819f00b9c849f32d965178de6629f63d3901505c
+deck_file_sha256: d827282983301ca54761c6c79830f30d351a07abb46ccbc13a96e072931efdcc
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 9
+own_archetype_id: 9
+own_archetype_name: team_rockets_mewtwo_ex
+own_archetype_display_name: Team Rocket's Mewtwo ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 9
+tags: team_rocket, board_count
+
+STRATEGIC CHARACTERISTICS
+axis: Rocket board and energy sacrifice
+definition: Team Rocket board-count and benched-energy sacrifice strategy.
+rationale: Four Rocket Pokémon and bench energy are explicit attack prerequisites.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=15, Trainer=33, Energy=12
+evolution_lines:
+  Basic / root:
+    - 4× Team Rocket's Tarountula [400] (Basic Pokémon)
+    - 2× Team Rocket's Articuno [414] (Basic Pokémon)
+    - 2× Team Rocket's Mewtwo ex [431] (Basic Pokémon)
+    - 2× Team Rocket's Mimikyu [434] (Basic Pokémon)
+    - 1× Team Rocket's Sneasel [464] (Basic Pokémon)
+  Team Rocket's Tarountula:
+    - 4× Team Rocket's Spidops [401] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 3× Team Rocket's Ariana [1216] (Supporter)
+  - 2× Team Rocket's Archer [1217] (Supporter)
+  - 3× Team Rocket's Giovanni [1218] (Supporter)
+  - 2× Team Rocket's Proton [1220] (Supporter)
+  - 3× Lillie's Determination [1227] (Supporter)
+  - 3× Team Rocket's Factory [1257] (Stadium)
+energy:
+  - 7× Basic {G} Energy [1]
+  - 1× Basic {P} Energy [5]
+  - 4× Team Rocket's Energy [15]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    7 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    1 |       5 | Basic {P} Energy | SVE 5 | Energy | Basic Energy
+    4 |      15 | Team Rocket's Energy | DRI 182 | Energy | Special Energy
+    4 |     400 | Team Rocket's Tarountula | DRI 19 | Pokémon | Basic Pokémon
+    4 |     401 | Team Rocket's Spidops | DRI 20 | Pokémon | Stage 1 Pokémon
+    2 |     414 | Team Rocket's Articuno | DRI 51 | Pokémon | Basic Pokémon
+    2 |     431 | Team Rocket's Mewtwo ex | DRI 81 | Pokémon | Basic Pokémon
+    2 |     434 | Team Rocket's Mimikyu | DRI 87 | Pokémon | Basic Pokémon
+    1 |     464 | Team Rocket's Sneasel | DRI 128 | Pokémon | Basic Pokémon
+    4 |    1094 | Bug Catching Set | TWM 143 | Trainer | Item
+    2 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    1 |    1116 | Energy Switch | SVI 173 | Trainer | Item
+    4 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    4 |    1134 | Team Rocket's Transceiver | DRI 178 | Trainer | Item
+    1 |    1158 | Maximum Belt | TEF 154 | Trainer | Pokémon Tool
+    1 |    1175 | Brave Bangle | WHT 80 | Trainer | Pokémon Tool
+    3 |    1216 | Team Rocket's Ariana | DRI 171 | Trainer | Supporter
+    2 |    1217 | Team Rocket's Archer | DRI 170 | Trainer | Supporter
+    3 |    1218 | Team Rocket's Giovanni | DRI 174 | Trainer | Supporter
+    2 |    1220 | Team Rocket's Proton | DRI 177 | Trainer | Supporter
+    3 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    3 |    1257 | Team Rocket's Factory | DRI 173 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 32, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/021_team_rocket_s_mewtwo_ex_spidops", "legacy_semantic_deck_id": "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

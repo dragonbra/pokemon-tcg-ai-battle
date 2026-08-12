@@ -1,0 +1,91 @@
+0043 DECK 016 — Mega Kangaskhan ex / Crustle
+==============================================================================
+
+IDENTITY
+deck_id: 016
+display_name: Mega Kangaskhan ex / Crustle
+upstream_name: Mega Kangaskhan ex / Crustle
+display_name_correction: none
+exact_deck_sha256: df6f7443719675711c2dcead3559087de996f3b8c43192d55ebfe6182e43cb7c
+deck_file_sha256: c5ea68e8f3fb8692d78eb6d8b9cca98eb03949b36547b6601757e6fe62802a8f
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 5
+own_archetype_id: 18
+own_archetype_name: slowking_toolbox
+own_archetype_display_name: Slowking Toolbox
+decision: split
+parent_archetype: mega_kangaskhan_ex
+embedding_init_from: 5
+tags: toolbox, topdeck_control, copied_attack
+
+STRATEGIC CHARACTERISTICS
+axis: top-deck copied-attack toolbox
+definition: Slowking Seek Inspiration toolbox that arranges non-Rule-Box attackers on top of the deck.
+rationale: Top-deck control and copied-attack selection are structurally unlike Kangaskhan beatdown.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=21, Trainer=31, Energy=8
+evolution_lines:
+  Gurdurr:
+    - 1× Conkeldurr [115] (Stage 2 Pokémon)
+  Basic / root:
+    - 1× Fezandipiti ex [140] (Basic Pokémon)
+    - 2× Kyurem [144] (Basic Pokémon)
+    - 4× Slowpoke [162] (Basic Pokémon)
+    - 2× Smoochum [183] (Basic Pokémon)
+    - 2× Latias ex [184] (Basic Pokémon)
+    - 3× Mega Kangaskhan ex [756] (Basic Pokémon)
+    - 1× Meowth ex [1071] (Basic Pokémon)
+  Slowpoke:
+    - 4× Slowking [163] (Stage 1 Pokémon)
+  Primeape:
+    - 1× Annihilape [224] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 4× Ciphermaniac’s Codebreaking [1188] (Supporter)
+  - 1× Colress’s Tenacity [1194] (Supporter)
+  - 1× Hilda [1225] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 4× Academy at Night [1248] (Stadium)
+energy:
+  - 4× Basic {P} Energy [5]
+  - 4× Telepath Psychic Energy [19]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    4 |       5 | Basic {P} Energy | SVE 5 | Energy | Basic Energy
+    4 |      19 | Telepath Psychic Energy | POR 87 | Energy | Special Energy
+    1 |     115 | Conkeldurr | TWM 105 | Pokémon | Stage 2 Pokémon
+    1 |     140 | Fezandipiti ex | SFA 38 | Pokémon | Basic Pokémon
+    2 |     144 | Kyurem | SFA 47 | Pokémon | Basic Pokémon
+    4 |     162 | Slowpoke | SCR 57 | Pokémon | Basic Pokémon
+    4 |     163 | Slowking | SCR 58 | Pokémon | Stage 1 Pokémon
+    2 |     183 | Smoochum | SSP 75 | Pokémon | Basic Pokémon
+    2 |     184 | Latias ex | SSP 76 | Pokémon | Basic Pokémon
+    1 |     224 | Annihilape | SSP 100 | Pokémon | Stage 2 Pokémon
+    3 |     756 | Mega Kangaskhan ex | MEG 104 | Pokémon | Basic Pokémon
+    1 |    1071 | Meowth ex | POR 62 | Pokémon | Basic Pokémon
+    1 |    1088 | Prime Catcher | TEF 157 | Trainer | Item
+    4 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    4 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    1 |    1123 | Switch | SVI 194 | Trainer | Item
+    3 |    1146 | Wondrous Patch | PFL 94 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    4 |    1188 | Ciphermaniac’s Codebreaking | TEF 145 | Trainer | Supporter
+    1 |    1194 | Colress’s Tenacity | SFA 57 | Trainer | Supporter
+    1 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    4 |    1248 | Academy at Night | SFA 54 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 15, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/016_slowking_toolbox", "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_df6f74437196", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

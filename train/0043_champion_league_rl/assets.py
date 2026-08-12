@@ -296,10 +296,13 @@ class AssetRegistry:
                 evaluation_games += row.games
         if len(self.evaluations) != 1 or len(evaluation_decks) != 55 or evaluation_games != 256:
             raise AssetIntegrityError("FrozenMeta256-V1 must contain exactly 55 decks and 256 games")
+        training_count = sum("training" in deck.roles for deck in self.decks)
+        if len(self.decks) != 67 or training_count != 67:
+            raise AssetIntegrityError("0043 Training Deck Pool must contain exact decks 001-067")
         return AssetAudit(
             status="PASS",
             deck_count=len(self.decks),
-            training_deck_count=sum("training" in deck.roles for deck in self.decks),
+            training_deck_count=training_count,
             evaluation_deck_count=len(evaluation_decks),
             evaluation_games=evaluation_games,
             policy_ids=tuple(sorted(policies)),
