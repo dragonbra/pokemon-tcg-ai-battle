@@ -1,0 +1,22 @@
+{
+  "archetype": "Mega Starmie ex / Dusknoir",
+  "deck_id": "mega_starmie_ex_dusknoir_46fd6cbdd4d2",
+  "exact_deck_sha256": "46fd6cbdd4d2c750e3abeee10c80be2e499aa4c8c96cb2e35ab704ba3acb8230",
+  "pool_id": "0812_top100_top500_plus_limitless_self_destruct_dragapult_v2",
+  "provenance": {
+    "binding_counts": {
+      "submission_date_exact_score_mismatch": 1
+    },
+    "segment": "potential_101_500",
+    "selection_rank": 350,
+    "source_ranks": [
+      350
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    1031,
+    133
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

@@ -1,0 +1,21 @@
+{
+  "archetype": "Dragapult ex",
+  "deck_id": "dragapult_ex_daa1cce90790",
+  "exact_deck_sha256": "daa1cce9079016e357f7ab3f1666f0ecc4ddca3b8e4131b88ade164c14ddcb4c",
+  "pool_id": "0812_top100_top500_plus_limitless_self_destruct_dragapult_v2",
+  "provenance": {
+    "binding_counts": {
+      "submission_date_exact_score_mismatch": 1
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      21
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    121
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

@@ -1,0 +1,18 @@
+{
+  "archetype": "Chandelure / Sylveon",
+  "deck_id": "chandelure_sylveon_17872b59494a",
+  "exact_deck_sha256": "17872b59494a351c03599017c4c978889d941745c83f75be61ff1d47ae746048",
+  "pool_id": "0812_top100_top500_plus_limitless_self_destruct_dragapult_v2",
+  "provenance": {
+    "segment": "top100_new_archetype",
+    "source_ranks": [
+      48
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-12-top100-exact.json"
+  },
+  "representative_card_ids": [
+    164,
+    145
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

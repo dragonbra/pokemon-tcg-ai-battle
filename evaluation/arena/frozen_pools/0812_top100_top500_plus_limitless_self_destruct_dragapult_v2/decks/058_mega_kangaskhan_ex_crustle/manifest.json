@@ -1,0 +1,19 @@
+{
+  "archetype": "Mega Kangaskhan ex / Crustle",
+  "deck_id": "mega_kangaskhan_ex_crustle_15f87ee2cd11",
+  "exact_deck_sha256": "15f87ee2cd1150c0404210c59bf7ec88e40efc0fc953002f534370dd711a17e5",
+  "pool_id": "0812_top100_top500_plus_limitless_self_destruct_dragapult_v2",
+  "provenance": {
+    "segment": "top500_limitless_counter_selection",
+    "selection_purpose": "dragapult_counter",
+    "source_ranks": [
+      159
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+  },
+  "representative_card_ids": [
+    756,
+    96
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

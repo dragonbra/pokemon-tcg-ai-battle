@@ -1,0 +1,66 @@
+{
+  "additions": {
+    "limitless_self_destruct_dragapult": "dragapult_ex_dusknoir_self_destruct_d8454cc8351f",
+    "top100_new_archetype": "chandelure_sylveon_17872b59494a",
+    "top500_limitless_counter_selections": [
+      "mega_kangaskhan_ex_crustle_15f87ee2cd11",
+      "team_rocket_s_mewtwo_ex_spidops_fba1f87c7115",
+      "cynthia_s_garchomp_ex_roserade_3f8ee4b51dd3",
+      "dragapult_ex_blaziken_ex_b4ed553f1dc4",
+      "mega_starmie_ex_dusknoir_654f54a66c95"
+    ]
+  },
+  "deck_count": 62,
+  "derived_from": {
+    "manifest_sha256": "9b23167b3f053683efcd5abcee846458801a0fc9ea13f457458115ffff606140",
+    "pool_id": "0806_kaggle_top100_plus_v1"
+  },
+  "policies": {
+    "main": {
+      "archive": "archive/pretrained/0031_friend_0806_epoch11_best_validation_loss",
+      "asset_id": "0031-friend-0806-epoch11-best-validation-loss",
+      "exact_deck_conditioned": true,
+      "policy_id": "Policy-0806",
+      "role": "main",
+      "shared_across_decks": true,
+      "weights_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8"
+    },
+    "opponent": {
+      "archive": "archive/pretrained/0019_universal_winner_bc_0730_epoch13",
+      "asset_id": "0019-0730-epoch13",
+      "deployment_source_id": 0,
+      "policy_id": "Policy-0019",
+      "role": "opponent",
+      "shared_across_decks": true,
+      "weights_sha256": "da9b13d6f82d19d4521b0bf43369adf5a41e9b4fd752795cc77b5c4ba467e5bb"
+    }
+  },
+  "policy_runtimes": {
+    "main": {
+      "path": "policies/policy_0806",
+      "tree_sha256": "5b766d3681955ff62feb575b58e6b9c36652bf67aef73dd200d6d6120ff4c4c1"
+    },
+    "opponent": {
+      "path": "policies/policy_0019",
+      "tree_sha256": "b7561fcaa975df282e57701259c8d28178266b48283db34970e83806d1455e0e"
+    }
+  },
+  "pool_id": "0812_top100_top500_plus_limitless_self_destruct_dragapult_v2",
+  "schedule_path": "schedule.json",
+  "schedule_sha256": "1d0a4561a2ad808647369860937227437b3de42d8200a13e510296d81daf927d",
+  "schema_version": "evaluation_frozen_distribution_v1",
+  "source_snapshot": {
+    "path": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-12-top100-exact.json",
+    "sha256": "7c33be3cddb9cef3319337b4e52aa784477bcb553c949fce4ed1fee1c25acf08"
+  },
+  "total_games": 256,
+  "usage_contract": {
+    "arena_validation": true,
+    "final_frozen_evaluation": true,
+    "fixed_integer_counts": true,
+    "official_engine_required": true,
+    "ppo_rollout_batch": true,
+    "reward": "terminal_win_loss_only",
+    "runtime_resampling": false
+  }
+}

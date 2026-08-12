@@ -1,0 +1,23 @@
+{
+  "archetype": "Cynthia's Garchomp ex / Roserade",
+  "deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
+  "exact_deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+  "pool_id": "0812_top100_top500_plus_limitless_self_destruct_dragapult_v2",
+  "provenance": {
+    "binding_counts": {
+      "leaderboard_score": 1,
+      "submission_date_exact_score_mismatch": 1
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      56,
+      66
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    381
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}
