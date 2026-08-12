@@ -38,10 +38,16 @@ def _validate_record(record: Mapping[str, Any]) -> int:
     return games
 
 
-def validate_combat_mat_index(payload: Mapping[str, Any]) -> None:
-    """Require both the 55-deck main view and the 14-axis aggregate view."""
-    if payload.get("catalog_decks") != CATALOG_DECKS:
-        raise ValueError("Combat Mat index must declare 55 catalog decks")
+def validate_combat_mat_index(
+    payload: Mapping[str, Any], *, expected_catalog_decks: int = CATALOG_DECKS
+) -> None:
+    """Require the configured deck main view and 14-axis aggregate view."""
+    if expected_catalog_decks <= 0:
+        raise ValueError("Combat Mat expected catalog deck count must be positive")
+    if payload.get("catalog_decks") != expected_catalog_decks:
+        raise ValueError(
+            f"Combat Mat index must declare {expected_catalog_decks} catalog decks"
+        )
     meta = _records(payload.get("meta_archetype_aggregates"), "index meta rows")
     if [item.get("class_id") for item in meta] != list(range(META_ARCHETYPES)):
         raise ValueError("Combat Mat index must contain ordered meta classes 0-13")
@@ -50,9 +56,14 @@ def validate_combat_mat_index(payload: Mapping[str, Any]) -> None:
         raise ValueError("Combat Mat index must contain the class-14 Other row")
 
     catalog_rows = _records(payload.get("catalog"), "index catalog")
-    expected_numbers = [f"{number:03d}" for number in range(1, CATALOG_DECKS + 1)]
+    expected_numbers = [
+        f"{number:03d}" for number in range(1, expected_catalog_decks + 1)
+    ]
     if [str(item.get("deck_number")) for item in catalog_rows] != expected_numbers:
-        raise ValueError("Combat Mat index must contain ordered decks 001-055")
+        raise ValueError(
+            "Combat Mat index must contain ordered decks "
+            f"001-{expected_catalog_decks:03d}"
+        )
     for item in catalog_rows:
         if item.get("status") not in {"tested", "pending"}:
             raise ValueError("Combat Mat index deck status must be tested or pending")
