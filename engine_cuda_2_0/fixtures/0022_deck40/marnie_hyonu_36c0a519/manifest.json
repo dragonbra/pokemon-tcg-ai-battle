@@ -1,0 +1,13 @@
+{
+    "deck_id":  "marnie_hyonu_36c0a519",
+    "decoder_ref":  "foundation",
+    "display_name":  "Marnie / Froslass — hyonu0620",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 271; player hyonu0620; exact deck hash 36c0a5190eb7; episode 89017885",
+                       "source":  "kaggle_episode:89017885"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

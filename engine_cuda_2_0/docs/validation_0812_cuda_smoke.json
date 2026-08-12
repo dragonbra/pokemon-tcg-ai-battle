@@ -1,0 +1,39 @@
+{
+  "schema_version": "engine_cuda_2_0_cuda_smoke_v1",
+  "date": "2026-08-12",
+  "status": "PASS",
+  "device": "NVIDIA GeForce RTX 3060 Laptop GPU",
+  "container": "pytorch/pytorch:2.10.0-cuda13.0-cudnn9-devel",
+  "pool_id": "0812_top100_top500_plus_limitless_self_destruct_dragapult_v2",
+  "pool_decks": 62,
+  "schedule_slots": 256,
+  "source_checkpoint_sha256": "11ac5c9a40ab46536a1bc651c388617edac4d7c5c4e1e2de1476d3317e7ad7f3",
+  "portable_checkpoint_sha256": "3f6683b0d916c72a31f3f487edb597c0cec4aedf529a236a4effacb177de89db",
+  "portable_conversion_audit": {
+    "source_keys": 209,
+    "portable_keys": 209,
+    "key_sets_equal": true,
+    "fp16_cast_exact_for_every_tensor": true,
+    "portable_floating_dtype": "fp16",
+    "runtime_dtype": "fp32"
+  },
+  "cuda_extension_sha256": "e13267c758b628079d723f79c41ce848f7f0a734f983ca06c4633b9f885c613a",
+  "official_rules_sha256": "e8bb8537ccadc5d77b75c4198ffb1467d9b73d119e1e8c6325a9e5cd503a80e6",
+  "tests": [
+    {"deck_number": "006", "archetype": "Teal Mask Ogerpon ex / Hero's Cape", "result_sha256": "7fb3d3c6810845c712b69b21e6a7643bf0fba99a89af210a2b9ab5d9afa657c4"},
+    {"deck_number": "056", "archetype": "Chandelure / Sylveon", "result_sha256": "48cf4eff393741a3d33b0df5c83144be2787564204135cfc58e04e7427dca25e"},
+    {"deck_number": "057", "archetype": "Dragapult ex / Dusknoir (Self-Destruct)", "result_sha256": "399839906838ebc650865890c24f38e668240f4de883ccbf690323cb9a5e8616"},
+    {"deck_number": "058", "archetype": "Mega Kangaskhan ex / Crustle", "result_sha256": "e6bf22fe2fdb825ee7aa4761b8629e1875019dc7c8ed31a010fb37b6e321de86"},
+    {"deck_number": "059", "archetype": "Team Rocket's Mewtwo ex / Spidops", "result_sha256": "5224a4a46c4800723085fca27ae4b58be9e078022580fb55824ff51cf283d504"},
+    {"deck_number": "060", "archetype": "Cynthia's Garchomp ex / Roserade", "result_sha256": "e32b3e84714554a04752de529d549b50219f0ee29b7af94c259cff4fa321c1ad"},
+    {"deck_number": "061", "archetype": "Dragapult ex / Blaziken ex", "result_sha256": "b2af9e367f740fcb158a041106ab4838624eca1c6bbe81a939ac43b3a32b573e"},
+    {"deck_number": "062", "archetype": "Mega Starmie ex / Dusknoir", "result_sha256": "806b2efa43458f0da9425eaa057c244464dba68bea21a906d3228719e9d68b37"}
+  ],
+  "per_test_contract": {
+    "games": 1,
+    "collector_errors": 0,
+    "candidate_identity_audit": "PASS",
+    "opponent_identity_audit": "PASS"
+  },
+  "scope_note": "Finite end-to-end CUDA smoke evidence; this is not the formal 2048-game strength evaluation."
+}

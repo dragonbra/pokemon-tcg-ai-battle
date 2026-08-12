@@ -1,0 +1,71 @@
+{
+  "name": "generic_smoke_v1",
+  "abi_version": 1,
+  "rule_pack_version": 1,
+  "metadata": {
+    "semantic_status": "prototype_only_not_official_engine_truth",
+    "deck_specific": false,
+    "known_divergence": "Ninetales 660 borrowing Amarys 1207 delayed effect is a named error"
+  },
+  "actions": [
+    {
+      "action_id": 0,
+      "name": "end_turn",
+      "option_type": 1,
+      "card_id": 0,
+      "flags": 0,
+      "program": [
+        {"opcode": "END_TURN", "target": "ACTOR"},
+        {"opcode": "HALT"}
+      ]
+    },
+    {
+      "action_id": 1,
+      "name": "draw_one",
+      "option_type": 2,
+      "card_id": 0,
+      "flags": 0,
+      "program": [
+        {"opcode": "DRAW", "target": "ACTOR", "arg0": 1},
+        {"opcode": "END_TURN", "target": "ACTOR"},
+        {"opcode": "HALT"}
+      ]
+    },
+    {
+      "action_id": 2,
+      "name": "damage_opponent_active",
+      "option_type": 3,
+      "card_id": 0,
+      "flags": 0,
+      "program": [
+        {"opcode": "DAMAGE_ACTIVE", "target": "OPPONENT", "arg0": 30},
+        {"opcode": "CHECK_KNOCKOUT", "target": "OPPONENT"},
+        {"opcode": "END_TURN", "target": "ACTOR"},
+        {"opcode": "HALT"}
+      ]
+    },
+    {
+      "action_id": 3,
+      "name": "heal_own_active",
+      "option_type": 4,
+      "card_id": 0,
+      "flags": 0,
+      "program": [
+        {"opcode": "HEAL_ACTIVE", "target": "ACTOR", "arg0": 10},
+        {"opcode": "END_TURN", "target": "ACTOR"},
+        {"opcode": "HALT"}
+      ]
+    },
+    {
+      "action_id": 4,
+      "name": "known_divergence_probe",
+      "option_type": 5,
+      "card_id": 660,
+      "flags": 0,
+      "program": [
+        {"opcode": "DELAY_EFFECT", "target": "ACTOR", "arg0": 660, "arg1": 1207},
+        {"opcode": "HALT"}
+      ]
+    }
+  ]
+}

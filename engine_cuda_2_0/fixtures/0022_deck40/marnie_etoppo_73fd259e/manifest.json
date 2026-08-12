@@ -1,0 +1,13 @@
+{
+    "deck_id":  "marnie_etoppo_73fd259e",
+    "decoder_ref":  "foundation",
+    "display_name":  "Marnie / Froslass / Yveltal — e-toppo + kurupical",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 24; player e-toppo + kurupical; exact deck hash 73fd259ebed5; episode 89016095",
+                       "source":  "kaggle_episode:89016095"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

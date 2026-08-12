@@ -1,0 +1,11 @@
+/build/
+/build_sm86/
+/artifacts/
+/.pytest_cache/
+/**/__pycache__/
+*.py[cod]
+
+# Generated from competition-use-only engine sources. Never package these.
+/generated/private/
+/rules/private/
+*.ptcgr

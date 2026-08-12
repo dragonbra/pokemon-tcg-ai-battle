@@ -1,0 +1,13 @@
+{
+    "deck_id":  "marnie_haggle_be5107ce",
+    "decoder_ref":  "foundation",
+    "display_name":  "Marnie / Froslass — haggle",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 1; player haggle; exact deck hash be5107ce4e96; episode 88977670",
+                       "source":  "kaggle_episode:88977670"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

@@ -1,0 +1,13 @@
+{
+    "deck_id":  "marnie_mirai_79675807",
+    "decoder_ref":  "foundation",
+    "display_name":  "Marnie / Froslass — MIRAI LAB",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 166; player MIRAI LAB; exact deck hash 79675807d119; episode 89017194",
+                       "source":  "kaggle_episode:89017194"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

@@ -1,0 +1,13 @@
+{
+    "deck_id":  "dragapult_lumen_ae4ed2c7",
+    "decoder_ref":  "foundation",
+    "display_name":  "Dragapult / Dusknoir — LumenLiquidity",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 41; player LumenLiquidity; exact deck hash ae4ed2c7455b; episode 89012305",
+                       "source":  "kaggle_episode:89012305"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

@@ -1,0 +1,13 @@
+{
+    "deck_id":  "dragapult_andrew_0063_0546",
+    "decoder_ref":  "foundation",
+    "display_name":  "Base Dragapult — Andrew Hedrick",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Limitless Andrew Hedrick representative list; Base Dragapult; engine reprint mappings=12",
+                       "source":  "https://labs.limitlesstcg.com/0063/player/0546/decklist"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

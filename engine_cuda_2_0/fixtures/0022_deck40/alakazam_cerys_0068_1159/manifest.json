@@ -1,0 +1,13 @@
+{
+    "deck_id":  "alakazam_cerys_0068_1159",
+    "decoder_ref":  "foundation",
+    "display_name":  "Alakazam / Dudunsparce — Cerys Jones",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Limitless Cerys Jones representative list; Alakazam / Dudunsparce; engine reprint mappings=5",
+                       "source":  "https://labs.limitlesstcg.com/0068/player/1159/decklist"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

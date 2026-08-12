@@ -1,0 +1,13 @@
+{
+    "deck_id":  "raging_bolt_vignesh_0066_0344",
+    "decoder_ref":  "foundation",
+    "display_name":  "Raging Bolt / Ogerpon — Vignesh Krishnan",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Limitless Vignesh Krishnan representative list; Raging Bolt / Ogerpon; engine reprint mappings=7",
+                       "source":  "https://labs.limitlesstcg.com/0066/player/0344/decklist"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}
