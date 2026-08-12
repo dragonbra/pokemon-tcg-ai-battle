@@ -1,0 +1,29 @@
+{
+  "cpu_replicas": [
+    0
+  ],
+  "cuda_replicas": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "evaluation_id": "FrozenMeta256-V1",
+  "frequency_unit_games": 256,
+  "master_seed": 341512806,
+  "schema_version": "0043_frozen_seed_contract_v1",
+  "seat_semantics": "seeded toss winner processes official context 41 and chooses first or second",
+  "seed_derivation_inputs": [
+    "master_seed",
+    "focal_deployment_identity",
+    "opponent_effective_identity",
+    "exact_deck_slot",
+    "replica",
+    "namespace"
+  ],
+  "status": "CONTRACT_FROZEN_SCHEDULE_MATERIALIZATION_PENDING_PHASE5"
+}

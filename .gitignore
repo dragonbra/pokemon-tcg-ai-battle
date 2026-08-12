@@ -13,6 +13,8 @@ venv/
 *.ckpt
 *.safetensors
 !train/0042_full_model_design/assets/allocation_head_bc_v1.pt
+!train/0043_champion_league_rl/assets/policies/definitions/**/*.pt
+!train/0043_champion_league_rl/assets/policies/definitions/**/*.bin
 engine/build/
 data/competition/
 data/raw/episodes/archives/

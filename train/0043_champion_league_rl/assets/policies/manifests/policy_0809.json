@@ -1,0 +1,60 @@
+{
+  "architecture_version": "0031_rule_faithful_semantic_decision_v2",
+  "artifacts": [
+    {
+      "path": "assets/policies/definitions/policy_0809/model.pt",
+      "purpose": "complete_base_checkpoint",
+      "sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f"
+    }
+  ],
+  "components": {
+    "action_decoder": {
+      "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+      "source_policy_id": "Policy-0809"
+    },
+    "final_norm": {
+      "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+      "source_policy_id": "Policy-0809"
+    },
+    "lora": {
+      "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_policy_id": "Policy-0809"
+    },
+    "option_input_encoder": {
+      "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+      "source_policy_id": "Policy-0809"
+    },
+    "option_transformer_layer_0": {
+      "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+      "source_policy_id": "Policy-0809"
+    },
+    "option_transformer_layer_1": {
+      "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+      "source_policy_id": "Policy-0809"
+    },
+    "prototype_encoder": {
+      "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+      "source_policy_id": "Policy-0809"
+    },
+    "state_encoder": {
+      "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+      "source_policy_id": "Policy-0809"
+    }
+  },
+  "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+  "frozen": true,
+  "generation": null,
+  "inference_semantics": {
+    "deploy_mode": "immutable_full_policy",
+    "runtime_dtype": "fp32",
+    "storage_dtype": "fp32"
+  },
+  "parent_policy_id": null,
+  "policy_id": "Policy-0809",
+  "role": "historical_anchor",
+  "schema_version": "0043_policy_manifest_v1",
+  "source": {
+    "imported_at": "2026-08-12T00:00:00+00:00",
+    "imported_from": "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt"
+  }
+}

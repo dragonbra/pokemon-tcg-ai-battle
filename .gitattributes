@@ -6,3 +6,5 @@ evaluation/arena/opponents/*/cg/*.dylib filter=lfs diff=lfs merge=lfs -text
 *.so filter=lfs diff=lfs merge=lfs -text
 archive/pretrained/0042_champion_g1/fp16_reference_048_package/strategy/model.bin filter=lfs diff=lfs merge=lfs -text
 archive/pretrained/0042_champion_g1/source_update_000010.pt filter=lfs diff=lfs merge=lfs -text
+train/0043_champion_league_rl/assets/policies/definitions/**/*.pt filter=lfs diff=lfs merge=lfs -text
+train/0043_champion_league_rl/assets/policies/definitions/**/*.bin filter=lfs diff=lfs merge=lfs -text

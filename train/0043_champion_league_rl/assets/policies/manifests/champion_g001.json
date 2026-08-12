@@ -1,0 +1,52 @@
+{
+  "architecture_version": "0042_strategy_conditioned_model_only_v1",
+  "artifacts": [
+    {
+      "path": "assets/policies/definitions/policy_0809/model.pt",
+      "purpose": "complete_base_checkpoint",
+      "sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f"
+    },
+    {
+      "path": "assets/policies/definitions/champion_g001/source_update_000010.pt",
+      "purpose": "model_only_delta",
+      "sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3"
+    },
+    {
+      "path": "assets/policies/definitions/champion_g001/model.bin",
+      "purpose": "portable_fp16_artifact",
+      "sha256": "cd5c05741aadf16db8bb8ca4f527e02eae431db75c33eba30f291fe89f57de84"
+    }
+  ],
+  "components": {
+    "base": {
+      "artifact_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+      "source_policy_id": "Policy-0809"
+    },
+    "portable_effective": {
+      "artifact_sha256": "cd5c05741aadf16db8bb8ca4f527e02eae431db75c33eba30f291fe89f57de84",
+      "source_policy_id": "Champion-G1"
+    },
+    "trained_delta": {
+      "artifact_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+      "source_policy_id": "Champion-G1"
+    }
+  },
+  "designation": "user_designated_generation_anchor",
+  "effective_policy_sha256": "0804ca9bd9bba58d3815383efdfad9ac817521ca83062fbd04c6982cf71b17c5",
+  "frozen": true,
+  "generation": 1,
+  "inference_semantics": {
+    "deploy_mode": "kaggle_fp16_storage_fp32_runtime_v1",
+    "runtime_dtype": "fp32",
+    "storage_dtype": "fp16"
+  },
+  "parent_policy_id": "Policy-0809",
+  "policy_id": "Champion-G1",
+  "promotion_record": "USER_DESIGNATED_G1_NOT_AUTOMATIC_PROMOTE",
+  "role": "latest_champion",
+  "schema_version": "0043_policy_manifest_v1",
+  "source": {
+    "imported_at": "2026-08-12T00:00:00+00:00",
+    "imported_from": "archive/pretrained/0042_champion_g1"
+  }
+}

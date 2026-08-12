@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>0043 Champion League RL Design</title>
+<style>body{font:16px/1.65 system-ui,sans-serif;max-width:1080px;margin:auto;padding:32px;color:#172033}h1,h2{line-height:1.25}code,pre{background:#f2f5fa;border-radius:6px}code{padding:.1em .3em}pre{padding:16px;overflow:auto}.status{padding:12px 16px;background:#fff4d6;border-left:4px solid #c78600}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd4e0;padding:8px;text-align:left}</style>
+</head><body>
+<h1>0043 Champion League RL Design</h1>
+<p class="status"><strong>Status:</strong> Phase 0 PASS; Phase 1 asset layer implemented; <code>BLOCKED_PRETRAINING_CONTRACT</code>.</p>
+<h2>Scope</h2><p>0043 changes opponent assets, league sampling, PFSP curriculum, telemetry, Frozen evaluation assetization and manual Champion governance. The approved actor/value architecture, PPO loss and optimizer contract, 256-game rollout, action semantics and official engine remain unchanged.</p>
+<h2>Authoritative contracts</h2><p>The project conforms to the 0043 Charter, Promote Champion V2 and repository-wide Frozen Policy Protocol V1. General official rules, current card/engine facts and strategy hypotheses remain separate evidence layers.</p>
+<h2>Asset boundary</h2><pre>approved one-time source
+→ SHA-256 verification
+→ 0043 semantic directory (001 / policy_0809 / champion_g001)
+→ project-relative immutable registry
+→ fail-closed resolution
+→ lane routing / batching</pre>
+<table><thead><tr><th>Domain</th><th>Initial content</th><th>Mutation rule</th></tr></thead><tbody>
+<tr><td>Training Deck Pool</td><td>55 exact meta decks</td><td>Append versioned decks; never edit in place</td></tr>
+<tr><td>Active Policy Pool</td><td>Policy-0809, Champion-G1</td><td>Only complete frozen policies</td></tr>
+<tr><td>FrozenMeta256-V1</td><td>55 decks, exact 256-game frequencies, Policy-0809</td><td>New benchmark version required</td></tr>
+</tbody></table>
+<p>The canonical deck identity is the zero-padded number: immutable <code>001</code>–<code>055</code>, then append-only from <code>056</code>. Archetypes, hashes and historical IDs are metadata. Directories use semantic IDs rather than hashes; SHA-256 remains an integrity field only.</p>
+<h2>Model and PPO</h2><p>Frozen prototype/state/option representations feed the inherited action decoder, strategy/value adapters, value blocks, allocation head and optional prize auxiliary. The canonical config preserves FP32 PPO, three complete shuffled passes, minibatch 2,048, turn-clock GAE 0.95 and all approved learning-rate/KL/loss values.</p>
+<h2>League flow</h2><pre>focal-deck phase
+├─ 128 PFSP: independent deck/policy weakness sampling
+├─  64 uniform: independent training-deck/active-policy sampling
+└─  64 latest: uniform training deck + frozen Champion-G1
+→ seeded lane shuffle → 256 official-engine games</pre>
+<p>PFSP uses Beta(1,1) smoothing and freezes each curriculum for ten updates. Joint deck × policy statistics are diagnostics, not a compatibility gate.</p>
+<h2>Evidence</h2><p>Rollout WR, prize/turn splits and PFSP tails are training diagnostics. Formal strength evidence requires the exact FP16-storage/FP32-runtime candidate, independent full opponent identity, official-engine games and zero error/unfinished/fallback. Promotion remains an explicit human decision.</p>
+<h2>Stage</h2><p>Phase 0 audit and Phase 1 registries are complete. Complete policy reconstruction/no-hybrid isolation, sampler, PFSP, PPO regression, telemetry, Frozen parity and Promote workflow remain hard gates before formal training.</p>
+</body></html>

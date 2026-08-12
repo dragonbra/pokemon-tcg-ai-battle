@@ -1,0 +1,52 @@
+{
+  "active_policy_pool": [
+    "Policy-0809",
+    "Champion-G1"
+  ],
+  "latest_champion_policy_id": "Champion-G1",
+  "policies": [
+    {
+      "artifacts": [
+        {
+          "path": "assets/policies/definitions/policy_0809/model.pt",
+          "purpose": "complete_base_checkpoint",
+          "sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f"
+        }
+      ],
+      "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+      "frozen": true,
+      "generation": null,
+      "manifest_path": "assets/policies/manifests/policy_0809.json",
+      "manifest_sha256": "4fc9945b88bb0bdf6038210f91711a94a528b68bceff2ce758ba525b7eebc6ba",
+      "policy_id": "Policy-0809",
+      "role": "historical_anchor"
+    },
+    {
+      "artifacts": [
+        {
+          "path": "assets/policies/definitions/policy_0809/model.pt",
+          "purpose": "complete_base_checkpoint",
+          "sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f"
+        },
+        {
+          "path": "assets/policies/definitions/champion_g001/source_update_000010.pt",
+          "purpose": "model_only_delta",
+          "sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3"
+        },
+        {
+          "path": "assets/policies/definitions/champion_g001/model.bin",
+          "purpose": "portable_fp16_artifact",
+          "sha256": "cd5c05741aadf16db8bb8ca4f527e02eae431db75c33eba30f291fe89f57de84"
+        }
+      ],
+      "effective_policy_sha256": "0804ca9bd9bba58d3815383efdfad9ac817521ca83062fbd04c6982cf71b17c5",
+      "frozen": true,
+      "generation": 1,
+      "manifest_path": "assets/policies/manifests/champion_g001.json",
+      "manifest_sha256": "b1086daee19e6e9f04c2ca0f9f6749276212ccd3e244628a15d2dc0d34604de6",
+      "policy_id": "Champion-G1",
+      "role": "latest_champion"
+    }
+  ],
+  "schema_version": "0043_policy_registry_v1"
+}
