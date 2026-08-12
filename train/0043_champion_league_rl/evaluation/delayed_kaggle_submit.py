@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import fcntl
 import json
 import os
@@ -72,7 +72,7 @@ def run(*, output_root: Path, scheduled_epoch: float) -> dict[str, Any]:
             raise FileExistsError("one-shot Kaggle receipt already exists")
         if time.time() < scheduled_epoch:
             time.sleep(scheduled_epoch - time.time())
-        started = datetime.now(UTC).isoformat()
+        started = datetime.now(timezone.utc).isoformat()
         # No process signal, CUDA command, or training mutation exists below.
         wandb_updates = _wandb_complete_updates()
         selection = select(
@@ -119,7 +119,7 @@ def run(*, output_root: Path, scheduled_epoch: float) -> dict[str, Any]:
             "returncode": submitted.returncode,
             "stdout": submitted.stdout,
             "stderr": submitted.stderr,
-            "finished_at": datetime.now(UTC).isoformat(),
+            "finished_at": datetime.now(timezone.utc).isoformat(),
         })
         _atomic_json(output_root / "submission_attempt.json", attempt)
         # Even on ambiguous CLI output, inspect existing submissions only; never resubmit.
@@ -154,7 +154,7 @@ def run(*, output_root: Path, scheduled_epoch: float) -> dict[str, Any]:
                 "SUBMISSION_OBSERVED" if found is not None
                 else "UNCERTAIN_NO_RETRY"
             ),
-            "completed_at": datetime.now(UTC).isoformat(),
+            "completed_at": datetime.now(timezone.utc).isoformat(),
         }
         _atomic_json(receipt_path, receipt)
         return receipt
