@@ -3,7 +3,7 @@
   "project_id": "0043_champion_league_rl",
   "deck_identity_contract": "0043_numeric_deck_identity_v1: 001-055 immutable; append from 056; hashes and names are metadata only",
   "policy_directory_contract": "semantic_policy_directories_v1: policy_0809, champion_g001; hashes are integrity metadata only",
-  "status": "BLOCKED_PRETRAINING_CONTRACT",
+  "status": "BLOCKED_FORMAL_TRAINING_PREFLIGHT",
   "active_training_config": "experiments/0043_champion_league_rl/active_training_config.json",
   "active_training_config_sha256": "fe6e1862a9f8660b3b19505898dacf55a2955a07385958639a5cb1f80d94264c",
   "approved_trainable_contract": [
@@ -20,16 +20,16 @@
   "phase_status": {
     "phase_0_audit": "PASS",
     "phase_1_assets": "PASS",
-    "phase_2_sampler": "PENDING",
-    "phase_3_pfsp": "PENDING",
-    "phase_4_telemetry": "PENDING",
-    "phase_5_frozen_evaluation": "PENDING",
-    "phase_6_promote": "PENDING"
+    "phase_2_sampler": "IMPLEMENTED_TESTED",
+    "phase_3_pfsp": "IMPLEMENTED_TESTED",
+    "phase_4_telemetry": "IMPLEMENTED_TESTED",
+    "phase_5_frozen_evaluation": "SCHEDULE_AND_HARD_GATES_IMPLEMENTED_OFFICIAL_GAMES_PENDING",
+    "phase_6_promote": "WORKFLOW_IMPLEMENTED_HUMAN_DECISION_REQUIRED"
   },
   "asset_registries": {
     "decks": {"path": "train/0043_champion_league_rl/assets/decks/registry.json", "sha256": "ade615417d0a4d73db2d42aebdebb9b6c32abd93b5c39f647170d4b5bfb58ece"},
     "policies": {"path": "train/0043_champion_league_rl/assets/policies/registry.json", "sha256": "454c7c7286afc10f5523cf637a5abd4662fb594f1bc718549d54cca453859055"},
-    "evaluation": {"path": "train/0043_champion_league_rl/assets/evaluation/registry.json", "sha256": "aa7c15a314d022c51055b68af397cec052df620bae12c13aecf339f86e5886aa"}
+    "evaluation": {"path": "train/0043_champion_league_rl/assets/evaluation/registry.json", "sha256": "0fe0b4cc55f8966a93a33fde2e80565406be93a62250eda2556f41d687908b5b"}
   },
   "formal_training_authorized": false,
   "human_promotion_decision": "NONE"

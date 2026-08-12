@@ -1,6 +1,6 @@
 # 0043 Champion League RL Design
 
-Status: **Phase 0 PASS; Phase 1 asset layer implemented; `BLOCKED_PRETRAINING_CONTRACT`**
+Status: **CPU implementation and synthetic CUDA forward smoke PASS; `BLOCKED_FORMAL_TRAINING_PREFLIGHT`**
 
 ## Purpose and evidence boundary
 
@@ -41,6 +41,8 @@ The inherited actor uses the 0031 rule-faithful semantic observation/action sche
 
 Prototype, state, and option representation weights remain frozen. PPO remains FP32 with one 256-game on-policy rollout per update, `gamma=1`, turn-clock GAE `0.95`, terminal outcome/value objective, directional prize auxiliary, three complete shuffled data passes at most, and the frozen learning-rate/loss/KL values in `active_training_config.json`.
 
+The inference source required to reconstruct both policy families is frozen below `train/0043_champion_league_rl/semantic_runtime/` with a per-file manifest and tree hash. Runtime code imports only this project-local package. Policy-0809 strict-loads its complete checkpoint; Champion-G1 strict-loads its portable FP16 artifact into FP32 runtime. The fixed synthetic contract batch has no source/team/persona tensor and exercises actor logits or Champion value/strategy decode on CPU and CUDA without changing model semantics.
+
 ## League schedule
 
 ```text
@@ -52,7 +54,7 @@ outer focal-deck phase
   -> 256 official-engine games
 ```
 
-PFSP uses Beta(1,1) smoothing and produces a new immutable curriculum manifest every ten updates. Deck/policy joint statistics are diagnostic only; V2.0 has no compatibility whitelist.
+PFSP uses Beta(1,1) smoothing and produces a new immutable curriculum manifest every ten updates. Its probability floor `0.001`, cap `1.0`, refresh interval and exact `128/64/64` quotas live in `league/config.json`; changing them is a new versioned experiment variable. Deck/policy joint statistics are diagnostic only; V2.0 has no compatibility whitelist.
 
 ## Telemetry and strength claims
 
@@ -60,10 +62,12 @@ Every completed rollout will aggregate raw WR, curriculum identity, deck/policy 
 
 Formal Kaggle-strength evidence materializes a complete candidate as FP16 storage and strict-loads that artifact into FP32 runtime. Candidate and opponent identities are independently audited. CPU-256 and CUDA-2048 remain separate reports with all games terminal and zero error, unfinished, or semantic fallback.
 
+Frozen schedule materialization is identity-bound to focal deployment hash, complete opponent hash, exact numeric deck slot, replica and namespace. CPU-256 is replica 0; CUDA-2048 is eight immutable replicas, and its first 256 jobs equal the CPU frequency unit. Seeded toss identifies the winning Agent, which must process official context 41 and choose first or second; the harness never assigns the seat directly.
+
 ## Current and next stage
 
-- Complete: Phase 0 audit and Phase 1 project-local asset registries/import/integrity validation.
-- Next: complete Policy-0809 and Champion-G1 materializers plus focal/opponent storage-isolation and no-hybrid tests.
-- Then: sampler, PFSP persistence, PPO integration/regression, telemetry, FrozenMeta parity, and manual Promote workflow.
+- Complete: project-local assets/runtime, complete policy materialization and isolation, league sampler, PFSP persistence, one-pass telemetry, frozen schedule materialization, candidate evaluation gates, and explicit human-decision Promote workflow.
+- Complete diagnostic: real CPU forward plus small RTX 5080 FP32 forward parity for Policy-0809 and Champion-G1; greedy actions matched, with maximum absolute errors below `6e-5`. This is implementation evidence only, not policy strength evidence.
+- Remaining before formal training: official-engine CPU rollout smoke, official-observation CPU/CUDA first-divergence audit, and allocation of a fresh formal `V<n>_<tag>` with W&B online preflight.
 
-No formal 0043 training version exists yet. Research smoke output must remain under `.tmp/`; formal versions will use `rl_runs/0043_champion_league_rl/versions/V<n>_<tag>/` and W&B private project `dragon_bra/pokemon-tcg-policy-learning`.
+No formal 0043 training version exists yet, and `formal_training_authorized` remains false. Research smoke output must remain under `.tmp/`; formal versions will use `rl_runs/0043_champion_league_rl/versions/V<n>_<tag>/` and W&B private project `dragon_bra/pokemon-tcg-policy-learning`.

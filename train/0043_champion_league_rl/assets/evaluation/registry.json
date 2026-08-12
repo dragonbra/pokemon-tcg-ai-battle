@@ -284,7 +284,7 @@
       "manifest_sha256": "7fab2cb49642e9a66eb762d4a33af84447bb3a509badf161397d49f5e1f0dcdf",
       "policy_id": "Policy-0809",
       "seed_manifest_path": "assets/evaluation/seeds/frozen_meta_256_v1.json",
-      "seed_manifest_sha256": "2baddf731bb318632b4643cc553d3e6d18edda3a6c54b058439a99d1eb361e34"
+      "seed_manifest_sha256": "4d910912cfeb476ee6f1df220f937b6b206421319953eddca09e647a5f8918b9"
     }
   ],
   "schema_version": "0043_evaluation_registry_v1"

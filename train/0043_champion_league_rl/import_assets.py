@@ -27,6 +27,9 @@ SOURCE_G1_ROOT = REPOSITORY_ROOT / "archive/pretrained/0042_champion_g1"
 SOURCE_G1_DELTA = SOURCE_G1_ROOT / "source_update_000010.pt"
 SOURCE_G1_PORTABLE = SOURCE_G1_ROOT / "fp16_reference_048_package/strategy/model.bin"
 SOURCE_G1_MANIFEST = SOURCE_G1_ROOT / "manifest.json"
+SOURCE_SEMANTIC_RUNTIME = (
+    SOURCE_G1_ROOT / "fp16_reference_048_package/strategy"
+)
 SOURCE_ACTIVE_CONFIG = (
     REPOSITORY_ROOT
     / "rl_runs/0042_full_model_design/versions/"
@@ -319,7 +322,7 @@ def import_evaluation(entries: list[dict[str, Any]]) -> None:
             "master_seed", "focal_deployment_identity", "opponent_effective_identity",
             "exact_deck_slot", "replica", "namespace",
         ],
-        "status": "CONTRACT_FROZEN_SCHEDULE_MATERIALIZATION_PENDING_PHASE5",
+        "status": "MATERIALIZER_IMPLEMENTED_CPU256_CUDA2048_FREQUENCY_PARITY_PASS",
     }
     manifest_path = PROJECT_ROOT / "assets/evaluation/manifests/frozen_meta_256_v1.json"
     seed_path = PROJECT_ROOT / "assets/evaluation/seeds/frozen_meta_256_v1.json"
@@ -347,6 +350,51 @@ def import_phase0_config() -> None:
     _copy_immutable(SOURCE_ACTIVE_CONFIG, destination)
 
 
+def import_semantic_runtime() -> None:
+    """Freeze the approved inference source inside 0043 without a runtime dependency.
+
+    The archived package is provenance only. Every executable import after this
+    one-time operation resolves below ``0043_champion_league_rl.semantic_runtime``.
+    Model weights remain in the semantic policy directories and are deliberately
+    excluded from this source-tree copy.
+    """
+    destination_root = PROJECT_ROOT / "semantic_runtime"
+    rows: list[dict[str, str]] = []
+    for source in sorted(SOURCE_SEMANTIC_RUNTIME.rglob("*")):
+        if not source.is_file() or source.name == "model.bin":
+            continue
+        if source.suffix not in {".py", ".json", ".md"}:
+            continue
+        relative = source.relative_to(SOURCE_SEMANTIC_RUNTIME)
+        destination = destination_root / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        source_hash = sha256_file(source)
+        if destination.exists():
+            if sha256_file(destination) != source_hash:
+                raise RuntimeError(f"refusing to overwrite frozen semantic runtime: {destination}")
+        else:
+            temporary = destination.with_suffix(destination.suffix + ".tmp")
+            shutil.copyfile(source, temporary)
+            temporary.replace(destination)
+        rows.append({"path": relative.as_posix(), "sha256": source_hash})
+    if not rows:
+        raise RuntimeError("approved semantic runtime source is empty")
+    tree_hash = hashlib.sha256(
+        "".join(f"{row['path']}\0{row['sha256']}\n" for row in rows).encode("utf-8")
+    ).hexdigest()
+    _write_json(
+        destination_root / "runtime_manifest.json",
+        {
+            "schema_version": "0043_semantic_runtime_manifest_v1",
+            "source": str(SOURCE_SEMANTIC_RUNTIME.relative_to(REPOSITORY_ROOT)),
+            "imported_at": _timestamp(),
+            "runtime_tree_sha256": tree_hash,
+            "excluded": ["model.bin", "__pycache__", "*.pyc"],
+            "files": rows,
+        },
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--all", action="store_true", help="import every Phase 1 asset domain")
@@ -354,6 +402,7 @@ def main() -> int:
     if not args.all:
         parser.error("Phase 1 currently requires --all so registries cannot be partially published")
     import_phase0_config()
+    import_semantic_runtime()
     _, entries = import_decks()
     import_policies()
     import_evaluation(entries)

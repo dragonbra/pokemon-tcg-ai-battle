@@ -1,0 +1,21 @@
+{
+  "schema_version": "0043_league_config_v1",
+  "rollout_games_per_update": 256,
+  "branches": {
+    "pfsp": 128,
+    "uniform": 64,
+    "latest_champion": 64
+  },
+  "seat_slots": {
+    "focal_first": 128,
+    "focal_second": 128
+  },
+  "deck_policy_sampling": "independent",
+  "pfsp": {
+    "prior": "Beta(1,1)",
+    "refresh_every_updates": 10,
+    "minimum_probability": 0.001,
+    "maximum_probability": 1.0
+  },
+  "notes": "The cap is intentionally feasible for the initial two-policy pool. Changing either bound is a new versioned experiment variable."
+}

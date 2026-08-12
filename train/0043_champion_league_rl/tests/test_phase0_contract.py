@@ -49,4 +49,4 @@ def test_experiment_manifest_hashes_every_published_registry() -> None:
         path = ROOT / identity["path"]
         assert hashlib.sha256(path.read_bytes()).hexdigest() == identity["sha256"]
     assert manifest["formal_training_authorized"] is False
-    assert manifest["status"] == "BLOCKED_PRETRAINING_CONTRACT"
+    assert manifest["status"] == "BLOCKED_FORMAL_TRAINING_PREFLIGHT"
