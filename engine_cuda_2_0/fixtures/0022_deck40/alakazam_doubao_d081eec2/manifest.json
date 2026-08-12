@@ -1,0 +1,13 @@
+{
+    "deck_id":  "alakazam_doubao_d081eec2",
+    "decoder_ref":  "foundation",
+    "display_name":  "Alakazam / Shaymin — 豆本豆豆包",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 729; player 豆本豆豆包; exact deck hash d081eec232c9; episode 88787262",
+                       "source":  "kaggle_episode:88787262"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

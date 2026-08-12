@@ -1,0 +1,13 @@
+{
+    "deck_id":  "marnie_nonono_087c86a8",
+    "decoder_ref":  "foundation",
+    "display_name":  "Marnie / Mega Gengar — 诺诺诺诺诺诺诺诺",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 641; player ノノノノノノノノ; exact deck hash 087c86a8091a; episode 88251096",
+                       "source":  "kaggle_episode:88251096"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

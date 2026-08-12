@@ -1,0 +1,20 @@
+{
+  "bad_ordinals": [],
+  "canonical_byte_mismatches": 0,
+  "cases_sha256": "49fb59d2bd17f3502730b3a887f5b26684c3ca9d6af38eacf81024a92fd58831",
+  "completed_cases": 2080,
+  "decisions_compared": 20558750,
+  "draws": 143,
+  "expected_cases": 2080,
+  "games": 104000,
+  "games_per_case": 50,
+  "missing_ordinals": [],
+  "outcome_mismatches": 0,
+  "passed": true,
+  "player0_wins": 49013,
+  "player1_wins": 53042,
+  "state_mismatches": 0,
+  "status_mismatches": 0,
+  "unfinished_battles": 1802,
+  "unexpected_ordinals": []
+}

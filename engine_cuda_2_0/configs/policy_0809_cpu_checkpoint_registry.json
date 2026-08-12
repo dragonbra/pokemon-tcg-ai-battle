@@ -1,0 +1,30 @@
+{
+  "schema_version": "0040_policy_identity_registry_v1",
+  "policies": [
+    {
+      "policy_id": "Policy-0809-CPU-checkpoint-2.0",
+      "policy_kind": "immutable_pretrained",
+      "parent_policy_id": null,
+      "model_schema_version": "0031_model_only_checkpoint_v1",
+      "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+      "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+      "base_checkpoint": {
+        "path": "archive/pretrained/0031_friend_0809_gsb_v5_value_v9/model.pt",
+        "sha256": "11ac5c9a40ab46536a1bc651c388617edac4d7c5c4e1e2de1476d3317e7ad7f3"
+      },
+      "trained_checkpoint": null,
+      "components": {
+        "prototype_encoder": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297"},
+        "state_encoder": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270"},
+        "option_input_encoder": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083"},
+        "option_transformer_layer_0": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe"},
+        "option_transformer_layer_1": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1"},
+        "final_norm": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d"},
+        "lora": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+        "action_decoder": {"source_policy_id": "Policy-0809-CPU-checkpoint-2.0", "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff"}
+      },
+      "created_from_update": null,
+      "effective_policy_sha256": "f9069b5ca594239f5ae4d8455eda77740538c8b9ddc6a3d4bd54a50b692f659e"
+    }
+  ]
+}

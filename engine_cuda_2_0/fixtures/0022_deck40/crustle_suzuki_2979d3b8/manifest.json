@@ -1,0 +1,13 @@
+{
+    "deck_id":  "crustle_suzuki_2979d3b8",
+    "decoder_ref":  "foundation",
+    "display_name":  "Pure Crustle — T.Suzuki",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 331; player T.Suzuki; exact deck hash 2979d3b83436; episode 88783473",
+                       "source":  "kaggle_episode:88783473"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

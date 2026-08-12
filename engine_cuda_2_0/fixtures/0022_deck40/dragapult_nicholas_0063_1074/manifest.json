@@ -1,0 +1,13 @@
+{
+    "deck_id":  "dragapult_nicholas_0063_1074",
+    "decoder_ref":  "foundation",
+    "display_name":  "Dragapult / Dusknoir — Nicholas Moffitt",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Limitless Nicholas Moffitt representative list; Dragapult / Dusknoir; engine reprint mappings=14",
+                       "source":  "https://labs.limitlesstcg.com/0063/player/1074/decklist"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

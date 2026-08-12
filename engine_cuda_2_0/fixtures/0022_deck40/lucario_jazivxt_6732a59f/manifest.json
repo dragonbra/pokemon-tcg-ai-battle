@@ -1,0 +1,13 @@
+{
+    "deck_id":  "lucario_jazivxt_6732a59f",
+    "decoder_ref":  "foundation",
+    "display_name":  "Pure Lucario — jazivxt",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 710; player jazivxt; exact deck hash 6732a59f188e; episode 88763519",
+                       "source":  "kaggle_episode:88763519"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

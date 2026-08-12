@@ -1,0 +1,13 @@
+{
+    "deck_id":  "cynthia_neddy_0062_0243",
+    "decoder_ref":  "foundation",
+    "display_name":  "Cynthia / Spiritomb — Neddy Kosek",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Limitless Neddy Kosek representative list; Cynthia / Spiritomb; engine reprint mappings=8",
+                       "source":  "https://labs.limitlesstcg.com/0062/player/0243/decklist"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

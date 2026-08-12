@@ -1,0 +1,54 @@
+{
+  "cards": {
+    "1252": {
+      "card_name": "Gravity Mountain",
+      "seeds_observed": 50,
+      "stadium_to_trash_events": 76
+    },
+    "1267": {
+      "card_name": "Lumiose City",
+      "seeds_observed": 44,
+      "stadium_ability_choices": 172,
+      "stadium_ability_seeds": 31,
+      "stadium_to_trash_events": 50
+    },
+    "58": {
+      "attack_events": 128,
+      "card_name": "Great Tusk",
+      "seeds_observed": 50
+    }
+  },
+  "decisions_compared": 28783,
+  "games": 150,
+  "pairs": [
+    {
+      "decisions_compared": 10069,
+      "left_deck": "063_mega_lucario_ex_solrock",
+      "left_wins": 5,
+      "right_deck": "064_mega_lopunny_ex_mega_froslass_ex",
+      "right_wins": 45,
+      "seeds": 50
+    },
+    {
+      "decisions_compared": 8655,
+      "left_deck": "063_mega_lucario_ex_solrock",
+      "left_wins": 23,
+      "right_deck": "065_crustle_great_tusk",
+      "right_wins": 27,
+      "seeds": 50
+    },
+    {
+      "decisions_compared": 10059,
+      "left_deck": "064_mega_lopunny_ex_mega_froslass_ex",
+      "left_wins": 42,
+      "right_deck": "065_crustle_great_tusk",
+      "right_wins": 8,
+      "seeds": 50
+    }
+  ],
+  "schema_version": "frozen65_targeted_semantic_v1",
+  "state_mismatches": 0,
+  "status_mismatches": 0,
+  "outcome_mismatches": 0,
+  "unfinished_battles": 0
+}

@@ -1,0 +1,13 @@
+{
+    "deck_id":  "cynthia_nuunohjo_c187f05a",
+    "decoder_ref":  "foundation",
+    "display_name":  "Cynthia / Spiritomb — NuuNohjo",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 861; player NuuNohjo; exact deck hash c187f05abd95; episode 88786072",
+                       "source":  "kaggle_episode:88786072"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

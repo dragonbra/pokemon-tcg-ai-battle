@@ -1,0 +1,13 @@
+{
+    "deck_id":  "marnie_xiaodouzi_e05c752b",
+    "decoder_ref":  "foundation",
+    "display_name":  "Marnie / Froslass — XIAODOUZI",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 613; player XIAODOUZI; exact deck hash e05c752b79d3; episode 88645719",
+                       "source":  "kaggle_episode:88645719"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}

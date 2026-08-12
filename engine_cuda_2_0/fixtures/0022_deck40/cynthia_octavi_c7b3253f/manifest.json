@@ -1,0 +1,13 @@
+{
+    "deck_id":  "cynthia_octavi_c7b3253f",
+    "decoder_ref":  "foundation",
+    "display_name":  "Cynthia / Spiritomb — Octavi Grau",
+    "focal":  false,
+    "provenance":  {
+                       "captured_at":  "2026-07-31",
+                       "evidence":  "Kaggle rank 13; player Octavi Grau; exact deck hash c7b3253feaa4; episode 88984591",
+                       "source":  "kaggle_episode:88984591"
+                   },
+    "role":  "live",
+    "schema_version":  "0022_league_deck_plugin_v1"
+}
