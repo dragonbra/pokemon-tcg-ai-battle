@@ -53,7 +53,7 @@
           "name": "Mega Froslass ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
@@ -962,17 +962,17 @@
         "032"
       ],
       "display_name": "Mega Lopunny ex",
-      "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "draws": 6,
+      "games": 2048,
+      "losses": 698,
       "name": "mega_lopunny_ex",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 7,
       "trigger_card_ids": [
         849
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.65625,
+      "wins": 1344
     },
     {
       "class_id": 2,
@@ -1252,8 +1252,8 @@
     "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
     "status": "PASS"
   },
-  "published_decks": 2,
-  "published_games": 4096,
+  "published_decks": 3,
+  "published_games": 6144,
   "reports": [
     {
       "actual_first_games": 998,
@@ -1426,6 +1426,92 @@
       "wall_seconds": 186.3834206869942,
       "win_rate": 0.57275390625,
       "wins": 1173
+    },
+    {
+      "actual_first_games": 1022,
+      "actual_first_wins": 687,
+      "actual_second_games": 1026,
+      "actual_second_wins": 657,
+      "best_rank": 2,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "a7538d9d8ad2d139ec682370c65a2fba0d3ba219db38416f1e52ee68030b18c4",
+        "portable_checkpoint_sha256": "77b4d53a42252f3f2cc13b873c7362989e190cf18a4e2d2d06af405e7794b5e5",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c",
+      "deck_number": "003",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 6,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "dd63244cb42c5002bb2c7e415e8224e3dc8440ee02743f0db22d9d44594a72cc",
+      "games": 2048,
+      "games_file": "games/003.json",
+      "losses": 698,
+      "observed_players": 6,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.02685546875,
+      "report": "reports/003.html",
+      "representative_cards": [],
+      "schedule_games": 15,
+      "schedule_sha256": "649c6a11c481b22e6c2509ab5d7977e8faa1a9445fea8d860f916d68708185a0",
+      "segment": "top100",
+      "wall_seconds": 215.96383566199802,
+      "win_rate": 0.65625,
+      "wins": 1344
     }
   ],
   "schema": "policy_0809_cuda_seeded2048_index_v1"
