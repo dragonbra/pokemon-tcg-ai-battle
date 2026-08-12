@@ -297,6 +297,14 @@ class PPOTrainer:
             for group in self.optimizer.param_groups
         }
 
+    def set_reference_model(self, reference_model: SemanticActorCritic) -> None:
+        """Replace only the immutable KL anchor; optimizer/model state is untouched."""
+        self.reference = DecoderPolicyHead.copy_from(reference_model)
+        self.reference_parameters = {
+            name: tensor.detach().clone()
+            for name, tensor in reference_model.actor.action_decoder.named_parameters()
+        }
+
     def optimizer_group_manifest(self) -> list[dict[str, object]]:
         gradient_sources = {
             "action_decoder": "PPO policy + entropy + reference KL + Prize actor advantage",

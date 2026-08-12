@@ -1,6 +1,6 @@
 # 0043 Champion League RL Design
 
-Status: **CUDA Engine 2.0, focal-seed parity, policy isolation, PFSP and PPO launch gates PASS; `READY_AWAITING_USER_LAUNCH`**
+Status: **V1 stopped after C002/U20 evidence; mixed-focal V2 routing validated and ready to continue from update 21**
 
 ## Own Archetype Taxonomy V2 (2026-08-13)
 
@@ -58,7 +58,7 @@ The inference source required to reconstruct both policy families is frozen belo
 ## League schedule
 
 ```text
-outer focal-deck phase
+outer opponent-policy phase (focal deck remains a per-lane feature)
   -> 128 PFSP lanes: independent deck and policy weakness draws
   ->  64 uniform lanes: independent Training Deck / Active Policy draws
   ->  64 latest lanes: uniform Training Deck + immutable Champion-G1
@@ -82,10 +82,17 @@ Frozen schedule materialization is identity-bound to focal deployment hash, comp
 
 CUDA 12.8 compilation of the optional `official_continuation_dispatch_smoke` translation unit reached roughly 30 GiB RSS by itself. The self-contained 0043 build entrypoint therefore uses `--parallel 1` and builds only the production dependencies `ptcg_cuda_smoke` and `_ptcg_cuda`; it never invokes the CMake `all` target. This is a build-resource constraint, not a runtime or policy-semantic change.
 
+## Mixed-focal cohort optimization
+
+CUDA resident collection now groups the 256 jobs only by immutable opponent policy identity. Each focal row receives its resident `job_index`, which selects that job's exact `focal_deck_id` and 29-way own-archetype embedding; exact-deck static features remain lane-bound and audited. Policy-0809 and Champion-G1 still use separate complete, immutable resident models, audits, and collector calls. This changes batching only: it does not share weights or caches across policy identities and does not change the 15-way opponent Meta head.
+
+On the same 99 U20 Policy-0809 jobs, old two-focal-cohort execution ran at 2.96 games/s and the mixed-focal cohort at 4.47 games/s (1.51×); outcome, terminal turn, error, and routing status matched for every game. A separate 64-game mixed 002/007 CUDA smoke completed 64/64 with zero error, zero routing failure, and zero feature D2H. V2 starts from the immutable V1 update-21 model-only checkpoint with a fresh optimizer, carries forward the C002 PFSP state, and retains the original G1/update-0 reference-KL anchor.
+
 ## Current and next stage
 
 - Complete: project-local assets/runtime, complete policy materialization and isolation, league sampler, PFSP persistence, one-pass telemetry, frozen schedule materialization, candidate evaluation gates, and explicit human-decision Promote workflow.
 - Complete diagnostic: real CPU forward plus small RTX 5080 FP32 forward parity for Policy-0809 and Champion-G1; greedy actions matched, with maximum absolute errors below `6e-5`. CUDA Engine 2.0 native runtime and PyTorch official-arena reset/classify smokes also pass. These are implementation evidence only, not policy strength evidence.
-- Ready: `V1_focal_002_007` is allocated with its run-local model-only update 0 seed, self-contained PPO entrypoint, CUDA Engine 2.0 extension, exact 002/007 focal schedule, 001–067 × {Policy-0809, Champion-G1} opponent routing, W&B online credentials, and manual-stop/checkpoint-retention contracts. The default entrypoint performs readiness only; `--launch-formal` is the explicit user launch token. A non-formal full-update acceptance completed 256 real CUDA-2.0 games, 20,673 policy boundaries and all three PPO epochs with zero feature D2H and passing routing; it wrote no formal checkpoint, metrics, or W&B run.
+- Complete: `V1_focal_002_007` reached checkpoint 21; its source-update-20 rollout used curriculum C002 and is frozen as the planned optimization boundary. U20 Frozen Policy-0809 CUDA-2048 reports are complete for focal decks 002 and 007.
+- Ready: `V2_mixed_focal_cohorts` is a new formal version and W&B run. It resumes logical source update 21 from the V1 model-only checkpoint with a new optimizer, existing PFSP state, unchanged PPO parameter/loss contract, and the original G1 reference anchor.
 
-No long 0043 rollout or PPO update has started. `formal_training_authorized` remains false only as the deliberate user-owned launch latch; all machine-verifiable launch gates report `READY_AWAITING_USER_LAUNCH`. Research smoke output remains under `.tmp/`; the prepared formal version is `rl_runs/0043_champion_league_rl/versions/V1_focal_002_007/`.
+V1 is immutable and stopped. The next formal output root is `rl_runs/0043_champion_league_rl/versions/V2_mixed_focal_cohorts/`; research benchmark evidence remains under `.tmp/evaluation/0043_mixed_focal_benchmark/`.

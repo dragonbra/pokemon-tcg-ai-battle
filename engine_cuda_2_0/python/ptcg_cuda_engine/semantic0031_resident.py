@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import inspect
 import time
 from typing import Any, Sequence
 
@@ -565,11 +566,17 @@ def run_resident_greedy_jobs(
             ):
                 focal_value = routed.focal_auxiliary
                 if focal_value is None and focal_value_fn is not None:
-                    focal_value = focal_value_fn(
+                    value_args = (
                         routed.validated,
                         routed.state,
                         routed.focal_options,
                     )
+                    if len(inspect.signature(focal_value_fn).parameters) >= 4:
+                        value_args += (
+                            queue.lane_job.index_select(0, policy_lanes)
+                            if bypass is not None else queue.lane_job,
+                        )
+                    focal_value = focal_value_fn(*value_args)
                 focal_decision_sink(
                     semantic=policy_semantic,
                     routed=routed,

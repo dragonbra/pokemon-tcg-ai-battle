@@ -82,13 +82,23 @@ def _config() -> PPOConfig:
     )
 
 
-def _paths() -> dict[str, Path]:
-    root = ROOT / "rl_runs" / PROJECT / "versions" / VERSION
+def _paths(version: str = VERSION) -> dict[str, Path]:
+    root = ROOT / "rl_runs" / PROJECT / "versions" / version
     return {name: root / name for name in ("artifact", "checkpoint", "tensorboard", "wandb")}
 
 
 def _run_id() -> str:
     return "0043-v1-focal-002-007"
+
+
+def _group_jobs_by_opponent_policy(
+    jobs: list[RolloutJob],
+) -> dict[str, list[RolloutJob]]:
+    """Keep policy identities isolated while allowing mixed focal decks per batch."""
+    grouped: dict[str, list[RolloutJob]] = defaultdict(list)
+    for job in jobs:
+        grouped[job.opponent_policy_id].append(job)
+    return grouped
 
 
 def readiness() -> dict[str, Any]:
@@ -200,18 +210,23 @@ def _episode_rows(episodes: list[Any]) -> list[dict[str, Any]]:
     return rows
 
 
-def _checkpoint(model, update: int) -> dict[str, Any]:
+def _checkpoint(model, update: int, *, version: str = VERSION) -> dict[str, Any]:
     return {
         "schema_version": "0043_focal_v1_model_only_v1", "update": update,
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
         "state_dict": {name: value.detach().cpu() for name, value in model.state_dict().items() if value.requires_grad or not name.startswith("actor.") or name.startswith("actor.action_decoder.")},
         "adaptation": {"no_option_lora": True},
         "integrated_flags": model.integrated_flags.metadata(),
-        "metadata": {"project_id": PROJECT, "version": VERSION, "checkpoint_retention": "all", "own_archetype_class_count": 29, "opponent_meta_class_count": 15},
+        "metadata": {"project_id": PROJECT, "version": version, "checkpoint_retention": "all", "own_archetype_class_count": 29, "opponent_meta_class_count": 15},
     }
 
 
-def run(*, updates: int | None, wandb_mode: str, launch_formal: bool) -> None:
+def run(
+    *, updates: int | None, wandb_mode: str, launch_formal: bool,
+    version: str = VERSION, start_update: int = 0,
+    parent_checkpoint: Path | None = None, parent_pfsp_state: Path | None = None,
+    wandb_run_id: str | None = None, wandb_name: str | None = None,
+) -> None:
     if not launch_formal:
         raise RuntimeError("formal 0043 PPO requires explicit --launch-formal")
     if "expandable_segments:True" not in os.environ.get("PYTORCH_CUDA_ALLOC_CONF", os.environ.get("PYTORCH_ALLOC_CONF", "")):
@@ -221,14 +236,28 @@ def run(*, updates: int | None, wandb_mode: str, launch_formal: bool) -> None:
         raise RuntimeError("0043 formal run requires CUDA")
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
-    paths = _paths()
-    if (paths["artifact"] / "training_metrics.jsonl").exists():
-        raise FileExistsError("V1 already contains formal training metrics")
+    paths = _paths(version)
+    used = [str(path) for path in paths.values() if path.exists() and any(path.iterdir())]
+    if used:
+        raise FileExistsError(f"formal version paths are already used: {used}")
     for name in ("tensorboard", "wandb"):
         paths[name].mkdir(parents=True, exist_ok=True)
     deck002 = _cards(registry, "002")
     model, source = load_actor_critic(deck=deck002, device=device, integrated_flags=preset("FULL_MODEL"))
+    if parent_checkpoint is not None:
+        parent = torch.load(parent_checkpoint, map_location="cpu", weights_only=True)
+        if parent.get("schema_version") != "0043_focal_v1_model_only_v1":
+            raise RuntimeError("unsupported 0043 parent checkpoint")
+        incompatible = model.load_state_dict(parent["state_dict"], strict=False)
+        if incompatible.unexpected_keys:
+            raise RuntimeError(f"0043 parent checkpoint has unexpected tensors: {incompatible}")
     trainer = PPOTrainer(model, device=device, config=_config())
+    if parent_checkpoint is not None:
+        reference_model, _ = load_actor_critic(
+            deck=deck002, device=device, integrated_flags=preset("FULL_MODEL")
+        )
+        trainer.set_reference_model(reference_model)
+        del reference_model
     opponents = {
         policy_id: _load_opponent(policy_id, "001", device)
         for policy_id in registry.active_policy_ids
@@ -236,23 +265,39 @@ def run(*, updates: int | None, wandb_mode: str, launch_formal: bool) -> None:
     os.environ.update({
         "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
         "WANDB_PROJECT": "pokemon-tcg-policy-learning",
-        "WANDB_RUN_ID": _run_id(), "WANDB_NAME": "0043 · V1 focal 002/007",
+        "WANDB_RUN_ID": wandb_run_id or _run_id(),
+        "WANDB_NAME": wandb_name or "0043 · V1 focal 002/007",
         "WANDB_RUN_GROUP": PROJECT, "WANDB_DIR": str(paths["wandb"]),
         "WANDB_JOB_TYPE": "ppo_champion_league",
     })
     history = RolloutHistory()
-    pfsp_state = PFSPState()
+    pfsp_state = (
+        PFSPState.load(parent_pfsp_state)
+        if parent_pfsp_state is not None else PFSPState()
+    )
     cumulative_decisions = 0
     status = paths["artifact"] / "status.json"
-    _atomic_json(status, {"state": "running", "checkpoint_update": 0, "wandb_run_id": _run_id()})
+    effective_run_id = wandb_run_id or _run_id()
+    _atomic_json(status, {
+        "state": "running", "checkpoint_update": start_update,
+        "wandb_run_id": effective_run_id,
+        "parent_checkpoint": str(parent_checkpoint) if parent_checkpoint else None,
+        "reference_anchor_update": 0,
+    })
+    if parent_checkpoint is not None:
+        _atomic_torch(
+            paths["checkpoint"] / f"update-{start_update:06d}.pt",
+            _checkpoint(model, start_update, version=version),
+        )
+        pfsp_state.save(paths["artifact"] / "pfsp_state.json")
     with TrainingLogger(paths["artifact"] / "training_metrics.jsonl", paths["tensorboard"]) as logger:
         logger.initialize_wandb({"trainer/update": 0, "checkpoint/update": 0})
-        update = 0
+        update = start_update
         while updates is None or update < updates:
             jobs, deck_weights, policy_weights, curriculum_version = _jobs(
                 update, registry, pfsp_state=pfsp_state
             )
-            by_group: dict[tuple[str, str], list[RolloutJob]] = defaultdict(list)
+            by_group = _group_jobs_by_opponent_policy(jobs)
             league = build_schedule(
                 update=update, seed=430043001 + update,
                 deck_ids=tuple(f"{i:03d}" for i in range(1, 68)),
@@ -261,10 +306,8 @@ def run(*, updates: int | None, wandb_mode: str, launch_formal: bool) -> None:
                 curriculum=pfsp_state.curricula[curriculum_version],
             )
             branch = {row.lane_id: row.branch for row in league}
-            for index, job in enumerate(jobs):
-                by_group[(job.opponent_policy_id, job.focal_deck_id)].append(job)
             episodes, runtime_rows = [], []
-            for (policy_id, focal_deck_id), group in sorted(by_group.items()):
+            for policy_id, group in sorted(by_group.items()):
                 opponent, audit = opponents[policy_id]
                 own_ids = None
                 if policy_id == "Champion-G1":
@@ -302,7 +345,7 @@ def run(*, updates: int | None, wandb_mode: str, launch_formal: bool) -> None:
             ppo = trainer.update(batch, update=update + 1)
             model.set_runtime_own_archetype_ids(None)
             checkpoint_update = update + 1
-            _atomic_torch(paths["checkpoint"] / f"update-{checkpoint_update:06d}.pt", _checkpoint(model, checkpoint_update))
+            _atomic_torch(paths["checkpoint"] / f"update-{checkpoint_update:06d}.pt", _checkpoint(model, checkpoint_update, version=version))
             runtime_metrics: dict[str, float] = {}
             additive = {"rollout/deck_static_cache_hits", "rollout/deck_static_cache_misses", "rollout/lane_routing_audit_failures"}
             for key in set().union(*(row.keys() for row in runtime_rows)):
@@ -328,7 +371,7 @@ def run(*, updates: int | None, wandb_mode: str, launch_formal: bool) -> None:
             cumulative_decisions += sum(len(ep.policy_transitions) for ep in episodes)
             metrics["env/decisions"] = cumulative_decisions
             logger.log(checkpoint_update, metrics)
-            _atomic_json(status, {"state": "running", "checkpoint_update": checkpoint_update, "rollout_source_policy_update": update, "wandb_run_id": _run_id()})
+            _atomic_json(status, {"state": "running", "checkpoint_update": checkpoint_update, "rollout_source_policy_update": update, "wandb_run_id": effective_run_id, "reference_anchor_update": 0})
             update = checkpoint_update
 
 

@@ -18,8 +18,8 @@ HOT_PATH_FILES = (
     "python/ptcg_cuda_engine/semantic0031_bridge.py",
 )
 AUDITED_ROUTING_FILES = {
-    "python/ptcg_cuda_engine/semantic0031_resident.py": "e1ab47a23d933fe2e02c173d53615beb1585da9cd950891f482cfcff395ba6f8",
-    "python/ptcg_cuda_engine/semantic0031_router.py": "0291422ae40b7adaa8e5e7af1ad63276da93e4fad928711bdba060b8778f7573",
+    "python/ptcg_cuda_engine/semantic0031_resident.py": "e9bb6a274c9866e3ffff7576aea12479866d5882d9518144fef4d88a5b635da9",
+    "python/ptcg_cuda_engine/semantic0031_router.py": "b627c4b01df238e08a5441deab466114d980efe30ffa0f558ba634a5fc898d2b",
 }
 EXPECTED_OFFICIAL_API = frozenset({
     "action_bytes", "advance_to_decision", "allocated_bytes", "apply_actions",

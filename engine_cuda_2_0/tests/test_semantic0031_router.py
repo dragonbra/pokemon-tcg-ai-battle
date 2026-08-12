@@ -272,6 +272,46 @@ class Semantic0031RouterTest(unittest.TestCase):
         ]
         torch.testing.assert_close(routed.focal_logprob[0], expected_logprob)
 
+    def test_focal_strategy_receives_compacted_resident_job_indices(self) -> None:
+        focal_model = _Policy(4, 0.0).eval()
+        opponent_model = _Policy(4, 0.0).eval()
+        options = torch.zeros((2, 2, 4))
+        observed: list[int] = []
+
+        def focal_strategy(_validated, _state, _options, job_indices):
+            observed.extend(job_indices.tolist())
+            return (lambda hidden: hidden), {"value": torch.zeros(job_indices.numel())}
+
+        router = Semantic0031ResidentRouter(
+            focal_adapter=_RowAwareAdapter(focal_model, options),
+            opponent_adapter=_RowAwareAdapter(opponent_model, options),
+            same_policy=False,
+            requested_opponent_policy_id="Policy-0809",
+            opponent_identity_audit={
+                "status": "PASS",
+                "requested_policy_id": "Policy-0809",
+                "effective_policy_sha256": "8" * 64,
+            },
+            focal_strategy_fn=focal_strategy,
+            role_compacted=True,
+        )
+        batch = SimpleNamespace(
+            row_id=torch.arange(2),
+            option_mask=torch.ones((2, 2), dtype=torch.bool),
+            min_count=torch.ones(2, dtype=torch.long),
+            max_count=torch.ones(2, dtype=torch.long),
+        )
+        router.route(
+            batch,
+            focal_route=torch.tensor([True, False]),
+            opponent_route=torch.tensor([False, True]),
+            max_select=1,
+            focal_greedy=True,
+            compute_stats=True,
+            job_indices=torch.tensor([7, 11]),
+        )
+        self.assertEqual(observed, [7])
+
     def test_heterogeneous_deck_batch_matches_grouped_and_permuted_reference(self) -> None:
         torch.manual_seed(809)
         model = _DeckAwarePolicy(4, 0.0).eval()

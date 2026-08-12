@@ -31,3 +31,11 @@
 - Use the 0042 PPO protocol and trainable boundary unchanged. The only runtime change is the validated CUDA Engine 2.0 backend and the project-local multi-policy/deck routing adapter.
 - Mirror sampled-rollout, rolling 100/500/2000, per focal deck, per opponent policy, per opponent deck, branch, prize, PPO/KL, throughput, cache, D2H and routing-health scalars to canonical JSONL, TensorBoard and private W&B. These diagnose and locate candidate updates; they are not frozen greedy strength evidence.
 - Mark the project `READY_AWAITING_USER_LAUNCH`. The long run remains unstarted and requires the user's explicit `--launch-formal` authorization.
+
+## 2026-08-13: freeze V1 at C002 and continue with mixed-focal cohorts
+
+- Freeze V1 after checkpoint 21. Its source-update-20 rollout completed under C002; no V1 files will receive further training metrics or checkpoints.
+- Treat opponent policy identity, not focal deck identity, as the CUDA resident cohort boundary. Keep each focal deck ID and own-archetype ID bound to its resident job/lane and preserve exact-deck static-field audits.
+- Preserve separate complete Policy-0809 and Champion-G1 collectors and immutable effective weights. No cross-policy tensor, cache, or routing sharing is introduced.
+- Accept the batching change after an identical 99-game U20 Policy-0809 comparison showed 2.96 to 4.47 games/s (1.51x), with exact outcome/turn/error/routing parity, plus a 64-game mixed-deck smoke with zero error, routing failure, or feature D2H.
+- Allocate `V2_mixed_focal_cohorts` as a new version and W&B run. Load V1 update 21 as model-only parent, initialize a fresh optimizer, carry the C002 PFSP state, and keep reference KL anchored to the original G1/update-0 model rather than silently re-anchoring it to update 21.

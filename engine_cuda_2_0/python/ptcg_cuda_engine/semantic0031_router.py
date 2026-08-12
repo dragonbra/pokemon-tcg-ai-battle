@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import fields, is_dataclass, replace
+import inspect
 from types import SimpleNamespace
 from typing import Any
 
@@ -171,6 +172,10 @@ class Semantic0031ResidentRouter:
         self.shared_trunk_identity_proof = shared_trunk_identity_proof
         self.focal_summary_fn = focal_summary_fn
         self.focal_strategy_fn = focal_strategy_fn
+        self._focal_strategy_accepts_job_indices = (
+            focal_strategy_fn is not None
+            and len(inspect.signature(focal_strategy_fn).parameters) >= 4
+        )
         self.opponent_strategy_fn = opponent_strategy_fn
         self.role_compacted = bool(role_compacted)
         if self.same_policy:
@@ -257,9 +262,14 @@ class Semantic0031ResidentRouter:
             focal_readout_fn = None
             focal_auxiliary = None
             if self.focal_strategy_fn is not None:
-                focal_readout_fn, focal_auxiliary = self.focal_strategy_fn(
-                    focal_validated, focal_state, focal_options
-                )
+                focal_args = (focal_validated, focal_state, focal_options)
+                if self._focal_strategy_accepts_job_indices:
+                    if job_indices is None:
+                        raise RuntimeError(
+                            "focal strategy requires resident job indices"
+                        )
+                    focal_args += (job_indices.index_select(0, focal_rows),)
+                focal_readout_fn, focal_auxiliary = self.focal_strategy_fn(*focal_args)
                 if not callable(focal_readout_fn) or not isinstance(
                     focal_auxiliary, dict
                 ):
@@ -434,9 +444,12 @@ class Semantic0031ResidentRouter:
         focal_readout_fn = None
         focal_auxiliary = None
         if self.focal_strategy_fn is not None:
-            focal_readout_fn, focal_auxiliary = self.focal_strategy_fn(
-                validated, state, focal_options
-            )
+            focal_args = (validated, state, focal_options)
+            if self._focal_strategy_accepts_job_indices:
+                if job_indices is None:
+                    raise RuntimeError("focal strategy requires resident job indices")
+                focal_args += (job_indices,)
+            focal_readout_fn, focal_auxiliary = self.focal_strategy_fn(*focal_args)
             if not callable(focal_readout_fn) or not isinstance(
                 focal_auxiliary, dict
             ):

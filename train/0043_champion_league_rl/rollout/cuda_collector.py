@@ -228,11 +228,6 @@ class CudaFullSemanticRolloutCollector:
         )
         if len({job.game_id for job in jobs}) != len(jobs):
             raise ValueError("rollout game IDs must be unique")
-        if len({job.focal_deck for job in jobs}) != 1:
-            raise ValueError("resident collector requires one exact focal deck")
-        focal_own_id = jobs[0].focal_own_archetype_id
-        if len({job.focal_own_archetype_id for job in jobs}) != 1:
-            raise ValueError("resident collector requires one focal own class per group")
         if len({job.source_policy_update for job in jobs}) != 1:
             raise ValueError("resident batch must use one behavior-policy update")
         if any(job.action_boundary_mode != "enabled" for job in jobs):
@@ -256,12 +251,23 @@ class CudaFullSemanticRolloutCollector:
         opponent_adapter = Semantic0031DeviceAdapter(
             self.opponent_actor, None, max_select=self.max_select
         )
-        def focal_strategy_fn(validated: Any, state: Any, options: torch.Tensor):
+        focal_own_ids = torch.tensor(
+            [job.focal_own_archetype_id for job in jobs],
+            dtype=torch.long,
+            device=self.device,
+        )
+
+        def focal_strategy_fn(
+            validated: Any,
+            state: Any,
+            options: torch.Tensor,
+            job_indices: torch.Tensor,
+        ):
             from ..policy.strategy_adapters import build_defined_strategy_context
 
-            self.model.set_runtime_own_archetype_ids(torch.full(
-                (options.shape[0],), focal_own_id, dtype=torch.long, device=options.device
-            ))
+            self.model.set_runtime_own_archetype_ids(
+                focal_own_ids.index_select(0, job_indices.long())
+            )
             value, auxiliary = self.model.value_and_aux_from_encoded(
                 validated, state, options
             )
@@ -318,10 +324,15 @@ class CudaFullSemanticRolloutCollector:
         )
         capture_trajectory = self.record_trajectory and bool(captured_jobs.any())
 
-        def value_fn(validated: Any, state: Any, options: torch.Tensor) -> dict[str, torch.Tensor]:
-            self.model.set_runtime_own_archetype_ids(torch.full(
-                (options.shape[0],), focal_own_id, dtype=torch.long, device=options.device
-            ))
+        def value_fn(
+            validated: Any,
+            state: Any,
+            options: torch.Tensor,
+            job_indices: torch.Tensor,
+        ) -> dict[str, torch.Tensor]:
+            self.model.set_runtime_own_archetype_ids(
+                focal_own_ids.index_select(0, job_indices.long())
+            )
             value, auxiliary = self.model.value_and_aux_from_encoded(validated, state, options)
             return {"value": value, **auxiliary}
 
