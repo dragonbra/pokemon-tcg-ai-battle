@@ -273,6 +273,98 @@ def _baseline_delta(number: str, summary: dict[str, Any]) -> float | None:
     )
 
 
+def _baseline_game_path(number: str) -> Path:
+    return BASELINE.parent / f"games/{number}.json"
+
+
+def _valid_baseline_summary(number: str, item: Any) -> dict[str, Any] | None:
+    path = _baseline_game_path(number)
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    summary = payload.get("summary") or {}
+    games = payload.get("games") or []
+    candidate = summary.get("candidate_deployment_identity_audit") or {}
+    opponent = summary.get("opponent_policy_identity_audit") or {}
+    if (
+        payload.get("schema") != "policy_0809_cuda_seeded2048_games_v1"
+        or summary.get("deck_number") != number
+        or summary.get("exact_deck_sha256") != item.deck_sha256
+        or summary.get("games") != 2048
+        or len(games) != 2048
+        or candidate.get("status") != "PASS"
+        or candidate.get("contract_id") != base.CANDIDATE_CONTRACT
+        or candidate.get("storage_dtype") != "fp16"
+        or candidate.get("runtime_dtype") != "fp32"
+        or opponent.get("status") != "PASS"
+        or opponent.get("requested_policy_id") != "Policy-0809"
+        or opponent.get("effective_policy_sha256") != EXPECTED_OPPONENT_EFFECTIVE
+    ):
+        raise RuntimeError(f"Policy-0809 baseline deck {number} evidence failed")
+    return summary
+
+
+def ensure_policy_0809_baseline(
+    number: str,
+    *,
+    catalog: Any,
+    candidates: tuple[Any, ...],
+    identity: dict[str, Any],
+) -> None:
+    """Materialize one comparable zero-shot result before evaluating G1."""
+
+    item = _catalog_by_number()[number]
+    if _valid_baseline_summary(number, item) is None:
+        candidate = next(
+            row for row in candidates
+            if str(row.package_manifest["frozen_deck_number"]) == number
+        )
+        result = base._run_one(catalog, candidate)
+        summary, games = base._summary(catalog, candidate, result)
+        base._atomic_json(BASELINE.parent / summary["games_file"], {
+            "schema": "policy_0809_cuda_seeded2048_games_v1",
+            "summary": summary,
+            "games": games,
+        })
+        detail = base._detail_payload(candidate, games, candidates)
+        base._atomic_text(
+            BASELINE.parent / summary["report"],
+            base._render_deck(
+                summary,
+                games,
+                catalog=catalog,
+                candidates=candidates,
+                detail=detail,
+                completed_numbers={
+                    path.stem for path in (BASELINE.parent / "games").glob("*.json")
+                } | {number},
+            ),
+        )
+
+    rows = []
+    for path in sorted((BASELINE.parent / "games").glob("*.json")):
+        baseline_number = path.stem
+        if baseline_number not in _catalog_by_number():
+            continue
+        summary = _valid_baseline_summary(
+            baseline_number, _catalog_by_number()[baseline_number]
+        )
+        if summary is not None:
+            rows.append(summary)
+    base._publish(
+        identity,
+        rows,
+        catalog,
+        candidates,
+        requested_numbers=tuple(evaluation_order()),
+        page_title="Policy-0809 Zero-shot · Full-55 CUDA-2048",
+        evidence_note=(
+            "为 Champion G1 full-55 对照逐卡补齐的同合同 Policy-0809 zero-shot；"
+            "每个 exact deck 的基线必须先完成，随后才执行对应 G1。"
+        ),
+    )
+
+
 def publish(completed_numbers: set[str], champion: dict[str, Any]) -> None:
     catalog, candidates = base._catalog()
     rows = []
@@ -362,10 +454,27 @@ def main() -> int:
     checkpoint = wait_for_v22()
     champion = seal_champion(checkpoint)
     order = evaluation_order()
+    baseline_identity = base.preflight_identity()
+    baseline_catalog, baseline_candidates = base._catalog()
     completed: set[str] = set()
     for position, number in enumerate(order, 1):
         _state(
-            state="evaluating",
+            state="evaluating_policy_0809_baseline",
+            champion_id="Champion-G1",
+            current_deck=number,
+            position=position,
+            total=55,
+            completed=sorted(completed),
+            phase="archetype_first" if position <= 14 else "remaining_exact_decks",
+        )
+        ensure_policy_0809_baseline(
+            number,
+            catalog=baseline_catalog,
+            candidates=baseline_candidates,
+            identity=baseline_identity,
+        )
+        _state(
+            state="evaluating_champion_g1",
             champion_id="Champion-G1",
             current_deck=number,
             position=position,

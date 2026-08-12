@@ -66,7 +66,7 @@
           "name": "Mega Lopunny ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95",
@@ -84,7 +84,7 @@
           "name": "Froslass"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9",
@@ -102,7 +102,7 @@
           "name": "Hero’s Cape"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "dragapult_ex_07bedfffbfad",
@@ -115,7 +115,7 @@
           "name": "Dragapult ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc",
@@ -133,7 +133,7 @@
           "name": "Hero’s Cape"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
@@ -151,7 +151,7 @@
           "name": "Solrock"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "festival_lead_dipplin_d6c573dd89bd",
@@ -164,7 +164,7 @@
           "name": "Dipplin"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_kangaskhan_ex_crustle_03822cc73f78",
@@ -182,7 +182,7 @@
           "name": "Crustle"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_lopunny_ex_mega_froslass_ex_053b4950d40b",
@@ -195,7 +195,7 @@
           "name": "Mega Lopunny ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
@@ -208,7 +208,7 @@
           "name": "Cynthia's Garchomp ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_kangaskhan_ex_crustle_67cf83ea7e09",
@@ -226,7 +226,7 @@
           "name": "Crustle"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_kangaskhan_ex_crustle_310ede704da1",
@@ -244,7 +244,7 @@
           "name": "Teal Mask Ogerpon ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_kangaskhan_ex_crustle_df6f74437196",
@@ -257,7 +257,7 @@
           "name": "Slowking"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a",
@@ -306,7 +306,7 @@
           "name": "Cornerstone Mask Ogerpon ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_venusaur_ex_meganium_8c6c9898455c",
@@ -324,7 +324,7 @@
           "name": "Meganium"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0",
@@ -337,7 +337,7 @@
           "name": "Team Rocket's Mewtwo ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_lopunny_ex_mega_froslass_ex_546b39d1d134",
@@ -721,7 +721,7 @@
           "name": "Mega Froslass ex"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "mega_starmie_ex_mega_froslass_ex_5694d3eb6909",
@@ -793,7 +793,7 @@
           "name": "Cinderace"
         }
       ],
-      "status": "pending"
+      "status": "tested"
     },
     {
       "deck_id": "n_s_zoroark_ex_munkidori_11bd8fb9fc18",
@@ -939,16 +939,16 @@
       ],
       "display_name": "Dragapult ex",
       "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "games": 2048,
+      "losses": 780,
       "name": "dragapult_ex",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 3,
       "trigger_card_ids": [
         121
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.619140625,
+      "wins": 1268
     },
     {
       "class_id": 1,
@@ -962,17 +962,17 @@
         "032"
       ],
       "display_name": "Mega Lopunny ex",
-      "draws": 6,
-      "games": 2048,
-      "losses": 698,
+      "draws": 9,
+      "games": 6144,
+      "losses": 2548,
       "name": "mega_lopunny_ex",
-      "tested_decks": 1,
+      "tested_decks": 3,
       "total_decks": 7,
       "trigger_card_ids": [
         849
       ],
-      "win_rate": 0.65625,
-      "wins": 1344
+      "win_rate": 0.5838216145833334,
+      "wins": 3587
     },
     {
       "class_id": 2,
@@ -985,16 +985,16 @@
       ],
       "display_name": "Marnie's Grimmsnarl ex",
       "draws": 5,
-      "games": 2048,
-      "losses": 921,
+      "games": 4096,
+      "losses": 1888,
       "name": "marnies_grimmsnarl_ex",
-      "tested_decks": 1,
+      "tested_decks": 2,
       "total_decks": 5,
       "trigger_card_ids": [
         648
       ],
-      "win_rate": 0.5478515625,
-      "wins": 1122
+      "win_rate": 0.537841796875,
+      "wins": 2203
     },
     {
       "class_id": 3,
@@ -1024,16 +1024,16 @@
       ],
       "display_name": "Mega Lucario ex",
       "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "games": 2048,
+      "losses": 836,
       "name": "mega_lucario_ex",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 1,
       "trigger_card_ids": [
         678
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.591796875,
+      "wins": 1212
     },
     {
       "class_id": 5,
@@ -1049,17 +1049,17 @@
         "035"
       ],
       "display_name": "Mega Kangaskhan ex",
-      "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "draws": 3,
+      "games": 8192,
+      "losses": 4858,
       "name": "mega_kangaskhan_ex",
-      "tested_decks": 0,
+      "tested_decks": 4,
       "total_decks": 9,
       "trigger_card_ids": [
         756
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.4066162109375,
+      "wins": 3331
     },
     {
       "class_id": 6,
@@ -1070,16 +1070,16 @@
       ],
       "display_name": "Festival Lead",
       "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "games": 2048,
+      "losses": 904,
       "name": "festival_lead",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 3,
       "trigger_card_ids": [
         93
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.55859375,
+      "wins": 1144
     },
     {
       "class_id": 7,
@@ -1089,18 +1089,18 @@
         "038"
       ],
       "display_name": "Crustle / Barbaracle Wall",
-      "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "draws": 1,
+      "games": 2048,
+      "losses": 953,
       "name": "crustle_barbaracle_wall",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 3,
       "trigger_card_ids": [
         345,
         1052
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.5341796875,
+      "wins": 1094
     },
     {
       "class_id": 8,
@@ -1110,18 +1110,18 @@
       ],
       "display_name": "Meganium Grass Evolution",
       "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "games": 2048,
+      "losses": 1377,
       "name": "meganium_grass_evolution",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 2,
       "trigger_card_ids": [
         652,
         150,
         404
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.32763671875,
+      "wins": 671
     },
     {
       "class_id": 9,
@@ -1129,17 +1129,17 @@
         "021"
       ],
       "display_name": "Team Rocket's Mewtwo ex",
-      "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "draws": 3,
+      "games": 2048,
+      "losses": 1211,
       "name": "team_rockets_mewtwo_ex",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 1,
       "trigger_card_ids": [
         431
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.4072265625,
+      "wins": 834
     },
     {
       "class_id": 10,
@@ -1151,16 +1151,16 @@
       ],
       "display_name": "Teal Mask Ogerpon / Hero's Cape",
       "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "games": 4096,
+      "losses": 2066,
       "name": "teal_mask_ogerpon_heros_cape",
-      "tested_decks": 0,
+      "tested_decks": 2,
       "total_decks": 4,
       "trigger_card_ids": [
         96
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.49560546875,
+      "wins": 2030
     },
     {
       "class_id": 11,
@@ -1168,17 +1168,17 @@
         "013"
       ],
       "display_name": "Cynthia's Garchomp ex",
-      "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "draws": 3,
+      "games": 2048,
+      "losses": 1008,
       "name": "cynthias_garchomp_ex",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 1,
       "trigger_card_ids": [
         381
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.50634765625,
+      "wins": 1037
     },
     {
       "class_id": 12,
@@ -1191,16 +1191,16 @@
       ],
       "display_name": "Mega Starmie ex",
       "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "games": 2048,
+      "losses": 923,
       "name": "mega_starmie_ex",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 5,
       "trigger_card_ids": [
         1031
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.54931640625,
+      "wins": 1125
     },
     {
       "class_id": 13,
@@ -1212,16 +1212,16 @@
       ],
       "display_name": "Archaludon ex",
       "draws": 0,
-      "games": 0,
-      "losses": 0,
+      "games": 2048,
+      "losses": 1269,
       "name": "archaludon_ex",
-      "tested_decks": 0,
+      "tested_decks": 1,
       "total_decks": 4,
       "trigger_card_ids": [
         190
       ],
-      "win_rate": null,
-      "wins": 0
+      "win_rate": 0.38037109375,
+      "wins": 779
     }
   ],
   "meta_archetype_contract": "evaluation/meta_archetypes_v1.json",
@@ -1252,8 +1252,8 @@
     "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
     "status": "PASS"
   },
-  "published_decks": 3,
-  "published_games": 6144,
+  "published_decks": 21,
+  "published_games": 43008,
   "reports": [
     {
       "actual_first_games": 998,
@@ -1512,6 +1512,1554 @@
       "wall_seconds": 215.96383566199802,
       "win_rate": 0.65625,
       "wins": 1344
+    },
+    {
+      "actual_first_games": 1060,
+      "actual_first_wins": 646,
+      "actual_second_games": 988,
+      "actual_second_wins": 546,
+      "best_rank": 18,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "62aae6174323fe3af022ff485e60e2727a668973c74536aafe9d1c889bc6f2eb",
+        "portable_checkpoint_sha256": "4b6b05d54209b2fa9d0fc2a20582fc10c3ef6c7fa1215d5d8e86f9a2e468ae85",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
+      "deck_number": "004",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 3,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "games": 2048,
+      "games_file": "games/004.json",
+      "losses": 853,
+      "observed_players": 6,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.04345703125,
+      "report": "reports/004.html",
+      "representative_cards": [],
+      "schedule_games": 15,
+      "schedule_sha256": "688bbd3cff26c46b03e67f5fb6523dd6855aff6c76bbfb0279e47926dc8d32be",
+      "segment": "top100",
+      "wall_seconds": 198.83034599898383,
+      "win_rate": 0.58203125,
+      "wins": 1192
+    },
+    {
+      "actual_first_games": 985,
+      "actual_first_wins": 540,
+      "actual_second_games": 1063,
+      "actual_second_wins": 541,
+      "best_rank": 23,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "c43f4d51ddd4f2b66eefa0eff58a84a0733822c078c48b07c7794bbcc8ad85c4",
+        "portable_checkpoint_sha256": "53923a5731edfd0a8160d4b514b196d5f55f5dad05a38630924b03c30f4bad9f",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95",
+      "deck_number": "005",
+      "display_name": "Marnie's Grimmsnarl ex / Froslass",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "games": 2048,
+      "games_file": "games/005.json",
+      "losses": 967,
+      "observed_players": 4,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.02978515625,
+      "report": "reports/005.html",
+      "representative_cards": [],
+      "schedule_games": 10,
+      "schedule_sha256": "92041a195efd74f1b75bb401c7be22cb8e6582ddcb6eda9faa3dd9daa4fe8b37",
+      "segment": "top100",
+      "wall_seconds": 157.03263253701152,
+      "win_rate": 0.52783203125,
+      "wins": 1081
+    },
+    {
+      "actual_first_games": 1007,
+      "actual_first_wins": 527,
+      "actual_second_games": 1041,
+      "actual_second_wins": 464,
+      "best_rank": 34,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "43b59d8f2c71d12d672548fb597fd2c32fe496026de60e3477430524392c460e",
+        "portable_checkpoint_sha256": "4ae93430c32e5e7165cfa6ef11ef07cb2a4ffd69546c50292eab0378605280cc",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9",
+      "deck_number": "006",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34",
+      "games": 2048,
+      "games_file": "games/006.json",
+      "losses": 1057,
+      "observed_players": 4,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.033203125,
+      "report": "reports/006.html",
+      "representative_cards": [],
+      "schedule_games": 10,
+      "schedule_sha256": "f453b65206685b9d6651b3d356e262d9bf701ce867d0e0a6000a06c654ca7021",
+      "segment": "top100",
+      "wall_seconds": 113.94010848400649,
+      "win_rate": 0.48388671875,
+      "wins": 991
+    },
+    {
+      "actual_first_games": 1034,
+      "actual_first_wins": 680,
+      "actual_second_games": 1014,
+      "actual_second_wins": 588,
+      "best_rank": 1,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "629973ab2ebc8677321f95f6d8cb9e93e9aa3b71d41a70045df4e31ffbe3388e",
+        "portable_checkpoint_sha256": "560293104d9d951435cef55bb9cee899200373a4289201a8f547d7369670bad6",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "dragapult_ex_07bedfffbfad",
+      "deck_number": "007",
+      "display_name": "Dragapult ex",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+      "games": 2048,
+      "games_file": "games/007.json",
+      "losses": 780,
+      "observed_players": 3,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.0126953125,
+      "report": "reports/007.html",
+      "representative_cards": [],
+      "schedule_games": 7,
+      "schedule_sha256": "67d457f02152f5a034102200daed89d32f9c5f17cb48bd2ebf3469560e334db1",
+      "segment": "top100",
+      "wall_seconds": 222.14497855698573,
+      "win_rate": 0.619140625,
+      "wins": 1268
+    },
+    {
+      "actual_first_games": 1076,
+      "actual_first_wins": 588,
+      "actual_second_games": 972,
+      "actual_second_wins": 451,
+      "best_rank": 46,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "86083d9261849d99528a1d56947a3fece174c96a5137f703af5360c38eff82c0",
+        "portable_checkpoint_sha256": "4e7c4d771473fc40caeda237ac922a8f18b06cb77a3d210844d9207237c4ac8e",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc",
+      "deck_number": "008",
+      "display_name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "5e60b8c7eafc87e69cb063ae0ed7f7351fbf415b4c021567790b977bece49fbf",
+      "games": 2048,
+      "games_file": "games/008.json",
+      "losses": 1009,
+      "observed_players": 3,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.02783203125,
+      "report": "reports/008.html",
+      "representative_cards": [],
+      "schedule_games": 7,
+      "schedule_sha256": "a4ff06462f92a6d371e6a315be78771a8ad34610c6bf07d6e1a39db1cd19c1af",
+      "segment": "top100",
+      "wall_seconds": 122.02389406398288,
+      "win_rate": 0.50732421875,
+      "wins": 1039
+    },
+    {
+      "actual_first_games": 1016,
+      "actual_first_wins": 639,
+      "actual_second_games": 1032,
+      "actual_second_wins": 573,
+      "best_rank": 8,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "06882711d12d3ca7c162e283239f3663d8cdc8f2c0a951b90ab2f1aa6e220edb",
+        "portable_checkpoint_sha256": "15cd28faa395cc1c1789c48b718258c59a231ce110c76deed15730f2f58f7049",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
+      "deck_number": "009",
+      "display_name": "Mega Lucario ex / Solrock",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
+      "games": 2048,
+      "games_file": "games/009.json",
+      "losses": 836,
+      "observed_players": 2,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.02734375,
+      "report": "reports/009.html",
+      "representative_cards": [],
+      "schedule_games": 5,
+      "schedule_sha256": "3d73b0c36b2665fc82393c1e25670edbb0933612a64162295dc329caa88b878f",
+      "segment": "top100",
+      "wall_seconds": 122.31238350199419,
+      "win_rate": 0.591796875,
+      "wins": 1212
+    },
+    {
+      "actual_first_games": 1042,
+      "actual_first_wins": 612,
+      "actual_second_games": 1006,
+      "actual_second_wins": 532,
+      "best_rank": 22,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "342e037c188ed28a66db6db5e61cab4cf569fe54b0ecc0ae8088489c86e626be",
+        "portable_checkpoint_sha256": "1a0c4e85e879f69c6a5c89f12fe1e76b94189e5686c2e913381277b6b39accba",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "festival_lead_dipplin_d6c573dd89bd",
+      "deck_number": "010",
+      "display_name": "Festival Lead / Dipplin",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "games": 2048,
+      "games_file": "games/010.json",
+      "losses": 904,
+      "observed_players": 2,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.0390625,
+      "report": "reports/010.html",
+      "representative_cards": [],
+      "schedule_games": 5,
+      "schedule_sha256": "6144b70c6b4ff1c1f24aceb2871f6cb057d552cbf22d86fbaf3b6d1166bab56f",
+      "segment": "top100",
+      "wall_seconds": 133.44510166201508,
+      "win_rate": 0.55859375,
+      "wins": 1144
+    },
+    {
+      "actual_first_games": 1071,
+      "actual_first_wins": 614,
+      "actual_second_games": 977,
+      "actual_second_wins": 487,
+      "best_rank": 28,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "e4da8e0a7e57012c367ce834471e33d69ba2f19c606839f3b5efb96656582e97",
+        "portable_checkpoint_sha256": "368481cc6c1bb176d22b2de56478ec411c892492a70e2305b89d277029e56221",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_03822cc73f78",
+      "deck_number": "011",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "draws": 1,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "games": 2048,
+      "games_file": "games/011.json",
+      "losses": 946,
+      "observed_players": 2,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.056640625,
+      "report": "reports/011.html",
+      "representative_cards": [],
+      "schedule_games": 5,
+      "schedule_sha256": "a3ebfc26cd3a1ff793049fd410cb08b6258225d42d0dff95a7fb9518f5e6ba7e",
+      "segment": "top100",
+      "wall_seconds": 143.09114236701862,
+      "win_rate": 0.53759765625,
+      "wins": 1101
+    },
+    {
+      "actual_first_games": 988,
+      "actual_first_wins": 529,
+      "actual_second_games": 1060,
+      "actual_second_wins": 522,
+      "best_rank": 36,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "ab0d388ffe619ef88ac58e92f77ab002d10ba6e422787b4a71407dd8bd2b705d",
+        "portable_checkpoint_sha256": "f2c83b1e628a5bcb1fdab98e9a18c69f3f9f2bf9dbc69e55d269f00905226a1a",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_053b4950d40b",
+      "deck_number": "012",
+      "display_name": "Mega Lopunny ex / Mega Froslass ex",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "053b4950d40b4a85f4c63511b1f89f90f82b691754d1aaa57b0a4df9f9806e75",
+      "games": 2048,
+      "games_file": "games/012.json",
+      "losses": 997,
+      "observed_players": 2,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.02978515625,
+      "report": "reports/012.html",
+      "representative_cards": [],
+      "schedule_games": 5,
+      "schedule_sha256": "bc0b86a305c24afe226d5ba03648064972afeaf11d0fb57c50741d9fc19418f8",
+      "segment": "top100",
+      "wall_seconds": 158.14331108599436,
+      "win_rate": 0.51318359375,
+      "wins": 1051
+    },
+    {
+      "actual_first_games": 1036,
+      "actual_first_wins": 601,
+      "actual_second_games": 1012,
+      "actual_second_wins": 436,
+      "best_rank": 56,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "ba384cb7851d305def84f375f7a05d328a6d2c306ab1e8da23336a214b0a6ce8",
+        "portable_checkpoint_sha256": "01e81d47838bfd0b629b7d1ba48139400d0ef17ff8f9ff0e7ba5436a1d0b4b86",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
+      "deck_number": "013",
+      "display_name": "Cynthia's Garchomp ex / Roserade",
+      "draws": 3,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "games": 2048,
+      "games_file": "games/013.json",
+      "losses": 1008,
+      "observed_players": 2,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.0400390625,
+      "report": "reports/013.html",
+      "representative_cards": [],
+      "schedule_games": 5,
+      "schedule_sha256": "c821919db3be3d2b9acd88687e9fc4f8e3cc9d967dbf644c5e92fa425d92dc81",
+      "segment": "top100",
+      "wall_seconds": 129.52556739901775,
+      "win_rate": 0.50634765625,
+      "wins": 1037
+    },
+    {
+      "actual_first_games": 1060,
+      "actual_first_wins": 601,
+      "actual_second_games": 988,
+      "actual_second_wins": 470,
+      "best_rank": 58,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "35a6e355662df6498029ebc9c6949d1c187d728e69edc2f4f193abc95bb165dc",
+        "portable_checkpoint_sha256": "1d10b152b55f8d26ee4769dcd596b803a143b53feac9b1834a1a4724fd4f2be6",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_67cf83ea7e09",
+      "deck_number": "014",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+      "games": 2048,
+      "games_file": "games/014.json",
+      "losses": 977,
+      "observed_players": 2,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.064453125,
+      "report": "reports/014.html",
+      "representative_cards": [],
+      "schedule_games": 5,
+      "schedule_sha256": "1b45f45ba2a69603bc29a04564507edceddf84b041389ad64dcfcb8bb695787c",
+      "segment": "top100",
+      "wall_seconds": 146.08854442302254,
+      "win_rate": 0.52294921875,
+      "wins": 1071
+    },
+    {
+      "actual_first_games": 1088,
+      "actual_first_wins": 282,
+      "actual_second_games": 960,
+      "actual_second_wins": 245,
+      "best_rank": 9,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "b40787a9101af5fcf9a9d8911de81999801aa29bb83c119df334eaf9ea801ac1",
+        "portable_checkpoint_sha256": "518df000e3a23edf0b263de2f7f1546167ed16d30923f64ced480326d796a9d4",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_310ede704da1",
+      "deck_number": "015",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "310ede704da1adc09e09efc2b3e4f96cd2201abdbcb3f51ada245472cac2742a",
+      "games": 2048,
+      "games_file": "games/015.json",
+      "losses": 1521,
+      "observed_players": 1,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": -0.0048828125,
+      "report": "reports/015.html",
+      "representative_cards": [],
+      "schedule_games": 3,
+      "schedule_sha256": "549e2b60030b7988407642ba20c1528c15935bd37b9752a75d5694eea333082f",
+      "segment": "top100",
+      "wall_seconds": 137.72194868102088,
+      "win_rate": 0.25732421875,
+      "wins": 527
+    },
+    {
+      "actual_first_games": 1040,
+      "actual_first_wins": 348,
+      "actual_second_games": 1008,
+      "actual_second_wins": 284,
+      "best_rank": 15,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "3923ac08e6d5824c4b7a3162d781870af9a75de0af0fea58f8ef87382bd9d18e",
+        "portable_checkpoint_sha256": "e389d7889245ab68a3f58af68cfa3c0b3ac03aed3a522f6530e56824b88a6d04",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_kangaskhan_ex_crustle_df6f74437196",
+      "deck_number": "016",
+      "display_name": "Mega Kangaskhan ex / Crustle",
+      "draws": 2,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "df6f7443719675711c2dcead3559087de996f3b8c43192d55ebfe6182e43cb7c",
+      "games": 2048,
+      "games_file": "games/016.json",
+      "losses": 1414,
+      "observed_players": 1,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": -0.013671875,
+      "report": "reports/016.html",
+      "representative_cards": [],
+      "schedule_games": 3,
+      "schedule_sha256": "5a04eeb1d373ec85a9008651d67389cc895d136c31be7a418d9258152f558798",
+      "segment": "top100",
+      "wall_seconds": 124.5116749870067,
+      "win_rate": 0.30859375,
+      "wins": 632
+    },
+    {
+      "actual_first_games": 1069,
+      "actual_first_wins": 597,
+      "actual_second_games": 979,
+      "actual_second_wins": 497,
+      "best_rank": 24,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "d802d0c65a9565666dc7723e172b6265fa00f3ed379d862c148a92dc7b6602a8",
+        "portable_checkpoint_sha256": "bf59157400082ebef9cc8d4098d05fed7c6735525b749a34889b78569487fb72",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e",
+      "deck_number": "019",
+      "display_name": "Barbaracle / Cornerstone Mask Ogerpon ex",
+      "draws": 1,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "275d23c9ed3eb47996ee9d6a6d7f9c31b77bff0902d881ce30c1d99a223c833b",
+      "games": 2048,
+      "games_file": "games/019.json",
+      "losses": 953,
+      "observed_players": 1,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.015625,
+      "report": "reports/019.html",
+      "representative_cards": [],
+      "schedule_games": 3,
+      "schedule_sha256": "5af1a43a7a652251a0621b3d4ece6dd193036402e22602197cc0d5c0305fbed9",
+      "segment": "top100",
+      "wall_seconds": 140.51796675199876,
+      "win_rate": 0.5341796875,
+      "wins": 1094
+    },
+    {
+      "actual_first_games": 1022,
+      "actual_first_wins": 361,
+      "actual_second_games": 1026,
+      "actual_second_wins": 310,
+      "best_rank": 25,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "fe04a08d77b1109776dab8798f2d37f7a0b93134a6906c7c54e34003b1e9043a",
+        "portable_checkpoint_sha256": "3add60dd10baeae29d01efc45822e1e4f4faa708a22e4de52cad39c14286fef8",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_venusaur_ex_meganium_8c6c9898455c",
+      "deck_number": "020",
+      "display_name": "Mega Venusaur ex / Meganium",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "8c6c9898455cca1b49e41993e2962051d48c5ffee42cb02f3b18152991c71e2b",
+      "games": 2048,
+      "games_file": "games/020.json",
+      "losses": 1377,
+      "observed_players": 1,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.00390625,
+      "report": "reports/020.html",
+      "representative_cards": [],
+      "schedule_games": 3,
+      "schedule_sha256": "0f5297609cd936405e30d874040b5c5f3219e0677dee1ece61c23a0680e3a343",
+      "segment": "top100",
+      "wall_seconds": 132.73672998597613,
+      "win_rate": 0.32763671875,
+      "wins": 671
+    },
+    {
+      "actual_first_games": 1035,
+      "actual_first_wins": 437,
+      "actual_second_games": 1013,
+      "actual_second_wins": 397,
+      "best_rank": 32,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "c0addaee401f811b41a4bf379ee4f3b140bae2f7d6d9a004242f4362f9eee1f1",
+        "portable_checkpoint_sha256": "4b4ec9f4571288bbe5c837ed1f4af066409962568ffa9ef29febcb1c548698fa",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0",
+      "deck_number": "021",
+      "display_name": "Team Rocket's Mewtwo ex / Spidops",
+      "draws": 3,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "ead283b0f4b07414749ba86b819f00b9c849f32d965178de6629f63d3901505c",
+      "games": 2048,
+      "games_file": "games/021.json",
+      "losses": 1211,
+      "observed_players": 1,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.0390625,
+      "report": "reports/021.html",
+      "representative_cards": [],
+      "schedule_games": 3,
+      "schedule_sha256": "5cf119ee9519b292afbb8600806247ee032814d53289f969b986fe63ced91c5e",
+      "segment": "top100",
+      "wall_seconds": 183.66585098899668,
+      "win_rate": 0.4072265625,
+      "wins": 834
+    },
+    {
+      "actual_first_games": 977,
+      "actual_first_wins": 542,
+      "actual_second_games": 1071,
+      "actual_second_wins": 583,
+      "best_rank": 204,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "13c88f155cc1faae73a73fb4488939bc16b692d120757308b055e9717c58003b",
+        "portable_checkpoint_sha256": "19da61a0990e194d0e948af87e5c0fc438a69fc2ab513976d851189bddeaaf01",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "mega_starmie_ex_mega_froslass_ex_7b5c56647730",
+      "deck_number": "044",
+      "display_name": "Mega Starmie ex / Mega Froslass ex",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "7b5c566477305e7b732b05d3232206fa6686f2c1c734aff1fe305df126012293",
+      "games": 2048,
+      "games_file": "games/044.json",
+      "losses": 923,
+      "observed_players": 1,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.00537109375,
+      "report": "reports/044.html",
+      "representative_cards": [],
+      "schedule_games": 1,
+      "schedule_sha256": "691b2ee3aee69bfa49bc534f623820401e262f22f6b14f6d8393b72abb371746",
+      "segment": "potential_101_500",
+      "wall_seconds": 114.43955072399694,
+      "win_rate": 0.54931640625,
+      "wins": 1125
+    },
+    {
+      "actual_first_games": 11,
+      "actual_first_wins": 5,
+      "actual_second_games": 2037,
+      "actual_second_wins": 774,
+      "best_rank": 282,
+      "candidate_deployment_identity_audit": {
+        "checkpoint_update": 10,
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "merge_full_effective_policy_then_fp16_storage_then_fp32_runtime",
+        "effective_candidate_sha256": "0804ca9bd9bba58d3815383efdfad9ac817521ca83062fbd04c6982cf71b17c5",
+        "portable_checkpoint_sha256": "cd5c05741aadf16db8bb8ca4f527e02eae431db75c33eba30f291fe89f57de84",
+        "runtime_dtype": "fp32",
+        "schema_version": "0042_candidate_deployment_identity_audit_v1",
+        "source_checkpoint_sha256": "aea408e8e140ceb28d23962cf45abac76a29be01888953bbbc5253ff6d120fe3",
+        "status": "PASS",
+        "storage_dtype": "fp16"
+      },
+      "deck_id": "archaludon_ex_cinderace_56b532d24b01",
+      "deck_number": "048",
+      "display_name": "Archaludon ex / Cinderace",
+      "draws": 0,
+      "engine": {
+        "extension": null
+      },
+      "exact_deck_sha256": "56b532d24b01cf9561aa4bd99289cb610b62e427eb0f7d625860531855289a66",
+      "games": 2048,
+      "games_file": "games/048.json",
+      "losses": 1269,
+      "observed_players": 1,
+      "opponent_policy_identity_audit": {
+        "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+        "checkpoint_sha256": "926321955b6f3144b62e65899b5041ca3a47b17f305202ba9dffc0c92aaa7c7f",
+        "components": {
+          "action_decoder": {
+            "effective_sha256": "1414ab7f9a2d423e39d2098e973dda6dd2d6b1085ccbedba3246b5e33437fbff",
+            "source_policy_id": "Policy-0809"
+          },
+          "final_norm": {
+            "effective_sha256": "4da805d623898210c9fbdf6c81040a55ec4f802f87a7a7f8a0b03ffda44eda7d",
+            "source_policy_id": "Policy-0809"
+          },
+          "lora": {
+            "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_input_encoder": {
+            "effective_sha256": "21db4ccf7f4faa6c436293e09b09797601c928265da72fb9731977f2ab485083",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_0": {
+            "effective_sha256": "fe707c99e7bef6990217ad96cb1efa493efcc9d9c7d0881cd433d909e4fc44fe",
+            "source_policy_id": "Policy-0809"
+          },
+          "option_transformer_layer_1": {
+            "effective_sha256": "7073e2f657c6276abc0490abfe994c9178438aee428bfd5680f32acb41cdebe1",
+            "source_policy_id": "Policy-0809"
+          },
+          "prototype_encoder": {
+            "effective_sha256": "c5cbea41fdae1a2991a53f29c0f37043254a997449a2281eb893ad3d8043d297",
+            "source_policy_id": "Policy-0809"
+          },
+          "state_encoder": {
+            "effective_sha256": "9f819d4dcf6c4b463651f0a50c809adb4e62eb1915be5fefd16597f27b6ec270",
+            "source_policy_id": "Policy-0809"
+          }
+        },
+        "effective_policy_sha256": "0d0091140d72e78f1070c549b8367583a9d4f5537d0cb67decab40ac3bb9da96",
+        "model_schema_version": "0031_model_only_checkpoint_v1",
+        "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+        "policy_kind": "immutable_pretrained",
+        "purpose": "shared_training_and_frozen_evaluation_resolver",
+        "requested_policy_id": "Policy-0809",
+        "schema_version": "rl_policy_identity_audit_v1",
+        "status": "PASS"
+      },
+      "policy_0809_baseline_win_rate_delta": 0.00390625,
+      "report": "reports/048.html",
+      "representative_cards": [],
+      "schedule_games": 1,
+      "schedule_sha256": "091c67b781aa66b8a439211acc5991e9dff841bd85c507d9fb96faeec5fcccaa",
+      "segment": "potential_101_500",
+      "wall_seconds": 128.09980718800216,
+      "win_rate": 0.38037109375,
+      "wins": 779
     }
   ],
   "schema": "policy_0809_cuda_seeded2048_index_v1"

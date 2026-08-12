@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import inspect
 import unittest
 
 
@@ -23,6 +24,13 @@ class ChampionG1Full55Test(unittest.TestCase):
 
     def test_other_is_deferred_to_second_phase(self) -> None:
         self.assertNotIn("047", controller.evaluation_order()[:14])
+
+    def test_main_ensures_baseline_before_g1(self) -> None:
+        source = inspect.getsource(controller.main)
+        self.assertLess(
+            source.index("ensure_policy_0809_baseline("),
+            source.index("run_one(number, checkpoint, champion)"),
+        )
 
 
 if __name__ == "__main__":
