@@ -1,0 +1,176 @@
+{
+  "great_tusk_mill_rank": 360,
+  "missing_after_v3": [],
+  "missing_before_v3": [
+    1252,
+    1267
+  ],
+  "schema_version": "top500_stadium_coverage_audit_v1",
+  "selected_exact_top500_ranks": [
+    170,
+    399
+  ],
+  "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json",
+  "top500_stadiums": [
+    {
+      "card_id": 1242,
+      "copy_count": 4,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 4,
+      "name": "Community Center"
+    },
+    {
+      "card_id": 1244,
+      "copy_count": 12,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 4,
+      "name": "Full Metal Lab"
+    },
+    {
+      "card_id": 1245,
+      "copy_count": 38,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 11,
+      "name": "Festival Grounds"
+    },
+    {
+      "card_id": 1246,
+      "copy_count": 35,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 18,
+      "name": "Jamming Tower"
+    },
+    {
+      "card_id": 1247,
+      "copy_count": 10,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 10,
+      "name": "Neutralization Zone"
+    },
+    {
+      "card_id": 1248,
+      "copy_count": 16,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 4,
+      "name": "Academy at Night"
+    },
+    {
+      "card_id": 1249,
+      "copy_count": 2,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 2,
+      "name": "Grand Tree"
+    },
+    {
+      "card_id": 1250,
+      "copy_count": 19,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 7,
+      "name": "Area Zero Underdepths"
+    },
+    {
+      "card_id": 1251,
+      "copy_count": 53,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 25,
+      "name": "Lively Stadium"
+    },
+    {
+      "card_id": 1252,
+      "copy_count": 7,
+      "covered_after_v3": true,
+      "covered_before_v3": false,
+      "deck_count": 4,
+      "name": "Gravity Mountain"
+    },
+    {
+      "card_id": 1253,
+      "copy_count": 6,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 2,
+      "name": "N’s Castle"
+    },
+    {
+      "card_id": 1256,
+      "copy_count": 5,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 4,
+      "name": "Team Rocket's Watchtower"
+    },
+    {
+      "card_id": 1257,
+      "copy_count": 27,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 21,
+      "name": "Team Rocket's Factory"
+    },
+    {
+      "card_id": 1259,
+      "copy_count": 785,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 197,
+      "name": "Spikemuth Gym"
+    },
+    {
+      "card_id": 1260,
+      "copy_count": 6,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 3,
+      "name": "Risky Ruins"
+    },
+    {
+      "card_id": 1261,
+      "copy_count": 56,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 22,
+      "name": "Forest of Vitality"
+    },
+    {
+      "card_id": 1262,
+      "copy_count": 8,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 2,
+      "name": "Surfing Beach"
+    },
+    {
+      "card_id": 1264,
+      "copy_count": 178,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 74,
+      "name": "Battle Cage"
+    },
+    {
+      "card_id": 1266,
+      "copy_count": 168,
+      "covered_after_v3": true,
+      "covered_before_v3": true,
+      "deck_count": 82,
+      "name": "Nighttime Mine"
+    },
+    {
+      "card_id": 1267,
+      "copy_count": 1,
+      "covered_after_v3": true,
+      "covered_before_v3": false,
+      "deck_count": 1,
+      "name": "Lumiose City"
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "archetype": "Mega Lopunny ex / Mega Froslass ex",
+  "deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
+  "exact_deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "binding_counts": {
+      "submission_date_exact_score_mismatch": 6
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      18,
+      19,
+      38,
+      50,
+      51,
+      84
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    849
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

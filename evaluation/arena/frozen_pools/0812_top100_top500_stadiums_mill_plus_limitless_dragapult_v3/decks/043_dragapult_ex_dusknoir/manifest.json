@@ -1,0 +1,22 @@
+{
+  "archetype": "Dragapult ex / Dusknoir",
+  "deck_id": "dragapult_ex_dusknoir_b85bae9f3a21",
+  "exact_deck_sha256": "b85bae9f3a2130375ba8cfef2fec42787b7bfc2289e324bbae0ef28a7486928b",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "binding_counts": {
+      "leaderboard_score": 1
+    },
+    "segment": "potential_101_500",
+    "selection_rank": 230,
+    "source_ranks": [
+      230
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    121,
+    133
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

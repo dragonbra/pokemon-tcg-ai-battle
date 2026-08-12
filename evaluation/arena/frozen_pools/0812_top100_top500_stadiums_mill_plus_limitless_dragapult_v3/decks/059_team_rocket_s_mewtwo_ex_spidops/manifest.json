@@ -1,0 +1,19 @@
+{
+  "archetype": "Team Rocket's Mewtwo ex / Spidops",
+  "deck_id": "team_rocket_s_mewtwo_ex_spidops_fba1f87c7115",
+  "exact_deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "segment": "top500_limitless_counter_selection",
+    "selection_purpose": "lucario_counter",
+    "source_ranks": [
+      193
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+  },
+  "representative_card_ids": [
+    431,
+    401
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

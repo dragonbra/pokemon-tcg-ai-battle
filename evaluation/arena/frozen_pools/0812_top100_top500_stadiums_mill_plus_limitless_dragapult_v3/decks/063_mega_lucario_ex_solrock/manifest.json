@@ -1,0 +1,19 @@
+{
+  "archetype": "Mega Lucario ex / Solrock",
+  "deck_id": "mega_lucario_ex_solrock_5b1e19a2e025",
+  "exact_deck_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "segment": "top500_stadium_coverage",
+    "selection_purpose": "stadium_coverage_gravity_mountain",
+    "source_ranks": [
+      170
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+  },
+  "representative_card_ids": [
+    675,
+    1252
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

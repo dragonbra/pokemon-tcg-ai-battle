@@ -1,0 +1,22 @@
+{
+  "archetype": "Marnie's Grimmsnarl ex / Froslass",
+  "deck_id": "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be",
+  "exact_deck_sha256": "de5b9940c5be5708af75d38f0bbb3fd85600e90fea9349a8ab330fb1f4638ffe",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "binding_counts": {
+      "leaderboard_score": 1
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      68
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    648,
+    104
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

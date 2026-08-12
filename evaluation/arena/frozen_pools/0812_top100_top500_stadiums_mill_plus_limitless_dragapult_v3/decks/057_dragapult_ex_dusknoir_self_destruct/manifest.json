@@ -1,0 +1,19 @@
+{
+  "archetype": "Dragapult ex / Dusknoir (Self-Destruct)",
+  "deck_id": "dragapult_ex_dusknoir_self_destruct_d8454cc8351f",
+  "exact_deck_sha256": "d8454cc8351f6170cfb17d05b3603684ff10b1e707684f05e44a8f7f0f853078",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "event": "Regional Los Angeles 0063",
+    "placement": 3,
+    "player": "Nicholas Moffitt",
+    "record": "13-3",
+    "segment": "limitless_representative",
+    "source_url": "https://labs.limitlesstcg.com/0063/player/1074/decklist"
+  },
+  "representative_card_ids": [
+    121,
+    133
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

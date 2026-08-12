@@ -1,0 +1,22 @@
+{
+  "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+  "deck_id": "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435",
+  "exact_deck_sha256": "f1f687577435fd42c1b3023f8c8903a4d1aa8d7a0742a13504e4870248efd86c",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "binding_counts": {
+      "leaderboard_score": 1
+    },
+    "segment": "top100",
+    "selection_rank": null,
+    "source_ranks": [
+      76
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-06-top500-exact.json"
+  },
+  "representative_card_ids": [
+    96,
+    1159
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}

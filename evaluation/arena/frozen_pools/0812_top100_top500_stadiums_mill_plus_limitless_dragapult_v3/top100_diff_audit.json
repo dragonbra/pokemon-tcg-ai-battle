@@ -1,0 +1,284 @@
+{
+  "exact_deck_differences": [
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "exact_deck_sha256": "0a6ca2ca3e72f1d6c0860cb653f16b05c4ba9b8d7774d5669c608e43f4c154f2",
+      "ranks": [
+        4
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Dragapult ex",
+      "exact_deck_sha256": "04d8c62a21a6ccdc9db26cbba19952d729cae087e3627b6fab189467218fbc87",
+      "ranks": [
+        11
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Dragapult ex",
+      "exact_deck_sha256": "39b50b5cba308ad1768346cd0e9dd1b75e7d87539c3ee0b455505bc945fe5bb6",
+      "ranks": [
+        12
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "exact_deck_sha256": "f06bd3d5964e5f6d7051339db56aff17f4b111043a2cacce1621d10f52806368",
+      "ranks": [
+        17
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Festival Lead / Dipplin",
+      "exact_deck_sha256": "706fa9122e5b9ca9aab2f6d40984e0822845fc6f44032c99653a3c103338dd35",
+      "ranks": [
+        22
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Festival Lead / Dipplin",
+      "exact_deck_sha256": "e8e9908e4943584bcbf4d54c91feda6ccfd5a39c0a0cf7d30e5db4a5de7ebd7b",
+      "ranks": [
+        29,
+        89
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "exact_deck_sha256": "4fde3b2a53102d072fe13ee14a0679dbf11b4d4b62e15ff9646e910a27df23d2",
+      "ranks": [
+        33
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "exact_deck_sha256": "a0c76728e82f1ba5bb3beaa9d24c1afdb630de1dcb8cc78a525078e5dfa754a7",
+      "ranks": [
+        36
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "exact_deck_sha256": "e13e98e335417986a8c8f5e8db288f311e87c1276fd10952a9054c5ecd03cf6b",
+      "ranks": [
+        38
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "exact_deck_sha256": "564e879292e2fc10e33a272cd4dffbfffd2db38c5fbe89760be73cf74eadb31a",
+      "ranks": [
+        40
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Festival Lead / Dipplin",
+      "exact_deck_sha256": "d07ed130cb14e088bf151f2edb944e1cbcb95713cb017b0375ed6667f8c978ba",
+      "ranks": [
+        46
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Chandelure / Sylveon",
+      "exact_deck_sha256": "17872b59494a351c03599017c4c978889d941745c83f75be61ff1d47ae746048",
+      "ranks": [
+        48
+      ],
+      "selected_for_pool": true
+    },
+    {
+      "archetype": "Dragapult ex",
+      "exact_deck_sha256": "14399e66b88b8ac7f19dd45125f8780e758bfa1be9680ef7d6941e98c639d4c1",
+      "ranks": [
+        51
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Mega Lucario ex / Solrock",
+      "exact_deck_sha256": "5215eb3eb285a44731d7b51d8d6b07661bd5b303c91dd693acce3a7b2778c493",
+      "ranks": [
+        53
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "exact_deck_sha256": "16fe2542d5b0b3dfe2b5e3ebcac679c107b8a476835726f2aec4e816e536e813",
+      "ranks": [
+        74
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Festival Lead / Dipplin",
+      "exact_deck_sha256": "a23b89031a0c3a384c860e8be483be3a7264d25ee5737fc5d511627ed5bd0f9d",
+      "ranks": [
+        77
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "exact_deck_sha256": "41f5fc7f6f74b69842e5bde647154619a29c004cb4afea1055c215eab67b359f",
+      "ranks": [
+        80
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Barbaracle / Cornerstone Mask Ogerpon ex",
+      "exact_deck_sha256": "70c72579c3756bf35c3b06300b2819b549f808c733ab3e0e043f0d303d649d70",
+      "ranks": [
+        86
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "exact_deck_sha256": "4dbed9a0888fad86eba05d92a088258e97db703afb4436df0795df2f0d1f2ef7",
+      "ranks": [
+        87
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "exact_deck_sha256": "fdf9c5b1e7507ced3eb6c1922921c39136880c75a36a61a0b1249c4be21eac28",
+      "ranks": [
+        91
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "exact_deck_sha256": "f65c3e061690ab89f9d0796e0b33c183c4c38d44911647724de0672b71b711d7",
+      "ranks": [
+        95
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "exact_deck_sha256": "68c95eacc12a6aed39544ecf7f93e20fc59799e398e3d1ccc612cfb8d7e58127",
+      "ranks": [
+        98
+      ],
+      "selected_for_pool": false
+    },
+    {
+      "archetype": "Team Rocket's Mewtwo ex / Spidops",
+      "exact_deck_sha256": "31136119926ea587f066e1dc275191ea879663df651a79a882be05727a3d865a",
+      "ranks": [
+        100
+      ],
+      "selected_for_pool": false
+    }
+  ],
+  "exact_decks_absent_from_0806_pool": 23,
+  "interpretation": "archetype coverage; exact-list differences retained for audit",
+  "limitless_matchup_evidence": {
+    "alakazam_cri": "https://play.limitlesstcg.com/decks/alakazam-meg/matchups?format=standard&rotation=2026&set=CRI",
+    "dragapult_dusknoir_pbl": "https://play.limitlesstcg.com/decks/dragapult-dusknoir/matchups/?format=standard&rotation=2026&set=PBL",
+    "mega_lucario_cri": "https://play.limitlesstcg.com/decks/mega-lucario-ex/matchups?format=standard&rotation=2026&set=CRI"
+  },
+  "new_archetypes_absent_from_0806_pool": [
+    "Chandelure / Sylveon"
+  ],
+  "resulting_deck_count": 65,
+  "resulting_schedule_games": 256,
+  "schema_version": "frozen_0812_top100_diff_audit_v1",
+  "selected_additions": [
+    "chandelure_sylveon_17872b59494a",
+    "dragapult_ex_dusknoir_self_destruct_d8454cc8351f",
+    "mega_kangaskhan_ex_crustle_15f87ee2cd11",
+    "team_rocket_s_mewtwo_ex_spidops_fba1f87c7115",
+    "cynthia_s_garchomp_ex_roserade_3f8ee4b51dd3",
+    "dragapult_ex_blaziken_ex_b4ed553f1dc4",
+    "mega_starmie_ex_dusknoir_654f54a66c95",
+    "mega_lucario_ex_solrock_5b1e19a2e025",
+    "mega_lopunny_ex_mega_froslass_ex_236786f63c7a",
+    "crustle_great_tusk_5822b67f77ee"
+  ],
+  "source_report_sha256": "68d05e4767d16b2b8fdacf97405b773e82e53bd8f7fad5c53f73d7c032c26e37",
+  "top100_players": 100,
+  "top100_unique_exact_decks": 39,
+  "top500_counter_selections": [
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "deck_id": "mega_kangaskhan_ex_crustle_15f87ee2cd11",
+      "exact_deck_sha256": "15f87ee2cd1150c0404210c59bf7ec88e40efc0fc953002f534370dd711a17e5",
+      "purpose": "dragapult_counter",
+      "rank": 159,
+      "segment": "top500_limitless_counter_selection"
+    },
+    {
+      "archetype": "Team Rocket's Mewtwo ex / Spidops",
+      "deck_id": "team_rocket_s_mewtwo_ex_spidops_fba1f87c7115",
+      "exact_deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+      "purpose": "lucario_counter",
+      "rank": 193,
+      "segment": "top500_limitless_counter_selection"
+    },
+    {
+      "archetype": "Cynthia's Garchomp ex / Roserade",
+      "deck_id": "cynthia_s_garchomp_ex_roserade_3f8ee4b51dd3",
+      "exact_deck_sha256": "3f8ee4b51dd39a464b9ca5bbda6c84fad383a50c04ee0c43c74df9a989893c04",
+      "purpose": "dragapult_and_lucario_counter",
+      "rank": 222,
+      "segment": "top500_limitless_counter_selection"
+    },
+    {
+      "archetype": "Dragapult ex / Blaziken ex",
+      "deck_id": "dragapult_ex_blaziken_ex_b4ed553f1dc4",
+      "exact_deck_sha256": "b4ed553f1dc4a6ac4d7835eb521b78bde2f25e7c32673438c9d364652554ff73",
+      "purpose": "alakazam_counter",
+      "rank": 240,
+      "segment": "top500_limitless_counter_selection"
+    },
+    {
+      "archetype": "Mega Starmie ex / Dusknoir",
+      "deck_id": "mega_starmie_ex_dusknoir_654f54a66c95",
+      "exact_deck_sha256": "654f54a66c951ab2b6f4a714286552a614ecb94e84752b47bf03770c4cd7c933",
+      "purpose": "lucario_counter",
+      "rank": 294,
+      "segment": "top500_limitless_counter_selection"
+    },
+    {
+      "archetype": "Mega Lucario ex / Solrock",
+      "deck_id": "mega_lucario_ex_solrock_5b1e19a2e025",
+      "exact_deck_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b",
+      "purpose": "stadium_coverage_gravity_mountain",
+      "rank": 170,
+      "segment": "top500_stadium_coverage"
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "deck_id": "mega_lopunny_ex_mega_froslass_ex_236786f63c7a",
+      "exact_deck_sha256": "236786f63c7a461f9ec384064539ada5c6d7342bef4b7f22d7833ace76bdec8c",
+      "purpose": "stadium_coverage_lumiose_city",
+      "rank": 399,
+      "segment": "top500_stadium_coverage"
+    },
+    {
+      "archetype": "Crustle / Great Tusk",
+      "deck_id": "crustle_great_tusk_5822b67f77ee",
+      "exact_deck_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210",
+      "purpose": "great_tusk_mill_coverage",
+      "rank": 360,
+      "segment": "top500_mill_coverage"
+    }
+  ],
+  "top500_source_report_sha256": "e71a51ba3f9fe46136f0484f0822587544b0758ca42a7fbbad42bb18cda86843"
+}

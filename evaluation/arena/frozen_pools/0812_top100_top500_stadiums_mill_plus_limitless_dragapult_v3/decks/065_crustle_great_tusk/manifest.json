@@ -1,0 +1,20 @@
+{
+  "archetype": "Crustle / Great Tusk",
+  "deck_id": "crustle_great_tusk_5822b67f77ee",
+  "exact_deck_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210",
+  "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+  "provenance": {
+    "segment": "top500_mill_coverage",
+    "selection_purpose": "great_tusk_mill_coverage",
+    "source_ranks": [
+      360
+    ],
+    "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+  },
+  "representative_card_ids": [
+    345,
+    58,
+    1247
+  ],
+  "schema_version": "evaluation_frozen_0812_deck_v1"
+}
