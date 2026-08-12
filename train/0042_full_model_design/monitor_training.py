@@ -37,13 +37,13 @@ def _read_json(path: Path) -> dict[str, Any]:
         return {"read_error": str(error)}
 
 
-def _tail(path: Path, limit: int = 131_072) -> str:
+def _tail(path: Path, limit: int = 131_072, *, start_offset: int = 0) -> str:
     if not path.is_file():
         return ""
     with path.open("rb") as handle:
         handle.seek(0, os.SEEK_END)
         size = handle.tell()
-        handle.seek(max(0, size - limit))
+        handle.seek(max(start_offset, size - limit))
         return handle.read().decode(errors="replace")
 
 
@@ -115,6 +115,7 @@ def monitor(args: argparse.Namespace) -> int:
     alert_path = monitor_root / "alert.json"
     monitor_root.mkdir(parents=True, exist_ok=True)
     started = time.time()
+    log_start_offset = log_path.stat().st_size if log_path.is_file() else 0
     with log_path.open("ab", buffering=0) as log:
         process = subprocess.Popen(args.command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
         last_lines = 0
@@ -129,7 +130,9 @@ def monitor(args: argparse.Namespace) -> int:
             status_modified_at = (
                 status_path.stat().st_mtime if status_path.is_file() else None
             )
-            tail = _tail(log_path)
+            # Retries append to the audit log. Historical tracebacks must not
+            # terminate a fresh process, so fatal scanning is attempt-local.
+            tail = _tail(log_path, start_offset=log_start_offset)
             fatal = [pattern for pattern in FATAL_PATTERNS if pattern in tail]
             returncode = process.poll()
             heartbeat = {

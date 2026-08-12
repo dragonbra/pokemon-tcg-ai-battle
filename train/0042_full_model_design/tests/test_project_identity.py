@@ -20,6 +20,9 @@ full_runner = importlib.import_module(
     "train.0042_full_model_design.training.run_full_semantic"
 )
 league = importlib.import_module("train.0042_full_model_design.league")
+own_archetype = importlib.import_module(
+    "train.0042_full_model_design.policy.own_archetype"
+)
 
 
 class ProjectIdentityTest(unittest.TestCase):
@@ -141,6 +144,127 @@ class ProjectIdentityTest(unittest.TestCase):
         self.assertEqual(full_runner.exact_deck_sha256(deck), config.focal_exact_deck_sha256)
         self.assertEqual({job.focal_deck for job in jobs}, {deck})
         self.assertNotEqual(deck, full_runner.focal_deck())
+
+    def test_v7_023_grass_focal_identity_and_archetype_are_explicit(self) -> None:
+        config = full_runner.RunConfig(
+            version="V7_hydrapple_ex_meganium_023",
+            focal_deck_path=(
+                "train/0042_full_model_design/focal_decks/"
+                "hydrapple_ex_meganium_023/deck.csv"
+            ),
+            focal_deck_id="hydrapple_ex_meganium_415af0a5541c",
+            focal_exact_deck_sha256=(
+                "415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d"
+            ),
+            focal_deck_display_name="023 · Hydrapple ex / Meganium",
+            focal_deck_source="0042_policy_0809_neutral_55_v1_catalog_023",
+        )
+        config.validate()
+        deck = full_runner.focal_deck(config)
+        jobs = full_runner.build_jobs(
+            source_policy_update=0,
+            seed=123,
+            count=256,
+            focal_cards=deck,
+        )
+        archetype = own_archetype.OwnArchetypeVocabulary.load().classify_own_deck(
+            deck
+        )
+
+        self.assertEqual(len(deck), 60)
+        self.assertEqual(full_runner.exact_deck_sha256(deck), config.focal_exact_deck_sha256)
+        self.assertEqual({job.focal_deck for job in jobs}, {deck})
+        self.assertEqual(archetype.value, 6)
+        self.assertEqual(
+            own_archetype.OwnArchetypeVocabulary.load().classes[archetype.value].name,
+            "festival_lead",
+        )
+
+    def test_v8_002_alakazam_focal_identity_and_archetype_are_explicit(self) -> None:
+        config = full_runner.RunConfig(
+            version="V8_alakazam_dudunsparce_002",
+            focal_deck_path=(
+                "train/0042_full_model_design/focal_decks/"
+                "alakazam_dudunsparce_002/deck.csv"
+            ),
+            focal_deck_id="alakazam_dudunsparce_3f4515092dc5",
+            focal_exact_deck_sha256=(
+                "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf"
+            ),
+            focal_deck_display_name="002 · Alakazam / Dudunsparce",
+            focal_deck_source="0042_policy_0809_neutral_55_v1_catalog_002",
+            initial_model_checkpoint=(
+                "rl_runs/0042_full_model_design/versions/"
+                "V7_hydrapple_ex_meganium_023/checkpoint/update-000270.pt"
+            ),
+        )
+        config.validate()
+        deck = full_runner.focal_deck(config)
+        jobs = full_runner.build_jobs(
+            source_policy_update=0,
+            seed=123,
+            count=256,
+            focal_cards=deck,
+        )
+        vocabulary = own_archetype.OwnArchetypeVocabulary.load()
+        archetype = vocabulary.classify_own_deck(deck)
+
+        self.assertEqual(len(deck), 60)
+        self.assertEqual(
+            full_runner.exact_deck_sha256(deck),
+            config.focal_exact_deck_sha256,
+        )
+        self.assertEqual({job.focal_deck for job in jobs}, {deck})
+        self.assertEqual(archetype.value, 3)
+        self.assertEqual(vocabulary.classes[archetype.value].name, "alakazam")
+
+    def test_v10_001_grimmsnarl_focal_identity_and_u90_lineage_are_explicit(self) -> None:
+        config = full_runner.RunConfig(
+            version="V10_marnies_grimmsnarl_ex_froslass_001",
+            focal_deck_path=(
+                "train/0042_full_model_design/focal_decks/"
+                "marnies_grimmsnarl_ex_froslass_001/deck.csv"
+            ),
+            focal_deck_id="marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6",
+            focal_exact_deck_sha256=(
+                "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af"
+            ),
+            focal_deck_display_name="001 · Marnie's Grimmsnarl ex / Froslass",
+            focal_deck_source="0042_policy_0809_neutral_55_v1_catalog_001",
+            initial_model_checkpoint=(
+                "rl_runs/0042_full_model_design/versions/"
+                "V9_alakazam_dudunsparce_002_fp16_drift_allowed/"
+                "checkpoint/update-000090.pt"
+            ),
+            allow_fp16_deployment_numeric_drift=True,
+        )
+        config.validate()
+        deck = full_runner.focal_deck(config)
+        jobs = full_runner.build_jobs(
+            source_policy_update=0,
+            seed=123,
+            count=256,
+            focal_cards=deck,
+        )
+        vocabulary = own_archetype.OwnArchetypeVocabulary.load()
+        archetype = vocabulary.classify_own_deck(deck)
+
+        self.assertEqual(len(deck), 60)
+        self.assertEqual(
+            full_runner.exact_deck_sha256(deck),
+            config.focal_exact_deck_sha256,
+        )
+        self.assertEqual({job.focal_deck for job in jobs}, {deck})
+        self.assertEqual(archetype.value, 2)
+        self.assertEqual(
+            vocabulary.classes[archetype.value].name,
+            "marnies_grimmsnarl_ex",
+        )
+        checkpoint = Path(config.initial_model_checkpoint)
+        self.assertEqual(
+            full_runner._sha256(checkpoint),
+            "b9d754214deb679c9ab0fb45c35ee39dfee39692b8aef73f88b06c4c1f894776",
+        )
 
     def test_formal_run_uses_0042_strategy_identity(self) -> None:
         config = full_runner.RunConfig()

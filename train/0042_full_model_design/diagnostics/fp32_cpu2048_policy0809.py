@@ -74,11 +74,16 @@ def _effective_sha256(payload: Mapping[str, Any]) -> str:
     return digest.hexdigest()
 
 
-def export_fp32_diagnostic(*, checkpoint: Path, output: Path) -> dict[str, Any]:
+def export_fp32_diagnostic(
+    *, checkpoint: Path, output: Path,
+    evaluation_inference_device: str = "cpu",
+) -> dict[str, Any]:
     """Export the complete effective candidate without an FP16 quantization step."""
 
     if output.exists():
         raise FileExistsError(output)
+    if not evaluation_inference_device.strip():
+        raise ValueError("evaluation inference device must be nonempty")
     # First reuse the normal exporter for runtime/assets/schema validation.  The
     # resulting tensor payload is immediately replaced from the audited FP32 base
     # and FP32 RL checkpoint before the package can be used.
@@ -125,7 +130,7 @@ def export_fp32_diagnostic(*, checkpoint: Path, output: Path) -> dict[str, Any]:
         "portable_checkpoint_sha256": _sha256(portable_path),
         "storage_dtype": "fp32",
         "runtime_dtype": "fp32",
-        "evaluation_inference_device": "cpu",
+        "evaluation_inference_device": evaluation_inference_device,
         "diagnostic_contract_id": CONTRACT_ID,
         "diagnostic_effective_sha256": _effective_sha256(portable),
         "kaggle_strength_evidence": False,

@@ -176,6 +176,17 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
         second = exporter.deployment_effective_sha256(payload, manifest)
         self.assertNotEqual(first, second)
 
+    def test_custom_frozen_export_is_guarded_by_final_effective_identity(self) -> None:
+        source = Path(exporter.__file__).read_text(encoding="utf-8")
+        self.assertNotIn(
+            "custom focal decks cannot inherit a Frozen selection produced by 007",
+            source,
+        )
+        self.assertIn(
+            "final package deployment identity differs from the exact-deck",
+            source,
+        )
+
     def test_frozen_selection_requires_v4_candidate_deployment_evidence(self) -> None:
         (exporter.ROOT / ".tmp").mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=exporter.ROOT / ".tmp") as temporary:
@@ -229,6 +240,9 @@ class ExportFullSemanticCandidateTest(unittest.TestCase):
             selection = exporter._frozen_selection(checkpoint, 5)
         self.assertEqual(selection["chance_boundaries"], 1)
         self.assertEqual(selection["semantic_fallbacks"], 0)
+        self.assertEqual(selection["wins"], 1024)
+        self.assertEqual(selection["losses"], 1024)
+        self.assertEqual(selection["draws"], 0)
 
 
 if __name__ == "__main__":

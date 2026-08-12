@@ -65,9 +65,25 @@ class LongRun0042ContractTest(unittest.TestCase):
         self.assertTrue(all(job.focal_won_toss is not None for job in jobs))
         self.assertEqual(len({job.seed for job in jobs}), 2048)
 
-    def test_cpu_cuda_value_parity_tolerance_covers_observed_reduction_jitter(self) -> None:
-        self.assertEqual(RUNNER.ATTESTED_CPU_CUDA_VALUE_ATOL, 5.0e-6)
-        self.assertLess(2.2649765014648438e-6, RUNNER.ATTESTED_CPU_CUDA_VALUE_ATOL)
+    def test_numeric_closeness_never_blocks_training(self) -> None:
+        report = {
+            "full_trace_coverage": True,
+            "fixed_action_cuda_state_errors": 0,
+            "tensor_mismatch_counts": {},
+            "integer_mask_relation_exact": True,
+            "history_wrap": {"passed": True},
+            "model": {"passed": False, "greedy_action_divergences": 0},
+            "value_model": {"passed": False},
+            "training_to_package": {
+                "passed": False,
+                "root": {"greedy_action_divergences": 0},
+                "allocation": {"top1_divergences": 0},
+            },
+            "full_cpu_causalknowledge_parity": False,
+        }
+        self.assertTrue(RUNNER._attested_package_parity_passed(report))
+        report["tensor_mismatch_counts"] = {"option_mask": 1}
+        self.assertFalse(RUNNER._attested_package_parity_passed(report))
 
 
 if __name__ == "__main__":

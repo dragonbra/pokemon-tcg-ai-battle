@@ -668,6 +668,7 @@ def _publish(
     requested_numbers: tuple[str, ...] = TOP_TEN,
     page_title: str = "Policy-0809 Report",
     evidence_note: str | None = None,
+    comparison_label: str | None = None,
 ) -> None:
     total_games = sum(row["games"] for row in rows)
     meta_rows, other_meta = _meta_aggregates(candidates, rows)
@@ -727,6 +728,7 @@ def _publish(
             status = '<span class="pending">未测试</span>'
             record = rate = first = second = wall = "-"
             data_rate = "-1"
+            comparison = "-"
         else:
             title = (
                 f'<a href="{html.escape(row["report"], quote=True)}">'
@@ -747,13 +749,23 @@ def _publish(
             )
             wall = f'{row["wall_seconds"]:.1f}s'
             data_rate = f'{row["win_rate"]:.12f}'
+            delta = row.get("policy_0809_baseline_win_rate_delta")
+            comparison = (
+                f'{float(delta):+.2%}' if delta is not None
+                else "无同合同基线"
+            )
+        comparison_cell = (
+            f'<td class="strong">{comparison}</td>' if comparison_label else ""
+        )
         table_rows.append(
             f'<tr data-rate="{data_rate}" data-rank="{int(schedule_entry.best_rank)}">'
             f'<td class="number">{number}</td><td><div class="deck">'
             f'<span class="art">{images}</span><span>{title}<small>{status} · '
             f'频率 {int(schedule_entry.games)}/256</small></span></div></td>'
             f'<td>{record}</td><td class="strong">{rate}</td><td>{first}</td>'
-            f'<td>{second}</td><td>{int(schedule_entry.best_rank)}</td>'
+            f'<td>{second}</td>'
+            f'{comparison_cell}'
+            f'<td>{int(schedule_entry.best_rank)}</td>'
             f'<td>{int(schedule_entry.observed_players)}</td>'
             f'<td>{html.escape(str(schedule_entry.segment))}</td><td>{wall}</td></tr>'
         )
@@ -792,7 +804,7 @@ def _publish(
     page = f"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Policy-0809 Report · Frozen-0809 卡组强度</title><style>
 :root{{--bg:#f3f6f4;--paper:#fff;--ink:#17231f;--muted:#66766f;--line:#d9e3de;--green:#176b4d;--red:#a54343}}
 *{{box-sizing:border-box}}body{{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,"PingFang SC",sans-serif}}header{{padding:28px max(20px,calc((100vw - 1500px)/2));background:#18382d;color:#fff}}h1{{margin:0;font-size:30px;letter-spacing:0}}header p{{max-width:1050px;margin:7px 0 0;color:#cfe1da}}main{{max-width:1500px;margin:auto;padding:20px}}.stats{{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--paper)}}.stat{{padding:15px 18px;border-right:1px solid var(--line)}}.stat:last-child{{border:0}}.stat b{{display:block;font-size:23px}}.stat span,small{{display:block;color:var(--muted)}}.tools{{display:flex;gap:10px;margin:18px 0}}input{{width:min(420px,100%);padding:9px 11px;border:1px solid #b9c9c1;border-radius:4px;background:#fff}}.table{{overflow:auto;border:1px solid var(--line);background:#fff}}table{{width:100%;min-width:1180px;border-collapse:collapse}}th,td{{padding:10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}}th{{position:sticky;top:0;background:#e9f0ec;color:#486158;font-size:12px}}th:nth-child(2),td:nth-child(2){{text-align:left}}tr:hover td{{background:#f8fbf9}}a{{color:var(--green);font-weight:700;text-decoration:none}}.deck{{display:flex;align-items:center;gap:10px}}.art{{display:flex;width:68px}}.art img{{width:38px;height:53px;margin-right:-8px;border:1px solid #c9d5cf;border-radius:3px;object-fit:cover;background:#e4ebe7}}.strong{{font-size:16px;font-weight:750}}code{{font-size:11px}}.number{{font-size:16px;font-weight:850;color:var(--green);font-variant-numeric:tabular-nums}}.done{{color:var(--green)}}.pending{{color:#8a6b28}}section{{margin-top:20px}}section h2{{margin:0 0 6px}}.section-note{{margin:0 0 12px;color:var(--muted)}}.contract{{margin-top:16px;padding:14px 16px;border-left:4px solid var(--green);background:#fff;color:var(--muted)}}@media(max-width:760px){{.stats{{grid-template-columns:1fr 1fr}}.stat:nth-child(2){{border-right:0}}header{{padding:22px 16px}}main{{padding:14px}}}}
-</style></head><body><header><h1>{html.escape(page_title)}</h1><p>001–055 全量 exact deck 目录；本次正式范围为 {html.escape(", ".join(requested_numbers))}。已测试卡组使用 {html.escape(focal_policy_id)} 的 Kaggle FP16-storage/FP32-runtime candidate，对手为独立完整 {html.escape(opponent_policy_id)}；8 个 256 局 replica 均由 seeded toss winner Agent 自主选择先后手。</p>{f'<p>{html.escape(evidence_note)}</p>' if evidence_note else ''}</header><main><div class="stats"><div class="stat"><b>{len(rows)}/55</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>正式对局</span></div><div class="stat"><b>{sum(row['wins'] for row in rows):,}</b><span>{html.escape(focal_policy_id)} 胜局</span></div><div class="stat"><b>{sum(row['wall_seconds'] for row in rows)/3600:.2f}h</b><span>累计 wall time</span></div></div><div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div><div class="table" id="deck-catalog"><table id="results"><thead><tr><th>编号</th><th>卡组 / 2048 局报告</th><th>W-L-D</th><th>胜率</th><th>实际先攻</th><th>实际后攻</th><th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table></div><section id="meta-archetype-summary"><h2>14 种 Meta Archetype 聚合胜率</h2><p class="section-note">按 focal exact deck 的 priority-ordered trigger-card taxonomy 分类；胜率按已完成对局加权，不对未测试构筑填 0。{html.escape(other_note)}</p><div class="table"><table><thead><tr><th>Meta</th><th>Archetype</th><th>已测/目录构筑</th><th>对局</th><th>W-L-D</th><th>加权胜率</th><th>构筑编号</th></tr></thead><tbody>{''.join(meta_table)}</tbody></table></div></section><div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · Candidate <code>{CANDIDATE_CONTRACT}</code> · {html.escape(focal_policy_id)} <code>{html.escape(focal_policy_sha256)}</code> · 14-axis taxonomy <code>{html.escape(str(META_ARCHETYPE_PATH.relative_to(ROOT)))}</code></div><script>const q=document.querySelector('#search'),body=document.querySelector('#results tbody');q.addEventListener('input',()=>{{const s=q.value.toLowerCase();for(const r of body.rows)r.hidden=!r.innerText.toLowerCase().includes(s)}});</script><script id="report-data" type="application/json">{embedded}</script></main></body></html>"""
+</style></head><body><header><h1>{html.escape(page_title)}</h1><p>001–055 全量 exact deck 目录；本次正式范围为 {html.escape(", ".join(requested_numbers))}。已测试卡组使用 {html.escape(focal_policy_id)} 的 Kaggle FP16-storage/FP32-runtime candidate，对手为独立完整 {html.escape(opponent_policy_id)}；8 个 256 局 replica 均由 seeded toss winner Agent 自主选择先后手。</p>{f'<p>{html.escape(evidence_note)}</p>' if evidence_note else ''}</header><main><div class="stats"><div class="stat"><b>{len(rows)}/55</b><span>完成卡组</span></div><div class="stat"><b>{total_games:,}</b><span>正式对局</span></div><div class="stat"><b>{sum(row['wins'] for row in rows):,}</b><span>{html.escape(focal_policy_id)} 胜局</span></div><div class="stat"><b>{sum(row['wall_seconds'] for row in rows)/3600:.2f}h</b><span>累计 wall time</span></div></div><div class="tools"><input id="search" type="search" placeholder="筛选编号或牌型"></div><div class="table" id="deck-catalog"><table id="results"><thead><tr><th>编号</th><th>卡组 / 2048 局报告</th><th>W-L-D</th><th>胜率</th><th>实际先攻</th><th>实际后攻</th>{f'<th>{html.escape(comparison_label)}</th>' if comparison_label else ''}<th>最佳名次</th><th>观察人数</th><th>来源</th><th>耗时</th></tr></thead><tbody>{''.join(table_rows)}</tbody></table></div><section id="meta-archetype-summary"><h2>14 种 Meta Archetype 聚合胜率</h2><p class="section-note">按 focal exact deck 的 priority-ordered trigger-card taxonomy 分类；胜率按已完成对局加权，不对未测试构筑填 0。{html.escape(other_note)}</p><div class="table"><table><thead><tr><th>Meta</th><th>Archetype</th><th>已测/目录构筑</th><th>对局</th><th>W-L-D</th><th>加权胜率</th><th>构筑编号</th></tr></thead><tbody>{''.join(meta_table)}</tbody></table></div></section><div class="contract">Contract <code>{FROZEN_0806_CONTRACT_ID}</code> · Candidate <code>{CANDIDATE_CONTRACT}</code> · {html.escape(focal_policy_id)} <code>{html.escape(focal_policy_sha256)}</code> · 14-axis taxonomy <code>{html.escape(str(META_ARCHETYPE_PATH.relative_to(ROOT)))}</code></div><script>const q=document.querySelector('#search'),body=document.querySelector('#results tbody');q.addEventListener('input',()=>{{const s=q.value.toLowerCase();for(const r of body.rows)r.hidden=!r.innerText.toLowerCase().includes(s)}});</script><script id="report-data" type="application/json">{embedded}</script></main></body></html>"""
     _atomic_text(output_root / "index.html", page)
 
 

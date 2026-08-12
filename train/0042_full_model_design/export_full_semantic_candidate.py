@@ -282,7 +282,10 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         raise ValueError("canonical Frozen evaluation contains semantic fallback")
     chance_boundaries = sum(bool(row["chance_boundary"]) for row in valid)
     wins = sum(row.get("outcome") == 1 for row in valid)
-    losses = len(valid) - wins
+    losses = sum(row.get("outcome") == -1 for row in valid)
+    draws = sum(row.get("outcome") == 0 for row in valid)
+    if wins + losses + draws != len(valid):
+        raise ValueError("canonical Frozen evaluation contains an invalid outcome")
     first = [row for row in valid if row.get("focal_first") is True]
     second = [row for row in valid if row.get("focal_first") is False]
     if len(first) + len(second) != len(valid) or not first or not second:
@@ -297,6 +300,7 @@ def _frozen_selection(checkpoint: Path, update: int) -> dict[str, Any]:
         "episodes": len(valid),
         "wins": wins,
         "losses": losses,
+        "draws": draws,
         "win_rate": wins / len(valid),
         "first_wins": sum(row.get("outcome") == 1 for row in first),
         "second_wins": sum(row.get("outcome") == 1 for row in second),
@@ -323,10 +327,6 @@ def export_candidate(
     if output.exists():
         raise FileExistsError(output)
     custom_deck = deployment_deck is not None
-    if custom_deck and require_frozen_selection:
-        raise ValueError(
-            "custom focal decks cannot inherit a Frozen selection produced by 007"
-        )
     if custom_deck:
         focal_cards = tuple(int(value) for value in deployment_deck or ())
         if (
@@ -536,6 +536,8 @@ def export_candidate(
             "schema_version": OUTPUT_SCHEMA,
             "candidate": output.name,
             "project_id": PROJECT_ID,
+            "runtime_framework": "pytorch",
+            "native_runtime_load_order": "torch_before_cg",
             "version": metadata.get("version"),
             "deck_id": focal_deck_id,
             "deck_display_name": focal_deck_display_name,
@@ -583,7 +585,7 @@ def export_candidate(
             "frozen_evaluation": frozen,
             "selection": (
                 f"{metadata.get('version')} update{checkpoint_update} canonical Frozen-0809 greedy "
-                f"{frozen['wins']}-{frozen['losses']} "
+                f"{frozen['wins']}-{frozen['losses']}-{frozen['draws']} "
                 f"({frozen['win_rate'] * 100:.8f}%), 0 error"
                 if frozen is not None
                 else "pre-evaluation deployment materialization; no strength result attached"
@@ -599,7 +601,8 @@ def export_candidate(
             ] != manifest["deployment_effective_sha256"]
         ):
             raise ValueError(
-                "final package deployment identity differs from evaluated candidate"
+                "final package deployment identity differs from the exact-deck "
+                "evaluated candidate"
             )
         manifest["package_file_sha256"] = _package_file_hashes(output)
         (output / "manifest.json").write_text(

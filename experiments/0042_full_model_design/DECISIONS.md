@@ -73,9 +73,13 @@
 - Exclude pre-seat context-41 rows (`relative_first_player=0`) from sparse gradient diagnostics;
   this does not filter PPO training data because stochastic training rollout does not delegate
   context 41. Keep `0` legal only in the explicit pre-seat runtime path.
-- Set immutable-trace CPU/CUDA Value numeric tolerance to explicit `5e-6`. This covers observed
-  reduction jitter (`1.43e-6` versus `2.265e-6` on repeated identical U250 traces) while retaining
-  zero greedy divergence, root-logit tolerance, package parity, and Value-sign hard gates.
+- 2026-08-12: remove numeric-closeness gates from training launch entirely, by explicit user
+  decision. CPU/CUDA Value and FP32/FP16 comparisons remain recorded diagnostics, but their
+  tolerance/pass fields cannot block PPO. Exact tensor/mask semantics, greedy-action identity,
+  checkpoint/deployment identity, exact-deck routing, and independent Policy-0809 identity remain
+  hard gates. V15 is retained as a failed U0 historical version; recovery starts V16/010 from the
+  immutable V14 U50 model-only checkpoint with fresh optimizer and on-policy data, then shifts
+  011 and the five remaining focal-deck versions through V17–V22.
 
 ## Evidence
 

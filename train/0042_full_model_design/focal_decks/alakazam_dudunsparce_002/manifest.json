@@ -1,0 +1,16 @@
+{
+  "schema": "0042_focal_exact_deck_v1",
+  "deck_id": "alakazam_dudunsparce_3f4515092dc5",
+  "display_name": "002 · Alakazam / Dudunsparce",
+  "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+  "own_archetype_id": 3,
+  "own_archetype_name": "alakazam",
+  "source": "0042_policy_0809_neutral_55_v1_catalog_002",
+  "cards": 60,
+  "provenance": {
+    "source_deck": "train/0042_full_model_design/league/decks/002_alakazam_dudunsparce/deck.csv",
+    "source_manifest": "train/0042_full_model_design/league/decks/002_alakazam_dudunsparce/manifest.json",
+    "source_deck_file_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
+    "pool_id": "0042_policy_0809_neutral_55_v1"
+  }
+}

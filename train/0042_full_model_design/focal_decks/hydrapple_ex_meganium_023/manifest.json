@@ -1,0 +1,17 @@
+{
+  "schema": "0042_focal_exact_deck_v1",
+  "deck_id": "hydrapple_ex_meganium_415af0a5541c",
+  "display_name": "023 · Hydrapple ex / Meganium",
+  "exact_deck_sha256": "415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d",
+  "own_archetype_id": 6,
+  "own_archetype_name": "festival_lead",
+  "source": "0042_policy_0809_neutral_55_v1_catalog_023",
+  "cards": 60,
+  "provenance": {
+    "source_deck": "train/0042_full_model_design/league/decks/023_hydrapple_ex_meganium/deck.csv",
+    "source_manifest": "train/0042_full_model_design/league/decks/023_hydrapple_ex_meganium/manifest.json",
+    "source_deck_file_sha256": "96cda5323dccba185bb29b7ae3150c076043ddeef4b6607ea5c204bbe1efe26c",
+    "pool_id": "0042_policy_0809_neutral_55_v1",
+    "own_archetype_reason": "priority taxonomy class 6 trigger card 93 precedes class 8 grass-evolution triggers"
+  }
+}

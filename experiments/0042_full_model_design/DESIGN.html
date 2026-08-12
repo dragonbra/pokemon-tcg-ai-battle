@@ -37,7 +37,7 @@
 <header><div>
   <h1>0042 · Strategy-Conditioned Full Model</h1>
   <div class="sub">Frozen semantic space · trainable Value understanding · detached policy readout</div>
-  <div class="status">V1 sealed at U250 · unbounded V5 U250 branch active · 281 tests pass</div>
+  <div class="status">V22 U10 finishing · Champion G1 seal + Full-55 CUDA-2048 handoff armed</div>
 </div></header>
 <main>
   <section class="metrics">
@@ -108,20 +108,86 @@ selected option + raw h_t -> unchanged legacy GRU transition</pre>
 
   <section>
     <h2>PPO Protocol V2 and Frozen-0809</h2>
-    <p>Current V6 exact focal deck <code>dragapult_ex_0042_v6</code>
-      (<code>7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3</code>);
-      own-archetype class 0 (<code>dragapult_ex</code>); 256 games per update; all valid decisions;
+    <p>Current V11 exact focal deck is catalog 001,
+      <code>marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6</code>
+      (<code>c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af</code>).
+      The immutable taxonomy resolves this exact deck to actor-visible own-archetype class 2
+      (<code>marnies_grimmsnarl_ex</code>), changing only the V9 class-3 focal conditioning while preserving tensor
+      shapes, action semantics, and opponent inputs. Runtime and candidate metadata independently bind the
+      exact 60-card identity; 256 games per update; all valid decisions;
       2,048-decision minibatches; up to three complete shuffled data epochs; target/hard behavior
       KL guards 0.015/0.025; FP32 AdamW; independently explicit actor-group LRs; Value-only LR
       1e-4; no update cap.</p>
-    <p>V6 strict-loads V5 U130 focal model-only weights after snapshotting immutable Policy-0809/U0
-      as the reference-KL policy, then starts a fresh AdamW state and fresh rollout. The selected
+    <p>V9 strict-loads V7 U270 model-only checkpoint
+      <code>0ce3b0920d4fd09674d06270c100c500e7bea627ee58933f0ecb02d69a5a5198</code>
+      after snapshotting immutable Policy-0809/U0 as the unchanged reference-KL policy, then starts
+      a fresh AdamW state, RNG stream, and on-policy rollout. Learned decoder, Value, adapters,
+      allocation, and Prize weights continue, while the exact-deck-derived own-archetype input
+      changes from V7 class 6 to V9 class 3. The selected
       protocol uses decoder 2e-5, Policy Adapter 4e-5, and
       allocation 2e-5. Across 22,719 decisions and three epochs it measured behavior KL 4.30e-4,
       root/macro KL 5.62e-5/2.36e-3, clip fraction 0.253%, and complete 3x reuse. The branch loads
-      optimizer state and rollout data are never imported from V5.</p>
+      optimizer state, RNG, rollout, and replay data are never imported from V7.</p>
+    <p>V8 completed its U0 Frozen-0809 CUDA-2048 run but stopped before PPO because one
+      training-FP32 versus FP16-storage Value sample differed by 0.0033997893, above the 0.003
+      threshold; exact inputs, CPU/CUDA runtime parity, greedy actions, and Value signs agreed.
+      V8 remains an immutable failed version. By explicit user authorization, V9 retains this
+      comparison as diagnostic rather than a PPO launch gate. Candidate deployment identity,
+      FP16-storage/FP32-runtime Frozen evaluation, Policy-0809 identity, routing, official-engine
+      health, and CPU/CUDA semantic parity remain mandatory.</p>
+    <p>V9 stopped cleanly by request after U92. V11 deliberately strict-loads its immutable U90
+      model-only checkpoint
+      <code>b9d754214deb679c9ab0fb45c35ee39dfee39692b8aef73f88b06c4c1f894776</code>, after first
+      snapshotting the same original Policy-0809/U0 reference-KL policy. V11 imports no optimizer,
+      RNG, rollout, or replay state. It preserves V9 topology, learning rates, every-10-update
+      Frozen CUDA-2048 cadence, unbounded duration, retain-all checkpoints, and the explicitly
+      approved FP16 numeric-drift diagnostic waiver. V9 U30/U90/U92 results remain provenance and
+      are not V11 strength evidence. V10 is retained as a failed formal version: it wrote U0 and
+      synced W&amp;B, then failed closed before Frozen games because the transient service PATH could
+      not resolve <code>g++</code>. V11 is a fresh version with only that service environment fixed.</p>
+    <p>V11 stopped after U50; the serialized controller then completed V12/003 Mega Lopunny (own
+      class 1), V13/006 Teal Mask Ogerpon (class 10), and V14/009 Mega Lucario (class 4). V15/010
+      Festival Lead failed before update 1 because its U0 CPU/CUDA Value diagnostic exceeded the
+      then-active 5e-6 tolerance by only 6.79e-9. No PPO update occurred, and V15 remains a failed
+      historical record. By explicit user decision, numeric-closeness gates no longer exist:
+      CPU/CUDA Value and FP32/FP16 differences remain diagnostics but cannot block training. Exact
+      tensor/mask semantics, greedy-action identity, checkpoint/deployment identity, deck routing,
+      and Policy-0809 identity remain mandatory. Recovery runs V16/010 from V14 U50, followed by
+      V17/011 Mega Kangaskhan (class 5), strictly one at a time. Each version imports only its predecessor's immutable U50 model-only
+      checkpoint, initializes fresh optimizer/RNG/on-policy state, runs exactly 50 updates, and
+      completes U50 Frozen-0809 CUDA-2048 before exit. The next version is blocked unless the U50
+      checkpoint SHA sidecar, 2,048 unique valid games, zero error/unfinished/semantic fallback,
+      candidate FP16-storage/FP32-runtime audit, and full Policy-0809 audit all pass. Exact-deck hash
+      and own-archetype class are derived again from each exact 60-card deck at launch; all other
+      training and evaluation parameters remain unchanged.</p>
+    <p>After V17 passes U50, a second controller continues through all five remaining focal
+      classes: V18/019 Barbaracle–Cornerstone Mask Ogerpon (class 7), V19/013 Cynthia’s
+      Garchomp–Roserade (class 11), V20/021 Team Rocket’s Mewtwo–Spidops (class 9), V21/044 Mega
+      Starmie–Mega Froslass (class 12), and V22/048 Archaludon–Cinderace (class 13). Each runs
+      exactly 10 updates. V18 imports only V17 U50; V19–V22 import only the preceding U10
+      model-only checkpoint, with fresh optimizer/RNG/on-policy state. Every handoff requires the
+      U10 FP16-storage/FP32-runtime CUDA-2048 result to contain 2,048 unique valid games, zero
+      error/unfinished/semantic fallback, a matching checkpoint sidecar and candidate identity,
+      and the independent complete Policy-0809 opponent identity. On completion, all 14 formal
+      own-archetype classes have appeared as focal training views; Other remains only a fallback.</p>
+    <p>Once V22 completes U10 and its terminal CUDA-2048 identity gate, the user explicitly
+      designates that immutable model-only checkpoint as <code>Champion-G1</code>, the first
+      generational research anchor. This is not an automatic Promote Champion score decision.
+      The archive records the exact V22/U10 source hash and a reference
+      FP16-storage/FP32-runtime portable deployment identity. Evaluation rematerializes the same
+      effective Champion-G1 weights for every exact-deck view; it never mutates the sealed model.</p>
+    <p>The Champion-G1 full assessment runs 55 independent CUDA-2048 views against a separately
+      materialized complete immutable Frozen Policy-0809. Phase one takes the first numbered deck
+      for each formal class 0–13: 001, 002, 003, 006, 007, 009, 010, 011, 013, 019, 020, 021,
+      044, and 048. Phase two evaluates the remaining 41 exact decks, including Other, in numeric
+      order. Every deck requires 2,048 terminal official CUDA-engine games, zero error,
+      unsupported or semantic fallback, passing candidate and opponent identities, and zero
+      shared parameter storage. The durable Combat Mat index refreshes after every completed
+      deck; canonical detail pages show the exact 60 cards, all 55 opponent matchups, and the
+      ordered 14-class plus Other aggregation. Same-contract Policy-0809 EC deltas are shown where
+      that baseline exists; absent baselines remain explicitly missing.</p>
     <p>The independent V4 smoke completed 22,182 decisions, 33 optimizer steps, 100% coverage and
-      3x reuse with behavior KL 3.82e-4 and clip fraction 0.344%. V6 runs without an update cap.</p>
+      3x reuse with behavior KL 3.82e-4 and clip fraction 0.344%. V9 runs without an update cap.</p>
     <p>Each logical 2,048-decision optimizer step uses at most two 1,024-row physical graphs with
       one shared loss denominator, one accumulated gradient, one clip, and one AdamW step. This
       retains 11 logical steps for 21,203 decisions while avoiding the WSL DXG residency failure
