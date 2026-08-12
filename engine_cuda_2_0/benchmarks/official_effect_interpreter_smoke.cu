@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "ptcg_cuda/official_effect_interpreter_pod.cuh"
+#include "ptcg_cuda/official_trigger_resolver_pod.cuh"
 
 namespace {
 

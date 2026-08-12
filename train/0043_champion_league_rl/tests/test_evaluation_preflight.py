@@ -44,3 +44,23 @@ def test_raw_fp32_candidate_and_missing_opponent_fail() -> None:
     manifest.pop("opponent_policy_identity_audit")
     with pytest.raises(module.EvaluationPreflightError):
         module.require_formal_evaluation_manifest(manifest)
+
+
+def test_cuda_2048_requires_complete_cuda_engine_2_identity() -> None:
+    manifest = _manifest()
+    manifest["schedule"].update({
+        "evaluation_id": "FrozenMeta2048-V1", "games": 2048,
+        "replicas": list(range(8)),
+    })
+    with pytest.raises(module.EvaluationPreflightError, match="CUDA Engine 2.0 identity"):
+        module.require_formal_evaluation_manifest(manifest)
+    manifest["cuda_engine_identity_audit"] = {
+        "status": "PASS", "engine_label": "cuda_engine_2_0",
+        "engine_source_sha256": "1" * 64,
+        "official_state_abi": 7, "official_rule_abi": 1,
+        "official_rule_pack_sha256": "2" * 64,
+        "compute_capability": [12, 0], "runtime_dtype": "fp32",
+        "semantic_codec": "semantic0031_v2",
+        "binary_sha256": "3" * 64, "extension_sha256": "4" * 64,
+    }
+    module.require_formal_evaluation_manifest(manifest)

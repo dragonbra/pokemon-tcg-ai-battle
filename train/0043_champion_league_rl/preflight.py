@@ -19,12 +19,16 @@ from .policy_identity import assert_storage_isolation, materialize_policy_bundle
 from .runtime import audit_runtime_tree, forward_parity
 from .evaluation.schedule import materialize as materialize_frozen_schedule
 from .training.config import audit_training_config
+from .cuda_engine_2.build import DEFAULT_BUILD_DIR, smoke_extension
+from .cuda_engine_2.identity import CudaEngineIdentity
+from .cuda_engine_2.routing import materialize_lane_requests
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 REPOSITORY_ROOT = PROJECT_ROOT.parents[1]
 CONFIG = REPOSITORY_ROOT / "experiments/0043_champion_league_rl/active_training_config.json"
 LEAGUE_CONFIG = PROJECT_ROOT / "league/config.json"
+CUDA_RULE_PACK = REPOSITORY_ROOT / ".tmp/cuda_0032_rules/official_rules.bin"
 
 
 def _pool_hash(values: list[str]) -> str:
@@ -39,7 +43,10 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
     champion = materialize_policy_bundle(PROJECT_ROOT, "Champion-G1", purpose="0043_preflight")
     assert_storage_isolation(anchor, champion)
     deck_ids = [deck.deck_id for deck in assets.decks if "training" in deck.roles]
-    policy_ids = [policy.policy_id for policy in assets.policies]
+    policy_ids = [
+        policy.policy_id for policy in assets.policies
+        if policy.frozen and policy.role in {"historical_anchor", "champion", "latest_champion"}
+    ]
     state = PFSPState()
     curriculum = state.curriculum_for(
         0, deck_ids=deck_ids, policy_ids=policy_ids,
@@ -51,6 +58,7 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
         latest_champion_policy_id=assets.latest_champion_policy_id,
         curriculum=curriculum,
     )
+    cuda_requests, cuda_schedule_sha256 = materialize_lane_requests(PROJECT_ROOT, schedule)
     gpu: dict[str, Any] = {"requested": gpu_smoke, "status": "NOT_RUN"}
     runtime_tree_sha256 = audit_runtime_tree()
     forward = [
@@ -79,6 +87,14 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
         ]
         checksum = sum(float(tensor.reshape(-1)[:1].float().sum().item()) for tensor in floating)
         torch.cuda.synchronize()
+        native_binary = DEFAULT_BUILD_DIR / "ptcg_cuda_smoke"
+        extension = DEFAULT_BUILD_DIR / "_ptcg_cuda.so"
+        engine_identity = CudaEngineIdentity.resolve(
+            REPOSITORY_ROOT, rule_pack=CUDA_RULE_PACK,
+            binary=native_binary, extension=extension,
+            require_gpu=True, require_extension=True,
+        )
+        engine_smoke = smoke_extension(CUDA_RULE_PACK, DEFAULT_BUILD_DIR)
         gpu = {
             "requested": True,
             "status": "PASS",
@@ -89,7 +105,9 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
             "storage_isolation": "PASS",
             "finite_checksum": bool(torch.isfinite(torch.tensor(checksum))),
             "allocated_bytes_delta": torch.cuda.memory_allocated() - before,
-            "scope": "tensor materialization plus synthetic forward parity; no official games or strength claim",
+            "cuda_engine_2_identity": engine_identity.to_manifest(),
+            "cuda_engine_2_smoke": engine_smoke,
+            "scope": "tensor materialization, synthetic forward parity and official CUDA runtime reset/classify; no complete official games or strength claim",
         }
     frozen_cpu = materialize_frozen_schedule(
         PROJECT_ROOT, focal_deck_id="048",
@@ -115,6 +133,8 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
             "branches": dict(Counter(lane.branch for lane in schedule)),
             "first": sum(lane.focal_goes_first for lane in schedule),
             "second": sum(not lane.focal_goes_first for lane in schedule),
+            "cuda_request_schedule_sha256": cuda_schedule_sha256,
+            "cuda_request_count": len(cuda_requests),
         },
         "gpu_smoke": gpu,
         "frozen_schedules": {

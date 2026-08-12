@@ -1,5 +1,6 @@
 #include "ptcg_cuda/official_effects_pod.cuh"
 #include "ptcg_cuda/official_continual_effects_pod.cuh"
+#include "ptcg_cuda/official_continual_refresh_pod.cuh"
 #include "ptcg_cuda/official_conditions_pod.cuh"
 #include "ptcg_cuda/official_targets_pod.cuh"
 

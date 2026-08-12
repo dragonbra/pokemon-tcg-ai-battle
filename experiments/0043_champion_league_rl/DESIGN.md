@@ -64,10 +64,16 @@ Formal Kaggle-strength evidence materializes a complete candidate as FP16 storag
 
 Frozen schedule materialization is identity-bound to focal deployment hash, complete opponent hash, exact numeric deck slot, replica and namespace. CPU-256 is replica 0; CUDA-2048 is eight immutable replicas, and its first 256 jobs equal the CPU frequency unit. Seeded toss identifies the winning Agent, which must process official context 41 and choose first or second; the harness never assigns the seat directly.
 
+## CUDA Engine 2.0 backend
+
+`engine_cuda_2_0/` is the required shared GPU engine implementation for 0043. The project-local `cuda_engine_2/` adapter pins the actual tracked source bytes, official state/rule ABI, private rule-pack hash, SM120 capability, native binary, extension, and complete policy/deck identities before creating lanes. The current RTX 5080 build produced the production static library, native runtime smoke binary, and PyTorch extension; official rule upload plus a two-lane device reset/classify smoke passed with ABI 7 and rule ABI 1. A real `001` versus `048` / reverse-seat smoke then materialized the full `semantic0031_v2` tensors on-device and routed every decision through independent complete Policy-0809 and Champion-G1 FP32 models. Both games reached terminal after 163 total decisions with engine turns 16/12, zero engine error, unfinished game, or CPU fallback. The existing upstream old-55 acceptance evidence covers 1,100 battles and 215,937 compared decisions with zero state/status/outcome mismatch, but 0043 still requires its own complete observation/action first-divergence gate before formal PPO.
+
+CUDA 12.8 compilation of the optional `official_continuation_dispatch_smoke` translation unit reached roughly 30 GiB RSS by itself. The self-contained 0043 build entrypoint therefore uses `--parallel 1` and builds only the production dependencies `ptcg_cuda_smoke` and `_ptcg_cuda`; it never invokes the CMake `all` target. This is a build-resource constraint, not a runtime or policy-semantic change.
+
 ## Current and next stage
 
 - Complete: project-local assets/runtime, complete policy materialization and isolation, league sampler, PFSP persistence, one-pass telemetry, frozen schedule materialization, candidate evaluation gates, and explicit human-decision Promote workflow.
-- Complete diagnostic: real CPU forward plus small RTX 5080 FP32 forward parity for Policy-0809 and Champion-G1; greedy actions matched, with maximum absolute errors below `6e-5`. This is implementation evidence only, not policy strength evidence.
-- Remaining before formal training: official-engine CPU rollout smoke, official-observation CPU/CUDA first-divergence audit, and allocation of a fresh formal `V<n>_<tag>` with W&B online preflight.
+- Complete diagnostic: real CPU forward plus small RTX 5080 FP32 forward parity for Policy-0809 and Champion-G1; greedy actions matched, with maximum absolute errors below `6e-5`. CUDA Engine 2.0 native runtime and PyTorch official-arena reset/classify smokes also pass. These are implementation evidence only, not policy strength evidence.
+- Remaining before formal training: complete official-game CPU/CUDA observation/action first-divergence audit and allocation of a fresh formal `V<n>_<tag>` with W&B online preflight.
 
 No formal 0043 training version exists yet, and `formal_training_authorized` remains false. Research smoke output must remain under `.tmp/`; formal versions will use `rl_runs/0043_champion_league_rl/versions/V<n>_<tag>/` and W&B private project `dragon_bra/pokemon-tcg-policy-learning`.
