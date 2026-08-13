@@ -24,7 +24,7 @@ from rl_environment.logging import TrainingLogger
 
 from ..assets import AssetRegistry, sha256_file
 from ..cuda_engine_2.build import DEFAULT_BUILD_DIR
-from ..initial_run import focal_schedule
+from ..initial_run import balanced_focal_schedule
 from ..integrated.presets import preset
 from ..league.pfsp import PFSPConfig, PFSPState
 from ..league.sampler import build_schedule
@@ -138,7 +138,10 @@ def readiness() -> dict[str, Any]:
     }
 
 
-def _jobs(update: int, registry: AssetRegistry, *, pfsp_state: PFSPState | None = None) -> tuple[list[RolloutJob], dict[str, float], dict[str, float], str]:
+def _jobs(
+    update: int, registry: AssetRegistry, *, pfsp_state: PFSPState | None = None,
+    focal_deck_ids: tuple[str, ...] = ("002", "007"),
+) -> tuple[list[RolloutJob], dict[str, float], dict[str, float], str]:
     deck_ids = tuple(deck.deck_id for deck in registry.decks if "training" in deck.roles)
     policy_ids = registry.active_policy_ids
     state = PFSPState() if pfsp_state is None else pfsp_state
@@ -152,7 +155,9 @@ def _jobs(update: int, registry: AssetRegistry, *, pfsp_state: PFSPState | None 
         policy_ids=policy_ids, latest_champion_policy_id="Champion-G1",
         curriculum=curriculum,
     )
-    focal = focal_schedule(430043711 + update)
+    focal = balanced_focal_schedule(
+        430043711 + update, deck_ids=focal_deck_ids, lanes=len(league)
+    )
     own = OwnArchetypeVocabulary.load_version("own_archetypes_v2", project_root=PROJECT_ROOT)
     own_by_deck = {row.deck_id: row.archetype_id for row in own.mappings}
     runtime = build_seeded_runtime()
@@ -226,6 +231,7 @@ def run(
     version: str = VERSION, start_update: int = 0,
     parent_checkpoint: Path | None = None, parent_pfsp_state: Path | None = None,
     wandb_run_id: str | None = None, wandb_name: str | None = None,
+    focal_deck_ids: tuple[str, ...] = ("002", "007"),
 ) -> None:
     if not launch_formal:
         raise RuntimeError("formal 0043 PPO requires explicit --launch-formal")
@@ -236,6 +242,13 @@ def run(
         raise RuntimeError("0043 formal run requires CUDA")
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
+    training_deck_ids = tuple(
+        deck.deck_id for deck in registry.decks if "training" in deck.roles
+    )
+    if not focal_deck_ids or len(set(focal_deck_ids)) != len(focal_deck_ids):
+        raise RuntimeError("formal focal deck IDs must be non-empty and unique")
+    if any(deck_id not in training_deck_ids for deck_id in focal_deck_ids):
+        raise RuntimeError("formal focal deck IDs escaped the 0043 training pool")
     paths = _paths(version)
     used = [str(path) for path in paths.values() if path.exists() and any(path.iterdir())]
     if used:
@@ -278,11 +291,45 @@ def run(
     cumulative_decisions = 0
     status = paths["artifact"] / "status.json"
     effective_run_id = wandb_run_id or _run_id()
+    _atomic_json(paths["artifact"] / "training_config.json", {
+        "schema_version": "0043_ppo_training_config_v1",
+        "project_id": PROJECT,
+        "version": version,
+        "start_update": start_update,
+        "rollout_games": 256,
+        "focal_deck_ids": list(focal_deck_ids),
+        "focal_schedule": "seeded_frequency_balanced_random_v1",
+        "opponent_deck_ids": list(training_deck_ids),
+        "opponent_policy_ids": list(registry.active_policy_ids),
+        "opponent_sampling": {"pfsp": 128, "uniform": 64, "latest": 64},
+        "parent_checkpoint": str(parent_checkpoint) if parent_checkpoint else None,
+        "parent_checkpoint_sha256": (
+            sha256_file(parent_checkpoint) if parent_checkpoint else None
+        ),
+        "parent_pfsp_state": str(parent_pfsp_state) if parent_pfsp_state else None,
+        "parent_pfsp_state_sha256": (
+            sha256_file(parent_pfsp_state) if parent_pfsp_state else None
+        ),
+        "optimizer_initialization": "fresh",
+        "ppo": asdict(_config()),
+        "reference_anchor_update": 0,
+        "checkpoint_retention": "all",
+        "checkpoint_contents": "model_only",
+        "cuda_engine": "2.0",
+        "wandb": {
+            "entity": "dragon_bra",
+            "project": "pokemon-tcg-policy-learning",
+            "run_id": effective_run_id,
+            "mode": wandb_mode,
+        },
+    })
     _atomic_json(status, {
         "state": "running", "checkpoint_update": start_update,
         "wandb_run_id": effective_run_id,
         "parent_checkpoint": str(parent_checkpoint) if parent_checkpoint else None,
         "reference_anchor_update": 0,
+        "focal_deck_ids": list(focal_deck_ids),
+        "focal_schedule": "seeded_frequency_balanced_random_v1",
     })
     if parent_checkpoint is not None:
         _atomic_torch(
@@ -291,11 +338,15 @@ def run(
         )
         pfsp_state.save(paths["artifact"] / "pfsp_state.json")
     with TrainingLogger(paths["artifact"] / "training_metrics.jsonl", paths["tensorboard"]) as logger:
-        logger.initialize_wandb({"trainer/update": 0, "checkpoint/update": 0})
+        logger.initialize_wandb({
+            "trainer/update": start_update,
+            "checkpoint/update": start_update,
+        })
         update = start_update
         while updates is None or update < updates:
             jobs, deck_weights, policy_weights, curriculum_version = _jobs(
-                update, registry, pfsp_state=pfsp_state
+                update, registry, pfsp_state=pfsp_state,
+                focal_deck_ids=focal_deck_ids,
             )
             by_group = _group_jobs_by_opponent_policy(jobs)
             league = build_schedule(
@@ -371,7 +422,7 @@ def run(
             cumulative_decisions += sum(len(ep.policy_transitions) for ep in episodes)
             metrics["env/decisions"] = cumulative_decisions
             logger.log(checkpoint_update, metrics)
-            _atomic_json(status, {"state": "running", "checkpoint_update": checkpoint_update, "rollout_source_policy_update": update, "wandb_run_id": effective_run_id, "reference_anchor_update": 0})
+            _atomic_json(status, {"state": "running", "checkpoint_update": checkpoint_update, "rollout_source_policy_update": update, "wandb_run_id": effective_run_id, "reference_anchor_update": 0, "focal_deck_ids": list(focal_deck_ids), "focal_schedule": "seeded_frequency_balanced_random_v1"})
             update = checkpoint_update
 
 

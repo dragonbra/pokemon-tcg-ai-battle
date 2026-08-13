@@ -1,6 +1,6 @@
 # 0043 Champion League RL Design
 
-Status: **V2 stopped by user after source update 206 / checkpoint U207; selected Policy-0809 CUDA-2048 evidence complete**
+Status: **V2 immutable at U207; V3 generalist focal 001–067 implementation and CUDA readiness PASS, awaiting explicit formal launch**
 
 ## Own Archetype Taxonomy V2 (2026-08-13)
 
@@ -96,5 +96,8 @@ On the same 99 U20 Policy-0809 jobs, old two-focal-cohort execution ran at 2.96 
 - Complete and stopped: `V2_mixed_focal_cohorts` resumed logical source update 21 with a fresh optimizer, retained C002 PFSP state and the original G1 reference anchor, and completed source updates 21–206 before the user-requested stop. Its final emitted model-only checkpoint is U207; no training process remains.
 - Complete Frozen selection audit: rollout landmarks U57 (early deck-002 peak), U103 (deck-007 point peak), U136 (best joint rolling balance), and U190 (late stable region) were each evaluated for focal decks 002 and 007 against independently materialized Policy-0809 with CUDA Engine 2.0, 2,048 official-engine games apiece. All eight reports passed candidate/opponent/deck identity, terminality, routing and zero-feature-D2H gates.
 - Result: U190 is the best single shared checkpoint among the tested V2 points (mean deck-002/007 win rate 60.74%, worst-deck 59.13%). Per deck, U190 leads deck 002 at 59.13%; U57 and U136 tie deck 007 at 63.53%, with U136 the preferred descriptive candidate because its actual-first/actual-second split is more balanced. None of the tested changes versus U20 is statistically decisive at 2,048 games, so this ranks candidates but does not establish Promotion or Kaggle strength superiority.
+- Ready, not launched: `V3_generalist_focal_001_067` inherits the latest V2 model-only checkpoint U207 and the final V2 PFSP state, initializes a fresh optimizer, recollects on-policy data, preserves the original G1/update-0 reference anchor and retains all V2 PPO/CUDA/opponent semantics. U136 remains a deck-007 evaluation/submission candidate and is not the V3 parent.
+- V3 focal scheduling uses all exact decks 001–067 inside every 256-game rollout. Each deck receives three lanes and a rotating 55-deck subset receives a fourth; the 256 lanes are deterministically shuffled by update. Across any complete 67-update rotation every deck receives exactly 256 focal games. Focal deck/own-archetype identity remains a lane-bound feature, while the CUDA resident cohort key remains only immutable opponent policy identity.
+- V3 readiness evidence covers 67 schedules / 17,152 focal lanes with exact long-run equality, plus a real U207 CUDA Engine 2.0 256-game rollout across all 67 focal decks and both opponent policies: 256/256 terminal, zero routing failure, zero feature D2H and 5.27 games/s. This is distribution/routing/performance evidence, not checkpoint strength evidence.
 
-V1 and V2 are immutable stopped runs. Formal selected-checkpoint reports are indexed under `experiments/0043_champion_league_rl/evaluation/`; any resumed training must allocate a new strictly increasing repository version and a new W&B run rather than append to V2.
+V1 and V2 are immutable stopped runs. Formal selected-checkpoint reports are indexed under `experiments/0043_champion_league_rl/evaluation/`. V3 has its own unused version root and W&B identity; long training remains gated by the explicit `--launch-formal` command.

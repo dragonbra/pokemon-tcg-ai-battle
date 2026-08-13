@@ -32,6 +32,29 @@ def focal_schedule(seed: int) -> tuple[FocalLane, ...]:
     return tuple(FocalLane(index, deck_id) for index, deck_id in enumerate(values))
 
 
+def balanced_focal_schedule(
+    seed: int, *, deck_ids: tuple[str, ...], lanes: int = 256,
+) -> tuple[FocalLane, ...]:
+    """Seeded random schedule with the tightest possible per-deck frequency spread."""
+    if not deck_ids or len(set(deck_ids)) != len(deck_ids):
+        raise ValueError("focal deck IDs must be non-empty and unique")
+    if lanes < len(deck_ids):
+        raise ValueError("focal lanes must cover every configured deck")
+    quotient, remainder = divmod(lanes, len(deck_ids))
+    rng = random.Random(seed)
+    offset = seed % len(deck_ids)
+    extra = {
+        deck_ids[(offset + index) % len(deck_ids)] for index in range(remainder)
+    }
+    values = [
+        deck_id
+        for deck_id in deck_ids
+        for _ in range(quotient + int(deck_id in extra))
+    ]
+    rng.shuffle(values)
+    return tuple(FocalLane(index, deck_id) for index, deck_id in enumerate(values))
+
+
 def acceptance(seed: int = 430043001, *, schedules: int = 64) -> dict[str, Any]:
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
