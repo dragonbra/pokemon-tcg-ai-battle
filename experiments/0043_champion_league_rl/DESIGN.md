@@ -1,6 +1,6 @@
 # 0043 Champion League RL Design
 
-Status: **V1 stopped after C002/U20 evidence; mixed-focal V2 routing validated and ready to continue from update 21**
+Status: **V2 stopped by user after source update 206 / checkpoint U207; selected Policy-0809 CUDA-2048 evidence complete**
 
 ## Own Archetype Taxonomy V2 (2026-08-13)
 
@@ -93,6 +93,8 @@ On the same 99 U20 Policy-0809 jobs, old two-focal-cohort execution ran at 2.96 
 - Complete: project-local assets/runtime, complete policy materialization and isolation, league sampler, PFSP persistence, one-pass telemetry, frozen schedule materialization, candidate evaluation gates, and explicit human-decision Promote workflow.
 - Complete diagnostic: real CPU forward plus small RTX 5080 FP32 forward parity for Policy-0809 and Champion-G1; greedy actions matched, with maximum absolute errors below `6e-5`. CUDA Engine 2.0 native runtime and PyTorch official-arena reset/classify smokes also pass. These are implementation evidence only, not policy strength evidence.
 - Complete: `V1_focal_002_007` reached checkpoint 21; its source-update-20 rollout used curriculum C002 and is frozen as the planned optimization boundary. U20 Frozen Policy-0809 CUDA-2048 reports are complete for focal decks 002 and 007.
-- Ready: `V2_mixed_focal_cohorts` is a new formal version and W&B run. It resumes logical source update 21 from the V1 model-only checkpoint with a new optimizer, existing PFSP state, unchanged PPO parameter/loss contract, and the original G1 reference anchor.
+- Complete and stopped: `V2_mixed_focal_cohorts` resumed logical source update 21 with a fresh optimizer, retained C002 PFSP state and the original G1 reference anchor, and completed source updates 21–206 before the user-requested stop. Its final emitted model-only checkpoint is U207; no training process remains.
+- Complete Frozen selection audit: rollout landmarks U57 (early deck-002 peak), U103 (deck-007 point peak), U136 (best joint rolling balance), and U190 (late stable region) were each evaluated for focal decks 002 and 007 against independently materialized Policy-0809 with CUDA Engine 2.0, 2,048 official-engine games apiece. All eight reports passed candidate/opponent/deck identity, terminality, routing and zero-feature-D2H gates.
+- Result: U190 is the best single shared checkpoint among the tested V2 points (mean deck-002/007 win rate 60.74%, worst-deck 59.13%). Per deck, U190 leads deck 002 at 59.13%; U57 and U136 tie deck 007 at 63.53%, with U136 the preferred descriptive candidate because its actual-first/actual-second split is more balanced. None of the tested changes versus U20 is statistically decisive at 2,048 games, so this ranks candidates but does not establish Promotion or Kaggle strength superiority.
 
-V1 is immutable and stopped. The next formal output root is `rl_runs/0043_champion_league_rl/versions/V2_mixed_focal_cohorts/`; research benchmark evidence remains under `.tmp/evaluation/0043_mixed_focal_benchmark/`.
+V1 and V2 are immutable stopped runs. Formal selected-checkpoint reports are indexed under `experiments/0043_champion_league_rl/evaluation/`; any resumed training must allocate a new strictly increasing repository version and a new W&B run rather than append to V2.

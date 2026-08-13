@@ -39,3 +39,11 @@
 - Preserve separate complete Policy-0809 and Champion-G1 collectors and immutable effective weights. No cross-policy tensor, cache, or routing sharing is introduced.
 - Accept the batching change after an identical 99-game U20 Policy-0809 comparison showed 2.96 to 4.47 games/s (1.51x), with exact outcome/turn/error/routing parity, plus a 64-game mixed-deck smoke with zero error, routing failure, or feature D2H.
 - Allocate `V2_mixed_focal_cohorts` as a new version and W&B run. Load V1 update 21 as model-only parent, initialize a fresh optimizer, carry the C002 PFSP state, and keep reference KL anchored to the original G1/update-0 model rather than silently re-anchoring it to update 21.
+
+## 2026-08-13: stop V2 and evaluate rollout-selected checkpoints
+
+- Stop V2 on the user's instruction after source update 206 produced model-only checkpoint U207. Do not append more updates to this repository version; any continuation requires a new version, fresh optimizer, newly collected on-policy data and a new W&B run.
+- Select U57, U103, U136 and U190 from the actual rollout history instead of arbitrary round-number checkpoints. They represent, respectively, the early deck-002 peak, the largest deck-007 point spike, the strongest joint rolling region and a late stable region.
+- Evaluate each selected checkpoint with both focal deck 002 and focal deck 007 against complete frozen Policy-0809 using the formal `kaggle_fp16_storage_fp32_runtime_v1` candidate contract and CUDA Engine 2.0 CUDA-2048 schedule. Keep all eight reports independent; do not merge their identities or outcomes.
+- Accept all eight reports as valid Frozen evidence: each completed 2,048/2,048 official-engine games with zero error, unfinished game, routing failure or feature D2H copy, and passed candidate, opponent, deck and CUDA identity gates.
+- Retain U190 as the best tested single-checkpoint compromise and the leading deck-002 candidate. Retain U136 as the preferred deck-007 candidate, with U57 as an equal raw-win-rate alternative. Treat these as descriptive candidate rankings only: two-sided checkpoint comparisons versus U20 are not statistically significant, and no automatic Promote decision follows.
