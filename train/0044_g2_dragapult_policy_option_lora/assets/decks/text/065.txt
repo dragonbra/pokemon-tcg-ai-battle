@@ -1,0 +1,80 @@
+0044 DECK 065 — Crustle Great Tusk
+==============================================================================
+
+IDENTITY
+deck_id: 065
+display_name: Crustle Great Tusk
+upstream_name: Crustle / Great Tusk
+display_name_correction: none
+exact_deck_sha256: 5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210
+deck_file_sha256: ff46397011bcaf0b2651950382d5777c0a36a907961ba5290a5f2441f2574343
+card_total: 60
+roles: training
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 7
+own_archetype_id: 26
+own_archetype_name: crustle_great_tusk_mill
+own_archetype_display_name: Crustle / Great Tusk Mill
+decision: split
+parent_archetype: crustle_barbaracle_wall
+embedding_init_from: 7
+tags: wall, mill, alternate_win_condition
+
+STRATEGIC CHARACTERISTICS
+axis: Great Tusk alternate deck-out route
+definition: Crustle wall backed by Great Tusk deck-discard as an alternate victory condition.
+rationale: Supporter timing and attacks target deck-out progress instead of ordinary Prize tempo.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=13, Trainer=39, Energy=8
+evolution_lines:
+  Basic / root:
+    - 4× Great Tusk [58] (Basic Pokémon)
+    - 4× Dwebble [344] (Basic Pokémon)
+    - 1× Terrakion [607] (Basic Pokémon)
+  Dwebble:
+    - 4× Crustle [345] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 4× Boss’s Orders [1182] (Supporter)
+  - 4× Explorer’s Guidance [1185] (Supporter)
+  - 2× Colress’s Tenacity [1194] (Supporter)
+  - 4× Xerosic’s Machinations [1197] (Supporter)
+  - 2× Lisia’s Appeal [1204] (Supporter)
+  - 1× Neutralization Zone [1247] (Stadium)
+energy:
+  - 4× Mist Energy [11]
+  - 4× Rock Fighting Energy [20]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    4 |      11 | Mist Energy | TEF 161 | Energy | Special Energy
+    4 |      20 | Rock Fighting Energy | POR 88 | Energy | Special Energy
+    4 |      58 | Great Tusk | TEF 97 | Pokémon | Basic Pokémon
+    4 |     344 | Dwebble | DRI 11 | Pokémon | Basic Pokémon
+    4 |     345 | Crustle | DRI 12 | Pokémon | Stage 1 Pokémon
+    1 |     607 | Terrakion | WHT 54 | Pokémon | Basic Pokémon
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    1 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    4 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    4 |    1123 | Switch | SVI 194 | Trainer | Item
+    4 |    1142 | Fighting Gong | MEG 116 | Trainer | Item
+    1 |    1147 | Jumbo Ice Cream | PFL 91 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    4 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    4 |    1185 | Explorer’s Guidance | TEF 147 | Trainer | Supporter
+    2 |    1194 | Colress’s Tenacity | SFA 57 | Trainer | Supporter
+    4 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    2 |    1204 | Lisia’s Appeal | SSP 179 | Trainer | Supporter
+    1 |    1247 | Neutralization Zone | SFA 60 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"display_name_correction": null, "imported_at": "2026-08-13T00:00:00+08:00", "imported_from": "FrozenPool_65_decks_2026-08-12.zip", "source_display_name": "Crustle Great Tusk", "source_manifest": {"archetype": "Crustle / Great Tusk", "deck_id": "crustle_great_tusk_5822b67f77ee", "exact_deck_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210", "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3", "provenance": {"segment": "top500_mill_coverage", "selection_purpose": "great_tusk_mill_coverage", "source_ranks": [360], "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"}, "representative_card_ids": [345, 58, 1247], "schema_version": "evaluation_frozen_0812_deck_v1"}, "source_member": "decks\\065_crustle_great_tusk\\deck.csv", "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"}

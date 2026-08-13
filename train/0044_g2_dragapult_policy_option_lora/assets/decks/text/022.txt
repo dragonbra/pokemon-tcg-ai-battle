@@ -1,0 +1,89 @@
+0044 DECK 022 — Mega Lopunny ex / Mega Froslass ex
+==============================================================================
+
+IDENTITY
+deck_id: 022
+display_name: Mega Lopunny ex / Mega Froslass ex
+upstream_name: Mega Lopunny ex / Mega Froslass ex
+display_name_correction: none
+exact_deck_sha256: 546b39d1d1340529eb93a53907f2d46e15f58297902f0c1a68f2563673df8fc6
+deck_file_sha256: 3d1d0cffa8dcab604ae71f6ed0ca195b0d87beba8093859f126e0a2a671281b7
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 1
+own_archetype_id: 1
+own_archetype_name: mega_lopunny_ex
+own_archetype_display_name: Mega Lopunny ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 1
+tags: switch_tempo
+
+STRATEGIC CHARACTERISTICS
+axis: switch-tempo attacker
+definition: Switch-tempo Mega Lopunny plan centered on moving from Bench to Active.
+rationale: Board movement is the damage breakpoint resource.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=17, Trainer=35, Energy=8
+evolution_lines:
+  Dunsparce:
+    - 3× Dudunsparce [66] (Stage 1 Pokémon)
+  Basic / root:
+    - 1× Fan Rotom [174] (Basic Pokémon)
+    - 1× Latias ex [184] (Basic Pokémon)
+    - 2× Lillie’s Clefairy ex [272] (Basic Pokémon)
+    - 4× Dunsparce [305] (Basic Pokémon)
+    - 3× Buneary [848] (Basic Pokémon)
+  Buneary:
+    - 3× Mega Lopunny ex [849] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 2× Boss’s Orders [1182] (Supporter)
+  - 2× Xerosic’s Machinations [1197] (Supporter)
+  - 3× Hilda [1225] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 4× Wally's Compassion [1229] (Supporter)
+  - 3× Battle Cage [1264] (Stadium)
+energy:
+  - 4× Mist Energy [11]
+  - 1× Enriching Energy [13]
+  - 3× Telepath Psychic Energy [19]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    4 |      11 | Mist Energy | TEF 161 | Energy | Special Energy
+    1 |      13 | Enriching Energy | SSP 191 | Energy | Special Energy
+    3 |      19 | Telepath Psychic Energy | POR 87 | Energy | Special Energy
+    3 |      66 | Dudunsparce | TEF 129 | Pokémon | Stage 1 Pokémon
+    1 |     174 | Fan Rotom | SCR 118 | Pokémon | Basic Pokémon
+    1 |     184 | Latias ex | SSP 76 | Pokémon | Basic Pokémon
+    2 |     272 | Lillie’s Clefairy ex | JTG 56 | Pokémon | Basic Pokémon
+    4 |     305 | Dunsparce | JTG 120 | Pokémon | Basic Pokémon
+    3 |     848 | Buneary | PFL 83 | Pokémon | Basic Pokémon
+    3 |     849 | Mega Lopunny ex | PFL 84 | Pokémon | Stage 1 Pokémon
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    1 |    1087 | Hand Trimmer | TEF 150 | Trainer | Item
+    1 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    3 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    2 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    3 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    3 |    1174 | Air Balloon | BLK 79 | Trainer | Pokémon Tool
+    2 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    2 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    3 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    4 |    1229 | Wally's Compassion | MEG 132 | Trainer | Supporter
+    3 |    1264 | Battle Cage | PFL 85 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 37, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/022_mega_lopunny_ex_mega_froslass_ex", "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_546b39d1d134", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

@@ -1,0 +1,80 @@
+0044 DECK 046 — Mega Starmie ex / Dusknoir
+==============================================================================
+
+IDENTITY
+deck_id: 046
+display_name: Mega Starmie ex / Dusknoir
+upstream_name: Mega Starmie ex / Dusknoir
+display_name_correction: none
+exact_deck_sha256: b15853cdfb8304f39f879638102a7fd161f1102d81e6d3f36d5beca4db9e01b0
+deck_file_sha256: 126a0c4ac756f407b63dc6ec0f8301e13a94f223b3b531c54f9a1ed08a4557ba
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 12
+own_archetype_id: 17
+own_archetype_name: mega_starmie_dusknoir
+own_archetype_display_name: Mega Starmie ex / Dusknoir
+decision: split
+parent_archetype: mega_starmie_ex
+embedding_init_from: 12
+tags: self_ko, prize_manipulation
+
+STRATEGIC CHARACTERISTICS
+axis: Dusknoir self-KO and Starmie breakpoints
+definition: Mega Starmie attack line plus Dusknoir self-KO damage placement.
+rationale: Self-KO Prize tempo and a second evolution line change bench and KO sequencing.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=13, Trainer=34, Energy=13
+evolution_lines:
+  Basic / root:
+    - 2× Duskull [131] (Basic Pokémon)
+    - 4× Staryu [1030] (Basic Pokémon)
+  Duskull:
+    - 2× Dusclops [132] (Stage 1 Pokémon)
+  Dusclops:
+    - 2× Dusknoir [133] (Stage 2 Pokémon)
+  Staryu:
+    - 3× Mega Starmie ex [1031] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 3× Carmine [1192] (Supporter)
+  - 3× Judge [1213] (Supporter)
+  - 4× Hilda [1225] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 4× Wally's Compassion [1229] (Supporter)
+energy:
+  - 9× Basic {W} Energy [3]
+  - 4× Ignition Energy [17]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    9 |       3 | Basic {W} Energy | SVE 3 | Energy | Basic Energy
+    4 |      17 | Ignition Energy | WHT 86 | Energy | Special Energy
+    2 |     131 | Duskull | SFA 18 | Pokémon | Basic Pokémon
+    2 |     132 | Dusclops | SFA 19 | Pokémon | Stage 1 Pokémon
+    2 |     133 | Dusknoir | SFA 20 | Pokémon | Stage 2 Pokémon
+    4 |    1030 | Staryu | POR 20 | Pokémon | Basic Pokémon
+    3 |    1031 | Mega Starmie ex | POR 21 | Pokémon | Stage 1 Pokémon
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    4 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    3 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    1 |    1167 | Deluxe Bomb | SCR 134 | Trainer | Pokémon Tool
+    3 |    1192 | Carmine | TWM 145 | Trainer | Supporter
+    3 |    1213 | Judge | SVI 176 | Trainer | Supporter
+    4 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    4 |    1229 | Wally's Compassion | MEG 132 | Trainer | Supporter
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 228, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/046_mega_starmie_ex_dusknoir", "legacy_semantic_deck_id": "mega_starmie_ex_dusknoir_b15853cdfb83", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

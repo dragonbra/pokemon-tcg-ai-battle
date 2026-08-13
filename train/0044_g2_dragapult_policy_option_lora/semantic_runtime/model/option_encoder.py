@@ -1,0 +1,141 @@
+"""Bind legal options to state instances and official prototypes, then retrieve state memory."""
+
+from __future__ import annotations
+
+from torch import Tensor, nn
+
+from ..contracts.batch import DecisionBatch
+from ..contracts.fields import (
+    EFFECT_ROLE_VOCAB,
+    OPTION_CAT_VOCABS,
+    SKILL_ROLE_VOCAB,
+    WIDTHS,
+)
+from .config import ModelConfig
+from .prototype_encoder import OfficialPrototypeEncoder, PrototypeEmbeddings
+from .state_encoder import EncodedState
+from .typed_fields import CategoricalFields, NumericFields, mean_pool_by_parent
+
+
+class OptionEncoder(nn.Module):
+    """Every legal option asks its own question of the full state memory."""
+
+    def __init__(self, config: ModelConfig, prototypes: OfficialPrototypeEncoder):
+        super().__init__()
+        d = config.d_model
+        self.prototypes = prototypes
+        self.categorical = CategoricalFields(OPTION_CAT_VOCABS, d)
+        self.numeric = NumericFields(WIDTHS.option_num, d)
+        self.skill_role = nn.Embedding(SKILL_ROLE_VOCAB, d, padding_idx=0)
+        self.effect_role = nn.Embedding(EFFECT_ROLE_VOCAB, d, padding_idx=0)
+        self.source_relation = nn.Linear(d, d, bias=False)
+        self.target_relation = nn.Linear(d, d, bias=False)
+        self.context_relation = nn.Linear(d, d, bias=False)
+        self.effect_card_relation = nn.Linear(d, d, bias=False)
+        self.skill_relation = nn.Linear(d, d, bias=False)
+        self.effect_relation = nn.Linear(d, d, bias=False)
+        self.input_norm = nn.LayerNorm(d)
+
+        layer = nn.TransformerDecoderLayer(
+            d_model=d,
+            nhead=config.heads,
+            dim_feedforward=d * config.ffn_multiplier,
+            dropout=config.dropout,
+            activation="gelu",
+            batch_first=True,
+            norm_first=True,
+        )
+        self.cross_attention_transformer = nn.TransformerDecoder(
+            layer,
+            num_layers=config.option_layers,
+            norm=nn.LayerNorm(d),
+        )
+
+    def forward(
+        self,
+        batch: DecisionBatch,
+        state: EncodedState,
+        prototype_memory: PrototypeEmbeddings | None = None,
+    ) -> Tensor:
+        prototype_memory = prototype_memory or self.prototypes.encode_all()
+        options = self.encode_inputs(batch, state, prototype_memory)
+        prefix = self.encode_prefix(batch, state, options)
+        return self.encode_final(batch, state, prefix)
+
+    def encode_inputs(
+        self,
+        batch: DecisionBatch,
+        state: EncodedState,
+        prototype_memory: PrototypeEmbeddings,
+    ) -> Tensor:
+        """Build option tokens before the two state-aware decoder blocks."""
+        option_cat = batch.option_cat
+        options = self.categorical(option_cat) + self.numeric(batch.option_num, batch.option_state)
+
+        for card_column in (5, 6, 11, 12):
+            options = options + prototype_memory.card(option_cat[..., card_column])
+        options = options + prototype_memory.attack(option_cat[..., 7])
+        options = options + self.source_relation(state.gather_cards(batch.option_source))
+        options = options + self.target_relation(state.gather_cards(batch.option_target))
+        options = options + self.context_relation(state.gather_cards(batch.option_context))
+        options = options + self.effect_card_relation(
+            state.gather_cards(batch.option_effect_card)
+        )
+
+        skill_tokens = (
+            prototype_memory.skill(batch.option_skill_id)
+            + self.skill_role(batch.option_skill_role)
+        )
+        skill_context = mean_pool_by_parent(
+            skill_tokens,
+            batch.option_skill_parent,
+            batch.option_skill_mask,
+            batch.option_count,
+        )
+        effect_tokens = (
+            prototype_memory.effect(batch.option_effect_id)
+            + self.effect_role(batch.option_effect_role)
+        )
+        effect_context = mean_pool_by_parent(
+            effect_tokens,
+            batch.option_effect_parent,
+            batch.option_effect_mask,
+            batch.option_count,
+        )
+        options = self.input_norm(
+            options
+            + self.skill_relation(skill_context)
+            + self.effect_relation(effect_context)
+        )
+        return options
+
+    @staticmethod
+    def _masks(batch: DecisionBatch, state: EncodedState) -> dict[str, Tensor]:
+        return {
+            "tgt_key_padding_mask": ~batch.option_mask,
+            "memory_key_padding_mask": ~state.mask,
+        }
+
+    def encode_prefix(
+        self, batch: DecisionBatch, state: EncodedState, options: Tensor,
+    ) -> Tensor:
+        """Run every Option block except the final policy/value fork point."""
+        layers = self.cross_attention_transformer.layers
+        if len(layers) != 2:
+            raise RuntimeError("0044 requires exactly two Option Transformer blocks")
+        return layers[0](options, state.tokens, **self._masks(batch, state))
+
+    def encode_final(
+        self, batch: DecisionBatch, state: EncodedState, prefix: Tensor,
+    ) -> Tensor:
+        """Run the immutable LoRA-free final block used by the Value branch."""
+        transformer = self.cross_attention_transformer
+        encoded = transformer.layers[1](
+            prefix, state.tokens, **self._masks(batch, state)
+        )
+        if transformer.norm is not None:
+            encoded = transformer.norm(encoded)
+        return encoded * batch.option_mask.unsqueeze(-1)
+
+
+__all__ = ["OptionEncoder"]

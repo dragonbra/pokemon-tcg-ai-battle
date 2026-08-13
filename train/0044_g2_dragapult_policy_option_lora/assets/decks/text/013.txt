@@ -1,0 +1,85 @@
+0044 DECK 013 — Cynthia's Garchomp ex / Roserade
+==============================================================================
+
+IDENTITY
+deck_id: 013
+display_name: Cynthia's Garchomp ex / Roserade
+upstream_name: Cynthia's Garchomp ex / Roserade
+display_name_correction: none
+exact_deck_sha256: c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712
+deck_file_sha256: 9fd1edbf44f6aad6dba91250263cb1a29ed5af7c775d4931be1594d0f1cb2f99
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 11
+own_archetype_id: 11
+own_archetype_name: cynthias_garchomp_ex
+own_archetype_display_name: Cynthia's Garchomp ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 11
+tags: stage2, cynthia
+
+STRATEGIC CHARACTERISTICS
+axis: Cynthia evolution engine
+definition: Cynthia-tagged evolution and Fighting-energy attack engine.
+rationale: Tagged search, evolution lines, and attack rotation form one stable plan.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=20, Trainer=31, Energy=9
+evolution_lines:
+  Basic / root:
+    - 4× Cynthia's Roselia [341] (Basic Pokémon)
+    - 4× Cynthia's Gible [379] (Basic Pokémon)
+    - 2× Cynthia's Spiritomb [387] (Basic Pokémon)
+  Cynthia's Roselia:
+    - 3× Cynthia's Roserade [342] (Stage 1 Pokémon)
+  Cynthia's Gible:
+    - 4× Cynthia's Gabite [380] (Stage 1 Pokémon)
+  Cynthia's Gabite:
+    - 3× Cynthia's Garchomp ex [381] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 2× Boss’s Orders [1182] (Supporter)
+  - 1× Xerosic’s Machinations [1197] (Supporter)
+  - 1× Surfer [1203] (Supporter)
+  - 3× Hilda [1225] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 2× Forest of Vitality [1261] (Stadium)
+energy:
+  - 5× Basic {F} Energy [6]
+  - 4× Rock Fighting Energy [20]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    5 |       6 | Basic {F} Energy | SVE 6 | Energy | Basic Energy
+    4 |      20 | Rock Fighting Energy | POR 88 | Energy | Special Energy
+    4 |     341 | Cynthia's Roselia | DRI 7 | Pokémon | Basic Pokémon
+    3 |     342 | Cynthia's Roserade | DRI 8 | Pokémon | Stage 1 Pokémon
+    4 |     379 | Cynthia's Gible | DRI 102 | Pokémon | Basic Pokémon
+    4 |     380 | Cynthia's Gabite | DRI 103 | Pokémon | Stage 1 Pokémon
+    3 |     381 | Cynthia's Garchomp ex | DRI 104 | Pokémon | Stage 2 Pokémon
+    2 |     387 | Cynthia's Spiritomb | DRI 129 | Pokémon | Basic Pokémon
+    1 |    1080 | Unfair Stamp | TWM 165 | Trainer | Item
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    2 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    4 |    1142 | Fighting Gong | MEG 116 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    3 |    1173 | Cynthia's Power Weight | DRI 162 | Trainer | Pokémon Tool
+    2 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    1 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    1 |    1203 | Surfer | SSP 187 | Trainer | Supporter
+    3 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    2 |    1261 | Forest of Vitality | MEG 117 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 56, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/013_cynthia_s_garchomp_ex_roserade", "legacy_semantic_deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

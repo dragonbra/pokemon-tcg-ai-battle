@@ -1,0 +1,824 @@
+{
+  "deck_count": 67,
+  "detail_pages": [
+    {
+      "deck_id": "001",
+      "path": "definitions/001/index.html",
+      "sha256": "2b5609c19dd218652b879a88bcceb08299906a7cd088358fadfa36c84bbc280b"
+    },
+    {
+      "deck_id": "002",
+      "path": "definitions/002/index.html",
+      "sha256": "d3ab7ad3e76ae15a34422e904e23bb76e672b68fe31bdf5d5a79c674fcce21f0"
+    },
+    {
+      "deck_id": "003",
+      "path": "definitions/003/index.html",
+      "sha256": "be0c155154354d7597ac3082feb980988f8e98e3cb2f564617639082083a0eb0"
+    },
+    {
+      "deck_id": "004",
+      "path": "definitions/004/index.html",
+      "sha256": "8119ae1448af932d2eb2a86e1d47a067eab234226e4fd9e61ba0290f54a4ef0b"
+    },
+    {
+      "deck_id": "005",
+      "path": "definitions/005/index.html",
+      "sha256": "d7cf33ffcdfc4d913986076dc8eafc36580e35567491c51486e14062df59dda8"
+    },
+    {
+      "deck_id": "006",
+      "path": "definitions/006/index.html",
+      "sha256": "3c8fbe680e8fcebea0713e696850feafbeb22e6c397aef5bf2f5c41115197767"
+    },
+    {
+      "deck_id": "007",
+      "path": "definitions/007/index.html",
+      "sha256": "29171793aa4114079289129b0b3745d726bd757d75e2fbec3fe779383dfc6638"
+    },
+    {
+      "deck_id": "008",
+      "path": "definitions/008/index.html",
+      "sha256": "70422ae1d9716f5d84b39b53476e304fe614bcae28661a6cd723d97de79d988b"
+    },
+    {
+      "deck_id": "009",
+      "path": "definitions/009/index.html",
+      "sha256": "d24b3fd472a8efeec303ec18f52411964eafe5f10219d162b273e6757a21ef28"
+    },
+    {
+      "deck_id": "010",
+      "path": "definitions/010/index.html",
+      "sha256": "e81ca6e19971e74c37fbebabd982a63c500b874dcbc2d643529e1907367caffc"
+    },
+    {
+      "deck_id": "011",
+      "path": "definitions/011/index.html",
+      "sha256": "bcb3393ac2e8ae7e2e93a8c80de89c644ebde531a5600d9dc657cb64e769f24a"
+    },
+    {
+      "deck_id": "012",
+      "path": "definitions/012/index.html",
+      "sha256": "a15793c27deefaec85c9d80d978cd1f54f1dd3f2f7b85e2be472c1d61bfa3193"
+    },
+    {
+      "deck_id": "013",
+      "path": "definitions/013/index.html",
+      "sha256": "861d2692e1605625502f66f0ac3838609890bfa89fc9c16bffe96ece72d5b573"
+    },
+    {
+      "deck_id": "014",
+      "path": "definitions/014/index.html",
+      "sha256": "6c9be62ee89c55cc4496e3d65471c47981aa7e3046612de2a688ea12162e4c21"
+    },
+    {
+      "deck_id": "015",
+      "path": "definitions/015/index.html",
+      "sha256": "433ef30ad70bf70dec10db4f609988ec65e3ddf55d2824df9304be99a47a2f4e"
+    },
+    {
+      "deck_id": "016",
+      "path": "definitions/016/index.html",
+      "sha256": "c081199775fa623f10231380d50d1abab9291338e240f941a71ff94531fa4fb7"
+    },
+    {
+      "deck_id": "017",
+      "path": "definitions/017/index.html",
+      "sha256": "194657848269b03277f2854c7763e27b0c371b9b61c9aa5560b9ac0844926c06"
+    },
+    {
+      "deck_id": "018",
+      "path": "definitions/018/index.html",
+      "sha256": "f8169f336aebcff9455eb12b1c89085fff4fe52f24af150769d23c76d5a3c4d5"
+    },
+    {
+      "deck_id": "019",
+      "path": "definitions/019/index.html",
+      "sha256": "47d7983077a22c968a48075e9c507a32cce77f1bfe43d6de4fc1fda7c9a94bea"
+    },
+    {
+      "deck_id": "020",
+      "path": "definitions/020/index.html",
+      "sha256": "4dd7ee6e351ad628d8f979c88b7537c54d2c641a30eab2484aaa3a9eb7c66a32"
+    },
+    {
+      "deck_id": "021",
+      "path": "definitions/021/index.html",
+      "sha256": "93c7cd98ce0dc84e51916f3c29fd67ea62ccc225147de99bc279b9ee246b2ec1"
+    },
+    {
+      "deck_id": "022",
+      "path": "definitions/022/index.html",
+      "sha256": "89daab81f6b1e90ba151175f76bf5545900a5d1d4ea46209cdb847924e513db4"
+    },
+    {
+      "deck_id": "023",
+      "path": "definitions/023/index.html",
+      "sha256": "51e74c246a0cfe45eceb13fce17b02dc484f672702df398fdea3bc3102f38006"
+    },
+    {
+      "deck_id": "024",
+      "path": "definitions/024/index.html",
+      "sha256": "71ce2a2573cb54ee30c5ec9b6cef3e254fbbc14bd37a6388d719941c9d2bf814"
+    },
+    {
+      "deck_id": "025",
+      "path": "definitions/025/index.html",
+      "sha256": "8701db167d585d7d1322117b1db3989a74e60952afd96201a3bdb3cc332f9f0e"
+    },
+    {
+      "deck_id": "026",
+      "path": "definitions/026/index.html",
+      "sha256": "4517279f276cda81fc4974d982c1d2aabf74c56e8c6490645cdf8231712777f7"
+    },
+    {
+      "deck_id": "027",
+      "path": "definitions/027/index.html",
+      "sha256": "111e33ab99e823262825af2de38826cc88429ecc87401d413aece34665da04b8"
+    },
+    {
+      "deck_id": "028",
+      "path": "definitions/028/index.html",
+      "sha256": "29d0ce98167fb66b5e0b5a8a91fd192d354d9ceda60c6b19f279d1fe21545608"
+    },
+    {
+      "deck_id": "029",
+      "path": "definitions/029/index.html",
+      "sha256": "b0e4260fc684052f8a2f08c957e706202ae18fea49d02bf1df23fff3477bd34c"
+    },
+    {
+      "deck_id": "030",
+      "path": "definitions/030/index.html",
+      "sha256": "606bb8bc681f73ad25954d276cb1f36de73410b7b3d3030d2300b2cbc5c06d86"
+    },
+    {
+      "deck_id": "031",
+      "path": "definitions/031/index.html",
+      "sha256": "0ffdc51a971860d8d43fa65e745da68c19018879a28a53821774eba1b3798ab3"
+    },
+    {
+      "deck_id": "032",
+      "path": "definitions/032/index.html",
+      "sha256": "81b4ed366e002e303237d57961001688a3d3070fba98b9162eff527b0992aad9"
+    },
+    {
+      "deck_id": "033",
+      "path": "definitions/033/index.html",
+      "sha256": "461eec672d1430473ea6c0862ddd95cc09a4f2317cfb3f7ef41db6439e90fa85"
+    },
+    {
+      "deck_id": "034",
+      "path": "definitions/034/index.html",
+      "sha256": "eaa2582253959d8bf285dfef1d34be4b2d75a4f32e1af526e3e44f1ba90a7f6d"
+    },
+    {
+      "deck_id": "035",
+      "path": "definitions/035/index.html",
+      "sha256": "cb01eb79d03128da43059e012f6a27d1091458ccd19f282f62cc48f1e2802de9"
+    },
+    {
+      "deck_id": "036",
+      "path": "definitions/036/index.html",
+      "sha256": "f2ecec42f558c6f9c19eb0f201af388358fc203318234ce8e750de98906d9a65"
+    },
+    {
+      "deck_id": "037",
+      "path": "definitions/037/index.html",
+      "sha256": "a6d0096441d6ec6c5cf2cc2377ed6355f6819b916c9ada5483ce0170426c1328"
+    },
+    {
+      "deck_id": "038",
+      "path": "definitions/038/index.html",
+      "sha256": "f7289aeba5dc33bfd7f62df7de8b1da3b45f588d3be274c16da2b59910cd09fc"
+    },
+    {
+      "deck_id": "039",
+      "path": "definitions/039/index.html",
+      "sha256": "6e5684538ba2174cd18b4b546e48c09274585ab1b0c5a073277e75b76f9aaa4c"
+    },
+    {
+      "deck_id": "040",
+      "path": "definitions/040/index.html",
+      "sha256": "519945a278d06a10891712f70daabbdaa93fab044b46300de32a46fe53e9505b"
+    },
+    {
+      "deck_id": "041",
+      "path": "definitions/041/index.html",
+      "sha256": "216d2ab7001e989dc2dc6dc1139183c43995e5031e4350c9adea11a2ff791008"
+    },
+    {
+      "deck_id": "042",
+      "path": "definitions/042/index.html",
+      "sha256": "3b98ccfe14357095b8691a921717d94eb7e1e68b3b8789a2e606de426b98ae78"
+    },
+    {
+      "deck_id": "043",
+      "path": "definitions/043/index.html",
+      "sha256": "ca8cbb3c1360c141829d24092996dfced0ddfbc98042d769796598e046f6a4a6"
+    },
+    {
+      "deck_id": "044",
+      "path": "definitions/044/index.html",
+      "sha256": "24b1be30f3047827c746e8b8815c4a47d0086f80e18725ff375d9003cae13579"
+    },
+    {
+      "deck_id": "045",
+      "path": "definitions/045/index.html",
+      "sha256": "504b1eb951c2d56320874c8b99a63061e90fe7d04a2abaf503460833a1df6261"
+    },
+    {
+      "deck_id": "046",
+      "path": "definitions/046/index.html",
+      "sha256": "bfd30fb04d106a3b8c1c743fad33ac82189b879da3fc4a904a6536c5595b2f9f"
+    },
+    {
+      "deck_id": "047",
+      "path": "definitions/047/index.html",
+      "sha256": "51f76b3dbcd27a6972649c0cff3c3dff695e32c211fb5223cc264cb5c02ec81f"
+    },
+    {
+      "deck_id": "048",
+      "path": "definitions/048/index.html",
+      "sha256": "a070c686c2351b9c7524a2469f465dec57c31e69877582d74f7b46fede78692d"
+    },
+    {
+      "deck_id": "049",
+      "path": "definitions/049/index.html",
+      "sha256": "8b60a564cb8290fde8f454ec6f118575b880e611c221a1a755e6ceabdd5b49b2"
+    },
+    {
+      "deck_id": "050",
+      "path": "definitions/050/index.html",
+      "sha256": "e7026300a878498c36007141bf47dac27976672867f4f448f33f92fe3f5b135e"
+    },
+    {
+      "deck_id": "051",
+      "path": "definitions/051/index.html",
+      "sha256": "68fa1eec8ebd814d665c94fdf6e806f9b978d058e64a24ad85e4126a2ca7a4bc"
+    },
+    {
+      "deck_id": "052",
+      "path": "definitions/052/index.html",
+      "sha256": "d31302a8717f03a04e3fb11333f0fa65410c017748866ac6eb69237292f918ab"
+    },
+    {
+      "deck_id": "053",
+      "path": "definitions/053/index.html",
+      "sha256": "ec60b2ff62dba20c505234924d268fbcb96b2d7547d06591f1c9b747ddcab831"
+    },
+    {
+      "deck_id": "054",
+      "path": "definitions/054/index.html",
+      "sha256": "b72f4b01e925abdccd2f64ccb5adb0e2f0e975cdad47d086d8eed0705a57fe72"
+    },
+    {
+      "deck_id": "055",
+      "path": "definitions/055/index.html",
+      "sha256": "e182d7aed156e811ab01279b3d488e9f4fd93123d02908f3cd42696e6d43021a"
+    },
+    {
+      "deck_id": "056",
+      "path": "definitions/056/index.html",
+      "sha256": "6e33af01f303eb4f51dddeb9df9b3c40ca972d36e4e699b8646ed80ee25d7b09"
+    },
+    {
+      "deck_id": "057",
+      "path": "definitions/057/index.html",
+      "sha256": "439eb4cbe934c05df38f1a0267f11a37ce74592d435a99ee432bbbf4d50299d4"
+    },
+    {
+      "deck_id": "058",
+      "path": "definitions/058/index.html",
+      "sha256": "6557944100bfe04c72c504ba43a1761f6df825a52bc199e3d2ea138fec0e20e0"
+    },
+    {
+      "deck_id": "059",
+      "path": "definitions/059/index.html",
+      "sha256": "3fc9ff18aa8b699fd048ae37a13fedd1b813ac5c522ca029ed54b5c92ec4adf1"
+    },
+    {
+      "deck_id": "060",
+      "path": "definitions/060/index.html",
+      "sha256": "2eb2bb5df37eb2eeb6d490ddfd95bd5ac58955486d1956e94e10b00729a24450"
+    },
+    {
+      "deck_id": "061",
+      "path": "definitions/061/index.html",
+      "sha256": "73a7ddeb28e0132645364e58a8e5d6e6da90d51279bf33235e02c4c60b64f837"
+    },
+    {
+      "deck_id": "062",
+      "path": "definitions/062/index.html",
+      "sha256": "999e31fd5b0f08ae75b19ade98cba853fc2408271767b25811c1168b85f706f1"
+    },
+    {
+      "deck_id": "063",
+      "path": "definitions/063/index.html",
+      "sha256": "f2663d4b3a5a996b6d77f524e517bb4eeb1b990186142b6d4592e9c8cebca80f"
+    },
+    {
+      "deck_id": "064",
+      "path": "definitions/064/index.html",
+      "sha256": "1f9e647158cb6ff1ab54a446e995cd3e22b0d56f95ead300a1d69904bdc6a25c"
+    },
+    {
+      "deck_id": "065",
+      "path": "definitions/065/index.html",
+      "sha256": "b5a7c7cf156480dec08884dd466271be3f918b4f8642467c500bb2677e3ffdff"
+    },
+    {
+      "deck_id": "066",
+      "path": "definitions/066/index.html",
+      "sha256": "3d98183b0ceaa2f19b543a737f55b027e83e1f7b7404403b9ff43511e87e0e00"
+    },
+    {
+      "deck_id": "067",
+      "path": "definitions/067/index.html",
+      "sha256": "3b69afa0a41fb6c1682a42ddc9f00870c8f52081d564c565f8dab74af319d429"
+    }
+  ],
+  "exact_card_total_per_deck": 60,
+  "html": {
+    "path": "index.html",
+    "sha256": "09a00aefdb4b0e7969aae1638ff11c2bb9ab898a21341080dc52a3f115cbe45c"
+  },
+  "image_policy": "external official-set thumbnails with explicit alt text and browser fallback",
+  "mapping_sha256": "6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120",
+  "official_card_data_sha256": "a0ea63cf7adcb65d35436ce0eb390de6e2e35654a7c67c065a45f4abaa00f373",
+  "schema_version": "0044_deck_asset_browser_v2",
+  "semantic_role": "Own Deck Strategy Archetype; independent from opponent Meta classifier",
+  "source_deck_registry_sha256": "d8e54d3f66f150325ce783982a07f0e3d17e273b138e8b4e6bb7e96cdd6d1996",
+  "taxonomy_sha256": "9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60",
+  "taxonomy_version": "own_archetypes_v2",
+  "text_profiles": [
+    {
+      "deck_id": "001",
+      "exact_deck_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "own_archetype_id": 2,
+      "path": "text/001.txt",
+      "sha256": "090da270c401ad2bf6d651dc876b67a10afd2d07f8e7efdbf7f4ea479a714e95"
+    },
+    {
+      "deck_id": "002",
+      "exact_deck_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "own_archetype_id": 3,
+      "path": "text/002.txt",
+      "sha256": "50f58000369ba9ac978c424163ce7e597c5e4ee9f2a3cfd6d52445c259f9eca0"
+    },
+    {
+      "deck_id": "003",
+      "exact_deck_sha256": "dd63244cb42c5002bb2c7e415e8224e3dc8440ee02743f0db22d9d44594a72cc",
+      "own_archetype_id": 1,
+      "path": "text/003.txt",
+      "sha256": "554abbd8ba21bfe11e317796646737084b5147e7b9b5ae7be7b6a61ea6eb0ff5"
+    },
+    {
+      "deck_id": "004",
+      "exact_deck_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "own_archetype_id": 1,
+      "path": "text/004.txt",
+      "sha256": "838eca89974d33e2e1e57a71bf0b9ca6cfd4df2b326badba789d17bb8a25a86b"
+    },
+    {
+      "deck_id": "005",
+      "exact_deck_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "own_archetype_id": 2,
+      "path": "text/005.txt",
+      "sha256": "76e407af32f5acab619896eff2bd0d78f869d8ecfc6f21dd044dfc2c26fa375e"
+    },
+    {
+      "deck_id": "006",
+      "exact_deck_sha256": "e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34",
+      "own_archetype_id": 10,
+      "path": "text/006.txt",
+      "sha256": "8b298f6553ba169629dbab16f5657e20106652a4ec52cd624e03d798842614dd"
+    },
+    {
+      "deck_id": "007",
+      "exact_deck_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+      "own_archetype_id": 0,
+      "path": "text/007.txt",
+      "sha256": "d1b5327a5cc5f4115942bd58023ddae2413f7c2503fd360806b3fe507a72eb19"
+    },
+    {
+      "deck_id": "008",
+      "exact_deck_sha256": "5e60b8c7eafc87e69cb063ae0ed7f7351fbf415b4c021567790b977bece49fbf",
+      "own_archetype_id": 10,
+      "path": "text/008.txt",
+      "sha256": "60c956d7d63cd58b57726709659e93735cea7a24c62103ada105e5c051d529b4"
+    },
+    {
+      "deck_id": "009",
+      "exact_deck_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
+      "own_archetype_id": 4,
+      "path": "text/009.txt",
+      "sha256": "f8b48458f7fb278d719c6da9bc6cd31297b89cb5781728302139df0d0e837965"
+    },
+    {
+      "deck_id": "010",
+      "exact_deck_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "own_archetype_id": 6,
+      "path": "text/010.txt",
+      "sha256": "c0fa2c14dacd0cca0f0259bd2483b12cc59b944389292bf44ca10d2b67b1a25b"
+    },
+    {
+      "deck_id": "011",
+      "exact_deck_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "own_archetype_id": 5,
+      "path": "text/011.txt",
+      "sha256": "1f9ec8c0a8292e932a577372569d47d5292376bc65cac25fadfb8f64601c4b1b"
+    },
+    {
+      "deck_id": "012",
+      "exact_deck_sha256": "053b4950d40b4a85f4c63511b1f89f90f82b691754d1aaa57b0a4df9f9806e75",
+      "own_archetype_id": 1,
+      "path": "text/012.txt",
+      "sha256": "434e19244f21a7318f9c487c6232db088c335491d0a63cb2fe5cdeb23741b954"
+    },
+    {
+      "deck_id": "013",
+      "exact_deck_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "own_archetype_id": 11,
+      "path": "text/013.txt",
+      "sha256": "b17bb4cca50210926a143eb3c6d5ff079c73f9a45a9874d660f08fcd9cab09b6"
+    },
+    {
+      "deck_id": "014",
+      "exact_deck_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+      "own_archetype_id": 5,
+      "path": "text/014.txt",
+      "sha256": "815ff6a8009eb24c3c48996eaffc46f98ce18d9c5fd55ce02ad087ec6093b855"
+    },
+    {
+      "deck_id": "015",
+      "exact_deck_sha256": "310ede704da1adc09e09efc2b3e4f96cd2201abdbcb3f51ada245472cac2742a",
+      "own_archetype_id": 19,
+      "path": "text/015.txt",
+      "sha256": "732b5539f54c30b243924dffcb5c7783c68b6bcb879829de0b7d0a43b5c1b567"
+    },
+    {
+      "deck_id": "016",
+      "exact_deck_sha256": "df6f7443719675711c2dcead3559087de996f3b8c43192d55ebfe6182e43cb7c",
+      "own_archetype_id": 18,
+      "path": "text/016.txt",
+      "sha256": "d1bb861c583305a7f61221f15402c4bafc265ca28b1afd70bb5dac754be98c8e"
+    },
+    {
+      "deck_id": "017",
+      "exact_deck_sha256": "a9cf3d228c6a32c3c2cfdbf4b42f570fc7d00f081e4e39e395c3a6793271d26c",
+      "own_archetype_id": 2,
+      "path": "text/017.txt",
+      "sha256": "aed51079692b14a9e5b0dc691d3e09e6ae6ed45414c3cfe130b11045d3134382"
+    },
+    {
+      "deck_id": "018",
+      "exact_deck_sha256": "daa1cce9079016e357f7ab3f1666f0ecc4ddca3b8e4131b88ade164c14ddcb4c",
+      "own_archetype_id": 0,
+      "path": "text/018.txt",
+      "sha256": "173e07165c04c5c21bcb818d4c0f85003b9c7b966a8a50445b65709064510b80"
+    },
+    {
+      "deck_id": "019",
+      "exact_deck_sha256": "275d23c9ed3eb47996ee9d6a6d7f9c31b77bff0902d881ce30c1d99a223c833b",
+      "own_archetype_id": 7,
+      "path": "text/019.txt",
+      "sha256": "5a7629a2c27bfee1767e41d6d9e8ac82ad3f8ae7d0629f710c2bf65d84aed957"
+    },
+    {
+      "deck_id": "020",
+      "exact_deck_sha256": "8c6c9898455cca1b49e41993e2962051d48c5ffee42cb02f3b18152991c71e2b",
+      "own_archetype_id": 8,
+      "path": "text/020.txt",
+      "sha256": "28290e1452c658449ca693033430d8cb2927559c73f6f66643da138da095bf21"
+    },
+    {
+      "deck_id": "021",
+      "exact_deck_sha256": "ead283b0f4b07414749ba86b819f00b9c849f32d965178de6629f63d3901505c",
+      "own_archetype_id": 9,
+      "path": "text/021.txt",
+      "sha256": "eb6467f3fc0667c805e4a06a1a13536914814589e60f2567a46719f5ec07f280"
+    },
+    {
+      "deck_id": "022",
+      "exact_deck_sha256": "546b39d1d1340529eb93a53907f2d46e15f58297902f0c1a68f2563673df8fc6",
+      "own_archetype_id": 1,
+      "path": "text/022.txt",
+      "sha256": "d8ac63c745957bf196ff5a636f9178f4c353e1a97ed177e78c4dbb58f67cf80a"
+    },
+    {
+      "deck_id": "023",
+      "exact_deck_sha256": "415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d",
+      "own_archetype_id": 27,
+      "path": "text/023.txt",
+      "sha256": "620fdf24f1e1ca08557a6f2fd0ef9c6af691cc08e046c70e51c58492c45a058d"
+    },
+    {
+      "deck_id": "024",
+      "exact_deck_sha256": "69fc3c54920d906e1784e0e76a35a6688c86a941ac369fc1b0f23f4bc226202b",
+      "own_archetype_id": 7,
+      "path": "text/024.txt",
+      "sha256": "5dcaaacc65e3b1f79d9e873980627cbdafa4139ce8a318bb118b5c7ffc91f73f"
+    },
+    {
+      "deck_id": "025",
+      "exact_deck_sha256": "5b509baed30a8f00d65b15eeaebb8b098cf0cc46b4b37ae685bd563ea5450e02",
+      "own_archetype_id": 21,
+      "path": "text/025.txt",
+      "sha256": "eacfd92f32dfef3f199464bfb696bb0242fd3d487cc3a4c98794552a5154cf55"
+    },
+    {
+      "deck_id": "026",
+      "exact_deck_sha256": "926cc79d2c4ea4610c7f07fc1de01c64b77b57e32a50794f541d810605cf7159",
+      "own_archetype_id": 28,
+      "path": "text/026.txt",
+      "sha256": "d347a94e2a4aab3685f63d27224bcb8a0fddfc001ad51d971750b4adbe2c50e3"
+    },
+    {
+      "deck_id": "027",
+      "exact_deck_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+      "own_archetype_id": 19,
+      "path": "text/027.txt",
+      "sha256": "40e6045a9cf359124fa9cbce2414bfd616225fffdf10291c759867f593bfdd15"
+    },
+    {
+      "deck_id": "028",
+      "exact_deck_sha256": "61b9c541b9cacccc78030862f281caee12857f5c3ce5599f3f3f09319e566c39",
+      "own_archetype_id": 1,
+      "path": "text/028.txt",
+      "sha256": "8a3152ef30b39b14af9d0abcac335ef7c5e561d40c8be64a2fa5382d9609deb8"
+    },
+    {
+      "deck_id": "029",
+      "exact_deck_sha256": "f8a5ec1c82043f715dfa7da982343bcb4d0b67d80827eb74c9640e00efb97766",
+      "own_archetype_id": 10,
+      "path": "text/029.txt",
+      "sha256": "0c6d1b8cd50530c3c5bc1df7a81784a05fe69fdc8bb590d8cd3722266306b9ad"
+    },
+    {
+      "deck_id": "030",
+      "exact_deck_sha256": "747769779b60ad8db730b0b238414abb1e47936349cc72c83ff79c2ffacf31bc",
+      "own_archetype_id": 5,
+      "path": "text/030.txt",
+      "sha256": "3c4df9ad36a0e337fb9dd9c32759c0af1c247b32d056603967e44d2bfe5c0227"
+    },
+    {
+      "deck_id": "031",
+      "exact_deck_sha256": "de5b9940c5be5708af75d38f0bbb3fd85600e90fea9349a8ab330fb1f4638ffe",
+      "own_archetype_id": 2,
+      "path": "text/031.txt",
+      "sha256": "c785ce3a84e2434d8f55bf0a7cb843d8bcc96ed4e8cd7b7efed43bc6e82326a1"
+    },
+    {
+      "deck_id": "032",
+      "exact_deck_sha256": "e9911db454f518890e3ec43a64ca9c66b6914cdfba5271ec56a6cf9d60e1b5fc",
+      "own_archetype_id": 21,
+      "path": "text/032.txt",
+      "sha256": "93841730ed245fbc53917dbe4448ee28710b598b8ee493806692e2fc4d7859e8"
+    },
+    {
+      "deck_id": "033",
+      "exact_deck_sha256": "1893950717074f0ee017a94335c6a8df1f0c5ac34b4ec81a16440f2d9b9dcc96",
+      "own_archetype_id": 5,
+      "path": "text/033.txt",
+      "sha256": "1c9b874097cb2178c38e12533518b4bf34d5ff64e95e5aa9cb9456a88e1ede9f"
+    },
+    {
+      "deck_id": "034",
+      "exact_deck_sha256": "56024e4e17512f2c66e86f08da54552e49b9de9ad7c5df8ab0b8a4fe80f38ea4",
+      "own_archetype_id": 3,
+      "path": "text/034.txt",
+      "sha256": "70ed126cca878ccf3c60e80c84ef4a39c4c8b3f504973e16024ab899a5a8f803"
+    },
+    {
+      "deck_id": "035",
+      "exact_deck_sha256": "ca60839cba73b0054f0854952ec3a5e98cb8178db1f71e264aafceb44ffd7adb",
+      "own_archetype_id": 5,
+      "path": "text/035.txt",
+      "sha256": "a480da7647183137bb4cde81cde27ca6a639a244398abc023e9ba6aa636e7b42"
+    },
+    {
+      "deck_id": "036",
+      "exact_deck_sha256": "f1f687577435fd42c1b3023f8c8903a4d1aa8d7a0742a13504e4870248efd86c",
+      "own_archetype_id": 10,
+      "path": "text/036.txt",
+      "sha256": "95d106b65cc1d5f2a09df5da0f37700c464135feb4cf89c0fbb030abcf4de1a1"
+    },
+    {
+      "deck_id": "037",
+      "exact_deck_sha256": "0043a7493af90c24b6662181233a5c9eeedc50892b7940744c82cbac36a55c4f",
+      "own_archetype_id": 2,
+      "path": "text/037.txt",
+      "sha256": "46f0b8c45d2005a13fa0bc5a34cf88b80cca1b8598f14dd8bd2842303c971e3d"
+    },
+    {
+      "deck_id": "038",
+      "exact_deck_sha256": "c385b53bf42c2af2bc8daedde5b28d921dd913e9886c1e86f326ad229ee20e6a",
+      "own_archetype_id": 7,
+      "path": "text/038.txt",
+      "sha256": "dd77ea5d01b0367bf8f178d011d20e2254f84eb9833f64788e18af9798e4e50a"
+    },
+    {
+      "deck_id": "039",
+      "exact_deck_sha256": "59c6fdb878b672309da0db1318640029802b1afdcfd4e23b1dcab3d3a96d61fc",
+      "own_archetype_id": 3,
+      "path": "text/039.txt",
+      "sha256": "0d6c76023ade35354039613c88a03236dad37093c09bebe82da95f500f5132f2"
+    },
+    {
+      "deck_id": "040",
+      "exact_deck_sha256": "09b937915fb787c62365c02c76bbd2d25b847fbd06f62292dd20f251fbdce19a",
+      "own_archetype_id": 3,
+      "path": "text/040.txt",
+      "sha256": "0107139b0b416783a65bb2bab8a43b71558cfd38e8c33999bf002c1f2f103620"
+    },
+    {
+      "deck_id": "041",
+      "exact_deck_sha256": "f1d642b4458ba1a2b3fa21ed6e4cdf14cc00f539d56fd4194d305ab370d227d3",
+      "own_archetype_id": 27,
+      "path": "text/041.txt",
+      "sha256": "8d4127d496839c55d8533212a3c4f5053f6a4d97fe5ed9556524f6aa4bc56b62"
+    },
+    {
+      "deck_id": "042",
+      "exact_deck_sha256": "dd46dbf9735fdf6c36c23bfe060c1092e68e8e7bb17c3c1e616e71045cb524e2",
+      "own_archetype_id": 8,
+      "path": "text/042.txt",
+      "sha256": "959949c4a2c7ade26bab693f4115ab0f12a576aa76ca434ad89c634431e7cf8c"
+    },
+    {
+      "deck_id": "043",
+      "exact_deck_sha256": "b85bae9f3a2130375ba8cfef2fec42787b7bfc2289e324bbae0ef28a7486928b",
+      "own_archetype_id": 15,
+      "path": "text/043.txt",
+      "sha256": "417fff6923c66477d07f43a094faa83b07b1783abdb1e93b6f27115b70d94391"
+    },
+    {
+      "deck_id": "044",
+      "exact_deck_sha256": "7b5c566477305e7b732b05d3232206fa6686f2c1c734aff1fe305df126012293",
+      "own_archetype_id": 12,
+      "path": "text/044.txt",
+      "sha256": "0bd2a813f98d5a9536e17353289ae9e513b24fe51b9a4d2cb248d3582284126a"
+    },
+    {
+      "deck_id": "045",
+      "exact_deck_sha256": "5694d3eb6909e7ff0618c943cd8b7dcac155ed81666d350bf3c7261d70bf119d",
+      "own_archetype_id": 12,
+      "path": "text/045.txt",
+      "sha256": "6641de30511e0f5f35a636f17c02dd5ed9f9ec1f4a017b00f58c010a6cd4234e"
+    },
+    {
+      "deck_id": "046",
+      "exact_deck_sha256": "b15853cdfb8304f39f879638102a7fd161f1102d81e6d3f36d5beca4db9e01b0",
+      "own_archetype_id": 17,
+      "path": "text/046.txt",
+      "sha256": "e666ecb86169fb838ff96f6620d380be8ca58c9bee3ce49098565e50662fe3bf"
+    },
+    {
+      "deck_id": "047",
+      "exact_deck_sha256": "a982751f90cfc560cc52b7a16b5f5da23a0328dbce035b9f37d79ad661ff223e",
+      "own_archetype_id": 23,
+      "path": "text/047.txt",
+      "sha256": "6ae4890b60d15f494c7d943093e438ae261161ca774abf0bceda9b0af34411a4"
+    },
+    {
+      "deck_id": "048",
+      "exact_deck_sha256": "56b532d24b01cf9561aa4bd99289cb610b62e427eb0f7d625860531855289a66",
+      "own_archetype_id": 13,
+      "path": "text/048.txt",
+      "sha256": "9ba7945573bf4d5d332b21dfd6e7aa49190ea28c64d29579eee7fdcfbd4c7b6a"
+    },
+    {
+      "deck_id": "049",
+      "exact_deck_sha256": "11bd8fb9fc18f68008df5fd98955516c492f4c1ef5eeca7df5d79d19187ab0ce",
+      "own_archetype_id": 24,
+      "path": "text/049.txt",
+      "sha256": "28e1314e2719b1ece67879ab86078779f44fab3d57aedf91f97e61be41a2b61a"
+    },
+    {
+      "deck_id": "050",
+      "exact_deck_sha256": "46fd6cbdd4d2c750e3abeee10c80be2e499aa4c8c96cb2e35ab704ba3acb8230",
+      "own_archetype_id": 17,
+      "path": "text/050.txt",
+      "sha256": "25e862a8359f68bb7e8c34c4ef8c4df6fab4105f65ce5d3ce7bcd41a2542408a"
+    },
+    {
+      "deck_id": "051",
+      "exact_deck_sha256": "da1d56e33b96abccedb056d4f8b31da68bfd2c224ade3a4914b5709135aa7535",
+      "own_archetype_id": 13,
+      "path": "text/051.txt",
+      "sha256": "94f796117e6664136e941e015d42f68835bf08a007ee1021f7c8178559da1f0e"
+    },
+    {
+      "deck_id": "052",
+      "exact_deck_sha256": "05566aeb4e7e4b7b574e3b15fb8f0a6d73eaee8e30605560186e1eb9b562dcc6",
+      "own_archetype_id": 13,
+      "path": "text/052.txt",
+      "sha256": "0aba615e63ed8dd2070c5f37f8deb9caa9b7f7e5ba28985514972ee560c29494"
+    },
+    {
+      "deck_id": "053",
+      "exact_deck_sha256": "555de3e40ea3ec143dab9dbea23b91a0fe9aebbd25224222f29d7c5b6fdddd7c",
+      "own_archetype_id": 12,
+      "path": "text/053.txt",
+      "sha256": "81318b2d658561b80c309730e1d60123c8135145c3efa26c80da7c2c93309827"
+    },
+    {
+      "deck_id": "054",
+      "exact_deck_sha256": "940bc1f37b2a0d5bc70210af8bccb99cfdd5c8e823507f53127fdfc494826efc",
+      "own_archetype_id": 24,
+      "path": "text/054.txt",
+      "sha256": "1f94c41d3e4654fd3a307619b0863cbf756cd52991e22ca672ded04fe8f278c6"
+    },
+    {
+      "deck_id": "055",
+      "exact_deck_sha256": "ee01ffad96758991132ec4bbc2c56282e6820fabaa7792b312c7e86272062f07",
+      "own_archetype_id": 13,
+      "path": "text/055.txt",
+      "sha256": "26baed9732242b47fa33e5ef89163d793673e8375167622d77e895e133e7508e"
+    },
+    {
+      "deck_id": "056",
+      "exact_deck_sha256": "17872b59494a351c03599017c4c978889d941745c83f75be61ff1d47ae746048",
+      "own_archetype_id": 25,
+      "path": "text/056.txt",
+      "sha256": "837ff611f11ac378b97512dbf3b3115f8d53d7c9cc22ea634da76047ead2d5ab"
+    },
+    {
+      "deck_id": "057",
+      "exact_deck_sha256": "d8454cc8351f6170cfb17d05b3603684ff10b1e707684f05e44a8f7f0f853078",
+      "own_archetype_id": 15,
+      "path": "text/057.txt",
+      "sha256": "b5c6adb970bf37c252f1a24c91aa2df98425bce63ad336f7b5741e1356b9f8ef"
+    },
+    {
+      "deck_id": "058",
+      "exact_deck_sha256": "15f87ee2cd1150c0404210c59bf7ec88e40efc0fc953002f534370dd711a17e5",
+      "own_archetype_id": 20,
+      "path": "text/058.txt",
+      "sha256": "c67be188d03ddf3c6c144ce3cb16dbdb5ce8775be920b90eb742166ef6e08f35"
+    },
+    {
+      "deck_id": "059",
+      "exact_deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+      "own_archetype_id": 9,
+      "path": "text/059.txt",
+      "sha256": "c80bf8ee34ca6975b7e2bdbb9d90a6fa240f7a26f3dadfc7be43a0458a269214"
+    },
+    {
+      "deck_id": "060",
+      "exact_deck_sha256": "3f8ee4b51dd39a464b9ca5bbda6c84fad383a50c04ee0c43c74df9a989893c04",
+      "own_archetype_id": 11,
+      "path": "text/060.txt",
+      "sha256": "602ffad325f41175b04ddfd5b34d7ef8c19796dfe3eb67dbdb4f4d70dc6dd7aa"
+    },
+    {
+      "deck_id": "061",
+      "exact_deck_sha256": "b4ed553f1dc4a6ac4d7835eb521b78bde2f25e7c32673438c9d364652554ff73",
+      "own_archetype_id": 16,
+      "path": "text/061.txt",
+      "sha256": "c6f2b7fc729a33b71fb669334d4ab2e41bd72c2c426125847ada3f7adf989222"
+    },
+    {
+      "deck_id": "062",
+      "exact_deck_sha256": "654f54a66c951ab2b6f4a714286552a614ecb94e84752b47bf03770c4cd7c933",
+      "own_archetype_id": 12,
+      "path": "text/062.txt",
+      "sha256": "1926eb32cf283dfa025f45fdf6de8d0b10043f4b32b40734da48a5b6cabc064d"
+    },
+    {
+      "deck_id": "063",
+      "exact_deck_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b",
+      "own_archetype_id": 4,
+      "path": "text/063.txt",
+      "sha256": "e0acd3dbb380e0a3fc530c9dc29c3effb60b0e0156c23fdcb2f62ac9273e9987"
+    },
+    {
+      "deck_id": "064",
+      "exact_deck_sha256": "236786f63c7a461f9ec384064539ada5c6d7342bef4b7f22d7833ace76bdec8c",
+      "own_archetype_id": 22,
+      "path": "text/064.txt",
+      "sha256": "aa7b4516bb6f8684da1d5160a2e96638e2757c99b4e6917ab646162f885cb9f6"
+    },
+    {
+      "deck_id": "065",
+      "exact_deck_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210",
+      "own_archetype_id": 26,
+      "path": "text/065.txt",
+      "sha256": "f7f2ebdda48b700b1df1c1d10a961884976b8dddbcc90969e4bdf706c46fefde"
+    },
+    {
+      "deck_id": "066",
+      "exact_deck_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+      "own_archetype_id": 15,
+      "path": "text/066.txt",
+      "sha256": "0595e5f78796487f84fcf826830f2e775a013f4acb7aace288d7f9beb70d8bc2"
+    },
+    {
+      "deck_id": "067",
+      "exact_deck_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+      "own_archetype_id": 0,
+      "path": "text/067.txt",
+      "sha256": "8fa77219467e3950e5ba15984ee6fec925f22de3f911d0730f64f19bd6b6c87f"
+    }
+  ]
+}

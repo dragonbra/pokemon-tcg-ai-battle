@@ -1,0 +1,85 @@
+0044 DECK 024 — Crustle / Cornerstone Mask Ogerpon ex
+==============================================================================
+
+IDENTITY
+deck_id: 024
+display_name: Crustle / Cornerstone Mask Ogerpon ex
+upstream_name: Crustle / Cornerstone Mask Ogerpon ex
+display_name_correction: none
+exact_deck_sha256: 69fc3c54920d906e1784e0e76a35a6688c86a941ac369fc1b0f23f4bc226202b
+deck_file_sha256: a2f32fee67f69d41ee56287462de9c2a4bf8f4046c017f78019b5a30498ccedf
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 7
+own_archetype_id: 7
+own_archetype_name: crustle_barbaracle_wall
+own_archetype_display_name: Crustle / Barbaracle Wall
+decision: keep
+parent_archetype: none
+embedding_init_from: 7
+tags: wall, single_prize
+
+STRATEGIC CHARACTERISTICS
+axis: single-prize wall and denial
+definition: Single-prize wall and denial plans centered on Crustle or Barbaracle.
+rationale: Matchup immunity and slow resource denial replace a normal damage race.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=16, Trainer=30, Energy=14
+evolution_lines:
+  Basic / root:
+    - 4× Munkidori [112] (Basic Pokémon)
+    - 2× Cornerstone Mask Ogerpon ex [117] (Basic Pokémon)
+    - 4× Dwebble [344] (Basic Pokémon)
+    - 2× Team Rocket's Articuno [414] (Basic Pokémon)
+  Dwebble:
+    - 4× Crustle [345] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 4× Crispin [1198] (Supporter)
+  - 4× Brock’s Scouting [1210] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 3× Urbain [1236] (Supporter)
+  - 2× Battle Cage [1264] (Stadium)
+energy:
+  - 3× Basic {G} Energy [1]
+  - 1× Basic {W} Energy [3]
+  - 1× Basic {F} Energy [6]
+  - 3× Basic {D} Energy [7]
+  - 4× Prism Energy [16]
+  - 2× Grow Grass Energy [18]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    3 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    1 |       3 | Basic {W} Energy | SVE 3 | Energy | Basic Energy
+    1 |       6 | Basic {F} Energy | SVE 6 | Energy | Basic Energy
+    3 |       7 | Basic {D} Energy | SVE 7 | Energy | Basic Energy
+    4 |      16 | Prism Energy | BLK 86 | Energy | Special Energy
+    2 |      18 | Grow Grass Energy | POR 86 | Energy | Special Energy
+    4 |     112 | Munkidori | TWM 95 | Pokémon | Basic Pokémon
+    2 |     117 | Cornerstone Mask Ogerpon ex | TWM 112 | Pokémon | Basic Pokémon
+    4 |     344 | Dwebble | DRI 11 | Pokémon | Basic Pokémon
+    4 |     345 | Crustle | DRI 12 | Pokémon | Stage 1 Pokémon
+    2 |     414 | Team Rocket's Articuno | DRI 51 | Pokémon | Basic Pokémon
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    4 |    1147 | Jumbo Ice Cream | PFL 91 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    1 |    1159 | Hero’s Cape | TEF 152 | Trainer | Pokémon Tool
+    4 |    1198 | Crispin | SCR 133 | Trainer | Supporter
+    4 |    1210 | Brock’s Scouting | JTG 146 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    3 |    1236 | Urbain | ASC 214 | Trainer | Supporter
+    2 |    1264 | Battle Cage | PFL 85 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 41, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/024_crustle_cornerstone_mask_ogerpon_ex", "legacy_semantic_deck_id": "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

@@ -1,0 +1,21 @@
+{
+  "schema_version": "0044_league_config_v1",
+  "rollout_games_per_update": 256,
+  "branches": {
+    "pfsp": 128,
+    "uniform": 64,
+    "latest_champion": 64
+  },
+  "seat_slots": {
+    "focal_first": 128,
+    "focal_second": 128
+  },
+  "deck_policy_sampling": "independent",
+  "pfsp": {
+    "prior": "Beta(1,1)",
+    "refresh_every_updates": 10,
+    "minimum_probability": 0.001,
+    "maximum_probability": 1.0
+  },
+  "notes": "V1 uses the singleton Champion-G2 policy pool. The 128/64/64 branches remain auditable and are effectively 50% deck-level PFSP plus 50% uniform deck exploration; changing either bound or branch count is a new versioned experiment variable."
+}

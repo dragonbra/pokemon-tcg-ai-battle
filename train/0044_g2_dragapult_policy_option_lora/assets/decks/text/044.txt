@@ -1,0 +1,86 @@
+0044 DECK 044 — Mega Starmie ex / Mega Froslass ex
+==============================================================================
+
+IDENTITY
+deck_id: 044
+display_name: Mega Starmie ex / Mega Froslass ex
+upstream_name: Mega Starmie ex / Mega Froslass ex
+display_name_correction: none
+exact_deck_sha256: 7b5c566477305e7b732b05d3232206fa6686f2c1c734aff1fe305df126012293
+deck_file_sha256: f5b7eef403d35462050d8e6e2392fc66194d727a63ecb5c187448eb1965110af
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
+mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+old_own_archetype_id: 12
+own_archetype_id: 12
+own_archetype_name: mega_starmie_ex
+own_archetype_display_name: Mega Starmie ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 12
+tags: water, spread_damage
+
+STRATEGIC CHARACTERISTICS
+axis: Starmie fast spread
+definition: Water Stage-1 spread attacker paired with Mega Froslass hand-pressure variants.
+rationale: Fast Stage-1 evolution and active/bench damage routing dominate sequencing.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=14, Trainer=37, Energy=9
+evolution_lines:
+  Raboot:
+    - 2× Cinderace [666] (Stage 2 Pokémon)
+  Basic / root:
+    - 3× Snorunt [860] (Basic Pokémon)
+    - 3× Staryu [1030] (Basic Pokémon)
+  Snorunt:
+    - 3× Mega Froslass ex [861] (Stage 1 Pokémon)
+  Staryu:
+    - 3× Mega Starmie ex [1031] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 2× Boss’s Orders [1182] (Supporter)
+  - 2× Salvatore [1189] (Supporter)
+  - 2× Xerosic’s Machinations [1197] (Supporter)
+  - 2× Cheren [1224] (Supporter)
+  - 3× Hilda [1225] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 3× Wally's Compassion [1229] (Supporter)
+  - 4× Surfing Beach [1262] (Stadium)
+energy:
+  - 9× Basic {W} Energy [3]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    9 |       3 | Basic {W} Energy | SVE 3 | Energy | Basic Energy
+    2 |     666 | Cinderace | MEG 28 | Pokémon | Stage 2 Pokémon
+    3 |     860 | Snorunt | ASC 46 | Pokémon | Basic Pokémon
+    3 |     861 | Mega Froslass ex | ASC 47 | Pokémon | Stage 1 Pokémon
+    3 |    1030 | Staryu | POR 20 | Pokémon | Basic Pokémon
+    3 |    1031 | Mega Starmie ex | POR 21 | Pokémon | Stage 1 Pokémon
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    2 |    1087 | Hand Trimmer | TEF 150 | Trainer | Item
+    1 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    3 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    3 |    1145 | Mega Signal | MEG 121 | Trainer | Item
+    1 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    1 |    1159 | Hero’s Cape | TEF 152 | Trainer | Pokémon Tool
+    2 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    2 |    1189 | Salvatore | TEF 160 | Trainer | Supporter
+    2 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    2 |    1224 | Cheren | WHT 81 | Trainer | Supporter
+    3 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    3 |    1229 | Wally's Compassion | MEG 132 | Trainer | Supporter
+    4 |    1262 | Surfing Beach | MEG 129 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 204, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/044_mega_starmie_ex_mega_froslass_ex", "legacy_semantic_deck_id": "mega_starmie_ex_mega_froslass_ex_7b5c56647730", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}
