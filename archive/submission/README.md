@@ -9,6 +9,7 @@ historical archives:
 - `0013_v5_m0_epoch14_loss_best/` - M0 epoch 14 validation-loss-best self-contained payload and local official-engine evaluation candidate.
 - `0022_frozen_festival_lead_dipplin_001/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Festival Lead / Dipplin 001 deck.
 - `0022_frozen_mega_kangaskhan_ex_crustle_004/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Mega Kangaskhan ex / Crustle 004 deck.
+- `0043_dragapult_ex_007_v2_u136_fp16_storage_fp32_runtime/` — 0043 V2 U136 with exact deck 007, materialized under `kaggle_fp16_storage_fp32_runtime_v1`; its formal Frozen Policy-0809 CUDA-2048 evidence is 1301-746-1 (63.53%).
 
 Each package remains self-contained with `main.py`, `deck.csv`, and its own `cg/` runtime. They are
 not current training entry points. New trainable candidates belong in `evaluation/arena/candidates/`.

@@ -127,6 +127,25 @@ def export(
             deck=deck, deck_id=deck_id, own_archetype_id=own_id,
             output=model_path, device=torch.device("cpu"),
         )
+        formal_evidence = selection.get("formal_strength_evidence")
+        if formal_evidence is not None:
+            expected = {
+                "checkpoint_update": audit.checkpoint_update,
+                "source_checkpoint_sha256": audit.source_checkpoint_sha256,
+                "portable_checkpoint_sha256": audit.portable_checkpoint_sha256,
+                "deployment_effective_sha256": audit.effective_candidate_sha256,
+                "deck_id": deck_id,
+                "focal_exact_deck_sha256": audit.focal_exact_deck_sha256,
+            }
+            mismatched = {
+                key: {"expected": value, "actual": formal_evidence.get(key)}
+                for key, value in expected.items()
+                if formal_evidence.get(key) != value
+            }
+            if formal_evidence.get("status") != "PASS" or mismatched:
+                raise RuntimeError(
+                    f"formal strength evidence does not identify this package: {mismatched}"
+                )
         _copy_official_runtime(output)
         (output / "deck.csv").write_text(
             "".join(f"{card}\n" for card in deck), encoding="utf-8"
@@ -148,10 +167,12 @@ def export(
             "deployment_contract": audit.to_manifest(),
             "storage_dtype": "fp16",
             "runtime_dtype": "fp32",
+            "runtime_framework": "pytorch",
+            "native_runtime_load_order": "torch_before_cg",
             "model_only": True,
             "optimizer_state_saved": False,
             "selection": selection,
-            "strength_evidence": "rollout_diagnostic_only_no_cuda2048",
+            "strength_evidence": formal_evidence or "rollout_diagnostic_only_no_cuda2048",
             "semantic_runtime_source": str(RUNTIME_ROOT.relative_to(ROOT)),
         }
         manifest["package_file_sha256"] = _file_inventory(output)
