@@ -165,8 +165,8 @@ def materialize_policy_bundle(
             raise PolicyIdentityViolation("Policy-0809 effective component hashes mismatch")
         tensors = {name: value.detach().clone() for name, value in state.items()}
         storage_dtype = "fp32"
-    elif policy_id == "Champion-G1":
-        delta_purpose = "model_only_delta"
+    elif policy_id.startswith("Champion-G") and policy.generation is not None:
+        delta_purpose = manifest.get("source_checkpoint_artifact_purpose", "model_only_delta")
         delta = torch.load(
             _artifact(policy, delta_purpose, project_root),
             map_location="cpu", weights_only=True,
@@ -175,8 +175,12 @@ def materialize_policy_bundle(
             _artifact(policy, "portable_fp16_artifact", project_root),
             map_location="cpu", weights_only=True,
         )
-        expected_delta_schema = "0042_strategy_conditioned_model_only_v1"
-        expected_portable_schema = "0042_strategy_conditioned_kaggle_candidate_v1"
+        expected_delta_schema = manifest.get(
+            "source_checkpoint_schema", "0042_strategy_conditioned_model_only_v1"
+        )
+        expected_portable_schema = manifest.get(
+            "portable_checkpoint_schema", "0042_strategy_conditioned_kaggle_candidate_v1"
+        )
         if (
             delta.get("schema_version") != expected_delta_schema
             or portable.get("schema_version") != expected_portable_schema
@@ -184,11 +188,11 @@ def materialize_policy_bundle(
             != artifacts[delta_purpose]
         ):
             raise PolicyIdentityViolation(f"{policy_id} reconstruction provenance mismatch")
-        if (
-            delta.get("metadata", {}).get("source_actor_sha256")
-            != artifacts["complete_base_checkpoint"]
+        base_purpose = manifest.get("source_base_artifact_purpose", "complete_base_checkpoint")
+        if base_purpose and (
+            delta.get("metadata", {}).get("source_actor_sha256") != artifacts[base_purpose]
         ):
-            raise PolicyIdentityViolation("Champion-G1 base provenance mismatch")
+            raise PolicyIdentityViolation(f"{policy_id} base provenance mismatch")
         tensors = {}
         components = {}
         for field in PORTABLE_FIELDS:
@@ -201,8 +205,11 @@ def materialize_policy_bundle(
             components[field] = _tensor_hash(state)
             tensors.update({f"{field}.{name}": value.detach().clone() for name, value in state.items()})
         storage_dtype = "fp16"
+        declared_tensor_hash = manifest.get("portable_tensor_sha256")
+        if declared_tensor_hash is not None and _tensor_hash(tensors) != declared_tensor_hash:
+            raise PolicyIdentityViolation(f"{policy_id} portable tensor identity mismatch")
     else:
-        raise PolicyIdentityViolation(f"unsupported initial 0043 policy: {policy_id}")
+        raise PolicyIdentityViolation(f"unsupported 0043 policy: {policy_id}")
     audit = PolicyBundleAudit(
         requested_policy_id=policy_id,
         artifact_sha256=artifacts,

@@ -1,6 +1,6 @@
 # 0043 Champion League RL Design
 
-Status: **V5 generalist focal 001–067 running from U208 with memory-safe physical microbatch 512; U209 healthy**
+Status: **V6 U407 has been human-promoted and archived as immutable Champion-G2; active opponent pool is Policy-0809 / Champion-G1 / Champion-G2**
 
 ## Own Archetype Taxonomy V2 (2026-08-13)
 
@@ -8,7 +8,7 @@ Own strategy and opponent Meta are separate schemas. Opponent Meta remains the f
 
 Known decks resolve by `(deck_id, exact content SHA-256)` through `deck_own_archetype_mapping_v2.json`. Trigger-card priority is compatibility fallback only and is never source of truth for 001–067. IDs 0–14 retain their exact V1 meanings; IDs 15–28 are append-only strategic splits. `other` (14) remains the unknown/unmodeled fallback, and no known deck in 001–067 maps to it.
 
-Champion-G1 remains byte-for-byte frozen with V1 tensors `[15,16]`. V1-Focal-Seed is a mutable, unpromoted run-local initialization with V2 tensors `[29,16]`: rows 0–14 are exact copies, and each appended row is copied from its declared G1 parent. The FP32 model-only training seed and portable FP16 artifact were migrated independently; no optimizer state exists or was migrated. A fresh optimizer includes both expanded own embeddings under the unchanged approved parameter groups and learning rates.
+Champion-G1 remains byte-for-byte frozen with V1 tensors `[15,16]`. V1-Focal-Seed initialized the mutable V2 line with tensors `[29,16]`: rows 0–14 were exact copies and each appended row was copied from its declared G1 parent. After generalist training through U407 and a complete human-reviewed Full67 CUDA-2048 gate, that exact U407 identity is now frozen as Champion-G2. G2 retains the trained `[29,16]` own embeddings and resolves each exact deck to its V2 row; its opponent Meta classifier remains the same frozen 15-way head and was not expanded or updated.
 
 Zero-update parity exercised all 15 historical rows through complete portable inference and obtained exact policy logits, action probabilities, greedy actions, value outputs, and both adapter outputs. It separately verified all 55 historical exact decks resolve to their G1 row and all 67 decks resolve through V2 exact mapping. This is schema-migration correctness evidence, not official-engine policy-strength evidence.
 
@@ -25,7 +25,7 @@ The governing documents are `docs/rl/0043_Project_Charter_Codex_Handoff.md`, `do
 ```text
 one-time approved historical source
   -> SHA-256 verification
-  -> 0043 semantic directory (`001`, `policy_0809`, `champion_g001`)
+  -> 0043 semantic directory (`001`, `policy_0809`, `champion_g001`, `champion_g002`)
   -> immutable project-relative registry
   -> fail-closed loader
   -> policy identity resolution
@@ -35,7 +35,7 @@ one-time approved historical source
 There are three independent domains:
 
 - Training Deck Pool: 67 exact decks, numbered `001`–`067`; append-only through new versioned assets.
-- Active Policy Pool: Policy-0809 historical anchor and frozen Champion-G1.
+- Active Policy Pool: Policy-0809 historical anchor plus frozen Champion-G1 and Champion-G2; G2 is the current latest Champion.
 - Frozen Evaluation Pool: FrozenMeta256-V1, the unchanged 55-deck/256-game integer-frequency composition using independently resolved Policy-0809.
 
 Within 0043, the sole canonical deck identity is the zero-padded numeric `deck_id`: the initial immutable set was `001`–`055`, the frozen-pool extension is `056`–`065`, and user-approved Dragapult exact lists are appended as `066`–`067`. Archetype names, exact-deck hashes, and historical semantic IDs remain audit metadata and never replace this identity. Decks 056–067 are training-only; FrozenMeta256-V1 still resolves exactly `001`–`055`, so this is not an implicit Frozen67 benchmark migration. Filesystem directories likewise carry stable semantic names rather than hashes: decks live under `definitions/<deck_id>`, while policies live under `definitions/policy_0809`, `definitions/champion_g001`, and future equivalent generation names. SHA-256 remains mandatory in manifests for integrity but has no directory-name semantics.
@@ -53,7 +53,7 @@ The inherited actor uses the 0031 rule-faithful semantic observation/action sche
 
 Prototype, state, and option representation weights remain frozen. PPO remains FP32 with one 256-game on-policy rollout per update, `gamma=1`, turn-clock GAE `0.95`, terminal outcome/value objective, directional prize auxiliary, three complete shuffled data passes at most, and the frozen learning-rate/loss/KL values in `active_training_config.json`.
 
-The inference source required to reconstruct both policy families is frozen below `train/0043_champion_league_rl/semantic_runtime/` with a per-file manifest and tree hash. Runtime code imports only this project-local package. Policy-0809 strict-loads its complete checkpoint; Champion-G1 strict-loads its portable FP16 artifact into FP32 runtime. The fixed synthetic contract batch has no source/team/persona tensor and exercises actor logits or Champion value/strategy decode on CPU and CUDA without changing model semantics.
+The inference source required to reconstruct all policy families is frozen below `train/0043_champion_league_rl/semantic_runtime/` with a per-file manifest and tree hash. Runtime code imports only this project-local package. Policy-0809 strict-loads its complete checkpoint; Champion-G1 and Champion-G2 independently strict-load their own portable FP16 artifacts into FP32 runtime. The fixed synthetic contract batch has no source/team/persona tensor and exercises actor logits or Champion value/strategy decode on CPU and CUDA without changing model semantics.
 
 ## League schedule
 
@@ -61,7 +61,7 @@ The inference source required to reconstruct both policy families is frozen belo
 outer opponent-policy phase (focal deck remains a per-lane feature)
   -> 128 PFSP lanes: independent deck and policy weakness draws
   ->  64 uniform lanes: independent Training Deck / Active Policy draws
-  ->  64 latest lanes: uniform Training Deck + immutable Champion-G1
+  ->  64 latest lanes: uniform Training Deck + immutable Champion-G2
   -> seeded shuffle preserving lane seat/seed identities
   -> 256 official-engine games
 ```
@@ -84,11 +84,20 @@ CUDA 12.8 compilation of the optional `official_continuation_dispatch_smoke` tra
 
 ## Mixed-focal cohort optimization
 
-CUDA resident collection now groups the 256 jobs only by immutable opponent policy identity. Each focal row receives its resident `job_index`, which selects that job's exact `focal_deck_id` and 29-way own-archetype embedding; exact-deck static features remain lane-bound and audited. Policy-0809 and Champion-G1 still use separate complete, immutable resident models, audits, and collector calls. This changes batching only: it does not share weights or caches across policy identities and does not change the 15-way opponent Meta head.
+CUDA resident collection groups the 256 jobs only by immutable opponent policy identity. Each focal row receives its resident `job_index`, which selects that job's exact `focal_deck_id` and own-archetype embedding; exact-deck static features remain lane-bound and audited. Policy-0809, Champion-G1 and Champion-G2 use three separate complete immutable resident models, audits and collector calls. G2 is loaded once per run and its 29-way own ID is injected per row, so adding it does not introduce per-deck checkpoint reloads. No weights or caches are shared across policy identities, and the 15-way opponent Meta head is unchanged.
 
 On the same 99 U20 Policy-0809 jobs, old two-focal-cohort execution ran at 2.96 games/s and the mixed-focal cohort at 4.47 games/s (1.51×); outcome, terminal turn, error, and routing status matched for every game. A separate 64-game mixed 002/007 CUDA smoke completed 64/64 with zero error, zero routing failure, and zero feature D2H. V2 starts from the immutable V1 update-21 model-only checkpoint with a fresh optimizer, carries forward the C002 PFSP state, and retains the original G1/update-0 reference-KL anchor.
 
 ## Current and next stage
+
+### Benchmark V1
+
+Benchmark V1 fixes every opponent as `(deck_i, Champion-G2)` and evaluates one focal policy/deck identity through exactly 2,048 official CUDA Engine 2.0 greedy games. The schedule is Meta-first rather than deck-first: 2,048 games are divided as evenly as possible across the 28 non-empty `own_archetypes_v2` classes (73/74 each), then evenly across each class's exact member decks, with seeded remainder assignment and shuffle. Class 14 Other has no registered 001–067 deck, so reports preserve it as `n=0` rather than fabricating games or a 0% rate.
+
+The G2 opponent model is strict-loaded once as an independent immutable FP16-storage/FP32-runtime identity. Each 256-game CUDA chunk receives the exact slice of per-lane 29-way opponent own IDs, while exact deck static fields remain bound to the same jobs. Reports live under `docs/evaluation/combat_mat/benchmark_v1/<focal-policy-and-deck>/` and show overall/seat strength, all 29 Meta classes, all 67 exact decks, W-L-D, sample counts and representative card thumbnails. The first focal set is Champion-G2 with decks 002, 003, 007 and 009.
+
+- Promoted: the human explicitly selected `PROMOTE` for V6 U407 after the complete 67-deck comparison against Champion-G1. The evidence covers 67 focal decks × two independent arms × 2,048 official CUDA Engine 2.0 games, all under `kaggle_fp16_storage_fp32_runtime_v1`. The aggregated U407 arm was 43.94% versus G1's 43.52% against frozen Policy-0809, a descriptive +0.43 pp; the human decision, not this score, authorized admission.
+- Champion-G2 identity: source checkpoint SHA-256 `828c1791…06bb`, portable artifact SHA-256 `48ac766d…9cbe`, policy tensor SHA-256 `5f314275…b082`, and evidence bundle SHA-256 `7392e164…e46f`. G1 remains immutable and independently reconstructable. Future league schedules draw uniform/PFSP lanes from all three active identities and route the 64 latest-Champion lanes to G2.
 
 - Complete: project-local assets/runtime, complete policy materialization and isolation, league sampler, PFSP persistence, one-pass telemetry, frozen schedule materialization, candidate evaluation gates, and explicit human-decision Promote workflow.
 - Complete diagnostic: real CPU forward plus small RTX 5080 FP32 forward parity for Policy-0809 and Champion-G1; greedy actions matched, with maximum absolute errors below `6e-5`. CUDA Engine 2.0 native runtime and PyTorch official-arena reset/classify smokes also pass. These are implementation evidence only, not policy strength evidence.

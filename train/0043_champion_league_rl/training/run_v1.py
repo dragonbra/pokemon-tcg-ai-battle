@@ -40,6 +40,7 @@ from .ppo_full_semantic import PPOConfig, PPOTrainer
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ROOT = PROJECT_ROOT.parents[1]
+HISTORICAL_OPPONENT_POLICY_IDS = ("Policy-0809", "Champion-G1")
 PROJECT = "0043_champion_league_rl"
 VERSION = "V1_focal_002_007"
 RULES = ROOT / ".tmp/cuda_0032_rules/official_rules.bin"
@@ -146,8 +147,9 @@ def readiness() -> dict[str, Any]:
     own = (state["value_adapter.own_embedding.weight"], state["policy_strategy_adapter.own_embedding.weight"])
     if meta.shape != (15, 320) or any(row.shape != (29, 16) for row in own):
         raise RuntimeError("0043 own/opponent taxonomy tensor boundary changed")
-    if registry.active_policy_ids != ("Policy-0809", "Champion-G1"):
-        raise RuntimeError("0043 active opponent pool changed")
+    historical_policy_ids = HISTORICAL_OPPONENT_POLICY_IDS
+    if not set(historical_policy_ids) <= set(registry.active_policy_ids):
+        raise RuntimeError("0043 V1 historical opponent identities are unavailable")
     return {
         "schema_version": "0043_v1_launch_readiness_v1",
         "status": "READY_AWAITING_USER_LAUNCH",
@@ -157,7 +159,7 @@ def readiness() -> dict[str, Any]:
         "asset_audit": asdict(audit),
         "focal_decks": ["002", "007"],
         "opponent_decks": ["001", "067"],
-        "opponent_policies": list(registry.active_policy_ids),
+        "opponent_policies": list(historical_policy_ids),
         "own_taxonomy": {"version": vocabulary.taxonomy_version, "classes": 29, "embedding_width": 16},
         "opponent_meta": {"classes": 15, "trainable": False},
         "cuda_engine": {"version": "2.0", "extension_sha256": sha256_file(DEFAULT_BUILD_DIR / "_ptcg_cuda.so")},
@@ -170,7 +172,7 @@ def _jobs(
     focal_deck_ids: tuple[str, ...] = ("002", "007"),
 ) -> tuple[list[RolloutJob], dict[str, float], dict[str, float], str]:
     deck_ids = tuple(deck.deck_id for deck in registry.decks if "training" in deck.roles)
-    policy_ids = registry.active_policy_ids
+    policy_ids = HISTORICAL_OPPONENT_POLICY_IDS
     state = PFSPState() if pfsp_state is None else pfsp_state
     curriculum = state.curriculum_for(
         update, deck_ids=deck_ids, policy_ids=policy_ids, config=PFSPConfig(),
@@ -312,7 +314,7 @@ def run(
         del reference_model
     opponents = {
         policy_id: _load_opponent(policy_id, "001", device)
-        for policy_id in registry.active_policy_ids
+        for policy_id in HISTORICAL_OPPONENT_POLICY_IDS
     }
     os.environ.update({
         "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
@@ -339,7 +341,7 @@ def run(
         "focal_deck_ids": list(focal_deck_ids),
         "focal_schedule": "seeded_frequency_balanced_random_v1",
         "opponent_deck_ids": list(training_deck_ids),
-        "opponent_policy_ids": list(registry.active_policy_ids),
+        "opponent_policy_ids": list(HISTORICAL_OPPONENT_POLICY_IDS),
         "opponent_sampling": {"pfsp": 128, "uniform": 64, "latest": 64},
         "parent_checkpoint": str(parent_checkpoint) if parent_checkpoint else None,
         "parent_checkpoint_sha256": (
@@ -391,7 +393,7 @@ def run(
             league = build_schedule(
                 update=update, seed=430043001 + update,
                 deck_ids=tuple(f"{i:03d}" for i in range(1, 68)),
-                policy_ids=registry.active_policy_ids,
+                policy_ids=HISTORICAL_OPPONENT_POLICY_IDS,
                 latest_champion_policy_id="Champion-G1",
                 curriculum=pfsp_state.curricula[curriculum_version],
             )

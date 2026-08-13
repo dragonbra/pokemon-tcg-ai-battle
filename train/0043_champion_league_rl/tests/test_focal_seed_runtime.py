@@ -24,8 +24,8 @@ def test_v1_and_v2_runtime_strict_load():
 
 def test_focal_seed_is_not_a_registered_policy_asset():
     registry = json.loads((ROOT / "assets/policies/registry.json").read_text())
-    assert registry["latest_champion_policy_id"] == "Champion-G1"
-    assert registry["active_policy_pool"] == ["Policy-0809", "Champion-G1"]
+    assert registry["latest_champion_policy_id"] == "Champion-G2"
+    assert registry["active_policy_pool"] == ["Policy-0809", "Champion-G1", "Champion-G2"]
     assert {row["policy_id"] for row in registry["policies"]} == {
-        "Policy-0809", "Champion-G1",
+        "Policy-0809", "Champion-G1", "Champion-G2",
     }

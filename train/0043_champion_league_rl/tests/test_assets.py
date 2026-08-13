@@ -39,8 +39,8 @@ def test_complete_imported_asset_registry_passes() -> None:
     assert audit.training_deck_count == 67
     assert audit.evaluation_deck_count == 55
     assert audit.evaluation_games == 256
-    assert audit.policy_ids == ("Champion-G1", "Policy-0809")
-    assert audit.latest_champion_policy_id == "Champion-G1"
+    assert audit.policy_ids == ("Champion-G1", "Champion-G2", "Policy-0809")
+    assert audit.latest_champion_policy_id == "Champion-G2"
     registry = AssetRegistry.load(PROJECT_ROOT)
     assert tuple(deck.deck_id for deck in registry.decks) == tuple(
         f"{index:03d}" for index in range(1, 68)
@@ -115,7 +115,11 @@ def test_policy_paths_use_semantic_directories_not_hash_directories() -> None:
         "assets/policies/definitions/champion_g001/source_update_000010.pt",
         "assets/policies/definitions/champion_g001/model.bin",
     }
-    assert set(paths) == {"Policy-0809", "Champion-G1"}
+    assert paths["Champion-G2"] == {
+        "assets/policies/definitions/champion_g002/source_update_000407.pt",
+        "assets/policies/definitions/champion_g002/model.bin",
+    }
+    assert set(paths) == {"Policy-0809", "Champion-G1", "Champion-G2"}
     assert not (PROJECT_ROOT / "assets/policies/blobs").exists()
 
 

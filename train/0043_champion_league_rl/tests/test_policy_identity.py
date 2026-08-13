@@ -27,11 +27,22 @@ def test_champion_g1_portable_and_reconstruction_provenance_pass() -> None:
     assert set(bundle.audit.component_sha256) == set(module.PORTABLE_FIELDS)
 
 
+def test_champion_g2_portable_and_reconstruction_provenance_pass() -> None:
+    bundle = module.materialize_policy_bundle(PROJECT, "Champion-G2")
+    assert bundle.audit.status == "PASS"
+    assert bundle.audit.tensor_count == 294
+    assert bundle.audit.storage_dtype == "fp16"
+    assert bundle.audit.effective_policy_sha256 == (
+        "5f314275c576c1957fe011ab554ca4807cc73680fc89f443394894a7441cb082"
+    )
+
+
 def test_materializations_never_share_tensor_storage() -> None:
     anchor = module.materialize_policy_bundle(PROJECT, "Policy-0809")
     champion = module.materialize_policy_bundle(PROJECT, "Champion-G1")
+    g2 = module.materialize_policy_bundle(PROJECT, "Champion-G2")
     second_anchor = module.materialize_policy_bundle(PROJECT, "Policy-0809")
-    module.assert_storage_isolation(anchor, champion, second_anchor)
+    module.assert_storage_isolation(anchor, champion, g2, second_anchor)
     name = next(iter(anchor.tensors))
     before = second_anchor.tensors[name].clone()
     anchor.tensors[name].view(-1)[0] += 1

@@ -1,5 +1,23 @@
 # 0043 Decisions
 
+## 2026-08-14: publish Benchmark V1 as the Champion-G2 mirror league
+
+- Define every opponent as the fixed pair `(exact deck 001–067, Champion-G2)`; policy identity never varies inside Benchmark V1.
+- Run exactly 2,048 official CUDA Engine 2.0 greedy games per focal policy/deck identity.
+- Balance sampling first across the 28 non-empty `own_archetypes_v2` classes (73 or 74 games each), then across exact member decks (counts differ by at most one), with seeded remainder rotation and shuffle. Class 14 Other has no registered deck and remains explicit `n=0`.
+- Bind engine/search/policy/toss seeds to focal deployment identity, immutable G2 identity, exact opponent deck and schedule slot. The seeded toss winner remains responsible for context-41 first/second choice.
+- Publish each focal report below `docs/evaluation/combat_mat/benchmark_v1/<focal-policy-and-deck>/`, with a parallel top-level index, Meta and exact-deck win rates, sample counts and representative card thumbnails.
+- Use Champion-G2 as the first focal policy for decks 002, 003, 007 and 009; each is an independent CUDA-2048 report.
+
+## 2026-08-14: human PROMOTE U407 as immutable Champion-G2
+
+- Record the user's explicit `PROMOTE` decision for `Candidate-0043-U407`; no score or automation performed the promotion.
+- Freeze V6 model-only checkpoint U407 as `Champion-G2` under `assets/policies/definitions/champion_g002/`, using semantic generation naming rather than a hash directory.
+- Bind the decision to the complete Full67 evidence: 67 exact focal decks, independent Champion-G1 and U407 arms, 2,048 official CUDA Engine 2.0 games per arm, frozen Policy-0809 opponent, and `kaggle_fp16_storage_fp32_runtime_v1` deployment semantics.
+- Preserve Policy-0809 and Champion-G1 byte-for-byte. Set the current active pool to `Policy-0809`, `Champion-G1`, `Champion-G2`, and move the latest-Champion pointer to G2.
+- Keep G2 resident once per policy cohort. Route exact deck identity and the 29-way own embedding row per lane; do not create 67 model copies or share mutable tensor/cache storage across policies.
+- Keep the opponent Meta classifier frozen at 15 classes. The promotion changes only the admitted own-policy identity and league composition; it does not mutate the value network's opponent taxonomy.
+
 ## 2026-08-12: establish the self-contained Champion League boundary
 
 - Name the numbered project `0043_champion_league_rl`.

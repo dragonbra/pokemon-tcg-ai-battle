@@ -130,7 +130,12 @@ class ResidentPolicyPool:
         self._loads: dict[str, int] = {}
 
     def get(self, policy_id: str) -> CudaPolicyCohort:
-        if policy_id not in {"V1-Focal-Seed", "Policy-0809", "Champion-G1"}:
+        admitted = {
+            policy.policy_id for policy in __import__(
+                "train.0043_champion_league_rl.assets", fromlist=["AssetRegistry"]
+            ).AssetRegistry.load(self.project_root).policies
+        }
+        if policy_id != "V1-Focal-Seed" and policy_id not in admitted:
             raise ValueError(f"non-admitted resident policy: {policy_id}")
         if policy_id not in self._cohorts:
             self._cohorts[policy_id] = (
@@ -144,7 +149,8 @@ class ResidentPolicyPool:
         return self._cohorts[policy_id]
 
     def warm(self) -> None:
-        for policy_id in ("V1-Focal-Seed", "Policy-0809", "Champion-G1"):
+        from ..assets import AssetRegistry
+        for policy_id in ("V1-Focal-Seed", *AssetRegistry.load(self.project_root).active_policy_ids):
             self.get(policy_id)
 
     @property
@@ -159,9 +165,13 @@ class ResidentPolicyPool:
         vocabulary = OwnArchetypeVocabulary.load_version(
             "own_archetypes_v2", project_root=self.project_root
         )
+        cohort = self.get(policy_id)
+        embedding_count = cohort.policy.value_adapter.own_embedding.num_embeddings
         mapping = {
-            row.deck_id: vocabulary.classes[row.archetype_id].embedding_init_from
-            for row in vocabulary.mappings
+            row.deck_id: (
+                row.archetype_id if embedding_count == vocabulary.class_count
+                else vocabulary.classes[row.archetype_id].embedding_init_from
+            ) for row in vocabulary.mappings
         }
         try:
             values = [mapping[deck_id] for deck_id in deck_ids]

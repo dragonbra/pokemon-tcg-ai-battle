@@ -68,15 +68,17 @@ def load_policy(policy_id: str, *, deck_id: str):
     cards = _deck(deck_id)
     if policy_id == "Policy-0809":
         return PortableSemanticPolicy.from_checkpoint(path, cards)
-    if policy_id == "Champion-G1":
+    if policy_id.startswith("Champion-G") and policy.generation is not None:
         loaded = PortableCompoundSemanticPolicy.from_checkpoint(path, cards)
         vocabulary = OwnArchetypeVocabulary.load_version(
             "own_archetypes_v2", project_root=PROJECT_ROOT
         )
         mapping = next(row for row in vocabulary.mappings if row.deck_id == deck_id)
-        loaded.metadata["own_archetype_id"] = vocabulary.classes[
-            mapping.archetype_id
-        ].embedding_init_from
+        embedding_count = loaded.value_adapter.own_embedding.num_embeddings
+        loaded.metadata["own_archetype_id"] = (
+            mapping.archetype_id if embedding_count == vocabulary.class_count
+            else vocabulary.classes[mapping.archetype_id].embedding_init_from
+        )
         return loaded
     raise AssetIntegrityError(f"0043 has no executable loader for {policy_id}")
 

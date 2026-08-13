@@ -23,7 +23,7 @@
     },
     "policies": {
       "path": "train/0043_champion_league_rl/assets/policies/registry.json",
-      "sha256": "454c7c7286afc10f5523cf637a5abd4662fb594f1bc718549d54cca453859055"
+      "sha256": "846b63fb8b39270af4fe72384d138c8d719049832e389f3a3cb0abd12b89fe10"
     }
   },
   "cuda_engine_2": {
@@ -53,7 +53,7 @@
     "text_profiles": 67
   },
   "formal_training_authorized": false,
-  "human_promotion_decision": "NONE",
+  "human_promotion_decision": "PROMOTE_CHAMPION_G2_U407",
   "launch_readiness": {
     "entrypoint": "python3 -m train.0043_champion_league_rl.training.run_v1 --launch-formal",
     "full_update_acceptance": ".tmp/evaluation/0043_initial_run_acceptance/full_update_smoke.json",
@@ -76,9 +76,9 @@
     "phase_3_pfsp": "IMPLEMENTED_TESTED",
     "phase_4_telemetry": "PASS_FORMAL_WANDB_CONTRACT",
     "phase_5_frozen_evaluation": "PASS_CUDA2_PREFLIGHT_AND_REAL_GAME_ROUTING",
-    "phase_6_promote": "WORKFLOW_IMPLEMENTED_HUMAN_DECISION_REQUIRED"
+    "phase_6_promote": "PASS_HUMAN_PROMOTED_CHAMPION_G2"
   },
-  "policy_directory_contract": "immutable opponent assets contain only policy_0809 and champion_g001; mutable V1 focal checkpoints live under rl_runs",
+  "policy_directory_contract": "immutable opponent assets: policy_0809, champion_g001, champion_g002; mutable focal checkpoints remain under rl_runs",
   "project_id": "0043_champion_league_rl",
   "schema_version": "0043_experiment_manifest_v1",
   "status": "READY_AWAITING_USER_LAUNCH"

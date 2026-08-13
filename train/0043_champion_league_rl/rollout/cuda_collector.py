@@ -194,7 +194,7 @@ class CudaFullSemanticRolloutCollector:
         job_indices: torch.Tensor | None,
     ):
         if job_indices is None or self.opponent_own_archetype_ids is None:
-            raise RuntimeError("Champion-G1 CUDA routing lacks exact-deck own IDs")
+            raise RuntimeError("compound champion CUDA routing lacks exact-deck own IDs")
         from ..policy.strategy_adapters import build_defined_strategy_context
 
         policy = self.opponent
@@ -300,7 +300,8 @@ class CudaFullSemanticRolloutCollector:
             focal_summary_fn=self.model.actor_summary,
             focal_strategy_fn=focal_strategy_fn,
             opponent_strategy_fn=(
-                self._opponent_strategy_fn if self.opponent_policy_id == "Champion-G1" else None
+                self._opponent_strategy_fn
+                if hasattr(self.opponent, "policy_strategy_adapter") else None
             ),
             role_compacted=self.role_compacted,
         )
@@ -668,8 +669,15 @@ class ChunkedCudaRolloutCollector:
         for begin in range(0, len(jobs), self.rollout_batch_size):
             chunk_started = time.perf_counter()
             kwargs = dict(self.collector_kwargs)
+            stop = min(begin + self.rollout_batch_size, len(jobs))
+            opponent_own_ids = kwargs.get("opponent_own_archetype_ids")
+            if opponent_own_ids is not None:
+                if opponent_own_ids.shape != (len(jobs),):
+                    raise ValueError(
+                        "opponent own-archetype IDs must align with all chunked jobs"
+                    )
+                kwargs["opponent_own_archetype_ids"] = opponent_own_ids[begin:stop]
             if kwargs.get("record_trajectory", True) and self.trajectory_games_per_update is not None:
-                stop = min(begin + self.rollout_batch_size, len(jobs))
                 kwargs["record_job_indices"] = {
                     global_index - begin
                     for global_index in range(begin, stop)

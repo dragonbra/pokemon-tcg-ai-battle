@@ -123,7 +123,10 @@ def prepare_episodes(
                 transition.metadata for transition in episode.policy_transitions
             ]
             if (
-                episode.job.opponent_policy_id not in {"Policy-0809", "Champion-G1"}
+                not (
+                    episode.job.opponent_policy_id == "Policy-0809"
+                    or episode.job.opponent_policy_id.startswith("Champion-G")
+                )
                 or diagnostics.get("opponent_policy_id") != episode.job.opponent_policy_id
                 or not isinstance(
                     diagnostics.get("opponent_effective_policy_sha256"), str

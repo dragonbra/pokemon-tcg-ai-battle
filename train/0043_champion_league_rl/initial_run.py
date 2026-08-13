@@ -60,11 +60,11 @@ def acceptance(seed: int = 430043001, *, schedules: int = 64) -> dict[str, Any]:
     registry.validate_all()
     contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
     decks = tuple(deck.deck_id for deck in registry.decks if "training" in deck.roles)
-    policies = registry.active_policy_ids
+    policies = tuple(contract["opponents"]["active_policy_pool"])
     if decks != tuple(f"{index:03d}" for index in range(1, 68)):
         raise RuntimeError("initial opponent deck pool is not exact 001-067")
     if policies != ("Policy-0809", "Champion-G1"):
-        raise RuntimeError("initial opponent policy pool identity changed")
+        raise RuntimeError("initial run snapshot policy pool identity changed")
     seen_pairs: set[tuple[str, str]] = set()
     schedule_hashes = []
     first_requests = None
@@ -75,7 +75,7 @@ def acceptance(seed: int = 430043001, *, schedules: int = 64) -> dict[str, Any]:
         )
         lanes = build_schedule(
             update=offset, seed=seed + offset, deck_ids=decks, policy_ids=policies,
-            latest_champion_policy_id=registry.latest_champion_policy_id,
+            latest_champion_policy_id="Champion-G1",
             curriculum=curriculum,
         )
         requests, digest = materialize_lane_requests(PROJECT_ROOT, lanes)

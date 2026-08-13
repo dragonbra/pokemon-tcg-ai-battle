@@ -1,9 +1,10 @@
 {
   "active_policy_pool": [
     "Policy-0809",
-    "Champion-G1"
+    "Champion-G1",
+    "Champion-G2"
   ],
-  "latest_champion_policy_id": "Champion-G1",
+  "latest_champion_policy_id": "Champion-G2",
   "policies": [
     {
       "artifacts": [
@@ -45,6 +46,27 @@
       "manifest_path": "assets/policies/manifests/champion_g001.json",
       "manifest_sha256": "b1086daee19e6e9f04c2ca0f9f6749276212ccd3e244628a15d2dc0d34604de6",
       "policy_id": "Champion-G1",
+      "role": "champion"
+    },
+    {
+      "artifacts": [
+        {
+          "path": "assets/policies/definitions/champion_g002/source_update_000407.pt",
+          "purpose": "model_only_checkpoint",
+          "sha256": "828c1791b62152667f0b87b2b668c2b16c6ab0bce9b7996558d3012628b106bb"
+        },
+        {
+          "path": "assets/policies/definitions/champion_g002/model.bin",
+          "purpose": "portable_fp16_artifact",
+          "sha256": "48ac766db4da0a21cb19f3f30187c0de763778d70cc1f3edcb23f0db70839cbe"
+        }
+      ],
+      "effective_policy_sha256": "5f314275c576c1957fe011ab554ca4807cc73680fc89f443394894a7441cb082",
+      "frozen": true,
+      "generation": 2,
+      "manifest_path": "assets/policies/manifests/champion_g002.json",
+      "manifest_sha256": "a8399dbacd09fc20bc38c14399e37e5d2a81e328b978a37c2df6e271b89b895b",
+      "policy_id": "Champion-G2",
       "role": "latest_champion"
     }
   ],

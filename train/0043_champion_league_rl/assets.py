@@ -251,6 +251,11 @@ class AssetRegistry:
                     "assets/policies/definitions/champion_g001",
                 ),
             }.get(policy.policy_id)
+            if policy.policy_id.startswith("Champion-G") and policy.generation is not None:
+                allowed_roots = (
+                    "assets/policies/definitions/policy_0809",
+                    f"assets/policies/definitions/champion_g{policy.generation:03d}",
+                )
             if allowed_roots is None:
                 allowed_roots = (
                     f"assets/policies/definitions/{policy.policy_id.lower().replace('-', '_')}",
@@ -268,12 +273,17 @@ class AssetRegistry:
         champion = policies.get(self.latest_champion_policy_id)
         if champion is None or champion.role != "latest_champion" or not champion.frozen:
             raise AssetIntegrityError("latest champion pointer must reference a frozen champion")
-        if self.active_policy_ids != ("Policy-0809", "Champion-G1"):
-            raise AssetIntegrityError(
-                "initial active opponent pool must be exactly Policy-0809 and Champion-G1"
-            )
+        if not self.active_policy_ids or self.active_policy_ids[0] != "Policy-0809":
+            raise AssetIntegrityError("active opponent pool must begin with Policy-0809")
+        if len(self.active_policy_ids) != len(set(self.active_policy_ids)):
+            raise AssetIntegrityError("active opponent pool contains duplicate identities")
         if set(self.active_policy_ids) != set(policies):
             raise AssetIntegrityError("policy assets contain a non-opponent policy")
+        generations = [
+            policy.generation for policy in self.policies if policy.generation is not None
+        ]
+        if generations != list(range(1, len(generations) + 1)):
+            raise AssetIntegrityError("champion generations must be ordered and contiguous")
 
         deck_by_id = {deck.deck_id: deck for deck in self.decks}
         evaluation_games = 0

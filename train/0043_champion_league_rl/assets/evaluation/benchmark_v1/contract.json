@@ -1,0 +1,12 @@
+{
+  "contract_id": "0043_benchmark_v1_meta_balanced_g2_cuda2048_v1",
+  "cuda_games": 2048,
+  "first_player_contract": "seeded_coin_winner_then_winning_agent_selects_context_41",
+  "master_seed": 341512902,
+  "meta_allocation": "balanced_across_nonempty_own_archetypes_v2_classes_then_balanced_within_class",
+  "meta_membership_authority": "assets/taxonomy/deck_own_archetype_mapping_v2.json",
+  "opponent_policy_id": "Champion-G2",
+  "opponent_policy_role": "immutable_fixed",
+  "schema_version": "0043_benchmark_v1_contract_v1",
+  "selection_mode": "greedy"
+}

@@ -39,9 +39,11 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
     assets = AssetRegistry.load(PROJECT_ROOT)
     asset_audit = assets.validate_all()
     training = audit_training_config(CONFIG)
-    anchor = materialize_policy_bundle(PROJECT_ROOT, "Policy-0809", purpose="0043_preflight")
-    champion = materialize_policy_bundle(PROJECT_ROOT, "Champion-G1", purpose="0043_preflight")
-    assert_storage_isolation(anchor, champion)
+    bundles = [
+        materialize_policy_bundle(PROJECT_ROOT, policy_id, purpose="0043_preflight")
+        for policy_id in assets.active_policy_ids
+    ]
+    assert_storage_isolation(*bundles)
     deck_ids = [deck.deck_id for deck in assets.decks if "training" in deck.roles]
     policy_ids = [
         policy.policy_id for policy in assets.policies
@@ -61,10 +63,8 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
     cuda_requests, cuda_schedule_sha256 = materialize_lane_requests(PROJECT_ROOT, schedule)
     gpu: dict[str, Any] = {"requested": gpu_smoke, "status": "NOT_RUN"}
     runtime_tree_sha256 = audit_runtime_tree()
-    forward = [
-        asdict(forward_parity("Policy-0809", deck_id="001", gpu=gpu_smoke)),
-        asdict(forward_parity("Champion-G1", deck_id="048", gpu=gpu_smoke)),
-    ]
+    forward = [asdict(forward_parity(policy_id, deck_id="048", gpu=gpu_smoke))
+               for policy_id in assets.active_policy_ids]
     if gpu_smoke:
         if not torch.cuda.is_available():
             raise RuntimeError("GPU smoke requested but CUDA is unavailable")
@@ -73,16 +73,20 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
         # Move representative tensors from both identities, including the
         # full G1 portable bundle. This is an identity/storage smoke, not an
         # official-engine or model-forward strength result.
+        anchor = bundles[0]
         anchor_sample = {
             name: tensor for index, (name, tensor) in enumerate(anchor.tensors.items())
             if index < 16
         }
         anchor_sample_bundle = type(anchor)(anchor.policy_id, anchor_sample, anchor.audit)
         gpu_anchor = anchor_sample_bundle.clone_to("cuda:0", runtime_dtype=torch.float32)
-        gpu_champion = champion.clone_to("cuda:0", runtime_dtype=torch.float32)
-        assert_storage_isolation(gpu_anchor, gpu_champion)
+        gpu_champions = [
+            bundle.clone_to("cuda:0", runtime_dtype=torch.float32)
+            for bundle in bundles[1:]
+        ]
+        assert_storage_isolation(gpu_anchor, *gpu_champions)
         floating = [
-            tensor for bundle in (gpu_anchor, gpu_champion)
+            tensor for bundle in (gpu_anchor, *gpu_champions)
             for tensor in bundle.tensors.values() if torch.is_floating_point(tensor)
         ]
         checksum = sum(float(tensor.reshape(-1)[:1].float().sum().item()) for tensor in floating)
@@ -101,7 +105,7 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
             "device": torch.cuda.get_device_name(0),
             "runtime_dtype": "fp32",
             "anchor_sample_tensors": len(gpu_anchor.tensors),
-            "champion_tensors": len(gpu_champion.tensors),
+            "champion_tensors": sum(len(bundle.tensors) for bundle in gpu_champions),
             "storage_isolation": "PASS",
             "finite_checksum": bool(torch.isfinite(torch.tensor(checksum))),
             "allocated_bytes_delta": torch.cuda.memory_allocated() - before,
@@ -111,11 +115,11 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
         }
     frozen_cpu = materialize_frozen_schedule(
         PROJECT_ROOT, focal_deck_id="048",
-        focal_deployment_identity=champion.audit.effective_policy_sha256, replicas=1,
+        focal_deployment_identity=bundles[-1].audit.effective_policy_sha256, replicas=1,
     )
     frozen_cuda = materialize_frozen_schedule(
         PROJECT_ROOT, focal_deck_id="048",
-        focal_deployment_identity=champion.audit.effective_policy_sha256, replicas=8,
+        focal_deployment_identity=bundles[-1].audit.effective_policy_sha256, replicas=8,
     )
     return {
         "schema_version": "0043_pretraining_preflight_v1",
@@ -124,7 +128,7 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
         "formal_training_authorized": False,
         "asset_audit": asdict(asset_audit),
         "training_regression_audit": training.to_manifest(),
-        "policy_audits": [asdict(anchor.audit), asdict(champion.audit)],
+        "policy_audits": [asdict(bundle.audit) for bundle in bundles],
         "policy_storage_isolation": "PASS",
         "semantic_runtime": {"status": "PASS", "tree_sha256": runtime_tree_sha256},
         "forward_parity": forward,
