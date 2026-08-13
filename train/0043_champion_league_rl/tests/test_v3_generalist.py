@@ -45,3 +45,28 @@ def test_v3_jobs_bind_all_focal_decks_and_own_archetypes() -> None:
     assert set(counts.values()) == {3, 4}
     assert all(len(job.focal_deck) == 60 for job in jobs)
     assert all(0 <= job.focal_own_archetype_id < 29 for job in jobs)
+
+
+def test_pristine_restart_rejects_any_metric_or_later_checkpoint(tmp_path: Path) -> None:
+    paths = {name: tmp_path / name for name in ("artifact", "checkpoint", "tensorboard", "wandb")}
+    paths["artifact"].mkdir(); paths["checkpoint"].mkdir()
+    (paths["artifact"] / "training_metrics.jsonl").write_text("")
+    (paths["artifact"] / "training_config.json").write_text(
+        __import__("json").dumps({
+            "start_update": 207,
+            "parent_checkpoint_sha256": runner.sha256_file(runner.PARENT_CHECKPOINT),
+            "focal_deck_ids": list(runner.FOCAL_DECK_IDS),
+            "optimizer_initialization": "fresh",
+        })
+    )
+    import torch
+    torch.save({"update": 207}, paths["checkpoint"] / "update-000207.pt")
+    assert shared._pristine_restart_allowed(
+        paths, start_update=207, parent_checkpoint=runner.PARENT_CHECKPOINT,
+        focal_deck_ids=runner.FOCAL_DECK_IDS,
+    )
+    (paths["artifact"] / "training_metrics.jsonl").write_text("{}\n")
+    assert not shared._pristine_restart_allowed(
+        paths, start_update=207, parent_checkpoint=runner.PARENT_CHECKPOINT,
+        focal_deck_ids=runner.FOCAL_DECK_IDS,
+    )

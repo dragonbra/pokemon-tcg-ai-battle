@@ -72,19 +72,46 @@ def _runtime_root() -> Path:
     return roots[0].parents[1].resolve()
 
 
-def _config() -> PPOConfig:
+def _config(*, forward_microbatch_size: int = 1024) -> PPOConfig:
     return PPOConfig(
         decoder_learning_rate=2e-5,
         policy_adapter_learning_rate=4e-5,
         allocation_learning_rate=2e-5,
         value_learning_rate=1e-4,
         prize_learning_rate=1e-4,
+        forward_microbatch_size=forward_microbatch_size,
     )
 
 
 def _paths(version: str = VERSION) -> dict[str, Path]:
     root = ROOT / "rl_runs" / PROJECT / "versions" / version
     return {name: root / name for name in ("artifact", "checkpoint", "tensorboard", "wandb")}
+
+
+def _pristine_restart_allowed(
+    paths: dict[str, Path], *, start_update: int, parent_checkpoint: Path,
+    focal_deck_ids: tuple[str, ...],
+) -> bool:
+    """Accept only a launch that failed before its first rollout metric/update."""
+    metrics = paths["artifact"] / "training_metrics.jsonl"
+    config = paths["artifact"] / "training_config.json"
+    checkpoints = sorted(paths["checkpoint"].glob("update-*.pt"))
+    if not metrics.is_file() or metrics.stat().st_size != 0 or not config.is_file():
+        return False
+    if checkpoints != [paths["checkpoint"] / f"update-{start_update:06d}.pt"]:
+        return False
+    try:
+        payload = json.loads(config.read_text(encoding="utf-8"))
+        checkpoint = torch.load(checkpoints[0], map_location="cpu", weights_only=True)
+    except (OSError, ValueError, KeyError):
+        return False
+    return (
+        checkpoint.get("update") == start_update
+        and payload.get("start_update") == start_update
+        and payload.get("parent_checkpoint_sha256") == sha256_file(parent_checkpoint)
+        and payload.get("focal_deck_ids") == list(focal_deck_ids)
+        and payload.get("optimizer_initialization") == "fresh"
+    )
 
 
 def _run_id() -> str:
@@ -232,6 +259,8 @@ def run(
     parent_checkpoint: Path | None = None, parent_pfsp_state: Path | None = None,
     wandb_run_id: str | None = None, wandb_name: str | None = None,
     focal_deck_ids: tuple[str, ...] = ("002", "007"),
+    allow_pristine_restart: bool = False,
+    forward_microbatch_size: int = 1024,
 ) -> None:
     if not launch_formal:
         raise RuntimeError("formal 0043 PPO requires explicit --launch-formal")
@@ -251,7 +280,14 @@ def run(
         raise RuntimeError("formal focal deck IDs escaped the 0043 training pool")
     paths = _paths(version)
     used = [str(path) for path in paths.values() if path.exists() and any(path.iterdir())]
-    if used:
+    pristine_restart = bool(
+        used and allow_pristine_restart and parent_checkpoint is not None
+        and _pristine_restart_allowed(
+            paths, start_update=start_update, parent_checkpoint=parent_checkpoint,
+            focal_deck_ids=focal_deck_ids,
+        )
+    )
+    if used and not pristine_restart:
         raise FileExistsError(f"formal version paths are already used: {used}")
     for name in ("tensorboard", "wandb"):
         paths[name].mkdir(parents=True, exist_ok=True)
@@ -264,7 +300,10 @@ def run(
         incompatible = model.load_state_dict(parent["state_dict"], strict=False)
         if incompatible.unexpected_keys:
             raise RuntimeError(f"0043 parent checkpoint has unexpected tensors: {incompatible}")
-    trainer = PPOTrainer(model, device=device, config=_config())
+    trainer = PPOTrainer(
+        model, device=device,
+        config=_config(forward_microbatch_size=forward_microbatch_size),
+    )
     if parent_checkpoint is not None:
         reference_model, _ = load_actor_critic(
             deck=deck002, device=device, integrated_flags=preset("FULL_MODEL")
@@ -311,7 +350,7 @@ def run(
             sha256_file(parent_pfsp_state) if parent_pfsp_state else None
         ),
         "optimizer_initialization": "fresh",
-        "ppo": asdict(_config()),
+        "ppo": asdict(_config(forward_microbatch_size=forward_microbatch_size)),
         "reference_anchor_update": 0,
         "checkpoint_retention": "all",
         "checkpoint_contents": "model_only",
@@ -387,7 +426,6 @@ def run(
                     policy_id=episode.job.opponent_policy_id,
                     result=result, update=update,
                 )
-            pfsp_state.save(paths["artifact"] / "pfsp_state.json")
             batch = prepare_episodes(
                 episodes, gamma=1.0, gae_lambda=0.95, credit_clock="turn",
                 loss_weighting="episode_equal_decisions", prize_mode="directional",
@@ -397,6 +435,10 @@ def run(
             model.set_runtime_own_archetype_ids(None)
             checkpoint_update = update + 1
             _atomic_torch(paths["checkpoint"] / f"update-{checkpoint_update:06d}.pt", _checkpoint(model, checkpoint_update, version=version))
+            # PFSP observations become canonical only after the corresponding
+            # PPO update and checkpoint succeed. A failed PPO attempt must not
+            # bias a future version's opponent curriculum.
+            pfsp_state.save(paths["artifact"] / "pfsp_state.json")
             runtime_metrics: dict[str, float] = {}
             additive = {"rollout/deck_static_cache_hits", "rollout/deck_static_cache_misses", "rollout/lane_routing_audit_failures"}
             for key in set().union(*(row.keys() for row in runtime_rows)):
