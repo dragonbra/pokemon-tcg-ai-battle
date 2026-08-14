@@ -163,6 +163,7 @@ class PPOConfig:
     policy_adapter_learning_rate: float = 5.0e-6
     allocation_learning_rate: float = 5.0e-6
     option_lora_learning_rate: float = 1.0e-5
+    meta_actor_residual_learning_rate: float = 5.0e-6
     value_learning_rate: float = 1.0e-4
     prize_learning_rate: float = 1.0e-4
     meta_anchor_coef: float = 0.10
@@ -191,6 +192,7 @@ class PPOConfig:
             "policy_strategy_adapter": self.policy_adapter_learning_rate,
             "allocation_head": self.allocation_learning_rate,
             "policy_option_lora": self.option_lora_learning_rate,
+            "meta_actor_residual": self.meta_actor_residual_learning_rate,
         }
 
     def validate(self) -> None:
@@ -228,6 +230,7 @@ class PPOConfig:
             self.policy_adapter_learning_rate,
             self.allocation_learning_rate,
             self.option_lora_learning_rate,
+            self.meta_actor_residual_learning_rate,
             self.value_learning_rate,
             self.prize_learning_rate,
         ) <= 0:
@@ -296,6 +299,11 @@ class PPOTrainer:
                     "params": model.policy_option_lora.parameters(),
                     "lr": config.option_lora_learning_rate,
                 },
+                {
+                    "name": "meta_actor_residual",
+                    "params": model.meta_actor_residual.parameters(),
+                    "lr": config.meta_actor_residual_learning_rate,
+                },
             ]
         if model.prize_aux is not None:
             groups.append({"name": "value_prize", "params": model.prize_aux.parameters(), "lr": config.prize_learning_rate})
@@ -324,6 +332,7 @@ class PPOTrainer:
             "policy_strategy_adapter": "PPO policy through detached strategic context",
             "allocation_head": "Phantom allocation policy + entropy + Prize actor advantage",
             "policy_option_lora": "PPO policy + entropy + reference KL through the policy Option branch only",
+            "meta_actor_residual": "PPO policy only through the selected own-Meta expert",
             "value_win": "terminal Value loss + q1 Meta anchor",
             "value_adapter": "terminal Value loss only",
             "value_prize": "directional Prize Value loss only",
@@ -346,6 +355,7 @@ class PPOTrainer:
         actor_groups = {
             "action_decoder", "policy_strategy_adapter", "allocation_head",
             "policy_option_lora",
+            "meta_actor_residual",
         }
         value_groups = {"value_win", "value_adapter", "value_prize"}
         actor_ids = {

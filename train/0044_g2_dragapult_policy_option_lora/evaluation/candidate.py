@@ -23,7 +23,32 @@ FIELDS = {
     "value_adapter_state_dict": "value_adapter.",
     "policy_strategy_adapter_state_dict": "policy_strategy_adapter.",
     "policy_option_lora_state_dict": "policy_option_lora.",
+    "meta_actor_residual_state_dict": "meta_actor_residual.",
 }
+_PROTOTYPE_ALIASES = ("state_encoder.prototypes.", "option_encoder.prototypes.")
+
+
+def _portable_actor_state_dict(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Store shared prototype parameters once under their canonical actor path."""
+    return {
+        name: value for name, value in state.items()
+        if not name.startswith(_PROTOTYPE_ALIASES)
+    }
+
+
+def _expanded_actor_state_dict(state: Mapping[str, Any]) -> dict[str, Any]:
+    """Restore the two model aliases from the single canonical prototype copy."""
+    expanded = dict(state)
+    canonical = {
+        name.removeprefix("prototype_encoder."): value
+        for name, value in state.items()
+        if name.startswith("prototype_encoder.")
+    }
+    if not canonical:
+        raise RuntimeError("portable candidate has no canonical prototype encoder")
+    for alias in _PROTOTYPE_ALIASES:
+        expanded.update({f"{alias}{name}": value for name, value in canonical.items()})
+    return expanded
 
 
 @dataclass(frozen=True, slots=True)
@@ -48,7 +73,16 @@ def _tensor_hash(payload: Mapping[str, Any], deck_hash: str) -> str:
     digest = hashlib.sha256(b"kaggle_fp16_storage_fp32_runtime_v1\0")
     digest.update(deck_hash.encode("ascii"))
     for field in FIELDS:
-        for name, value in sorted(payload[field].items()):
+        values = dict(payload[field])
+        if field == "actor_state_dict":
+            canonical = {
+                name.removeprefix("prototype_encoder."): value
+                for name, value in values.items()
+                if name.startswith("prototype_encoder.")
+            }
+            for alias in _PROTOTYPE_ALIASES:
+                values.update({f"{alias}{name}": value for name, value in canonical.items()})
+        for name, value in sorted(values.items()):
             tensor = value.detach().cpu().contiguous()
             digest.update(f"{field}.{name}".encode()); digest.update(b"\0")
             digest.update(str(tensor.dtype).encode()); digest.update(b"\0")
@@ -74,21 +108,29 @@ def materialize(
     if not isinstance(update, int):
         raise RuntimeError("candidate checkpoint update is missing")
     base = torch.load(base_portable, map_location="cpu", weights_only=True)
-    if base.get("schema_version") != "0043_focal_v1_kaggle_candidate_v1":
-        raise RuntimeError("0044 portable base must be immutable promoted Champion-G2")
+    if base.get("schema_version") not in {
+        "0043_focal_v1_kaggle_candidate_v1",
+        "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
+    }:
+        raise RuntimeError(
+            "0044 portable base must be a supported immutable promoted Champion"
+        )
     state = source["state_dict"]
-    model, _ = load_actor_critic(checkpoint=base_portable, deck=cards, device="cpu")
+    model, _ = load_actor_critic(
+        checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu"
+    )
     incompatible = model.load_state_dict(state, strict=False)
     if incompatible.unexpected_keys:
         raise RuntimeError(f"0044 candidate has unexpected source tensors: {incompatible}")
     result = {
-        "schema_version": "0044_policy_value_split_option_lora_candidate_v1",
-        "actor_state_dict": model.actor.state_dict(),
+        "schema_version": "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
+        "actor_state_dict": _portable_actor_state_dict(model.actor.state_dict()),
         "value_head_state_dict": model.value_head.state_dict(),
         "allocation_head_state_dict": model.allocation_head.state_dict(),
         "value_adapter_state_dict": model.value_adapter.state_dict(),
         "policy_strategy_adapter_state_dict": model.policy_strategy_adapter.state_dict(),
         "policy_option_lora_state_dict": model.policy_option_lora.state_dict(),
+        "meta_actor_residual_state_dict": model.meta_actor_residual.state_dict(),
     }
     for field in FIELDS:
         result[field] = {
@@ -111,6 +153,10 @@ def materialize(
             "attention_targets": ["self_attn.qv", "cross_attn.qv"],
             "parameters": 10240,
         },
+        "meta_actor_residual": {
+            "scope": "policy_only", "classes": 29, "rank": 4,
+            "parameters": 74240,
+        },
     })
     result["metadata"] = metadata
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -120,9 +166,11 @@ def materialize(
     floating = [v for field in FIELDS for v in strict[field].values() if torch.is_floating_point(v)]
     if not floating or any(v.dtype != torch.float16 for v in floating):
         raise RuntimeError("portable candidate is not wholly FP16 stored")
-    if strict.get("schema_version") != "0044_policy_value_split_option_lora_candidate_v1":
+    if strict.get("schema_version") != "0044_policy_value_split_option_lora_meta_residual_candidate_v2":
         raise RuntimeError("0044 dual-option candidate schema changed during storage")
-    model, _ = load_actor_critic(checkpoint=base_portable, deck=cards, device="cpu")
+    model, _ = load_actor_critic(
+        checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu"
+    )
     modules = {
         "actor_state_dict": model.actor,
         "value_head_state_dict": model.value_head,
@@ -130,12 +178,16 @@ def materialize(
         "value_adapter_state_dict": model.value_adapter,
         "policy_strategy_adapter_state_dict": model.policy_strategy_adapter,
         "policy_option_lora_state_dict": model.policy_option_lora,
+        "meta_actor_residual_state_dict": model.meta_actor_residual,
     }
     for field, module in modules.items():
+        stored = strict[field]
+        if field == "actor_state_dict":
+            stored = _expanded_actor_state_dict(stored)
         module.load_state_dict(
             {
                 name: value.float() if torch.is_floating_point(value) else value
-                for name, value in strict[field].items()
+                for name, value in stored.items()
             },
             strict=True,
         )

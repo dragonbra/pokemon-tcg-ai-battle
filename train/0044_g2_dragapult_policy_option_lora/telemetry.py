@@ -1,4 +1,4 @@
-"""One-pass aggregate telemetry from the same 256 terminal rollout games."""
+"""One-pass aggregate telemetry from one explicitly sized terminal rollout."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ REQUIRED_FIELDS = {
 }
 FORMAL_REQUIRED_FIELDS = REQUIRED_FIELDS | {
     "focal_deck_id", "error", "unfinished", "engine_decisions",
+    "coin_winner_seed", "focal_won_toss", "first_player_choice", "focal_first",
 }
 
 
@@ -40,10 +41,13 @@ def aggregate_rollout(
     deck_weights: Mapping[str, float], policy_weights: Mapping[str, float],
     sampling_mode: str = "pfsp_mixture",
     red_threshold: float = 0.35,
+    expected_games: int = 256,
 ) -> dict[str, Any]:
     rows = list(games)
-    if len(rows) != 256:
-        raise ValueError("0044 rollout telemetry requires exactly 256 games")
+    if expected_games < 1 or len(rows) != expected_games:
+        raise ValueError(
+            f"0044 rollout telemetry requires exactly {expected_games} games"
+        )
     for index, row in enumerate(rows):
         missing = REQUIRED_FIELDS - set(row)
         if missing:
@@ -65,7 +69,7 @@ def aggregate_rollout(
     branch_counts = Counter(str(row["branch"]) for row in rows)
     output = {
         "rollout/raw_win_rate": len(wins) / len(rows),
-        "rollout/games": 256,
+        "rollout/games": len(rows),
         "rollout/curriculum_version": curriculum_version,
         "rollout/opponent_deck_distribution": dict(sorted(deck_counts.items())),
         "rollout/opponent_policy_distribution": dict(sorted(policy_counts.items())),
@@ -89,6 +93,9 @@ def aggregate_rollout(
     sampling = {
         "sampling/entropy": _entropy(deck_counts) + _entropy(policy_counts),
         "sampling/mode_uniform": float(sampling_mode == "uniform_001_067"),
+        "sampling/mode_meta_balanced": float(
+            sampling_mode == "meta_balanced_001_067"
+        ),
         "sampling/deck_probability": dict(sorted(deck_weights.items())),
         "sampling/policy_probability": dict(sorted(policy_weights.items())),
     }
@@ -106,7 +113,7 @@ def aggregate_rollout(
             "pfsp/deck_sampling_probability": dict(sorted(deck_weights.items())),
             "pfsp/policy_sampling_probability": dict(sorted(policy_weights.items())),
         })
-    elif sampling_mode != "uniform_001_067":
+    elif sampling_mode not in {"uniform_001_067", "meta_balanced_001_067"}:
         raise ValueError(f"unsupported rollout sampling mode: {sampling_mode}")
     return output
 
@@ -146,6 +153,7 @@ def aggregate_training_rollout(
     deck_weights: Mapping[str, float], policy_weights: Mapping[str, float],
     history: RolloutHistory, runtime_metrics: Mapping[str, float],
     sampling_mode: str = "pfsp_mixture",
+    expected_games: int = 256,
 ) -> dict[str, Any]:
     """Formal scalar telemetry mirrored unchanged to JSONL/TensorBoard/W&B."""
 
@@ -156,10 +164,26 @@ def aggregate_training_rollout(
         missing = FORMAL_REQUIRED_FIELDS - set(row)
         if missing:
             raise ValueError(f"formal rollout game {index} missing fields: {sorted(missing)}")
+        choice = row["first_player_choice"]
+        if (
+            not isinstance(row["coin_winner_seed"], int)
+            or isinstance(row["coin_winner_seed"], bool)
+            or row["coin_winner_seed"] <= 0
+            or type(row["focal_won_toss"]) is not bool
+            or not isinstance(choice, Mapping)
+            or type(choice.get("chooser_is_focal")) is not bool
+            or choice.get("chooser_is_focal") is not row["focal_won_toss"]
+            or choice.get("action_index") not in (0, 1)
+            or type(choice.get("focal_first")) is not bool
+            or row["focal_first"] is not choice.get("focal_first")
+        ):
+            raise ValueError(
+                f"formal rollout game {index} lacks valid Agent-owned first-player evidence"
+            )
     metrics = aggregate_rollout(
         rows, curriculum_version=curriculum_version,
         deck_weights=deck_weights, policy_weights=policy_weights,
-        sampling_mode=sampling_mode,
+        sampling_mode=sampling_mode, expected_games=expected_games,
     )
     history.append(rows)
     metrics.update(history.metrics())
@@ -174,6 +198,27 @@ def aggregate_training_rollout(
         "rollout/engine_decisions": float(sum(int(row["engine_decisions"]) for row in rows)),
         "rollout/strength_evidence": 0.0,
         "rollout/candidate_localization_only": 1.0,
+    })
+    actual_first = [row for row in rows if row["focal_first"]]
+    actual_second = [row for row in rows if not row["focal_first"]]
+    metrics.update({
+        "rollout/actual_focal_first/games": float(len(actual_first)),
+        "rollout/actual_focal_second/games": float(len(actual_second)),
+        "rollout/actual_focal_first/win_rate": (
+            sum(row["result"] == "win" for row in actual_first)
+            / max(1, len(actual_first))
+        ),
+        "rollout/actual_focal_second/win_rate": (
+            sum(row["result"] == "win" for row in actual_second)
+            / max(1, len(actual_second))
+        ),
+        "rollout/focal_won_toss/games": float(
+            sum(row["focal_won_toss"] for row in rows)
+        ),
+        "rollout/opponent_won_toss/games": float(
+            sum(not row["focal_won_toss"] for row in rows)
+        ),
+        "rollout/agent_owned_first_player": 1.0,
     })
     for group_field, namespace in (
         ("focal_deck_id", "focal_deck"),

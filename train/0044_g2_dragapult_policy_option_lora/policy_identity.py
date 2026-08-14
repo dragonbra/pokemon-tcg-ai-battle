@@ -28,6 +28,10 @@ PORTABLE_FIELDS = (
     "actor_state_dict", "value_head_state_dict", "allocation_head_state_dict",
     "value_adapter_state_dict", "policy_strategy_adapter_state_dict",
 )
+COMPLETE_PORTABLE_FIELDS = PORTABLE_FIELDS + (
+    "policy_option_lora_state_dict",
+    "meta_actor_residual_state_dict",
+)
 
 
 class PolicyIdentityViolation(RuntimeError):
@@ -195,7 +199,10 @@ def materialize_policy_bundle(
             raise PolicyIdentityViolation(f"{policy_id} base provenance mismatch")
         tensors = {}
         components = {}
-        for field in PORTABLE_FIELDS:
+        portable_fields = tuple(manifest.get("portable_fields", PORTABLE_FIELDS))
+        if portable_fields not in {PORTABLE_FIELDS, COMPLETE_PORTABLE_FIELDS}:
+            raise PolicyIdentityViolation(f"{policy_id} portable field contract mismatch")
+        for field in portable_fields:
             state = portable.get(field)
             if not isinstance(state, dict) or not state:
                 raise PolicyIdentityViolation(f"{policy_id} missing portable field: {field}")
@@ -237,6 +244,7 @@ def assert_storage_isolation(*bundles: MaterializedPolicyBundle) -> None:
 
 
 __all__ = [
+    "COMPLETE_PORTABLE_FIELDS",
     "MaterializedPolicyBundle", "PolicyBundleAudit", "PolicyIdentityViolation",
     "assert_storage_isolation", "materialize_policy_bundle",
 ]

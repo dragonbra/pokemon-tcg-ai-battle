@@ -21,7 +21,8 @@ class LeagueLane:
     opponent_deck_id: str
     opponent_policy_id: str
     seat_slot: int
-    focal_goes_first: bool
+    coin_winner_seed: int
+    focal_won_toss: bool
     engine_seed: int
     search_seed: int
     policy_seed: int
@@ -47,8 +48,8 @@ def build_schedule(
     latest_champion_policy_id: str, curriculum: Curriculum,
 ) -> tuple[LeagueLane, ...]:
     deck_ids, policy_ids = tuple(deck_ids), tuple(policy_ids)
-    if policy_ids != ("Champion-G2",) or latest_champion_policy_id != "Champion-G2":
-        raise ValueError("0044 V1 opponent policy pool must be singleton Champion-G2")
+    if policy_ids != (latest_champion_policy_id,) or not latest_champion_policy_id.startswith("Champion-G"):
+        raise ValueError("0044 opponent policy pool must be the singleton requested Champion")
     if latest_champion_policy_id not in policy_ids:
         raise ValueError("latest champion must belong to the active policy pool")
     if set(curriculum.deck_weights) != set(deck_ids):
@@ -74,7 +75,8 @@ def build_schedule(
         LeagueLane(
             lane_id=lane_id, branch=branch, opponent_deck_id=deck,
             opponent_policy_id=policy, seat_slot=slot,
-            focal_goes_first=slot % 2 == 0,
+            coin_winner_seed=(coin_seed := _seed(seed, slot, "coin-winner")),
+            focal_won_toss=bool(coin_seed & 1),
             engine_seed=_seed(seed, slot, "engine"),
             search_seed=_seed(seed, slot, "search"),
             policy_seed=_seed(seed, slot, "policy"),
@@ -82,8 +84,8 @@ def build_schedule(
         )
         for lane_id, (branch, deck, policy, slot) in enumerate(pending)
     )
-    if len(lanes) != 256 or sum(lane.focal_goes_first for lane in lanes) != 128:
-        raise RuntimeError("0044 schedule violated 256-game/seat contract")
+    if len(lanes) != 256 or len({lane.coin_winner_seed for lane in lanes}) != 256:
+        raise RuntimeError("0044 schedule violated 256-game/seeded-toss contract")
     return lanes
 
 
@@ -97,8 +99,8 @@ def build_uniform_schedule(
     deck_ids, policy_ids = tuple(deck_ids), tuple(policy_ids)
     if deck_ids != tuple(f"{index:03d}" for index in range(1, 68)):
         raise ValueError("0044 uniform schedule requires exact deck pool 001-067")
-    if policy_ids != ("Champion-G2",) or latest_champion_policy_id != "Champion-G2":
-        raise ValueError("0044 uniform schedule requires singleton Champion-G2")
+    if policy_ids != (latest_champion_policy_id,) or not latest_champion_policy_id.startswith("Champion-G"):
+        raise ValueError("0044 uniform schedule requires one requested Champion")
     if set(curriculum.deck_weights) != set(deck_ids):
         raise ValueError("uniform schedule curriculum deck identity mismatch")
     if set(curriculum.policy_weights) != set(policy_ids):
@@ -109,8 +111,9 @@ def build_uniform_schedule(
     lanes = tuple(
         LeagueLane(
             lane_id=lane_id, branch="uniform", opponent_deck_id=deck,
-            opponent_policy_id="Champion-G2", seat_slot=slot,
-            focal_goes_first=slot % 2 == 0,
+            opponent_policy_id=latest_champion_policy_id, seat_slot=slot,
+            coin_winner_seed=(coin_seed := _seed(seed, slot, "coin-winner")),
+            focal_won_toss=bool(coin_seed & 1),
             engine_seed=_seed(seed, slot, "engine"),
             search_seed=_seed(seed, slot, "search"),
             policy_seed=_seed(seed, slot, "policy"),
@@ -118,8 +121,8 @@ def build_uniform_schedule(
         )
         for lane_id, (deck, slot) in enumerate(pending)
     )
-    if len(lanes) != 256 or sum(lane.focal_goes_first for lane in lanes) != 128:
-        raise RuntimeError("0044 uniform schedule violated 256-game/seat contract")
+    if len(lanes) != 256 or len({lane.coin_winner_seed for lane in lanes}) != 256:
+        raise RuntimeError("0044 uniform schedule violated 256-game/seeded-toss contract")
     return lanes
 
 

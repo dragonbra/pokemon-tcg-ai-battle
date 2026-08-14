@@ -119,6 +119,18 @@ def _trajectory_job_indices(
     return frozenset(selected)
 
 
+def _post_seat_focal_route(
+    focal_route: torch.Tensor, global_cat: torch.Tensor,
+) -> torch.Tensor:
+    """Keep semantic-policy decisions only after actual first/second is known."""
+
+    if focal_route.ndim != 1 or global_cat.ndim != 2:
+        raise ValueError("post-seat PPO route expects [B] route and [B,F] globals")
+    if global_cat.shape[0] != focal_route.shape[0] or global_cat.shape[1] <= 2:
+        raise ValueError("post-seat PPO route feature shape mismatch")
+    return focal_route.bool() & global_cat[:, 2].ne(0)
+
+
 class CudaFullSemanticRolloutCollector:
     """Collect true strategic boundaries while the official clone stays on GPU."""
 
@@ -218,6 +230,9 @@ class CudaFullSemanticRolloutCollector:
             adapted = policy.policy_strategy_adapter(
                 hidden.index_select(0, rows), context
             )[0]
+            residual = getattr(policy, "meta_actor_residual", None)
+            if residual is not None:
+                adapted = residual(adapted, context.own_archetype_id)[0]
             return hidden.index_copy(0, rows, adapted)
 
         return readout, {"value": value, **auxiliary}
@@ -290,6 +305,9 @@ class CudaFullSemanticRolloutCollector:
                 adapted = self.model.policy_strategy_adapter(
                     hidden.index_select(0, strategy_rows), context
                 )[0]
+                adapted = self.model.meta_actor_residual(
+                    adapted, context.own_archetype_id
+                )[0]
                 return hidden.index_copy(0, strategy_rows, adapted)
 
             return readout, {"value": value, **auxiliary}
@@ -319,6 +337,7 @@ class CudaFullSemanticRolloutCollector:
         staged: list[_Staged] = []
         staged_bytes = 0
         staged_feature_bytes = 0
+        preseat_choices_excluded = 0
         captured_jobs = torch.ones(
             len(jobs), dtype=torch.bool, device=self.device
         ) if self.record_job_indices is None else torch.tensor(
@@ -341,12 +360,16 @@ class CudaFullSemanticRolloutCollector:
             return {"value": value, **auxiliary}
 
         def sink(**payload: Any) -> None:
-            nonlocal staged_bytes, staged_feature_bytes
-            route = payload["focal_route"].bool() & captured_jobs.index_select(
+            nonlocal staged_bytes, staged_feature_bytes, preseat_choices_excluded
+            captured_focal = payload["focal_route"].bool() & captured_jobs.index_select(
                 0, payload["lane_job"].long()
             )
-            rows = route.nonzero(as_tuple=False).flatten()
             semantic = payload["semantic"]
+            route = _post_seat_focal_route(captured_focal, semantic["global_cat"])
+            preseat_choices_excluded += int((captured_focal & ~route).sum())
+            rows = route.nonzero(as_tuple=False).flatten()
+            if not rows.numel():
+                return
             routed = payload["routed"]
             values = payload["values"]
             all_metadata = payload.get("decision_metadata") or [None] * route.numel()
@@ -469,6 +492,28 @@ class CudaFullSemanticRolloutCollector:
             episode.finish(reward, result.terminal_turns[index])
             job_stats = boundary.per_job[index]
             invalid_reason = boundary.invalid_jobs.get(index)
+            first_player_choice = boundary.first_player_choices.get(index)
+            if self.agent_selects_first_player:
+                if episode.job.focal_won_toss is None or episode.job.coin_winner_seed <= 0:
+                    raise RuntimeError(
+                        f"job {episode.job.game_id}: missing seeded toss evidence"
+                    )
+                if (
+                    not isinstance(first_player_choice, dict)
+                    or type(first_player_choice.get("chooser_is_focal")) is not bool
+                    or type(first_player_choice.get("focal_first")) is not bool
+                    or first_player_choice.get("action_index") not in (0, 1)
+                ):
+                    raise RuntimeError(
+                        f"job {episode.job.game_id}: missing Agent-owned context-41 choice"
+                    )
+                if (
+                    first_player_choice["chooser_is_focal"]
+                    is not episode.job.focal_won_toss
+                ):
+                    raise RuntimeError(
+                        f"job {episode.job.game_id}: toss winner/Agent chooser mismatch"
+                    )
             episode.diagnostics = {
                 "engine_selections": result.engine_selections[index],
                 "termination_status": _termination_status(
@@ -478,7 +523,8 @@ class CudaFullSemanticRolloutCollector:
                 ),
                 "source_policy_update": episode.job.source_policy_update,
                 "cuda_resident": True,
-                "first_player_choice": boundary.first_player_choices.get(index),
+                "first_player_choice": first_player_choice,
+                "coin_winner_seed": episode.job.coin_winner_seed,
                 "focal_won_toss": episode.job.focal_won_toss,
                 "opponent_policy_id": self.opponent_policy_id,
                 "opponent_effective_policy_sha256": (
@@ -597,6 +643,9 @@ class CudaFullSemanticRolloutCollector:
                 bool(episode.policy_transitions) for episode in episodes
             )),
             "rollout/cuda_stored_policy_transitions": float(stored_decisions),
+            "rollout/preseat_choices_excluded_from_ppo": float(
+                preseat_choices_excluded
+            ),
             "rollout/cuda_peak_allocated_bytes": float(hot_allocated),
             "rollout/cuda_peak_reserved_bytes": float(hot_reserved),
             "rollout/forced_shortcuts": float(adapter_metrics.get("forced_shortcuts", 0)),
@@ -621,6 +670,9 @@ class CudaFullSemanticRolloutCollector:
             "rollout/engines_per_worker": 0.0,
             "rollout/inference_channels_per_role": 0.0,
             "rollout/role_compacted_routing": float(self.role_compacted),
+            "rollout/agent_owned_first_player": float(
+                self.agent_selects_first_player
+            ),
         }
         return episodes
 
@@ -716,7 +768,9 @@ class ChunkedCudaRolloutCollector:
             "rollout/cuda_staged_trajectory_bytes", "rollout/cuda_staged_feature_bytes",
             "rollout/cuda_feature_d2h_bytes", "rollout/cuda_scalar_d2h_bytes",
             "rollout/cuda_trajectory_games",
-            "rollout/cuda_stored_policy_transitions", "rollout/forced_shortcuts",
+            "rollout/cuda_stored_policy_transitions",
+            "rollout/preseat_choices_excluded_from_ppo",
+            "rollout/forced_shortcuts",
             "rollout/macro_actions", "rollout/macro_callbacks", "rollout/invalid_macros",
             "rollout/lane_routing_audit_failures",
             "rollout/lane_routing_roles_audited",
@@ -756,6 +810,12 @@ class ChunkedCudaRolloutCollector:
             "rollout/role_compacted_routing": float(
                 bool(chunks) and all(
                     row.get("rollout/role_compacted_routing") == 1.0
+                    for row in chunks
+                )
+            ),
+            "rollout/agent_owned_first_player": float(
+                bool(chunks) and all(
+                    row.get("rollout/agent_owned_first_player") == 1.0
                     for row in chunks
                 )
             ),

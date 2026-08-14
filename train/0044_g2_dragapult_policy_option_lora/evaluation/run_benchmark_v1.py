@@ -140,6 +140,7 @@ def run(
     jobs = [RolloutJob(
         game_id=row["game_id"], opponent_id=row["opponent_deck_id"],
         focal_first=row["focal_won_toss"], focal_won_toss=row["focal_won_toss"],
+        coin_winner_seed=row["coin_winner_seed"],
         seed=row["engine_seed"], search_seed=row["search_seed"],
         policy_seed=row["policy_seed"], source_policy_update=(checkpoint_update or 407),
         focal_deck=cards, opponent_deck=decks[row["opponent_deck_id"]],

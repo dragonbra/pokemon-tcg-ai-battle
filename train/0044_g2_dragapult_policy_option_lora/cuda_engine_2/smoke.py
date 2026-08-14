@@ -11,6 +11,7 @@ import torch
 from .arena import create_official_cuda_arena
 from .build import DEFAULT_BUILD_DIR
 from .inference import CudaPolicyCohort
+from ..assets import AssetRegistry
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -23,6 +24,7 @@ def _deck(deck_id: str) -> list[int]:
 
 
 def run(rule_pack: Path, build_dir: Path = DEFAULT_BUILD_DIR) -> dict[str, object]:
+    latest_champion = AssetRegistry.load(PROJECT_ROOT).latest_champion_policy_id
     arena = create_official_cuda_arena(
         REPOSITORY_ROOT, rule_pack=rule_pack, batch_size=2, build_dir=build_dir,
     )
@@ -34,7 +36,9 @@ def run(rule_pack: Path, build_dir: Path = DEFAULT_BUILD_DIR) -> dict[str, objec
     arena.engine.reset_seeded_first_min_semantic(decks, seeds)
     cohorts = (
         CudaPolicyCohort.load(PROJECT_ROOT, policy_id="Policy-0809", deck_id="001"),
-        CudaPolicyCohort.load(PROJECT_ROOT, policy_id="Champion-G1", deck_id="048"),
+        CudaPolicyCohort.load(
+            PROJECT_ROOT, policy_id=latest_champion, deck_id="048"
+        ),
     )
     decisions = 0
     semantic_shapes: dict[str, list[int]] | None = None
@@ -54,7 +58,7 @@ def run(rule_pack: Path, build_dir: Path = DEFAULT_BUILD_DIR) -> dict[str, objec
             }
         actors = arena.engine.decision_actors().index_select(0, ready_lanes.long()).long()
         # In both reverse-seat lanes, actor == lane identifies the deck-001
-        # Policy-0809 seat; the other actor is the deck-048 Champion-G1 seat.
+        # Policy-0809 seat; the other actor is the deck-048 latest Champion seat.
         route_anchor = ready_lanes.long().eq(actors)
         routed: list[tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]] = []
         action_width = 1

@@ -28,6 +28,7 @@ class RolloutJob:
     opponent_policy_id: str
     focal_deck_id: str = ""
     focal_own_archetype_id: int = -1
+    coin_winner_seed: int = 0
     policy_seed: int = 0
     search_seed: int = 0
     engine_library: Path | None = None
@@ -53,6 +54,14 @@ class RolloutJob:
             raise ValueError("opponent_policy_id must identify a concrete policy")
         if not self.focal_deck_id or not 0 <= self.focal_own_archetype_id < 29:
             raise ValueError("0044 rollout requires an exact focal deck and own class")
+        if self.focal_won_toss is not None:
+            if self.coin_winner_seed <= 0:
+                raise ValueError("seeded toss winner requires a positive coin_winner_seed")
+            if self.focal_first is not self.focal_won_toss:
+                raise ValueError(
+                    "legacy focal_first must place the seeded toss winner at context 41; "
+                    "it is not actual-seat evidence"
+                )
 
 
 def require_opponent_policy_binding(

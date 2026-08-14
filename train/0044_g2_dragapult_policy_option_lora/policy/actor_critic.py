@@ -17,6 +17,7 @@ from .adaptation import AdaptationConfig, apply_focal_adaptation
 from .option_policy_lora import DualOptionEncoding
 from .allocation_head import DragapultAllocationHead
 from .strategy_adapters import (
+    MetaActorResidual,
     PolicyStrategyAdapter,
     StrategyContext,
     ValueResidualAdapter,
@@ -85,13 +86,16 @@ class SourceIdentity:
 
 
 class DecoderPolicyHead(nn.Module):
-    def __init__(self, action_decoder: nn.Module, strategy_adapter: PolicyStrategyAdapter) -> None:
+    def __init__(self, action_decoder: nn.Module, strategy_adapter: PolicyStrategyAdapter,
+                 meta_actor_residual: MetaActorResidual) -> None:
         super().__init__()
         self.action_decoder = action_decoder
         self.strategy_adapter = strategy_adapter
+        self.meta_actor_residual = meta_actor_residual
 
     def logits(self, batch, options: Tensor, state, context: StrategyContext, **kwargs) -> Tensor:
         readout, _ = self.strategy_adapter(state.hidden, context)
+        readout, _ = self.meta_actor_residual(readout, context.own_archetype_id)
         return self.action_decoder.logits(
             batch, options, state, readout_hidden=readout, **kwargs
         )
@@ -101,6 +105,7 @@ class DecoderPolicyHead(nn.Module):
         snapshot = cls(
             copy.deepcopy(model.actor.action_decoder),
             copy.deepcopy(model.policy_strategy_adapter),
+            copy.deepcopy(model.meta_actor_residual),
         ).to(model.device).eval()
         snapshot.requires_grad_(False)
         return snapshot
@@ -132,6 +137,9 @@ class SemanticActorCritic(nn.Module):
             torch.manual_seed(420_042_211)
             self.value_adapter = ValueResidualAdapter(width, own_archetype_classes=own_archetype_classes)
             self.policy_strategy_adapter = PolicyStrategyAdapter(width, own_archetype_classes=own_archetype_classes)
+            self.meta_actor_residual = MetaActorResidual(
+                width, rank=4, archetype_classes=own_archetype_classes
+            )
             self.prize_aux = PrizeAuxHead(width) if integrated_flags.enable_prize_aux else None
         self.freeze_representation()
 
@@ -141,7 +149,11 @@ class SemanticActorCritic(nn.Module):
 
     @property
     def head(self) -> DecoderPolicyHead:
-        return DecoderPolicyHead(self.actor.action_decoder, self.policy_strategy_adapter)
+        return DecoderPolicyHead(
+            self.actor.action_decoder,
+            self.policy_strategy_adapter,
+            self.meta_actor_residual,
+        )
 
     def own_archetype_ids(self, batch_size: int, device: torch.device) -> Tensor:
         runtime = getattr(self, "_runtime_own_archetype_ids", None)
@@ -245,6 +257,7 @@ class SemanticActorCritic(nn.Module):
         self.allocation_head.requires_grad_(True)
         self.value_adapter.requires_grad_(True)
         self.policy_strategy_adapter.requires_grad_(True)
+        self.meta_actor_residual.requires_grad_(True)
         self.policy_option_lora.requires_grad_(True)
         if self.prize_aux is not None:
             self.prize_aux.requires_grad_(True)
@@ -273,7 +286,7 @@ class SemanticActorCritic(nn.Module):
             and not name.startswith("allocation_head.")
             and not name.startswith((
                 "prize_aux.", "value_adapter.", "policy_strategy_adapter.",
-                "policy_option_lora.",
+                "policy_option_lora.", "meta_actor_residual.",
             ))
         ]
         if invalid or not any(name.startswith("actor.action_decoder.") for name in names):
@@ -294,6 +307,7 @@ class SemanticActorCritic(nn.Module):
 def load_actor_critic(
     checkpoint: Path = DEFAULT_FOCAL_CHECKPOINT,
     deck: tuple[int, ...] = (),
+    deck_id: str = "007",
     device: str | torch.device = "cpu",
     adaptation: AdaptationConfig = AdaptationConfig(),
     integrated_flags: IntegratedFlags = IntegratedFlags(),
@@ -309,7 +323,7 @@ def load_actor_critic(
     vocabulary = OwnArchetypeVocabulary.load_version(
         "own_archetypes_v2", project_root=PROJECT_ROOT
     )
-    own_archetype_id = vocabulary.resolve_exact_deck("007", deck).value
+    own_archetype_id = vocabulary.resolve_exact_deck(deck_id, deck).value
     identity = SourceIdentity(
         checkpoint_sha256=_sha256(checkpoint),
         schema_version="0043_focal_v1_kaggle_candidate_v1",
@@ -333,6 +347,10 @@ def load_actor_critic(
     model.policy_strategy_adapter.load_state_dict(
         portable.policy_strategy_adapter.state_dict(), strict=True
     )
+    if portable.meta_actor_residual is not None:
+        model.meta_actor_residual.load_state_dict(
+            portable.meta_actor_residual.state_dict(), strict=True
+        )
     model.prize_aux = PrizeAuxHead(int(actor.config.d_model))
     # Prize prediction is training-only and absent from the promoted portable
     # policy identity. Restore only that head from the FP32 U407 source; every

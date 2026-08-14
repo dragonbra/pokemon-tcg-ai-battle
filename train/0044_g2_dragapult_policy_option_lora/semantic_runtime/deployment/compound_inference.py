@@ -9,6 +9,7 @@ from typing import Any
 
 import torch
 from torch import nn
+from torch.func import functional_call
 
 from ..action_boundary.decision_gate import DecisionClass, DecisionGate
 from ..action_boundary.dragapult import (
@@ -143,13 +144,90 @@ class PolicyStrategyAdapter(nn.Module):
         return hidden + self.gate.tanh() * delta, delta
 
 
+class MetaActorResidual(nn.Module):
+    def __init__(self, width: int = 320, rank: int = 4,
+                 archetype_classes: int = 29, alpha: float = 4.0) -> None:
+        super().__init__()
+        self.width = width
+        self.rank = rank
+        self.archetype_classes = archetype_classes
+        self.scale = float(alpha) / rank
+        self.down = nn.Parameter(torch.empty(archetype_classes, rank, width))
+        self.up = nn.Parameter(torch.zeros(archetype_classes, width, rank))
+        nn.init.kaiming_uniform_(self.down, a=5 ** 0.5)
+
+    def forward(self, hidden, own_archetype_id):
+        ids = own_archetype_id.to(device=hidden.device, dtype=torch.long)
+        if ids.shape != (hidden.shape[0],) or not bool(
+            ids.ge(0).logical_and(ids.lt(self.archetype_classes)).all()
+        ):
+            raise ValueError("Meta Actor Residual own-Meta identity mismatch")
+        low_rank = torch.bmm(self.down[ids], hidden.unsqueeze(-1))
+        delta = torch.bmm(self.up[ids], low_rank).squeeze(-1) * self.scale
+        return hidden + delta, delta
+
+
+class LoRAQVDelta(nn.Module):
+    """Portable rank-4 Q/V delta for one merged Option QKV projection."""
+
+    def __init__(self, width: int, rank: int = 4, alpha: float = 8.0) -> None:
+        super().__init__()
+        self.q_a = nn.Parameter(torch.empty(rank, width))
+        self.q_b = nn.Parameter(torch.zeros(width, rank))
+        self.v_a = nn.Parameter(torch.empty(rank, width))
+        self.v_b = nn.Parameter(torch.zeros(width, rank))
+        self.scale = float(alpha) / int(rank)
+
+    def merged_weight(self, base: torch.Tensor) -> torch.Tensor:
+        width = base.shape[0] // 3
+        if base.shape != (3 * width, width):
+            raise ValueError("Option Q/V LoRA requires a square merged QKV projection")
+        q = (self.q_b @ self.q_a).to(base.dtype) * self.scale
+        v = (self.v_b @ self.v_a).to(base.dtype) * self.scale
+        return base + torch.cat((q, torch.zeros_like(q), v), dim=0)
+
+
+class PolicyOnlyOptionLoRA(nn.Module):
+    """Portable policy-only final Option block; Value keeps the immutable block."""
+
+    def __init__(self, width: int) -> None:
+        super().__init__()
+        self.self_attention = LoRAQVDelta(width)
+        self.cross_attention = LoRAQVDelta(width)
+
+    def forward(self, option_encoder, batch, state, prefix):
+        transformer = option_encoder.cross_attention_transformer
+        if len(transformer.layers) != 2:
+            raise RuntimeError("0044 requires exactly two Option Transformer blocks")
+        final = transformer.layers[1]
+        encoded = functional_call(
+            final,
+            {
+                "self_attn.in_proj_weight": self.self_attention.merged_weight(
+                    final.self_attn.in_proj_weight
+                ),
+                "multihead_attn.in_proj_weight": self.cross_attention.merged_weight(
+                    final.multihead_attn.in_proj_weight
+                ),
+            },
+            (prefix, state.tokens),
+            option_encoder._masks(batch, state),
+            strict=False,
+        )
+        if transformer.norm is not None:
+            encoded = transformer.norm(encoded)
+        return encoded * batch.option_mask.unsqueeze(-1)
+
+
 class PortableCompoundSemanticPolicy:
     """Greedy 0042 strategy-conditioned actor with cached macro expansion."""
 
     def __init__(self, actor: SemanticPolicy, value_head: nn.Module,
                  allocation_head: nn.Module, value_adapter: nn.Module,
                  policy_strategy_adapter: nn.Module,
-                 deck: Sequence[int], metadata: Mapping[str, Any]) -> None:
+                 deck: Sequence[int], metadata: Mapping[str, Any],
+                 policy_option_lora: nn.Module | None = None,
+                 meta_actor_residual: nn.Module | None = None) -> None:
         torch.set_num_threads(1)
         self.actor = actor.eval()
         # q0/q1, the frozen pretrained Meta head, and adapted Value are part of
@@ -158,6 +236,12 @@ class PortableCompoundSemanticPolicy:
         self.allocation_head = allocation_head.eval()
         self.value_adapter = value_adapter.eval()
         self.policy_strategy_adapter = policy_strategy_adapter.eval()
+        self.policy_option_lora = (
+            policy_option_lora.eval() if policy_option_lora is not None else None
+        )
+        self.meta_actor_residual = (
+            meta_actor_residual.eval() if meta_actor_residual is not None else None
+        )
         self.deck = tuple(int(card) for card in deck)
         if len(self.deck) != 60 or any(card <= 0 for card in self.deck):
             raise ValueError("deck must contain exactly 60 positive card IDs")
@@ -177,17 +261,30 @@ class PortableCompoundSemanticPolicy:
     @classmethod
     def from_checkpoint(cls, path: Path, deck: Sequence[int]):
         payload = torch.load(path, map_location="cpu", weights_only=True)
-        expected = {
+        legacy_expected = {
             "schema_version", "actor_state_dict", "value_head_state_dict",
             "allocation_head_state_dict",
             "value_adapter_state_dict", "policy_strategy_adapter_state_dict",
             "metadata",
         }
+        option_lora_expected = legacy_expected | {"policy_option_lora_state_dict"}
+        meta_residual_expected = option_lora_expected | {
+            "meta_actor_residual_state_dict"
+        }
         supported_schemas = {
             SCHEMA_VERSION,
             "0043_focal_v1_kaggle_candidate_v1",
             "0044_g2_policy_option_lora_kaggle_candidate_v1",
+            "0044_policy_value_split_option_lora_candidate_v1",
+            "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
         }
+        expected = (
+            meta_residual_expected
+            if payload.get("schema_version") == "0044_policy_value_split_option_lora_meta_residual_candidate_v2"
+            else option_lora_expected
+            if payload.get("schema_version") == "0044_policy_value_split_option_lora_candidate_v1"
+            else legacy_expected
+        )
         if set(payload) != expected or payload.get("schema_version") not in supported_schemas:
             raise ValueError("checkpoint is not the 0042 compound Kaggle contract")
         metadata = payload["metadata"]
@@ -201,15 +298,15 @@ class PortableCompoundSemanticPolicy:
             ModelConfig(**dict(config_payload)),
             PrototypeIndex.load(public_path, engine_path),
         )
-        actor.load_state_dict(
-            _expanded_portable_state_dict(payload["actor_state_dict"]), strict=True
-        )
+        actor_state = _expanded_portable_state_dict(payload["actor_state_dict"])
+        actor.load_state_dict(actor_state, strict=True)
         width = int(actor.config.d_model)
         value_head = LatentQueryValueHead(width, int(actor.config.heads))
         value_head.load_state_dict(payload["value_head_state_dict"], strict=True)
         allocation_head = DragapultAllocationHead(width)
         allocation_head.load_state_dict(payload["allocation_head_state_dict"], strict=True)
-        if metadata.get("no_option_lora") is not True:
+        has_policy_option_lora = "policy_option_lora_state_dict" in payload
+        if not has_policy_option_lora and metadata.get("no_option_lora") is not True:
             raise ValueError("0042 portable checkpoint must declare no_option_lora=true")
         own_classes = int(payload["value_adapter_state_dict"]["own_embedding.weight"].shape[0])
         declared_classes = metadata.get("own_archetype_class_count")
@@ -222,6 +319,8 @@ class PortableCompoundSemanticPolicy:
             payload.get("schema_version") not in {
                 "0043_focal_v1_kaggle_candidate_v1",
                 "0044_g2_policy_option_lora_kaggle_candidate_v1",
+                "0044_policy_value_split_option_lora_candidate_v1",
+                "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
             }
             or own_version != "own_archetypes_v2"
         ):
@@ -232,9 +331,39 @@ class PortableCompoundSemanticPolicy:
         policy_adapter.load_state_dict(
             payload["policy_strategy_adapter_state_dict"], strict=True
         )
+        policy_option_lora = None
+        if has_policy_option_lora:
+            policy_option_lora = PolicyOnlyOptionLoRA(width)
+            policy_option_lora.load_state_dict(
+                payload["policy_option_lora_state_dict"], strict=True
+            )
+        meta_actor_residual = None
+        if "meta_actor_residual_state_dict" in payload:
+            meta_actor_residual = MetaActorResidual(
+                width, rank=4, archetype_classes=own_classes
+            )
+            meta_actor_residual.load_state_dict(
+                payload["meta_actor_residual_state_dict"], strict=True
+            )
         return cls(
-            actor, value_head, allocation_head, value_adapter, policy_adapter, deck, metadata
+            actor, value_head, allocation_head, value_adapter, policy_adapter,
+            deck, metadata, policy_option_lora, meta_actor_residual,
         )
+
+    def _encode_options(self, features):
+        """Return immutable Value options and independently adapted Policy options."""
+        if self.policy_option_lora is None:
+            validated, state, options = self.actor.encode(features)
+            return validated, state, options, options
+        validated = self.actor.validate_batch(features)
+        prototype_memory = self.actor.prototype_memory()
+        state = self.actor.state_encoder(validated, prototype_memory)
+        encoder = self.actor.option_encoder
+        inputs = encoder.encode_inputs(validated, state, prototype_memory)
+        prefix = encoder.encode_prefix(validated, state, inputs)
+        value_options = encoder.encode_final(validated, state, prefix)
+        policy_options = self.policy_option_lora(encoder, validated, state, prefix)
+        return validated, state, value_options, policy_options
 
     def value_from_encoded(self, validated, state, options, own_archetype_id=None):
         """Expose the same adapted q0 Value used to build strategy context."""
@@ -273,9 +402,9 @@ class PortableCompoundSemanticPolicy:
 
     def encode_with_strategy(self, features, own_archetype_id=None):
         """Mirror the training actor-critic boundary for parity tooling."""
-        validated, state, options = self.actor.encode(features)
+        validated, state, value_options, policy_options = self._encode_options(features)
         value, auxiliary = self.value_and_aux_from_encoded(
-            validated, state, options, own_archetype_id=own_archetype_id
+            validated, state, value_options, own_archetype_id=own_archetype_id
         )
         context = StrategyContext.build(
             validated.global_cat[:, 2],
@@ -284,7 +413,7 @@ class PortableCompoundSemanticPolicy:
             value,
             auxiliary["own_archetype_id"],
         )
-        return validated, state, options, value, auxiliary, context
+        return validated, state, policy_options, value, auxiliary, context
 
     def _greedy_strategy(self, validated, state, options, context):
         decoder = self.actor.action_decoder
@@ -302,6 +431,10 @@ class PortableCompoundSemanticPolicy:
         legal = torch.ones_like(active)
         for step in range(maximum_steps):
             readout, _ = self.policy_strategy_adapter(decoder_state.hidden, context)
+            if self.meta_actor_residual is not None:
+                readout, _ = self.meta_actor_residual(
+                    readout, context.own_archetype_id
+                )
             scores = decoder.logits(
                 validated, options, decoder_state, readout_hidden=readout
             )
@@ -376,8 +509,8 @@ class PortableCompoundSemanticPolicy:
 
         batch = DecisionBatch.from_mapping(encoder.encode(observation))
         with torch.inference_mode():
-            validated, state, options = self.actor.encode(batch)
-            memory = torch.cat((state.tokens, options), dim=1)
+            validated, state, value_options, options = self._encode_options(batch)
+            memory = torch.cat((state.tokens, value_options), dim=1)
             memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
             queries = self.value_head.decode(memory, memory_mask)
             z_meta = queries[:, 1]

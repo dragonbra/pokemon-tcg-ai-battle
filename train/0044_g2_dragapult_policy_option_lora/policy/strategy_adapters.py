@@ -149,7 +149,44 @@ class PolicyStrategyAdapter(nn.Module):
         return residual.norm(dim=-1) / hidden.norm(dim=-1).clamp_min(1.0e-8)
 
 
+class MetaActorResidual(nn.Module):
+    """A small policy-only low-rank expert selected by own Meta identity."""
+
+    def __init__(
+        self, width: int = 320, rank: int = 4, archetype_classes: int = 29,
+        alpha: float = 4.0,
+    ) -> None:
+        super().__init__()
+        if min(width, rank, archetype_classes) < 1 or alpha <= 0:
+            raise ValueError("Meta Actor Residual dimensions must be positive")
+        self.width = int(width)
+        self.rank = int(rank)
+        self.archetype_classes = int(archetype_classes)
+        self.scale = float(alpha) / self.rank
+        self.down = nn.Parameter(torch.empty(archetype_classes, rank, width))
+        self.up = nn.Parameter(torch.zeros(archetype_classes, width, rank))
+        nn.init.kaiming_uniform_(self.down, a=5 ** 0.5)
+
+    def forward(
+        self, hidden: Tensor, own_archetype_id: Tensor,
+    ) -> tuple[Tensor, Tensor]:
+        if hidden.ndim != 2 or hidden.shape[1] != self.width:
+            raise ValueError("Meta Actor Residual hidden must have shape [B, width]")
+        if own_archetype_id.shape != (hidden.shape[0],):
+            raise ValueError("Meta Actor Residual IDs must have shape [B]")
+        ids = own_archetype_id.to(device=hidden.device, dtype=torch.long)
+        if not bool(ids.ge(0).logical_and(ids.lt(self.archetype_classes)).all()):
+            raise ValueError("Meta Actor Residual ID is outside the own taxonomy")
+        low_rank = torch.bmm(self.down[ids], hidden.unsqueeze(-1))
+        delta = torch.bmm(self.up[ids], low_rank).squeeze(-1) * self.scale
+        return hidden + delta, delta
+
+    def effective_residual_ratio(self, hidden: Tensor, delta: Tensor) -> Tensor:
+        return delta.norm(dim=-1) / hidden.norm(dim=-1).clamp_min(1.0e-8)
+
+
 __all__ = [
+    "MetaActorResidual",
     "PolicyStrategyAdapter",
     "StrategyContext",
     "ValueResidualAdapter",

@@ -273,15 +273,31 @@ class AssetRegistry:
         champion = policies.get(self.latest_champion_policy_id)
         if champion is None or champion.role != "latest_champion" or not champion.frozen:
             raise AssetIntegrityError("latest champion pointer must reference a frozen champion")
-        if self.active_policy_ids != ("Champion-G2",):
-            raise AssetIntegrityError("0044 V1 active opponent pool must be singleton Champion-G2")
+        expected_active = (self.latest_champion_policy_id,)
+        if self.active_policy_ids != expected_active:
+            raise AssetIntegrityError(
+                "0044 active opponent pool must be the singleton latest champion"
+            )
         if len(self.active_policy_ids) != len(set(self.active_policy_ids)):
             raise AssetIntegrityError("active opponent pool contains duplicate identities")
-        if set(policies) != {"Policy-0809", "Champion-G2"}:
+        expected_policies = {
+            "Policy-0809",
+            *(f"Champion-G{generation}" for generation in range(2, champion.generation + 1)),
+        }
+        if set(policies) != expected_policies:
             raise AssetIntegrityError(
-                "0044 policy assets must contain Champion-G2 plus evaluation-only Policy-0809"
+                "0044 policy assets must contain contiguous admitted Champions plus Policy-0809"
             )
-        if policies["Champion-G2"].generation != 2 or policies["Policy-0809"].role != "historical_anchor":
+        if (
+            champion.generation is None
+            or champion.policy_id != f"Champion-G{champion.generation}"
+            or policies["Policy-0809"].role != "historical_anchor"
+            or any(
+                policies[f"Champion-G{generation}"].role
+                != ("latest_champion" if generation == champion.generation else "champion")
+                for generation in range(2, champion.generation + 1)
+            )
+        ):
             raise AssetIntegrityError("0044 immutable policy roles are invalid")
 
         deck_by_id = {deck.deck_id: deck for deck in self.decks}

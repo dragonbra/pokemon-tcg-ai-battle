@@ -6,9 +6,11 @@
     "uniform": 64,
     "latest_champion": 64
   },
-  "seat_slots": {
-    "focal_first": 128,
-    "focal_second": 128
+  "first_player_contract": {
+    "id": "seeded_toss_winner_agent_context_41_choice_v1",
+    "schedule_controls": "coin_winner_seed only",
+    "actual_seat_source": "toss-winning complete policy choice at official context 41",
+    "actual_seat_quota": null
   },
   "deck_policy_sampling": "independent",
   "pfsp": {
@@ -17,5 +19,5 @@
     "minimum_probability": 0.001,
     "maximum_probability": 1.0
   },
-  "notes": "V1 uses the singleton Champion-G2 policy pool. The 128/64/64 branches remain auditable and are effectively 50% deck-level PFSP plus 50% uniform deck exploration; changing either bound or branch count is a new versioned experiment variable."
+  "notes": "Historical V1-V10 training used legacy fixed 128/128 seats. Every successor must use the seeded toss winner and complete Agent context-41 choice; actual seats are observed results and are never balanced by the harness."
 }

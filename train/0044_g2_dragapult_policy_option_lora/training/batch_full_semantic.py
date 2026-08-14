@@ -99,6 +99,27 @@ def _episode_gae(
     return advantages, returns, boundaries, first_credit
 
 
+def _actual_focal_first(episode: EpisodeTrajectory, *, strict: bool) -> bool:
+    choice = episode.diagnostics.get("first_player_choice")
+    valid = (
+        episode.job.focal_won_toss is not None
+        and episode.job.coin_winner_seed > 0
+        and isinstance(choice, dict)
+        and type(choice.get("chooser_is_focal")) is bool
+        and type(choice.get("focal_first")) is bool
+        and choice.get("action_index") in (0, 1)
+        and choice["chooser_is_focal"] is episode.job.focal_won_toss
+    )
+    if not valid:
+        if strict:
+            raise ValueError(
+                "PPO rejected episode without seeded toss, Agent-owned context-41 "
+                "choice and actual-seat evidence"
+            )
+        return bool(episode.job.focal_first)
+    return bool(choice["focal_first"])
+
+
 def prepare_episodes(
     episodes: list[EpisodeTrajectory],
     *,
@@ -118,6 +139,7 @@ def prepare_episodes(
         violations = []
         for episode in episodes:
             diagnostics = episode.diagnostics
+            _actual_focal_first(episode, strict=True)
             expected_deck = exact_deck_sha256(episode.job.opponent_deck)
             transition_metadata = [
                 transition.metadata for transition in episode.policy_transitions
@@ -162,6 +184,27 @@ def prepare_episodes(
     if not valid:
         raise ValueError("no valid terminal episodes to prepare")
     use_compound = all(episode.policy_transitions for episode in valid)
+    if use_compound:
+        invalid_seat_records: list[str] = []
+        for episode in valid:
+            for transition_index, transition in enumerate(episode.policy_transitions):
+                global_cat = transition.pre_action_features.get("global_cat")
+                if (
+                    global_cat is None
+                    or global_cat.ndim != 2
+                    or global_cat.shape[0] != 1
+                    or global_cat.shape[1] <= 2
+                    or int(global_cat[0, 2].item()) not in (1, 2)
+                ):
+                    invalid_seat_records.append(
+                        f"{episode.job.game_id}:{transition_index}"
+                    )
+        if invalid_seat_records:
+            raise ValueError(
+                "PPO rejected pre-seat or malformed compound transitions; "
+                "relative_first_player must encode own-first=1 or own-second=2: "
+                f"{invalid_seat_records[:8]}"
+            )
     updates = (
         {
             int(transition.metadata["policy_update"])
@@ -282,7 +325,9 @@ def prepare_episodes(
             if record_turn is not None and record_turn > episode.turns:
                 raise ValueError("decision turn exceeds terminal engine turn")
             terminal_turns.append(episode.turns)
-            candidate_first.append(episode.job.focal_first)
+            candidate_first.append(
+                _actual_focal_first(episode, strict=require_policy_identity)
+            )
             opponents.append(episode.job.opponent_id)
             prize_rewards.append(prize_reward)
             if use_compound:

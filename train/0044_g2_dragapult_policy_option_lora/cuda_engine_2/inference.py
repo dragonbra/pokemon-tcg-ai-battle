@@ -45,10 +45,15 @@ def decision_batch_from_cuda_codec(encoded: Mapping[str, torch.Tensor]) -> Decis
 def _modules(policy: Any) -> tuple[torch.nn.Module, ...]:
     if isinstance(policy, PortableSemanticPolicy):
         return (policy.model,)
-    return (
+    modules = [
         policy.actor, policy.value_head, policy.allocation_head,
         policy.value_adapter, policy.policy_strategy_adapter,
-    )
+    ]
+    for name in ("policy_option_lora", "meta_actor_residual"):
+        module = getattr(policy, name, None)
+        if module is not None:
+            modules.append(module)
+    return tuple(modules)
 
 
 @dataclass(slots=True)

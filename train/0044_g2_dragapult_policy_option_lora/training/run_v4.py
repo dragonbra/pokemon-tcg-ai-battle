@@ -47,7 +47,9 @@ def readiness(*, version_root: Path = VERSION_ROOT) -> dict[str, object]:
     source = torch.load(G2_SOURCE, map_location="cpu", weights_only=True)
     if source.get("schema_version") != "0043_focal_v1_model_only_v1" or source.get("update") != 407:
         raise RuntimeError("V4 source is not immutable Champion-G2 U407")
-    model, identity = load_actor_critic(deck=_cards(registry, FOCAL_DECK_ID))
+    model, identity = load_actor_critic(
+        deck=_cards(registry, FOCAL_DECK_ID), deck_id=FOCAL_DECK_ID
+    )
     if not model.policy_option_lora.is_zero_delta():
         raise RuntimeError("V4 G2 seed does not have zero-delta Option LoRA")
     vocabulary = OwnArchetypeVocabulary.load_version(

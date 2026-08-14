@@ -136,8 +136,9 @@ def run_preflight(*, gpu_smoke: bool = False) -> dict[str, Any]:
         "schedule": {
             "games": len(schedule),
             "branches": dict(Counter(lane.branch for lane in schedule)),
-            "first": sum(lane.focal_goes_first for lane in schedule),
-            "second": sum(not lane.focal_goes_first for lane in schedule),
+            "focal_won_toss": sum(lane.focal_won_toss for lane in schedule),
+            "opponent_won_toss": sum(not lane.focal_won_toss for lane in schedule),
+            "actual_seat_semantics": "Agent-owned official context 41; not scheduled",
             "cuda_request_schedule_sha256": cuda_schedule_sha256,
             "cuda_request_count": len(cuda_requests),
         },

@@ -1,0 +1,3268 @@
+{
+  "audit": {
+    "games_per_meta": 128,
+    "same_2048_job_identities": true,
+    "same_common_random_schedule": true,
+    "selected_meta_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      17,
+      27
+    ],
+    "u0_feature_d2h_bytes": 0.0,
+    "u0_routing_failures": 0.0,
+    "u0_status": "PASS",
+    "u30_feature_d2h_bytes": 0.0,
+    "u30_routing_failures": 0.0,
+    "u30_status": "PASS"
+  },
+  "by_meta_archetype": [
+    {
+      "archetype_id": 0,
+      "deck_ids": [
+        "007",
+        "018",
+        "067"
+      ],
+      "definition": "Dragapult ex Stage-2 spread-damage plan without a second structural Stage-2 engine.",
+      "delta": 0.0,
+      "display_name": "Dragapult ex",
+      "net_wins": 0,
+      "representative_decks": [
+        {
+          "deck_id": "007",
+          "representative_cards": [
+            {
+              "card_id": 121,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv6/130.png",
+              "name": "Dragapult ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 120,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/129.png",
+              "name": "Drakloak",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "018",
+          "representative_cards": [
+            {
+              "card_id": 121,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv6/130.png",
+              "name": "Dragapult ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 306,
+              "count": 1,
+              "image_url": "https://images.pokemontcg.io/sv9/121.png",
+              "name": "Dudunsparce ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "067",
+          "representative_cards": [
+            {
+              "card_id": 121,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv6/130.png",
+              "name": "Dragapult ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 120,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/129.png",
+              "name": "Drakloak",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 49,
+        "win_rate": 0.6171875,
+        "wins": 79
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 49,
+        "win_rate": 0.6171875,
+        "wins": 79
+      }
+    },
+    {
+      "archetype_id": 1,
+      "deck_ids": [
+        "003",
+        "004",
+        "012",
+        "022",
+        "028"
+      ],
+      "definition": "Switch-tempo Mega Lopunny plan centered on moving from Bench to Active.",
+      "delta": 0.015625,
+      "display_name": "Mega Lopunny ex",
+      "net_wins": 2,
+      "representative_decks": [
+        {
+          "deck_id": "003",
+          "representative_cards": [
+            {
+              "card_id": 849,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me2/84.png",
+              "name": "Mega Lopunny ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 861,
+              "count": 2,
+              "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+              "name": "Mega Froslass ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "004",
+          "representative_cards": [
+            {
+              "card_id": 849,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/me2/84.png",
+              "name": "Mega Lopunny ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 66,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv5/129.png",
+              "name": "Dudunsparce",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "012",
+          "representative_cards": [
+            {
+              "card_id": 849,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/me2/84.png",
+              "name": "Mega Lopunny ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 66,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv5/129.png",
+              "name": "Dudunsparce",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "022",
+          "representative_cards": [
+            {
+              "card_id": 849,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/me2/84.png",
+              "name": "Mega Lopunny ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 66,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv5/129.png",
+              "name": "Dudunsparce",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "028",
+          "representative_cards": [
+            {
+              "card_id": 849,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/me2/84.png",
+              "name": "Mega Lopunny ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 66,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv5/129.png",
+              "name": "Dudunsparce",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 42,
+        "win_rate": 0.671875,
+        "wins": 86
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 40,
+        "win_rate": 0.6875,
+        "wins": 88
+      }
+    },
+    {
+      "archetype_id": 2,
+      "deck_ids": [
+        "001",
+        "005",
+        "017",
+        "031",
+        "037"
+      ],
+      "definition": "Stage-2 dark-energy acceleration with Froslass/Munkidori damage support.",
+      "delta": 0.015625,
+      "display_name": "Marnie's Grimmsnarl ex",
+      "net_wins": 2,
+      "representative_decks": [
+        {
+          "deck_id": "001",
+          "representative_cards": [
+            {
+              "card_id": 648,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/136.png",
+              "name": "Marnie's Grimmsnarl ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 647,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/135.png",
+              "name": "Marnie's Morgrem",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "005",
+          "representative_cards": [
+            {
+              "card_id": 648,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/136.png",
+              "name": "Marnie's Grimmsnarl ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 647,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/135.png",
+              "name": "Marnie's Morgrem",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "017",
+          "representative_cards": [
+            {
+              "card_id": 648,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/136.png",
+              "name": "Marnie's Grimmsnarl ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 104,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv6/53.png",
+              "name": "Froslass",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "031",
+          "representative_cards": [
+            {
+              "card_id": 648,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/136.png",
+              "name": "Marnie's Grimmsnarl ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 647,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/135.png",
+              "name": "Marnie's Morgrem",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "037",
+          "representative_cards": [
+            {
+              "card_id": 648,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/136.png",
+              "name": "Marnie's Grimmsnarl ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 647,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/135.png",
+              "name": "Marnie's Morgrem",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 56,
+        "win_rate": 0.5625,
+        "wins": 72
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 54,
+        "win_rate": 0.578125,
+        "wins": 74
+      }
+    },
+    {
+      "archetype_id": 3,
+      "deck_ids": [
+        "002",
+        "034",
+        "039",
+        "040"
+      ],
+      "definition": "Hand-size damage and evolution-trigger draw with Dudunsparce cycling.",
+      "delta": -0.0546875,
+      "display_name": "Alakazam",
+      "net_wins": -7,
+      "representative_decks": [
+        {
+          "deck_id": "002",
+          "representative_cards": [
+            {
+              "card_id": 743,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/56.png",
+              "name": "Alakazam",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 742,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/55.png",
+              "name": "Kadabra",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "034",
+          "representative_cards": [
+            {
+              "card_id": 743,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/56.png",
+              "name": "Alakazam",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 742,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/55.png",
+              "name": "Kadabra",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "039",
+          "representative_cards": [
+            {
+              "card_id": 743,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/56.png",
+              "name": "Alakazam",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 742,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/55.png",
+              "name": "Kadabra",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "040",
+          "representative_cards": [
+            {
+              "card_id": 743,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/56.png",
+              "name": "Alakazam",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 742,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/55.png",
+              "name": "Kadabra",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 47,
+        "win_rate": 0.6328125,
+        "wins": 81
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 54,
+        "win_rate": 0.578125,
+        "wins": 74
+      }
+    },
+    {
+      "archetype_id": 4,
+      "deck_ids": [
+        "009",
+        "063"
+      ],
+      "definition": "Fast Fighting attacker with discard-to-bench energy acceleration.",
+      "delta": 0.0234375,
+      "display_name": "Mega Lucario ex",
+      "net_wins": 3,
+      "representative_decks": [
+        {
+          "deck_id": "009",
+          "representative_cards": [
+            {
+              "card_id": 678,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/77.png",
+              "name": "Mega Lucario ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 674,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/73.png",
+              "name": "Hariyama",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "063",
+          "representative_cards": [
+            {
+              "card_id": 678,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/me1/77.png",
+              "name": "Mega Lucario ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 66,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv5/129.png",
+              "name": "Dudunsparce",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 58,
+        "win_rate": 0.546875,
+        "wins": 70
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 55,
+        "win_rate": 0.5703125,
+        "wins": 73
+      }
+    },
+    {
+      "archetype_id": 5,
+      "deck_ids": [
+        "011",
+        "014",
+        "030",
+        "033",
+        "035"
+      ],
+      "definition": "Active-position draw/attack shell with resilient secondary lines.",
+      "delta": 0.0078125,
+      "display_name": "Mega Kangaskhan ex",
+      "net_wins": 1,
+      "representative_decks": [
+        {
+          "deck_id": "011",
+          "representative_cards": [
+            {
+              "card_id": 345,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/12.png",
+              "name": "Crustle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 756,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/104.png",
+              "name": "Mega Kangaskhan ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "014",
+          "representative_cards": [
+            {
+              "card_id": 345,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/12.png",
+              "name": "Crustle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 756,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/104.png",
+              "name": "Mega Kangaskhan ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "030",
+          "representative_cards": [
+            {
+              "card_id": 345,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/12.png",
+              "name": "Crustle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 756,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/104.png",
+              "name": "Mega Kangaskhan ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "033",
+          "representative_cards": [
+            {
+              "card_id": 345,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/12.png",
+              "name": "Crustle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 756,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/104.png",
+              "name": "Mega Kangaskhan ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "035",
+          "representative_cards": [
+            {
+              "card_id": 345,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/12.png",
+              "name": "Crustle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 756,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/104.png",
+              "name": "Mega Kangaskhan ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 77,
+        "win_rate": 0.3984375,
+        "wins": 51
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 76,
+        "win_rate": 0.40625,
+        "wins": 52
+      }
+    },
+    {
+      "archetype_id": 6,
+      "deck_ids": [
+        "010"
+      ],
+      "definition": "Festival Grounds bench-scaling double-attack strategy.",
+      "delta": -0.015625,
+      "display_name": "Festival Lead",
+      "net_wins": -2,
+      "representative_decks": [
+        {
+          "deck_id": "010",
+          "representative_cards": [
+            {
+              "card_id": 90,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/15.png",
+              "name": "Thwackey",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 93,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/18.png",
+              "name": "Dipplin",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 22,
+        "win_rate": 0.828125,
+        "wins": 106
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 24,
+        "win_rate": 0.8125,
+        "wins": 104
+      }
+    },
+    {
+      "archetype_id": 7,
+      "deck_ids": [
+        "019",
+        "024",
+        "038"
+      ],
+      "definition": "Single-prize wall and denial plans centered on Crustle or Barbaracle.",
+      "delta": 0.0390625,
+      "display_name": "Crustle / Barbaracle Wall",
+      "net_wins": 5,
+      "representative_decks": [
+        {
+          "deck_id": "019",
+          "representative_cards": [
+            {
+              "card_id": 1052,
+              "count": 2,
+              "image_url": "https://images.scrydex.com/pokemon/me3-43/small",
+              "name": "Barbaracle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 117,
+              "count": 1,
+              "image_url": "https://images.pokemontcg.io/sv6/112.png",
+              "name": "Cornerstone Mask Ogerpon ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "024",
+          "representative_cards": [
+            {
+              "card_id": 345,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/12.png",
+              "name": "Crustle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 117,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv6/112.png",
+              "name": "Cornerstone Mask Ogerpon ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "038",
+          "representative_cards": [
+            {
+              "card_id": 345,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/12.png",
+              "name": "Crustle",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 117,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv6/112.png",
+              "name": "Cornerstone Mask Ogerpon ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 19,
+        "win_rate": 0.8515625,
+        "wins": 109
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 14,
+        "win_rate": 0.890625,
+        "wins": 114
+      }
+    },
+    {
+      "archetype_id": 8,
+      "deck_ids": [
+        "020",
+        "042"
+      ],
+      "definition": "Multi-line Grass evolution board using Meganium and Forest of Vitality.",
+      "delta": 0.0,
+      "display_name": "Meganium Grass Evolution",
+      "net_wins": 0,
+      "representative_decks": [
+        {
+          "deck_id": "020",
+          "representative_cards": [
+            {
+              "card_id": 652,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/3.png",
+              "name": "Mega Venusaur ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 919,
+              "count": 1,
+              "image_url": "https://images.scrydex.com/pokemon/me2pt5-10/small",
+              "name": "Mega Meganium ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "042",
+          "representative_cards": [
+            {
+              "card_id": 404,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv10/23.png",
+              "name": "Arboliva ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 710,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/10.png",
+              "name": "Meganium",
+              "stage_or_type": "Stage 2 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 18,
+        "win_rate": 0.859375,
+        "wins": 110
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 18,
+        "win_rate": 0.859375,
+        "wins": 110
+      }
+    },
+    {
+      "archetype_id": 9,
+      "deck_ids": [
+        "021",
+        "059"
+      ],
+      "definition": "Team Rocket board-count and benched-energy sacrifice strategy.",
+      "delta": 0.015625,
+      "display_name": "Team Rocket's Mewtwo ex",
+      "net_wins": 2,
+      "representative_decks": [
+        {
+          "deck_id": "021",
+          "representative_cards": [
+            {
+              "card_id": 401,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/20.png",
+              "name": "Team Rocket's Spidops",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 431,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv10/81.png",
+              "name": "Team Rocket's Mewtwo ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "059",
+          "representative_cards": [
+            {
+              "card_id": 401,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/20.png",
+              "name": "Team Rocket's Spidops",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 431,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv10/81.png",
+              "name": "Team Rocket's Mewtwo ex",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 29,
+        "win_rate": 0.7734375,
+        "wins": 99
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 27,
+        "win_rate": 0.7890625,
+        "wins": 101
+      }
+    },
+    {
+      "archetype_id": 10,
+      "deck_ids": [
+        "006",
+        "008",
+        "029",
+        "036"
+      ],
+      "definition": "Four-Ogerpon energy-stacking beatdown with repeated Teal Dance.",
+      "delta": 0.078125,
+      "display_name": "Teal Mask Ogerpon ex",
+      "net_wins": 10,
+      "representative_decks": [
+        {
+          "deck_id": "006",
+          "representative_cards": [
+            {
+              "card_id": 96,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/25.png",
+              "name": "Teal Mask Ogerpon ex",
+              "stage_or_type": "Basic Pokémon"
+            },
+            {
+              "card_id": 1159,
+              "count": 1,
+              "image_url": "https://images.pokemontcg.io/sv5/152.png",
+              "name": "Hero’s Cape",
+              "stage_or_type": "Pokémon Tool"
+            }
+          ]
+        },
+        {
+          "deck_id": "008",
+          "representative_cards": [
+            {
+              "card_id": 96,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/25.png",
+              "name": "Teal Mask Ogerpon ex",
+              "stage_or_type": "Basic Pokémon"
+            },
+            {
+              "card_id": 1159,
+              "count": 1,
+              "image_url": "https://images.pokemontcg.io/sv5/152.png",
+              "name": "Hero’s Cape",
+              "stage_or_type": "Pokémon Tool"
+            }
+          ]
+        },
+        {
+          "deck_id": "029",
+          "representative_cards": [
+            {
+              "card_id": 96,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/25.png",
+              "name": "Teal Mask Ogerpon ex",
+              "stage_or_type": "Basic Pokémon"
+            },
+            {
+              "card_id": 920,
+              "count": 1,
+              "image_url": "https://images.pokemontcg.io/sv6pt5/6.png",
+              "name": "Tapu Bulu",
+              "stage_or_type": "Basic Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "036",
+          "representative_cards": [
+            {
+              "card_id": 96,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv6/25.png",
+              "name": "Teal Mask Ogerpon ex",
+              "stage_or_type": "Basic Pokémon"
+            },
+            {
+              "card_id": 1159,
+              "count": 1,
+              "image_url": "https://images.pokemontcg.io/sv5/152.png",
+              "name": "Hero’s Cape",
+              "stage_or_type": "Pokémon Tool"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 30,
+        "win_rate": 0.765625,
+        "wins": 98
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 20,
+        "win_rate": 0.84375,
+        "wins": 108
+      }
+    },
+    {
+      "archetype_id": 11,
+      "deck_ids": [
+        "013",
+        "060"
+      ],
+      "definition": "Cynthia-tagged evolution and Fighting-energy attack engine.",
+      "delta": 0.0,
+      "display_name": "Cynthia's Garchomp ex",
+      "net_wins": 0,
+      "representative_decks": [
+        {
+          "deck_id": "013",
+          "representative_cards": [
+            {
+              "card_id": 381,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/104.png",
+              "name": "Cynthia's Garchomp ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 380,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/103.png",
+              "name": "Cynthia's Gabite",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "060",
+          "representative_cards": [
+            {
+              "card_id": 381,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv10/104.png",
+              "name": "Cynthia's Garchomp ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 380,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv10/103.png",
+              "name": "Cynthia's Gabite",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 60,
+        "win_rate": 0.53125,
+        "wins": 68
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 60,
+        "win_rate": 0.53125,
+        "wins": 68
+      }
+    },
+    {
+      "archetype_id": 12,
+      "deck_ids": [
+        "044",
+        "045",
+        "053",
+        "062"
+      ],
+      "definition": "Water Stage-1 spread attacker paired with Mega Froslass hand-pressure variants.",
+      "delta": 0.0078125,
+      "display_name": "Mega Starmie ex",
+      "net_wins": 1,
+      "representative_decks": [
+        {
+          "deck_id": "044",
+          "representative_cards": [
+            {
+              "card_id": 666,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/28.png",
+              "name": "Cinderace",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 861,
+              "count": 3,
+              "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+              "name": "Mega Froslass ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "045",
+          "representative_cards": [
+            {
+              "card_id": 666,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/28.png",
+              "name": "Cinderace",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 861,
+              "count": 3,
+              "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+              "name": "Mega Froslass ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "053",
+          "representative_cards": [
+            {
+              "card_id": 861,
+              "count": 3,
+              "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+              "name": "Mega Froslass ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 1031,
+              "count": 3,
+              "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+              "name": "Mega Starmie ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "062",
+          "representative_cards": [
+            {
+              "card_id": 861,
+              "count": 4,
+              "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+              "name": "Mega Froslass ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            },
+            {
+              "card_id": 1031,
+              "count": 4,
+              "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+              "name": "Mega Starmie ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 69,
+        "win_rate": 0.4609375,
+        "wins": 59
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 68,
+        "win_rate": 0.46875,
+        "wins": 60
+      }
+    },
+    {
+      "archetype_id": 13,
+      "deck_ids": [
+        "048",
+        "051",
+        "052",
+        "055"
+      ],
+      "definition": "Metal discard-recovery acceleration and durable Stage-1 attacker.",
+      "delta": 0.0078125,
+      "display_name": "Archaludon ex",
+      "net_wins": 1,
+      "representative_decks": [
+        {
+          "deck_id": "048",
+          "representative_cards": [
+            {
+              "card_id": 666,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/28.png",
+              "name": "Cinderace",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 190,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv8/130.png",
+              "name": "Archaludon ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "051",
+          "representative_cards": [
+            {
+              "card_id": 666,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/28.png",
+              "name": "Cinderace",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 190,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv8/130.png",
+              "name": "Archaludon ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "052",
+          "representative_cards": [
+            {
+              "card_id": 666,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/28.png",
+              "name": "Cinderace",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 190,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv8/130.png",
+              "name": "Archaludon ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "055",
+          "representative_cards": [
+            {
+              "card_id": 666,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/me1/28.png",
+              "name": "Cinderace",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 190,
+              "count": 4,
+              "image_url": "https://images.pokemontcg.io/sv8/130.png",
+              "name": "Archaludon ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 47,
+        "win_rate": 0.6328125,
+        "wins": 81
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 46,
+        "win_rate": 0.640625,
+        "wins": 82
+      }
+    },
+    {
+      "archetype_id": 17,
+      "deck_ids": [
+        "046",
+        "050"
+      ],
+      "definition": "Mega Starmie attack line plus Dusknoir self-KO damage placement.",
+      "delta": 0.015625,
+      "display_name": "Mega Starmie ex / Dusknoir",
+      "net_wins": 2,
+      "representative_decks": [
+        {
+          "deck_id": "046",
+          "representative_cards": [
+            {
+              "card_id": 133,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv6pt5/20.png",
+              "name": "Dusknoir",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 1031,
+              "count": 3,
+              "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+              "name": "Mega Starmie ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "050",
+          "representative_cards": [
+            {
+              "card_id": 133,
+              "count": 3,
+              "image_url": "https://images.pokemontcg.io/sv6pt5/20.png",
+              "name": "Dusknoir",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 1031,
+              "count": 3,
+              "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+              "name": "Mega Starmie ex",
+              "stage_or_type": "Stage 1 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 52,
+        "win_rate": 0.59375,
+        "wins": 76
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 50,
+        "win_rate": 0.609375,
+        "wins": 78
+      }
+    },
+    {
+      "archetype_id": 27,
+      "deck_ids": [
+        "023",
+        "041"
+      ],
+      "definition": "Hydrapple/Meganium Grass-energy acceleration board; Dipplin is an evolution stage, not Festival Lead.",
+      "delta": -0.0078125,
+      "display_name": "Hydrapple ex / Meganium",
+      "net_wins": -1,
+      "representative_decks": [
+        {
+          "deck_id": "023",
+          "representative_cards": [
+            {
+              "card_id": 150,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv7/14.png",
+              "name": "Hydrapple ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 710,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/10.png",
+              "name": "Meganium",
+              "stage_or_type": "Stage 2 Pokémon"
+            }
+          ]
+        },
+        {
+          "deck_id": "041",
+          "representative_cards": [
+            {
+              "card_id": 150,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/sv7/14.png",
+              "name": "Hydrapple ex",
+              "stage_or_type": "Stage 2 Pokémon"
+            },
+            {
+              "card_id": 710,
+              "count": 2,
+              "image_url": "https://images.pokemontcg.io/me1/10.png",
+              "name": "Meganium",
+              "stage_or_type": "Stage 2 Pokémon"
+            }
+          ]
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 47,
+        "win_rate": 0.6328125,
+        "wins": 81
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 48,
+        "win_rate": 0.625,
+        "wins": 80
+      }
+    }
+  ],
+  "by_opponent_deck": [
+    {
+      "deck_id": "001",
+      "delta": 0.07692307692307693,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 647,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/135.png",
+          "name": "Marnie's Morgrem",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 15,
+        "win_rate": 0.4230769230769231,
+        "wins": 11
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 13,
+        "win_rate": 0.5,
+        "wins": 13
+      }
+    },
+    {
+      "deck_id": "002",
+      "delta": -0.125,
+      "net_wins": -4,
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 742,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/55.png",
+          "name": "Kadabra",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 11,
+        "win_rate": 0.65625,
+        "wins": 21
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 15,
+        "win_rate": 0.53125,
+        "wins": 17
+      }
+    },
+    {
+      "deck_id": "003",
+      "delta": -0.03846153846153849,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 861,
+          "count": 2,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 14,
+        "win_rate": 0.46153846153846156,
+        "wins": 12
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 15,
+        "win_rate": 0.4230769230769231,
+        "wins": 11
+      }
+    },
+    {
+      "deck_id": "004",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 66,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 25,
+        "losses": 6,
+        "win_rate": 0.76,
+        "wins": 19
+      },
+      "u30": {
+        "draws": 0,
+        "games": 25,
+        "losses": 6,
+        "win_rate": 0.76,
+        "wins": 19
+      }
+    },
+    {
+      "deck_id": "005",
+      "delta": 0.08000000000000007,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 647,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/135.png",
+          "name": "Marnie's Morgrem",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 25,
+        "losses": 10,
+        "win_rate": 0.6,
+        "wins": 15
+      },
+      "u30": {
+        "draws": 0,
+        "games": 25,
+        "losses": 8,
+        "win_rate": 0.68,
+        "wins": 17
+      }
+    },
+    {
+      "deck_id": "006",
+      "delta": 0.0625,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex",
+          "stage_or_type": "Basic Pokémon"
+        },
+        {
+          "card_id": 1159,
+          "count": 1,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape",
+          "stage_or_type": "Pokémon Tool"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 6,
+        "win_rate": 0.8125,
+        "wins": 26
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 4,
+        "win_rate": 0.875,
+        "wins": 28
+      }
+    },
+    {
+      "deck_id": "007",
+      "delta": -0.023255813953488413,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 120,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/129.png",
+          "name": "Drakloak",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 43,
+        "losses": 21,
+        "win_rate": 0.5116279069767442,
+        "wins": 22
+      },
+      "u30": {
+        "draws": 0,
+        "games": 43,
+        "losses": 22,
+        "win_rate": 0.4883720930232558,
+        "wins": 21
+      }
+    },
+    {
+      "deck_id": "008",
+      "delta": 0.15625,
+      "net_wins": 5,
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex",
+          "stage_or_type": "Basic Pokémon"
+        },
+        {
+          "card_id": 1159,
+          "count": 1,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape",
+          "stage_or_type": "Pokémon Tool"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 9,
+        "win_rate": 0.71875,
+        "wins": 23
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 4,
+        "win_rate": 0.875,
+        "wins": 28
+      }
+    },
+    {
+      "deck_id": "009",
+      "delta": 0.03125,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 678,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/77.png",
+          "name": "Mega Lucario ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 674,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/73.png",
+          "name": "Hariyama",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 33,
+        "win_rate": 0.484375,
+        "wins": 31
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 31,
+        "win_rate": 0.515625,
+        "wins": 33
+      }
+    },
+    {
+      "deck_id": "010",
+      "delta": -0.015625,
+      "net_wins": -2,
+      "representative_cards": [
+        {
+          "card_id": 90,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/15.png",
+          "name": "Thwackey",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 93,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/18.png",
+          "name": "Dipplin",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 128,
+        "losses": 22,
+        "win_rate": 0.828125,
+        "wins": 106
+      },
+      "u30": {
+        "draws": 0,
+        "games": 128,
+        "losses": 24,
+        "win_rate": 0.8125,
+        "wins": 104
+      }
+    },
+    {
+      "deck_id": "011",
+      "delta": -0.03999999999999998,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 756,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 25,
+        "losses": 14,
+        "win_rate": 0.44,
+        "wins": 11
+      },
+      "u30": {
+        "draws": 0,
+        "games": 25,
+        "losses": 15,
+        "win_rate": 0.4,
+        "wins": 10
+      }
+    },
+    {
+      "deck_id": "012",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 66,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 25,
+        "losses": 4,
+        "win_rate": 0.84,
+        "wins": 21
+      },
+      "u30": {
+        "draws": 0,
+        "games": 25,
+        "losses": 4,
+        "win_rate": 0.84,
+        "wins": 21
+      }
+    },
+    {
+      "deck_id": "013",
+      "delta": 0.03125,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 381,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/104.png",
+          "name": "Cynthia's Garchomp ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 380,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/103.png",
+          "name": "Cynthia's Gabite",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 31,
+        "win_rate": 0.515625,
+        "wins": 33
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 29,
+        "win_rate": 0.546875,
+        "wins": 35
+      }
+    },
+    {
+      "deck_id": "014",
+      "delta": 0.08000000000000002,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 756,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 25,
+        "losses": 16,
+        "win_rate": 0.36,
+        "wins": 9
+      },
+      "u30": {
+        "draws": 0,
+        "games": 25,
+        "losses": 14,
+        "win_rate": 0.44,
+        "wins": 11
+      }
+    },
+    {
+      "deck_id": "017",
+      "delta": -0.038461538461538436,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 104,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv6/53.png",
+          "name": "Froslass",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 8,
+        "win_rate": 0.6923076923076923,
+        "wins": 18
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 9,
+        "win_rate": 0.6538461538461539,
+        "wins": 17
+      }
+    },
+    {
+      "deck_id": "018",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 306,
+          "count": 1,
+          "image_url": "https://images.pokemontcg.io/sv9/121.png",
+          "name": "Dudunsparce ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 42,
+        "losses": 13,
+        "win_rate": 0.6904761904761905,
+        "wins": 29
+      },
+      "u30": {
+        "draws": 0,
+        "games": 42,
+        "losses": 13,
+        "win_rate": 0.6904761904761905,
+        "wins": 29
+      }
+    },
+    {
+      "deck_id": "019",
+      "delta": 0.023255813953488413,
+      "net_wins": 1,
+      "representative_cards": [
+        {
+          "card_id": 1052,
+          "count": 2,
+          "image_url": "https://images.scrydex.com/pokemon/me3-43/small",
+          "name": "Barbaracle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 117,
+          "count": 1,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 43,
+        "losses": 4,
+        "win_rate": 0.9069767441860465,
+        "wins": 39
+      },
+      "u30": {
+        "draws": 0,
+        "games": 43,
+        "losses": 3,
+        "win_rate": 0.9302325581395349,
+        "wins": 40
+      }
+    },
+    {
+      "deck_id": "020",
+      "delta": -0.015625,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 652,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/3.png",
+          "name": "Mega Venusaur ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 919,
+          "count": 1,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-10/small",
+          "name": "Mega Meganium ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 8,
+        "win_rate": 0.875,
+        "wins": 56
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 9,
+        "win_rate": 0.859375,
+        "wins": 55
+      }
+    },
+    {
+      "deck_id": "021",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 401,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/20.png",
+          "name": "Team Rocket's Spidops",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 431,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv10/81.png",
+          "name": "Team Rocket's Mewtwo ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 11,
+        "win_rate": 0.828125,
+        "wins": 53
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 11,
+        "win_rate": 0.828125,
+        "wins": 53
+      }
+    },
+    {
+      "deck_id": "022",
+      "delta": -0.038461538461538436,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 66,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 9,
+        "win_rate": 0.6538461538461539,
+        "wins": 17
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 10,
+        "win_rate": 0.6153846153846154,
+        "wins": 16
+      }
+    },
+    {
+      "deck_id": "023",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 150,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv7/14.png",
+          "name": "Hydrapple ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 710,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium",
+          "stage_or_type": "Stage 2 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 25,
+        "win_rate": 0.609375,
+        "wins": 39
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 25,
+        "win_rate": 0.609375,
+        "wins": 39
+      }
+    },
+    {
+      "deck_id": "024",
+      "delta": 0.11904761904761907,
+      "net_wins": 5,
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 117,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 42,
+        "losses": 8,
+        "win_rate": 0.8095238095238095,
+        "wins": 34
+      },
+      "u30": {
+        "draws": 0,
+        "games": 42,
+        "losses": 3,
+        "win_rate": 0.9285714285714286,
+        "wins": 39
+      }
+    },
+    {
+      "deck_id": "028",
+      "delta": 0.15384615384615385,
+      "net_wins": 4,
+      "representative_cards": [
+        {
+          "card_id": 849,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/me2/84.png",
+          "name": "Mega Lopunny ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 66,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 9,
+        "win_rate": 0.6538461538461539,
+        "wins": 17
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 5,
+        "win_rate": 0.8076923076923077,
+        "wins": 21
+      }
+    },
+    {
+      "deck_id": "029",
+      "delta": 0.09375,
+      "net_wins": 3,
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex",
+          "stage_or_type": "Basic Pokémon"
+        },
+        {
+          "card_id": 920,
+          "count": 1,
+          "image_url": "https://images.pokemontcg.io/sv6pt5/6.png",
+          "name": "Tapu Bulu",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 8,
+        "win_rate": 0.75,
+        "wins": 24
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 5,
+        "win_rate": 0.84375,
+        "wins": 27
+      }
+    },
+    {
+      "deck_id": "030",
+      "delta": -0.11538461538461542,
+      "net_wins": -3,
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 756,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 8,
+        "win_rate": 0.6923076923076923,
+        "wins": 18
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 11,
+        "win_rate": 0.5769230769230769,
+        "wins": 15
+      }
+    },
+    {
+      "deck_id": "031",
+      "delta": -0.07692307692307698,
+      "net_wins": -2,
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 647,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/135.png",
+          "name": "Marnie's Morgrem",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 9,
+        "win_rate": 0.6538461538461539,
+        "wins": 17
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 11,
+        "win_rate": 0.5769230769230769,
+        "wins": 15
+      }
+    },
+    {
+      "deck_id": "033",
+      "delta": -0.03846153846153849,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 756,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 16,
+        "win_rate": 0.38461538461538464,
+        "wins": 10
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 17,
+        "win_rate": 0.34615384615384615,
+        "wins": 9
+      }
+    },
+    {
+      "deck_id": "034",
+      "delta": -0.09375,
+      "net_wins": -3,
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 742,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/55.png",
+          "name": "Kadabra",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 12,
+        "win_rate": 0.625,
+        "wins": 20
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 15,
+        "win_rate": 0.53125,
+        "wins": 17
+      }
+    },
+    {
+      "deck_id": "035",
+      "delta": 0.15384615384615383,
+      "net_wins": 4,
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 756,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/104.png",
+          "name": "Mega Kangaskhan ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 26,
+        "losses": 23,
+        "win_rate": 0.11538461538461539,
+        "wins": 3
+      },
+      "u30": {
+        "draws": 0,
+        "games": 26,
+        "losses": 19,
+        "win_rate": 0.2692307692307692,
+        "wins": 7
+      }
+    },
+    {
+      "deck_id": "036",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 96,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/25.png",
+          "name": "Teal Mask Ogerpon ex",
+          "stage_or_type": "Basic Pokémon"
+        },
+        {
+          "card_id": 1159,
+          "count": 1,
+          "image_url": "https://images.pokemontcg.io/sv5/152.png",
+          "name": "Hero’s Cape",
+          "stage_or_type": "Pokémon Tool"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 7,
+        "win_rate": 0.78125,
+        "wins": 25
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 7,
+        "win_rate": 0.78125,
+        "wins": 25
+      }
+    },
+    {
+      "deck_id": "037",
+      "delta": 0.03999999999999998,
+      "net_wins": 1,
+      "representative_cards": [
+        {
+          "card_id": 648,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/136.png",
+          "name": "Marnie's Grimmsnarl ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 647,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/135.png",
+          "name": "Marnie's Morgrem",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 25,
+        "losses": 14,
+        "win_rate": 0.44,
+        "wins": 11
+      },
+      "u30": {
+        "draws": 0,
+        "games": 25,
+        "losses": 13,
+        "win_rate": 0.48,
+        "wins": 12
+      }
+    },
+    {
+      "deck_id": "038",
+      "delta": -0.023255813953488413,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 345,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/12.png",
+          "name": "Crustle",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 117,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv6/112.png",
+          "name": "Cornerstone Mask Ogerpon ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 43,
+        "losses": 7,
+        "win_rate": 0.8372093023255814,
+        "wins": 36
+      },
+      "u30": {
+        "draws": 0,
+        "games": 43,
+        "losses": 8,
+        "win_rate": 0.813953488372093,
+        "wins": 35
+      }
+    },
+    {
+      "deck_id": "039",
+      "delta": -0.0625,
+      "net_wins": -2,
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 742,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/55.png",
+          "name": "Kadabra",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 14,
+        "win_rate": 0.5625,
+        "wins": 18
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 16,
+        "win_rate": 0.5,
+        "wins": 16
+      }
+    },
+    {
+      "deck_id": "040",
+      "delta": 0.0625,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 743,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/56.png",
+          "name": "Alakazam",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 742,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/55.png",
+          "name": "Kadabra",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 10,
+        "win_rate": 0.6875,
+        "wins": 22
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 8,
+        "win_rate": 0.75,
+        "wins": 24
+      }
+    },
+    {
+      "deck_id": "041",
+      "delta": -0.015625,
+      "net_wins": -1,
+      "representative_cards": [
+        {
+          "card_id": 150,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv7/14.png",
+          "name": "Hydrapple ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 710,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium",
+          "stage_or_type": "Stage 2 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 22,
+        "win_rate": 0.65625,
+        "wins": 42
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 23,
+        "win_rate": 0.640625,
+        "wins": 41
+      }
+    },
+    {
+      "deck_id": "042",
+      "delta": 0.015625,
+      "net_wins": 1,
+      "representative_cards": [
+        {
+          "card_id": 404,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv10/23.png",
+          "name": "Arboliva ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 710,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/10.png",
+          "name": "Meganium",
+          "stage_or_type": "Stage 2 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 10,
+        "win_rate": 0.84375,
+        "wins": 54
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 9,
+        "win_rate": 0.859375,
+        "wins": 55
+      }
+    },
+    {
+      "deck_id": "044",
+      "delta": 0.03125,
+      "net_wins": 1,
+      "representative_cards": [
+        {
+          "card_id": 666,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 861,
+          "count": 3,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 19,
+        "win_rate": 0.40625,
+        "wins": 13
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 18,
+        "win_rate": 0.4375,
+        "wins": 14
+      }
+    },
+    {
+      "deck_id": "045",
+      "delta": -0.0625,
+      "net_wins": -2,
+      "representative_cards": [
+        {
+          "card_id": 666,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 861,
+          "count": 3,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 12,
+        "win_rate": 0.625,
+        "wins": 20
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 14,
+        "win_rate": 0.5625,
+        "wins": 18
+      }
+    },
+    {
+      "deck_id": "046",
+      "delta": 0.03125,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 133,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv6pt5/20.png",
+          "name": "Dusknoir",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 1031,
+          "count": 3,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 30,
+        "win_rate": 0.53125,
+        "wins": 34
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 28,
+        "win_rate": 0.5625,
+        "wins": 36
+      }
+    },
+    {
+      "deck_id": "048",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 666,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 190,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 11,
+        "win_rate": 0.65625,
+        "wins": 21
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 11,
+        "win_rate": 0.65625,
+        "wins": 21
+      }
+    },
+    {
+      "deck_id": "050",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 133,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv6pt5/20.png",
+          "name": "Dusknoir",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 1031,
+          "count": 3,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 22,
+        "win_rate": 0.65625,
+        "wins": 42
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 22,
+        "win_rate": 0.65625,
+        "wins": 42
+      }
+    },
+    {
+      "deck_id": "051",
+      "delta": 0.125,
+      "net_wins": 4,
+      "representative_cards": [
+        {
+          "card_id": 666,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 190,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 16,
+        "win_rate": 0.5,
+        "wins": 16
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 12,
+        "win_rate": 0.625,
+        "wins": 20
+      }
+    },
+    {
+      "deck_id": "052",
+      "delta": -0.09375,
+      "net_wins": -3,
+      "representative_cards": [
+        {
+          "card_id": 666,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 190,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 12,
+        "win_rate": 0.625,
+        "wins": 20
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 15,
+        "win_rate": 0.53125,
+        "wins": 17
+      }
+    },
+    {
+      "deck_id": "053",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 861,
+          "count": 3,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 1031,
+          "count": 3,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 17,
+        "win_rate": 0.46875,
+        "wins": 15
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 17,
+        "win_rate": 0.46875,
+        "wins": 15
+      }
+    },
+    {
+      "deck_id": "055",
+      "delta": 0.0,
+      "net_wins": 0,
+      "representative_cards": [
+        {
+          "card_id": 666,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/me1/28.png",
+          "name": "Cinderace",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 190,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv8/130.png",
+          "name": "Archaludon ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 8,
+        "win_rate": 0.75,
+        "wins": 24
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 8,
+        "win_rate": 0.75,
+        "wins": 24
+      }
+    },
+    {
+      "deck_id": "059",
+      "delta": 0.03125,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 401,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/20.png",
+          "name": "Team Rocket's Spidops",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 431,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv10/81.png",
+          "name": "Team Rocket's Mewtwo ex",
+          "stage_or_type": "Basic Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 18,
+        "win_rate": 0.71875,
+        "wins": 46
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 16,
+        "win_rate": 0.75,
+        "wins": 48
+      }
+    },
+    {
+      "deck_id": "060",
+      "delta": -0.03125,
+      "net_wins": -2,
+      "representative_cards": [
+        {
+          "card_id": 381,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv10/104.png",
+          "name": "Cynthia's Garchomp ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 380,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv10/103.png",
+          "name": "Cynthia's Gabite",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 29,
+        "win_rate": 0.546875,
+        "wins": 35
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 31,
+        "win_rate": 0.515625,
+        "wins": 33
+      }
+    },
+    {
+      "deck_id": "062",
+      "delta": 0.0625,
+      "net_wins": 2,
+      "representative_cards": [
+        {
+          "card_id": 861,
+          "count": 4,
+          "image_url": "https://images.scrydex.com/pokemon/me2pt5-47/small",
+          "name": "Mega Froslass ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 1031,
+          "count": 4,
+          "image_url": "https://images.scrydex.com/pokemon/me3-21/small",
+          "name": "Mega Starmie ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 32,
+        "losses": 21,
+        "win_rate": 0.34375,
+        "wins": 11
+      },
+      "u30": {
+        "draws": 0,
+        "games": 32,
+        "losses": 19,
+        "win_rate": 0.40625,
+        "wins": 13
+      }
+    },
+    {
+      "deck_id": "063",
+      "delta": 0.015625,
+      "net_wins": 1,
+      "representative_cards": [
+        {
+          "card_id": 678,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/me1/77.png",
+          "name": "Mega Lucario ex",
+          "stage_or_type": "Stage 1 Pokémon"
+        },
+        {
+          "card_id": 66,
+          "count": 2,
+          "image_url": "https://images.pokemontcg.io/sv5/129.png",
+          "name": "Dudunsparce",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 64,
+        "losses": 25,
+        "win_rate": 0.609375,
+        "wins": 39
+      },
+      "u30": {
+        "draws": 0,
+        "games": 64,
+        "losses": 24,
+        "win_rate": 0.625,
+        "wins": 40
+      }
+    },
+    {
+      "deck_id": "067",
+      "delta": 0.023255813953488302,
+      "net_wins": 1,
+      "representative_cards": [
+        {
+          "card_id": 121,
+          "count": 3,
+          "image_url": "https://images.pokemontcg.io/sv6/130.png",
+          "name": "Dragapult ex",
+          "stage_or_type": "Stage 2 Pokémon"
+        },
+        {
+          "card_id": 120,
+          "count": 4,
+          "image_url": "https://images.pokemontcg.io/sv6/129.png",
+          "name": "Drakloak",
+          "stage_or_type": "Stage 1 Pokémon"
+        }
+      ],
+      "u0": {
+        "draws": 0,
+        "games": 43,
+        "losses": 15,
+        "win_rate": 0.6511627906976745,
+        "wins": 28
+      },
+      "u30": {
+        "draws": 0,
+        "games": 43,
+        "losses": 14,
+        "win_rate": 0.6744186046511628,
+        "wins": 29
+      }
+    }
+  ],
+  "common_random_schedule_sha256": "80d4c8c76089504ba288a4e9de0a6b185aa50d15e2b731f915e029c01f7fc53f",
+  "contract_id": "0044_benchmark_v2_core16_meta_balanced_policy0809_common_seeds_cuda2048_v2",
+  "delta": 0.00927734375,
+  "focal_deck_display_name": "Dragapult ex",
+  "focal_deck_id": "007",
+  "focal_representative_cards": [
+    {
+      "card_id": 121,
+      "count": 3,
+      "image_url": "https://images.pokemontcg.io/sv6/130.png",
+      "name": "Dragapult ex",
+      "stage_or_type": "Stage 2 Pokémon"
+    },
+    {
+      "card_id": 120,
+      "count": 4,
+      "image_url": "https://images.pokemontcg.io/sv6/129.png",
+      "name": "Drakloak",
+      "stage_or_type": "Stage 1 Pokémon"
+    }
+  ],
+  "net_wins": 19,
+  "opponent_policy_id": "Policy-0809",
+  "paired_transitions": {
+    "loss_to_loss": 594,
+    "loss_to_win": 128,
+    "win_to_loss": 109,
+    "win_to_win": 1217
+  },
+  "schema_version": "0044_benchmark_v2_u0_u30_comparison_v1",
+  "source_reports": {
+    "u0_archived_path": "u0_report.json",
+    "u0_sha256": "ed1d9f74b458d7232cca325fab8526b0ed4155b5158db07dae333c061630616d",
+    "u30_archived_path": "u30_report.json",
+    "u30_sha256": "5b6da44c3f2670f10113b438280996da76cba625053084e8bb7e0ec941ebabe6"
+  },
+  "status": "PASS",
+  "u0": {
+    "deployment_effective_sha256": "80f181e72368d88ccb192e631c8e7bf5de07101a80999bea49e28f30c20e00aa",
+    "label": "0044 U0 (Champion-G2 initialization)",
+    "schedule_sha256": "b8a699b7142ad49e403f4025ca95d0e431272b4d8e8d37534abd3adac0711353",
+    "source_checkpoint_sha256": "3ee103ed721a5f5771d0c07c13598bd19b1f4ead71765740442c85891600be06",
+    "summary": {
+      "draws": 0,
+      "elapsed_seconds": 237.07634821900137,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.6731301939058172,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.6186528497409326,
+      "games": 2048,
+      "games_per_second": 8.638567345014703,
+      "losses": 722,
+      "wilson_95": [
+        0.6265108223382188,
+        0.6678588997489603
+      ],
+      "win_rate": 0.6474609375,
+      "wins": 1326
+    }
+  },
+  "u30": {
+    "deployment_effective_sha256": "1a35521f55ffd4393c8e210fdfba7640026f135e467a24f04e633a4ed5210951",
+    "label": "0044 U30",
+    "schedule_sha256": "b94674c9c6baeb3b102e17337f95329a62f421a7cea1da7f1208e8b522c55400",
+    "source_checkpoint_sha256": "4d69800477bc70881a4313afdcbc98bb2c56576f28bec39723e2ceb73e9f48cb",
+    "summary": {
+      "draws": 0,
+      "elapsed_seconds": 232.05539762900298,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.6786703601108033,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.6321243523316062,
+      "games": 2048,
+      "games_per_second": 8.825478833611216,
+      "losses": 703,
+      "wilson_95": [
+        0.6358987383677274,
+        0.6769909331222875
+      ],
+      "win_rate": 0.65673828125,
+      "wins": 1345
+    }
+  }
+}

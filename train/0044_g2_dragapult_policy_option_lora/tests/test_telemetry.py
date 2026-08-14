@@ -24,6 +24,14 @@ def _games():
             "opponent_policy_id": "Policy-0809" if index % 2 else "Champion-G1",
             "branch": ("pfsp", "uniform", "latest_champion")[index % 3],
             "focal_deck_id": "002" if index % 2 else "007",
+            "coin_winner_seed": index + 1,
+            "focal_won_toss": bool(index & 1),
+            "first_player_choice": {
+                "chooser_is_focal": bool(index & 1),
+                "action_index": index % 2,
+                "focal_first": bool((index // 2) & 1),
+            },
+            "focal_first": bool((index // 2) & 1),
             "error": False, "unfinished": False, "engine_decisions": 10,
         })
     return rows
@@ -82,6 +90,20 @@ def test_formal_rollout_has_chronology_rolling_slices_and_runtime_health() -> No
     assert result["rollout/focal_deck/002/games"] == 128
     assert result["rollout/opponent_policy/Champion-G1/games"] == 128
     assert result["rollout/opponent_deck/001/games"] == 64
+    assert result["rollout/actual_focal_first/games"] == 128
+    assert result["rollout/actual_focal_second/games"] == 128
+
+
+def test_formal_rollout_rejects_toss_winner_as_actual_seat_evidence() -> None:
+    rows = _games()
+    rows[0]["first_player_choice"] = None
+    with pytest.raises(ValueError, match="Agent-owned first-player"):
+        telemetry.aggregate_training_rollout(
+            rows, source_policy_update=0, checkpoint_update=1,
+            curriculum_version="C000", deck_weights={"001": 1.0},
+            policy_weights={"Champion-G2": 1.0},
+            history=telemetry.RolloutHistory(), runtime_metrics={},
+        )
 
 
 def test_uniform_rollout_does_not_emit_pfsp_namespace() -> None:
@@ -92,4 +114,30 @@ def test_uniform_rollout_does_not_emit_pfsp_namespace() -> None:
         sampling_mode="uniform_001_067",
     )
     assert result["sampling/mode_uniform"] == 1.0
+    assert not any(key.startswith("pfsp/") for key in result)
+
+
+def test_v13_meta_balanced_512_rollout_uses_explicit_game_contract() -> None:
+    rows = _games() + _games()
+    result = telemetry.aggregate_training_rollout(
+        rows, source_policy_update=0, checkpoint_update=1,
+        curriculum_version="meta-balanced-u000000",
+        deck_weights={f"{index:03d}": 1 / 67 for index in range(1, 68)},
+        policy_weights={"Champion-G3": 1.0},
+        history=telemetry.RolloutHistory(),
+        runtime_metrics={
+            "rollout/cuda_games_per_second": 12.0,
+            "rollout/strategic_decisions_per_second": 100.0,
+            "rollout/cuda_features_device_resident": 1.0,
+            "rollout/cuda_feature_d2h_bytes": 0.0,
+            "rollout/lane_routing_audit_pass": 1.0,
+            "rollout/lane_routing_audit_failures": 0.0,
+            "rollout/policy_weight_loads": 1.0,
+            "rollout/deck_static_cache_hits": 445.0,
+            "rollout/deck_static_cache_misses": 67.0,
+        },
+        sampling_mode="meta_balanced_001_067", expected_games=512,
+    )
+    assert result["rollout/games"] == 512
+    assert result["sampling/mode_meta_balanced"] == 1.0
     assert not any(key.startswith("pfsp/") for key in result)

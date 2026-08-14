@@ -50,8 +50,8 @@ def materialize(
     registry = AssetRegistry.load(project_root)
     registry.validate_all()
     opponent = next(row for row in registry.policies if row.policy_id == OPPONENT_POLICY_ID)
-    if registry.latest_champion_policy_id != OPPONENT_POLICY_ID:
-        raise RuntimeError("Benchmark V1 fixed opponent is not the registered latest Champion-G2")
+    if not opponent.frozen:
+        raise RuntimeError("Benchmark V1 fixed Champion-G2 opponent is not immutable")
     vocabulary = OwnArchetypeVocabulary.load_version(
         "own_archetypes_v2", project_root=project_root
     )

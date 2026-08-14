@@ -23,7 +23,8 @@ class CudaLaneRequest:
     materialized_policy_id: str
     opponent_effective_policy_sha256: str
     seat_slot: int
-    focal_goes_first: bool
+    coin_winner_seed: int
+    focal_won_toss: bool
     engine_seed: int
     search_seed: int
     policy_seed: int
@@ -63,7 +64,9 @@ def materialize_lane_requests(
             requested_policy_id=lane.opponent_policy_id,
             materialized_policy_id=bundle.policy_id,
             opponent_effective_policy_sha256=bundle.audit.effective_policy_sha256,
-            seat_slot=lane.seat_slot, focal_goes_first=lane.focal_goes_first,
+            seat_slot=lane.seat_slot,
+            coin_winner_seed=lane.coin_winner_seed,
+            focal_won_toss=lane.focal_won_toss,
             engine_seed=lane.engine_seed, search_seed=lane.search_seed,
             policy_seed=lane.policy_seed, curriculum_version=lane.curriculum_version,
         ))

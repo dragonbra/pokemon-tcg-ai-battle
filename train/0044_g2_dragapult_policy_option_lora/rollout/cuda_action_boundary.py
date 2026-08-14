@@ -312,7 +312,10 @@ class CudaActionBoundaryAdapter:
                 "actual_first": actual_first,
                 "focal_first": actual_first == resident_focal,
             }
-        focal_rows_tensor = focal_route.nonzero(as_tuple=False).flatten()
+        first_player_rows = (semantic["global_cat"][:, 1].long() - 1).eq(41)
+        focal_rows_tensor = (
+            focal_route & ~first_player_rows
+        ).nonzero(as_tuple=False).flatten()
         focal_jobs = lane_job.index_select(0, focal_rows_tensor).tolist()
         for job in focal_jobs:
             job = int(job)

@@ -325,6 +325,7 @@ def run_arm(*, deck_id: str, arm: str, output_root: Path) -> dict[str, Any]:
     jobs = [RolloutJob(
         game_id=row["game_id"], opponent_id=row["opponent_deck_id"],
         focal_first=row["focal_won_toss"], focal_won_toss=row["focal_won_toss"],
+        coin_winner_seed=row["coin_winner_seed"],
         seed=row["engine_seed"], search_seed=row["search_seed"],
         policy_seed=row["policy_seed"], source_policy_update=audit.checkpoint_update,
         focal_deck=deck, opponent_deck=decks[row["opponent_deck_id"]],

@@ -22,8 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ROOT = PROJECT_ROOT.parents[1]
 RUNTIME_ROOT = PROJECT_ROOT / "semantic_runtime"
 BASE_PORTABLE = (
-    ROOT / "rl_runs/0044_g2_dragapult_policy_option_lora/versions/"
-    "V1_focal_002_007/artifact/focal_seed/model.bin"
+    PROJECT_ROOT / "assets/policies/definitions/champion_g002/model.bin"
 )
 PACKAGE_SCHEMA = "0044_champion_league_kaggle_package_v1"
 
