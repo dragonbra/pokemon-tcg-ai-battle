@@ -311,6 +311,7 @@ def load_actor_critic(
     device: str | torch.device = "cpu",
     adaptation: AdaptationConfig = AdaptationConfig(),
     integrated_flags: IntegratedFlags = IntegratedFlags(),
+    own_archetype_id_override: int | None = None,
 ) -> tuple[SemanticActorCritic, SourceIdentity]:
     if len(deck) != 60:
         raise ValueError("focal loader requires one exact 60-card deck")
@@ -323,7 +324,12 @@ def load_actor_critic(
     vocabulary = OwnArchetypeVocabulary.load_version(
         "own_archetypes_v2", project_root=PROJECT_ROOT
     )
-    own_archetype_id = vocabulary.resolve_exact_deck(deck_id, deck).value
+    if own_archetype_id_override is None:
+        own_archetype_id = vocabulary.resolve_exact_deck(deck_id, deck).value
+    else:
+        if not 0 <= own_archetype_id_override < vocabulary.class_count:
+            raise ValueError("own_archetype_id_override is outside the frozen vocabulary")
+        own_archetype_id = own_archetype_id_override
     identity = SourceIdentity(
         checkpoint_sha256=_sha256(checkpoint),
         schema_version="0043_focal_v1_kaggle_candidate_v1",

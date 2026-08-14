@@ -117,7 +117,8 @@ def materialize(
         )
     state = source["state_dict"]
     model, _ = load_actor_critic(
-        checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu"
+        checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu",
+        own_archetype_id_override=own_archetype_id,
     )
     incompatible = model.load_state_dict(state, strict=False)
     if incompatible.unexpected_keys:
@@ -169,7 +170,8 @@ def materialize(
     if strict.get("schema_version") != "0044_policy_value_split_option_lora_meta_residual_candidate_v2":
         raise RuntimeError("0044 dual-option candidate schema changed during storage")
     model, _ = load_actor_critic(
-        checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu"
+        checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu",
+        own_archetype_id_override=own_archetype_id,
     )
     modules = {
         "actor_state_dict": model.actor,

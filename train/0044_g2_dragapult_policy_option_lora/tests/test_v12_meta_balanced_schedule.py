@@ -31,7 +31,7 @@ def test_512_schedule_balances_active_meta_then_member_decks() -> None:
     assert len(meta_counts) == 28
     assert set(meta_counts.values()) == {18, 19}
     assert set(row.deck_id for row in rows) == {
-        f"{value:03d}" for value in range(1, 68)
+        f"{value:03d}" for value in range(1, 70)
     }
     by_meta: dict[int, Counter[str]] = defaultdict(Counter)
     for row in rows:
@@ -86,9 +86,9 @@ def test_invalid_meta_schedule_inputs_fail_closed() -> None:
     try:
         schedule.balanced_meta_deck_schedule(
             quota_seed=1, shuffle_seed=2,
-            mappings=vocabulary.mappings[:-1], lanes=512,
+            mappings=vocabulary.mappings[:-2] + vocabulary.mappings[-1:], lanes=512,
         )
     except ValueError as error:
-        assert "001-067" in str(error)
+        assert "contiguous exact deck identity" in str(error)
     else:
         raise AssertionError("incomplete exact-deck mapping was accepted")

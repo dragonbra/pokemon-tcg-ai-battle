@@ -7443,9 +7443,63 @@
         "user_approved_append_2026_08_13",
         "dragapult_control"
       ]
+    },
+    {
+      "archetype": "Alakazam",
+      "card_count": 60,
+      "content_sha256": "f06bd3d5964e5f6d7051339db56aff17f4b111043a2cacce1621d10f52806368",
+      "deck_id": "068",
+      "deck_path": "assets/decks/definitions/068/deck.csv",
+      "file_sha256": "262df0fed73650d1b6e9d70410fcc8a651803e786e99a2a8800bd2ea5402a1bc",
+      "name": "Alakazam / Dudunsparce Trainer Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-14T00:00:00+08:00",
+        "source_list": "user-provided 2026-08-14: exact 60-card Alakazam list",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_14",
+        "alakazam",
+        "training_pool_append_2026_08_14"
+      ]
+    },
+    {
+      "archetype": "Alakazam",
+      "card_count": 60,
+      "content_sha256": "34b55fc87379940210a7153247a3f610b361136ae954f5502233bd7db41538dc",
+      "deck_id": "069",
+      "deck_path": "assets/decks/definitions/069/deck.csv",
+      "file_sha256": "1e1f4510a4861fc583cef59f26cad94608d279d722b19712cb57701378ff741b",
+      "name": "Alakazam / Dudunsparce Boss Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-14T00:00:00+08:00",
+        "parent_deck_id": "068",
+        "source_list": "user-provided 2026-08-14: 068 with Night Stretcher -1 and Boss's Orders +1",
+        "source_type": "user_provided_exact_variant"
+      },
+      "tags": [
+        "user_approved_append_2026_08_14",
+        "alakazam",
+        "training_pool_append_2026_08_14",
+        "parent_068"
+      ]
     }
   ],
-  "identity_contract": "deck_id is append-only; 001-067 are immutable",
+  "training_pool_append_2026_08_14": {
+    "added_deck_ids": [
+      "068",
+      "069"
+    ],
+    "benchmark_v2_historical_pool_changed": false,
+    "formal_training_opponent_pool_changed": true
+  },
+  "identity_contract": "deck_id is append-only; 001-069 are immutable",
   "immutability": "content change requires a new deck_id",
   "schema_version": "0043_deck_registry_v2_numeric_identity",
   "training_pool_append": {
@@ -7457,5 +7511,5 @@
     "frozen_evaluation_changed": false
   },
   "training_pool_source_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee",
-  "training_pool_version": "FrozenPool65_plus_user_dragapult_066_067_2026-08-13"
+  "training_pool_version": "FrozenPool65_plus_user_decks_066_069_2026-08-14"
 }

@@ -35,19 +35,25 @@ def test_complete_imported_asset_registry_passes() -> None:
     audit = AssetRegistry.load(PROJECT_ROOT).validate_all()
 
     assert audit.status == "PASS"
-    assert audit.deck_count == 67
-    assert audit.training_deck_count == 67
+    assert audit.deck_count == 69
+    assert audit.training_deck_count == 69
     assert audit.evaluation_deck_count == 0
     assert audit.evaluation_games == 0
     assert audit.policy_ids == ("Champion-G2", "Champion-G3", "Policy-0809")
     assert audit.latest_champion_policy_id == "Champion-G3"
     registry = AssetRegistry.load(PROJECT_ROOT)
     assert tuple(deck.deck_id for deck in registry.decks) == tuple(
-        f"{index:03d}" for index in range(1, 68)
+        f"{index:03d}" for index in range(1, 70)
     )
+    assert tuple(
+        deck.deck_id for deck in registry.decks if "training" in deck.roles
+    ) == tuple(f"{index:03d}" for index in range(1, 70))
+    assert tuple(
+        deck.deck_id for deck in registry.decks if deck.roles == ("evaluation",)
+    ) == ()
     assert tuple(path.name for path in sorted(
         (PROJECT_ROOT / "assets/decks/definitions").iterdir()
-    )) == tuple(f"{index:03d}" for index in range(1, 68))
+    )) == tuple(f"{index:03d}" for index in range(1, 70))
     assert all(
         deck.deck_path == f"assets/decks/definitions/{deck.deck_id}/deck.csv"
         for deck in registry.decks

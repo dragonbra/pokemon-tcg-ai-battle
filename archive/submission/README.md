@@ -10,6 +10,7 @@ historical archives:
 - `0022_frozen_festival_lead_dipplin_001/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Festival Lead / Dipplin 001 deck.
 - `0022_frozen_mega_kangaskhan_ex_crustle_004/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Mega Kangaskhan ex / Crustle 004 deck.
 - `0043_dragapult_ex_007_v2_u136_fp16_storage_fp32_runtime/` — 0043 V2 U136 with exact deck 007, materialized under `kaggle_fp16_storage_fp32_runtime_v1`; its formal Frozen Policy-0809 CUDA-2048 evidence is 1301-746-1 (63.53%).
+- `0044_alakazam_dudunsparce_069_v18_u14_fp16_storage_fp32_runtime/` — 0044 V18 U14 with exact deck 069 (Alakazam / Dudunsparce Boss Control), materialized under `kaggle_fp16_storage_fp32_runtime_v1`; its formal common-schedule Frozen Policy-0809 CUDA-2048 evidence is 1269-749-30 (61.96%). The final archive passed fresh-extraction validation, Kaggle-style raw execution without `__file__`, and a 10/10-terminal official-engine smoke with zero errors.
 
 Each package remains self-contained with `main.py`, `deck.csv`, and its own `cg/` runtime. They are
 not current training entry points. New trainable candidates belong in `evaluation/arena/candidates/`.

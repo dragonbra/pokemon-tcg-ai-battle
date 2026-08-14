@@ -468,9 +468,23 @@
       "deck_id": "067",
       "old_archetype_id": 0,
       "strategic_axis": "Phantom Dive spread with Munkidori and Hammer/Stadium control"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "retain_parent_alakazam",
+      "deck_id": "068",
+      "old_archetype_id": 3,
+      "strategic_axis": "Alakazam hand-size damage with Dudunsparce cycling and Trainer denial"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "retain_parent_alakazam",
+      "deck_id": "069",
+      "old_archetype_id": 3,
+      "strategic_axis": "068 Alakazam parent with one Night Stretcher exchanged for Boss's Orders"
     }
   ],
-  "mapping_provenance": "manual 001-067 exact-list strategic audit against official card data on 2026-08-13",
+  "mapping_provenance": "manual 001-067 audit plus user-approved evaluation-only Alakazam 068-069 on 2026-08-14",
   "schema_version": "0043_exact_deck_own_archetype_mapping_v2",
   "taxonomy_version": "own_archetypes_v2"
 }

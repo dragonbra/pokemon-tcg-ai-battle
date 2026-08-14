@@ -37,6 +37,7 @@ from ..rollout import DEFAULT_FULL_ROUND_DRAW_LIMIT, ChunkedCudaRolloutCollector
 from ..runtime import load_policy
 from ..telemetry import RolloutHistory, aggregate_training_rollout
 from .batch_full_semantic import prepare_episodes
+from .lr_profiles import LearningRateProfile, resolve_learning_rate_profile
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .periodic_evaluation import is_due as periodic_evaluation_due
 from .periodic_evaluation import wandb_metrics as periodic_evaluation_metrics
@@ -80,24 +81,33 @@ def _runtime_root() -> Path:
 
 def _config(
     *, forward_microbatch_size: int = 1024,
-    actor_learning_rate_scale: float = 1.0,
+    behavior_probe_batch_size: int = 512,
+    offload_reference_after_cache: bool = False,
+    learning_rate_profile: LearningRateProfile | None = None,
+    actor_learning_rate_scale: float | None = None,
     batch_size: int = 2048,
-    value_learning_rate: float = 1.0e-4,
-    prize_learning_rate: float = 1.0e-4,
-    meta_actor_residual_learning_rate: float = 5.0e-6,
+    value_learning_rate: float | None = None,
+    prize_learning_rate: float | None = None,
+    meta_actor_residual_learning_rate: float | None = None,
+    entropy_coefficient: float | None = None,
 ) -> PPOConfig:
-    if actor_learning_rate_scale <= 0:
-        raise ValueError("actor learning-rate scale must be positive")
-    return PPOConfig(
-        decoder_learning_rate=1e-5 * actor_learning_rate_scale,
-        policy_adapter_learning_rate=1e-5 * actor_learning_rate_scale,
-        allocation_learning_rate=1e-5 * actor_learning_rate_scale,
-        option_lora_learning_rate=2e-5 * actor_learning_rate_scale,
-        meta_actor_residual_learning_rate=meta_actor_residual_learning_rate,
+    profile = resolve_learning_rate_profile(
+        learning_rate_profile=learning_rate_profile,
+        actor_learning_rate_scale=actor_learning_rate_scale,
         value_learning_rate=value_learning_rate,
         prize_learning_rate=prize_learning_rate,
+        meta_actor_residual_learning_rate=meta_actor_residual_learning_rate,
+    )
+    return PPOConfig(
+        **profile.rates(),
         batch_size=batch_size,
         forward_microbatch_size=forward_microbatch_size,
+        behavior_probe_batch_size=behavior_probe_batch_size,
+        offload_reference_after_cache=offload_reference_after_cache,
+        entropy_coefficient=(
+            PPOConfig().entropy_coefficient
+            if entropy_coefficient is None else float(entropy_coefficient)
+        ),
     )
 
 
@@ -194,10 +204,22 @@ def _jobs(
     opponent_policy_ids: tuple[str, ...] = OPPONENT_POLICY_IDS,
     latest_champion_policy_id: str = "Champion-G2",
     rollout_games: int = 256,
+    opponent_meta_weights: dict[int, float] | None = None,
 ) -> tuple[list[RolloutJob], dict[str, float], dict[str, float], str]:
-    deck_ids = tuple(deck.deck_id for deck in registry.decks if "training" in deck.roles)
+    training_deck_ids = tuple(
+        deck.deck_id for deck in registry.decks if "training" in deck.roles
+    )
+    legacy_deck_ids = tuple(f"{value:03d}" for value in range(1, 68))
+    deck_ids = (
+        legacy_deck_ids
+        if opponent_sampling_mode in {"uniform_001_067", "meta_balanced_001_067"}
+        else training_deck_ids
+    )
     policy_ids = opponent_policy_ids
-    if opponent_sampling_mode in {"uniform_001_067", "meta_balanced_001_067"}:
+    if opponent_sampling_mode in {
+        "uniform_001_067", "meta_balanced_001_067",
+        "meta_balanced_training_pool",
+    }:
         curriculum = _uniform_curriculum(update, deck_ids, policy_ids)
     else:
         state = PFSPState() if pfsp_state is None else pfsp_state
@@ -210,21 +232,36 @@ def _jobs(
         "pfsp_mixture": build_schedule,
         "uniform_001_067": build_uniform_schedule,
     }.get(opponent_sampling_mode)
-    if schedule_builder is None and opponent_sampling_mode != "meta_balanced_001_067":
+    if schedule_builder is None and opponent_sampling_mode not in {
+        "meta_balanced_001_067", "meta_balanced_training_pool"
+    }:
         raise ValueError(f"unsupported opponent sampling mode: {opponent_sampling_mode}")
-    if opponent_sampling_mode == "meta_balanced_001_067":
+    if opponent_sampling_mode in {
+        "meta_balanced_001_067", "meta_balanced_training_pool"
+    }:
         if policy_ids != (latest_champion_policy_id,):
             raise ValueError("Meta-balanced opponent schedule requires one latest champion")
         own = OwnArchetypeVocabulary.load_version(
             "own_archetypes_v2", project_root=PROJECT_ROOT
         )
+        training_mappings = tuple(
+            row for row in own.mappings if row.deck_id in set(deck_ids)
+        )
         quota_seed = 440_120_000 + update
         opponent_slots = balanced_meta_deck_schedule(
             quota_seed=quota_seed,
             shuffle_seed=440_120_200 + update,
-            mappings=own.mappings,
+            mappings=training_mappings,
             lanes=rollout_games,
+            meta_weights=opponent_meta_weights,
         )
+        scheduled_deck_counts: dict[str, int] = defaultdict(int)
+        for slot in opponent_slots:
+            scheduled_deck_counts[slot.deck_id] += 1
+        scheduled_deck_weights = {
+            deck_id: scheduled_deck_counts[deck_id] / rollout_games
+            for deck_id in deck_ids
+        }
         master = 430_044_001 + update
         league = tuple(
             LeagueLane(
@@ -245,9 +282,16 @@ def _jobs(
             **{
                 **asdict(curriculum),
                 "curriculum_version": f"meta-balanced-u{update:06d}",
+                "deck_weights": scheduled_deck_weights,
+                "config_hash": hashlib.sha256(json.dumps({
+                    "sampling_mode": opponent_sampling_mode,
+                    "opponent_meta_weights": opponent_meta_weights,
+                    "rollout_games": rollout_games,
+                }, sort_keys=True).encode()).hexdigest(),
                 "stats_snapshot": {
-                    "sampling_mode": "meta_balanced_001_067",
+                    "sampling_mode": opponent_sampling_mode,
                     "pfsp_enabled": False,
+                    "opponent_meta_weights": opponent_meta_weights,
                 },
             }
         )
@@ -271,16 +315,37 @@ def _jobs(
             )
         )
     elif focal_schedule_mode == "meta_balanced_001_067":
-        if focal_deck_ids != deck_ids:
+        if focal_deck_ids != legacy_deck_ids:
             raise ValueError("Meta-balanced focal schedule requires exact pool 001-067")
         own = OwnArchetypeVocabulary.load_version(
             "own_archetypes_v2", project_root=PROJECT_ROOT
+        )
+        training_mappings = tuple(
+            row for row in own.mappings if row.deck_id in set(deck_ids)
         )
         focal_by_lane = tuple(
             row.deck_id for row in balanced_meta_deck_schedule(
                 quota_seed=440_120_000 + update,
                 shuffle_seed=440_120_100 + update,
-                mappings=own.mappings,
+                mappings=training_mappings,
+                lanes=len(league),
+            )
+        )
+    elif focal_schedule_mode == "meta_balanced_training_pool":
+        if focal_deck_ids != training_deck_ids:
+            raise ValueError("Meta-balanced focal schedule requires the exact training pool")
+        own = OwnArchetypeVocabulary.load_version(
+            "own_archetypes_v2", project_root=PROJECT_ROOT
+        )
+        training_id_set = set(training_deck_ids)
+        training_mappings = tuple(
+            row for row in own.mappings if row.deck_id in training_id_set
+        )
+        focal_by_lane = tuple(
+            row.deck_id for row in balanced_meta_deck_schedule(
+                quota_seed=440_120_000 + update,
+                shuffle_seed=440_120_100 + update,
+                mappings=training_mappings,
                 lanes=len(league),
             )
         )
@@ -425,6 +490,36 @@ def _checkpoint(
     }
 
 
+def _validate_formal_deck_scope(
+    registry: AssetRegistry, *, focal_deck_ids: tuple[str, ...],
+    focal_deck_id: str, focal_schedule_mode: str,
+) -> tuple[str, ...]:
+    """Validate focal identities against the current formal training pool."""
+    training_deck_ids = tuple(
+        deck.deck_id for deck in registry.decks if "training" in deck.roles
+    )
+    if not focal_deck_ids or len(set(focal_deck_ids)) != len(focal_deck_ids):
+        raise RuntimeError("formal focal deck IDs must be non-empty and unique")
+    if any(deck_id not in training_deck_ids for deck_id in focal_deck_ids):
+        raise RuntimeError("formal focal deck IDs escaped the 0044 training pool")
+    if focal_deck_id not in training_deck_ids:
+        raise RuntimeError("focal initialization deck escaped the 0044 training pool")
+    if focal_schedule_mode == "fixed":
+        if focal_deck_ids != (focal_deck_id,):
+            raise RuntimeError("fixed-focal run requires one exact matching focal deck")
+    elif focal_schedule_mode == "seeded_frequency_balanced_random_v1":
+        pass
+    elif focal_schedule_mode == "meta_balanced_001_067":
+        if focal_deck_ids != tuple(f"{value:03d}" for value in range(1, 68)):
+            raise RuntimeError("legacy generalist focal run requires exact pool 001-067")
+    elif focal_schedule_mode == "meta_balanced_training_pool":
+        if focal_deck_ids != training_deck_ids:
+            raise RuntimeError("generalist focal run requires the exact training pool")
+    else:
+        raise RuntimeError("formal focal schedule mode is unsupported")
+    return training_deck_ids
+
+
 def run(
     *, updates: int | None, wandb_mode: str, launch_formal: bool,
     version: str = VERSION, start_update: int = 0,
@@ -439,17 +534,23 @@ def run(
     source_parent_version: str | None = None,
     source_parent_update: int | None = None,
     reference_anchor_update: int | None = None,
+    reference_anchor_identity: str | None = None,
     allow_pristine_restart: bool = False,
     forward_microbatch_size: int = 1024,
+    behavior_probe_batch_size: int = 512,
+    offload_reference_after_cache: bool = False,
     opponent_sampling_mode: str = "pfsp_mixture",
-    actor_learning_rate_scale: float = 1.0,
+    learning_rate_profile: LearningRateProfile | None = None,
+    actor_learning_rate_scale: float | None = None,
     opponent_policy_ids: tuple[str, ...] = OPPONENT_POLICY_IDS,
     latest_champion_policy_id: str = "Champion-G2",
     rollout_games: int = 256,
+    opponent_meta_weights: dict[int, float] | None = None,
     ppo_batch_size: int = 2048,
-    value_learning_rate: float = 1.0e-4,
-    prize_learning_rate: float = 1.0e-4,
-    meta_actor_residual_learning_rate: float = 5.0e-6,
+    value_learning_rate: float | None = None,
+    prize_learning_rate: float | None = None,
+    meta_actor_residual_learning_rate: float | None = None,
+    entropy_coefficient: float | None = None,
     focal_base_checkpoint: Path | None = None,
 ) -> None:
     if not launch_formal:
@@ -461,30 +562,18 @@ def run(
         raise RuntimeError("0044 formal run requires CUDA")
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
-    training_deck_ids = tuple(
-        deck.deck_id for deck in registry.decks if "training" in deck.roles
+    training_deck_ids = _validate_formal_deck_scope(
+        registry,
+        focal_deck_ids=focal_deck_ids,
+        focal_deck_id=focal_deck_id,
+        focal_schedule_mode=focal_schedule_mode,
     )
-    if not focal_deck_ids or len(set(focal_deck_ids)) != len(focal_deck_ids):
-        raise RuntimeError("formal focal deck IDs must be non-empty and unique")
-    if any(deck_id not in training_deck_ids for deck_id in focal_deck_ids):
-        raise RuntimeError("formal focal deck IDs escaped the 0044 training pool")
-    if focal_deck_id not in training_deck_ids:
-        raise RuntimeError("focal initialization deck escaped the 0044 training pool")
-    if focal_schedule_mode == "fixed":
-        if focal_deck_ids != (focal_deck_id,):
-            raise RuntimeError("fixed-focal run requires one exact matching focal deck")
-    elif focal_schedule_mode in {
-        "seeded_frequency_balanced_random_v1", "meta_balanced_001_067"
-    }:
-        if focal_deck_ids != training_deck_ids:
-            raise RuntimeError("generalist focal run requires exact ordered pool 001-067")
-    else:
-        raise RuntimeError("formal focal schedule mode is unsupported")
     evaluation_focal_deck_id = evaluation_focal_deck_id or focal_deck_id
     reference_anchor_update = (
         source_parent_update
         if reference_anchor_update is None else reference_anchor_update
     )
+    reference_anchor_identity = reference_anchor_identity or latest_champion_policy_id
     if evaluation_focal_deck_id not in training_deck_ids:
         raise RuntimeError("evaluation focal deck escaped the 0044 training pool")
     focal_schedule = (
@@ -492,13 +581,24 @@ def run(
         if focal_schedule_mode == "fixed" else focal_schedule_mode
     )
     if opponent_sampling_mode not in {
-        "pfsp_mixture", "uniform_001_067", "meta_balanced_001_067"
+        "pfsp_mixture", "uniform_001_067", "meta_balanced_001_067",
+        "meta_balanced_training_pool",
     }:
         raise RuntimeError("formal opponent sampling mode is unsupported")
+    if opponent_meta_weights is not None and opponent_sampling_mode not in {
+        "meta_balanced_001_067", "meta_balanced_training_pool",
+    }:
+        raise RuntimeError("opponent Meta weights require a Meta-balanced schedule")
     if opponent_sampling_mode in {
-        "uniform_001_067", "meta_balanced_001_067"
+        "uniform_001_067", "meta_balanced_001_067",
+        "meta_balanced_training_pool",
     } and parent_pfsp_state is not None:
         raise RuntimeError("uniform training must not load a PFSP state")
+    opponent_deck_ids = (
+        tuple(f"{value:03d}" for value in range(1, 68))
+        if opponent_sampling_mode in {"uniform_001_067", "meta_balanced_001_067"}
+        else training_deck_ids
+    )
     paths = _paths(version)
     used = [str(path) for path in paths.values() if path.exists() and any(path.iterdir())]
     pristine_restart = bool(
@@ -525,15 +625,22 @@ def run(
         incompatible = model.load_state_dict(parent["state_dict"], strict=False)
         if incompatible.unexpected_keys:
             raise RuntimeError(f"0044 parent checkpoint has unexpected tensors: {incompatible}")
+    effective_lr_profile = resolve_learning_rate_profile(
+        learning_rate_profile=learning_rate_profile,
+        actor_learning_rate_scale=actor_learning_rate_scale,
+        value_learning_rate=value_learning_rate,
+        prize_learning_rate=prize_learning_rate,
+        meta_actor_residual_learning_rate=meta_actor_residual_learning_rate,
+    )
     trainer = PPOTrainer(
         model, device=device,
         config=_config(
             forward_microbatch_size=forward_microbatch_size,
-            actor_learning_rate_scale=actor_learning_rate_scale,
+            behavior_probe_batch_size=behavior_probe_batch_size,
+            offload_reference_after_cache=offload_reference_after_cache,
+            learning_rate_profile=effective_lr_profile,
             batch_size=ppo_batch_size,
-            value_learning_rate=value_learning_rate,
-            prize_learning_rate=prize_learning_rate,
-            meta_actor_residual_learning_rate=meta_actor_residual_learning_rate,
+            entropy_coefficient=entropy_coefficient,
         ),
     )
     if parent_checkpoint is not None:
@@ -582,14 +689,18 @@ def run(
         "focal_deck_id": focal_deck_id if focal_schedule_mode == "fixed" else None,
         "focal_initialization_deck_id": focal_deck_id,
         "focal_schedule": focal_schedule,
-        "opponent_deck_ids": list(training_deck_ids),
+        "opponent_deck_ids": list(opponent_deck_ids),
         "opponent_policy_ids": list(opponent_policy_ids),
         "opponent_sampling": (
             {"pfsp": 0, "uniform": rollout_games, "latest": 0}
-            if opponent_sampling_mode in {"uniform_001_067", "meta_balanced_001_067"}
+            if opponent_sampling_mode in {
+                "uniform_001_067", "meta_balanced_001_067",
+                "meta_balanced_training_pool",
+            }
             else {"pfsp": 128, "uniform": 64, "latest": 64}
         ),
         "opponent_sampling_mode": opponent_sampling_mode,
+        "opponent_meta_weights": opponent_meta_weights,
         "first_player_contract": {
             "id": "seeded_toss_winner_agent_context_41_choice_v1",
             "schedule_controls": "coin_winner_seed_only",
@@ -608,16 +719,20 @@ def run(
             sha256_file(parent_pfsp_state) if parent_pfsp_state else None
         ),
         "optimizer_initialization": "fresh",
+        "learning_rate_profile": effective_lr_profile.metadata(),
         "ppo": asdict(_config(
             forward_microbatch_size=forward_microbatch_size,
-            actor_learning_rate_scale=actor_learning_rate_scale,
+            behavior_probe_batch_size=behavior_probe_batch_size,
+            offload_reference_after_cache=offload_reference_after_cache,
+            learning_rate_profile=effective_lr_profile,
             batch_size=ppo_batch_size,
-            value_learning_rate=value_learning_rate,
-            prize_learning_rate=prize_learning_rate,
-            meta_actor_residual_learning_rate=meta_actor_residual_learning_rate,
+            entropy_coefficient=entropy_coefficient,
         )),
-        "reference_anchor_policy_id": latest_champion_policy_id,
+        "reference_anchor_policy_id": reference_anchor_identity,
         "reference_anchor_update": reference_anchor_update,
+        "reference_anchor_checkpoint_sha256": (
+            sha256_file(parent_checkpoint) if parent_checkpoint else None
+        ),
         "periodic_evaluation": {
             "enabled": periodic_evaluation_enabled,
             "contract_id": "0044_benchmark_v2_core16_meta_balanced_policy0809_common_seeds_cuda2048_v2",
@@ -642,7 +757,7 @@ def run(
         "state": "running", "checkpoint_update": start_update,
         "wandb_run_id": effective_run_id,
         "parent_checkpoint": str(parent_checkpoint) if parent_checkpoint else None,
-        "reference_anchor_policy_id": latest_champion_policy_id,
+        "reference_anchor_policy_id": reference_anchor_identity,
         "reference_anchor_update": reference_anchor_update,
         "focal_deck_ids": list(focal_deck_ids),
         "focal_deck_id": focal_deck_id if focal_schedule_mode == "fixed" else None,
@@ -709,9 +824,12 @@ def run(
                 opponent_policy_ids=opponent_policy_ids,
                 latest_champion_policy_id=latest_champion_policy_id,
                 rollout_games=rollout_games,
+                opponent_meta_weights=opponent_meta_weights,
             )
             by_group = _group_jobs_by_opponent_policy(jobs)
-            if opponent_sampling_mode == "meta_balanced_001_067":
+            if opponent_sampling_mode in {
+                "meta_balanced_001_067", "meta_balanced_training_pool"
+            }:
                 branch = {
                     int(job.game_id.rsplit("-", 1)[1]): "meta_balanced_uniform"
                     for job in jobs
@@ -848,7 +966,7 @@ def run(
                 )
                 eval_metrics = periodic_evaluation_metrics(report)
                 logger.log(checkpoint_update, eval_metrics)
-            _atomic_json(status, {"state": "running", "checkpoint_update": checkpoint_update, "rollout_source_policy_update": update, "wandb_run_id": effective_run_id, "reference_anchor_policy_id": latest_champion_policy_id, "reference_anchor_update": reference_anchor_update, "focal_deck_ids": list(focal_deck_ids), "focal_deck_id": focal_deck_id if focal_schedule_mode == "fixed" else None, "focal_initialization_deck_id": focal_deck_id, "focal_schedule": focal_schedule, "evaluation_focal_deck_id": evaluation_focal_deck_id, "source_parent_version": source_parent_version, "source_parent_update": source_parent_update})
+            _atomic_json(status, {"state": "running", "checkpoint_update": checkpoint_update, "rollout_source_policy_update": update, "wandb_run_id": effective_run_id, "reference_anchor_policy_id": reference_anchor_identity, "reference_anchor_update": reference_anchor_update, "focal_deck_ids": list(focal_deck_ids), "focal_deck_id": focal_deck_id if focal_schedule_mode == "fixed" else None, "focal_initialization_deck_id": focal_deck_id, "focal_schedule": focal_schedule, "evaluation_focal_deck_id": evaluation_focal_deck_id, "source_parent_version": source_parent_version, "source_parent_update": source_parent_update})
             update = checkpoint_update
 
 

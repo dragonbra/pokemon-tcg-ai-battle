@@ -121,8 +121,13 @@ class OwnArchetypeVocabulary:
                 )
                 for row in mapping_raw["decks"]
             )
-            if tuple(row.deck_id for row in mappings) != tuple(f"{i:03d}" for i in range(1, 68)):
-                raise AssetIntegrityError("V2 must map each exact deck 001-067 exactly once")
+            expected_mapping_ids = tuple(
+                f"{i:03d}" for i in range(1, len(mappings) + 1)
+            )
+            if tuple(row.deck_id for row in mappings) != expected_mapping_ids:
+                raise AssetIntegrityError(
+                    "V2 must map every registered deck as one contiguous exact identity"
+                )
             declared = {deck_id for row in classes for deck_id in row.deck_ids}
             if declared != {row.deck_id for row in mappings}:
                 raise AssetIntegrityError("taxonomy deck_ids and exact mapping disagree")

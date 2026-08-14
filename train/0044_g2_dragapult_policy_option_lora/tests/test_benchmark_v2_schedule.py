@@ -39,6 +39,8 @@ def test_benchmark_v2_is_meta_balanced_policy0809_cuda2048() -> None:
         "037", "038", "039", "040", "041", "042", "044", "045", "046", "048",
         "050", "051", "052", "053", "055", "059", "060", "062", "063", "067",
     }
+    assert "068" not in {row["opponent_deck_id"] for row in jobs}
+    assert "069" not in {row["opponent_deck_id"] for row in jobs}
     for name in ("engine_seed", "search_seed", "policy_seed", "coin_winner_seed"):
         assert len({row[name] for row in jobs}) == 2048
 

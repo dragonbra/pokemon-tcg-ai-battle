@@ -14,8 +14,8 @@ roles: training, evaluation
 TAXONOMY
 semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
 taxonomy_version: own_archetypes_v2
-taxonomy_sha256: 9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60
-mapping_sha256: 6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120
+taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
+mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
 old_own_archetype_id: 1
 own_archetype_id: 1
 own_archetype_name: mega_lopunny_ex

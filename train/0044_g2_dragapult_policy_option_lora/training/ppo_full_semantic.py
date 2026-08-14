@@ -178,6 +178,7 @@ class PPOConfig:
     behavior_logprob_mae_limit: float = 1.0e-4
     behavior_guard_samples: int = 4096
     behavior_probe_batch_size: int = 512
+    offload_reference_after_cache: bool = False
     full_behavior_audit_interval: int = 10
     gradient_accumulation: int = 1
 
@@ -852,6 +853,9 @@ class PPOTrainer:
 
     def _reference_log_probs(self, batch: PreparedBatch) -> torch.Tensor:
         """Compute the complete frozen-G2 anchor once per on-policy batch."""
+        if next(self.reference_model.parameters()).device != self.device:
+            self.reference_model.to(self.device)
+            self.reference = self.reference_model.head
         output = torch.empty(batch.decisions, dtype=torch.float32)
         self.reference_model.eval()
         with torch.no_grad():
@@ -909,6 +913,10 @@ class PPOTrainer:
             probe_indices=None if full_preupdate_audit else guard_indices,
         )
         reference_log_probs = self._reference_log_probs(batch)
+        if self.config.offload_reference_after_cache:
+            self.reference_model.to("cpu")
+            self.reference = self.reference_model.head
+            torch.cuda.empty_cache()
         preupdate_mae_max = preupdate["behavior_logprob_mae_max"]
         optimizer_steps = 0
         minibatches = 0

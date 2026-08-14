@@ -18,6 +18,8 @@ GAMES = 2048
 OPPONENT_POLICY_ID = "Policy-0809"
 SELECTED_CLASS_IDS = tuple(range(14)) + (17, 27)
 FIRST_PLAYER_CONTRACT = "seeded_coin_winner_then_winning_agent_selects_context_41"
+FROZEN_TAXONOMY_SHA256 = "9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60"
+FROZEN_MAPPING_SHA256 = "6b7d97027d465031344d6851f8826fcf3955e2a9cc9fbd8ba49ff32fd6cb5120"
 
 
 def _hash(value: Any) -> str:
@@ -60,9 +62,13 @@ def materialize(
     vocabulary = OwnArchetypeVocabulary.load_version(
         "own_archetypes_v2", project_root=project_root
     )
+    # Benchmark V2 is an immutable historical comparison contract. The live
+    # training pool may append decks, but its opponent identities stay 001-067.
+    benchmark_deck_ids = {f"{value:03d}" for value in range(1, 68)}
     by_class: dict[int, list[str]] = {index: [] for index in range(vocabulary.class_count)}
     for row in vocabulary.mappings:
-        by_class[row.archetype_id].append(row.deck_id)
+        if row.deck_id in benchmark_deck_ids:
+            by_class[row.archetype_id].append(row.deck_id)
     if any(not by_class[class_id] for class_id in SELECTED_CLASS_IDS):
         raise RuntimeError("Benchmark V2 selected an empty Meta Archetype")
     class_counts = _balanced_counts(list(SELECTED_CLASS_IDS), GAMES, seed=MASTER_SEED)
@@ -103,8 +109,8 @@ def materialize(
         "contract_id": CONTRACT_ID,
         "master_seed": MASTER_SEED,
         "opponent_effective_policy_sha256": opponent.effective_policy_sha256,
-        "taxonomy_sha256": vocabulary.taxonomy_sha256,
-        "mapping_sha256": vocabulary.mapping_sha256,
+        "taxonomy_sha256": FROZEN_TAXONOMY_SHA256,
+        "mapping_sha256": FROZEN_MAPPING_SHA256,
         "selected_class_ids": list(SELECTED_CLASS_IDS),
         "jobs": jobs,
     }
@@ -120,8 +126,8 @@ def materialize(
         "focal_deployment_identity": focal_deployment_identity,
         "opponent_policy_id": OPPONENT_POLICY_ID,
         "opponent_effective_policy_sha256": opponent.effective_policy_sha256,
-        "taxonomy_sha256": vocabulary.taxonomy_sha256,
-        "mapping_sha256": vocabulary.mapping_sha256,
+        "taxonomy_sha256": FROZEN_TAXONOMY_SHA256,
+        "mapping_sha256": FROZEN_MAPPING_SHA256,
         "selected_class_ids": list(SELECTED_CLASS_IDS),
         "excluded_class_ids": [
             class_id for class_id in range(vocabulary.class_count)
@@ -141,6 +147,7 @@ def materialize(
 
 
 __all__ = [
-    "CONTRACT_ID", "FIRST_PLAYER_CONTRACT", "GAMES", "MASTER_SEED",
+    "CONTRACT_ID", "FIRST_PLAYER_CONTRACT", "FROZEN_MAPPING_SHA256",
+    "FROZEN_TAXONOMY_SHA256", "GAMES", "MASTER_SEED",
     "OPPONENT_POLICY_ID", "SELECTED_CLASS_IDS", "materialize",
 ]

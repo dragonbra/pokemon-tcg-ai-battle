@@ -105,14 +105,16 @@ def _representative_cards(cards: list[int]) -> list[dict[str, Any]]:
 
 def _deck_representative_art() -> dict[str, list[dict[str, Any]]]:
     registry = AssetRegistry.load(PROJECT_ROOT)
+    expected = {f"{value:03d}" for value in range(1, 68)}
     result = {}
     for deck in registry.decks:
+        if deck.deck_id not in expected:
+            continue
         cards = list(map(int, (PROJECT_ROOT / deck.deck_path).read_text().splitlines()))
         representatives = _representative_cards(cards)
         if not representatives or any(not row["image_url"] for row in representatives):
             raise RuntimeError(f"deck {deck.deck_id} has no complete representative art")
         result[deck.deck_id] = representatives
-    expected = {f"{value:03d}" for value in range(1, 68)}
     if set(result) != expected:
         raise RuntimeError("representative art does not cover exact 001-067")
     return result
@@ -139,23 +141,29 @@ def _by_opponent(report: dict[str, Any]) -> dict[str, dict[str, int | float]]:
 def _meta_taxonomy() -> dict[str, Any]:
     taxonomy = json.loads(META_TAXONOMY_PATH.read_text(encoding="utf-8"))
     mapping = json.loads(META_MAPPING_PATH.read_text(encoding="utf-8"))
+    reporting_deck_ids = {f"{value:03d}" for value in range(1, 68)}
     classes = sorted(taxonomy["classes"], key=lambda row: int(row["archetype_id"]))
     if [int(row["archetype_id"]) for row in classes] != list(range(29)):
         raise RuntimeError("reporting taxonomy is not exact 29 classes")
     deck_to_class: dict[str, int] = {}
     for item in mapping["decks"]:
         deck_id = str(item["deck_id"])
+        if deck_id not in reporting_deck_ids:
+            continue
         archetype_id = int(item["archetype_id"])
         if deck_id in deck_to_class:
             raise RuntimeError(f"duplicate reporting taxonomy deck {deck_id}")
         deck_to_class[deck_id] = archetype_id
-    expected = {f"{value:03d}" for value in range(1, 68)}
+    expected = reporting_deck_ids
     if set(deck_to_class) != expected:
         raise RuntimeError("reporting taxonomy does not cover exact 001-067")
     by_class = {int(row["archetype_id"]): row for row in classes}
     discrepancies = []
     for archetype_id, row in by_class.items():
-        declared = sorted(map(str, row["deck_ids"]))
+        declared = sorted(
+            deck_id for deck_id in map(str, row["deck_ids"])
+            if deck_id in reporting_deck_ids
+        )
         mapped = sorted(deck for deck, value in deck_to_class.items() if value == archetype_id)
         if declared != mapped:
             discrepancies.append({

@@ -141,3 +141,28 @@ def test_v13_meta_balanced_512_rollout_uses_explicit_game_contract() -> None:
     assert result["rollout/games"] == 512
     assert result["sampling/mode_meta_balanced"] == 1.0
     assert not any(key.startswith("pfsp/") for key in result)
+
+
+def test_live_training_pool_meta_balanced_rollout_uses_same_telemetry_contract() -> None:
+    rows = _games() + _games()
+    result = telemetry.aggregate_training_rollout(
+        rows, source_policy_update=0, checkpoint_update=1,
+        curriculum_version="meta-balanced-u000000",
+        deck_weights={f"{index:03d}": 1 / 69 for index in range(1, 70)},
+        policy_weights={"Champion-G3": 1.0},
+        history=telemetry.RolloutHistory(), runtime_metrics={
+            "rollout/cuda_games_per_second": 10.0,
+            "rollout/strategic_decisions_per_second": 100.0,
+            "rollout/cuda_features_device_resident": 1.0,
+            "rollout/cuda_feature_d2h_bytes": 0.0,
+            "rollout/lane_routing_audit_pass": 1.0,
+            "rollout/lane_routing_audit_failures": 0.0,
+            "rollout/policy_weight_loads": 1.0,
+            "rollout/deck_static_cache_hits": 443.0,
+            "rollout/deck_static_cache_misses": 69.0,
+        },
+        sampling_mode="meta_balanced_training_pool", expected_games=512,
+    )
+    assert result["rollout/games"] == 512
+    assert result["sampling/mode_meta_balanced"] == 1.0
+    assert not any(key.startswith("pfsp/") for key in result)

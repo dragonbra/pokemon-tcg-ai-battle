@@ -334,9 +334,22 @@ class AssetRegistry:
                 "0044 V1 does not admit legacy FrozenMeta evaluations; periodic strength "
                 "evidence uses the separate Benchmark V1 CUDA-2048 contract"
             )
-        training_count = sum("training" in deck.roles for deck in self.decks)
-        if len(self.decks) != 67 or training_count != 67:
-            raise AssetIntegrityError("0044 Training Deck Pool must contain exact decks 001-067")
+        training_ids = tuple(
+            deck.deck_id for deck in self.decks if "training" in deck.roles
+        )
+        evaluation_only_ids = tuple(
+            deck.deck_id for deck in self.decks if deck.roles == ("evaluation",)
+        )
+        expected_training_ids = tuple(f"{value:03d}" for value in range(1, 70))
+        if (
+            len(self.decks) != 69
+            or training_ids != expected_training_ids
+            or evaluation_only_ids
+        ):
+            raise AssetIntegrityError(
+                "0044 registry must contain the exact formal training pool 001-069"
+            )
+        training_count = len(training_ids)
         return AssetAudit(
             status="PASS",
             deck_count=len(self.decks),

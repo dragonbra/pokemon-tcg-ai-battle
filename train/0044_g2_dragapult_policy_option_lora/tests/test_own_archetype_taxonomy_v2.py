@@ -12,7 +12,7 @@ OwnArchetypeVocabulary = importlib.import_module(
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_exact_67_append_only_taxonomy():
+def test_exact_69_append_only_taxonomy_with_67_training_decks():
     v1 = OwnArchetypeVocabulary.load_version("0042_own_archetypes_v1")
     v2 = OwnArchetypeVocabulary.load_version("own_archetypes_v2", project_root=ROOT)
     assert v1.class_count == 15
@@ -20,15 +20,16 @@ def test_exact_67_append_only_taxonomy():
     assert [(row.archetype_id, row.name) for row in v2.classes[:15]] == [
         (row.archetype_id, row.name) for row in v1.classes
     ]
-    assert len(v2.mappings) == 67
-    assert len({row.deck_id for row in v2.mappings}) == 67
+    assert len(v2.mappings) == 69
+    assert len({row.deck_id for row in v2.mappings}) == 69
     assert v2.embedding_width == v1.embedding_width == 16
 
 
 def test_exact_registry_is_source_of_truth_and_legacy_frozen_pool_is_absent():
     registry = AssetRegistry.load(ROOT)
     audit = registry.validate_all()
-    assert audit.deck_count == audit.training_deck_count == 67
+    assert audit.deck_count == 69
+    assert audit.training_deck_count == 69
     assert audit.evaluation_deck_count == 0
     v2 = OwnArchetypeVocabulary.load_version("own_archetypes_v2", project_root=ROOT)
     for deck in registry.decks:
@@ -47,6 +48,7 @@ def test_key_strategic_splits_and_other_is_fallback_only():
     assert mapping["043"] == mapping["057"] == names["dragapult_dusknoir"]
     assert mapping["066"] == names["dragapult_dusknoir"]
     assert mapping["067"] == names["dragapult_ex"]
+    assert mapping["068"] == mapping["069"] == names["alakazam"] == 3
     assert mapping["061"] == names["dragapult_blaziken"]
     assert mapping["046"] == mapping["050"] == names["mega_starmie_dusknoir"]
     assert mapping["065"] == names["crustle_great_tusk_mill"]

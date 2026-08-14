@@ -94,7 +94,9 @@ def aggregate_rollout(
         "sampling/entropy": _entropy(deck_counts) + _entropy(policy_counts),
         "sampling/mode_uniform": float(sampling_mode == "uniform_001_067"),
         "sampling/mode_meta_balanced": float(
-            sampling_mode == "meta_balanced_001_067"
+            sampling_mode in {
+                "meta_balanced_001_067", "meta_balanced_training_pool"
+            }
         ),
         "sampling/deck_probability": dict(sorted(deck_weights.items())),
         "sampling/policy_probability": dict(sorted(policy_weights.items())),
@@ -113,7 +115,10 @@ def aggregate_rollout(
             "pfsp/deck_sampling_probability": dict(sorted(deck_weights.items())),
             "pfsp/policy_sampling_probability": dict(sorted(policy_weights.items())),
         })
-    elif sampling_mode not in {"uniform_001_067", "meta_balanced_001_067"}:
+    elif sampling_mode not in {
+        "uniform_001_067", "meta_balanced_001_067",
+        "meta_balanced_training_pool",
+    }:
         raise ValueError(f"unsupported rollout sampling mode: {sampling_mode}")
     return output
 

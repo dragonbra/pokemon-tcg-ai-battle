@@ -27,11 +27,11 @@ def test_062_name_is_exact_list_corrected_without_identity_change():
     assert {860, 861, 1030, 1031}.issubset(cards)
 
 
-def test_catalog_has_67_complete_chinese_text_profiles_and_html_details():
+def test_catalog_has_69_complete_chinese_text_profiles_and_html_details():
     manifest = json.loads((DECK_ASSETS / "manifest.json").read_text())
-    assert manifest["deck_count"] == 67
-    assert len(manifest["text_profiles"]) == 67
-    assert len(manifest["detail_pages"]) == 67
+    assert manifest["deck_count"] == 69
+    assert len(manifest["text_profiles"]) == 69
+    assert len(manifest["detail_pages"]) == 69
     assert manifest["semantic_role"].startswith("Own Deck Strategy Archetype")
     html = (DECK_ASSETS / "index.html").read_text()
     assert "Policy-0809 CUDA-2048" in html

@@ -16,7 +16,7 @@ import torch
 
 from evaluation.runtime.seeded import build_seeded_runtime
 
-from ..assets import AssetRegistry
+from ..assets import AssetRegistry, canonical_deck_sha256
 from ..cuda_engine_2.build import DEFAULT_BUILD_DIR
 from ..cuda_engine_2.identity import CudaEngineIdentity
 from ..own_archetype import OwnArchetypeVocabulary
@@ -118,18 +118,36 @@ def validate_report(report: dict[str, Any]) -> None:
 
 def run(
     *, deck_id: str, output_root: Path, checkpoint: Path,
-    checkpoint_update: int,
+    checkpoint_update: int, deck_path: Path | None = None,
+    deck_display_name: str | None = None, own_archetype_id: int | None = None,
 ) -> dict[str, Any]:
     if output_root.exists():
         raise FileExistsError(output_root)
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
-    asset = next(row for row in registry.decks if row.deck_id == deck_id)
-    cards = tuple(map(int, (PROJECT_ROOT / asset.deck_path).read_text().splitlines()))
     vocabulary = OwnArchetypeVocabulary.load_version(
         "own_archetypes_v2", project_root=PROJECT_ROOT
     )
     own_by_deck = {row.deck_id: row.archetype_id for row in vocabulary.mappings}
+    if deck_path is None:
+        asset = next(row for row in registry.decks if row.deck_id == deck_id)
+        cards = tuple(map(int, (PROJECT_ROOT / asset.deck_path).read_text().splitlines()))
+        focal_display_name = asset.name
+        focal_exact_deck_sha256 = asset.content_sha256
+        focal_own_archetype_id = own_by_deck[deck_id]
+        focal_deck_source = str(PROJECT_ROOT / asset.deck_path)
+        focal_deck_registry_member = True
+    else:
+        cards = tuple(map(int, deck_path.read_text(encoding="utf-8").splitlines()))
+        if len(cards) != 60:
+            raise ValueError("external Benchmark V2 focal deck must contain exact 60 cards")
+        if own_archetype_id is None or not 0 <= own_archetype_id < vocabulary.class_count:
+            raise ValueError("external Benchmark V2 focal deck requires a valid own_archetype_id")
+        focal_display_name = deck_display_name or deck_id
+        focal_exact_deck_sha256 = canonical_deck_sha256(cards)
+        focal_own_archetype_id = own_archetype_id
+        focal_deck_source = str(deck_path)
+        focal_deck_registry_member = False
     device = torch.device("cuda:0")
     opponent_bundle = materialize_policy_bundle(
         PROJECT_ROOT, "Policy-0809", purpose="benchmark_v2_opponent"
@@ -139,7 +157,7 @@ def run(
     base_portable = PROJECT_ROOT / "assets/policies/definitions/champion_g002/model.bin"
     focal, focal_audit = materialize_candidate(
         checkpoint=checkpoint, base_portable=base_portable,
-        deck=cards, deck_id=deck_id, own_archetype_id=own_by_deck[deck_id],
+        deck=cards, deck_id=deck_id, own_archetype_id=focal_own_archetype_id,
         output=output_root / "materialization/model.bin", device=device,
     )
     opponent_modules = policy_modules(opponent)
@@ -170,7 +188,7 @@ def run(
         policy_seed=row["policy_seed"], source_policy_update=checkpoint_update,
         focal_deck=cards, opponent_deck=decks[row["opponent_deck_id"]],
         runtime_root=_runtime_root(), opponent_policy_id="Policy-0809",
-        focal_deck_id=deck_id, focal_own_archetype_id=own_by_deck[deck_id],
+        focal_deck_id=deck_id, focal_own_archetype_id=focal_own_archetype_id,
         engine_library=runtime.library_path, action_boundary_mode="enabled",
         trace_policy="errors_and_sample",
     ) for row in schedule["jobs"]]
@@ -230,9 +248,12 @@ def run(
         "focal_checkpoint_update": checkpoint_update,
         "focal_policy_identity_audit": focal_audit.to_manifest(),
         "focal_deployment_effective_sha256": focal_audit.effective_candidate_sha256,
-        "focal_deck_id": deck_id, "focal_deck_display_name": asset.name,
-        "focal_exact_deck_sha256": asset.content_sha256,
+        "focal_deck_id": deck_id, "focal_deck_display_name": focal_display_name,
+        "focal_exact_deck_sha256": focal_exact_deck_sha256,
         "focal_deck_cards": list(cards),
+        "focal_own_archetype_id": focal_own_archetype_id,
+        "focal_deck_source": focal_deck_source,
+        "focal_deck_registry_member": focal_deck_registry_member,
         "focal_opponent_shared_parameter_storages": len(shared),
         "opponent_policy_identity_audit": asdict(opponent_bundle.audit),
         "schedule": {key: value for key, value in schedule.items() if key != "jobs"},
@@ -251,10 +272,16 @@ def main() -> int:
     parser.add_argument("--output-root", required=True, type=Path)
     parser.add_argument("--checkpoint", required=True, type=Path)
     parser.add_argument("--checkpoint-update", required=True, type=int)
+    parser.add_argument("--deck-path", type=Path)
+    parser.add_argument("--deck-display-name")
+    parser.add_argument("--own-archetype-id", type=int)
     args = parser.parse_args()
     report = run(
         deck_id=args.deck_id, output_root=args.output_root.resolve(),
         checkpoint=args.checkpoint.resolve(), checkpoint_update=args.checkpoint_update,
+        deck_path=args.deck_path.resolve() if args.deck_path else None,
+        deck_display_name=args.deck_display_name,
+        own_archetype_id=args.own_archetype_id,
     )
     print(json.dumps(report["summary"], indent=2, sort_keys=True))
     return 0
