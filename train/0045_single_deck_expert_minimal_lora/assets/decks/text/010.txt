@@ -1,0 +1,79 @@
+0044 DECK 010 — Festival Lead / Dipplin
+==============================================================================
+
+IDENTITY
+deck_id: 010
+display_name: Festival Lead / Dipplin
+upstream_name: Festival Lead / Dipplin
+display_name_correction: none
+exact_deck_sha256: d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd
+deck_file_sha256: e7fa70fcaef8fb7fd57b24abf78330111caa2b0320ec16f50fbf5c4506fbf755
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
+mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
+old_own_archetype_id: 6
+own_archetype_id: 6
+own_archetype_name: festival_lead
+own_archetype_display_name: Festival Lead
+decision: keep
+parent_archetype: none
+embedding_init_from: 6
+tags: stadium, multi_attack
+
+STRATEGIC CHARACTERISTICS
+axis: Festival double attack
+definition: Festival Grounds bench-scaling double-attack strategy.
+rationale: Stadium and full-bench timing define prize tempo.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=17, Trainer=36, Energy=7
+evolution_lines:
+  Basic / root:
+    - 4× Grookey [89] (Basic Pokémon)
+    - 4× Applin [92] (Basic Pokémon)
+    - 1× Fezandipiti ex [140] (Basic Pokémon)
+  Grookey:
+    - 4× Thwackey [90] (Stage 1 Pokémon)
+  Applin:
+    - 4× Dipplin [93] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 1× Xerosic’s Machinations [1197] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 2× Dawn [1231] (Supporter)
+  - 4× Festival Grounds [1245] (Stadium)
+energy:
+  - 7× Basic {G} Energy [1]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    7 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    4 |      89 | Grookey | TWM 14 | Pokémon | Basic Pokémon
+    4 |      90 | Thwackey | TWM 15 | Pokémon | Stage 1 Pokémon
+    4 |      92 | Applin | TWM 17 | Pokémon | Basic Pokémon
+    4 |      93 | Dipplin | TWM 18 | Pokémon | Stage 1 Pokémon
+    1 |     140 | Fezandipiti ex | SFA 38 | Pokémon | Basic Pokémon
+    1 |    1080 | Unfair Stamp | TWM 165 | Trainer | Item
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    4 |    1094 | Bug Catching Set | TWM 143 | Trainer | Item
+    3 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    4 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    1 |    1129 | Sacred Ash | DRI 168 | Trainer | Item
+    1 |    1137 | Tool Scrapper | WHT 85 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    3 |    1175 | Brave Bangle | WHT 80 | Trainer | Pokémon Tool
+    1 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    2 |    1231 | Dawn | PFL 87 | Trainer | Supporter
+    4 |    1245 | Festival Grounds | TWM 149 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 22, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/010_festival_lead_dipplin", "legacy_semantic_deck_id": "festival_lead_dipplin_d6c573dd89bd", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

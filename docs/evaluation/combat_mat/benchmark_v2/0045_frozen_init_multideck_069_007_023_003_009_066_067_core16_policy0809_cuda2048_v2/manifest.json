@@ -1,0 +1,45 @@
+{
+  "checkpoint_sha256": "3c13e085b4587a8112148b393c4b80c4c875efbc13820dcf44acb6a0a1991bc7",
+  "contract_id": "0044_benchmark_v2_core16_meta_balanced_policy0809_common_seeds_cuda2048_v2",
+  "deck_order": [
+    "069",
+    "007",
+    "023",
+    "003",
+    "009",
+    "066",
+    "067"
+  ],
+  "reports": {
+    "003": {
+      "path": "reports/003/report.json",
+      "sha256": "a3a3dedb433983edf2f441e6f8b57150f18428a0b6530817f1a0bd53d8a9c14b"
+    },
+    "007": {
+      "path": "reports/007/report.json",
+      "sha256": "2d38d5f582fcd2953bb064f3114e252ef529b656590b438c0ff2ab5157001c9b"
+    },
+    "009": {
+      "path": "reports/009/report.json",
+      "sha256": "60b41b6280a941103786da3736cc72ec4fcf7db18f1d162c7210b7c958b1f18b"
+    },
+    "023": {
+      "path": "reports/023/report.json",
+      "sha256": "7234cef5fb03b1882b09c87ca739d54e5af5c537f7eb9933b90a367ff480007e"
+    },
+    "066": {
+      "path": "reports/066/report.json",
+      "sha256": "6a3f75d83f8a84384fd77fcf081bd787704229fe5f9bf122a43a9d8748386c34"
+    },
+    "067": {
+      "path": "reports/067/report.json",
+      "sha256": "980b5e9dcb7c7fa0194c013c1fabc9daeecce91bcc7fd871dbac539237742913"
+    },
+    "069": {
+      "path": "reports/069/report.json",
+      "sha256": "5eb32b2f561e004b3e1f2a639dd0345a28602a6c8701eb1284e49f301c56caa9"
+    }
+  },
+  "schema_version": "0045_frozen_init_multideck_benchmark_v2_manifest_v1",
+  "status": "PASS"
+}

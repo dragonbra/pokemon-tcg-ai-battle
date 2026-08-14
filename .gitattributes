@@ -10,6 +10,9 @@ train/0043_champion_league_rl/assets/policies/definitions/**/*.pt filter=lfs dif
 train/0043_champion_league_rl/assets/policies/definitions/**/*.bin filter=lfs diff=lfs merge=lfs -text
 train/0044_g2_dragapult_policy_option_lora/assets/policies/definitions/**/*.pt filter=lfs diff=lfs merge=lfs -text
 train/0044_g2_dragapult_policy_option_lora/assets/policies/definitions/**/*.bin filter=lfs diff=lfs merge=lfs -text
+train/0045_single_deck_expert_minimal_lora/assets/policies/definitions/**/*.pt filter=lfs diff=lfs merge=lfs -text
+train/0045_single_deck_expert_minimal_lora/assets/policies/definitions/**/*.bin filter=lfs diff=lfs merge=lfs -text
 # Deck CSV bytes are immutable, hash-addressed evidence. Some approved source decks
 # use CRLF, so Git must not normalize or whitespace-check their line endings.
 train/0044_g2_dragapult_policy_option_lora/assets/decks/definitions/*/deck.csv binary
+train/0045_single_deck_expert_minimal_lora/assets/decks/definitions/*/deck.csv binary

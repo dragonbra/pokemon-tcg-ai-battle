@@ -1,0 +1,99 @@
+0044 DECK 023 — Hydrapple ex / Meganium
+==============================================================================
+
+IDENTITY
+deck_id: 023
+display_name: Hydrapple ex / Meganium
+upstream_name: Hydrapple ex / Meganium
+display_name_correction: none
+exact_deck_sha256: 415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d
+deck_file_sha256: 96cda5323dccba185bb29b7ae3150c076043ddeef4b6607ea5c204bbe1efe26c
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
+mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
+old_own_archetype_id: 6
+own_archetype_id: 27
+own_archetype_name: hydrapple_meganium
+own_archetype_display_name: Hydrapple ex / Meganium
+decision: split
+parent_archetype: festival_lead
+embedding_init_from: 6
+tags: grass, energy_acceleration, stage2
+
+STRATEGIC CHARACTERISTICS
+axis: Hydrapple energy-wide scaling
+definition: Hydrapple/Meganium Grass-energy acceleration board; Dipplin is an evolution stage, not Festival Lead.
+rationale: Energy-wide damage, healing attachment, and evolution acceleration replace Festival double attacks.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=21, Trainer=25, Energy=14
+evolution_lines:
+  Applin:
+    - 2× Dipplin [93] (Stage 1 Pokémon)
+  Basic / root:
+    - 4× Teal Mask Ogerpon ex [96] (Basic Pokémon)
+    - 1× Fezandipiti ex [140] (Basic Pokémon)
+    - 1× Applin [149] (Basic Pokémon)
+    - 1× Applin [346] (Basic Pokémon)
+    - 1× Celebi [655] (Basic Pokémon)
+    - 2× Chikorita [917] (Basic Pokémon)
+    - 1× Tapu Bulu [920] (Basic Pokémon)
+    - 2× Meowth ex [1071] (Basic Pokémon)
+  Dipplin:
+    - 2× Hydrapple ex [150] (Stage 2 Pokémon)
+  Chikorita:
+    - 1× Bayleef [709] (Stage 1 Pokémon)
+    - 1× Bayleef [918] (Stage 1 Pokémon)
+  Bayleef:
+    - 2× Meganium [710] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 2× Boss’s Orders [1182] (Supporter)
+  - 1× Lana’s Aid [1184] (Supporter)
+  - 1× Ciphermaniac’s Codebreaking [1188] (Supporter)
+  - 1× Briar [1201] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 1× Dawn [1231] (Supporter)
+  - 4× Forest of Vitality [1261] (Stadium)
+energy:
+  - 14× Basic {G} Energy [1]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+   14 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    2 |      93 | Dipplin | TWM 18 | Pokémon | Stage 1 Pokémon
+    4 |      96 | Teal Mask Ogerpon ex | TWM 25 | Pokémon | Basic Pokémon
+    1 |     140 | Fezandipiti ex | SFA 38 | Pokémon | Basic Pokémon
+    1 |     149 | Applin | SCR 12 | Pokémon | Basic Pokémon
+    2 |     150 | Hydrapple ex | SCR 14 | Pokémon | Stage 2 Pokémon
+    1 |     346 | Applin | DRI 16 | Pokémon | Basic Pokémon
+    1 |     655 | Celebi | MEG 12 | Pokémon | Basic Pokémon
+    1 |     709 | Bayleef | MEG 9 | Pokémon | Stage 1 Pokémon
+    2 |     710 | Meganium | MEG 10 | Pokémon | Stage 2 Pokémon
+    2 |     917 | Chikorita | ASC 8 | Pokémon | Basic Pokémon
+    1 |     918 | Bayleef | ASC 9 | Pokémon | Stage 1 Pokémon
+    1 |     920 | Tapu Bulu | SFA 6 | Pokémon | Basic Pokémon
+    2 |    1071 | Meowth ex | POR 62 | Pokémon | Basic Pokémon
+    1 |    1080 | Unfair Stamp | TWM 165 | Trainer | Item
+    4 |    1094 | Bug Catching Set | TWM 143 | Trainer | Item
+    1 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    4 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    1 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    2 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    1 |    1184 | Lana’s Aid | TWM 155 | Trainer | Supporter
+    1 |    1188 | Ciphermaniac’s Codebreaking | TEF 145 | Trainer | Supporter
+    1 |    1201 | Briar | SCR 132 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    1 |    1231 | Dawn | PFL 87 | Trainer | Supporter
+    4 |    1261 | Forest of Vitality | MEG 117 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 39, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/023_hydrapple_ex_meganium", "legacy_semantic_deck_id": "hydrapple_ex_meganium_415af0a5541c", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

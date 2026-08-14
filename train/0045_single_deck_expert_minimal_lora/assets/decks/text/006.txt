@@ -1,0 +1,76 @@
+0044 DECK 006 — Teal Mask Ogerpon ex / Hero’s Cape
+==============================================================================
+
+IDENTITY
+deck_id: 006
+display_name: Teal Mask Ogerpon ex / Hero’s Cape
+upstream_name: Teal Mask Ogerpon ex / Hero’s Cape
+display_name_correction: none
+exact_deck_sha256: e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34
+deck_file_sha256: 78a57de595b8e7b7a2631f0d32119dc6620c20b39c7a3cb3c611e240b58432df
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
+mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
+old_own_archetype_id: 10
+own_archetype_id: 10
+own_archetype_name: teal_mask_ogerpon_heros_cape
+own_archetype_display_name: Teal Mask Ogerpon ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 10
+tags: basic_attacker, energy_stack
+
+STRATEGIC CHARACTERISTICS
+axis: Ogerpon energy stacking
+definition: Four-Ogerpon energy-stacking beatdown with repeated Teal Dance.
+rationale: Energy attachment order is both acceleration and draw sequencing.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=4, Trainer=36, Energy=20
+evolution_lines:
+  Basic / root:
+    - 4× Teal Mask Ogerpon ex [96] (Basic Pokémon)
+key_supporters_and_stadiums:
+  - 3× Boss’s Orders [1182] (Supporter)
+  - 1× Briar [1201] (Supporter)
+  - 4× Judge [1213] (Supporter)
+  - 1× N's Plan [1221] (Supporter)
+  - 2× Harlequin [1223] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 2× Lively Stadium [1251] (Stadium)
+energy:
+  - 18× Basic {G} Energy [1]
+  - 2× Grow Grass Energy [18]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+   18 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    2 |      18 | Grow Grass Energy | POR 86 | Energy | Special Energy
+    4 |      96 | Teal Mask Ogerpon ex | TWM 25 | Pokémon | Basic Pokémon
+    4 |    1094 | Bug Catching Set | TWM 143 | Trainer | Item
+    2 |    1118 | Energy Retrieval | SVI 171 | Trainer | Item
+    4 |    1119 | Energy Search | SVI 172 | Trainer | Item
+    3 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    2 |    1127 | Tera Orb | SSP 189 | Trainer | Item
+    1 |    1137 | Tool Scrapper | WHT 85 | Trainer | Item
+    2 |    1147 | Jumbo Ice Cream | PFL 91 | Trainer | Item
+    1 |    1159 | Hero’s Cape | TEF 152 | Trainer | Pokémon Tool
+    3 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    1 |    1201 | Briar | SCR 132 | Trainer | Supporter
+    4 |    1213 | Judge | SVI 176 | Trainer | Supporter
+    1 |    1221 | N's Plan | BLK 83 | Trainer | Supporter
+    2 |    1223 | Harlequin | WHT 83 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    2 |    1251 | Lively Stadium | SSP 180 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 34, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/006_teal_mask_ogerpon_ex_hero_s_cape", "legacy_semantic_deck_id": "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

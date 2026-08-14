@@ -1,0 +1,92 @@
+0044 DECK 026 — Mega Kangaskhan ex / Crustle
+==============================================================================
+
+IDENTITY
+deck_id: 026
+display_name: Mega Kangaskhan ex / Crustle
+upstream_name: Mega Kangaskhan ex / Crustle
+display_name_correction: none
+exact_deck_sha256: 926cc79d2c4ea4610c7f07fc1de01c64b77b57e32a50794f541d810605cf7159
+deck_file_sha256: 56a5ced3183c5d67e723c3c2425dff3d28bee0f00c33a488667ab1052f50ec74
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
+mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
+old_own_archetype_id: 5
+own_archetype_id: 28
+own_archetype_name: mega_venusaur_meganium
+own_archetype_display_name: Mega Venusaur ex / Meganium
+decision: split
+parent_archetype: mega_kangaskhan_ex
+embedding_init_from: 5
+tags: grass, multi_line_evolution, energy_transfer
+
+STRATEGIC CHARACTERISTICS
+axis: dual Stage-2 Grass energy transfer
+definition: Multi-Stage-2 Grass board using Meganium doubling and Mega Venusaur energy movement.
+rationale: Evolution-line allocation and movable Grass energy dominate; the thin Kangaskhan line is secondary.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=19, Trainer=29, Energy=12
+evolution_lines:
+  Basic / root:
+    - 4× Teal Mask Ogerpon ex [96] (Basic Pokémon)
+    - 2× Bulbasaur [650] (Basic Pokémon)
+    - 3× Chikorita [708] (Basic Pokémon)
+    - 2× Mega Kangaskhan ex [756] (Basic Pokémon)
+  Bulbasaur:
+    - 2× Ivysaur [651] (Stage 1 Pokémon)
+  Ivysaur:
+    - 2× Mega Venusaur ex [652] (Stage 2 Pokémon)
+  Chikorita:
+    - 2× Bayleef [709] (Stage 1 Pokémon)
+  Bayleef:
+    - 2× Meganium [710] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 1× Boss’s Orders [1182] (Supporter)
+  - 2× Colress’s Tenacity [1194] (Supporter)
+  - 1× Xerosic’s Machinations [1197] (Supporter)
+  - 3× Hilda [1225] (Supporter)
+  - 4× Wally's Compassion [1229] (Supporter)
+  - 2× Dawn [1231] (Supporter)
+  - 4× Forest of Vitality [1261] (Stadium)
+energy:
+  - 11× Basic {G} Energy [1]
+  - 1× Enriching Energy [13]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+   11 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    1 |      13 | Enriching Energy | SSP 191 | Energy | Special Energy
+    4 |      96 | Teal Mask Ogerpon ex | TWM 25 | Pokémon | Basic Pokémon
+    2 |     650 | Bulbasaur | MEG 1 | Pokémon | Basic Pokémon
+    2 |     651 | Ivysaur | MEG 2 | Pokémon | Stage 1 Pokémon
+    2 |     652 | Mega Venusaur ex | MEG 3 | Pokémon | Stage 2 Pokémon
+    3 |     708 | Chikorita | MEG 8 | Pokémon | Basic Pokémon
+    2 |     709 | Bayleef | MEG 9 | Pokémon | Stage 1 Pokémon
+    2 |     710 | Meganium | MEG 10 | Pokémon | Stage 2 Pokémon
+    2 |     756 | Mega Kangaskhan ex | MEG 104 | Pokémon | Basic Pokémon
+    4 |    1094 | Bug Catching Set | TWM 143 | Trainer | Item
+    1 |    1118 | Energy Retrieval | SVI 171 | Trainer | Item
+    2 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    1 |    1123 | Switch | SVI 194 | Trainer | Item
+    2 |    1145 | Mega Signal | MEG 121 | Trainer | Item
+    2 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    1 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    2 |    1194 | Colress’s Tenacity | SFA 57 | Trainer | Supporter
+    1 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    3 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1229 | Wally's Compassion | MEG 132 | Trainer | Supporter
+    2 |    1231 | Dawn | PFL 87 | Trainer | Supporter
+    4 |    1261 | Forest of Vitality | MEG 117 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 47, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/026_mega_kangaskhan_ex_crustle", "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_926cc79d2c4e", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

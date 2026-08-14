@@ -1,0 +1,74 @@
+{
+  "architecture_version": "0044_focal_v1_plus_policy_option_lora_v1",
+  "artifacts": [
+    {
+      "path": "assets/policies/definitions/champion_g003/source_update_000110.pt",
+      "purpose": "model_only_checkpoint",
+      "sha256": "e1101f1712f2e4751aa56ba983b1a1165a9852b4cb1ab18913fbcd6108beac79"
+    },
+    {
+      "path": "assets/policies/definitions/champion_g003/model.bin",
+      "purpose": "portable_fp16_artifact",
+      "sha256": "106d8fad5cfea71db603f5b53db58827f270d044e3d2c6b5abb47b8f076eff24"
+    }
+  ],
+  "components": {
+    "actor_state_dict": {
+      "effective_sha256": "d3d168b66dcf54e3259c9577f9034010ed0bb2d5681dbd3ffbc86e964397f6cb"
+    },
+    "allocation_head_state_dict": {
+      "effective_sha256": "cd85d163ea5ba5a0a54c129883ceb9ead388d01c948de0ed719cbf5435b936cc"
+    },
+    "meta_actor_residual_state_dict": {
+      "effective_sha256": "ebf02d484bdd496586bac19f373dbd43be36844e09cf74070e18d04ade5ec038"
+    },
+    "policy_option_lora_state_dict": {
+      "effective_sha256": "c0f7aaec3dbd08a832c37958a5c1f5dedad9450f8366a952829fee6457b5b3af"
+    },
+    "policy_strategy_adapter_state_dict": {
+      "effective_sha256": "7c85900c469ab704457721ea8fb98759fc7e48ce08d3a6e28c88ee2d3f57335c"
+    },
+    "value_adapter_state_dict": {
+      "effective_sha256": "e645393e4acdfdec1b66ccb2d72b8e5cc7b75c814b0209e4aefa40d2c4f4cadc"
+    },
+    "value_head_state_dict": {
+      "effective_sha256": "3350c72c099dfbf3783fd465ec141f94529a4969d3ba14cccbb1b73ef4c8860e"
+    }
+  },
+  "effective_policy_sha256": "5d15f503236a11c7d7c88a82a2deebf9b1be3942444f4c1153799b333cb592cf",
+  "frozen": true,
+  "generation": 3,
+  "inference_semantics": {
+    "deploy_mode": "kaggle_fp16_storage_fp32_runtime_v1",
+    "meta_actor_residual": "zero_initialized_not_part_of_g3_training",
+    "opponent_meta_head": "frozen_15_way_unchanged",
+    "own_deck_conditioning": "own_archetypes_v2_exact_deck_29_way",
+    "policy_option_lora": "final_option_block_qv_rank4",
+    "runtime_dtype": "fp32",
+    "storage_dtype": "fp16"
+  },
+  "parent_policy_id": "Champion-G2",
+  "policy_id": "Champion-G3",
+  "portable_checkpoint_schema": "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
+  "portable_fields": [
+    "actor_state_dict",
+    "value_head_state_dict",
+    "allocation_head_state_dict",
+    "value_adapter_state_dict",
+    "policy_strategy_adapter_state_dict",
+    "policy_option_lora_state_dict",
+    "meta_actor_residual_state_dict"
+  ],
+  "portable_tensor_sha256": "5d15f503236a11c7d7c88a82a2deebf9b1be3942444f4c1153799b333cb592cf",
+  "promotion_record": "experiments/0044_g2_dragapult_policy_option_lora/promotion/champion_g003_u110.json",
+  "role": "latest_champion",
+  "schema_version": "0044_policy_manifest_v2",
+  "source": {
+    "project_version": "V10_g3_v9_u50_generalist_001_067_core16_benchmark_v2",
+    "promoted_at": "2026-08-14T05:43:53.608770+00:00",
+    "update": 110
+  },
+  "source_base_artifact_purpose": null,
+  "source_checkpoint_artifact_purpose": "model_only_checkpoint",
+  "source_checkpoint_schema": "0044_focal_v1_model_only_v1"
+}

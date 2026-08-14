@@ -1,0 +1,23 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0045 Single-Deck Expert Minimal-LoRA</title><style>body{font:16px/1.6 system-ui;max-width:1100px;margin:40px auto;padding:0 24px;color:#18212b}h1,h2{color:#152b49}pre{background:#f3f6fa;padding:18px;overflow:auto;border-radius:10px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd5df;padding:8px;text-align:left}.gate{background:#fff4d6;padding:12px;border-left:5px solid #d68b00}</style></head><body>
+<h1>0045 — Single-Deck Expert Minimal-LoRA</h1><p><strong>阶段：</strong>架构与迁移 hard gate 已通过；V1 标准/limit LR 对照完成至 U5，V2 从同一 Frozen-U0 以无限 update 模式验证 expert cold-start 默认 LR，由用户观察后决定停止。</p>
+<p>唯一 focal 是 exact deck <code>007</code>（Dragapult ex），60-card content SHA-256 <code>07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725</code>。</p>
+<div class="gate">对手身份已按 0045 明文要求解析为 immutable Champion-G2；当前 0044 V24 使用的 Champion-G3 被记录为未选择身份，绝不静默替换。</div>
+<h2>0044 实际旧图</h2><pre>frozen semantics → dual Option
+policy Option LoRA + [V_win, z_meta, meta probs, Own Meta, side]
+  → PolicyStrategyAdapter → MetaActorResidual → ActionDecoder
+base Option → Critic → V_win / V_prize / opponent Meta</pre>
+<h2>0045 V1 新图</h2><pre>frozen semantics → policy Option Q/V LoRA(r4, alpha8)
+                 → ActionDecoder / AllocationHead → action
+
+frozen semantics → base Option → Critic → GAE/value/prize/meta losses
+                                      X
+                                  Actor forward</pre>
+<p>Actor 的公开接口不含 Critic tensor；不是 detach，而是没有数据边。Critic Own-Archetype conditioning 仅保留在训练期 Critic 内。</p>
+<h2>运行时参数审计</h2><table><tr><th>模块</th><th>trainable 参数</th><th>角色</th></tr><tr><td>Action Decoder</td><td>1,027,202</td><td>Actor</td></tr><tr><td>Allocation Head</td><td>621,761</td><td>Actor</td></tr><tr><td>Option Q/V LoRA</td><td>10,240</td><td>Actor</td></tr><tr><td>Value head</td><td>3,397,121</td><td>Critic</td></tr><tr><td>Value adapter</td><td>211,665</td><td>Critic</td></tr><tr><td>Prize head</td><td>103,681</td><td>Critic</td></tr></table>
+<p>Actor 合计 1,659,203；Critic 合计 3,712,467；总 trainable 5,371,670。Policy Strategy Adapter（320,465）与 Meta Actor Residual（74,240）已退出模型和 optimizer。</p>
+<h2>训练与评测合同</h2><p>rollout 512、3 epochs、batch 4096、clip .10、entropy .003、reference KL .02、behavior KL .015/.025、Prize actor advantage .1。每个版本使用 fresh AdamW。</p>
+<table><tr><th>LR stage</th><th>Decoder / Allocation</th><th>Option LoRA</th><th>Critic</th><th>用途</th></tr><tr><td><code>0045_expert_cold_start_lr_v1</code>（新 expert 默认）</td><td>1e-5</td><td>2e-5</td><td>2e-5</td><td>快速穿越 U0 邻域，尽早验证 KL→胜率转换</td></tr><tr><td><code>0045_limit_finetune_lr_v1</code></td><td>5e-6</td><td>1e-5</td><td>2e-5</td><td>从已验证 checkpoint 做精细调整</td></tr></table>
+<p>Reference KL 只表示相对 Frozen-U0 的距离，不是质量目标。高 LR 阶段仍由固定 common-seed greedy eval 决定是否有效；切换 LR 必须新建版本和 fresh optimizer。</p>
+<p><strong>Frozen-0045-Init</strong> 是 U0 同架构主 reference。Benchmark Tiny V2 每 5 update 执行 CUDA-512，16 个冻结 Meta class 各 32 局；U10/U20 同时满足 periodic evaluate，不重复跑。评测必须通过 FP16 storage → strict FP32 runtime deployment identity gate。</p>
+<h2>当前阶段</h2><p>全部结构 hard gate 已通过。0044 停在 V24 U21；0045 U0 CUDA-512 为 324–188–0（63.28%）。V1 标准/limit LR 的 U5 为 326–186–0（63.67%），随后在完整 U5 边界封存。V2 从相同 Frozen-U0 以 2× Actor LR 重启且不设自动 update 上限；U5/U10 是第一组快速 viability gate，之后每五次 update 继续评测，直到用户明确停止。完整事实与接口以同目录 <code>DESIGN.md</code> 为准。</p>
+</body></html>

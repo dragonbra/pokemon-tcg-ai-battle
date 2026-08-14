@@ -1,0 +1,91 @@
+0044 DECK 015 — Mega Kangaskhan ex / Crustle
+==============================================================================
+
+IDENTITY
+deck_id: 015
+display_name: Mega Kangaskhan ex / Crustle
+upstream_name: Mega Kangaskhan ex / Crustle
+display_name_correction: none
+exact_deck_sha256: 310ede704da1adc09e09efc2b3e4f96cd2201abdbcb3f51ada245472cac2742a
+deck_file_sha256: 2bee2854dc4137c36ecbf01dbe0ffa1c7501a41457dc4aeb290dde87f4bd0475
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
+mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
+old_own_archetype_id: 5
+own_archetype_id: 19
+own_archetype_name: area_zero_tera_toolbox
+own_archetype_display_name: Area Zero Tera Toolbox
+decision: split
+parent_archetype: mega_kangaskhan_ex
+embedding_init_from: 5
+tags: area_zero, toolbox, energy_switch
+
+STRATEGIC CHARACTERISTICS
+axis: Area Zero eight-bench toolbox
+definition: Eight-bench Tera toolbox with Energy Switch and multi-type attackers.
+rationale: Expanded bench capacity, Tera retention, and cross-board energy routing define decisions.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=17, Trainer=27, Energy=16
+evolution_lines:
+  Basic / root:
+    - 2× Raging Bolt ex [63] (Basic Pokémon)
+    - 3× Teal Mask Ogerpon ex [96] (Basic Pokémon)
+    - 1× Wellspring Mask Ogerpon ex [108] (Basic Pokémon)
+    - 1× Fezandipiti ex [140] (Basic Pokémon)
+    - 2× Latias ex [184] (Basic Pokémon)
+    - 1× Lillie’s Clefairy ex [272] (Basic Pokémon)
+    - 3× Mega Kangaskhan ex [756] (Basic Pokémon)
+    - 1× Passimian [978] (Basic Pokémon)
+    - 3× Meowth ex [1071] (Basic Pokémon)
+key_supporters_and_stadiums:
+  - 2× Boss’s Orders [1182] (Supporter)
+  - 2× Xerosic’s Machinations [1197] (Supporter)
+  - 4× Crispin [1198] (Supporter)
+  - 2× Cyrano [1205] (Supporter)
+  - 4× Area Zero Underdepths [1250] (Stadium)
+energy:
+  - 9× Basic {G} Energy [1]
+  - 1× Basic {W} Energy [3]
+  - 2× Basic {L} Energy [4]
+  - 2× Basic {P} Energy [5]
+  - 2× Basic {F} Energy [6]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    9 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    1 |       3 | Basic {W} Energy | SVE 3 | Energy | Basic Energy
+    2 |       4 | Basic {L} Energy | SVE 4 | Energy | Basic Energy
+    2 |       5 | Basic {P} Energy | SVE 5 | Energy | Basic Energy
+    2 |       6 | Basic {F} Energy | SVE 6 | Energy | Basic Energy
+    2 |      63 | Raging Bolt ex | TEF 123 | Pokémon | Basic Pokémon
+    3 |      96 | Teal Mask Ogerpon ex | TWM 25 | Pokémon | Basic Pokémon
+    1 |     108 | Wellspring Mask Ogerpon ex | TWM 64 | Pokémon | Basic Pokémon
+    1 |     140 | Fezandipiti ex | SFA 38 | Pokémon | Basic Pokémon
+    2 |     184 | Latias ex | SSP 76 | Pokémon | Basic Pokémon
+    1 |     272 | Lillie’s Clefairy ex | JTG 56 | Pokémon | Basic Pokémon
+    3 |     756 | Mega Kangaskhan ex | MEG 104 | Pokémon | Basic Pokémon
+    1 |     978 | Passimian | SSP 111 | Pokémon | Basic Pokémon
+    3 |    1071 | Meowth ex | POR 62 | Pokémon | Basic Pokémon
+    1 |    1088 | Prime Catcher | TEF 157 | Trainer | Item
+    2 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    2 |    1098 | Glass Trumpet | SCR 135 | Trainer | Item
+    4 |    1116 | Energy Switch | SVI 173 | Trainer | Item
+    4 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    2 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    2 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    4 |    1198 | Crispin | SCR 133 | Trainer | Supporter
+    2 |    1205 | Cyrano | SSP 170 | Trainer | Supporter
+    4 |    1250 | Area Zero Underdepths | SCR 131 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 9, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/015_wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex", "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_310ede704da1", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

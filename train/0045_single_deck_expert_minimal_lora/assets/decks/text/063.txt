@@ -1,0 +1,84 @@
+0044 DECK 063 — Mega Lucario Ex Solrock
+==============================================================================
+
+IDENTITY
+deck_id: 063
+display_name: Mega Lucario Ex Solrock
+upstream_name: Mega Lucario ex / Solrock
+display_name_correction: none
+exact_deck_sha256: 5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b
+deck_file_sha256: 9b51fe451fac36b6ec7fca09ff6649eedd859dcf522a9496da885a79331c32a0
+card_total: 60
+roles: training
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
+mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
+old_own_archetype_id: 4
+own_archetype_id: 4
+own_archetype_name: mega_lucario_ex
+own_archetype_display_name: Mega Lucario ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 4
+tags: energy_acceleration
+
+STRATEGIC CHARACTERISTICS
+axis: Fighting attack rotation
+definition: Fast Fighting attacker with discard-to-bench energy acceleration.
+rationale: Alternating attacks and bench energy placement drive tempo.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=16, Trainer=31, Energy=13
+evolution_lines:
+  Dunsparce:
+    - 2× Dudunsparce [66] (Stage 1 Pokémon)
+  Basic / root:
+    - 3× Dunsparce [305] (Basic Pokémon)
+    - 2× Lunatone [675] (Basic Pokémon)
+    - 2× Solrock [676] (Basic Pokémon)
+    - 4× Riolu [677] (Basic Pokémon)
+  Riolu:
+    - 3× Mega Lucario ex [678] (Stage 1 Pokémon)
+key_supporters_and_stadiums:
+  - 3× Boss’s Orders [1182] (Supporter)
+  - 1× Judge [1213] (Supporter)
+  - 2× Hilda [1225] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 2× Wally's Compassion [1229] (Supporter)
+  - 2× Gravity Mountain [1252] (Stadium)
+energy:
+  - 9× Basic {F} Energy [6]
+  - 4× Rock Fighting Energy [20]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    9 |       6 | Basic {F} Energy | SVE 6 | Energy | Basic Energy
+    4 |      20 | Rock Fighting Energy | POR 88 | Energy | Special Energy
+    2 |      66 | Dudunsparce | TEF 129 | Pokémon | Stage 1 Pokémon
+    3 |     305 | Dunsparce | JTG 120 | Pokémon | Basic Pokémon
+    2 |     675 | Lunatone | MEG 74 | Pokémon | Basic Pokémon
+    2 |     676 | Solrock | MEG 75 | Pokémon | Basic Pokémon
+    4 |     677 | Riolu | MEG 76 | Pokémon | Basic Pokémon
+    3 |     678 | Mega Lucario ex | MEG 77 | Pokémon | Stage 1 Pokémon
+    2 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    2 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    4 |    1141 | Premium Power Pro | MEG 124 | Trainer | Item
+    4 |    1142 | Fighting Gong | MEG 116 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    1 |    1159 | Hero’s Cape | TEF 152 | Trainer | Pokémon Tool
+    3 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    1 |    1213 | Judge | SVI 176 | Trainer | Supporter
+    2 |    1225 | Hilda | WHT 84 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    2 |    1229 | Wally's Compassion | MEG 132 | Trainer | Supporter
+    2 |    1252 | Gravity Mountain | SSP 177 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"display_name_correction": null, "imported_at": "2026-08-13T00:00:00+08:00", "imported_from": "FrozenPool_65_decks_2026-08-12.zip", "source_display_name": "Mega Lucario Ex Solrock", "source_manifest": {"archetype": "Mega Lucario ex / Solrock", "deck_id": "mega_lucario_ex_solrock_5b1e19a2e025", "exact_deck_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b", "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3", "provenance": {"segment": "top500_stadium_coverage", "selection_purpose": "stadium_coverage_gravity_mountain", "source_ranks": [170], "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"}, "representative_card_ids": [675, 1252], "schema_version": "evaluation_frozen_0812_deck_v1"}, "source_member": "decks\\063_mega_lucario_ex_solrock\\deck.csv", "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"}

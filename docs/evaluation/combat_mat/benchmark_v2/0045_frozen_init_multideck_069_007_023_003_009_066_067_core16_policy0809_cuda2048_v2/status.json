@@ -1,0 +1,150 @@
+{
+  "checkpoint": "/home/cyd/repos/pokemon-tcg-ai-battle/rl_runs/0045_single_deck_expert_minimal_lora/versions/V1_minimal_lora_dragapult_007/checkpoint/update-000000.pt",
+  "checkpoint_sha256": "3c13e085b4587a8112148b393c4b80c4c875efbc13820dcf44acb6a0a1991bc7",
+  "completed_at": "2026-08-14T17:28:01.020155+00:00",
+  "completed_decks": [
+    "069",
+    "007",
+    "023",
+    "003",
+    "009",
+    "066",
+    "067"
+  ],
+  "contract_id": "0044_benchmark_v2_core16_meta_balanced_policy0809_common_seeds_cuda2048_v2",
+  "created_at": "2026-08-14T17:08:33.649936+00:00",
+  "current_deck": null,
+  "deck_order": [
+    "069",
+    "007",
+    "023",
+    "003",
+    "009",
+    "066",
+    "067"
+  ],
+  "last_completed_at": "2026-08-14T17:28:00.518943+00:00",
+  "schema_version": "0045_frozen_init_multideck_benchmark_v2_status_v1",
+  "state": "complete",
+  "summaries": {
+    "003": {
+      "draws": 2,
+      "elapsed_seconds": 169.65004052902805,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.6786703601108033,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.6466321243523316,
+      "games": 2048,
+      "games_per_second": 12.071909877614065,
+      "losses": 687,
+      "wilson_95": [
+        0.6428216952849573,
+        0.6837142547124104
+      ],
+      "win_rate": 0.66357421875,
+      "wins": 1359
+    },
+    "007": {
+      "draws": 0,
+      "elapsed_seconds": 210.2517231310194,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.6805170821791321,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.6124352331606218,
+      "games": 2048,
+      "games_per_second": 9.740704948818797,
+      "losses": 720,
+      "wilson_95": [
+        0.6274986201259469,
+        0.6688205703194254
+      ],
+      "win_rate": 0.6484375,
+      "wins": 1328
+    },
+    "009": {
+      "draws": 0,
+      "elapsed_seconds": 118.1015128279978,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.6112650046168052,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.5772020725388601,
+      "games": 2048,
+      "games_per_second": 17.341014106929286,
+      "losses": 829,
+      "wilson_95": [
+        0.573797260258493,
+        0.6162759046653478
+      ],
+      "win_rate": 0.59521484375,
+      "wins": 1219
+    },
+    "023": {
+      "draws": 1,
+      "elapsed_seconds": 110.52739161002683,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.5623268698060941,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.5015544041450777,
+      "games": 2048,
+      "games_per_second": 18.529343452037182,
+      "losses": 954,
+      "wilson_95": [
+        0.5120429411871267,
+        0.5552137171705401
+      ],
+      "win_rate": 0.53369140625,
+      "wins": 1093
+    },
+    "066": {
+      "draws": 0,
+      "elapsed_seconds": 185.74072893100674,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.4469067405355494,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.41036269430051814,
+      "games": 2048,
+      "games_per_second": 11.026122336155622,
+      "losses": 1168,
+      "wilson_95": [
+        0.40839925102069613,
+        0.4512390271893905
+      ],
+      "win_rate": 0.4296875,
+      "wins": 880
+    },
+    "067": {
+      "draws": 0,
+      "elapsed_seconds": 205.97096889599925,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.602954755309326,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.5419689119170984,
+      "games": 2048,
+      "games_per_second": 9.94314883780585,
+      "losses": 872,
+      "wilson_95": [
+        0.5526845507925745,
+        0.5954750444301117
+      ],
+      "win_rate": 0.57421875,
+      "wins": 1176
+    },
+    "069": {
+      "draws": 55,
+      "elapsed_seconds": 188.61445673700655,
+      "focal_first_games": 1083,
+      "focal_first_win_rate": 0.6048014773776547,
+      "focal_second_games": 965,
+      "focal_second_win_rate": 0.5326424870466321,
+      "games": 2048,
+      "games_per_second": 10.858128456482085,
+      "losses": 824,
+      "wilson_95": [
+        0.5492513456978776,
+        0.5920851102711322
+      ],
+      "win_rate": 0.57080078125,
+      "wins": 1169
+    }
+  }
+}
