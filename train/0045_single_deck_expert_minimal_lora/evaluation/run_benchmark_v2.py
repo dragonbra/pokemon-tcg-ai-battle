@@ -36,6 +36,18 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 ROOT = PROJECT_ROOT.parents[1]
 
 
+def candidate_policy_id(deck_id: str, checkpoint_update: int) -> str:
+    if checkpoint_update == 0:
+        return "Frozen-0045-Init"
+    return f"0045-single-deck-expert-{deck_id}-update-{checkpoint_update:06d}"
+
+
+def candidate_policy_role(checkpoint_update: int) -> str:
+    if checkpoint_update == 0:
+        return "frozen_specialist_initialization"
+    return "specialist_checkpoint_candidate"
+
+
 def _atomic_json(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
@@ -63,9 +75,18 @@ def validate_report(report: dict[str, Any]) -> None:
     opponent = report.get("opponent_policy_identity_audit") or {}
     focal = report.get("focal_policy_identity_audit") or {}
     metrics = report.get("collector_metrics") or {}
+    checkpoint_update = report.get("focal_checkpoint_update")
+    focal_deck_id = report.get("focal_deck_id")
     if (
         report.get("status") != "PASS"
         or report.get("benchmark_id") != "Benchmark-V2"
+        or not isinstance(checkpoint_update, int)
+        or not isinstance(focal_deck_id, str)
+        or report.get("focal_policy_id")
+        != candidate_policy_id(focal_deck_id, checkpoint_update)
+        or report.get("focal_policy_role")
+        != candidate_policy_role(checkpoint_update)
+        or focal.get("checkpoint_update") != checkpoint_update
         or focal.get("status") != "PASS"
         or report.get("focal_opponent_shared_parameter_storages") != 0
         or not isinstance(entries, list)
@@ -243,8 +264,9 @@ def run(
     report = {
         "schema_version": "0045_benchmark_v2_report_v1",
         "created_at": datetime.now(UTC).isoformat(), "status": "PASS",
-        "benchmark_id": "Benchmark-V2", "focal_policy_id": "Frozen-0045-Init",
-        "focal_policy_role": "frozen_specialist_initialization_cross_deck_audit",
+        "benchmark_id": "Benchmark-V2",
+        "focal_policy_id": candidate_policy_id(deck_id, checkpoint_update),
+        "focal_policy_role": candidate_policy_role(checkpoint_update),
         "focal_checkpoint_update": checkpoint_update,
         "focal_policy_identity_audit": focal_audit.to_manifest(),
         "focal_deployment_effective_sha256": focal_audit.effective_candidate_sha256,

@@ -224,18 +224,22 @@ class PortableCompoundSemanticPolicy:
 
     def __init__(self, actor: SemanticPolicy, value_head: nn.Module,
                  allocation_head: nn.Module, value_adapter: nn.Module,
-                 policy_strategy_adapter: nn.Module,
+                 policy_strategy_adapter: nn.Module | None,
                  deck: Sequence[int], metadata: Mapping[str, Any],
                  policy_option_lora: nn.Module | None = None,
                  meta_actor_residual: nn.Module | None = None) -> None:
         torch.set_num_threads(1)
         self.actor = actor.eval()
-        # q0/q1, the frozen pretrained Meta head, and adapted Value are part of
-        # every strategic policy decision and therefore the effective policy.
+        # Legacy 0042-0044 policies consume Critic context in Actor inference.
+        # 0045 keeps these modules only for deployment-identity compatibility;
+        # its Actor path never evaluates or consumes them.
         self.value_head = value_head.eval()
         self.allocation_head = allocation_head.eval()
         self.value_adapter = value_adapter.eval()
-        self.policy_strategy_adapter = policy_strategy_adapter.eval()
+        self.policy_strategy_adapter = (
+            policy_strategy_adapter.eval()
+            if policy_strategy_adapter is not None else None
+        )
         self.policy_option_lora = (
             policy_option_lora.eval() if policy_option_lora is not None else None
         )
@@ -271,14 +275,23 @@ class PortableCompoundSemanticPolicy:
         meta_residual_expected = option_lora_expected | {
             "meta_actor_residual_state_dict"
         }
+        minimal_0045_expected = {
+            "schema_version", "actor_state_dict", "value_head_state_dict",
+            "allocation_head_state_dict", "value_adapter_state_dict",
+            "policy_option_lora_state_dict", "metadata",
+        }
         supported_schemas = {
             SCHEMA_VERSION,
             "0043_focal_v1_kaggle_candidate_v1",
             "0044_g2_policy_option_lora_kaggle_candidate_v1",
             "0044_policy_value_split_option_lora_candidate_v1",
             "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
+            "0045_minimal_lora_candidate_v1",
         }
         expected = (
+            minimal_0045_expected
+            if payload.get("schema_version") == "0045_minimal_lora_candidate_v1"
+            else
             meta_residual_expected
             if payload.get("schema_version") == "0044_policy_value_split_option_lora_meta_residual_candidate_v2"
             else option_lora_expected
@@ -321,16 +334,29 @@ class PortableCompoundSemanticPolicy:
                 "0044_g2_policy_option_lora_kaggle_candidate_v1",
                 "0044_policy_value_split_option_lora_candidate_v1",
                 "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
+                "0045_minimal_lora_candidate_v1",
             }
             or own_version != "own_archetypes_v2"
         ):
             raise ValueError("dynamic own-taxonomy checkpoint identity mismatch")
         value_adapter = ValueResidualAdapter(width, own_archetype_classes=own_classes)
         value_adapter.load_state_dict(payload["value_adapter_state_dict"], strict=True)
-        policy_adapter = PolicyStrategyAdapter(width, own_archetype_classes=own_classes)
-        policy_adapter.load_state_dict(
-            payload["policy_strategy_adapter_state_dict"], strict=True
-        )
+        minimal_0045 = payload.get("schema_version") == "0045_minimal_lora_candidate_v1"
+        if minimal_0045:
+            if metadata.get("policy_strategy_adapter") != "removed":
+                raise ValueError("0045 candidate did not retire Policy Strategy Adapter")
+            if metadata.get("meta_actor_residual") != "removed":
+                raise ValueError("0045 candidate did not retire Meta Actor Residual")
+            if metadata.get("critic_outputs_consumed_by_actor") is not False:
+                raise ValueError("0045 candidate does not prove Critic-free Actor inference")
+            policy_adapter = None
+        else:
+            policy_adapter = PolicyStrategyAdapter(
+                width, own_archetype_classes=own_classes
+            )
+            policy_adapter.load_state_dict(
+                payload["policy_strategy_adapter_state_dict"], strict=True
+            )
         policy_option_lora = None
         if has_policy_option_lora:
             policy_option_lora = PolicyOnlyOptionLoRA(width)
@@ -415,7 +441,7 @@ class PortableCompoundSemanticPolicy:
         )
         return validated, state, policy_options, value, auxiliary, context
 
-    def _greedy_strategy(self, validated, state, options, context):
+    def _greedy_strategy(self, validated, state, options, context=None):
         decoder = self.actor.action_decoder
         decoder_state = decoder.initialize(validated, state.summary)
         maximum_steps = min(
@@ -430,8 +456,14 @@ class PortableCompoundSemanticPolicy:
         active = torch.ones(validated.batch_size, dtype=torch.bool, device=options.device)
         legal = torch.ones_like(active)
         for step in range(maximum_steps):
-            readout, _ = self.policy_strategy_adapter(decoder_state.hidden, context)
+            readout = decoder_state.hidden
+            if self.policy_strategy_adapter is not None:
+                if context is None:
+                    raise RuntimeError("legacy strategy-conditioned policy has no context")
+                readout, _ = self.policy_strategy_adapter(readout, context)
             if self.meta_actor_residual is not None:
+                if context is None:
+                    raise RuntimeError("Meta Actor Residual has no context")
                 readout, _ = self.meta_actor_residual(
                     readout, context.own_archetype_id
                 )
@@ -510,20 +542,24 @@ class PortableCompoundSemanticPolicy:
         batch = DecisionBatch.from_mapping(encoder.encode(observation))
         with torch.inference_mode():
             validated, state, value_options, options = self._encode_options(batch)
-            memory = torch.cat((state.tokens, value_options), dim=1)
-            memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
-            queries = self.value_head.decode(memory, memory_mask)
-            z_meta = queries[:, 1]
-            meta_logits = self.value_head.heads.archetype(z_meta)
-            own_id = torch.full(
-                (validated.batch_size,), int(self.metadata["own_archetype_id"]),
-                dtype=torch.long, device=options.device,
-            )
-            adapted_value, _ = self.value_adapter(queries[:, 0], own_id)
-            value = 2.0 * self.value_head.heads.value(adapted_value).squeeze(-1).sigmoid() - 1.0
-            strategy_context = StrategyContext.build(
-                validated.global_cat[:, 2], z_meta, meta_logits, value, own_id
-            )
+            strategy_context = None
+            if self.policy_strategy_adapter is not None:
+                memory = torch.cat((state.tokens, value_options), dim=1)
+                memory_mask = torch.cat((state.mask, validated.option_mask), dim=1)
+                queries = self.value_head.decode(memory, memory_mask)
+                z_meta = queries[:, 1]
+                meta_logits = self.value_head.heads.archetype(z_meta)
+                own_id = torch.full(
+                    (validated.batch_size,), int(self.metadata["own_archetype_id"]),
+                    dtype=torch.long, device=options.device,
+                )
+                adapted_value, _ = self.value_adapter(queries[:, 0], own_id)
+                value = 2.0 * self.value_head.heads.value(
+                    adapted_value
+                ).squeeze(-1).sigmoid() - 1.0
+                strategy_context = StrategyContext.build(
+                    validated.global_cat[:, 2], z_meta, meta_logits, value, own_id
+                )
             sequences, lengths, legal = self._greedy_strategy(
                 validated, state, options, strategy_context
             )

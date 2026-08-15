@@ -1,18 +1,17 @@
-"""0044 V3: continue U1 with singleton-G2 telemetry health contract."""
+"""0045 V3: continue deck-007 cold-start training from V2 U45."""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-from .run_v1 import ROOT, PROJECT, run
+from .lr_profiles import EXPERT_COLD_START_LR_PROFILE
+from .run_v1 import run
 
 
-VERSION = "V3_singleton_g2_telemetry_fix"
-WANDB_RUN_ID = "0044-v3-singleton-g2-telemetry-fix"
-PARENT_ROOT = ROOT / "rl_runs" / PROJECT / "versions/V2_cached_complete_g2_reference"
-PARENT_CHECKPOINT = PARENT_ROOT / "checkpoint/update-000001.pt"
-PARENT_PFSP_STATE = PARENT_ROOT / "artifact/pfsp_state.json"
+VERSION = "V3_dragapult_007_expert_continue_u45"
+WANDB_RUN_ID = "0045-v3-dragapult-007-expert-continue-u45"
+START_UPDATE = 45
 
 
 def main() -> int:
@@ -20,16 +19,25 @@ def main() -> int:
     parser.add_argument("--launch-formal", action="store_true")
     parser.add_argument("--updates", type=int)
     parser.add_argument("--wandb-mode", choices=("online", "offline"), default="online")
+    parser.add_argument("--parent-checkpoint", required=True, type=Path)
+    parser.add_argument("--u0-reference-checkpoint", required=True, type=Path)
     args = parser.parse_args()
-    if not PARENT_CHECKPOINT.is_file() or not PARENT_PFSP_STATE.is_file():
-        raise FileNotFoundError("0044 V3 immutable U1/PFSP parent is unavailable")
     run(
-        updates=args.updates, wandb_mode=args.wandb_mode,
-        launch_formal=args.launch_formal, version=VERSION, start_update=1,
-        parent_checkpoint=PARENT_CHECKPOINT,
-        parent_pfsp_state=PARENT_PFSP_STATE,
+        updates=args.updates,
+        wandb_mode=args.wandb_mode,
+        launch_formal=args.launch_formal,
+        version=VERSION,
+        start_update=START_UPDATE,
+        parent_checkpoint=args.parent_checkpoint.resolve(),
+        reference_checkpoint=args.u0_reference_checkpoint.resolve(),
+        baseline_evaluation_checkpoint=START_UPDATE,
+        source_parent_version="V2_dragapult_007_expert_cold_start_lr",
+        source_parent_update=START_UPDATE,
+        reference_anchor_update=0,
+        reference_anchor_identity="Frozen-0045-Init",
+        learning_rate_profile=EXPERT_COLD_START_LR_PROFILE,
         wandb_run_id=WANDB_RUN_ID,
-        wandb_name="0044 · V3 G2 → 007 · singleton-G2 telemetry fix",
+        wandb_name="0045 · V3 · deck 007 expert continue from V2 U45",
     )
     return 0
 

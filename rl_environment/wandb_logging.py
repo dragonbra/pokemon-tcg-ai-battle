@@ -169,7 +169,14 @@ class WandbSink:
             "rollout/opponent/*",
         ):
             self._run.define_metric(strength_namespace, step_metric="env/episodes")
-        self._run.define_metric("eval/*", step_metric="env/episodes")
+        # Evaluation is emitted as a second record after the PPO row at the
+        # same checkpoint.  It therefore cannot use W&B's internal `_step`,
+        # and eval-only rows intentionally do not duplicate env/episodes.
+        # Bind every eval curve to the checkpoint it actually evaluated.
+        self._run.define_metric("eval/checkpoint_update")
+        self._run.define_metric(
+            "eval/*", step_metric="eval/checkpoint_update"
+        )
         self._run.define_metric("system/disk/*", step_metric="trainer/update")
         self._run.define_metric("system/rollout/*", step_metric="env/decisions")
         self._run.define_metric("system/gpu/*", step_metric="trainer/update")

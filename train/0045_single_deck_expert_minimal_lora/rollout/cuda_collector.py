@@ -156,6 +156,9 @@ class CudaFullSemanticRolloutCollector:
         opponent_identity_audit: Any | None = None,
         opponent_own_archetype_ids: torch.Tensor | None = None,
         role_compacted: bool = True,
+        focal_compacted_policy_fn: Any | None = None,
+        focal_allocation_head_for_job: Any | None = None,
+        focal_resident_router_cls: Any | None = None,
     ) -> None:
         if device.type != "cuda" or lane_count < 1:
             raise ValueError("0038 CUDA collector requires CUDA and positive lanes")
@@ -201,6 +204,9 @@ class CudaFullSemanticRolloutCollector:
         self.opponent_identity_audit = opponent_identity_audit
         self.opponent_own_archetype_ids = opponent_own_archetype_ids
         self.role_compacted = bool(role_compacted)
+        self.focal_compacted_policy_fn = focal_compacted_policy_fn
+        self.focal_allocation_head_for_job = focal_allocation_head_for_job
+        self.focal_resident_router_cls = focal_resident_router_cls
         self._metrics: dict[str, float] = {}
 
     def _opponent_strategy_fn(
@@ -294,7 +300,7 @@ class CudaFullSemanticRolloutCollector:
 
             return readout, {"value": value, **auxiliary}
 
-        router = Semantic0031ResidentRouter(
+        router_kwargs = dict(
             focal_adapter=adapter,
             same_policy=False,
             opponent_adapter=opponent_adapter,
@@ -308,12 +314,21 @@ class CudaFullSemanticRolloutCollector:
             ),
             role_compacted=self.role_compacted,
         )
+        router_cls = self.focal_resident_router_cls or Semantic0031ResidentRouter
+        if self.focal_compacted_policy_fn is not None:
+            if self.focal_resident_router_cls is None:
+                raise RuntimeError(
+                    "custom compacted focal policy requires a project-local router class"
+                )
+            router_kwargs["focal_compacted_policy_fn"] = self.focal_compacted_policy_fn
+        router = router_cls(**router_kwargs)
         boundary = CudaActionBoundaryAdapter(
             self.model,
             resident_jobs,
             greedy=self.mode == "greedy",
             max_select=self.max_select,
             agent_selects_first_player=self.agent_selects_first_player,
+            allocation_head_for_job=self.focal_allocation_head_for_job,
         )
         expected = tuple(sorted(self.model.actor.expected_batch_keys))
         staged: list[_Staged] = []

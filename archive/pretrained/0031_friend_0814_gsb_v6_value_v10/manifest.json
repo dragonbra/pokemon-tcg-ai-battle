@@ -1,0 +1,187 @@
+{
+  "architecture_parity_with_policy_0809": {
+    "actor_state_entries": 293,
+    "actor_structure_sha256_0809": "bab437eb2b1b0c0ca71eed731c05babf03bd5132f3c36058f9d211087496474b",
+    "actor_structure_sha256_0814": "bab437eb2b1b0c0ca71eed731c05babf03bd5132f3c36058f9d211087496474b",
+    "comparison": "exact_state_key_shape_dtype_inventory_match",
+    "reference_release": "archive/pretrained/0031_friend_0809_gsb_v5_value_v9",
+    "status": "PASS",
+    "value_state_entries": 57,
+    "value_structure_sha256_0809": "c02ca9449613a009118326bbf3c78658412967dba7523f0832969215d5f5e70d",
+    "value_structure_sha256_0814": "c02ca9449613a009118326bbf3c78658412967dba7523f0832969215d5f5e70d"
+  },
+  "asset_id": "0031-friend-0814-gsb-v6-value-v10",
+  "checkpoint_payload": "paired_model_weights_only_no_optimizer_no_resume_state",
+  "display_name": "Policy-0814 · 0031 Friend GSB V6 + Value V10",
+  "evidence_boundary": {
+    "architecture_parity_does_not_claim_weight_equality": true,
+    "official_engine_evaluation_required_for_strength_claims": true,
+    "policy_validation_is_imitation_evidence_only": true,
+    "value_validation_is_offline_calibration_evidence_only": true
+  },
+  "file_sha256": {
+    "README.md": "21f42199671e348eaa42d79fb31b281ee26d02da699a03398f68863946a9075a",
+    "assets/official_full_engine_prototypes_v2.json": "7228b2612da118e1ec353c7a2e08d4a306de0d4128f0c9e68b4075f2c6b54f73",
+    "assets/official_public_prototypes_v1.json": "5b45041cd14beed8a847f2e99ce955a105fbeb63d09256769d41f8cc88bdbc9d",
+    "checkpoint_metadata.json": "ea5be3bfae305fc4df7b5b89258ac7cd7f0357d8feb58b68ff43e2ba58853435",
+    "contracts/local_0031_model_contract.json": "d1e6d2fa94f661fcc39a7146d9cc4674871c82048ed29d76bd7ae438b5102ac9",
+    "loader.py": "392e9db8848fa0d4902b3a769187cad183ed1c9e351a61faf40a0e5fcf02ec63",
+    "model.pt": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b",
+    "model_source/__init__.py": "570bd164532128dd716b7288426827596c2722395afaf8247dbf05b5e74996de",
+    "model_source/contracts/__init__.py": "6f486a91ced3c3799b8bb97458ceb15c662c5c94cb3c587a2f14012d3d8d7f48",
+    "model_source/contracts/batch.py": "bcf56b8dfce862b40e80590e4ece63923d324899660cba901720391376bf332c",
+    "model_source/contracts/fields.py": "73e0aaa61c69b2d7bac45940a651a8d1be04465d70654ececd24eaccaca7596a",
+    "model_source/contracts/prototype_field_inventory.json": "91ffc9b36f818826ef624fc9fdc6cdc52bf46515c7882e1e4fa4f73c9b6fcf7a",
+    "model_source/domain/__init__.py": "aeb1002f3e5be3fe2e2eff1440cd194f9c875fe99c571ce401b388f8f044c27f",
+    "model_source/domain/prototypes.py": "9af585adae948aab591d9d7f5a040e8139a5c90f8e41ad003867eb05625fdf79",
+    "model_source/features/__init__.py": "acbf55c9933fbfd860f4ccf8a8296a3434cc5616b8a1703f8e184bca9ced1a55",
+    "model_source/features/collate.py": "65ea6c7c77efe4f6cbcf4df5aa3c6ef237269104ff8f8902bfc00900ab3258f6",
+    "model_source/features/compiler.py": "9d7abf4825b9e09362ba3abbe1dd31716a698ed4655cb8bf8a45e5fcc58590c9",
+    "model_source/features/incremental.py": "74ac150b4d6f4e9e738f6956eeea50b6c11ee8ab12e9a31a2b2debc08e61ec35",
+    "model_source/features/layers.py": "be5ebd5a4b55cc8dea7724bbb60ec318199a742ba3f9f8f33dc75c9218c0f967",
+    "model_source/features/relations.py": "028f185c5943ac1dac2f8ff51b303edd088984f7ba5c0d555c0a3f7c2da35289",
+    "model_source/knowledge/__init__.py": "d51464603389e55bedbc77451be8c8ae19310374359ee4053b61d0dd71c55712",
+    "model_source/knowledge/ledger.py": "ab69d0601441b9c604b1ed0b7e3e4c4aee754b27760f781425a82060ddf768af",
+    "model_source/knowledge/state.py": "24d2f0064e61e86eac5eb97ab5cb97bfe325af246c0911fbf9949221908bb78c",
+    "model_source/model/README.md": "f5a1dd98e35f52c08e72a9358c7450909df8b9f42162f731f05406af769177d2",
+    "model_source/model/__init__.py": "05fd2198f4a1aa7f7a8a6fcb3aba14de94aea8cde90715a432499b2e5b38af39",
+    "model_source/model/action_decoder.py": "40e025becce90d6f151d485bf8042eb933e1287aa9e0b93893573f278bf454b5",
+    "model_source/model/config.py": "0d4ab95b20438ec87936da632e3dc016cea930409f76fd98769054f1840411ce",
+    "model_source/model/option_encoder.py": "9d7a7b41708471fe94ffc8cb27a2fcd3229f16645b96861e30d0d29d7bee2f53",
+    "model_source/model/policy.py": "1d613522ab73ad7001ccf5c083d346df0b9964db709eb6060812c7d55695e260",
+    "model_source/model/prototype_encoder.py": "2687de3ec1543394d7233c978f55a82d374ab251fe02de4af8f404b440407ec4",
+    "model_source/model/state_encoder.py": "277495c493f1bd26a2b5493e00f969becfc96b314dcc61493da537d9325da72e",
+    "model_source/model/typed_fields.py": "efdff960f1a68cd7aff12ea7100d45f9d6fca6f786a9d370c6e698d5162ae501",
+    "value_head.pt": "0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d",
+    "value_source/__init__.py": "11c57a411ffa64035686f91eb596750260e506adf45de3ec2af7fa18bc9ca76f",
+    "value_source/checkpoints.py": "2a53cb9a9428dea2db536aebea07d63507141eb776fe1c9ded727e53153dcfc0",
+    "value_source/value_network.py": "f498542f68f9ed9a0ff5039ad14ad74a0111a99c2e2b30e9423c00f32bf97ba9",
+    "verify_archive.py": "c67326ee517dfa2b2ac6bd271248b308419310d1deccc91be285ae8608470c82"
+  },
+  "implementation_bundle_sha256": {
+    "model_source": "b96d727e4705166e28a583ec22124c0fbc9c90dc46cdc1902a0ad68dde08bbba",
+    "value_source": "903663402dafc7ac6c67e0468a1e45027f5c8b0402d39d86ac190d48c102b1a3"
+  },
+  "pair_contract": {
+    "critic_encoder_frozen": true,
+    "critic_source_checkpoint_sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b",
+    "policy_checkpoint_sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b",
+    "status": "exact_sha256_match",
+    "value_is_actor_visible": false,
+    "value_output": "2*sigmoid(value_logit)-1"
+  },
+  "policy": {
+    "action_contract": "ordered_legal_option_pointer_plus_stop",
+    "actor_view": "canonical_typed_state_and_option_relations_only",
+    "checkpoint_schema": "0031_model_only_checkpoint_v1",
+    "class": "SemanticPolicy",
+    "dataset_manifest_sha256": "7dfb2cebc01f70893ad517a21bee8e26a9f665b83e0f0a9012154eb8e4e1eaae",
+    "epoch": 23,
+    "global_step": 143198,
+    "parameter_count": 56352322,
+    "policy_id": "Policy-0814",
+    "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
+    "source_identity_actor_visible": false,
+    "validation": {
+      "action_length_accuracy": 0.9955536300142203,
+      "decisions": 1431055,
+      "exact_action": 0.8197791140102931,
+      "legal_action": 1.0,
+      "loss": 0.2500847065524083,
+      "teacher_exact_action": 0.8197791140102931,
+      "token_accuracy": 0.9096497793342841,
+      "tokens": 2974182
+    },
+    "version": "V6_medal_zone_gsb_all_days_to_0810"
+  },
+  "policy_identity": {
+    "action_schema_version": "ordered_legal_option_pointer_plus_stop",
+    "base_checkpoint": {
+      "path": "archive/pretrained/0031_friend_0814_gsb_v6_value_v10/model.pt",
+      "sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b"
+    },
+    "components": {
+      "action_decoder": {
+        "effective_sha256": "eee255a80f8e9aa5384ab2abf2e7eaded5647557dddfd64454e6fb7980ed3a38",
+        "source_policy_id": "Policy-0814"
+      },
+      "final_norm": {
+        "effective_sha256": "c0f42de3dbd044a06a19f4e4ce5ee087d3e73d643d03adbf3d158984c4aa4c92",
+        "source_policy_id": "Policy-0814"
+      },
+      "lora": {
+        "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source_policy_id": "Policy-0814"
+      },
+      "option_input_encoder": {
+        "effective_sha256": "0a9ca03921264f895a089f205751466ec8e53399e2c2c9c39b77ba43c6e51527",
+        "source_policy_id": "Policy-0814"
+      },
+      "option_transformer_layer_0": {
+        "effective_sha256": "449fc50ff682b1add6d7b0c88de712ef927cd22a9f514fff00a5f8ecb260369a",
+        "source_policy_id": "Policy-0814"
+      },
+      "option_transformer_layer_1": {
+        "effective_sha256": "c6b32a8a6ed8c26b479e0cc198c7b7ef54ce8d3143813d488172324c54bcdc1b",
+        "source_policy_id": "Policy-0814"
+      },
+      "prototype_encoder": {
+        "effective_sha256": "9057714b8ef6ed1640d11c93323bdeee5cac21cf26c2179b8da7be03f236e992",
+        "source_policy_id": "Policy-0814"
+      },
+      "state_encoder": {
+        "effective_sha256": "86c3604d71e46ef2d9d320bf84b90370efc9078fd8bc18a96045a23baf9d0567",
+        "source_policy_id": "Policy-0814"
+      }
+    },
+    "created_from_update": null,
+    "effective_policy_sha256": "476d57d55eb9c040fa4e75ce74ac5205af5d094a296db71cba4ecbf792902580",
+    "model_schema_version": "0031_model_only_checkpoint_v1",
+    "observation_schema_version": "0031_rule_faithful_semantic_decision_v2",
+    "parent_policy_id": null,
+    "policy_id": "Policy-0814",
+    "policy_kind": "immutable_pretrained",
+    "trained_checkpoint": null
+  },
+  "provenance": {
+    "policy_member": "best_validation_loss_0814.pt",
+    "source_archive": "n-m-0814.zip",
+    "source_archive_sha256": "dadbd03f5c3f1682305c93bda12e66b4e5483385644f82b383d4f2eff39abd19",
+    "value_member": "best_validation_value_loss_0814.pt"
+  },
+  "release_date": "2026-08-16",
+  "release_stage": "internal_pretrained_policy_and_value",
+  "schema_version": "pretrained_policy_value_archive_v1",
+  "value": {
+    "architecture": "latent_queries",
+    "auxiliary_outputs": {
+      "opponent_archetype_logits": 15,
+      "terminal_prize_difference_logits": 13
+    },
+    "checkpoint_schema": "0036_value_model_only_checkpoint_v1",
+    "dataset_catalog_sha256": "f04233b1da6b86ca2f2122fc5a450fdc1202da1430a6db60848a06ceb4fc0868",
+    "epoch": 13,
+    "parameter_count": 3407389,
+    "project_id": "0036_dedicated_action_value_network",
+    "validation_exact007_value_loss": null,
+    "validation_value_loss": 0.39862922933317185,
+    "version": "V10_v6_e23_best_val_encoder_latent_value_archetype_diff"
+  },
+  "weights": {
+    "policy": {
+      "bytes": 464776538,
+      "path": "model.pt",
+      "sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b"
+    },
+    "value": {
+      "bytes": 13651904,
+      "path": "value_head.pt",
+      "sha256": "0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d"
+    }
+  },
+  "zero_shot": {
+    "requires_chronological_observations": true,
+    "requires_exact_60_card_deck": true,
+    "requires_reset_between_games": true
+  }
+}

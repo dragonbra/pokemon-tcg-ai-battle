@@ -245,6 +245,39 @@ class WandbLoggingTests(unittest.TestCase):
             [{"trainer/update": 4, "ppo/policy_loss": -0.125}],
         )
 
+    def test_ppo_eval_history_uses_evaluated_checkpoint_axis(self) -> None:
+        with TemporaryDirectory() as directory:
+            fake_run = FakeRun()
+            sink = WandbSink(
+                self._settings(Path(directory), job_type="ppo_train"),
+                sdk=FakeWandb(fake_run),
+            )
+            sink.log(
+                {
+                    "step": 45,
+                    "eval/checkpoint_update": 45,
+                    "eval/core/win_rate": 0.625,
+                }
+            )
+
+        self.assertIn(
+            (
+                "eval/*",
+                {"step_metric": "eval/checkpoint_update"},
+            ),
+            fake_run.defined_metrics,
+        )
+        self.assertEqual(
+            fake_run.logged,
+            [
+                {
+                    "trainer/update": 45,
+                    "eval/checkpoint_update": 45,
+                    "eval/core/win_rate": 0.625,
+                }
+            ],
+        )
+
     def test_environment_settings_load_config_and_redact_secret_fields(self) -> None:
         with TemporaryDirectory() as directory:
             output = Path(directory)

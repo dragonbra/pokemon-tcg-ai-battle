@@ -27,6 +27,7 @@ from ..cuda_engine_2.build import DEFAULT_BUILD_DIR
 from ..initial_run import balanced_focal_schedule
 from ..integrated.presets import preset
 from ..league.pfsp import Curriculum, PFSPConfig, PFSPState
+from ..league.aggressive_meta_quota import aggressive_meta_quota_schedule
 from ..league.meta_balanced import balanced_meta_deck_schedule
 from ..league.sampler import LeagueLane, _seed, build_schedule, build_uniform_schedule
 from ..own_archetype import OwnArchetypeVocabulary
@@ -235,6 +236,7 @@ def _jobs(
     latest_champion_policy_id: str = "Champion-G2",
     rollout_games: int = 256,
     opponent_meta_weights: dict[int, float] | None = None,
+    opponent_meta_quotas: dict[int, int] | None = None,
 ) -> tuple[list[RolloutJob], dict[str, float], dict[str, float], str]:
     training_deck_ids = tuple(
         deck.deck_id for deck in registry.decks if "training" in deck.roles
@@ -248,7 +250,7 @@ def _jobs(
     policy_ids = opponent_policy_ids
     if opponent_sampling_mode in {
         "uniform_001_067", "meta_balanced_001_067",
-        "meta_balanced_training_pool",
+        "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
     }:
         curriculum = _uniform_curriculum(update, deck_ids, policy_ids)
     else:
@@ -263,11 +265,13 @@ def _jobs(
         "uniform_001_067": build_uniform_schedule,
     }.get(opponent_sampling_mode)
     if schedule_builder is None and opponent_sampling_mode not in {
-        "meta_balanced_001_067", "meta_balanced_training_pool"
+        "meta_balanced_001_067", "meta_balanced_training_pool",
+        "aggressive_meta_quota_training_pool",
     }:
         raise ValueError(f"unsupported opponent sampling mode: {opponent_sampling_mode}")
     if opponent_sampling_mode in {
-        "meta_balanced_001_067", "meta_balanced_training_pool"
+        "meta_balanced_001_067", "meta_balanced_training_pool",
+        "aggressive_meta_quota_training_pool",
     }:
         if policy_ids != (latest_champion_policy_id,):
             raise ValueError("Meta-balanced opponent schedule requires one latest champion")
@@ -278,13 +282,28 @@ def _jobs(
             row for row in own.mappings if row.deck_id in set(deck_ids)
         )
         quota_seed = 440_120_000 + update
-        opponent_slots = balanced_meta_deck_schedule(
-            quota_seed=quota_seed,
-            shuffle_seed=440_120_200 + update,
-            mappings=training_mappings,
-            lanes=rollout_games,
-            meta_weights=opponent_meta_weights,
-        )
+        if opponent_sampling_mode == "aggressive_meta_quota_training_pool":
+            if opponent_meta_weights is not None or opponent_meta_quotas is None:
+                raise ValueError("aggressive Meta schedule requires quotas, not weights")
+            opponent_slots = aggressive_meta_quota_schedule(
+                quota_seed=quota_seed,
+                shuffle_seed=440_120_200 + update,
+                mappings=training_mappings,
+                lanes=rollout_games,
+                fixed_meta_quotas=opponent_meta_quotas,
+            )
+            branch_name = "aggressive_meta_quota"
+        else:
+            if opponent_meta_quotas is not None:
+                raise ValueError("Meta quotas require the aggressive schedule")
+            opponent_slots = balanced_meta_deck_schedule(
+                quota_seed=quota_seed,
+                shuffle_seed=440_120_200 + update,
+                mappings=training_mappings,
+                lanes=rollout_games,
+                meta_weights=opponent_meta_weights,
+            )
+            branch_name = "meta_balanced_uniform"
         scheduled_deck_counts: dict[str, int] = defaultdict(int)
         for slot in opponent_slots:
             scheduled_deck_counts[slot.deck_id] += 1
@@ -295,7 +314,7 @@ def _jobs(
         master = 430_044_001 + update
         league = tuple(
             LeagueLane(
-                lane_id=row.lane_id, branch="meta_balanced_uniform",
+                lane_id=row.lane_id, branch=branch_name,
                 opponent_deck_id=row.deck_id,
                 opponent_policy_id=latest_champion_policy_id,
                 seat_slot=row.lane_id,
@@ -304,24 +323,26 @@ def _jobs(
                 engine_seed=_seed(master, row.lane_id, "engine"),
                 search_seed=_seed(master, row.lane_id, "search"),
                 policy_seed=_seed(master, row.lane_id, "policy"),
-                curriculum_version=f"meta-balanced-u{update:06d}",
+                curriculum_version=f"{branch_name}-u{update:06d}",
             )
             for row in opponent_slots
         )
         curriculum = Curriculum(
             **{
                 **asdict(curriculum),
-                "curriculum_version": f"meta-balanced-u{update:06d}",
+                "curriculum_version": f"{branch_name}-u{update:06d}",
                 "deck_weights": scheduled_deck_weights,
                 "config_hash": hashlib.sha256(json.dumps({
                     "sampling_mode": opponent_sampling_mode,
                     "opponent_meta_weights": opponent_meta_weights,
+                    "opponent_meta_quotas": opponent_meta_quotas,
                     "rollout_games": rollout_games,
                 }, sort_keys=True).encode()).hexdigest(),
                 "stats_snapshot": {
                     "sampling_mode": opponent_sampling_mode,
                     "pfsp_enabled": False,
                     "opponent_meta_weights": opponent_meta_weights,
+                    "opponent_meta_quotas": opponent_meta_quotas,
                 },
             }
         )
@@ -551,8 +572,12 @@ def run(
     *, updates: int | None, wandb_mode: str, launch_formal: bool,
     version: str = VERSION, start_update: int = 0,
     parent_checkpoint: Path | None = None, parent_pfsp_state: Path | None = None,
+    reference_checkpoint: Path | None = None,
     baseline_evaluation_checkpoint: int | None = None,
+    baseline_evaluation_provenance: Path | None = None,
     periodic_evaluation_enabled: bool = True,
+    periodic_evaluation_profile: str = "benchmark_tiny_v2_core16_g2",
+    periodic_evaluation_interval_updates: int = 5,
     wandb_run_id: str | None = None, wandb_name: str | None = None,
     focal_deck_ids: tuple[str, ...] = (FOCAL_DECK_ID,),
     focal_deck_id: str = FOCAL_DECK_ID,
@@ -573,6 +598,7 @@ def run(
     latest_champion_policy_id: str = "Champion-G2",
     rollout_games: int = 512,
     opponent_meta_weights: dict[int, float] | None = None,
+    opponent_meta_quotas: dict[int, int] | None = None,
     ppo_batch_size: int = 4096,
     value_learning_rate: float | None = None,
     prize_learning_rate: float | None = None,
@@ -581,8 +607,32 @@ def run(
 ) -> None:
     if not launch_formal:
         raise RuntimeError("formal 0045 PPO requires explicit --launch-formal")
+    if periodic_evaluation_profile not in {
+        "benchmark_tiny_v2_core16_g2",
+        "policy0809_three_pool_cuda512",
+    }:
+        raise RuntimeError("unknown periodic evaluation profile")
+    if periodic_evaluation_interval_updates <= 0:
+        raise RuntimeError("periodic evaluation interval must be positive")
     if parent_checkpoint is None:
         raise RuntimeError("0045 formal PPO requires exact migrated Frozen-0045-Init U0")
+    reference_checkpoint = reference_checkpoint or parent_checkpoint
+    baseline_provenance: dict[str, Any] | None = None
+    if baseline_evaluation_provenance is not None:
+        if baseline_evaluation_checkpoint is not None:
+            raise RuntimeError("baseline evaluation cannot be both rerun and reused")
+        from ..evaluation.run_benchmark_tiny_v2_three_pool import validate_report
+
+        baseline_provenance = json.loads(
+            baseline_evaluation_provenance.read_text(encoding="utf-8")
+        )
+        validate_report(baseline_provenance)
+        audit = baseline_provenance["focal_policy_identity_audit"]
+        if (
+            baseline_provenance.get("focal_checkpoint_update") != start_update
+            or audit.get("source_checkpoint_sha256") != sha256_file(parent_checkpoint)
+        ):
+            raise RuntimeError("baseline provenance is not the exact parent checkpoint")
     if "expandable_segments:True" not in os.environ.get("PYTORCH_CUDA_ALLOC_CONF", os.environ.get("PYTORCH_ALLOC_CONF", "")):
         raise RuntimeError("set PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True")
     device = torch.device("cuda:0")
@@ -610,18 +660,25 @@ def run(
     )
     if opponent_sampling_mode not in {
         "pfsp_mixture", "uniform_001_067", "meta_balanced_001_067",
-        "meta_balanced_training_pool",
+        "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
     }:
         raise RuntimeError("formal opponent sampling mode is unsupported")
     if opponent_meta_weights is not None and opponent_sampling_mode not in {
         "meta_balanced_001_067", "meta_balanced_training_pool",
     }:
         raise RuntimeError("opponent Meta weights require a Meta-balanced schedule")
+    if opponent_meta_quotas is not None and opponent_sampling_mode != (
+        "aggressive_meta_quota_training_pool"
+    ):
+        raise RuntimeError("opponent Meta quotas require the aggressive schedule")
+    if opponent_sampling_mode == "aggressive_meta_quota_training_pool":
+        if opponent_meta_quotas is None or opponent_meta_weights is not None:
+            raise RuntimeError("aggressive schedule requires quotas and forbids weights")
     if opponent_meta_weights is None and opponent_sampling_mode == "meta_balanced_training_pool":
         opponent_meta_weights = {0: 3.0, 1: 3.0, 2: 3.0, 3: 3.0, 5: 3.0, 27: 3.0}
     if opponent_sampling_mode in {
         "uniform_001_067", "meta_balanced_001_067",
-        "meta_balanced_training_pool",
+        "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
     } and parent_pfsp_state is not None:
         raise RuntimeError("uniform training must not load a PFSP state")
     opponent_deck_ids = (
@@ -656,7 +713,7 @@ def run(
     if parent_checkpoint is not None:
         parent = torch.load(parent_checkpoint, map_location="cpu", weights_only=True)
         if parent.get("schema_version") != "0045_minimal_lora_model_only_v1":
-            raise RuntimeError("0045 requires the audited migrated U0 checkpoint")
+            raise RuntimeError("0045 requires an audited model-only parent checkpoint")
         incompatible = model.load_state_dict(parent["state_dict"], strict=False)
         if incompatible.unexpected_keys:
             raise RuntimeError(f"0045 U0 checkpoint has unexpected tensors: {incompatible}")
@@ -678,13 +735,18 @@ def run(
         ),
     )
     if parent_checkpoint is not None:
+        reference = torch.load(
+            reference_checkpoint, map_location="cpu", weights_only=True
+        )
+        if reference.get("schema_version") != "0045_minimal_lora_model_only_v1":
+            raise RuntimeError("0045 requires an audited model-only reference checkpoint")
         reference_model, _ = load_actor_critic(
             checkpoint=focal_base_checkpoint or DEFAULT_FOCAL_CHECKPOINT,
             deck=focal_deck, deck_id=focal_deck_id, device=device,
             integrated_flags=preset("FULL_MODEL"),
         )
         reference_incompatible = reference_model.load_state_dict(
-            parent["state_dict"], strict=False
+            reference["state_dict"], strict=False
         )
         if reference_incompatible.unexpected_keys:
             raise RuntimeError(
@@ -730,12 +792,13 @@ def run(
             {"pfsp": 0, "uniform": rollout_games, "latest": 0}
             if opponent_sampling_mode in {
                 "uniform_001_067", "meta_balanced_001_067",
-                "meta_balanced_training_pool",
+                "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
             }
             else {"pfsp": 128, "uniform": 64, "latest": 64}
         ),
         "opponent_sampling_mode": opponent_sampling_mode,
         "opponent_meta_weights": opponent_meta_weights,
+        "opponent_meta_quotas": opponent_meta_quotas,
         "first_player_contract": {
             "id": "seeded_toss_winner_agent_context_41_choice_v1",
             "schedule_controls": "coin_winner_seed_only",
@@ -747,6 +810,8 @@ def run(
         "parent_checkpoint_sha256": (
             sha256_file(parent_checkpoint) if parent_checkpoint else None
         ),
+        "reference_checkpoint": str(reference_checkpoint),
+        "reference_checkpoint_sha256": sha256_file(reference_checkpoint),
         "source_parent_version": source_parent_version,
         "source_parent_update": source_parent_update,
         "parent_pfsp_state": str(parent_pfsp_state) if parent_pfsp_state else None,
@@ -766,13 +831,48 @@ def run(
         "reference_anchor_policy_id": reference_anchor_identity,
         "reference_anchor_update": reference_anchor_update,
         "reference_anchor_checkpoint_sha256": (
-            sha256_file(parent_checkpoint) if parent_checkpoint else None
+            sha256_file(reference_checkpoint)
+        ),
+        "baseline_evaluation_provenance": (
+            {
+                "report": str(baseline_evaluation_provenance),
+                "report_sha256": sha256_file(baseline_evaluation_provenance),
+                "checkpoint_update": baseline_provenance["focal_checkpoint_update"],
+                "deployment_effective_sha256": baseline_provenance[
+                    "focal_deployment_effective_sha256"
+                ],
+                "status": baseline_provenance["status"],
+            }
+            if baseline_provenance is not None else None
         ),
         "periodic_evaluation": {
             "enabled": periodic_evaluation_enabled,
-            "contract_id": "0045_benchmark_tiny_v2_core16_meta_balanced_common_seeds_cuda512_v1",
-            "interval_updates": 5 if periodic_evaluation_enabled else None,
-            "games": 512 if periodic_evaluation_enabled else 0,
+            "profile": periodic_evaluation_profile,
+            "contract_id": (
+                "0045_policy0809_three_meta_pools_common_seeds_cuda512_v1"
+                if periodic_evaluation_profile == "policy0809_three_pool_cuda512"
+                else "0045_benchmark_tiny_v2_core16_meta_balanced_common_seeds_cuda512_v1"
+            ),
+            "interval_updates": (
+                periodic_evaluation_interval_updates
+                if periodic_evaluation_enabled else None
+            ),
+            "games_per_pool": 512 if periodic_evaluation_enabled else 0,
+            "pool_count": (
+                3 if periodic_evaluation_enabled
+                and periodic_evaluation_profile == "policy0809_three_pool_cuda512"
+                else int(periodic_evaluation_enabled)
+            ),
+            "games": (
+                1536 if periodic_evaluation_enabled
+                and periodic_evaluation_profile == "policy0809_three_pool_cuda512"
+                else 512 if periodic_evaluation_enabled else 0
+            ),
+            "opponent_policy_id": (
+                "Policy-0809"
+                if periodic_evaluation_profile == "policy0809_three_pool_cuda512"
+                else "Champion-G2"
+            ),
             "focal_deck_id": evaluation_focal_deck_id,
             "role": "longitudinal_sentinel",
             "wandb_namespace": "eval",
@@ -830,7 +930,18 @@ def run(
                 )
             if baseline_evaluation_checkpoint != start_update:
                 raise RuntimeError("baseline evaluation must bind the exact start checkpoint")
-            from ..evaluation.run_benchmark_tiny_v2 import run as run_benchmark_tiny_v2
+            if periodic_evaluation_profile == "policy0809_three_pool_cuda512":
+                from ..evaluation.run_benchmark_tiny_v2_three_pool import (
+                    run as run_periodic_evaluation,
+                )
+                from .periodic_evaluation import (
+                    wandb_metrics_three_pool as periodic_metrics,
+                )
+            else:
+                from ..evaluation.run_benchmark_tiny_v2 import (
+                    run as run_periodic_evaluation,
+                )
+                periodic_metrics = periodic_evaluation_metrics
 
             evaluation_root = (
                 paths["artifact"] / "periodic_evaluation"
@@ -840,15 +951,16 @@ def run(
             if report_path.is_file():
                 report = json.loads(report_path.read_text(encoding="utf-8"))
             else:
-                report = run_benchmark_tiny_v2(
+                report = run_periodic_evaluation(
                     deck_id=evaluation_focal_deck_id,
                     output_root=evaluation_root,
                     checkpoint=paths["checkpoint"] / f"update-{start_update:06d}.pt",
                     checkpoint_update=start_update,
                 )
-            eval_metrics = periodic_evaluation_metrics(
-                report, initial_baseline_update=start_update,
-            )
+            periodic_kwargs = {"initial_baseline_update": start_update}
+            if periodic_evaluation_profile == "policy0809_three_pool_cuda512":
+                periodic_kwargs["interval_updates"] = periodic_evaluation_interval_updates
+            eval_metrics = periodic_metrics(report, **periodic_kwargs)
             logger.log(start_update, eval_metrics)
         update = start_update
         while updates is None or update < updates:
@@ -862,13 +974,19 @@ def run(
                 latest_champion_policy_id=latest_champion_policy_id,
                 rollout_games=rollout_games,
                 opponent_meta_weights=opponent_meta_weights,
+                opponent_meta_quotas=opponent_meta_quotas,
             )
             by_group = _group_jobs_by_opponent_policy(jobs)
             if opponent_sampling_mode in {
-                "meta_balanced_001_067", "meta_balanced_training_pool"
+                "meta_balanced_001_067", "meta_balanced_training_pool",
+                "aggressive_meta_quota_training_pool",
             }:
                 branch = {
-                    int(job.game_id.rsplit("-", 1)[1]): "meta_balanced_uniform"
+                    int(job.game_id.rsplit("-", 1)[1]): (
+                        "aggressive_meta_quota"
+                        if opponent_sampling_mode == "aggressive_meta_quota_training_pool"
+                        else "meta_balanced_uniform"
+                    )
                     for job in jobs
                 }
             else:
@@ -980,28 +1098,57 @@ def run(
                 expected_games=rollout_games,
             )
             metrics.update(ppo)
+            if opponent_sampling_mode == "aggressive_meta_quota_training_pool":
+                vocabulary = OwnArchetypeVocabulary.load_version(
+                    "own_archetypes_v2", project_root=PROJECT_ROOT
+                )
+                meta_by_deck = {
+                    row.deck_id: row.archetype_id for row in vocabulary.mappings
+                }
+                realized_meta_counts: dict[int, int] = defaultdict(int)
+                for job in jobs:
+                    realized_meta_counts[meta_by_deck[job.opponent_id]] += 1
+                for meta_id, games in sorted(realized_meta_counts.items()):
+                    metrics[f"sampling/opponent_meta/{meta_id:02d}/games"] = games
             metrics["trainer/update"] = checkpoint_update
             metrics["env/episodes"] = checkpoint_update * rollout_games
             cumulative_decisions += sum(len(ep.policy_transitions) for ep in episodes)
             metrics["env/decisions"] = cumulative_decisions
             logger.log(checkpoint_update, metrics)
-            if periodic_evaluation_enabled and periodic_evaluation_due(checkpoint_update):
+            if periodic_evaluation_enabled and periodic_evaluation_due(
+                checkpoint_update,
+                interval_updates=periodic_evaluation_interval_updates,
+            ):
                 # Run only after the model-only checkpoint is durable. This is
                 # synchronous by design so a missing/failed Benchmark V2 cannot
                 # be silently skipped while the formal run advances.
-                from ..evaluation.run_benchmark_tiny_v2 import run as run_benchmark_tiny_v2
+                if periodic_evaluation_profile == "policy0809_three_pool_cuda512":
+                    from ..evaluation.run_benchmark_tiny_v2_three_pool import (
+                        run as run_periodic_evaluation,
+                    )
+                    from .periodic_evaluation import (
+                        wandb_metrics_three_pool as periodic_metrics,
+                    )
+                else:
+                    from ..evaluation.run_benchmark_tiny_v2 import (
+                        run as run_periodic_evaluation,
+                    )
+                    periodic_metrics = periodic_evaluation_metrics
 
                 evaluation_root = (
                     paths["artifact"] / "periodic_evaluation"
                     / f"update-{checkpoint_update:06d}"
                 )
-                report = run_benchmark_tiny_v2(
+                report = run_periodic_evaluation(
                     deck_id=evaluation_focal_deck_id,
                     output_root=evaluation_root,
                     checkpoint=paths["checkpoint"] / f"update-{checkpoint_update:06d}.pt",
                     checkpoint_update=checkpoint_update,
                 )
-                eval_metrics = periodic_evaluation_metrics(report)
+                periodic_kwargs = {}
+                if periodic_evaluation_profile == "policy0809_three_pool_cuda512":
+                    periodic_kwargs["interval_updates"] = periodic_evaluation_interval_updates
+                eval_metrics = periodic_metrics(report, **periodic_kwargs)
                 logger.log(checkpoint_update, eval_metrics)
             _atomic_json(status, {"state": "running", "checkpoint_update": checkpoint_update, "rollout_source_policy_update": update, "wandb_run_id": effective_run_id, "reference_anchor_policy_id": reference_anchor_identity, "reference_anchor_update": reference_anchor_update, "focal_deck_ids": list(focal_deck_ids), "focal_deck_id": focal_deck_id if focal_schedule_mode == "fixed" else None, "focal_initialization_deck_id": focal_deck_id, "focal_schedule": focal_schedule, "evaluation_focal_deck_id": evaluation_focal_deck_id, "source_parent_version": source_parent_version, "source_parent_update": source_parent_update})
             update = checkpoint_update

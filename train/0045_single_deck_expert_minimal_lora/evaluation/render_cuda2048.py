@@ -37,16 +37,22 @@ def render(report: dict) -> str:
         m=catalog[card];url=card_image_url(str(m["expansion"]),str(m["collection_number"])) or ""
         image=f'<img src="{html.escape(url)}" alt="" loading="lazy">' if url else ""
         cards.append(f'<div class="card">{image}<span><b>{html.escape(str(m["name"]))}</b><small>{html.escape(str(m["expansion"]))} {html.escape(str(m["collection_number"]))} · ID {card}</small></span><strong>×{count}</strong></div>')
-    s=report["summary"];candidate=report["candidate_deployment_identity_audit"];opponent=report["opponent_policy_identity_audit"];cuda=report["cuda_engine_identity_audit"]
-    update=report.get("checkpoint_update")
+    s=report["summary"]
+    candidate=(
+        report.get("candidate_deployment_identity_audit")
+        or report.get("focal_policy_identity_audit")
+        or {}
+    )
+    opponent=report["opponent_policy_identity_audit"];cuda=report["cuda_engine_identity_audit"]
+    update=report.get("checkpoint_update", report.get("focal_checkpoint_update"))
     if not isinstance(update,int) or update < 0 or candidate.get("checkpoint_update") != update:
         raise RuntimeError("HTML requires one consistent checkpoint update identity")
     embedded=json.dumps(report,ensure_ascii=False,separators=(",",":")).replace("</","<\\/")
     style="""
 :root{--bg:#f5f7f6;--ink:#17211d;--muted:#65716c;--brand:#176b4b;--line:#d8e0dc;--card:#fff}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,sans-serif}main{max-width:1180px;margin:auto;padding:32px 20px 80px}header{background:#153f32;color:white;padding:32px;border-radius:20px}h1{margin:4px 0;font-size:38px}header p{margin:0;color:#cfe3db}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.metric,section{background:var(--card);border:1px solid var(--line);border-radius:16px}.metric{padding:18px}.metric b{display:block;font-size:25px}.metric small,.muted{color:var(--muted)}section{margin-top:18px;padding:24px}h2{margin-top:0}.deck{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.card{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:8px}.card img{width:42px;height:58px;object-fit:contain}.card span{flex:1}.card small{display:block;color:var(--muted)}table{width:100%;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid var(--line);padding:8px}code{overflow-wrap:anywhere}.audit{display:grid;grid-template-columns:210px 1fr;gap:8px 14px}.pass{color:var(--brand);font-weight:700}@media(max-width:760px){.grid,.deck{grid-template-columns:1fr 1fr}.audit{grid-template-columns:1fr}}
 """
-    return f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0044 U{update} · Deck {report['focal_deck_id']} · CUDA-2048</title><style>{style}</style></head><body><main>
-<header><p>0044 CHAMPION LEAGUE RL · FROZEN POLICY-0809</p><h1>U{update} · Deck {report['focal_deck_id']} · CUDA-2048</h1><p>{html.escape(report['focal_deck_display_name'])} · CUDA Engine 2.0 · greedy · official engine · 独立强度证据</p></header>
+    return f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>0045 U{update} · Deck {report['focal_deck_id']} · CUDA-2048</title><style>{style}</style></head><body><main>
+<header><p>0045 SINGLE-DECK EXPERT · BENCHMARK V2 · FROZEN POLICY-0809</p><h1>U{update} · Deck {report['focal_deck_id']} · CUDA-2048</h1><p>{html.escape(report['focal_deck_display_name'])} · CUDA Engine 2.0 · greedy · official engine · 独立强度证据</p></header>
 <section class="grid"><div class="metric"><small>胜率</small><b>{_pct(s['win_rate'])}</b><span>{s['wins']}-{s['losses']}-{s['draws']}</span></div><div class="metric"><small>实际先手胜率</small><b>{_pct(s['focal_first_win_rate'])}</b><span>{s['focal_first_games']} 局</span></div><div class="metric"><small>实际后手胜率</small><b>{_pct(s['focal_second_win_rate'])}</b><span>{s['focal_second_games']} 局</span></div><div class="metric"><small>吞吐</small><b>{s['games_per_second']:.2f}</b><span>games/s · {s['elapsed_seconds']:.1f}s</span></div></section>
 <section><h2>Exact 60-card focal deck</h2><div class="deck">{''.join(cards)}</div></section>
 <section><h2>001–055 对局明细</h2><p class="muted">每个 256 局 frequency unit 的 exact-deck composition 相同；八个 unit 的 engine/search/policy seed 均互不重复。</p><table><thead><tr><th>Deck</th><th>Opponent</th><th>Games</th><th>W-L-D</th><th>Win rate</th></tr></thead><tbody>{matchups}</tbody></table></section>

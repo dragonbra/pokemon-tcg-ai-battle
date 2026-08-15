@@ -67,12 +67,14 @@ class CudaActionBoundaryAdapter:
         greedy: bool,
         max_select: int,
         agent_selects_first_player: bool = False,
+        allocation_head_for_job: Any | None = None,
     ) -> None:
         self.model = model
         self.jobs = tuple(jobs)
         self.greedy = bool(greedy)
         self.max_select = int(max_select)
         self.agent_selects_first_player = bool(agent_selects_first_player)
+        self.allocation_head_for_job = allocation_head_for_job
         self.planner = MacroPlanner(model.allocation_head)
         self.pending: dict[int, _Pending] = {}
         self.invalid_jobs: dict[int, str] = {}
@@ -390,7 +392,12 @@ class CudaActionBoundaryAdapter:
                 for index in ordered
             ]
             root = phantom[0]
-            planned = self.planner.plan(
+            planner = (
+                self.planner
+                if self.allocation_head_for_job is None
+                else MacroPlanner(self.allocation_head_for_job(job))
+            )
+            planned = planner.plan(
                 state_summary=routed.state.summary[row],
                 root_option=routed.focal_options[row, root],
                 target_embeddings=routed.state.cards[row, ordered],

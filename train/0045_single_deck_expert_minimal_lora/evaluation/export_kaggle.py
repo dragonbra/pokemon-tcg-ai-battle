@@ -1,4 +1,4 @@
-"""Export one 0044 checkpoint as a self-contained Kaggle submission package."""
+"""Export one 0045 checkpoint as a self-contained Kaggle submission package."""
 
 from __future__ import annotations
 
@@ -24,9 +24,9 @@ RUNTIME_ROOT = PROJECT_ROOT / "semantic_runtime"
 BASE_PORTABLE = (
     PROJECT_ROOT / "assets/policies/definitions/champion_g002/model.bin"
 )
-PACKAGE_SCHEMA = "0044_champion_league_kaggle_package_v1"
+PACKAGE_SCHEMA = "0045_single_deck_expert_kaggle_package_v1"
 
-MAIN = '''"""Kaggle entrypoint for one immutable 0044 deployment identity."""
+MAIN = '''"""Kaggle entrypoint for one immutable 0045 deployment identity."""
 import hashlib
 import json
 import os
@@ -53,8 +53,8 @@ def _sha256(path):
 
 def _manifest():
     payload = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
-    if payload.get("schema_version") != "0044_champion_league_kaggle_package_v1":
-        raise RuntimeError("0044 Kaggle package schema mismatch")
+    if payload.get("schema_version") != "0045_single_deck_expert_kaggle_package_v1":
+        raise RuntimeError("0045 Kaggle package schema mismatch")
     expected = payload.get("package_file_sha256")
     actual = {
         str(path.relative_to(ROOT)) for path in ROOT.rglob("*")
@@ -62,10 +62,10 @@ def _manifest():
         and "__pycache__" not in path.parts and path.suffix != ".pyc"
     }
     if not isinstance(expected, dict) or actual != set(expected):
-        raise RuntimeError("0044 Kaggle package file inventory mismatch")
+        raise RuntimeError("0045 Kaggle package file inventory mismatch")
     mismatched = [name for name, digest in expected.items() if _sha256(ROOT / name) != digest]
     if mismatched:
-        raise RuntimeError(f"0044 Kaggle package hash mismatch: {mismatched}")
+        raise RuntimeError(f"0045 Kaggle package hash mismatch: {mismatched}")
     return payload
 
 PACKAGE_MANIFEST = _manifest()
@@ -105,7 +105,7 @@ def export(
     selection: dict[str, Any],
 ) -> dict[str, Any]:
     if output.exists() or archive.exists():
-        raise FileExistsError("0044 Kaggle output/package archive already exists")
+        raise FileExistsError("0045 Kaggle output/package archive already exists")
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
     asset = next(row for row in registry.decks if row.deck_id == deck_id)
@@ -152,7 +152,7 @@ def export(
         (output / "main.py").write_text(MAIN, encoding="utf-8")
         manifest = {
             "schema_version": PACKAGE_SCHEMA,
-            "project_id": "0044_g2_dragapult_policy_option_lora",
+            "project_id": "0045_single_deck_expert_minimal_lora",
             "candidate": output.name,
             "checkpoint_update": audit.checkpoint_update,
             "source_checkpoint": str(checkpoint.relative_to(ROOT)),
