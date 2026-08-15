@@ -14,8 +14,8 @@ roles: training, evaluation
 TAXONOMY
 semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
 taxonomy_version: own_archetypes_v2
-taxonomy_sha256: b3bebe924251abb47462a1a8643a2d6a66f8c6dc1d0d278b910397f052471b6b
-mapping_sha256: 400c6240c8cc33bb2f1185fe7d413b7713fa00a851545427603e078f6c863635
+taxonomy_sha256: fa8aea6538a1480e54bb13651169492fef34b74a455160a3e255ed97741bab78
+mapping_sha256: e0fe9248c57684e6ac761911e04ecc978804d963c7435afce36506607c679b2d
 old_own_archetype_id: 13
 own_archetype_id: 13
 own_archetype_name: archaludon_ex

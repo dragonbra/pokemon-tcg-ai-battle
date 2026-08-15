@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import tarfile
-import tempfile
 from typing import Any
 
 import torch

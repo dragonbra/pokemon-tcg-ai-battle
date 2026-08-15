@@ -482,9 +482,16 @@
       "deck_id": "069",
       "old_archetype_id": 3,
       "strategic_axis": "068 Alakazam parent with one Night Stretcher exchanged for Boss's Orders"
+    },
+    {
+      "archetype_id": 15,
+      "decision": "keep",
+      "deck_id": "070",
+      "old_archetype_id": 15,
+      "strategic_axis": "Dragapult spread plus Dusknoir self-KO breakpoints, Munkidori damage transfer, and Risky Ruins pressure"
     }
   ],
-  "mapping_provenance": "manual 001-067 audit plus user-approved evaluation-only Alakazam 068-069 on 2026-08-14",
+  "mapping_provenance": "manual 001-067 audit plus user-approved exact decks 068-070 through 2026-08-16",
   "schema_version": "0043_exact_deck_own_archetype_mapping_v2",
   "taxonomy_version": "own_archetypes_v2"
 }

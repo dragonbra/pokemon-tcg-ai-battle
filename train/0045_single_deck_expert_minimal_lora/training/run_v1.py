@@ -210,7 +210,7 @@ def readiness() -> dict[str, Any]:
         "project": PROJECT, "version": VERSION,
         "asset_audit": asdict(audit),
         "focal_decks": [FOCAL_DECK_ID],
-        "opponent_decks": [f"{value:03d}" for value in range(1, 70)],
+        "opponent_decks": [f"{value:03d}" for value in range(1, 71)],
         "opponent_policies": list(OPPONENT_POLICY_IDS),
         "opponent_sampling": {
             "mode": "meta_balanced_training_pool", "games": 512,

@@ -7489,17 +7489,142 @@
         "training_pool_append_2026_08_14",
         "parent_068"
       ]
+    },
+    {
+      "archetype": "Dragapult ex / Dusknoir / Munkidori",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 1
+        },
+        {
+          "card_id": 133,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 2
+        },
+        {
+          "card_id": 1260,
+          "count": 2
+        }
+      ],
+      "content_sha256": "2693a7b610ccdf2ed10a76a8872003dcb53456e54b006d3a3feff580520374fb",
+      "deck_id": "070",
+      "deck_path": "assets/decks/definitions/070/deck.csv",
+      "file_sha256": "f3de3c2334899df789a98fec378c8c6bfdc20c858e0ae46107dead6c0c34abdd",
+      "name": "Dragapult ex / Dusknoir / Munkidori",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-16T00:00:00+08:00",
+        "set_code_resolution": {
+          "ASC_142_fezandipiti_ex": "SFA 38 engine identity",
+          "ASC_16_budew": "PRE 4 engine identity",
+          "ASC_196_night_stretcher": "SFA 61 engine identity",
+          "MEE_basic_energy": "SVE basic Energy engine identity",
+          "MEG_114_boss": "PAL 172 engine identity",
+          "MEG_125_rare_candy": "SVI 191 engine identity",
+          "MEG_131_ultra_ball": "SVI 196 engine identity",
+          "PRE_35_duskull": "SFA 18 engine identity",
+          "PRE_36_dusclops": "SFA 19 engine identity",
+          "PRE_37_dusknoir": "SFA 20 engine identity"
+        },
+        "source_list": "user-provided 2026-08-16: Dragapult/Dusknoir/Munkidori exact 60",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_16",
+        "dragapult_dusknoir",
+        "munkidori",
+        "training_pool_append_2026_08_16"
+      ]
     }
   ],
-  "training_pool_append_2026_08_14": {
-    "added_deck_ids": [
-      "068",
-      "069"
-    ],
-    "benchmark_v2_historical_pool_changed": false,
-    "formal_training_opponent_pool_changed": true
-  },
-  "identity_contract": "deck_id is append-only; 001-069 are immutable",
+  "identity_contract": "deck_id is append-only; 001-070 are immutable",
   "immutability": "content change requires a new deck_id",
   "schema_version": "0043_deck_registry_v2_numeric_identity",
   "training_pool_append": {
@@ -7510,6 +7635,21 @@
     "base": "FrozenPool_65_decks_2026-08-12",
     "frozen_evaluation_changed": false
   },
+  "training_pool_append_2026_08_14": {
+    "added_deck_ids": [
+      "068",
+      "069"
+    ],
+    "benchmark_v2_historical_pool_changed": false,
+    "formal_training_opponent_pool_changed": true
+  },
+  "training_pool_append_2026_08_16": {
+    "added_deck_ids": [
+      "070"
+    ],
+    "benchmark_v2_historical_pool_changed": false,
+    "formal_training_opponent_pool_changed": true
+  },
   "training_pool_source_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee",
-  "training_pool_version": "FrozenPool65_plus_user_decks_066_069_2026-08-14"
+  "training_pool_version": "FrozenPool65_plus_user_decks_066_070_2026-08-16"
 }

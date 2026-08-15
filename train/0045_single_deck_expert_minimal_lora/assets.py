@@ -340,14 +340,14 @@ class AssetRegistry:
         evaluation_only_ids = tuple(
             deck.deck_id for deck in self.decks if deck.roles == ("evaluation",)
         )
-        expected_training_ids = tuple(f"{value:03d}" for value in range(1, 70))
+        expected_training_ids = tuple(f"{value:03d}" for value in range(1, 71))
         if (
-            len(self.decks) != 69
+            len(self.decks) != 70
             or training_ids != expected_training_ids
             or evaluation_only_ids
         ):
             raise AssetIntegrityError(
-                "0044 registry must contain the exact formal training pool 001-069"
+                "0045 registry must contain the exact formal training pool 001-070"
             )
         training_count = len(training_ids)
         return AssetAudit(
