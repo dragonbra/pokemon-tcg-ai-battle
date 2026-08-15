@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 
+import pytest
 import torch
 
 
@@ -26,6 +27,9 @@ moe_run = importlib.import_module(
 )
 moe_ppo = importlib.import_module(
     "train.0047_meta_routed_moe_rl.training.ppo_moe"
+)
+moe_checkpoint = importlib.import_module(
+    "train.0047_meta_routed_moe_rl.training.moe_checkpoint"
 )
 runtime = importlib.import_module("train.0047_meta_routed_moe_rl.runtime")
 run_v1 = importlib.import_module("train.0047_meta_routed_moe_rl.training.run_v1")
@@ -189,3 +193,70 @@ def test_v9_uses_win_only_actor_advantage_and_u0_then_every_five_eval():
 def test_router_heatmap_generates_png(tmp_path):
     output = moe_run._router_heatmap(_model(), 0, tmp_path / "router.png")
     assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_compact_checkpoint_round_trip_is_exact_and_omits_frozen_actor():
+    model = _model()
+    with torch.no_grad():
+        next(model.experts[3].action_decoder.parameters()).add_(0.125)
+        next(model.value_adapter.parameters()).sub_(0.25)
+    model.set_soft_routing(True)
+    payload = moe_checkpoint.build_compact_checkpoint(
+        model, 5, metadata={"version": "test", "focal_deck_id": "007"}
+    )
+    assert payload["schema_version"] == moe_checkpoint.SCHEMA_VERSION
+    assert payload["update"] == 5
+    assert payload["delta_state_dict"]
+    assert not any(name.startswith("actor.") for name in payload["delta_state_dict"])
+    assert all(
+        not value.is_floating_point() or value.dtype == torch.float32
+        for value in payload["delta_state_dict"].values()
+    )
+    restored = _model()
+    moe_checkpoint.load_compact_checkpoint(restored, payload)
+    assert restored.soft_routing is True
+    assert restored.router_logits.requires_grad is True
+    for name, expected in model.state_dict().items():
+        assert torch.equal(restored.state_dict()[name], expected), name
+
+
+def test_compact_checkpoint_rejects_base_or_delta_contract_changes():
+    model = _model()
+    payload = moe_checkpoint.build_compact_checkpoint(
+        model, 0, metadata={"version": "test"}
+    )
+    wrong_base = dict(payload)
+    wrong_base["base"] = {**payload["base"], "actor_checkpoint_sha256": "0" * 64}
+    with pytest.raises(RuntimeError, match="immutable Policy-0814 base mismatch"):
+        moe_checkpoint.load_compact_checkpoint(_model(), wrong_base)
+    missing_delta = dict(payload)
+    missing_delta["delta_state_dict"] = dict(payload["delta_state_dict"])
+    missing_delta["delta_state_dict"].pop(next(iter(missing_delta["delta_state_dict"])))
+    with pytest.raises(RuntimeError, match="delta inventory mismatch"):
+        moe_checkpoint.load_compact_checkpoint(_model(), missing_delta)
+    with pytest.raises(ValueError, match="forbidden fields"):
+        moe_checkpoint.build_compact_checkpoint(
+            model, 0, metadata={"optimizer_state": {}}
+        )
+
+
+def test_checkpoint_pruning_keeps_only_successfully_evaluated_nodes(tmp_path):
+    for update in range(6):
+        (tmp_path / f"update-{update:06d}.pt").write_bytes(b"checkpoint")
+        (tmp_path / f"router-{update:06d}.json").write_text("{}\n")
+    with pytest.raises(RuntimeError, match="successful evaluation"):
+        moe_checkpoint.prune_non_eval_checkpoints(
+            tmp_path, through_update=5, eval_interval=5,
+            evaluation_status="FAIL",
+        )
+    removed = moe_checkpoint.prune_non_eval_checkpoints(
+        tmp_path, through_update=5, eval_interval=5,
+        evaluation_status="PASS",
+    )
+    assert [path.name for path in removed] == [
+        f"update-{update:06d}.pt" for update in range(1, 5)
+    ]
+    assert sorted(path.name for path in tmp_path.glob("update-*.pt")) == [
+        "update-000000.pt", "update-000005.pt"
+    ]
+    assert len(tuple(tmp_path.glob("router-*.json"))) == 6

@@ -1,7 +1,7 @@
 # 0047 — Meta-Routed MoE RL
 
-Status: seven-Actor sparse V10 win-only restart prepared; formal run
-`V10_deck070_policy0814_moe7_win_only_two_pool`.
+Status: seven-Actor sparse V11 deck-007 compact-checkpoint restart prepared;
+formal run `V11_deck007_policy0814_moe7_compact_eval5_retention`.
 
 V2 reached a complete 512-game rollout but failed before U1 when per-job
 allocation contexts retained views over entire historical compacted CUDA
@@ -20,11 +20,16 @@ explicit cache/context release. V8 stopped cleanly at completed U3 before the
 new experiment changed the Actor objective and fixed-evaluation schedule. V9
 completed its deterministic U0 two-pool report, then failed before training
 because the host Python lacked Matplotlib for the required Router heatmap.
-Matplotlib 3.11.1 is now installed; V10 is the clean formal restart.
+Matplotlib 3.11.1 was installed for V10. V10 reached durable U4, then was
+stopped by explicit user request when its full-state FP32 checkpoint was found
+to consume about 502 MiB per update. Its weights were explicitly authorized for
+deletion and its logs/metrics remain as a non-resumable historical record. V11
+starts again from immutable Policy-0814 rather than continuing V10 U4, changes
+the exact focal deck to 007, and adopts the compact persistence contract below.
 
 ## Identities
 
-- Focal deck: exact deck `070`, content SHA-256 `2693a7b610ccdf2ed10a76a8872003dcb53456e54b006d3a3feff580520374fb`, 29-class ID 15.
+- Focal deck: exact deck `007`, content SHA-256 `07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725`, 29-class ID 0.
 - Shared focal initialization and all seven Actor seeds: immutable `Policy-0814`, actor SHA-256 `d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b`.
 - Critic initialization: paired 0814 Value SHA-256 `0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d`.
 - Rollout and evaluation opponent: independent complete `Policy-0814`, effective identity `476d57d55eb9c040fa4e75ce74ac5205af5d094a296db71cba4ecbf792902580`.
@@ -35,7 +40,7 @@ Matplotlib 3.11.1 is now installed; V10 is the clean formal restart.
 observation -> frozen prototype/state/option prefix
             -> policy final Option Q/V LoRA -> one ActionDecoder -> root action
             -> one AllocationHead when required
-            -> base final Option block -> isolated Critic/Value/Prize/15-class Meta
+            -> base final Option block -> isolated Critic/Value/Prize/29-class Meta
 ```
 
 The 0045 Actor loss updated exactly ActionDecoder (1,027,202), Allocation Head
@@ -53,7 +58,7 @@ public observation + exact focal resources + legal options
         |                             |
   seven Actor experts             one Critic
   E0 + E00/E01/E02/E03/E05/E27   base Option final block
-  each: Q/V LoRA + Decoder        Value/Prize/15-class Meta
+  each: Q/V LoRA + Decoder        Value/Prize/29-class Meta
         + Allocation
         |
 public exact-Meta memory: UNKNOWN or locked 29-class ID
@@ -114,7 +119,7 @@ Actor total after Router unlock: 11,614,427. Critic total: 3,712,467. The frozen
 The inherited PPO settings remain: 512 rollout games, three epochs, clip 0.10,
 entropy coefficient 0.003, reference-KL coefficient 0.02, decoder/allocation LR
 1e-5, LoRA LR 2e-5, Value/Prize LR 2e-5. `Frozen-0047-U0` is the immutable
-same-architecture reference. V9 uses a strictly win-only Actor advantage:
+same-architecture reference. V11 uses a strictly win-only Actor advantage:
 
 ```text
 A_actor = normalize(A_terminal_win_loss)
@@ -125,9 +130,33 @@ Directional Prize deltas, `V_prize`, and its Critic-side auxiliary loss remain
 available for variance/diagnostic work, but Prize Advantage is never added to
 the Actor policy loss.
 
+## V11 checkpoint and retention contract
+
+Training checkpoints use schema
+`0047_meta_routed_moe_compact_fp32_delta_v1`. The immutable Policy-0814 Actor
+is never copied into an update file. Each file records the exact actor/value/
+effective base hashes and stores every non-`actor.*` effective tensor in FP32:
+all seven expert Decoders/Allocation Heads/QV LoRA modules, Router state, the
+trainable Critic path, Value adapter, Prize head, and required buffers. A fresh
+audited Policy-0814 model plus this delta must strict-load to the exact complete
+effective policy; changed base hashes, missing/unexpected tensors, wrong shapes,
+wrong dtypes, optimizer state, replay, or RNG state hard-fail. The expected
+training checkpoint is about 59 MiB rather than the prior 502 MiB.
+
+U0 and every update are saved before downstream work. U0/U5/U10/etc evaluation
+reloads the just-saved compact checkpoint into a fresh base and requires its
+effective tensor hash to equal the live policy before any official-engine game.
+Only after the evaluation report returns `PASS` and the canonical local/W&B
+metric is logged may checkpoints between evaluated nodes be deleted. Thus a
+successful U5 removes U1-U4 while retaining U0/U5; a failed or interrupted
+evaluation deletes nothing. This `evaluated_nodes_only_after_successful_eval`
+exception was explicitly authorized by the user on 2026-08-16. Router JSON
+remains as lightweight audit metadata.
+
 Formal greedy evaluation runs first at U0, before any rollout or PPO update, and
 then at U5/U10/etc. It uses FP16 storage followed by strict FP32 materialization
-and complete Frozen Policy-0814 opposition. There are exactly two physical
+from the source compact FP32 checkpoint, records all three candidate identities,
+and uses complete Frozen Policy-0814 opposition. There are exactly two physical
 CUDA-512 pools:
 
 - `focus_seven`: 256 games balanced within `old_three` exact decks 001/002/011,
@@ -164,3 +193,9 @@ progress lines without publishing partial strength metrics as completed updates.
   epochs, finite Router update norm, no NaN/Inf.
 - V9 two-pool schedule contract: PASS; focus is exactly 256 old-three plus 256
   new-four, remain-meta is exactly 512 and excludes all seven focus decks.
+- V11 compact FP32 delta round-trip, immutable-base rejection, exact inventory,
+  and PASS-gated evaluated-node pruning: PASS (CPU, 10-test MoE suite).
+
+The Pokémon TCG rules and official-engine action contract are unchanged by V11.
+The only observation-side identity change is exact focal deck conditioning from
+070/ID15 to 007/ID0; routing still uses only public opponent evidence.

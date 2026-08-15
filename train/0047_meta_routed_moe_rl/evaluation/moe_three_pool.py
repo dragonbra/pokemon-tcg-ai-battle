@@ -13,7 +13,7 @@ import torch
 
 from evaluation.runtime.seeded import build_seeded_runtime
 
-from ..assets import AssetRegistry
+from ..assets import AssetRegistry, sha256_file
 from ..cuda_engine_2.build import DEFAULT_BUILD_DIR
 from ..policy.moe_actor_critic import MetaRoutedMoEActorCritic, load_moe_actor_critic
 from ..policy_identity import materialize_policy_bundle
@@ -22,6 +22,7 @@ from ..rollout.moe_runtime import MoEFocalRuntime, MoEResidentRouter
 from ..rollout.protocol import RolloutJob
 from ..runtime import _modules as policy_modules, load_policy
 from ..training.run_v1 import PROJECT_ROOT, RULES, _cards, _runtime_root
+from ..training.moe_checkpoint import load_compact_checkpoint
 from .moe_three_pool_schedule import materialize as materialize_schedule
 
 
@@ -37,11 +38,24 @@ def _tensor_hash(state: dict[str, torch.Tensor]) -> str:
 
 def materialize_fp16_fp32(
     model: MetaRoutedMoEActorCritic, *, deck: tuple[int, ...],
-    output: Path, checkpoint_update: int,
+    source_checkpoint: Path, output: Path, checkpoint_update: int,
 ) -> tuple[MetaRoutedMoEActorCritic, dict[str, Any]]:
+    source_payload = torch.load(
+        source_checkpoint, map_location="cpu", weights_only=True, mmap=True
+    )
+    if source_payload.get("update") != checkpoint_update:
+        raise RuntimeError("candidate source checkpoint update mismatch")
+    reconstructed, _ = load_moe_actor_critic(
+        deck=deck, own_archetype_id=0, device="cpu"
+    )
+    load_compact_checkpoint(reconstructed, source_payload)
+    live_hash = _tensor_hash(model.state_dict())
+    source_effective_hash = _tensor_hash(reconstructed.state_dict())
+    if live_hash != source_effective_hash:
+        raise RuntimeError("FATAL: live policy differs from saved compact checkpoint")
     storage = {
         name: value.detach().cpu().half() if value.is_floating_point() else value.detach().cpu().clone()
-        for name, value in model.state_dict().items()
+        for name, value in reconstructed.state_dict().items()
     }
     payload = {
         "schema_version": "0047_moe_fp16_storage_fp32_runtime_v1",
@@ -49,6 +63,7 @@ def materialize_fp16_fp32(
         "metadata": {
             "checkpoint_update": int(checkpoint_update),
             "source_policy_id": "Policy-0814",
+            "focal_deck_id": "007",
             "runtime_dtype": "float32",
             "experts": model.expert_count,
             "expert_labels": list(model.expert_labels),
@@ -70,25 +85,32 @@ def materialize_fp16_fp32(
     candidate.eval()
     audit = {
         "status": "PASS", "source_checkpoint_update": checkpoint_update,
-        "portable_fp16_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
+        "source_checkpoint": str(source_checkpoint),
+        "source_checkpoint_sha256": sha256_file(source_checkpoint),
+        "source_effective_sha256": source_effective_hash,
+        "portable_checkpoint_sha256": hashlib.sha256(output.read_bytes()).hexdigest(),
         "deployment_effective_sha256": _tensor_hash(candidate.state_dict()),
         "storage_dtype": "fp16", "runtime_dtype": "fp32",
+        "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+        "conversion_order": "immutable_fp32_base_plus_fp32_delta_to_fp16_storage_then_strict_fp32_runtime",
+        "candidate_deployment_identity_audit": "PASS",
     }
     return candidate, audit
 
 
 def evaluate_model(
     model: MetaRoutedMoEActorCritic, *, checkpoint_update: int,
-    output_root: Path, games_per_pool: int = 512,
+    source_checkpoint: Path, output_root: Path, games_per_pool: int = 512,
 ) -> dict[str, Any]:
     if not 1 <= games_per_pool <= 512:
         raise ValueError("0047 evaluation games_per_pool must be in [1, 512]")
     output_root.mkdir(parents=True, exist_ok=False)
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
-    deck = _cards(registry, "070")
+    deck = _cards(registry, "007")
     candidate, candidate_audit = materialize_fp16_fp32(
         model, deck=deck, output=output_root / "candidate_fp16.pt",
+        source_checkpoint=source_checkpoint,
         checkpoint_update=checkpoint_update,
     )
     device = torch.device("cuda:0")
@@ -107,7 +129,7 @@ def evaluate_model(
     if focal_pointers & opponent_pointers:
         raise RuntimeError("FATAL: 0047 focal/opponent storage alias")
     schedule = materialize_schedule(
-        PROJECT_ROOT, focal_deck_id="070",
+        PROJECT_ROOT, focal_deck_id="007",
         focal_deployment_identity=candidate_audit["deployment_effective_sha256"],
     )
     decks = {row.deck_id: _cards(registry, row.deck_id) for row in registry.decks}
@@ -125,7 +147,7 @@ def evaluate_model(
             source_policy_update=checkpoint_update, focal_deck=deck,
             opponent_deck=decks[row["opponent_deck_id"]],
             runtime_root=_runtime_root(), opponent_policy_id="Policy-0814",
-            focal_deck_id="070", focal_own_archetype_id=15,
+            focal_deck_id="007", focal_own_archetype_id=0,
             engine_library=official.library_path, action_boundary_mode="enabled",
             trace_policy="errors_and_sample",
         ) for row in scheduled]

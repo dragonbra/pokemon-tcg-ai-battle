@@ -1,4 +1,4 @@
-"""Formal indefinite 0047 deck-070 Meta-routed MoE PPO run."""
+"""Formal indefinite 0047 deck-007 Meta-routed MoE PPO run."""
 
 from __future__ import annotations
 
@@ -25,14 +25,21 @@ from ..rollout.moe_runtime import MoEFocalRuntime, MoEResidentRouter
 from ..runtime import _modules as policy_modules, load_policy
 from ..telemetry import RolloutHistory, aggregate_training_rollout
 from .batch_full_semantic import prepare_episodes
+from .moe_checkpoint import (
+    RETENTION_POLICY,
+    atomic_save_compact_checkpoint,
+    prune_non_eval_checkpoints,
+)
 from .ppo_moe import PPOConfig, PPOTrainer
 from .run_v1 import PROJECT_ROOT, ROOT, RULES, _cards, _jobs
 
 
 PROJECT = "0047_meta_routed_moe_rl"
-VERSION = "V10_deck070_policy0814_moe7_win_only_two_pool"
+VERSION = "V11_deck007_policy0814_moe7_compact_eval5_retention"
 VERSION_ROOT = ROOT / "rl_runs" / PROJECT / "versions" / VERSION
-RUN_ID = "0047-v10-deck070-policy0814-moe7-win-only-two-pool"
+RUN_ID = "0047-v11-deck007-policy0814-moe7-compact-eval5-retention"
+FOCAL_DECK_ID = "007"
+FOCAL_OWN_ARCHETYPE_ID = 0
 WARMUP_UPDATES = 5
 ROLLOUT_GAMES = 512
 EVAL_INTERVAL = 5
@@ -51,34 +58,20 @@ def _atomic_json(path: Path, value: Any) -> None:
     temporary.replace(path)
 
 
-def _atomic_torch(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    torch.save(value, temporary)
-    temporary.replace(path)
-
-
-def _checkpoint(model, update: int) -> dict[str, Any]:
+def _checkpoint_metadata(model) -> dict[str, Any]:
     return {
-        "schema_version": "0047_meta_routed_moe_model_only_v1",
-        "update": int(update),
-        "state_dict": {
-            name: value.detach().cpu() for name, value in model.state_dict().items()
-        },
-        "metadata": {
-            "project_id": PROJECT, "version": VERSION,
-            "focal_deck_id": "070", "source_policy_id": "Policy-0814",
-            "source_actor_sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b",
-            "source_value_sha256": "0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d",
-            "experts": 7, "expert_labels": list(model.expert_labels),
-            "priority_meta_ids": list(model.priority_meta_ids),
-            "router_topology": "E0_to_Em_two_way_core6",
-            "warmup_updates": WARMUP_UPDATES,
-            "routing_phase": "soft" if model.soft_routing else "hard_warmup",
-            "router_probabilities": model.router_table(),
-            "meta_identifier_version": "0047_public_exact_deck_candidates_v1",
-            "checkpoint_retention": "all", "optimizer_state_saved": False,
-        },
+        "project_id": PROJECT, "version": VERSION,
+        "focal_deck_id": FOCAL_DECK_ID,
+        "focal_own_archetype_id": FOCAL_OWN_ARCHETYPE_ID,
+        "source_policy_id": "Policy-0814",
+        "experts": 7, "expert_labels": list(model.expert_labels),
+        "priority_meta_ids": list(model.priority_meta_ids),
+        "router_topology": "E0_to_Em_two_way_core6",
+        "warmup_updates": WARMUP_UPDATES,
+        "routing_phase": "soft" if model.soft_routing else "hard_warmup",
+        "router_probabilities": model.router_table(),
+        "meta_identifier_version": "0047_public_exact_deck_candidates_v1",
+        "retention_authorization": "explicit_user_authorization_2026-08-16",
     }
 
 
@@ -93,7 +86,7 @@ def _episode_rows(episodes):
             "full_turns": (episode.turns + 1) // 2,
             "opponent_deck_id": episode.job.opponent_id,
             "opponent_policy_id": episode.job.opponent_policy_id,
-            "focal_deck_id": "070", "branch": "meta_balanced_uniform",
+            "focal_deck_id": FOCAL_DECK_ID, "branch": "meta_balanced_uniform",
             "error": episode.error, "unfinished": not episode.valid,
             "engine_decisions": int(d.get("engine_selections", 0)),
             "coin_winner_seed": episode.job.coin_winner_seed,
@@ -189,7 +182,9 @@ def readiness() -> dict[str, Any]:
         raise FileNotFoundError(missing)
     return {
         "status": "READY", "project": PROJECT, "version": VERSION,
-        "focal_deck_id": "070", "opponent_policy_id": "Policy-0814",
+        "focal_deck_id": FOCAL_DECK_ID,
+        "focal_own_archetype_id": FOCAL_OWN_ARCHETYPE_ID,
+        "opponent_policy_id": "Policy-0814",
         "rollout_games": ROLLOUT_GAMES, "warmup_updates": WARMUP_UPDATES,
         "opponent_sampling_mode": "core_deck_half_meta_balanced_half",
         "core_opponent_deck_ids": list(CORE_OPPONENT_DECK_IDS),
@@ -199,6 +194,9 @@ def readiness() -> dict[str, Any]:
         "ppo_forward_microbatch_size": PPO_FORWARD_MICROBATCH,
         "eval_interval": EVAL_INTERVAL,
         "eval_at_u0": EVAL_AT_U0,
+        "checkpoint_contents": "fp32_effective_delta_only",
+        "checkpoint_retention": RETENTION_POLICY,
+        "retention_authorization": "explicit_user_authorization_2026-08-16",
         "actor_advantage": "terminal_win_loss_only",
         "prize_aux_actor_weight": PRIZE_AUX_ACTOR_WEIGHT,
         "eval_pools": {
@@ -220,16 +218,16 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
         raise RuntimeError("0047 formal PPO requires CUDA")
     paths = {name: VERSION_ROOT / name for name in ("artifact", "checkpoint", "tensorboard", "wandb")}
     metrics_path = paths["artifact"] / "training_metrics.jsonl"
-    if metrics_path.exists() and metrics_path.stat().st_size:
-        raise FileExistsError(f"0047 {VERSION} already contains training metrics; never append a new run")
+    if VERSION_ROOT.exists() and any(VERSION_ROOT.rglob("*")):
+        raise FileExistsError(f"0047 formal version path is already used: {VERSION_ROOT}")
     for path in paths.values():
         path.mkdir(parents=True, exist_ok=True)
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
     device = torch.device("cuda:0")
-    deck = _cards(registry, "070")
+    deck = _cards(registry, FOCAL_DECK_ID)
     model, source = load_moe_actor_critic(
-        deck=deck, own_archetype_id=15, device=device,
+        deck=deck, own_archetype_id=FOCAL_OWN_ARCHETYPE_ID, device=device,
         integrated_flags=preset("WIN_ONLY_ACTOR"),
     )
     opponent_bundle = materialize_policy_bundle(
@@ -253,19 +251,24 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
     os.environ.update({
         "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
         "WANDB_PROJECT": "pokemon-tcg-policy-learning", "WANDB_RUN_ID": RUN_ID,
-        "WANDB_NAME": "0047 · V10 · deck 070 · Policy0814 · MoE7 win-only · two-pool eval",
+        "WANDB_NAME": "0047 · V11 · deck 007 · Policy0814 · MoE7 compact eval-5 retention",
         "WANDB_RUN_GROUP": PROJECT, "WANDB_DIR": str(paths["wandb"]),
         "WANDB_JOB_TYPE": "ppo_meta_routed_moe",
     })
     _atomic_json(paths["artifact"] / "training_config.json", {
         **readiness(), "ppo": asdict(config), "source_identity": asdict(source),
-        "checkpoint_retention": "all", "checkpoint_contents": "model_only",
+        "checkpoint_retention": RETENTION_POLICY,
+        "checkpoint_contents": "fp32_effective_delta_only",
+        "retention_authorization": "explicit_user_authorization_2026-08-16",
         "configured_update_limit": updates, "wandb_mode": wandb_mode,
     })
     _atomic_json(paths["artifact"] / "status.json", {
         "state": "running", "checkpoint_update": 0, "wandb_run_id": RUN_ID,
     })
-    _atomic_torch(paths["checkpoint"] / "update-000000.pt", _checkpoint(model, 0))
+    checkpoint_path = atomic_save_compact_checkpoint(
+        paths["checkpoint"] / "update-000000.pt", model, 0,
+        metadata=_checkpoint_metadata(model),
+    )
     save_router_table(model, paths["checkpoint"] / "router-000000.json")
     history = RolloutHistory()
     update = 0
@@ -275,6 +278,7 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
             eval_root = paths["artifact"] / "evaluation" / "update-000000"
             report = evaluate_model(
                 model, checkpoint_update=0,
+                source_checkpoint=checkpoint_path,
                 output_root=eval_root, games_per_pool=512,
             )
             u0_metrics = {
@@ -304,7 +308,8 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
             if update == WARMUP_UPDATES:
                 model.set_soft_routing(True)
             jobs, deck_weights, policy_weights, curriculum = _jobs(
-                update, registry, focal_deck_ids=("070",), focal_deck_id="070",
+                update, registry, focal_deck_ids=(FOCAL_DECK_ID,),
+                focal_deck_id=FOCAL_DECK_ID,
                 opponent_sampling_mode="core_deck_half_meta_balanced_half",
                 opponent_policy_ids=("Policy-0814",),
                 latest_champion_policy_id="Policy-0814",
@@ -351,7 +356,10 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
             ppo = trainer.update(batch, update=update + 1)
             checkpoint_update = update + 1
             checkpoint_path = paths["checkpoint"] / f"update-{checkpoint_update:06d}.pt"
-            _atomic_torch(checkpoint_path, _checkpoint(model, checkpoint_update))
+            atomic_save_compact_checkpoint(
+                checkpoint_path, model, checkpoint_update,
+                metadata=_checkpoint_metadata(model),
+            )
             save_router_table(model, paths["checkpoint"] / f"router-{checkpoint_update:06d}.json")
             rows = _episode_rows(episodes)
             rollout = aggregate_training_rollout(
@@ -367,6 +375,7 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
                 eval_root = paths["artifact"] / "evaluation" / f"update-{checkpoint_update:06d}"
                 report = evaluate_model(
                     model, checkpoint_update=checkpoint_update,
+                    source_checkpoint=checkpoint_path,
                     output_root=eval_root, games_per_pool=512,
                 )
                 metrics.update(wandb_metrics(report))
@@ -380,9 +389,20 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
                 except Exception as error:
                     metrics["router/heatmap_wandb_error"] = str(error)
             logger.log(checkpoint_update, metrics)
+            removed_checkpoints: list[str] = []
+            if checkpoint_update % EVAL_INTERVAL == 0:
+                removed_checkpoints = [
+                    path.name for path in prune_non_eval_checkpoints(
+                        paths["checkpoint"], through_update=checkpoint_update,
+                        eval_interval=EVAL_INTERVAL,
+                        evaluation_status=report["status"],
+                    )
+                ]
             _atomic_json(paths["artifact"] / "status.json", {
                 "state": "running", "checkpoint_update": checkpoint_update,
                 "routing_phase": "soft" if model.soft_routing else "hard_warmup",
+                "checkpoint_retention": RETENTION_POLICY,
+                "last_pruned_checkpoints": removed_checkpoints,
                 "wandb_run_id": RUN_ID, "last_metric_time": time.time(),
             })
             model.set_runtime_own_archetype_ids(None)
