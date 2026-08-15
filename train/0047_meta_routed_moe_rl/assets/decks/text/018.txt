@@ -1,0 +1,95 @@
+0044 DECK 018 — Dragapult ex
+==============================================================================
+
+IDENTITY
+deck_id: 018
+display_name: Dragapult ex
+upstream_name: Dragapult ex
+display_name_correction: none
+exact_deck_sha256: daa1cce9079016e357f7ab3f1666f0ecc4ddca3b8e4131b88ade164c14ddcb4c
+deck_file_sha256: 85cf85e65e0a9d66dcc4625ea3c906be822cb1392890a5b2e52f41c68aa43fc5
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: fa8aea6538a1480e54bb13651169492fef34b74a455160a3e255ed97741bab78
+mapping_sha256: e0fe9248c57684e6ac761911e04ecc978804d963c7435afce36506607c679b2d
+old_own_archetype_id: 0
+own_archetype_id: 0
+own_archetype_name: dragapult_ex
+own_archetype_display_name: Dragapult ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 0
+tags: stage2, spread_damage
+
+STRATEGIC CHARACTERISTICS
+axis: Phantom Dive spread
+definition: Dragapult ex Stage-2 spread-damage plan without a second structural Stage-2 engine.
+rationale: Phantom Dive pressure and distributed damage define the primary KO route.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=19, Trainer=31, Energy=10
+evolution_lines:
+  Basic / root:
+    - 1× Dunsparce [65] (Basic Pokémon)
+    - 2× Munkidori [112] (Basic Pokémon)
+    - 4× Dreepy [119] (Basic Pokémon)
+    - 1× Fezandipiti ex [140] (Basic Pokémon)
+    - 1× Budew [235] (Basic Pokémon)
+    - 1× Meowth ex [1071] (Basic Pokémon)
+  Dunsparce:
+    - 1× Dudunsparce [66] (Stage 1 Pokémon)
+    - 1× Dudunsparce ex [306] (Stage 1 Pokémon)
+  Dreepy:
+    - 4× Drakloak [120] (Stage 1 Pokémon)
+  Drakloak:
+    - 3× Dragapult ex [121] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 2× Boss’s Orders [1182] (Supporter)
+  - 3× Crispin [1198] (Supporter)
+  - 1× Judge [1213] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 1× Jamming Tower [1246] (Stadium)
+  - 1× Risky Ruins [1260] (Stadium)
+energy:
+  - 3× Basic {R} Energy [2]
+  - 4× Basic {P} Energy [5]
+  - 3× Basic {D} Energy [7]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    3 |       2 | Basic {R} Energy | SVE 2 | Energy | Basic Energy
+    4 |       5 | Basic {P} Energy | SVE 5 | Energy | Basic Energy
+    3 |       7 | Basic {D} Energy | SVE 7 | Energy | Basic Energy
+    1 |      65 | Dunsparce | TEF 128 | Pokémon | Basic Pokémon
+    1 |      66 | Dudunsparce | TEF 129 | Pokémon | Stage 1 Pokémon
+    2 |     112 | Munkidori | TWM 95 | Pokémon | Basic Pokémon
+    4 |     119 | Dreepy | TWM 128 | Pokémon | Basic Pokémon
+    4 |     120 | Drakloak | TWM 129 | Pokémon | Stage 1 Pokémon
+    3 |     121 | Dragapult ex | TWM 130 | Pokémon | Stage 2 Pokémon
+    1 |     140 | Fezandipiti ex | SFA 38 | Pokémon | Basic Pokémon
+    1 |     235 | Budew | PRE 4 | Pokémon | Basic Pokémon
+    1 |     306 | Dudunsparce ex | JTG 121 | Pokémon | Stage 1 Pokémon
+    1 |    1071 | Meowth ex | POR 62 | Pokémon | Basic Pokémon
+    1 |    1080 | Unfair Stamp | TWM 165 | Trainer | Item
+    4 |    1086 | Buddy-Buddy Poffin | TEF 144 | Trainer | Item
+    2 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    4 |    1120 | Crushing Hammer | SVI 168 | Trainer | Item
+    4 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    2 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    3 |    1198 | Crispin | SCR 133 | Trainer | Supporter
+    1 |    1213 | Judge | SVI 176 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    1 |    1246 | Jamming Tower | TWM 153 | Trainer | Stadium
+    1 |    1260 | Risky Ruins | MEG 127 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 21, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/018_dragapult_ex", "legacy_semantic_deck_id": "dragapult_ex_daa1cce90790", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

@@ -27,7 +27,7 @@ MARNIES_GRIMMSNARL_EX = 648
 
 UI_BASELINE = "2026-07-26.html"
 CARD_POOL_BASELINE = "2026-07-25.html"
-SNAPSHOT_SCHEMA = "pokemon_tcg_environment_daily_v3"
+SNAPSHOT_SCHEMA = "pokemon_tcg_environment_daily_v4"
 LEADERBOARD_BINDINGS = {
     "leaderboard_score",
     "leaderboard_score_submission_date",
@@ -160,7 +160,7 @@ def _datetime(value: object) -> datetime | None:
 
 def _model_value(model: Any, *names: str, default: Any = None) -> Any:
     for name in names:
-        value = getattr(model, name, None)
+        value = model.get(name) if isinstance(model, dict) else getattr(model, name, None)
         if value is not None:
             return value
     return default
@@ -176,6 +176,96 @@ def _score(value: object) -> Decimal | None:
         return Decimal(str(value))
     except (InvalidOperation, TypeError, ValueError):
         return None
+
+
+def _scored_submissions_at_or_before(
+    submissions: list[object], cutoff_value: object
+) -> list[object]:
+    cutoff = _datetime(cutoff_value)
+    if cutoff is None:
+        raise ValueError(f"invalid submission cutoff: {cutoff_value!r}")
+    selected: list[tuple[Decimal, datetime, int, object]] = []
+    for submission in submissions:
+        score = _score(_model_value(submission, "public_score", "publicScore"))
+        submitted_at = _datetime(
+            _model_value(submission, "date_submitted", "dateSubmitted")
+        )
+        if score is None or submitted_at is None or submitted_at > cutoff:
+            continue
+        selected.append(
+            (
+                score,
+                submitted_at,
+                int(_model_value(submission, "id", default=0) or 0),
+                submission,
+            )
+        )
+    selected.sort(key=lambda item: (item[0], item[1], item[2]), reverse=True)
+    return [item[3] for item in selected]
+
+
+def _latest_submission_at_or_before(
+    submissions: list[object], cutoff_value: object
+) -> object:
+    cutoff = _datetime(cutoff_value)
+    if cutoff is None:
+        raise ValueError(f"invalid submission cutoff: {cutoff_value!r}")
+    dated = []
+    for submission in submissions:
+        submitted_at = _datetime(
+            _model_value(submission, "date_submitted", "dateSubmitted")
+        )
+        if submitted_at is not None and submitted_at <= cutoff:
+            dated.append(
+                (
+                    submitted_at,
+                    int(_model_value(submission, "id", default=0) or 0),
+                    submission,
+                )
+            )
+    if not dated:
+        raise ValueError("team has no submission at or before snapshot cutoff")
+    return max(dated, key=lambda item: (item[0], item[1]))[2]
+
+
+def _select_distinct_deck_evidence(
+    evidence: list[dict[str, object]], *, limit: int = 2
+) -> list[dict[str, object]]:
+    selected = []
+    seen = set()
+    for row in evidence:
+        deck_sha256 = str(row.get("deck_sha256") or "")
+        if not deck_sha256 or deck_sha256 in seen:
+            continue
+        seen.add(deck_sha256)
+        selected.append(row)
+        if len(selected) >= limit:
+            break
+    return selected
+
+
+def _relative_submission_age(submitted_value: object, captured_value: object) -> str:
+    submitted_at = _datetime(submitted_value)
+    captured_at = _datetime(captured_value)
+    if submitted_at is None or captured_at is None:
+        raise ValueError("submission age requires valid timestamps")
+    elapsed = int((captured_at - submitted_at).total_seconds())
+    if elapsed < 0:
+        raise ValueError("submission timestamp is after snapshot cutoff")
+    if elapsed < 60:
+        return "刚刚"
+    minutes = elapsed // 60
+    if minutes < 60:
+        return f"{minutes} 分钟前"
+    hours = elapsed // 3600
+    if hours < 24:
+        return f"{hours} 小时前"
+    days = elapsed // 86400
+    if days < 30:
+        return f"{days} 天前"
+    if days < 365:
+        return f"{days // 30} 个月前"
+    return f"{days // 365} 年前"
 
 
 def _select_leaderboard_submission(
@@ -231,7 +321,7 @@ def _select_leaderboard_submission(
 def _capture_score_bound_leaderboard(
     api: KaggleApi,
 ) -> tuple[list[object], dict[int, list[object]], str]:
-    """Warm submission views before freezing the final score-bound leaderboard."""
+    """Warm views, freeze the leaderboard, then refresh cutoff-bounded team submissions."""
     preliminary = api.competition_leaderboard_view(COMPETITION, page_size=100)[:100]
     if len(preliminary) != 100:
         raise RuntimeError(f"leaderboard returned {len(preliminary)} rows, expected 100")
@@ -252,14 +342,10 @@ def _capture_score_bound_leaderboard(
         raise RuntimeError(f"leaderboard returned {len(leaderboard)} rows, expected 100")
     for row in leaderboard:
         team_id = int(_model_value(row, "team_id", "teamId"))
-        submissions = submissions_by_team.get(team_id, [])
-        try:
-            _select_leaderboard_submission(row, submissions)
-        except ValueError:
-            submissions = list(
-                _rate_call(lambda: api.competition_team_submissions(team_id))
-            )
-            _select_leaderboard_submission(row, submissions)
+        submissions = list(
+            _rate_call(lambda: api.competition_team_submissions(team_id))
+        )
+        _select_leaderboard_submission(row, submissions)
         submissions_by_team[team_id] = submissions
     return leaderboard, submissions_by_team, captured_at_utc
 
@@ -480,6 +566,58 @@ def _validate_snapshot(
         ).hexdigest()
         if player.get("deck_sha256") != deck_sha256:
             raise ValueError(f"rank {expected_rank}: deck hash diverged")
+        if state.get("schema") == SNAPSHOT_SCHEMA:
+            last_submitted_at = _datetime(player.get("last_submission_date_actual"))
+            if last_submitted_at is None or last_submitted_at > cutoff:
+                raise ValueError(f"rank {expected_rank}: invalid cutoff-bounded last submission")
+            high_score_decks = list(player.get("high_score_decks") or [])
+            if not 1 <= len(high_score_decks) <= 2:
+                raise ValueError(f"rank {expected_rank}: requires one or two high-score decks")
+            if (
+                int(high_score_decks[0].get("submission_id") or 0) != submission_id
+                or high_score_decks[0].get("deck_sha256") != deck_sha256
+                or _score(high_score_decks[0].get("public_score"))
+                != _score(player.get("submission_public_score"))
+            ):
+                raise ValueError(f"rank {expected_rank}: first high-score deck is not canonical")
+            evidence_hashes = set()
+            previous_score: Decimal | None = None
+            for evidence in high_score_decks:
+                evidence_score = _score(evidence.get("public_score"))
+                evidence_submitted_at = _datetime(evidence.get("submitted_at"))
+                evidence_episode_at = _datetime(evidence.get("episode_create_time"))
+                evidence_deck = [int(card_id) for card_id in evidence.get("deck") or []]
+                evidence_hash = hashlib.sha256(
+                    ",".join(str(card_id) for card_id in sorted(evidence_deck)).encode("ascii")
+                ).hexdigest()
+                if evidence_score is None or (
+                    previous_score is not None and evidence_score > previous_score
+                ):
+                    raise ValueError(f"rank {expected_rank}: high-score decks are not score ordered")
+                if evidence_submitted_at is None or evidence_submitted_at > cutoff:
+                    raise ValueError(f"rank {expected_rank}: alternate submission exceeds cutoff")
+                if evidence_episode_at is None or evidence_episode_at > cutoff:
+                    raise ValueError(f"rank {expected_rank}: alternate Episode exceeds cutoff")
+                if len(evidence_deck) != 60 or evidence.get("deck_sha256") != evidence_hash:
+                    raise ValueError(f"rank {expected_rank}: alternate exact deck hash diverged")
+                if evidence_hash in evidence_hashes:
+                    raise ValueError(f"rank {expected_rank}: high-score decks are not distinct")
+                evidence_hashes.add(evidence_hash)
+                previous_score = evidence_score
+                evidence_episode_id = int(evidence.get("episode_id") or 0)
+                evidence_index = int(evidence.get("episode_player_index", -1))
+                evidence_replay = replay_root / f"episode-{evidence_episode_id}.json"
+                if not evidence_replay.is_file():
+                    raise ValueError(
+                        f"rank {expected_rank}: missing alternate replay {evidence_episode_id}"
+                    )
+                evidence_replay_decks = _decks_from_replay(
+                    json.loads(evidence_replay.read_text(encoding="utf-8"))
+                )
+                if evidence_index not in (0, 1) or sorted(
+                    evidence_replay_decks[evidence_index]
+                ) != sorted(evidence_deck):
+                    raise ValueError(f"rank {expected_rank}: alternate replay identity diverged")
         rewards = [float(view["reward"]) for view in bounded_views if view.get("reward") is not None]
         expected_result = (
             sum(reward > 0 for reward in rewards),
@@ -519,6 +657,13 @@ def _validate_snapshot(
         "all_submission_matches_unique": True,
         "all_leaderboard_scores_match": True,
         "all_decks_exactly_60": True,
+        "audited_high_score_decks": sum(
+            len(list(player.get("high_score_decks") or [])) for player in players.values()
+        ),
+        "dual_deck_players": sum(
+            len(list(player.get("high_score_decks") or [])) == 2
+            for player in players.values()
+        ),
         "bounded_player_views": sum(
             int(player.get("valid_games") or 0) for player in players.values()
         ),
@@ -636,22 +781,41 @@ def _render_report(
     .snapshot-note{padding:16px 18px;border:1px solid #e5bb76;border-radius:14px;background:#fff8e9;color:#5e4218}
     .archetype-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.archetype-card{padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff}.archetype-card h3{margin:0 0 8px}.bar-track{height:9px;border-radius:99px;background:#e8eee9;overflow:hidden}.bar-fill{height:100%;background:linear-gradient(90deg,#1e7c60,#8bbf9a)}
     .deck-group{margin:18px 0 28px}.deck-group h4{padding-bottom:7px;border-bottom:2px solid #a8cdbd}.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px}.card-tile{min-width:0}.card-tile .card-art{position:relative;aspect-ratio:2.5/3.5;overflow:hidden;border-radius:8px;background:#edf2ef}.card-tile .card-thumb{width:100%!important;height:100%!important;min-width:0!important;max-width:none!important;min-height:0!important;max-height:none!important}.card-tile .card-thumb img{width:100%!important;height:100%!important;object-fit:contain!important}.card-tile b,.card-tile small{display:block}.card-tile b{margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-tile small{color:var(--muted)}.deck-count{position:absolute;z-index:4;top:7px;right:7px;padding:3px 7px;border-radius:999px;color:#fff;background:#173e31e8;font-weight:900}
+    .identity-meta{display:block;margin-top:4px;color:#315b4d;font-size:12px;font-weight:750}.identity-meta time{color:#8a5410}.high-score-deck{margin:22px 0;padding:18px;border:1px solid var(--line);border-radius:16px;background:#fbfdfc}.high-score-deck.alt{border-color:#d7b36c;background:#fffaf0}.high-score-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:center}.high-score-head h4{margin:0}.high-score-head p{margin:0;color:var(--muted)}.dual-deck-badge{display:inline-flex;padding:3px 7px;border-radius:999px;background:#fff0c9;color:#754b08;font-size:11px;font-weight:900}
     .archetype-profile{margin:10px 0;border:1px solid var(--line);border-radius:14px}.archetype-profile summary{display:flex;justify-content:space-between;gap:12px;padding:15px;cursor:pointer;font-weight:800}.archetype-profile>div{padding:0 15px 15px}.tag-list{display:flex;flex-wrap:wrap;gap:7px}.tag{padding:5px 8px;border-radius:999px;background:#edf6f1;color:#0d6349;font-size:12px}.unavailable-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.unavailable-grid article{padding:16px;border:1px dashed #c9d2cd;border-radius:14px;background:#f7f8f7}.comparison-table small,.summary-table small{display:block;color:var(--muted)}
     .current-user{outline:2px solid #c88b19;outline-offset:-2px;background:#fffaf0!important}.current-user-badge{display:inline-flex;align-items:center;margin-left:7px;padding:3px 7px;border:1px solid #d8aa54;border-radius:999px;background:#fff0c9;color:#754b08;font-size:11px;font-weight:900;vertical-align:middle}.current-user-banner{display:flex;flex-wrap:wrap;align-items:center;gap:9px 16px;margin:16px 0;padding:15px 18px;border:2px solid #c88b19;border-radius:12px;background:#fffaf0}.current-user-banner b{font-size:18px}.current-user-banner span{color:#5f584c}.current-user-banner a{margin-left:auto;font-weight:850}
     @media(max-width:900px){.archetype-grid,.unavailable-grid{grid-template-columns:1fr 1fr}}@media(max-width:680px){.archetype-grid,.unavailable-grid{grid-template-columns:1fr}}
     """
     css = "\n".join(line.rstrip() for line in css.splitlines())
+    cutoff = _datetime(state["captured_at_utc"])
+    if cutoff is None:
+        raise ValueError("report requires a valid captured_at_utc")
     for player in players:
         player["archetype"] = _classify_archetype(player["deck"], catalog)
         player["deck_hash"] = _deck_hash(player["deck"])
         player["card_counts"] = Counter(int(card_id) for card_id in player["deck"])
+        if not player.get("last_submission_date_actual"):
+            player["last_submission_date_actual"] = player.get("submission_date_actual")
+        if not player.get("high_score_decks"):
+            player["high_score_decks"] = [
+                {
+                    "submission_id": player["submission_id"],
+                    "public_score": player["submission_public_score"],
+                    "submitted_at": player.get("submission_date_actual"),
+                    "episode_id": player["episode_id"],
+                    "episode_create_time": player.get("episode_create_time"),
+                    "episode_player_index": player.get("episode_player_index"),
+                    "deck_sha256": player["deck_sha256"],
+                    "deck": player["deck"],
+                    "archetype": player["archetype"],
+                }
+            ]
     current_user = next(
         (player for player in players if int(player["team_id"]) == CURRENT_USER_TEAM_ID),
         None,
     )
 
     by_submission = {int(player["submission_id"]): player for player in players}
-    cutoff = _datetime(state["captured_at_utc"])
     views_by_submission: dict[int, list[dict[str, object]]] = {}
     for submission_id, player in by_submission.items():
         raw_views = (meta_payload or {}).get("views", {}).get(str(submission_id), [])
@@ -821,13 +985,28 @@ def _render_report(
     def current_user_badge(player: dict[str, object]) -> str:
         return '<span class="current-user-badge">我的位置</span>' if is_current_user(player) else ""
 
+    def identity_meta(player: dict[str, object]) -> str:
+        submitted_at = str(player["last_submission_date_actual"])
+        submitted_iso = _timestamp(submitted_at)
+        age = _relative_submission_age(submitted_at, state["captured_at_utc"])
+        dual = (
+            '<span class="dual-deck-badge">2 套高分构筑</span>'
+            if len(list(player.get("high_score_decks") or [])) == 2
+            else ""
+        )
+        return (
+            f'<span class="identity-meta"><b>榜分 {float(player["score"]):.1f}</b> · '
+            f'最后提交 <time datetime="{html.escape(submitted_iso)}" '
+            f'title="精确提交时间：{html.escape(submitted_iso)}">{age}</time> {dual}</span>'
+        )
+
     def player_row(player: dict[str, object], attribute: str) -> str:
         search = f'{player["rank"]} {player["team_name"]} {player["team_id"]} {player["archetype"]}'.lower()
         return (
             f'<tr {attribute}{current_user_attributes(player)} data-archetype="{html.escape(str(player["archetype"]))}" '
             f'data-search="{html.escape(search)}"><td><b>#{player["rank"]}</b></td>'
             f'<td><a href="#player-{int(player["rank"]):03d}">{html.escape(str(player["team_name"]))}</a>{current_user_badge(player)}'
-            f'<small>Team {player["team_id"]} · submission {player["submission_id"]}</small></td>'
+            f'{identity_meta(player)}<small>Team {player["team_id"]} · submission {player["submission_id"]}</small></td>'
             f'<td>{badge(player)}</td><td>{float(player["score"]):.1f}</td>'
             f'<td>{int(player["valid_games"]):,}</td><td>{player["wins"]}-{player["losses"]}-{player["draws"]}</td>'
             f'<td><b>{_pct(player["win_rate"])}</b></td><td><code>{player["deck_hash"]}</code>'
@@ -880,7 +1059,7 @@ def _render_report(
             f'data-archetype="{html.escape(str(player["archetype"]))}" '
             f'data-search="{html.escape(search)}"><div class="person-head"><span class="rank-chip">#{player["rank"]}</span>'
             f'<div><a href="#player-{int(player["rank"]):03d}"><b>{html.escape(str(player["team_name"]))}</b></a>'
-            f'{current_user_badge(player)}{archetype_visual(str(player["archetype"]))}</div></div><div class="win-grid">'
+            f'{current_user_badge(player)}{identity_meta(player)}{archetype_visual(str(player["archetype"]))}</div></div><div class="win-grid">'
             f'{rate_card("全样本", player["win_rate"], int(player["valid_games"]))}'
             f'{rate_card("高分段 · Top 100 对手", high_rate, len(player["high_rewards"]))}'
             f'{rate_card("低分段 · 其余对手", other_rate, len(player["other_rewards"]))}</div>'
@@ -905,7 +1084,7 @@ def _render_report(
         for left in top20_names
     )
     top20_rows = "".join(
-        f'<tr><td>#{player["rank"]}</td><td><a href="#player-{int(player["rank"]):03d}">{html.escape(str(player["team_name"]))}</a></td>'
+        f'<tr><td>#{player["rank"]}</td><td><a href="#player-{int(player["rank"]):03d}">{html.escape(str(player["team_name"]))}</a>{identity_meta(player)}</td>'
         f'<td>{archetype_visual(str(player["archetype"]))}</td><td>{player["valid_games"]}</td>'
         f'<td>{player["wins"]}-{player["losses"]}-{player["draws"]}</td><td>{_pct(player["win_rate"])}</td></tr>'
         for player in top20
@@ -978,22 +1157,45 @@ def _render_report(
 
     detail_blocks = []
     for player in players:
-        groups: dict[str, list[str]] = {"Pokémon": [], "Trainer": [], "Energy": []}
-        totals: Counter[str] = Counter()
-        for card_id, count in sorted(player["card_counts"].items(), key=lambda item: catalog.get(item[0], {}).get("Card Name", "")):
-            row = catalog.get(card_id, {})
-            group = _card_group(row)
-            totals[group] += count
-            name = row.get("Card Name", f"Card ID {card_id}")
-            groups[group].append(
-                f'<article class="card-tile"><div class="card-art">{_card_thumb(card_id, catalog, compact=False)}'
-                f'<span class="deck-count">×{count}</span></div><b title="{html.escape(name)}">{html.escape(name)}</b>'
-                f'<small>Card ID {card_id} · {count} 张</small></article>'
+        def high_score_deck_html(evidence: dict[str, object], index: int) -> str:
+            counts = Counter(int(card_id) for card_id in evidence["deck"])
+            groups: dict[str, list[str]] = {"Pokémon": [], "Trainer": [], "Energy": []}
+            totals: Counter[str] = Counter()
+            for card_id, count in sorted(
+                counts.items(),
+                key=lambda item: catalog.get(item[0], {}).get("Card Name", ""),
+            ):
+                card = catalog.get(card_id, {})
+                group = _card_group(card)
+                totals[group] += count
+                name = card.get("Card Name", f"Card ID {card_id}")
+                groups[group].append(
+                    f'<article class="card-tile"><div class="card-art">{_card_thumb(card_id, catalog, compact=False)}'
+                    f'<span class="deck-count">×{count}</span></div><b title="{html.escape(name)}">{html.escape(name)}</b>'
+                    f'<small>Card ID {card_id} · {count} 张</small></article>'
+                )
+            deck_groups = "".join(
+                f'<section class="deck-group"><h4>{group} <small>{totals[group]} 张 · {len(groups[group])} 种</small></h4>'
+                f'<div class="card-grid">{"".join(groups[group])}</div></section>'
+                for group in ("Pokémon", "Trainer", "Energy")
             )
+            submitted_at = str(evidence["submitted_at"])
+            submitted_iso = _timestamp(submitted_at)
+            age = _relative_submission_age(submitted_at, state["captured_at_utc"])
+            label = "当前榜分构筑" if index == 0 else "第二高分不同构筑"
+            return (
+                f'<section class="high-score-deck{" alt" if index else ""}" data-high-score-deck '
+                f'data-deck-sha256="{html.escape(str(evidence["deck_sha256"]))}">'
+                f'<div class="high-score-head"><div><h4>{label} · {html.escape(str(evidence["archetype"]))}</h4>'
+                f'<p>榜分 {float(evidence["public_score"]):.1f} · submission {evidence["submission_id"]} · '
+                f'<time datetime="{html.escape(submitted_iso)}" title="精确提交时间：{html.escape(submitted_iso)}">{age}</time></p></div>'
+                f'<p>Episode {evidence["episode_id"]} · P{evidence["episode_player_index"]} · '
+                f'<code>{_deck_hash(list(evidence["deck"]))}</code></p></div>{deck_groups}</section>'
+            )
+
         deck_html = "".join(
-            f'<section class="deck-group"><h4>{group} <small>{totals[group]} 张 · {len(groups[group])} 种</small></h4>'
-            f'<div class="card-grid">{"".join(groups[group])}</div></section>'
-            for group in ("Pokémon", "Trainer", "Energy")
+            high_score_deck_html(evidence, index)
+            for index, evidence in enumerate(player["high_score_decks"])
         )
         matchup_items = [
             (right, counter)
@@ -1024,13 +1226,13 @@ def _render_report(
             f'{current_user_data}'
             f'data-archetype="{html.escape(str(player["archetype"]))}" data-search="{html.escape(search)}">'
             f'<summary><span><b>#{player["rank"]} {html.escape(str(player["team_name"]))}</b>'
-            f'{current_user_badge(player)} · {badge(player)}</span>'
+            f'{current_user_badge(player)}{identity_meta(player)} · {badge(player)}</span>'
             f'<span>{player["wins"]}-{player["losses"]}-{player["draws"]} · {_pct(player["win_rate"])}</span></summary>'
             f'<div class="detail-body"><p><b>submission {player["submission_id"]}</b> · Episode {player["episode_id"]} · '
             f'player index {player.get("episode_player_index", "—")} · '
             f'createTime {html.escape(str(player.get("episode_create_time") or "未记录"))} · '
             f'deck hash <code>{player["deck_hash"]}</code></p><h4>已识别 matchup</h4>{matchup_html}'
-            f'<h4>Exact 60-card deck</h4>{deck_html}</div></details>'
+            f'<h4>高分 Exact 60-card 构筑</h4>{deck_html}</div></details>'
         )
 
     current_user_banner = ""
@@ -1039,7 +1241,7 @@ def _render_report(
             '<aside class="current-user-banner" data-current-user="true">'
             '<span class="current-user-badge">我的位置</span>'
             f'<b>#{current_user["rank"]} {html.escape(str(current_user["team_name"]))}</b>'
-            f'<span>榜分 {float(current_user["score"]):.1f} · submission '
+            f'<span>{identity_meta(current_user)}submission '
             f'{current_user["submission_id"]} · {html.escape(str(current_user["archetype"]))}</span>'
             f'<a href="#player-{int(current_user["rank"]):03d}">查看完整构筑与对局</a></aside>'
         )
@@ -1052,7 +1254,7 @@ def _render_report(
 
 <section class="panel" id="new-summary"><div class="heading"><div><p class="eyebrow">{report_date} SNAPSHOT · {report_id}</p><h2>新版环境分析总览</h2></div><p>整体组件与 UI 固定继承 0726；构筑卡池固定继承 0725 的卡图网格与覆盖率表达。</p></div>
 {current_user_banner}
-<div class="metrics new-metrics"><div class="metric"><b>100</b><span>最终 submissions</span></div><div class="metric"><b>{total_games:,}</b><span>公开 Meta 玩家视角</span></div><div class="metric"><b>{len(presence)}</b><span>Card Pool 并集</span></div><div class="metric"><b>{len(distribution)}</b><span>实际牌型</span></div><div class="metric"><b>100</b><span>exact decks 已审计</span></div><div class="metric"><b>100</b><span>代表 replays</span></div></div>
+<div class="metrics new-metrics"><div class="metric"><b>100</b><span>最终 submissions</span></div><div class="metric"><b>{total_games:,}</b><span>公开 Meta 玩家视角</span></div><div class="metric"><b>{len(presence)}</b><span>Card Pool 并集</span></div><div class="metric"><b>{len(distribution)}</b><span>实际牌型</span></div><div class="metric"><b>{sum(len(player["high_score_decks"]) for player in players)}</b><span>高分 exact decks 已审计</span></div><div class="metric"><b>{sum(len(player["high_score_decks"]) == 2 for player in players)}</b><span>双构筑选手</span></div></div>
 <div class="evidence-grid"><article><b>榜单层</b><p>冻结官方 Top100，以 score 匹配 submission publicScore；同分才用 submissionDate 消歧。</p></article><article><b>Meta 层</b><p>只计 exact submission 的 PUBLIC + COMPLETED Episode Meta。</p></article><article><b>Replay 层</b><p>逐 submission 最新合格 replay 的 exact 60-card deck。</p></article></div>
 <h3>读数摘要</h3><div class="finding-grid"><article><b>榜首与分差</b><p>{html.escape(str(players[0]["team_name"]))} · {float(players[0]["score"]):.1f}；第 100 名 {html.escape(str(players[-1]["team_name"]))} · {float(players[-1]["score"]):.1f}。</p></article><article><b>公开 Meta</b><p>{total_wins:,}-{total_losses:,}-{total_draws:,}，玩家视角胜率 {_pct(overall)}（n={total_games:,}）。</p></article><article><b>环境集中度</b><p>{html.escape(ordered_archetypes[0][0])} {ordered_archetypes[0][1]} 人；前两类合计 {sum(count for _, count in ordered_archetypes[:2])}/100。</p></article><article><b>卡池审计</b><p>100 份代表 deck 均为 60 张，共覆盖 {len(presence)} 个 Card ID。</p></article></div>
 <div class="snapshot-note"><b>证据护栏：</b>单 submission 的 Episode Meta 最多暴露约 1,000 局；本次有 {capped_submissions} 个 submission 命中端点上限。逐局 opponent Meta 已按 leaderboard 冻结时间截断后用于真实 matchup，firstPlayer / final turn 仍只按代表 replay 审计，不外推为全量结论。</div></section>
@@ -1069,11 +1271,11 @@ def _render_report(
 
 <section class="panel" id="archetype-builds"><div class="heading"><div><p class="eyebrow">ARCHETYPE BUILD AUDIT</p><h2>各牌型典型构筑卡池</h2></div><p>每张卡的 n 表示该牌型中有多少套代表 deck 包含它；不是平均投入张数或因果强度。</p></div>{''.join(archetype_profiles)}</section>
 
-<section class="panel" id="rank-index"><div class="heading"><div><p class="eyebrow">STATIC RANK INDEX</p><h2>Top 100 静态排名索引</h2></div><p>固定为 {html.escape(str(state["captured_at_utc"]))} 的榜单，不随后续 leaderboard 变化重排。</p></div><div class="table-scroll"><table class="summary-table"><thead><tr><th>Rank</th><th>选手</th><th>牌型</th><th>榜分</th><th>Meta 场次</th><th>W-L-D</th><th>胜率</th><th>deck evidence</th></tr></thead><tbody>{''.join(player_row(player, 'data-index-row') for player in players)}</tbody></table></div></section>
+<section class="panel" id="rank-index"><div class="heading"><div><p class="eyebrow">STATIC RANK INDEX</p><h2>Top 100 静态排名索引</h2></div><p>固定为 {html.escape(str(state["captured_at_utc"]))} 的榜单，不随后续 leaderboard 变化重排；身份旁的“最后提交”均相对此冻结时刻计算。</p></div><div class="table-scroll"><table class="summary-table"><thead><tr><th>Rank</th><th>选手 / 最后提交</th><th>牌型</th><th>榜分</th><th>Meta 场次</th><th>W-L-D</th><th>胜率</th><th>deck evidence</th></tr></thead><tbody>{''.join(player_row(player, 'data-index-row') for player in players)}</tbody></table></div></section>
 
-<section class="panel" id="player-details"><div class="heading"><div><p class="eyebrow">PLAYER DETAIL / EXACT DECK</p><h2>逐人 exact 60-card deck 展开</h2></div><p>点击展开；卡图、分组、张数、Card ID 与大图预览沿用 0726。</p></div><div class="toolbar"><button id="open-visible" type="button">展开当前筛选</button><button id="close-all" type="button">全部收起</button></div><div class="person-grid">{''.join(detail_blocks)}</div></section>
+<section class="panel" id="player-details"><div class="heading"><div><p class="eyebrow">PLAYER DETAIL / EXACT DECK</p><h2>逐人高分 exact 60-card deck 展开</h2></div><p>点击展开；若该选手存在两个不同 deck hash 的高分提交，则同时展示两套。第一套绑定当前榜分，第二套仅作为历史高分构筑证据。</p></div><div class="toolbar"><button id="open-visible" type="button">展开当前筛选</button><button id="close-all" type="button">全部收起</button></div><div class="person-grid">{''.join(detail_blocks)}</div></section>
 
-<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{report_id}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均通过 <code>leaderboard score = submission publicScore</code> 绑定实际高分 submission；只有同分候选才使用 submissionDate 消歧。</li><li>只统计 PUBLIC + COMPLETED 且 submission ID 精确匹配、createTime 不晚于 leaderboard 冻结时间的公开 Episode Meta。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>每个 deck 来自该 submission 最新合格代表 replay 的自身 player index，且恰为 60 个 Card ID；渲染前已执行 100/100 身份链强制审计。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/snapshot.json</code>；逐局 Meta 缓存：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/meta_views.json</code>；生成入口：<code>python3 -m data.processed.environment_daily.generate_live_snapshot</code>。</li></ul></section>
+<section class="panel provenance" id="boundaries"><div class="heading"><div><p class="eyebrow">BOUNDARIES</p><h2>数据边界与复现</h2></div></div><ul><li>报告 ID：<code>{report_id}</code>；leaderboard 冻结：<code>{html.escape(str(state["captured_at_utc"]))}</code>。</li><li>100 行均通过 <code>leaderboard score = submission publicScore</code> 绑定实际高分 submission；只有同分候选才使用 submissionDate 消歧。身份旁“最后提交”是该 team 截至冻结时刻的最新 submission，与当前榜分 submission 可以不是同一个。</li><li>只统计当前榜分 submission 的 PUBLIC + COMPLETED Episode Meta；第二套高分构筑只展示 exact-deck 证据，不混入胜率或 matchup。</li><li>逐局 Meta 玩家视角 {total_games:,}，其中当前 Top100 最终 submission 互局视角 {top100_player_views:,}；命中约 1,000 条端点上限的 submission 为 {capped_submissions} 个。</li><li>展示的每套 deck 都来自对应 submission 截止冻结时刻最新合格 replay 的自身 player index，且恰为 60 个 Card ID；渲染前已执行 100/100 身份链与 {sum(len(player["high_score_decks"]) for player in players)} 套高分构筑强制审计。</li><li>UI 基准：<a href="{UI_BASELINE}">0726</a>；构筑卡池专项基准：<a href="{CARD_POOL_BASELINE}">0725</a>；归档入口：<a href="../index.html">环境日报索引</a>。</li><li>本地冻结事实源：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/snapshot.json</code>；逐局 Meta 缓存：<code>{html.escape(str(state.get("evidence_root", ".tmp/environment_daily")))}/meta_views.json</code>；生成入口：<code>python3 -m data.processed.environment_daily.generate_live_snapshot</code>。</li></ul></section>
 </main><script type="application/json" id="snapshot-audit">{audit_json}</script><script>
 const search=document.getElementById('search'), archetype=document.getElementById('archetype-filter'), visible=document.getElementById('visible-count');
 function apply(){{const q=search.value.trim().toLowerCase();let n=0;document.querySelectorAll('[data-player-row],[data-player-detail],[data-person-card]').forEach(row=>{{const ok=(!q||row.dataset.search.includes(q))&&(!archetype.value||row.dataset.archetype===archetype.value);row.hidden=!ok;if(ok&&row.matches('[data-player-row]'))n++;}});visible.textContent=`显示 ${{n}}`;}}search.addEventListener('input',apply);archetype.addEventListener('change',apply);apply();
@@ -1139,6 +1341,91 @@ def _refresh_frozen_player(
         "bounded": len(episodes),
         "possibly_censored_at_1000": len(all_eligible) >= 1000,
     }
+
+
+def _materialize_submission_deck(
+    api: KaggleApi,
+    submission: object,
+    capture_cutoff: datetime,
+    replay_root: Path,
+    catalog: dict[int, dict[str, str]],
+) -> dict[str, object] | None:
+    submission_id = int(_model_value(submission, "id", default=0) or 0)
+    episodes = _episodes_at_or_before(
+        _rate_call(lambda: _eligible_episodes(api, submission_id, 1000)),
+        capture_cutoff,
+    )
+    if not episodes:
+        return None
+    episode = episodes[0]
+    episode_id = int(_model_value(episode, "id"))
+    player_index = _episode_player_index(episode, submission_id)
+    replay = replay_root / f"episode-{episode_id}.json"
+    if not replay.exists():
+        _rate_call(
+            lambda: api.competition_episode_replay(
+                episode_id, path=str(replay_root), quiet=True
+            )
+        )
+        (replay_root / f"episode-{episode_id}-replay.json").replace(replay)
+    deck = _decks_from_replay(json.loads(replay.read_text(encoding="utf-8")))[player_index]
+    if len(deck) != 60:
+        raise RuntimeError(f"submission {submission_id} replay deck is not exactly 60 cards")
+    deck_sha256 = hashlib.sha256(
+        ",".join(str(card_id) for card_id in sorted(deck)).encode("ascii")
+    ).hexdigest()
+    created_at = _datetime(_model_value(episode, "create_time", "createTime"))
+    submitted_at = _datetime(
+        _model_value(submission, "date_submitted", "dateSubmitted")
+    )
+    return {
+        "submission_id": submission_id,
+        "public_score": str(
+            _model_value(submission, "public_score", "publicScore", default="")
+        ),
+        "submitted_at": submitted_at.isoformat() if submitted_at else None,
+        "episode_id": episode_id,
+        "episode_create_time": created_at.isoformat() if created_at else None,
+        "episode_player_index": player_index,
+        "deck_sha256": deck_sha256,
+        "deck": deck,
+        "archetype": _classify_archetype(deck, catalog),
+    }
+
+
+def _collect_high_score_decks(
+    api: KaggleApi,
+    player: dict[str, object],
+    submissions: list[object],
+    capture_cutoff: datetime,
+    replay_root: Path,
+    catalog: dict[int, dict[str, str]],
+) -> list[dict[str, object]]:
+    canonical = {
+        "submission_id": int(player["submission_id"]),
+        "public_score": str(player["submission_public_score"]),
+        "submitted_at": str(player["submission_date_actual"]),
+        "episode_id": int(player["episode_id"]),
+        "episode_create_time": player.get("episode_create_time"),
+        "episode_player_index": int(player["episode_player_index"]),
+        "deck_sha256": str(player["deck_sha256"]),
+        "deck": list(player["deck"]),
+        "archetype": str(player["archetype"]),
+    }
+    materialized = [canonical]
+    for submission in _scored_submissions_at_or_before(submissions, capture_cutoff):
+        if int(_model_value(submission, "id", default=0) or 0) == canonical["submission_id"]:
+            continue
+        evidence = _materialize_submission_deck(
+            api, submission, capture_cutoff, replay_root, catalog
+        )
+        if evidence is None:
+            continue
+        materialized.append(evidence)
+        selected = _select_distinct_deck_evidence(materialized, limit=2)
+        if len(selected) == 2:
+            return selected
+    return _select_distinct_deck_evidence(materialized, limit=2)
 
 
 def _bounded_meta_fingerprint(
@@ -1277,6 +1564,25 @@ def collect(work: Path, report: Path, report_date: str) -> None:
             raise RuntimeError(
                 f"rank {row['rank']}: leaderboard score did not bind uniquely"
             )
+        latest_submission = _latest_submission_at_or_before(
+            list(submissions), capture_cutoff
+        )
+        serialized_submissions = [
+            {
+                "id": int(_model_value(submission, "id", default=0) or 0),
+                "public_score": (
+                    str(_model_value(submission, "public_score", "publicScore"))
+                    if _model_value(submission, "public_score", "publicScore") is not None
+                    else None
+                ),
+                "date_submitted": str(
+                    _model_value(
+                        submission, "date_submitted", "dateSubmitted", default=""
+                    )
+                ),
+            }
+            for submission in submissions
+        ]
         state["players"][key] = {
             **row,
             "submission_id": int(selected.id),
@@ -1286,6 +1592,15 @@ def collect(work: Path, report: Path, report_date: str) -> None:
             "submission_date_actual": str(
                 _model_value(selected, "date_submitted", "dateSubmitted", default="")
             ),
+            "last_submission_id": int(
+                _model_value(latest_submission, "id", default=0) or 0
+            ),
+            "last_submission_date_actual": str(
+                _model_value(
+                    latest_submission, "date_submitted", "dateSubmitted", default=""
+                )
+            ),
+            "submission_candidates": serialized_submissions,
             "binding": binding,
         }
         state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
@@ -1365,6 +1680,33 @@ def collect(work: Path, report: Path, report_date: str) -> None:
             break
     else:
         raise RuntimeError("Kaggle Episode Meta did not stabilize after six full sweeps")
+
+    # Alternate scored submissions are deck evidence only. They never contribute games,
+    # rewards, rank, or matchup observations to the canonical leaderboard policy row.
+    for row in state["rows"]:
+        key = str(row["rank"])
+        player = state["players"][key]
+        existing_high_score_decks = list(player.get("high_score_decks") or [])
+        if existing_high_score_decks and (
+            int(existing_high_score_decks[0].get("submission_id") or 0)
+            == int(player["submission_id"])
+            and existing_high_score_decks[0].get("deck_sha256")
+            == player.get("deck_sha256")
+        ):
+            continue
+        print(
+            f"[{row['rank']:03d}/100] auditing distinct high-score decks for {row['team_name']}",
+            flush=True,
+        )
+        submissions = list(player.get("submission_candidates") or [])
+        if not submissions:
+            submissions = list(
+                _rate_call(lambda: api.competition_team_submissions(row["team_id"]))
+            )
+        player["high_score_decks"] = _collect_high_score_decks(
+            api, player, submissions, capture_cutoff, replay_root, catalog
+        )
+        state_path.write_text(json.dumps(state, ensure_ascii=False), encoding="utf-8")
     players = [state["players"][str(i)] for i in range(1, 101)]
     state["identity_audit"] = _validate_snapshot(state, meta_payload, replay_root)
     state["status"] = "complete"

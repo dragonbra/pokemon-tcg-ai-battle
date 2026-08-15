@@ -1,0 +1,23 @@
+{
+  "schema_version": "0044_league_config_v1",
+  "rollout_games_per_update": 256,
+  "branches": {
+    "pfsp": 128,
+    "uniform": 64,
+    "latest_champion": 64
+  },
+  "first_player_contract": {
+    "id": "seeded_toss_winner_agent_context_41_choice_v1",
+    "schedule_controls": "coin_winner_seed only",
+    "actual_seat_source": "toss-winning complete policy choice at official context 41",
+    "actual_seat_quota": null
+  },
+  "deck_policy_sampling": "independent",
+  "pfsp": {
+    "prior": "Beta(1,1)",
+    "refresh_every_updates": 10,
+    "minimum_probability": 0.001,
+    "maximum_probability": 1.0
+  },
+  "notes": "Historical V1-V10 training used legacy fixed 128/128 seats. Every successor must use the seeded toss winner and complete Agent context-41 choice; actual seats are observed results and are never balanced by the harness."
+}

@@ -1,0 +1,162 @@
+{
+  "files": [
+    {
+      "path": "__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "action_boundary/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "action_boundary/contracts.py",
+      "sha256": "097536a6f03aa334bc2b3a3cfb13719f2f8650e0b5570f347b27268989d06454"
+    },
+    {
+      "path": "action_boundary/decision_gate.py",
+      "sha256": "4855506926c7db85dcc55603ca9c2d2280d3e68ec77817ad62127d967c1981cc"
+    },
+    {
+      "path": "action_boundary/dragapult.py",
+      "sha256": "7972006294dac222fd00e5433eca85877654b7a3171a7b55a87efaa0391f417b"
+    },
+    {
+      "path": "action_boundary/macro_planner.py",
+      "sha256": "4a0bd9781cf9de4ccffa33662669e0c10d35594d3d960d9628995c8d33d417c8"
+    },
+    {
+      "path": "action_boundary/macro_protocol.py",
+      "sha256": "7a3fff433aa605c50b272697e4e9aaa6e516c2b0ddb310205f6188bb1b6b874c"
+    },
+    {
+      "path": "action_boundary/public_card_features.py",
+      "sha256": "16c70c6f341e97214f20fae0b7b06497422d369ea73ef9bf59c5773621f78982"
+    },
+    {
+      "path": "assets/official_full_engine_prototypes_v2.json",
+      "sha256": "7228b2612da118e1ec353c7a2e08d4a306de0d4128f0c9e68b4075f2c6b54f73"
+    },
+    {
+      "path": "assets/official_public_prototypes_v1.json",
+      "sha256": "5b45041cd14beed8a847f2e99ce955a105fbeb63d09256769d41f8cc88bdbc9d"
+    },
+    {
+      "path": "contracts/__init__.py",
+      "sha256": "6f486a91ced3c3799b8bb97458ceb15c662c5c94cb3c587a2f14012d3d8d7f48"
+    },
+    {
+      "path": "contracts/batch.py",
+      "sha256": "bcf56b8dfce862b40e80590e4ece63923d324899660cba901720391376bf332c"
+    },
+    {
+      "path": "contracts/fields.py",
+      "sha256": "73e0aaa61c69b2d7bac45940a651a8d1be04465d70654ececd24eaccaca7596a"
+    },
+    {
+      "path": "contracts/prototype_field_inventory.json",
+      "sha256": "91ffc9b36f818826ef624fc9fdc6cdc52bf46515c7882e1e4fa4f73c9b6fcf7a"
+    },
+    {
+      "path": "deployment/__init__.py",
+      "sha256": "22000edbb1634e0a3686826b538a6b06b0afdce4e18b3cf3cbb2d22e373a9252"
+    },
+    {
+      "path": "deployment/compound_inference.py",
+      "sha256": "b9a7ced446f464400b53fa99624cf551888bcb5c0c85c4b2991eed53619023cc"
+    },
+    {
+      "path": "deployment/inference.py",
+      "sha256": "e5bf85ff9190555ea3d2cacabd45a9dc7758216b5ca68c5a169c1fe3539a9c12"
+    },
+    {
+      "path": "deployment/online_runtime.py",
+      "sha256": "826306a8f20a98df5adb719ed312c71c089b2e34fb2e2a01de37bcdf5dc8a78d"
+    },
+    {
+      "path": "deployment/value_network.py",
+      "sha256": "d4423c66fc087c376be103ba8e6e16d6af82aadaaac286665b9f0f1efbf752df"
+    },
+    {
+      "path": "domain/__init__.py",
+      "sha256": "aeb1002f3e5be3fe2e2eff1440cd194f9c875fe99c571ce401b388f8f044c27f"
+    },
+    {
+      "path": "domain/prototypes.py",
+      "sha256": "9af585adae948aab591d9d7f5a040e8139a5c90f8e41ad003867eb05625fdf79"
+    },
+    {
+      "path": "features/__init__.py",
+      "sha256": "312a14881717b3a46cd414361ddf4e6788a26b0a686ac9cabf611e06cba6ec90"
+    },
+    {
+      "path": "features/collate.py",
+      "sha256": "65ea6c7c77efe4f6cbcf4df5aa3c6ef237269104ff8f8902bfc00900ab3258f6"
+    },
+    {
+      "path": "features/compiler.py",
+      "sha256": "03c97b5d87919a64152c066ed5df9bf5f7e91fd018ad423fc74236317c1c372e"
+    },
+    {
+      "path": "features/relations.py",
+      "sha256": "028f185c5943ac1dac2f8ff51b303edd088984f7ba5c0d555c0a3f7c2da35289"
+    },
+    {
+      "path": "inference.py",
+      "sha256": "72829831aef39149fc214941714222d60dd9e96371334f57f7306f6ad40a7b84"
+    },
+    {
+      "path": "knowledge/__init__.py",
+      "sha256": "d51464603389e55bedbc77451be8c8ae19310374359ee4053b61d0dd71c55712"
+    },
+    {
+      "path": "knowledge/ledger.py",
+      "sha256": "ab69d0601441b9c604b1ed0b7e3e4c4aee754b27760f781425a82060ddf768af"
+    },
+    {
+      "path": "knowledge/state.py",
+      "sha256": "24d2f0064e61e86eac5eb97ab5cb97bfe325af246c0911fbf9949221908bb78c"
+    },
+    {
+      "path": "model/README.md",
+      "sha256": "f5a1dd98e35f52c08e72a9358c7450909df8b9f42162f731f05406af769177d2"
+    },
+    {
+      "path": "model/__init__.py",
+      "sha256": "05fd2198f4a1aa7f7a8a6fcb3aba14de94aea8cde90715a432499b2e5b38af39"
+    },
+    {
+      "path": "model/action_decoder.py",
+      "sha256": "852f9f991e19a1391bc75663d82562d34fb0e3fdee2ce70d4b2f0a44674a0a34"
+    },
+    {
+      "path": "model/config.py",
+      "sha256": "0d4ab95b20438ec87936da632e3dc016cea930409f76fd98769054f1840411ce"
+    },
+    {
+      "path": "model/option_encoder.py",
+      "sha256": "ac244afc1954553001d1fee930cd9775e882290eb9bd4354f62515f0800aad98"
+    },
+    {
+      "path": "model/policy.py",
+      "sha256": "67aba2bcbc31a3a950f7699f3a402476fd2293126f755252f9de8d8bdfdacafb"
+    },
+    {
+      "path": "model/prototype_encoder.py",
+      "sha256": "2687de3ec1543394d7233c978f55a82d374ab251fe02de4af8f404b440407ec4"
+    },
+    {
+      "path": "model/state_encoder.py",
+      "sha256": "277495c493f1bd26a2b5493e00f969becfc96b314dcc61493da537d9325da72e"
+    },
+    {
+      "path": "model/typed_fields.py",
+      "sha256": "efdff960f1a68cd7aff12ea7100d45f9d6fca6f786a9d370c6e698d5162ae501"
+    },
+    {
+      "path": "online_runtime.py",
+      "sha256": "d5bec9271c4f3fbee91ff9601d65e180783c2a7668528527c88bff3beecea69d"
+    }
+  ],
+  "runtime_tree_sha256": "2df0765d9d8eed34265087f6ac231c0f952781adc319188354d0d63e425ffea1",
+  "schema_version": "0044_semantic_runtime_manifest_v1"
+}

@@ -1,0 +1,182 @@
+"""0045 V8: continue stopped V7 U282 with two-update evaluation cadence."""
+
+from __future__ import annotations
+
+import argparse
+from collections import Counter
+import json
+from pathlib import Path
+
+import torch
+
+from ..assets import AssetRegistry, sha256_file
+from ..league.aggressive_meta_quota import aggressive_meta_quota_schedule
+from ..own_archetype import OwnArchetypeVocabulary
+from .lr_profiles import EXPERT_COLD_START_LR_PROFILE
+from .run_v1 import PROJECT_ROOT, ROOT, run
+
+
+VERSION = "V8_dragapult_007_u282_aggressive_meta_quota_policy0809_eval2"
+VERSION_ROOT = ROOT / "rl_runs/0047_meta_routed_moe_rl/versions" / VERSION
+START_UPDATE = 282
+BASELINE_EVALUATION_CHECKPOINT = START_UPDATE
+PARENT_VERSION = "V7_dragapult_007_u276_aggressive_meta_quota_policy0809"
+PARENT_CHECKPOINT = (
+    ROOT / "rl_runs/0047_meta_routed_moe_rl/versions"
+    / PARENT_VERSION / "checkpoint/update-000282.pt"
+)
+PARENT_CHECKPOINT_SHA256 = "25f312fa1d2c41a7ddbec2e3d4631c0437013781ed797a0d98b0c9f635d32d5c"
+REFERENCE_CHECKPOINT = (
+    ROOT / "rl_runs/0047_meta_routed_moe_rl/versions"
+    / "V1_minimal_lora_dragapult_007/checkpoint/update-000000.pt"
+)
+REFERENCE_CHECKPOINT_SHA256 = "3c13e085b4587a8112148b393c4b80c4c875efbc13820dcf44acb6a0a1991bc7"
+FOCAL_DECK_ID = "007"
+ROLLOUT_GAMES = 512
+OPPONENT_POLICY_IDS = ("Policy-0809",)
+OPPONENT_SAMPLING_MODE = "aggressive_meta_quota_training_pool"
+OPPONENT_META_QUOTAS = {2: 50, 3: 200, 5: 200}
+PERIODIC_EVALUATION_PROFILE = "policy0809_three_pool_cuda512"
+PERIODIC_EVALUATION_INTERVAL_UPDATES = 2
+WANDB_RUN_ID = "0045-v8-dragapult-007-u282-aggressive-meta-quota-policy0809-eval2"
+
+
+def readiness(*, version_root: Path = VERSION_ROOT) -> dict[str, object]:
+    if version_root.exists() and any(version_root.rglob("*")):
+        raise FileExistsError(f"V8 formal version path is already used: {version_root}")
+    if (
+        not PARENT_CHECKPOINT.is_file()
+        or sha256_file(PARENT_CHECKPOINT) != PARENT_CHECKPOINT_SHA256
+    ):
+        raise RuntimeError("V8 parent checkpoint identity failed")
+    if (
+        not REFERENCE_CHECKPOINT.is_file()
+        or sha256_file(REFERENCE_CHECKPOINT) != REFERENCE_CHECKPOINT_SHA256
+    ):
+        raise RuntimeError("V8 Frozen-0045-Init identity failed")
+    parent = torch.load(PARENT_CHECKPOINT, map_location="cpu", weights_only=True)
+    if (
+        parent.get("schema_version") != "0045_minimal_lora_model_only_v1"
+        or parent.get("update") != START_UPDATE
+        or parent.get("metadata", {}).get("version") != PARENT_VERSION
+    ):
+        raise RuntimeError("V8 parent is not exact stopped V7 U282")
+    registry = AssetRegistry.load(PROJECT_ROOT)
+    registry.validate_all()
+    vocabulary = OwnArchetypeVocabulary.load_version(
+        "own_archetypes_v2", project_root=PROJECT_ROOT
+    )
+    schedule = aggressive_meta_quota_schedule(
+        quota_seed=440_120_000 + START_UPDATE,
+        shuffle_seed=440_120_200 + START_UPDATE,
+        mappings=vocabulary.mappings,
+        lanes=ROLLOUT_GAMES,
+        fixed_meta_quotas=OPPONENT_META_QUOTAS,
+    )
+    counts = Counter(row.archetype_id for row in schedule)
+    if (
+        len(schedule) != ROLLOUT_GAMES
+        or {meta: counts[meta] for meta in OPPONENT_META_QUOTAS}
+        != OPPONENT_META_QUOTAS
+        or sum(
+            games for meta, games in counts.items()
+            if meta not in OPPONENT_META_QUOTAS
+        ) != 62
+    ):
+        raise RuntimeError("V8 first aggressive schedule identity failed")
+    return {
+        "schema_version": "0045_v8_u282_aggressive_eval2_readiness_v1",
+        "status": "READY_AWAITING_USER_LAUNCH",
+        "version": VERSION,
+        "continuation": {
+            "parent_version": PARENT_VERSION,
+            "parent_update": START_UPDATE,
+            "parent_sha256": PARENT_CHECKPOINT_SHA256,
+            "optimizer": "fresh",
+            "on_policy_data": "fresh",
+        },
+        "reference": {
+            "policy_id": "Frozen-0045-Init",
+            "update": 0,
+            "sha256": REFERENCE_CHECKPOINT_SHA256,
+        },
+        "rollout": {
+            "games": ROLLOUT_GAMES,
+            "opponent_policy_ids": list(OPPONENT_POLICY_IDS),
+            "fixed_meta_quotas": OPPONENT_META_QUOTAS,
+            "realized_first_schedule": dict(sorted(counts.items())),
+        },
+        "periodic_evaluation": {
+            "baseline_checkpoint": BASELINE_EVALUATION_CHECKPOINT,
+            "interval_updates": PERIODIC_EVALUATION_INTERVAL_UPDATES,
+            "due_checkpoints_after_baseline": [284, 286, 288],
+            "profile": PERIODIC_EVALUATION_PROFILE,
+            "opponent_policy_id": "Policy-0809",
+            "games_per_evaluation": 1536,
+        },
+        "learning_rate_profile": EXPERT_COLD_START_LR_PROFILE.metadata(),
+        "update_limit": None,
+        "checkpoint_retention": "all",
+        "wandb": {
+            "entity": "dragon_bra",
+            "project": "pokemon-tcg-policy-learning",
+            "run_id": WANDB_RUN_ID,
+        },
+    }
+
+
+def launch(*, wandb_mode: str = "online", updates: int | None = None) -> None:
+    readiness()
+    run(
+        updates=updates,
+        wandb_mode=wandb_mode,
+        launch_formal=True,
+        version=VERSION,
+        start_update=START_UPDATE,
+        parent_checkpoint=PARENT_CHECKPOINT,
+        reference_checkpoint=REFERENCE_CHECKPOINT,
+        baseline_evaluation_checkpoint=BASELINE_EVALUATION_CHECKPOINT,
+        periodic_evaluation_enabled=True,
+        periodic_evaluation_profile=PERIODIC_EVALUATION_PROFILE,
+        periodic_evaluation_interval_updates=PERIODIC_EVALUATION_INTERVAL_UPDATES,
+        wandb_run_id=WANDB_RUN_ID,
+        wandb_name="0045 · V8 · U282 aggressive continuation · eval every 2",
+        focal_deck_ids=(FOCAL_DECK_ID,),
+        focal_deck_id=FOCAL_DECK_ID,
+        focal_schedule_mode="fixed",
+        evaluation_focal_deck_id=FOCAL_DECK_ID,
+        source_parent_version=PARENT_VERSION,
+        source_parent_update=START_UPDATE,
+        reference_anchor_update=0,
+        reference_anchor_identity="Frozen-0045-Init",
+        opponent_sampling_mode=OPPONENT_SAMPLING_MODE,
+        opponent_policy_ids=OPPONENT_POLICY_IDS,
+        latest_champion_policy_id="Policy-0809",
+        rollout_games=ROLLOUT_GAMES,
+        opponent_meta_quotas=OPPONENT_META_QUOTAS,
+        learning_rate_profile=EXPERT_COLD_START_LR_PROFILE,
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--launch-formal", action="store_true")
+    parser.add_argument("--updates", type=int)
+    parser.add_argument("--wandb-mode", choices=("online", "offline"), default="online")
+    parser.add_argument("--readiness-output", type=Path)
+    args = parser.parse_args()
+    if args.launch_formal:
+        launch(wandb_mode=args.wandb_mode, updates=args.updates)
+        return 0
+    payload = readiness()
+    if args.readiness_output:
+        args.readiness_output.parent.mkdir(parents=True, exist_ok=True)
+        args.readiness_output.write_text(
+            json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+    print(json.dumps(payload, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -14,6 +14,7 @@ from unittest import mock
 ROOT = Path(__file__).resolve().parents[1]
 REPORT = ROOT / "docs/environment-daily_kaggle_top100/daily/2026-07-27.html"
 CURRENT_REPORT = ROOT / "docs/environment-daily_kaggle_top100/daily/2026-07-30.html"
+LATEST_REPORT = ROOT / "docs/environment-daily_kaggle_top100/daily/2026-08-16.html"
 
 
 class _DailyParser(HTMLParser):
@@ -31,6 +32,7 @@ class _DailyParser(HTMLParser):
         self.heatmaps = 0
         self.card_images = 0
         self.invalid_card_images = 0
+        self.high_score_decks = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
@@ -42,6 +44,8 @@ class _DailyParser(HTMLParser):
             self.player_details += 1
         if "data-pool-card" in values:
             self.pool_cards += 1
+        if "data-high-score-deck" in values:
+            self.high_score_decks += 1
         if "card-thumb" in str(values.get("class", "")).split():
             self.card_thumbs += 1
         if tag == "img" and str(values.get("src", "")).startswith("https://"):
@@ -171,7 +175,71 @@ class EnvironmentDailyContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "leaderboard score"):
             _select_leaderboard_submission(leaderboard, tied)
 
-    def test_final_leaderboard_freeze_refreshes_only_changed_team_views(self) -> None:
+    def test_scored_submissions_are_cutoff_bounded_and_score_ordered(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _scored_submissions_at_or_before,
+        )
+
+        submissions = [
+            SimpleNamespace(id=1, public_score="1080.0", date_submitted="2026-08-15T01:00:00Z"),
+            SimpleNamespace(id=2, public_score="1120.0", date_submitted="2026-08-14T01:00:00Z"),
+            SimpleNamespace(id=3, public_score="1200.0", date_submitted="2026-08-16T02:00:01Z"),
+            SimpleNamespace(id=4, public_score=None, date_submitted="2026-08-13T01:00:00Z"),
+        ]
+
+        ordered = _scored_submissions_at_or_before(
+            submissions, "2026-08-16T02:00:00+00:00"
+        )
+
+        self.assertEqual([row.id for row in ordered], [2, 1])
+
+    def test_latest_submission_is_cutoff_bounded(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _latest_submission_at_or_before,
+        )
+
+        submissions = [
+            SimpleNamespace(id=1, date_submitted="2026-08-15T01:00:00Z"),
+            SimpleNamespace(id=2, date_submitted="2026-08-16T01:59:59Z"),
+            SimpleNamespace(id=3, date_submitted="2026-08-16T02:00:01Z"),
+        ]
+
+        selected = _latest_submission_at_or_before(
+            submissions, "2026-08-16T02:00:00+00:00"
+        )
+
+        self.assertEqual(selected.id, 2)
+
+    def test_distinct_high_score_decks_keep_only_best_two_hashes(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _select_distinct_deck_evidence,
+        )
+
+        evidence = [
+            {"submission_id": 1, "public_score": "1200.0", "deck_sha256": "aaa"},
+            {"submission_id": 2, "public_score": "1180.0", "deck_sha256": "aaa"},
+            {"submission_id": 3, "public_score": "1170.0", "deck_sha256": "bbb"},
+            {"submission_id": 4, "public_score": "1160.0", "deck_sha256": "ccc"},
+        ]
+
+        selected = _select_distinct_deck_evidence(evidence, limit=2)
+
+        self.assertEqual([row["submission_id"] for row in selected], [1, 3])
+
+    def test_relative_submission_age_uses_snapshot_time(self) -> None:
+        from data.processed.environment_daily.generate_live_snapshot import (
+            _relative_submission_age,
+        )
+
+        captured = "2026-08-16T12:00:00+00:00"
+        self.assertEqual(_relative_submission_age("2026-08-16T11:59:40Z", captured), "刚刚")
+        self.assertEqual(_relative_submission_age("2026-08-16T11:21:00Z", captured), "39 分钟前")
+        self.assertEqual(_relative_submission_age("2026-08-16T08:00:00Z", captured), "4 小时前")
+        self.assertEqual(_relative_submission_age("2026-08-14T11:59:59Z", captured), "2 天前")
+        with self.assertRaisesRegex(ValueError, "after snapshot cutoff"):
+            _relative_submission_age("2026-08-16T12:00:01Z", captured)
+
+    def test_final_leaderboard_freeze_refreshes_every_team_view_after_cutoff(self) -> None:
         from data.processed.environment_daily.generate_live_snapshot import (
             _capture_score_bound_leaderboard,
         )
@@ -220,8 +288,7 @@ class EnvironmentDailyContractTests(unittest.TestCase):
         self.assertEqual(leaderboard[7].score, "1001.0")
         self.assertTrue(captured_at_utc.endswith("+00:00"))
         self.assertEqual(api.leaderboard_calls, 2)
-        self.assertEqual(api.submission_calls[7], 2)
-        self.assertTrue(all(api.submission_calls[index] == 1 for index in range(100) if index != 7))
+        self.assertTrue(all(api.submission_calls[index] == 2 for index in range(100)))
         self.assertEqual(submissions[7][0].public_score, "1001.0")
 
     def test_episode_identity_uses_agent_index_not_list_position(self) -> None:
@@ -365,6 +432,26 @@ class EnvironmentDailyContractTests(unittest.TestCase):
             all(row["leaderboard_score"] == row["submission_public_score"] for row in selected)
         )
         self.assertIn("leaderboard score = submission publicScore", text)
+
+    def test_latest_report_shows_relative_last_submission_and_audited_dual_decks(self) -> None:
+        text = LATEST_REPORT.read_text(encoding="utf-8")
+        parser = _DailyParser()
+        parser.feed(text)
+        audit_match = re.search(
+            r'<script type="application/json" id="snapshot-audit">(.*?)</script>',
+            text,
+            re.S,
+        )
+        self.assertIsNotNone(audit_match)
+        audit = json.loads(audit_match.group(1))
+
+        self.assertEqual(parser.player_rows, 100)
+        self.assertEqual(parser.player_details, 100)
+        self.assertEqual(parser.high_score_decks, audit["audited_high_score_decks"])
+        self.assertEqual(audit["dual_deck_players"], 55)
+        self.assertIn("最后提交", text)
+        self.assertIn("精确提交时间：", text)
+        self.assertIn("第二高分不同构筑", text)
 
     def test_generator_is_date_parameterized(self) -> None:
         source = (

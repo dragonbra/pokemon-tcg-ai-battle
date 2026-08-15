@@ -1,0 +1,362 @@
+"""Formal indefinite 0047 deck-070 Meta-routed MoE PPO run."""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import asdict
+import json
+import os
+from pathlib import Path
+import time
+from typing import Any
+
+import torch
+
+from rl_environment.logging import TrainingLogger
+
+from ..assets import AssetRegistry, sha256_file
+from ..cuda_engine_2.build import DEFAULT_BUILD_DIR
+from ..evaluation.moe_three_pool import evaluate_model, wandb_metrics
+from ..integrated.presets import preset
+from ..policy.moe_actor_critic import load_moe_actor_critic, save_router_table
+from ..policy_identity import materialize_policy_bundle
+from ..rollout.cuda_collector import ChunkedCudaRolloutCollector
+from ..rollout.moe_runtime import MoEFocalRuntime, MoEResidentRouter
+from ..runtime import _modules as policy_modules, load_policy
+from ..telemetry import RolloutHistory, aggregate_training_rollout
+from .batch_full_semantic import prepare_episodes
+from .ppo_moe import PPOConfig, PPOTrainer
+from .run_v1 import PROJECT_ROOT, ROOT, RULES, _cards, _jobs
+
+
+PROJECT = "0047_meta_routed_moe_rl"
+VERSION = "V8_deck070_policy0814_moe7_sparse_512lane_micro256"
+VERSION_ROOT = ROOT / "rl_runs" / PROJECT / "versions" / VERSION
+RUN_ID = "0047-v8-deck070-policy0814-moe7-sparse-512lane-micro256"
+WARMUP_UPDATES = 5
+ROLLOUT_GAMES = 512
+EVAL_INTERVAL = 5
+CUDA_LANES = 512
+ROLLOUT_CHUNK_GAMES = 512
+PPO_FORWARD_MICROBATCH = 256
+CORE_OPPONENT_DECK_IDS = ("007", "003", "001", "002", "009", "011", "023")
+
+
+def _atomic_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+    temporary.replace(path)
+
+
+def _atomic_torch(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    torch.save(value, temporary)
+    temporary.replace(path)
+
+
+def _checkpoint(model, update: int) -> dict[str, Any]:
+    return {
+        "schema_version": "0047_meta_routed_moe_model_only_v1",
+        "update": int(update),
+        "state_dict": {
+            name: value.detach().cpu() for name, value in model.state_dict().items()
+        },
+        "metadata": {
+            "project_id": PROJECT, "version": VERSION,
+            "focal_deck_id": "070", "source_policy_id": "Policy-0814",
+            "source_actor_sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b",
+            "source_value_sha256": "0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d",
+            "experts": 7, "expert_labels": list(model.expert_labels),
+            "priority_meta_ids": list(model.priority_meta_ids),
+            "router_topology": "E0_to_Em_two_way_core6",
+            "warmup_updates": WARMUP_UPDATES,
+            "routing_phase": "soft" if model.soft_routing else "hard_warmup",
+            "router_probabilities": model.router_table(),
+            "meta_identifier_version": "0047_public_exact_deck_candidates_v1",
+            "checkpoint_retention": "all", "optimizer_state_saved": False,
+        },
+    }
+
+
+def _episode_rows(episodes):
+    rows = []
+    for episode in episodes:
+        d = episode.diagnostics
+        rows.append({
+            "result": "win" if episode.reward == 1 else "loss" if episode.reward == -1 else "draw",
+            "focal_prizes_taken": 6 - int(d["focal_prizes_remaining"]),
+            "opponent_prizes_taken": 6 - int(d["opponent_prizes_remaining"]),
+            "full_turns": (episode.turns + 1) // 2,
+            "opponent_deck_id": episode.job.opponent_id,
+            "opponent_policy_id": episode.job.opponent_policy_id,
+            "focal_deck_id": "070", "branch": "meta_balanced_uniform",
+            "error": episode.error, "unfinished": not episode.valid,
+            "engine_decisions": int(d.get("engine_selections", 0)),
+            "coin_winner_seed": episode.job.coin_winner_seed,
+            "focal_won_toss": episode.job.focal_won_toss,
+            "first_player_choice": d["first_player_choice"],
+            "focal_first": d["first_player_choice"]["focal_first"],
+        })
+    return rows
+
+
+def _router_metrics(model, telemetry):
+    output = {
+        "router/unknown_decision_fraction": telemetry["unknown_decision_fraction"],
+        "router/mean_identification_decision": telemetry["mean_identification_decision"],
+        "router/identified_game_fraction": telemetry["identified_game_fraction"],
+        "router/soft_phase": float(model.soft_routing),
+    }
+    for label, value in zip(model.expert_labels, telemetry["effective_usage"], strict=True):
+        output[f"router/effective_usage/{label}"] = value
+    for meta_id, alpha in model.router_alphas().items():
+        output[f"router/alpha_{meta_id:02d}"] = float(alpha.detach().cpu())
+    probabilities = model.router_table()
+    for row in probabilities:
+        for expert, value in enumerate(row["probabilities"]):
+            output[f"router/meta_{row['meta_id']}/{model.expert_labels[expert]}"] = value
+    return output
+
+
+def _combine_router_telemetry(chunks: list[dict[str, Any]]) -> dict[str, Any]:
+    if not chunks:
+        raise RuntimeError("0047 rollout produced no Router telemetry chunks")
+    combined = {
+        name: [item for chunk in chunks for item in chunk[name]]
+        for name in (
+            "confirmed_meta", "first_identification_decision",
+            "decision_count", "candidate_count",
+        )
+    }
+    total_decisions = sum(int(chunk["total_decisions"]) for chunk in chunks)
+    combined["effective_usage"] = [
+        sum(
+            float(chunk["effective_usage"][index]) * int(chunk["total_decisions"])
+            for chunk in chunks
+        ) / max(1, total_decisions)
+        for index in range(7)
+    ]
+    combined["unknown_decision_fraction"] = sum(
+        float(chunk["unknown_decision_fraction"]) * int(chunk["total_decisions"])
+        for chunk in chunks
+    ) / max(1, total_decisions)
+    identified_timings = [
+        value for value in combined["first_identification_decision"] if value >= 0
+    ]
+    combined.update({
+        "identifier_version": chunks[0]["identifier_version"],
+        "identified_game_fraction": len(identified_timings)
+        / max(1, len(combined["confirmed_meta"])),
+        "mean_identification_decision": sum(identified_timings)
+        / max(1, len(identified_timings)),
+        "total_decisions": total_decisions,
+    })
+    return combined
+
+
+def _router_heatmap(model, update: int, path: Path) -> Path:
+    import matplotlib.pyplot as plt
+    probabilities = [row["probabilities"] for row in model.router_table()]
+    figure, axis = plt.subplots(figsize=(8, 12))
+    image = axis.imshow(probabilities, vmin=0, vmax=1, aspect="auto", cmap="viridis")
+    axis.set_xticks(range(model.expert_count), model.expert_labels)
+    axis.set_yticks(range(29), [f"{i:02d}" for i in range(29)])
+    axis.set_title(f"0047 Router · U{update}")
+    figure.colorbar(image, ax=axis)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.tight_layout(); figure.savefig(path, dpi=140); plt.close(figure)
+    return path
+
+
+def readiness() -> dict[str, Any]:
+    registry = AssetRegistry.load(PROJECT_ROOT)
+    audit = registry.validate_all()
+    required = [
+        RULES, DEFAULT_BUILD_DIR / "_ptcg_cuda.so",
+        PROJECT_ROOT / "assets/policies/definitions/policy_0814/model.pt",
+        PROJECT_ROOT / "assets/policies/definitions/policy_0814/value_head.pt",
+    ]
+    missing = [str(path) for path in required if not path.is_file()]
+    if missing:
+        raise FileNotFoundError(missing)
+    return {
+        "status": "READY", "project": PROJECT, "version": VERSION,
+        "focal_deck_id": "070", "opponent_policy_id": "Policy-0814",
+        "rollout_games": ROLLOUT_GAMES, "warmup_updates": WARMUP_UPDATES,
+        "opponent_sampling_mode": "core_deck_half_meta_balanced_half",
+        "core_opponent_deck_ids": list(CORE_OPPONENT_DECK_IDS),
+        "core_opponent_fraction": 0.5,
+        "cuda_lanes": CUDA_LANES,
+        "rollout_chunk_games": ROLLOUT_CHUNK_GAMES,
+        "ppo_forward_microbatch_size": PPO_FORWARD_MICROBATCH,
+        "eval_interval": EVAL_INTERVAL,
+        "eval_pools": {
+            "old_three": ["001", "002", "011"],
+            "new_four": ["007", "003", "009", "023"],
+            "remain_meta": "all_exact_decks_except_the_seven_focus_decks",
+        },
+        "asset_audit": asdict(audit),
+        "cuda_extension_sha256": sha256_file(DEFAULT_BUILD_DIR / "_ptcg_cuda.so"),
+        "wandb_run_id": RUN_ID,
+    }
+
+
+def run(*, updates: int | None, wandb_mode: str) -> None:
+    if not torch.cuda.is_available():
+        raise RuntimeError("0047 formal PPO requires CUDA")
+    paths = {name: VERSION_ROOT / name for name in ("artifact", "checkpoint", "tensorboard", "wandb")}
+    metrics_path = paths["artifact"] / "training_metrics.jsonl"
+    if metrics_path.exists() and metrics_path.stat().st_size:
+        raise FileExistsError(f"0047 {VERSION} already contains training metrics; never append a new run")
+    for path in paths.values():
+        path.mkdir(parents=True, exist_ok=True)
+    registry = AssetRegistry.load(PROJECT_ROOT)
+    registry.validate_all()
+    device = torch.device("cuda:0")
+    deck = _cards(registry, "070")
+    model, source = load_moe_actor_critic(
+        deck=deck, own_archetype_id=15, device=device,
+        integrated_flags=preset("FULL_MODEL"),
+    )
+    opponent_bundle = materialize_policy_bundle(
+        PROJECT_ROOT, "Policy-0814", purpose="0047_formal_rollout"
+    )
+    opponent = load_policy("Policy-0814", deck_id="001")
+    for module in policy_modules(opponent):
+        module.to(device).eval().requires_grad_(False)
+    focal_ptr = {p.untyped_storage().data_ptr() for p in model.parameters()}
+    opponent_ptr = {
+        p.untyped_storage().data_ptr()
+        for module in policy_modules(opponent) for p in module.parameters()
+    }
+    if focal_ptr & opponent_ptr:
+        raise RuntimeError("FATAL: focal/opponent mutable storage alias")
+    config = PPOConfig(forward_microbatch_size=PPO_FORWARD_MICROBATCH)
+    trainer = PPOTrainer(model, device=device, config=config)
+    os.environ.update({
+        "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
+        "WANDB_PROJECT": "pokemon-tcg-policy-learning", "WANDB_RUN_ID": RUN_ID,
+        "WANDB_NAME": "0047 · V8 · deck 070 · Policy0814 · MoE7 sparse 512-lane micro256",
+        "WANDB_RUN_GROUP": PROJECT, "WANDB_DIR": str(paths["wandb"]),
+        "WANDB_JOB_TYPE": "ppo_meta_routed_moe",
+    })
+    _atomic_json(paths["artifact"] / "training_config.json", {
+        **readiness(), "ppo": asdict(config), "source_identity": asdict(source),
+        "checkpoint_retention": "all", "checkpoint_contents": "model_only",
+        "configured_update_limit": updates, "wandb_mode": wandb_mode,
+    })
+    _atomic_json(paths["artifact"] / "status.json", {
+        "state": "running", "checkpoint_update": 0, "wandb_run_id": RUN_ID,
+    })
+    _atomic_torch(paths["checkpoint"] / "update-000000.pt", _checkpoint(model, 0))
+    save_router_table(model, paths["checkpoint"] / "router-000000.json")
+    history = RolloutHistory()
+    update = 0
+    with TrainingLogger(metrics_path, paths["tensorboard"]) as logger:
+        logger.initialize_wandb({"trainer/update": 0, "checkpoint/update": 0})
+        while updates is None or update < updates:
+            if update == WARMUP_UPDATES:
+                model.set_soft_routing(True)
+            jobs, deck_weights, policy_weights, curriculum = _jobs(
+                update, registry, focal_deck_ids=("070",), focal_deck_id="070",
+                opponent_sampling_mode="core_deck_half_meta_balanced_half",
+                opponent_policy_ids=("Policy-0814",),
+                latest_champion_policy_id="Policy-0814",
+                rollout_games=ROLLOUT_GAMES,
+                core_deck_ids=CORE_OPPONENT_DECK_IDS,
+            )
+            runtime = MoEFocalRuntime(model, job_count=ROLLOUT_CHUNK_GAMES, device=device)
+            router_chunks: list[dict[str, Any]] = []
+
+            def before_chunk(begin: int, stop: int) -> None:
+                runtime.reset(stop - begin)
+
+            def after_chunk(begin: int, stop: int, _collector: Any) -> None:
+                del begin, stop, _collector
+                router_chunks.append(runtime.telemetry())
+                runtime.contexts.clear()
+
+            collector = ChunkedCudaRolloutCollector(
+                model, opponent, device=device, rules_path=RULES,
+                rollout_batch_size=ROLLOUT_CHUNK_GAMES,
+                before_chunk=before_chunk, after_chunk=after_chunk,
+                extension_dir=DEFAULT_BUILD_DIR, lane_count=CUDA_LANES, mode="sample",
+                record_trajectory=True, agent_selects_first_player=True,
+                opponent_policy_id="Policy-0814",
+                opponent_identity_audit=opponent_bundle.audit,
+                role_compacted=True,
+                focal_compacted_policy_fn=runtime.decode_compacted,
+                focal_allocation_planner_for_job=runtime.plan_allocation,
+                focal_resident_router_cls=MoEResidentRouter,
+            )
+            episodes = collector.collect(jobs)
+            if len(episodes) != ROLLOUT_GAMES or any(not row.valid for row in episodes):
+                raise RuntimeError("0047 formal rollout is incomplete")
+            collector_metrics = collector.metrics()
+            runtime_telemetry = _combine_router_telemetry(router_chunks)
+            runtime.contexts.clear()
+            del collector, runtime
+            torch.cuda.empty_cache()
+            batch = prepare_episodes(
+                episodes, gamma=1.0, gae_lambda=0.95, credit_clock="turn",
+                loss_weighting="episode_equal_decisions", prize_mode="directional",
+                require_policy_identity=True,
+            )
+            ppo = trainer.update(batch, update=update + 1)
+            checkpoint_update = update + 1
+            checkpoint_path = paths["checkpoint"] / f"update-{checkpoint_update:06d}.pt"
+            _atomic_torch(checkpoint_path, _checkpoint(model, checkpoint_update))
+            save_router_table(model, paths["checkpoint"] / f"router-{checkpoint_update:06d}.json")
+            rows = _episode_rows(episodes)
+            rollout = aggregate_training_rollout(
+                rows, source_policy_update=update, checkpoint_update=checkpoint_update,
+                curriculum_version=curriculum, deck_weights=deck_weights,
+                policy_weights=policy_weights, history=history,
+                runtime_metrics={**collector_metrics, "rollout/policy_weight_loads": 1.0},
+                sampling_mode="meta_balanced_training_pool", expected_games=ROLLOUT_GAMES,
+            )
+            router = _router_metrics(model, runtime_telemetry)
+            metrics = {"trainer/update": checkpoint_update, **rollout, **ppo, **router}
+            if checkpoint_update % EVAL_INTERVAL == 0:
+                eval_root = paths["artifact"] / "evaluation" / f"update-{checkpoint_update:06d}"
+                report = evaluate_model(
+                    model, checkpoint_update=checkpoint_update,
+                    output_root=eval_root, games_per_pool=512,
+                )
+                metrics.update(wandb_metrics(report))
+                heatmap = _router_heatmap(
+                    model, checkpoint_update,
+                    paths["artifact"] / "router_heatmaps" / f"update-{checkpoint_update:06d}.png",
+                )
+                try:
+                    import wandb
+                    wandb.log({"router/meta_expert_heatmap": wandb.Image(str(heatmap))}, step=checkpoint_update)
+                except Exception as error:
+                    metrics["router/heatmap_wandb_error"] = str(error)
+            logger.log(checkpoint_update, metrics)
+            _atomic_json(paths["artifact"] / "status.json", {
+                "state": "running", "checkpoint_update": checkpoint_update,
+                "routing_phase": "soft" if model.soft_routing else "hard_warmup",
+                "wandb_run_id": RUN_ID, "last_metric_time": time.time(),
+            })
+            model.set_runtime_own_archetype_ids(None)
+            update = checkpoint_update
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--launch-formal", action="store_true")
+    parser.add_argument("--updates", type=int)
+    parser.add_argument("--wandb-mode", choices=("online", "offline"), default="online")
+    args = parser.parse_args()
+    if not args.launch_formal:
+        print(json.dumps(readiness(), indent=2, sort_keys=True))
+        return 0
+    run(updates=args.updates, wandb_mode=args.wandb_mode)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,497 @@
+{
+  "decks": [
+    {
+      "archetype_id": 2,
+      "decision": "keep",
+      "deck_id": "001",
+      "old_archetype_id": 2,
+      "strategic_axis": "Punk Up energy acceleration"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "keep",
+      "deck_id": "002",
+      "old_archetype_id": 3,
+      "strategic_axis": "hand-size damage and draw"
+    },
+    {
+      "archetype_id": 1,
+      "decision": "keep",
+      "deck_id": "003",
+      "old_archetype_id": 1,
+      "strategic_axis": "switch-tempo attacker"
+    },
+    {
+      "archetype_id": 1,
+      "decision": "keep",
+      "deck_id": "004",
+      "old_archetype_id": 1,
+      "strategic_axis": "switch-tempo attacker"
+    },
+    {
+      "archetype_id": 2,
+      "decision": "keep",
+      "deck_id": "005",
+      "old_archetype_id": 2,
+      "strategic_axis": "Punk Up energy acceleration"
+    },
+    {
+      "archetype_id": 10,
+      "decision": "keep",
+      "deck_id": "006",
+      "old_archetype_id": 10,
+      "strategic_axis": "Ogerpon energy stacking"
+    },
+    {
+      "archetype_id": 0,
+      "decision": "keep",
+      "deck_id": "007",
+      "old_archetype_id": 0,
+      "strategic_axis": "Phantom Dive spread"
+    },
+    {
+      "archetype_id": 10,
+      "decision": "keep",
+      "deck_id": "008",
+      "old_archetype_id": 10,
+      "strategic_axis": "Ogerpon energy stacking"
+    },
+    {
+      "archetype_id": 4,
+      "decision": "keep",
+      "deck_id": "009",
+      "old_archetype_id": 4,
+      "strategic_axis": "Fighting attack rotation"
+    },
+    {
+      "archetype_id": 6,
+      "decision": "keep",
+      "deck_id": "010",
+      "old_archetype_id": 6,
+      "strategic_axis": "Festival double attack"
+    },
+    {
+      "archetype_id": 5,
+      "decision": "keep",
+      "deck_id": "011",
+      "old_archetype_id": 5,
+      "strategic_axis": "Kangaskhan active draw with wall"
+    },
+    {
+      "archetype_id": 1,
+      "decision": "keep",
+      "deck_id": "012",
+      "old_archetype_id": 1,
+      "strategic_axis": "switch-tempo attacker"
+    },
+    {
+      "archetype_id": 11,
+      "decision": "keep",
+      "deck_id": "013",
+      "old_archetype_id": 11,
+      "strategic_axis": "Cynthia evolution engine"
+    },
+    {
+      "archetype_id": 5,
+      "decision": "keep",
+      "deck_id": "014",
+      "old_archetype_id": 5,
+      "strategic_axis": "Kangaskhan active draw with wall"
+    },
+    {
+      "archetype_id": 19,
+      "decision": "split",
+      "deck_id": "015",
+      "old_archetype_id": 5,
+      "strategic_axis": "Area Zero eight-bench toolbox"
+    },
+    {
+      "archetype_id": 18,
+      "decision": "split",
+      "deck_id": "016",
+      "old_archetype_id": 5,
+      "strategic_axis": "top-deck copied-attack toolbox"
+    },
+    {
+      "archetype_id": 2,
+      "decision": "keep",
+      "deck_id": "017",
+      "old_archetype_id": 2,
+      "strategic_axis": "Punk Up energy acceleration"
+    },
+    {
+      "archetype_id": 0,
+      "decision": "keep",
+      "deck_id": "018",
+      "old_archetype_id": 0,
+      "strategic_axis": "Phantom Dive spread"
+    },
+    {
+      "archetype_id": 7,
+      "decision": "keep",
+      "deck_id": "019",
+      "old_archetype_id": 7,
+      "strategic_axis": "single-prize wall and denial"
+    },
+    {
+      "archetype_id": 8,
+      "decision": "keep",
+      "deck_id": "020",
+      "old_archetype_id": 8,
+      "strategic_axis": "Meganium Grass evolution"
+    },
+    {
+      "archetype_id": 9,
+      "decision": "keep",
+      "deck_id": "021",
+      "old_archetype_id": 9,
+      "strategic_axis": "Rocket board and energy sacrifice"
+    },
+    {
+      "archetype_id": 1,
+      "decision": "keep",
+      "deck_id": "022",
+      "old_archetype_id": 1,
+      "strategic_axis": "switch-tempo attacker"
+    },
+    {
+      "archetype_id": 27,
+      "decision": "split",
+      "deck_id": "023",
+      "old_archetype_id": 6,
+      "strategic_axis": "Hydrapple energy-wide scaling"
+    },
+    {
+      "archetype_id": 7,
+      "decision": "keep",
+      "deck_id": "024",
+      "old_archetype_id": 7,
+      "strategic_axis": "single-prize wall and denial"
+    },
+    {
+      "archetype_id": 21,
+      "decision": "split",
+      "deck_id": "025",
+      "old_archetype_id": 1,
+      "strategic_axis": "Ogerpon toolbox with thin Lopunny"
+    },
+    {
+      "archetype_id": 28,
+      "decision": "split",
+      "deck_id": "026",
+      "old_archetype_id": 5,
+      "strategic_axis": "dual Stage-2 Grass energy transfer"
+    },
+    {
+      "archetype_id": 19,
+      "decision": "split",
+      "deck_id": "027",
+      "old_archetype_id": 5,
+      "strategic_axis": "Area Zero eight-bench toolbox"
+    },
+    {
+      "archetype_id": 1,
+      "decision": "keep",
+      "deck_id": "028",
+      "old_archetype_id": 1,
+      "strategic_axis": "switch-tempo attacker"
+    },
+    {
+      "archetype_id": 10,
+      "decision": "keep",
+      "deck_id": "029",
+      "old_archetype_id": 10,
+      "strategic_axis": "Ogerpon energy stacking"
+    },
+    {
+      "archetype_id": 5,
+      "decision": "keep",
+      "deck_id": "030",
+      "old_archetype_id": 5,
+      "strategic_axis": "Kangaskhan active draw with wall"
+    },
+    {
+      "archetype_id": 2,
+      "decision": "keep",
+      "deck_id": "031",
+      "old_archetype_id": 2,
+      "strategic_axis": "Punk Up energy acceleration"
+    },
+    {
+      "archetype_id": 21,
+      "decision": "split",
+      "deck_id": "032",
+      "old_archetype_id": 1,
+      "strategic_axis": "Ogerpon toolbox with thin Lopunny"
+    },
+    {
+      "archetype_id": 5,
+      "decision": "keep",
+      "deck_id": "033",
+      "old_archetype_id": 5,
+      "strategic_axis": "Kangaskhan active draw with wall"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "keep",
+      "deck_id": "034",
+      "old_archetype_id": 3,
+      "strategic_axis": "hand-size damage and draw"
+    },
+    {
+      "archetype_id": 5,
+      "decision": "keep",
+      "deck_id": "035",
+      "old_archetype_id": 5,
+      "strategic_axis": "Kangaskhan active draw with wall"
+    },
+    {
+      "archetype_id": 10,
+      "decision": "keep",
+      "deck_id": "036",
+      "old_archetype_id": 10,
+      "strategic_axis": "Ogerpon energy stacking"
+    },
+    {
+      "archetype_id": 2,
+      "decision": "keep",
+      "deck_id": "037",
+      "old_archetype_id": 2,
+      "strategic_axis": "Punk Up energy acceleration"
+    },
+    {
+      "archetype_id": 7,
+      "decision": "keep",
+      "deck_id": "038",
+      "old_archetype_id": 7,
+      "strategic_axis": "single-prize wall and denial"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "keep",
+      "deck_id": "039",
+      "old_archetype_id": 3,
+      "strategic_axis": "hand-size damage and draw"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "keep",
+      "deck_id": "040",
+      "old_archetype_id": 3,
+      "strategic_axis": "hand-size damage and draw"
+    },
+    {
+      "archetype_id": 27,
+      "decision": "split",
+      "deck_id": "041",
+      "old_archetype_id": 6,
+      "strategic_axis": "Hydrapple energy-wide scaling"
+    },
+    {
+      "archetype_id": 8,
+      "decision": "keep",
+      "deck_id": "042",
+      "old_archetype_id": 8,
+      "strategic_axis": "Meganium Grass evolution"
+    },
+    {
+      "archetype_id": 15,
+      "decision": "split",
+      "deck_id": "043",
+      "old_archetype_id": 0,
+      "strategic_axis": "Dusknoir self-KO and damage placement"
+    },
+    {
+      "archetype_id": 12,
+      "decision": "keep",
+      "deck_id": "044",
+      "old_archetype_id": 12,
+      "strategic_axis": "Starmie fast spread"
+    },
+    {
+      "archetype_id": 12,
+      "decision": "keep",
+      "deck_id": "045",
+      "old_archetype_id": 12,
+      "strategic_axis": "Starmie fast spread"
+    },
+    {
+      "archetype_id": 17,
+      "decision": "split",
+      "deck_id": "046",
+      "old_archetype_id": 12,
+      "strategic_axis": "Dusknoir self-KO and Starmie breakpoints"
+    },
+    {
+      "archetype_id": 23,
+      "decision": "split",
+      "deck_id": "047",
+      "old_archetype_id": 14,
+      "strategic_axis": "team healing and status control"
+    },
+    {
+      "archetype_id": 13,
+      "decision": "keep",
+      "deck_id": "048",
+      "old_archetype_id": 13,
+      "strategic_axis": "metal discard acceleration"
+    },
+    {
+      "archetype_id": 24,
+      "decision": "split",
+      "deck_id": "049",
+      "old_archetype_id": 14,
+      "strategic_axis": "benched attack library and copying"
+    },
+    {
+      "archetype_id": 17,
+      "decision": "split",
+      "deck_id": "050",
+      "old_archetype_id": 12,
+      "strategic_axis": "Dusknoir self-KO and Starmie breakpoints"
+    },
+    {
+      "archetype_id": 13,
+      "decision": "keep",
+      "deck_id": "051",
+      "old_archetype_id": 13,
+      "strategic_axis": "metal discard acceleration"
+    },
+    {
+      "archetype_id": 13,
+      "decision": "keep",
+      "deck_id": "052",
+      "old_archetype_id": 13,
+      "strategic_axis": "metal discard acceleration"
+    },
+    {
+      "archetype_id": 12,
+      "decision": "keep",
+      "deck_id": "053",
+      "old_archetype_id": 12,
+      "strategic_axis": "Starmie fast spread"
+    },
+    {
+      "archetype_id": 24,
+      "decision": "split",
+      "deck_id": "054",
+      "old_archetype_id": 14,
+      "strategic_axis": "benched attack library and copying"
+    },
+    {
+      "archetype_id": 13,
+      "decision": "keep",
+      "deck_id": "055",
+      "old_archetype_id": 13,
+      "strategic_axis": "metal discard acceleration"
+    },
+    {
+      "archetype_id": 25,
+      "decision": "split",
+      "deck_id": "056",
+      "old_archetype_id": 14,
+      "strategic_axis": "opponent-hand control and safeguard"
+    },
+    {
+      "archetype_id": 15,
+      "decision": "split",
+      "deck_id": "057",
+      "old_archetype_id": 0,
+      "strategic_axis": "Dusknoir self-KO and damage placement"
+    },
+    {
+      "archetype_id": 20,
+      "decision": "split",
+      "deck_id": "058",
+      "old_archetype_id": 5,
+      "strategic_axis": "Area Zero poison checkup route"
+    },
+    {
+      "archetype_id": 9,
+      "decision": "keep",
+      "deck_id": "059",
+      "old_archetype_id": 9,
+      "strategic_axis": "Rocket board and energy sacrifice"
+    },
+    {
+      "archetype_id": 11,
+      "decision": "keep",
+      "deck_id": "060",
+      "old_archetype_id": 11,
+      "strategic_axis": "Cynthia evolution engine"
+    },
+    {
+      "archetype_id": 16,
+      "decision": "split",
+      "deck_id": "061",
+      "old_archetype_id": 0,
+      "strategic_axis": "Blaziken energy recursion and dual Stage-2"
+    },
+    {
+      "archetype_id": 12,
+      "decision": "keep",
+      "deck_id": "062",
+      "old_archetype_id": 12,
+      "strategic_axis": "Starmie/Froslass fast spread"
+    },
+    {
+      "archetype_id": 4,
+      "decision": "keep",
+      "deck_id": "063",
+      "old_archetype_id": 4,
+      "strategic_axis": "Fighting attack rotation"
+    },
+    {
+      "archetype_id": 22,
+      "decision": "split",
+      "deck_id": "064",
+      "old_archetype_id": 1,
+      "strategic_axis": "Grand Tree and board-wide Psychic energy"
+    },
+    {
+      "archetype_id": 26,
+      "decision": "split",
+      "deck_id": "065",
+      "old_archetype_id": 7,
+      "strategic_axis": "Great Tusk alternate deck-out route"
+    },
+    {
+      "archetype_id": 15,
+      "decision": "keep",
+      "deck_id": "066",
+      "old_archetype_id": 15,
+      "strategic_axis": "Dusknoir self-KO, spread breakpoints, and Hammer/Watchtower control"
+    },
+    {
+      "archetype_id": 0,
+      "decision": "keep",
+      "deck_id": "067",
+      "old_archetype_id": 0,
+      "strategic_axis": "Phantom Dive spread with Munkidori and Hammer/Stadium control"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "retain_parent_alakazam",
+      "deck_id": "068",
+      "old_archetype_id": 3,
+      "strategic_axis": "Alakazam hand-size damage with Dudunsparce cycling and Trainer denial"
+    },
+    {
+      "archetype_id": 3,
+      "decision": "retain_parent_alakazam",
+      "deck_id": "069",
+      "old_archetype_id": 3,
+      "strategic_axis": "068 Alakazam parent with one Night Stretcher exchanged for Boss's Orders"
+    },
+    {
+      "archetype_id": 15,
+      "decision": "keep",
+      "deck_id": "070",
+      "old_archetype_id": 15,
+      "strategic_axis": "Dragapult spread plus Dusknoir self-KO breakpoints, Munkidori damage transfer, and Risky Ruins pressure"
+    }
+  ],
+  "mapping_provenance": "manual 001-067 audit plus user-approved exact decks 068-070 through 2026-08-16",
+  "schema_version": "0043_exact_deck_own_archetype_mapping_v2",
+  "taxonomy_version": "own_archetypes_v2"
+}

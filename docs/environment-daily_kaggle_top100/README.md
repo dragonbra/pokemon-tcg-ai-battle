@@ -19,6 +19,12 @@
   查询到的冻结点前 Episode 按 `episode_id` 做单调并集，并在连续两轮全量查询零新增后才允许
   完成；胜率从该冻结并集重算。不得把单次端点返回列表当成完整、稳定的历史样本。
 - 最终交付物是可直接阅读的 HTML，保存为 `daily/YYYY-MM-DD.html`。
+- 每个 Top 100 身份旁必须显示当前 leaderboard 分数，以及相对本次 `captured_at_utc` 的最后一次
+  submission 时间（例如“3 小时前”）；精确 UTC 时间仍须保留在 HTML `datetime`/悬停说明中。
+- 对同一 Top 100 team，生成器按 `publicScore` 从高到低审计截止冻结时刻以前的 submissions；若能从
+  `PUBLIC + COMPLETED` Episode replay 证明存在两个不同 exact-deck hash，则逐人详情同时展示两套
+  高分 60-card 构筑。第一套必须是当前 leaderboard 绑定 submission；第二套只作历史高分构筑证据，
+  不得把它的 Episode、reward、胜率或 matchup 混入当前榜单 policy 的统计。
 - 每新增一份日报，必须同步更新 `index.html`，并按日期倒序排列。
 - 原始 snapshot、Episode Meta 与代表 replay 写入独立的 `.tmp/environment_daily/<date>/run-*`
   目录；已标记 complete 的 run 不可继续采集或改写。正式 HTML 内嵌 100 条身份链审计摘要。

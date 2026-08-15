@@ -1,0 +1,85 @@
+0044 DECK 047 — Erika's Vileplume ex / Cinderace
+==============================================================================
+
+IDENTITY
+deck_id: 047
+display_name: Erika's Vileplume ex / Cinderace
+upstream_name: Erika's Vileplume ex / Cinderace
+display_name_correction: none
+exact_deck_sha256: a982751f90cfc560cc52b7a16b5f5da23a0328dbce035b9f37d79ad661ff223e
+deck_file_sha256: 1b9c5095d17c0e9cc8f83b89eb6272237841c56c8e96a74902d6ace56dffc1d6
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: fa8aea6538a1480e54bb13651169492fef34b74a455160a3e255ed97741bab78
+mapping_sha256: e0fe9248c57684e6ac761911e04ecc978804d963c7435afce36506607c679b2d
+old_own_archetype_id: 14
+own_archetype_id: 23
+own_archetype_name: erikas_vileplume_ex
+own_archetype_display_name: Erika's Vileplume ex
+decision: split
+parent_archetype: other
+embedding_init_from: 14
+tags: healing, status, stage2
+
+STRATEGIC CHARACTERISTICS
+axis: team healing and status control
+definition: Erika evolution board using repeated team healing and status pressure.
+rationale: Multi-line evolution, all-board healing, and sleep/poison tempo merit an explicit prior.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=19, Trainer=31, Energy=10
+evolution_lines:
+  Raboot:
+    - 4× Cinderace [666] (Stage 2 Pokémon)
+  Basic / root:
+    - 4× Erika's Oddish [909] (Basic Pokémon)
+    - 3× Erika's Tangela [915] (Basic Pokémon)
+  Erika's Oddish:
+    - 4× Erika's Gloom [910] (Stage 1 Pokémon)
+  Erika's Gloom:
+    - 4× Erika's Vileplume ex [911] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 2× Boss’s Orders [1182] (Supporter)
+  - 3× Colress’s Tenacity [1194] (Supporter)
+  - 2× Xerosic’s Machinations [1197] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 1× Perilous Jungle [1243] (Stadium)
+  - 3× Forest of Vitality [1261] (Stadium)
+energy:
+  - 6× Basic {G} Energy [1]
+  - 1× Neo Upper Energy [10]
+  - 3× Grow Grass Energy [18]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+    6 |       1 | Basic {G} Energy | SVE 1 | Energy | Basic Energy
+    1 |      10 | Neo Upper Energy | TEF 162 | Energy | Special Energy
+    3 |      18 | Grow Grass Energy | POR 86 | Energy | Special Energy
+    4 |     666 | Cinderace | MEG 28 | Pokémon | Stage 2 Pokémon
+    4 |     909 | Erika's Oddish | ASC 1 | Pokémon | Basic Pokémon
+    4 |     910 | Erika's Gloom | ASC 2 | Pokémon | Stage 1 Pokémon
+    4 |     911 | Erika's Vileplume ex | ASC 3 | Pokémon | Stage 2 Pokémon
+    3 |     915 | Erika's Tangela | ASC 7 | Pokémon | Basic Pokémon
+    1 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    2 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    2 |    1123 | Switch | SVI 194 | Trainer | Item
+    3 |    1147 | Jumbo Ice Cream | PFL 91 | Trainer | Item
+    4 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    4 |    1174 | Air Balloon | BLK 79 | Trainer | Pokémon Tool
+    2 |    1182 | Boss’s Orders | PAL 172 | Trainer | Supporter
+    3 |    1194 | Colress’s Tenacity | SFA 57 | Trainer | Supporter
+    2 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    1 |    1243 | Perilous Jungle | TEF 156 | Trainer | Stadium
+    3 |    1261 | Forest of Vitality | MEG 117 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 244, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/047_erika_s_vileplume_ex_cinderace", "legacy_semantic_deck_id": "erika_s_vileplume_ex_cinderace_a982751f90cf", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

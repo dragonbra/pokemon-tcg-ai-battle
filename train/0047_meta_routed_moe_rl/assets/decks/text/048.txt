@@ -1,0 +1,75 @@
+0044 DECK 048 — Archaludon ex / Cinderace
+==============================================================================
+
+IDENTITY
+deck_id: 048
+display_name: Archaludon ex / Cinderace
+upstream_name: Archaludon ex / Cinderace
+display_name_correction: none
+exact_deck_sha256: 56b532d24b01cf9561aa4bd99289cb610b62e427eb0f7d625860531855289a66
+deck_file_sha256: b12b07a388736ab05eca09102e4cd9dc827b219b68a74d48c4b380ea61743010
+card_total: 60
+roles: training, evaluation
+
+TAXONOMY
+semantic_role: actor-visible Own Deck Strategy Archetype (not opponent Meta classifier)
+taxonomy_version: own_archetypes_v2
+taxonomy_sha256: fa8aea6538a1480e54bb13651169492fef34b74a455160a3e255ed97741bab78
+mapping_sha256: e0fe9248c57684e6ac761911e04ecc978804d963c7435afce36506607c679b2d
+old_own_archetype_id: 13
+own_archetype_id: 13
+own_archetype_name: archaludon_ex
+own_archetype_display_name: Archaludon ex
+decision: keep
+parent_archetype: none
+embedding_init_from: 13
+tags: metal, discard_acceleration
+
+STRATEGIC CHARACTERISTICS
+axis: metal discard acceleration
+definition: Metal discard-recovery acceleration and durable Stage-1 attacker.
+rationale: Discard preparation before Assemble Alloy controls attack readiness.
+evidence_boundary: exact-list/card-text audit; not an official-engine strength result
+
+COMPOSITION
+category_counts: Pokémon=12, Trainer=34, Energy=14
+evolution_lines:
+  Basic / root:
+    - 4× Duraludon [169] (Basic Pokémon)
+  Duraludon:
+    - 4× Archaludon ex [190] (Stage 1 Pokémon)
+  Raboot:
+    - 4× Cinderace [666] (Stage 2 Pokémon)
+key_supporters_and_stadiums:
+  - 4× Explorer’s Guidance [1185] (Supporter)
+  - 2× Xerosic’s Machinations [1197] (Supporter)
+  - 1× Judge [1213] (Supporter)
+  - 4× Lillie's Determination [1227] (Supporter)
+  - 4× Full Metal Lab [1244] (Stadium)
+energy:
+  - 14× Basic {M} Energy [8]
+
+EXACT 60-CARD LIST
+count | card_id | card_name | set/no | category | stage_or_type
+--------------------------------------------------------------------------------------------
+   14 |       8 | Basic {M} Energy | SVE 8 | Energy | Basic Energy
+    4 |     169 | Duraludon | SCR 106 | Pokémon | Basic Pokémon
+    4 |     190 | Archaludon ex | SSP 130 | Pokémon | Stage 1 Pokémon
+    4 |     666 | Cinderace | MEG 28 | Pokémon | Stage 2 Pokémon
+    1 |    1087 | Hand Trimmer | TEF 150 | Trainer | Item
+    4 |    1097 | Night Stretcher | SFA 61 | Trainer | Item
+    4 |    1121 | Ultra Ball | SVI 196 | Trainer | Item
+    4 |    1122 | Pokégear 3.0 | SVI 186 | Trainer | Item
+    2 |    1147 | Jumbo Ice Cream | PFL 91 | Trainer | Item
+    3 |    1152 | Poké Pad | POR 81 | Trainer | Item
+    1 |    1159 | Hero’s Cape | TEF 152 | Trainer | Pokémon Tool
+    4 |    1185 | Explorer’s Guidance | TEF 147 | Trainer | Supporter
+    2 |    1197 | Xerosic’s Machinations | SFA 64 | Trainer | Supporter
+    1 |    1213 | Judge | SVI 176 | Trainer | Supporter
+    4 |    1227 | Lillie's Determination | MEG 119 | Trainer | Supporter
+    4 |    1244 | Full Metal Lab | TEF 148 | Trainer | Stadium
+--------------------------------------------------------------------------------------------
+TOTAL | 60
+
+PROVENANCE
+{"best_rank": 282, "imported_at": "2026-08-12T00:00:00+00:00", "imported_from": "train/0042_full_model_design/league/decks/048_archaludon_ex_cinderace", "legacy_semantic_deck_id": "archaludon_ex_cinderace_56b532d24b01", "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"}

@@ -1,0 +1,52 @@
+{
+  "policy": {
+    "arm": "rule_faithful_semantic",
+    "checkpoint_schema": "0031_model_only_checkpoint_v1",
+    "dataset_manifest_sha256": "7dfb2cebc01f70893ad517a21bee8e26a9f665b83e0f0a9012154eb8e4e1eaae",
+    "epoch": 23,
+    "global_step": 143198,
+    "implementation_sha256": "3bafa60b6f83e1bc6bb285c4fdd0f308e562a2762f3245b944546ebde5eaf8fc",
+    "model_contract_sha256": "23f9d716cac19726b01cd8acf560007c09c77282a3302896a73f845c6fac610e",
+    "optimizer_state_saved": false,
+    "policy_id": "Policy-0814",
+    "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
+    "resumable_training_state_saved": false,
+    "validation": {
+      "action_length_accuracy": 0.9955536300142203,
+      "decisions": 1431055,
+      "exact_action": 0.8197791140102931,
+      "legal_action": 1.0,
+      "loss": 0.2500847065524083,
+      "teacher_exact_action": 0.8197791140102931,
+      "token_accuracy": 0.9096497793342841,
+      "tokens": 2974182
+    },
+    "version": "V6_medal_zone_gsb_all_days_to_0810",
+    "weights_bytes": 464776538,
+    "weights_sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b"
+  },
+  "release_date": "2026-08-16",
+  "source_archive": "n-m-0814.zip",
+  "source_archive_sha256": "dadbd03f5c3f1682305c93bda12e66b4e5483385644f82b383d4f2eff39abd19",
+  "value": {
+    "architecture": "latent_queries",
+    "checkpoint_schema": "0036_value_model_only_checkpoint_v1",
+    "dataset_catalog_sha256": "f04233b1da6b86ca2f2122fc5a450fdc1202da1430a6db60848a06ceb4fc0868",
+    "epoch": 13,
+    "optimizer_state_saved": false,
+    "project_id": "0036_dedicated_action_value_network",
+    "resumable_training_state_saved": false,
+    "source_checkpoint_sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b",
+    "validation_exact007_value_loss": null,
+    "validation_value_loss": 0.39862922933317185,
+    "value_config": {
+      "architecture": "latent_queries",
+      "dropout": 0.0,
+      "layers": 2,
+      "queries": 8
+    },
+    "version": "V10_v6_e23_best_val_encoder_latent_value_archetype_diff",
+    "weights_bytes": 13651904,
+    "weights_sha256": "0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d"
+  }
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>0047 Meta-Routed MoE RL</title>
+<style>body{font:16px/1.55 system-ui;max-width:1050px;margin:32px auto;padding:0 20px;color:#18202a}h1,h2{color:#17365d}code,pre{background:#f4f6f8;border-radius:6px}pre{padding:16px;overflow:auto}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd4dc;padding:8px;text-align:left}th{background:#eaf0f6}.pass{color:#087830;font-weight:700}</style></head>
+<body><h1>0047 — Meta-Routed MoE RL</h1>
+<p>Focal deck <code>070</code>; focal base, seven Actor seeds, rollout opponent and evaluation opponent are all independently materialized from immutable <code>Policy-0814</code>.</p>
+<p>Formal run: <code>V8_deck070_policy0814_moe7_sparse_512lane_micro256</code>. The policy executes only nonzero gate support: E0 alone or E0 plus one Specialist. Rollout uses the historical 0045 concurrency of 512 lanes; PPO uses 256-row forward microbatches with logical minibatch 2048 and releases rollout-only CUDA state before optimization.</p>
+<h2>Forward graph</h2>
+<pre>public observation → frozen 0814 semantic backbone
+                         ├─ E0 + E00/E01/E02/E03/E05/E27
+                         │  each: QV-LoRA + Decoder + Allocation
+public exact-Meta memory ─┤ hard warm-up / six E0↔Em sigmoid gates
+                         └─ π_eff = Σ gate_k π_k
+
+base Option path → isolated Critic (Value / Prize / 15-class Meta)
+Critic output ─X→ Actor or Router</pre>
+<h2>Trainable parameters</h2>
+<table><tr><th>Group</th><th>Parameters</th><th>LR</th></tr><tr><td>7 Decoders</td><td>7,190,414</td><td>1e-5</td></tr><tr><td>7 Allocation Heads</td><td>4,352,327</td><td>1e-5</td></tr><tr><td>7 Q/V LoRA</td><td>71,680</td><td>2e-5</td></tr><tr><td>6 routing logits</td><td>6</td><td>2e-6</td></tr><tr><td>Critic</td><td>3,712,467</td><td>2e-5</td></tr></table>
+<h2>Routing</h2><p>U0–U5 hard warm-up: UNKNOWN/non-core→E0; 00/01/02/03/05/27 each route to E00/E01/E02/E03/E05/E27. Thereafter each core meta uses only E0 and its own Specialist, initially 0.20/0.80, through an independent trainable scalar alpha. UNKNOWN and non-core metas remain exactly E0. Identification uses only accumulated public opponent Pokémon and locks only when all compatible exact decks agree on one 29-class ID.</p><p><code>old_three</code> and <code>new_four</code> are evaluation labels only and do not define Expert groups.</p>
+<h2>Evaluation</h2><ul><li><code>old_three</code>: exact decks 001/002/011, CUDA 512</li><li><code>new_four</code>: exact decks 007/003/009/023, CUDA 512</li><li><code>remain_meta</code>: every other exact deck, Meta-first/deck-balanced, CUDA 512</li></ul>
+<p>All use independent Frozen Policy-0814 and FP16-storage/FP32-runtime candidate materialization. True scheduled Meta is never passed to the focal Router.</p>
+<h2>Training opponent schedule</h2><p>All 512 opponents are Frozen Policy-0814. A dedicated 256-game half is split evenly (36–37 each, rotating remainder) across decks 007/003/001/002/009/011/023. The other 256 games remain Meta-first then deck-balanced across all active metas; core decks can also appear in this general half. Deck 009 maps to meta04 (Lucario), deck 023 to meta27 (Hydrapple).</p>
+<h2>Gates</h2><p class="pass">U0 parity PASS · seven-Actor independence PASS · core hard routing PASS · strict E0 fallback PASS · two-way alpha gradient PASS · official CUDA PPO mixture PASS · tiny official CUDA three-pool PASS</p>
+<p>Full tensor identities, exact counts, PPO settings, leakage boundary and smoke measurements are recorded in <code>DESIGN.md</code>.</p></body></html>

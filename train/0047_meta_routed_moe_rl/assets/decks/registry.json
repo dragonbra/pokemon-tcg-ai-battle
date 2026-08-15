@@ -1,0 +1,7655 @@
+{
+  "decks": [
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 7,
+          "count": 10
+        },
+        {
+          "card_id": 104,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 4
+        },
+        {
+          "card_id": 646,
+          "count": 4
+        },
+        {
+          "card_id": 647,
+          "count": 3
+        },
+        {
+          "card_id": 648,
+          "count": 3
+        },
+        {
+          "card_id": 860,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 1
+        },
+        {
+          "card_id": 1137,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1219,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1259,
+          "count": 4
+        }
+      ],
+      "content_sha256": "c20a8a46f5c635773754f03103652f5c534b13dc622448ed2255a97234c103af",
+      "deck_id": "001",
+      "deck_path": "assets/decks/definitions/001/deck.csv",
+      "file_sha256": "92b92bac9f9163ecff933b3dc39294d2cc154c8684f3c8497877661419ebc59d",
+      "name": "Marnie's Grimmsnarl ex / Froslass",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 5,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/001_marnie_s_grimmsnarl_ex_froslass",
+        "legacy_semantic_deck_id": "marnie_s_grimmsnarl_ex_froslass_c20a8a46f5c6",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 5,
+          "count": 2
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 66,
+          "count": 2
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 3
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 741,
+          "count": 4
+        },
+        {
+          "card_id": 742,
+          "count": 4
+        },
+        {
+          "card_id": 743,
+          "count": 4
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1081,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1129,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1197,
+          "count": 3
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 4
+        },
+        {
+          "card_id": 1266,
+          "count": 2
+        }
+      ],
+      "content_sha256": "3f4515092dc59df397f365a9b79c7cf0c1cb73b9aa38bc47c1b18e9df4c2fdaf",
+      "deck_id": "002",
+      "deck_path": "assets/decks/definitions/002/deck.csv",
+      "file_sha256": "0598646548d081832ec311c15fdc369b32c6f5e63175b0cfd1904d21fd082451",
+      "name": "Alakazam / Dudunsparce",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 7,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/002_alakazam_dudunsparce",
+        "legacy_semantic_deck_id": "alakazam_dudunsparce_3f4515092dc5",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 3
+        },
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 66,
+          "count": 3
+        },
+        {
+          "card_id": 174,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 4
+        },
+        {
+          "card_id": 848,
+          "count": 2
+        },
+        {
+          "card_id": 849,
+          "count": 2
+        },
+        {
+          "card_id": 860,
+          "count": 2
+        },
+        {
+          "card_id": 861,
+          "count": 2
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 2
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1174,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 3
+        }
+      ],
+      "content_sha256": "dd63244cb42c5002bb2c7e415e8224e3dc8440ee02743f0db22d9d44594a72cc",
+      "deck_id": "003",
+      "deck_path": "assets/decks/definitions/003/deck.csv",
+      "file_sha256": "3b4ffbc0735d73a4ab5c2f2c722c45636b60af0e29dda5cc4b5a2d5d5fb5d7c7",
+      "name": "Mega Lopunny ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 2,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/003_mega_lopunny_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_dd63244cb42c",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 14,
+          "count": 3
+        },
+        {
+          "card_id": 66,
+          "count": 4
+        },
+        {
+          "card_id": 174,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 4
+        },
+        {
+          "card_id": 848,
+          "count": 4
+        },
+        {
+          "card_id": 849,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1174,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        }
+      ],
+      "content_sha256": "01501d644249c08144b169d9af115042260d89f0990e04b81c5aeadfcb7d7b84",
+      "deck_id": "004",
+      "deck_path": "assets/decks/definitions/004/deck.csv",
+      "file_sha256": "7fc17fc61014dc3bddec69e751eecde72588bb050b56a763d82720ce92ed1d6c",
+      "name": "Mega Lopunny ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 18,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/004_mega_lopunny_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_01501d644249",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 7,
+          "count": 10
+        },
+        {
+          "card_id": 104,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 4
+        },
+        {
+          "card_id": 646,
+          "count": 4
+        },
+        {
+          "card_id": 647,
+          "count": 3
+        },
+        {
+          "card_id": 648,
+          "count": 3
+        },
+        {
+          "card_id": 860,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1161,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1219,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1259,
+          "count": 4
+        }
+      ],
+      "content_sha256": "e2e03fe8ef9592b1204c159a7725da3945675fa872b1e18baca550560503a78e",
+      "deck_id": "005",
+      "deck_path": "assets/decks/definitions/005/deck.csv",
+      "file_sha256": "c960f71296a4ca797d8b8421f8c3d059752296ba34721108e6b625e02ca0410a",
+      "name": "Marnie's Grimmsnarl ex / Froslass",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 23,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/005_marnie_s_grimmsnarl_ex_froslass",
+        "legacy_semantic_deck_id": "marnie_s_grimmsnarl_ex_froslass_e2e03fe8ef95",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 18
+        },
+        {
+          "card_id": 18,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1118,
+          "count": 2
+        },
+        {
+          "card_id": 1119,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1127,
+          "count": 2
+        },
+        {
+          "card_id": 1137,
+          "count": 1
+        },
+        {
+          "card_id": 1147,
+          "count": 2
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1201,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 4
+        },
+        {
+          "card_id": 1221,
+          "count": 1
+        },
+        {
+          "card_id": 1223,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1251,
+          "count": 2
+        }
+      ],
+      "content_sha256": "e40278fd83d971c280b0fb9cd14d5e45cfe63a45c647741eb937440b4b19be34",
+      "deck_id": "006",
+      "deck_path": "assets/decks/definitions/006/deck.csv",
+      "file_sha256": "78a57de595b8e7b7a2631f0d32119dc6620c20b39c7a3cb3c611e240b58432df",
+      "name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 34,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/006_teal_mask_ogerpon_ex_hero_s_cape",
+        "legacy_semantic_deck_id": "teal_mask_ogerpon_ex_hero_s_cape_e40278fd83d9",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 4
+        },
+        {
+          "card_id": 5,
+          "count": 4
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 2
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1246,
+          "count": 2
+        }
+      ],
+      "content_sha256": "07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725",
+      "deck_id": "007",
+      "deck_path": "assets/decks/definitions/007/deck.csv",
+      "file_sha256": "730515d5b8e9d6f7b9a87c160cd87b43c95535c917688d2b15f46d82fc054485",
+      "name": "Dragapult ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 1,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/007_dragapult_ex",
+        "legacy_semantic_deck_id": "dragapult_ex_07bedfffbfad",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 17
+        },
+        {
+          "card_id": 18,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1118,
+          "count": 1
+        },
+        {
+          "card_id": 1119,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1127,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 3
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1201,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 4
+        },
+        {
+          "card_id": 1221,
+          "count": 1
+        },
+        {
+          "card_id": 1223,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1251,
+          "count": 2
+        }
+      ],
+      "content_sha256": "5e60b8c7eafc87e69cb063ae0ed7f7351fbf415b4c021567790b977bece49fbf",
+      "deck_id": "008",
+      "deck_path": "assets/decks/definitions/008/deck.csv",
+      "file_sha256": "97f7424bf3758bc5c8d4346c3e971763c379c40a5b949121b3ee5229ee7e4c91",
+      "name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 46,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/008_teal_mask_ogerpon_ex_hero_s_cape",
+        "legacy_semantic_deck_id": "teal_mask_ogerpon_ex_hero_s_cape_5e60b8c7eafc",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lucario ex / Solrock",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 6,
+          "count": 13
+        },
+        {
+          "card_id": 673,
+          "count": 2
+        },
+        {
+          "card_id": 674,
+          "count": 2
+        },
+        {
+          "card_id": 675,
+          "count": 2
+        },
+        {
+          "card_id": 676,
+          "count": 3
+        },
+        {
+          "card_id": 677,
+          "count": 3
+        },
+        {
+          "card_id": 678,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 2
+        },
+        {
+          "card_id": 1141,
+          "count": 4
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1213,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 2
+        }
+      ],
+      "content_sha256": "77a53ffc32f89b22562f6b4ac0b8cbde9e8210923cd0ef512551b8a8eb9003f8",
+      "deck_id": "009",
+      "deck_path": "assets/decks/definitions/009/deck.csv",
+      "file_sha256": "5ddb7ca2790518e3c1eac6e2ff8b7fdb6ff0a817bf888536349a090ec7582a9f",
+      "name": "Mega Lucario ex / Solrock",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 8,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/009_mega_lucario_ex_solrock",
+        "legacy_semantic_deck_id": "mega_lucario_ex_solrock_77a53ffc32f8",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Festival Lead / Dipplin",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 7
+        },
+        {
+          "card_id": 89,
+          "count": 4
+        },
+        {
+          "card_id": 90,
+          "count": 4
+        },
+        {
+          "card_id": 92,
+          "count": 4
+        },
+        {
+          "card_id": 93,
+          "count": 4
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1129,
+          "count": 1
+        },
+        {
+          "card_id": 1137,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1175,
+          "count": 3
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 2
+        },
+        {
+          "card_id": 1245,
+          "count": 4
+        }
+      ],
+      "content_sha256": "d6c573dd89bd1319494e25d56e66536c0b68c3db2cf4694f4a63f7423ee2f0bd",
+      "deck_id": "010",
+      "deck_path": "assets/decks/definitions/010/deck.csv",
+      "file_sha256": "e7fa70fcaef8fb7fd57b24abf78330111caa2b0320ec16f50fbf5c4506fbf755",
+      "name": "Festival Lead / Dipplin",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 22,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/010_festival_lead_dipplin",
+        "legacy_semantic_deck_id": "festival_lead_dipplin_d6c573dd89bd",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 1
+        },
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 14,
+          "count": 4
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 344,
+          "count": 3
+        },
+        {
+          "card_id": 345,
+          "count": 3
+        },
+        {
+          "card_id": 756,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1120,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 2
+        }
+      ],
+      "content_sha256": "03822cc73f7886a42fbfe086d205d4a37f24fc65c443ce1574363bbf200542bd",
+      "deck_id": "011",
+      "deck_path": "assets/decks/definitions/011/deck.csv",
+      "file_sha256": "5523489b5af270f8cfa86350de582ae5cba2c2075231094f072400dfe8bae92a",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 28,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/011_mega_kangaskhan_ex_crustle",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_03822cc73f78",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 14,
+          "count": 3
+        },
+        {
+          "card_id": 66,
+          "count": 4
+        },
+        {
+          "card_id": 174,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 4
+        },
+        {
+          "card_id": 848,
+          "count": 4
+        },
+        {
+          "card_id": 849,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1174,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        }
+      ],
+      "content_sha256": "053b4950d40b4a85f4c63511b1f89f90f82b691754d1aaa57b0a4df9f9806e75",
+      "deck_id": "012",
+      "deck_path": "assets/decks/definitions/012/deck.csv",
+      "file_sha256": "ae8f420757b8f9e143c7b9b5357cf8aafd675e49bf383910adc26aed1d075a08",
+      "name": "Mega Lopunny ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 36,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/012_mega_lopunny_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_053b4950d40b",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Cynthia's Garchomp ex / Roserade",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 6,
+          "count": 5
+        },
+        {
+          "card_id": 20,
+          "count": 4
+        },
+        {
+          "card_id": 341,
+          "count": 4
+        },
+        {
+          "card_id": 342,
+          "count": 3
+        },
+        {
+          "card_id": 379,
+          "count": 4
+        },
+        {
+          "card_id": 380,
+          "count": 4
+        },
+        {
+          "card_id": 381,
+          "count": 3
+        },
+        {
+          "card_id": 387,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1173,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1203,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1261,
+          "count": 2
+        }
+      ],
+      "content_sha256": "c04e65de725b8bb51b25f5dc87ae1c56a01316177c501ee2cfc62b3c60ac5712",
+      "deck_id": "013",
+      "deck_path": "assets/decks/definitions/013/deck.csv",
+      "file_sha256": "9fd1edbf44f6aad6dba91250263cb1a29ed5af7c775d4931be1594d0f1cb2f99",
+      "name": "Cynthia's Garchomp ex / Roserade",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 56,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/013_cynthia_s_garchomp_ex_roserade",
+        "legacy_semantic_deck_id": "cynthia_s_garchomp_ex_roserade_c04e65de725b",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 1
+        },
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 14,
+          "count": 4
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 4
+        },
+        {
+          "card_id": 756,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 2
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 2
+        }
+      ],
+      "content_sha256": "67cf83ea7e092595551b8cd9668be37903de3beb362b384f21c07b66d0549ff9",
+      "deck_id": "014",
+      "deck_path": "assets/decks/definitions/014/deck.csv",
+      "file_sha256": "f016cf2394a0260fff660f276259f43066a861a0f0c7ad406bf91bc38d632fe4",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 58,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/014_mega_kangaskhan_ex_crustle",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_67cf83ea7e09",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 9
+        },
+        {
+          "card_id": 3,
+          "count": 1
+        },
+        {
+          "card_id": 4,
+          "count": 2
+        },
+        {
+          "card_id": 5,
+          "count": 2
+        },
+        {
+          "card_id": 6,
+          "count": 2
+        },
+        {
+          "card_id": 63,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 3
+        },
+        {
+          "card_id": 108,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 184,
+          "count": 2
+        },
+        {
+          "card_id": 272,
+          "count": 1
+        },
+        {
+          "card_id": 756,
+          "count": 3
+        },
+        {
+          "card_id": 978,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 3
+        },
+        {
+          "card_id": 1088,
+          "count": 1
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1098,
+          "count": 2
+        },
+        {
+          "card_id": 1116,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1198,
+          "count": 4
+        },
+        {
+          "card_id": 1205,
+          "count": 2
+        },
+        {
+          "card_id": 1250,
+          "count": 4
+        }
+      ],
+      "content_sha256": "310ede704da1adc09e09efc2b3e4f96cd2201abdbcb3f51ada245472cac2742a",
+      "deck_id": "015",
+      "deck_path": "assets/decks/definitions/015/deck.csv",
+      "file_sha256": "2bee2854dc4137c36ecbf01dbe0ffa1c7501a41457dc4aeb290dde87f4bd0475",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 9,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/015_wellspring_mask_ogerpon_ex_teal_mask_ogerpon_ex",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_310ede704da1",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 5,
+          "count": 4
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 115,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 144,
+          "count": 2
+        },
+        {
+          "card_id": 162,
+          "count": 4
+        },
+        {
+          "card_id": 163,
+          "count": 4
+        },
+        {
+          "card_id": 183,
+          "count": 2
+        },
+        {
+          "card_id": 184,
+          "count": 2
+        },
+        {
+          "card_id": 224,
+          "count": 1
+        },
+        {
+          "card_id": 756,
+          "count": 3
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1088,
+          "count": 1
+        },
+        {
+          "card_id": 1097,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 1
+        },
+        {
+          "card_id": 1146,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1188,
+          "count": 4
+        },
+        {
+          "card_id": 1194,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1248,
+          "count": 4
+        }
+      ],
+      "content_sha256": "df6f7443719675711c2dcead3559087de996f3b8c43192d55ebfe6182e43cb7c",
+      "deck_id": "016",
+      "deck_path": "assets/decks/definitions/016/deck.csv",
+      "file_sha256": "c5ea68e8f3fb8692d78eb6d8b9cca98eb03949b36547b6601757e6fe62802a8f",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 15,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/016_slowking_toolbox",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_df6f74437196",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 7,
+          "count": 10
+        },
+        {
+          "card_id": 104,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 4
+        },
+        {
+          "card_id": 646,
+          "count": 4
+        },
+        {
+          "card_id": 647,
+          "count": 2
+        },
+        {
+          "card_id": 648,
+          "count": 3
+        },
+        {
+          "card_id": 860,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 1
+        },
+        {
+          "card_id": 1137,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1219,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1259,
+          "count": 4
+        }
+      ],
+      "content_sha256": "a9cf3d228c6a32c3c2cfdbf4b42f570fc7d00f081e4e39e395c3a6793271d26c",
+      "deck_id": "017",
+      "deck_path": "assets/decks/definitions/017/deck.csv",
+      "file_sha256": "efc0d1a94fe94c85f57c8b213ab4b7d2f3585f2fcba4fb36290a45cba301a15e",
+      "name": "Marnie's Grimmsnarl ex / Froslass",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 20,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/017_marnie_s_grimmsnarl_ex_froslass",
+        "legacy_semantic_deck_id": "marnie_s_grimmsnarl_ex_froslass_a9cf3d228c6a",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 4
+        },
+        {
+          "card_id": 7,
+          "count": 3
+        },
+        {
+          "card_id": 65,
+          "count": 1
+        },
+        {
+          "card_id": 66,
+          "count": 1
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 306,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1246,
+          "count": 1
+        },
+        {
+          "card_id": 1260,
+          "count": 1
+        }
+      ],
+      "content_sha256": "daa1cce9079016e357f7ab3f1666f0ecc4ddca3b8e4131b88ade164c14ddcb4c",
+      "deck_id": "018",
+      "deck_path": "assets/decks/definitions/018/deck.csv",
+      "file_sha256": "85cf85e65e0a9d66dcc4625ea3c906be822cb1392890a5b2e52f41c68aa43fc5",
+      "name": "Dragapult ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 21,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/018_dragapult_ex",
+        "legacy_semantic_deck_id": "dragapult_ex_daa1cce90790",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Barbaracle / Cornerstone Mask Ogerpon ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 6,
+          "count": 9
+        },
+        {
+          "card_id": 7,
+          "count": 1
+        },
+        {
+          "card_id": 12,
+          "count": 1
+        },
+        {
+          "card_id": 16,
+          "count": 4
+        },
+        {
+          "card_id": 112,
+          "count": 1
+        },
+        {
+          "card_id": 116,
+          "count": 4
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 675,
+          "count": 2
+        },
+        {
+          "card_id": 676,
+          "count": 3
+        },
+        {
+          "card_id": 1051,
+          "count": 2
+        },
+        {
+          "card_id": 1052,
+          "count": 2
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 1
+        },
+        {
+          "card_id": 1137,
+          "count": 1
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1174,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1187,
+          "count": 2
+        },
+        {
+          "card_id": 1213,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1238,
+          "count": 2
+        },
+        {
+          "card_id": 1256,
+          "count": 3
+        }
+      ],
+      "content_sha256": "275d23c9ed3eb47996ee9d6a6d7f9c31b77bff0902d881ce30c1d99a223c833b",
+      "deck_id": "019",
+      "deck_path": "assets/decks/definitions/019/deck.csv",
+      "file_sha256": "03e69a040c384b253b16863a5a4f8fe65c97cead1bc9e5046206dee95e0d46ef",
+      "name": "Barbaracle / Cornerstone Mask Ogerpon ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 24,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/019_barbaracle_cornerstone_mask_ogerpon_ex",
+        "legacy_semantic_deck_id": "barbaracle_cornerstone_mask_ogerpon_ex_275d23c9ed3e",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Venusaur ex / Meganium",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 14
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 650,
+          "count": 2
+        },
+        {
+          "card_id": 651,
+          "count": 2
+        },
+        {
+          "card_id": 652,
+          "count": 2
+        },
+        {
+          "card_id": 709,
+          "count": 3
+        },
+        {
+          "card_id": 710,
+          "count": 2
+        },
+        {
+          "card_id": 917,
+          "count": 3
+        },
+        {
+          "card_id": 919,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 2
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 3
+        },
+        {
+          "card_id": 1261,
+          "count": 4
+        }
+      ],
+      "content_sha256": "8c6c9898455cca1b49e41993e2962051d48c5ffee42cb02f3b18152991c71e2b",
+      "deck_id": "020",
+      "deck_path": "assets/decks/definitions/020/deck.csv",
+      "file_sha256": "37fbe1bd5c5ef20df3bd7ac3c8f8db04ca61342950937da8437950275589b603",
+      "name": "Mega Venusaur ex / Meganium",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 25,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/020_mega_venusaur_ex_meganium",
+        "legacy_semantic_deck_id": "mega_venusaur_ex_meganium_8c6c9898455c",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Team Rocket's Mewtwo ex / Spidops",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 7
+        },
+        {
+          "card_id": 5,
+          "count": 1
+        },
+        {
+          "card_id": 15,
+          "count": 4
+        },
+        {
+          "card_id": 400,
+          "count": 4
+        },
+        {
+          "card_id": 401,
+          "count": 4
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 431,
+          "count": 2
+        },
+        {
+          "card_id": 434,
+          "count": 2
+        },
+        {
+          "card_id": 464,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1116,
+          "count": 1
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1134,
+          "count": 4
+        },
+        {
+          "card_id": 1158,
+          "count": 1
+        },
+        {
+          "card_id": 1175,
+          "count": 1
+        },
+        {
+          "card_id": 1216,
+          "count": 3
+        },
+        {
+          "card_id": 1217,
+          "count": 2
+        },
+        {
+          "card_id": 1218,
+          "count": 3
+        },
+        {
+          "card_id": 1220,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 3
+        },
+        {
+          "card_id": 1257,
+          "count": 3
+        }
+      ],
+      "content_sha256": "ead283b0f4b07414749ba86b819f00b9c849f32d965178de6629f63d3901505c",
+      "deck_id": "021",
+      "deck_path": "assets/decks/definitions/021/deck.csv",
+      "file_sha256": "d827282983301ca54761c6c79830f30d351a07abb46ccbc13a96e072931efdcc",
+      "name": "Team Rocket's Mewtwo ex / Spidops",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 32,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/021_team_rocket_s_mewtwo_ex_spidops",
+        "legacy_semantic_deck_id": "team_rocket_s_mewtwo_ex_spidops_ead283b0f4b0",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 19,
+          "count": 3
+        },
+        {
+          "card_id": 66,
+          "count": 3
+        },
+        {
+          "card_id": 174,
+          "count": 1
+        },
+        {
+          "card_id": 184,
+          "count": 1
+        },
+        {
+          "card_id": 272,
+          "count": 2
+        },
+        {
+          "card_id": 305,
+          "count": 4
+        },
+        {
+          "card_id": 848,
+          "count": 3
+        },
+        {
+          "card_id": 849,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 1
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1121,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 2
+        },
+        {
+          "card_id": 1152,
+          "count": 3
+        },
+        {
+          "card_id": 1174,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 3
+        }
+      ],
+      "content_sha256": "546b39d1d1340529eb93a53907f2d46e15f58297902f0c1a68f2563673df8fc6",
+      "deck_id": "022",
+      "deck_path": "assets/decks/definitions/022/deck.csv",
+      "file_sha256": "3d1d0cffa8dcab604ae71f6ed0ca195b0d87beba8093859f126e0a2a671281b7",
+      "name": "Mega Lopunny ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 37,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/022_mega_lopunny_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_546b39d1d134",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 14
+        },
+        {
+          "card_id": 93,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 149,
+          "count": 1
+        },
+        {
+          "card_id": 150,
+          "count": 2
+        },
+        {
+          "card_id": 346,
+          "count": 1
+        },
+        {
+          "card_id": 655,
+          "count": 1
+        },
+        {
+          "card_id": 709,
+          "count": 1
+        },
+        {
+          "card_id": 710,
+          "count": 2
+        },
+        {
+          "card_id": 917,
+          "count": 2
+        },
+        {
+          "card_id": 918,
+          "count": 1
+        },
+        {
+          "card_id": 920,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1188,
+          "count": 1
+        },
+        {
+          "card_id": 1201,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1261,
+          "count": 4
+        }
+      ],
+      "content_sha256": "415af0a5541c9c046b4a80abc365dbf91fc693b8546e49796fec6463a181c53d",
+      "deck_id": "023",
+      "deck_path": "assets/decks/definitions/023/deck.csv",
+      "file_sha256": "96cda5323dccba185bb29b7ae3150c076043ddeef4b6607ea5c204bbe1efe26c",
+      "name": "Hydrapple ex / Meganium",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 39,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/023_hydrapple_ex_meganium",
+        "legacy_semantic_deck_id": "hydrapple_ex_meganium_415af0a5541c",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Crustle / Cornerstone Mask Ogerpon ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 3
+        },
+        {
+          "card_id": 3,
+          "count": 1
+        },
+        {
+          "card_id": 6,
+          "count": 1
+        },
+        {
+          "card_id": 7,
+          "count": 3
+        },
+        {
+          "card_id": 16,
+          "count": 4
+        },
+        {
+          "card_id": 18,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 4
+        },
+        {
+          "card_id": 117,
+          "count": 2
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 4
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1198,
+          "count": 4
+        },
+        {
+          "card_id": 1210,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1236,
+          "count": 3
+        },
+        {
+          "card_id": 1264,
+          "count": 2
+        }
+      ],
+      "content_sha256": "69fc3c54920d906e1784e0e76a35a6688c86a941ac369fc1b0f23f4bc226202b",
+      "deck_id": "024",
+      "deck_path": "assets/decks/definitions/024/deck.csv",
+      "file_sha256": "a2f32fee67f69d41ee56287462de9c2a4bf8f4046c017f78019b5a30498ccedf",
+      "name": "Crustle / Cornerstone Mask Ogerpon ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 41,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/024_crustle_cornerstone_mask_ogerpon_ex",
+        "legacy_semantic_deck_id": "crustle_cornerstone_mask_ogerpon_ex_69fc3c54920d",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 12
+        },
+        {
+          "card_id": 3,
+          "count": 1
+        },
+        {
+          "card_id": 12,
+          "count": 1
+        },
+        {
+          "card_id": 16,
+          "count": 1
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 848,
+          "count": 1
+        },
+        {
+          "card_id": 849,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1127,
+          "count": 3
+        },
+        {
+          "card_id": 1147,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1201,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1246,
+          "count": 2
+        }
+      ],
+      "content_sha256": "5b509baed30a8f00d65b15eeaebb8b098cf0cc46b4b37ae685bd563ea5450e02",
+      "deck_id": "025",
+      "deck_path": "assets/decks/definitions/025/deck.csv",
+      "file_sha256": "fed0e604a17a3f77efc2130e8915f223fcdf733333640522122673ba87af53a6",
+      "name": "Mega Lopunny ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 42,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/025_mega_lopunny_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_5b509baed30a",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 11
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 650,
+          "count": 2
+        },
+        {
+          "card_id": 651,
+          "count": 2
+        },
+        {
+          "card_id": 652,
+          "count": 2
+        },
+        {
+          "card_id": 708,
+          "count": 3
+        },
+        {
+          "card_id": 709,
+          "count": 2
+        },
+        {
+          "card_id": 710,
+          "count": 2
+        },
+        {
+          "card_id": 756,
+          "count": 2
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1118,
+          "count": 1
+        },
+        {
+          "card_id": 1122,
+          "count": 2
+        },
+        {
+          "card_id": 1123,
+          "count": 1
+        },
+        {
+          "card_id": 1145,
+          "count": 2
+        },
+        {
+          "card_id": 1152,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 1
+        },
+        {
+          "card_id": 1194,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 2
+        },
+        {
+          "card_id": 1261,
+          "count": 4
+        }
+      ],
+      "content_sha256": "926cc79d2c4ea4610c7f07fc1de01c64b77b57e32a50794f541d810605cf7159",
+      "deck_id": "026",
+      "deck_path": "assets/decks/definitions/026/deck.csv",
+      "file_sha256": "56a5ced3183c5d67e723c3c2425dff3d28bee0f00c33a488667ab1052f50ec74",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 47,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/026_mega_kangaskhan_ex_crustle",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_926cc79d2c4e",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 9
+        },
+        {
+          "card_id": 3,
+          "count": 2
+        },
+        {
+          "card_id": 4,
+          "count": 2
+        },
+        {
+          "card_id": 5,
+          "count": 1
+        },
+        {
+          "card_id": 6,
+          "count": 2
+        },
+        {
+          "card_id": 63,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 3
+        },
+        {
+          "card_id": 108,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 184,
+          "count": 2
+        },
+        {
+          "card_id": 272,
+          "count": 1
+        },
+        {
+          "card_id": 756,
+          "count": 3
+        },
+        {
+          "card_id": 978,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 3
+        },
+        {
+          "card_id": 1088,
+          "count": 1
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1098,
+          "count": 2
+        },
+        {
+          "card_id": 1116,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1198,
+          "count": 4
+        },
+        {
+          "card_id": 1205,
+          "count": 2
+        },
+        {
+          "card_id": 1250,
+          "count": 4
+        }
+      ],
+      "content_sha256": "f50fa3a23cdf21be7cf7d3f558b8ff0b82e8d4e7ba8f61b7b4cacc1a0080c16a",
+      "deck_id": "027",
+      "deck_path": "assets/decks/definitions/027/deck.csv",
+      "file_sha256": "6c115a5f06facc35dbd7df4b710a777ddf8930338f189a285d0c017e9ccdeecb",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 53,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/027_mega_kangaskhan_ex_crustle",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_f50fa3a23cdf",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 3
+        },
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 66,
+          "count": 4
+        },
+        {
+          "card_id": 174,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 4
+        },
+        {
+          "card_id": 414,
+          "count": 1
+        },
+        {
+          "card_id": 848,
+          "count": 3
+        },
+        {
+          "card_id": 849,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1174,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        },
+        {
+          "card_id": 1266,
+          "count": 3
+        }
+      ],
+      "content_sha256": "61b9c541b9cacccc78030862f281caee12857f5c3ce5599f3f3f09319e566c39",
+      "deck_id": "028",
+      "deck_path": "assets/decks/definitions/028/deck.csv",
+      "file_sha256": "3e8ac8a6603b99448fdb43c357145c890b11bcd41473b9e0961bad91437d180f",
+      "name": "Mega Lopunny ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 62,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/028_mega_lopunny_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_61b9c541b9ca",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 17
+        },
+        {
+          "card_id": 18,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 920,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1118,
+          "count": 1
+        },
+        {
+          "card_id": 1119,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1127,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 3
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1201,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 4
+        },
+        {
+          "card_id": 1221,
+          "count": 1
+        },
+        {
+          "card_id": 1223,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1251,
+          "count": 2
+        }
+      ],
+      "content_sha256": "f8a5ec1c82043f715dfa7da982343bcb4d0b67d80827eb74c9640e00efb97766",
+      "deck_id": "029",
+      "deck_path": "assets/decks/definitions/029/deck.csv",
+      "file_sha256": "8bd7d896316ac7a547684326edba63d078c79ab44b3541eb12444ada14ae83f9",
+      "name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 65,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/029_teal_mask_ogerpon_ex_hero_s_cape",
+        "legacy_semantic_deck_id": "teal_mask_ogerpon_ex_hero_s_cape_f8a5ec1c8204",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 1
+        },
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 14,
+          "count": 4
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 4
+        },
+        {
+          "card_id": 756,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 1
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 2
+        }
+      ],
+      "content_sha256": "747769779b60ad8db730b0b238414abb1e47936349cc72c83ff79c2ffacf31bc",
+      "deck_id": "030",
+      "deck_path": "assets/decks/definitions/030/deck.csv",
+      "file_sha256": "f3332903a3b2827a104d2cf62b5c70391ea9393b9667014de07b1365f94a04a1",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 67,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/030_mega_kangaskhan_ex_crustle",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_747769779b60",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 7,
+          "count": 10
+        },
+        {
+          "card_id": 104,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 4
+        },
+        {
+          "card_id": 646,
+          "count": 4
+        },
+        {
+          "card_id": 647,
+          "count": 3
+        },
+        {
+          "card_id": 648,
+          "count": 3
+        },
+        {
+          "card_id": 860,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 4
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1219,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1259,
+          "count": 4
+        }
+      ],
+      "content_sha256": "de5b9940c5be5708af75d38f0bbb3fd85600e90fea9349a8ab330fb1f4638ffe",
+      "deck_id": "031",
+      "deck_path": "assets/decks/definitions/031/deck.csv",
+      "file_sha256": "5b60b068dbb9b869449be4d18f1ae7a246b2b99fa7e8a94d46facec53ba820f6",
+      "name": "Marnie's Grimmsnarl ex / Froslass",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 68,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/031_marnie_s_grimmsnarl_ex_froslass",
+        "legacy_semantic_deck_id": "marnie_s_grimmsnarl_ex_froslass_de5b9940c5be",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 12
+        },
+        {
+          "card_id": 16,
+          "count": 2
+        },
+        {
+          "card_id": 18,
+          "count": 3
+        },
+        {
+          "card_id": 24,
+          "count": 1
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 848,
+          "count": 2
+        },
+        {
+          "card_id": 849,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1127,
+          "count": 3
+        },
+        {
+          "card_id": 1147,
+          "count": 2
+        },
+        {
+          "card_id": 1152,
+          "count": 2
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1201,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1256,
+          "count": 2
+        }
+      ],
+      "content_sha256": "e9911db454f518890e3ec43a64ca9c66b6914cdfba5271ec56a6cf9d60e1b5fc",
+      "deck_id": "032",
+      "deck_path": "assets/decks/definitions/032/deck.csv",
+      "file_sha256": "7b57bab61bea24d00eb3a883ab8c93225e00a7b5b5ecabaec0d6e476ee9bc135",
+      "name": "Mega Lopunny ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 69,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/032_mega_lopunny_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_lopunny_ex_mega_froslass_ex_e9911db454f5",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 1
+        },
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 14,
+          "count": 4
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 4
+        },
+        {
+          "card_id": 756,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 1
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 3
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1186,
+          "count": 1
+        },
+        {
+          "card_id": 1197,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 3
+        }
+      ],
+      "content_sha256": "1893950717074f0ee017a94335c6a8df1f0c5ac34b4ec81a16440f2d9b9dcc96",
+      "deck_id": "033",
+      "deck_path": "assets/decks/definitions/033/deck.csv",
+      "file_sha256": "78dd4cded8247b2025f23e533a40c84db434339e3c672621d16eb21baa0c132d",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 71,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/033_mega_kangaskhan_ex_crustle",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_189395071707",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 5,
+          "count": 2
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 66,
+          "count": 3
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 3
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 741,
+          "count": 4
+        },
+        {
+          "card_id": 742,
+          "count": 4
+        },
+        {
+          "card_id": 743,
+          "count": 4
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1081,
+          "count": 2
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1129,
+          "count": 1
+        },
+        {
+          "card_id": 1146,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 4
+        }
+      ],
+      "content_sha256": "56024e4e17512f2c66e86f08da54552e49b9de9ad7c5df8ab0b8a4fe80f38ea4",
+      "deck_id": "034",
+      "deck_path": "assets/decks/definitions/034/deck.csv",
+      "file_sha256": "ca42a47ab1c33580631b45be66fd99a9a0d5b38c3c68ec012b1841299604f96c",
+      "name": "Alakazam / Dudunsparce",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 73,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/034_alakazam_dudunsparce",
+        "legacy_semantic_deck_id": "alakazam_dudunsparce_56024e4e1751",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan ex / Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 2
+        },
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 14,
+          "count": 4
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 20,
+          "count": 2
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 3
+        },
+        {
+          "card_id": 756,
+          "count": 2
+        },
+        {
+          "card_id": 1086,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 2
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 1
+        },
+        {
+          "card_id": 1137,
+          "count": 1
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 4
+        },
+        {
+          "card_id": 1194,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1219,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1257,
+          "count": 1
+        },
+        {
+          "card_id": 1264,
+          "count": 1
+        }
+      ],
+      "content_sha256": "ca60839cba73b0054f0854952ec3a5e98cb8178db1f71e264aafceb44ffd7adb",
+      "deck_id": "035",
+      "deck_path": "assets/decks/definitions/035/deck.csv",
+      "file_sha256": "704270a2922dabe9e04a8a7da824317b637d727107f6e70afcd90c1bb1264447",
+      "name": "Mega Kangaskhan ex / Crustle",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 74,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/035_mega_kangaskhan_ex_crustle",
+        "legacy_semantic_deck_id": "mega_kangaskhan_ex_crustle_ca60839cba73",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 16
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1118,
+          "count": 2
+        },
+        {
+          "card_id": 1119,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1127,
+          "count": 2
+        },
+        {
+          "card_id": 1137,
+          "count": 1
+        },
+        {
+          "card_id": 1147,
+          "count": 2
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 4
+        },
+        {
+          "card_id": 1201,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 4
+        },
+        {
+          "card_id": 1223,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1251,
+          "count": 2
+        }
+      ],
+      "content_sha256": "f1f687577435fd42c1b3023f8c8903a4d1aa8d7a0742a13504e4870248efd86c",
+      "deck_id": "036",
+      "deck_path": "assets/decks/definitions/036/deck.csv",
+      "file_sha256": "22bfdfc3ff34268b1cf2a7f118e40585b7057c22635a07a3adfc9fbc35b6e274",
+      "name": "Teal Mask Ogerpon ex / Hero’s Cape",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 76,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/036_teal_mask_ogerpon_ex_hero_s_cape",
+        "legacy_semantic_deck_id": "teal_mask_ogerpon_ex_hero_s_cape_f1f687577435",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Marnie's Grimmsnarl ex / Froslass",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 7,
+          "count": 10
+        },
+        {
+          "card_id": 104,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 4
+        },
+        {
+          "card_id": 646,
+          "count": 4
+        },
+        {
+          "card_id": 647,
+          "count": 3
+        },
+        {
+          "card_id": 648,
+          "count": 3
+        },
+        {
+          "card_id": 860,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 3
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1116,
+          "count": 2
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 2
+        },
+        {
+          "card_id": 1219,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1259,
+          "count": 4
+        }
+      ],
+      "content_sha256": "0043a7493af90c24b6662181233a5c9eeedc50892b7940744c82cbac36a55c4f",
+      "deck_id": "037",
+      "deck_path": "assets/decks/definitions/037/deck.csv",
+      "file_sha256": "78321f666809ba75d06fda5da553c17744f283cac041526beaf1e9406e6412c2",
+      "name": "Marnie's Grimmsnarl ex / Froslass",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 77,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/037_marnie_s_grimmsnarl_ex_froslass",
+        "legacy_semantic_deck_id": "marnie_s_grimmsnarl_ex_froslass_0043a7493af9",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Crustle / Cornerstone Mask Ogerpon ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 3
+        },
+        {
+          "card_id": 3,
+          "count": 1
+        },
+        {
+          "card_id": 6,
+          "count": 1
+        },
+        {
+          "card_id": 7,
+          "count": 3
+        },
+        {
+          "card_id": 16,
+          "count": 4
+        },
+        {
+          "card_id": 18,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 4
+        },
+        {
+          "card_id": 117,
+          "count": 2
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 4
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1120,
+          "count": 1
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1198,
+          "count": 4
+        },
+        {
+          "card_id": 1210,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1236,
+          "count": 4
+        }
+      ],
+      "content_sha256": "c385b53bf42c2af2bc8daedde5b28d921dd913e9886c1e86f326ad229ee20e6a",
+      "deck_id": "038",
+      "deck_path": "assets/decks/definitions/038/deck.csv",
+      "file_sha256": "462a93bf54fd1162e0cc64aac57964a746ce8e35c5efc2b95a6fc953d61379e6",
+      "name": "Crustle / Cornerstone Mask Ogerpon ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 79,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/038_crustle_cornerstone_mask_ogerpon_ex",
+        "legacy_semantic_deck_id": "crustle_cornerstone_mask_ogerpon_ex_c385b53bf42c",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 5,
+          "count": 2
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 66,
+          "count": 2
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 3
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 741,
+          "count": 4
+        },
+        {
+          "card_id": 742,
+          "count": 4
+        },
+        {
+          "card_id": 743,
+          "count": 4
+        },
+        {
+          "card_id": 1079,
+          "count": 4
+        },
+        {
+          "card_id": 1081,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1129,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 3
+        }
+      ],
+      "content_sha256": "59c6fdb878b672309da0db1318640029802b1afdcfd4e23b1dcab3d3a96d61fc",
+      "deck_id": "039",
+      "deck_path": "assets/decks/definitions/039/deck.csv",
+      "file_sha256": "596c34605e7826f120d2f27edf1f7ce0d0ca07d14f90b004be798f7dc0d2b16e",
+      "name": "Alakazam / Dudunsparce",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 83,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/039_alakazam_dudunsparce",
+        "legacy_semantic_deck_id": "alakazam_dudunsparce_59c6fdb878b6",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Alakazam / Dudunsparce",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 13,
+          "count": 1
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 66,
+          "count": 3
+        },
+        {
+          "card_id": 305,
+          "count": 4
+        },
+        {
+          "card_id": 741,
+          "count": 4
+        },
+        {
+          "card_id": 742,
+          "count": 4
+        },
+        {
+          "card_id": 743,
+          "count": 4
+        },
+        {
+          "card_id": 1079,
+          "count": 4
+        },
+        {
+          "card_id": 1081,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1129,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 4
+        },
+        {
+          "card_id": 1264,
+          "count": 1
+        }
+      ],
+      "content_sha256": "09b937915fb787c62365c02c76bbd2d25b847fbd06f62292dd20f251fbdce19a",
+      "deck_id": "040",
+      "deck_path": "assets/decks/definitions/040/deck.csv",
+      "file_sha256": "0f8fb632ade2833645af8c6ffe2b282fe24e7446ee8b23f3e468b8410d8ea36c",
+      "name": "Alakazam / Dudunsparce",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 87,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/040_alakazam_dudunsparce",
+        "legacy_semantic_deck_id": "alakazam_dudunsparce_09b937915fb7",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 15
+        },
+        {
+          "card_id": 93,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 149,
+          "count": 2
+        },
+        {
+          "card_id": 150,
+          "count": 2
+        },
+        {
+          "card_id": 655,
+          "count": 2
+        },
+        {
+          "card_id": 709,
+          "count": 2
+        },
+        {
+          "card_id": 710,
+          "count": 2
+        },
+        {
+          "card_id": 917,
+          "count": 2
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1121,
+          "count": 2
+        },
+        {
+          "card_id": 1127,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1188,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1256,
+          "count": 1
+        },
+        {
+          "card_id": 1261,
+          "count": 3
+        }
+      ],
+      "content_sha256": "f1d642b4458ba1a2b3fa21ed6e4cdf14cc00f539d56fd4194d305ab370d227d3",
+      "deck_id": "041",
+      "deck_path": "assets/decks/definitions/041/deck.csv",
+      "file_sha256": "92e72d2099fcc7fa7863726913555c8a05c0f10afc143b8b1e3a7d54175bc562",
+      "name": "Hydrapple ex / Meganium",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 88,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/041_hydrapple_ex_meganium",
+        "legacy_semantic_deck_id": "hydrapple_ex_meganium_f1d642b4458b",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "top100"
+      ]
+    },
+    {
+      "archetype": "Arboliva ex / Meganium / Teal Mask Ogerpon ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 12
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 402,
+          "count": 2
+        },
+        {
+          "card_id": 403,
+          "count": 2
+        },
+        {
+          "card_id": 404,
+          "count": 2
+        },
+        {
+          "card_id": 708,
+          "count": 2
+        },
+        {
+          "card_id": 709,
+          "count": 2
+        },
+        {
+          "card_id": 710,
+          "count": 2
+        },
+        {
+          "card_id": 920,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1116,
+          "count": 1
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 3
+        },
+        {
+          "card_id": 1261,
+          "count": 4
+        }
+      ],
+      "content_sha256": "dd46dbf9735fdf6c36c23bfe060c1092e68e8e7bb17c3c1e616e71045cb524e2",
+      "deck_id": "042",
+      "deck_path": "assets/decks/definitions/042/deck.csv",
+      "file_sha256": "d61a6109df720d83da824475953e54a6c69a97be7dd74bf612d65bf6713f4503",
+      "name": "Arboliva ex / Meganium / Teal Mask Ogerpon ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 101,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/042_arboliva_ex_meganium_teal_mask_ogerpon_ex",
+        "legacy_semantic_deck_id": "arboliva_ex_meganium_teal_mask_ogerpon_ex_dd46dbf9735f",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex / Dusknoir",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 1
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 1
+        },
+        {
+          "card_id": 133,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 184,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 2
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1198,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1240,
+          "count": 1
+        },
+        {
+          "card_id": 1246,
+          "count": 1
+        },
+        {
+          "card_id": 1256,
+          "count": 1
+        }
+      ],
+      "content_sha256": "b85bae9f3a2130375ba8cfef2fec42787b7bfc2289e324bbae0ef28a7486928b",
+      "deck_id": "043",
+      "deck_path": "assets/decks/definitions/043/deck.csv",
+      "file_sha256": "202a0124cac5b17442cf3de7ea7ba713741298a3621304611ce55db4b22c7c68",
+      "name": "Dragapult ex / Dusknoir",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 230,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/043_dragapult_ex_dusknoir",
+        "legacy_semantic_deck_id": "dragapult_ex_dusknoir_b85bae9f3a21",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 9
+        },
+        {
+          "card_id": 666,
+          "count": 2
+        },
+        {
+          "card_id": 860,
+          "count": 3
+        },
+        {
+          "card_id": 861,
+          "count": 3
+        },
+        {
+          "card_id": 1030,
+          "count": 3
+        },
+        {
+          "card_id": 1031,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 2
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1145,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 1
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1189,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1224,
+          "count": 2
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 3
+        },
+        {
+          "card_id": 1262,
+          "count": 4
+        }
+      ],
+      "content_sha256": "7b5c566477305e7b732b05d3232206fa6686f2c1c734aff1fe305df126012293",
+      "deck_id": "044",
+      "deck_path": "assets/decks/definitions/044/deck.csv",
+      "file_sha256": "f5b7eef403d35462050d8e6e2392fc66194d727a63ecb5c187448eb1965110af",
+      "name": "Mega Starmie ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 204,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/044_mega_starmie_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_starmie_ex_mega_froslass_ex_7b5c56647730",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 12
+        },
+        {
+          "card_id": 66,
+          "count": 1
+        },
+        {
+          "card_id": 305,
+          "count": 1
+        },
+        {
+          "card_id": 666,
+          "count": 2
+        },
+        {
+          "card_id": 860,
+          "count": 3
+        },
+        {
+          "card_id": 861,
+          "count": 3
+        },
+        {
+          "card_id": 1030,
+          "count": 3
+        },
+        {
+          "card_id": 1031,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 2
+        },
+        {
+          "card_id": 1122,
+          "count": 2
+        },
+        {
+          "card_id": 1145,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 1
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1197,
+          "count": 3
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 3
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        },
+        {
+          "card_id": 1262,
+          "count": 3
+        }
+      ],
+      "content_sha256": "5694d3eb6909e7ff0618c943cd8b7dcac155ed81666d350bf3c7261d70bf119d",
+      "deck_id": "045",
+      "deck_path": "assets/decks/definitions/045/deck.csv",
+      "file_sha256": "8d615d2010a6d3161667ff05d1b7593099f8d22add5298afb9397d6a51d41d9e",
+      "name": "Mega Starmie ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 210,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/045_mega_starmie_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_starmie_ex_mega_froslass_ex_5694d3eb6909",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Dusknoir",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 9
+        },
+        {
+          "card_id": 17,
+          "count": 4
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 2
+        },
+        {
+          "card_id": 133,
+          "count": 2
+        },
+        {
+          "card_id": 1030,
+          "count": 4
+        },
+        {
+          "card_id": 1031,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1167,
+          "count": 1
+        },
+        {
+          "card_id": 1192,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 3
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        }
+      ],
+      "content_sha256": "b15853cdfb8304f39f879638102a7fd161f1102d81e6d3f36d5beca4db9e01b0",
+      "deck_id": "046",
+      "deck_path": "assets/decks/definitions/046/deck.csv",
+      "file_sha256": "126a0c4ac756f407b63dc6ec0f8301e13a94f223b3b531c54f9a1ed08a4557ba",
+      "name": "Mega Starmie ex / Dusknoir",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 228,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/046_mega_starmie_ex_dusknoir",
+        "legacy_semantic_deck_id": "mega_starmie_ex_dusknoir_b15853cdfb83",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Erika's Vileplume ex / Cinderace",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 6
+        },
+        {
+          "card_id": 10,
+          "count": 1
+        },
+        {
+          "card_id": 18,
+          "count": 3
+        },
+        {
+          "card_id": 666,
+          "count": 4
+        },
+        {
+          "card_id": 909,
+          "count": 4
+        },
+        {
+          "card_id": 910,
+          "count": 4
+        },
+        {
+          "card_id": 911,
+          "count": 4
+        },
+        {
+          "card_id": 915,
+          "count": 3
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1122,
+          "count": 2
+        },
+        {
+          "card_id": 1123,
+          "count": 2
+        },
+        {
+          "card_id": 1147,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1174,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1194,
+          "count": 3
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1243,
+          "count": 1
+        },
+        {
+          "card_id": 1261,
+          "count": 3
+        }
+      ],
+      "content_sha256": "a982751f90cfc560cc52b7a16b5f5da23a0328dbce035b9f37d79ad661ff223e",
+      "deck_id": "047",
+      "deck_path": "assets/decks/definitions/047/deck.csv",
+      "file_sha256": "1b9c5095d17c0e9cc8f83b89eb6272237841c56c8e96a74902d6ace56dffc1d6",
+      "name": "Erika's Vileplume ex / Cinderace",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 244,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/047_erika_s_vileplume_ex_cinderace",
+        "legacy_semantic_deck_id": "erika_s_vileplume_ex_cinderace_a982751f90cf",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 8,
+          "count": 14
+        },
+        {
+          "card_id": 169,
+          "count": 4
+        },
+        {
+          "card_id": 190,
+          "count": 4
+        },
+        {
+          "card_id": 666,
+          "count": 4
+        },
+        {
+          "card_id": 1087,
+          "count": 1
+        },
+        {
+          "card_id": 1097,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 2
+        },
+        {
+          "card_id": 1152,
+          "count": 3
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1185,
+          "count": 4
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1244,
+          "count": 4
+        }
+      ],
+      "content_sha256": "56b532d24b01cf9561aa4bd99289cb610b62e427eb0f7d625860531855289a66",
+      "deck_id": "048",
+      "deck_path": "assets/decks/definitions/048/deck.csv",
+      "file_sha256": "b12b07a388736ab05eca09102e4cd9dc827b219b68a74d48c4b380ea61743010",
+      "name": "Archaludon ex / Cinderace",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 282,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/048_archaludon_ex_cinderace",
+        "legacy_semantic_deck_id": "archaludon_ex_cinderace_56b532d24b01",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "N's Zoroark ex / Munkidori",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 7,
+          "count": 9
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 292,
+          "count": 4
+        },
+        {
+          "card_id": 293,
+          "count": 4
+        },
+        {
+          "card_id": 303,
+          "count": 2
+        },
+        {
+          "card_id": 906,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1113,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 2
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1176,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 4
+        },
+        {
+          "card_id": 1188,
+          "count": 1
+        },
+        {
+          "card_id": 1195,
+          "count": 1
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1205,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1253,
+          "count": 3
+        }
+      ],
+      "content_sha256": "11bd8fb9fc18f68008df5fd98955516c492f4c1ef5eeca7df5d79d19187ab0ce",
+      "deck_id": "049",
+      "deck_path": "assets/decks/definitions/049/deck.csv",
+      "file_sha256": "ee356659b7aff37d9b5b776ed65ec8a9c5c3adf6803b3f52d159a7c4b865fd3a",
+      "name": "N's Zoroark ex / Munkidori",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 347,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/049_n_s_zoroark_ex_munkidori",
+        "legacy_semantic_deck_id": "n_s_zoroark_ex_munkidori_11bd8fb9fc18",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Dusknoir",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 4
+        },
+        {
+          "card_id": 17,
+          "count": 4
+        },
+        {
+          "card_id": 131,
+          "count": 4
+        },
+        {
+          "card_id": 132,
+          "count": 4
+        },
+        {
+          "card_id": 133,
+          "count": 3
+        },
+        {
+          "card_id": 1030,
+          "count": 4
+        },
+        {
+          "card_id": 1031,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1192,
+          "count": 4
+        },
+        {
+          "card_id": 1194,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 3
+        },
+        {
+          "card_id": 1249,
+          "count": 1
+        },
+        {
+          "card_id": 1260,
+          "count": 3
+        }
+      ],
+      "content_sha256": "46fd6cbdd4d2c750e3abeee10c80be2e499aa4c8c96cb2e35ab704ba3acb8230",
+      "deck_id": "050",
+      "deck_path": "assets/decks/definitions/050/deck.csv",
+      "file_sha256": "0206d2415034ec6c12e197fbc3aa05d1b382c7c9bfbcb009e5c7203b9e59d52f",
+      "name": "Mega Starmie ex / Dusknoir",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 350,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/050_mega_starmie_ex_dusknoir",
+        "legacy_semantic_deck_id": "mega_starmie_ex_dusknoir_46fd6cbdd4d2",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 8,
+          "count": 11
+        },
+        {
+          "card_id": 57,
+          "count": 1
+        },
+        {
+          "card_id": 169,
+          "count": 4
+        },
+        {
+          "card_id": 190,
+          "count": 4
+        },
+        {
+          "card_id": 666,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1185,
+          "count": 4
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1244,
+          "count": 4
+        }
+      ],
+      "content_sha256": "da1d56e33b96abccedb056d4f8b31da68bfd2c224ade3a4914b5709135aa7535",
+      "deck_id": "051",
+      "deck_path": "assets/decks/definitions/051/deck.csv",
+      "file_sha256": "fbe6ab59992260b0d6774abed19469be315521b5ed0546de8c20f329607693e6",
+      "name": "Archaludon ex / Cinderace",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 387,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/051_archaludon_ex_cinderace",
+        "legacy_semantic_deck_id": "archaludon_ex_cinderace_da1d56e33b96",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 8,
+          "count": 11
+        },
+        {
+          "card_id": 57,
+          "count": 1
+        },
+        {
+          "card_id": 169,
+          "count": 4
+        },
+        {
+          "card_id": 190,
+          "count": 4
+        },
+        {
+          "card_id": 344,
+          "count": 1
+        },
+        {
+          "card_id": 666,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 1
+        },
+        {
+          "card_id": 1185,
+          "count": 4
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1244,
+          "count": 3
+        }
+      ],
+      "content_sha256": "05566aeb4e7e4b7b574e3b15fb8f0a6d73eaee8e30605560186e1eb9b562dcc6",
+      "deck_id": "052",
+      "deck_path": "assets/decks/definitions/052/deck.csv",
+      "file_sha256": "10dec882622f880e9306aae9046633e94453476ce6b6b97bb634b6d2710cd415",
+      "name": "Archaludon ex / Cinderace",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 392,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/052_archaludon_ex_cinderace",
+        "legacy_semantic_deck_id": "archaludon_ex_cinderace_05566aeb4e7e",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 11
+        },
+        {
+          "card_id": 12,
+          "count": 1
+        },
+        {
+          "card_id": 860,
+          "count": 4
+        },
+        {
+          "card_id": 861,
+          "count": 3
+        },
+        {
+          "card_id": 1030,
+          "count": 4
+        },
+        {
+          "card_id": 1031,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1145,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1189,
+          "count": 4
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 4
+        },
+        {
+          "card_id": 1262,
+          "count": 3
+        }
+      ],
+      "content_sha256": "555de3e40ea3ec143dab9dbea23b91a0fe9aebbd25224222f29d7c5b6fdddd7c",
+      "deck_id": "053",
+      "deck_path": "assets/decks/definitions/053/deck.csv",
+      "file_sha256": "ca48e06defaf584934d77c2daf134150d652c3df41042fe25b5bf0dc6e64f4d5",
+      "name": "Mega Starmie ex / Mega Froslass ex",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 425,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/053_mega_starmie_ex_mega_froslass_ex",
+        "legacy_semantic_deck_id": "mega_starmie_ex_mega_froslass_ex_555de3e40ea3",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "N's Zoroark ex / Munkidori",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 7,
+          "count": 9
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 292,
+          "count": 4
+        },
+        {
+          "card_id": 293,
+          "count": 4
+        },
+        {
+          "card_id": 303,
+          "count": 2
+        },
+        {
+          "card_id": 906,
+          "count": 2
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1113,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1176,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 4
+        },
+        {
+          "card_id": 1188,
+          "count": 1
+        },
+        {
+          "card_id": 1195,
+          "count": 1
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1205,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1253,
+          "count": 3
+        }
+      ],
+      "content_sha256": "940bc1f37b2a0d5bc70210af8bccb99cfdd5c8e823507f53127fdfc494826efc",
+      "deck_id": "054",
+      "deck_path": "assets/decks/definitions/054/deck.csv",
+      "file_sha256": "b2771a7353959bbcb0c4cfc7bbc53698564d182bd7ccee00145d6c1a1ccc51b3",
+      "name": "N's Zoroark ex / Munkidori",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 433,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/054_n_s_zoroark_ex_munkidori",
+        "legacy_semantic_deck_id": "n_s_zoroark_ex_munkidori_940bc1f37b2a",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Archaludon ex / Cinderace",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 8,
+          "count": 13
+        },
+        {
+          "card_id": 169,
+          "count": 4
+        },
+        {
+          "card_id": 190,
+          "count": 4
+        },
+        {
+          "card_id": 666,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 3
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 1
+        },
+        {
+          "card_id": 1185,
+          "count": 4
+        },
+        {
+          "card_id": 1197,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1244,
+          "count": 4
+        }
+      ],
+      "content_sha256": "ee01ffad96758991132ec4bbc2c56282e6820fabaa7792b312c7e86272062f07",
+      "deck_id": "055",
+      "deck_path": "assets/decks/definitions/055/deck.csv",
+      "file_sha256": "d6adcaaa22936f60ef27240f7cc77ecb0673e18f02899c7c520981fbe9f9bdba",
+      "name": "Archaludon ex / Cinderace",
+      "roles": [
+        "training",
+        "evaluation"
+      ],
+      "source": {
+        "best_rank": 457,
+        "imported_at": "2026-08-12T00:00:00+00:00",
+        "imported_from": "train/0042_full_model_design/league/decks/055_archaludon_ex_cinderace",
+        "legacy_semantic_deck_id": "archaludon_ex_cinderace_ee01ffad9675",
+        "source_catalog_sha256": "b1147f570c1df9f9b3261f3ed89d83c5a96cc5f51931a30ce9ae57c59bbc3d2c"
+      },
+      "tags": [
+        "meta",
+        "potential_101_500"
+      ]
+    },
+    {
+      "archetype": "Chandelure Sylveon",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 16,
+          "count": 4
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 97,
+          "count": 3
+        },
+        {
+          "card_id": 98,
+          "count": 3
+        },
+        {
+          "card_id": 145,
+          "count": 2
+        },
+        {
+          "card_id": 164,
+          "count": 4
+        },
+        {
+          "card_id": 330,
+          "count": 2
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 1
+        },
+        {
+          "card_id": 506,
+          "count": 2
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 3
+        },
+        {
+          "card_id": 1087,
+          "count": 3
+        },
+        {
+          "card_id": 1122,
+          "count": 3
+        },
+        {
+          "card_id": 1123,
+          "count": 2
+        },
+        {
+          "card_id": 1129,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1222,
+          "count": 3
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1242,
+          "count": 2
+        },
+        {
+          "card_id": 1247,
+          "count": 1
+        }
+      ],
+      "content_sha256": "17872b59494a351c03599017c4c978889d941745c83f75be61ff1d47ae746048",
+      "deck_id": "056",
+      "deck_path": "assets/decks/definitions/056/deck.csv",
+      "file_sha256": "c70ed4a993397162af585f98641bafc14512a81c9a80f35af997c68475c58bb0",
+      "name": "Chandelure Sylveon",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Chandelure Sylveon",
+        "source_manifest": {
+          "archetype": "Chandelure / Sylveon",
+          "deck_id": "chandelure_sylveon_17872b59494a",
+          "exact_deck_sha256": "17872b59494a351c03599017c4c978889d941745c83f75be61ff1d47ae746048",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top100_new_archetype",
+            "source_ranks": [
+              48
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-12-top100-exact.json"
+          },
+          "representative_card_ids": [
+            164,
+            145
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\056_chandelure_sylveon\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Dragapult Ex Dusknoir Self Destruct",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 2
+        },
+        {
+          "card_id": 133,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 2
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1240,
+          "count": 1
+        },
+        {
+          "card_id": 1246,
+          "count": 1
+        },
+        {
+          "card_id": 1260,
+          "count": 2
+        }
+      ],
+      "content_sha256": "d8454cc8351f6170cfb17d05b3603684ff10b1e707684f05e44a8f7f0f853078",
+      "deck_id": "057",
+      "deck_path": "assets/decks/definitions/057/deck.csv",
+      "file_sha256": "0de59597f795acd1d71cf22058a20692a574ef19f0198eb08cad7f26fbf84d36",
+      "name": "Dragapult Ex Dusknoir Self Destruct",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Dragapult Ex Dusknoir Self Destruct",
+        "source_manifest": {
+          "archetype": "Dragapult ex / Dusknoir (Self-Destruct)",
+          "deck_id": "dragapult_ex_dusknoir_self_destruct_d8454cc8351f",
+          "exact_deck_sha256": "d8454cc8351f6170cfb17d05b3603684ff10b1e707684f05e44a8f7f0f853078",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "event": "Regional Los Angeles 0063",
+            "placement": 3,
+            "player": "Nicholas Moffitt",
+            "record": "13-3",
+            "segment": "limitless_representative",
+            "source_url": "https://labs.limitlesstcg.com/0063/player/1074/decklist"
+          },
+          "representative_card_ids": [
+            121,
+            133
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\057_dragapult_ex_dusknoir_self_destruct\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Kangaskhan Ex Crustle",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 10
+        },
+        {
+          "card_id": 12,
+          "count": 1
+        },
+        {
+          "card_id": 16,
+          "count": 4
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 184,
+          "count": 2
+        },
+        {
+          "card_id": 230,
+          "count": 4
+        },
+        {
+          "card_id": 272,
+          "count": 2
+        },
+        {
+          "card_id": 318,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 1
+        },
+        {
+          "card_id": 756,
+          "count": 2
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1116,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1127,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1221,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1250,
+          "count": 3
+        }
+      ],
+      "content_sha256": "15f87ee2cd1150c0404210c59bf7ec88e40efc0fc953002f534370dd711a17e5",
+      "deck_id": "058",
+      "deck_path": "assets/decks/definitions/058/deck.csv",
+      "file_sha256": "908844684f6405eb4603e5f3ad7e72592e3ccd3d22ec4bcc0db157bf6ad94dac",
+      "name": "Mega Kangaskhan Ex Crustle",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Kangaskhan Ex Crustle",
+        "source_manifest": {
+          "archetype": "Mega Kangaskhan ex / Crustle",
+          "deck_id": "mega_kangaskhan_ex_crustle_15f87ee2cd11",
+          "exact_deck_sha256": "15f87ee2cd1150c0404210c59bf7ec88e40efc0fc953002f534370dd711a17e5",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "dragapult_counter",
+            "source_ranks": [
+              159
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            756,
+            96
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\058_mega_kangaskhan_ex_crustle\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Team Rocket S Mewtwo Ex Spidops",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 7
+        },
+        {
+          "card_id": 15,
+          "count": 4
+        },
+        {
+          "card_id": 400,
+          "count": 4
+        },
+        {
+          "card_id": 401,
+          "count": 4
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 431,
+          "count": 2
+        },
+        {
+          "card_id": 434,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 2
+        },
+        {
+          "card_id": 1134,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1175,
+          "count": 1
+        },
+        {
+          "card_id": 1216,
+          "count": 4
+        },
+        {
+          "card_id": 1217,
+          "count": 1
+        },
+        {
+          "card_id": 1218,
+          "count": 3
+        },
+        {
+          "card_id": 1220,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 3
+        },
+        {
+          "card_id": 1257,
+          "count": 3
+        }
+      ],
+      "content_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+      "deck_id": "059",
+      "deck_path": "assets/decks/definitions/059/deck.csv",
+      "file_sha256": "96d2f981fd42562f986649c4adce6e98115b652ed841aac9c70629b2aa28de75",
+      "name": "Team Rocket S Mewtwo Ex Spidops",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Team Rocket S Mewtwo Ex Spidops",
+        "source_manifest": {
+          "archetype": "Team Rocket's Mewtwo ex / Spidops",
+          "deck_id": "team_rocket_s_mewtwo_ex_spidops_fba1f87c7115",
+          "exact_deck_sha256": "fba1f87c71154c33646901f5d30c5b1ae187faba6f0605077f36f5897ccdb032",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "lucario_counter",
+            "source_ranks": [
+              193
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            431,
+            401
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\059_team_rocket_s_mewtwo_ex_spidops\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Cynthia S Garchomp Ex Roserade",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 6,
+          "count": 4
+        },
+        {
+          "card_id": 20,
+          "count": 4
+        },
+        {
+          "card_id": 341,
+          "count": 4
+        },
+        {
+          "card_id": 342,
+          "count": 3
+        },
+        {
+          "card_id": 379,
+          "count": 4
+        },
+        {
+          "card_id": 380,
+          "count": 4
+        },
+        {
+          "card_id": 381,
+          "count": 3
+        },
+        {
+          "card_id": 387,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1122,
+          "count": 1
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1173,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 2
+        },
+        {
+          "card_id": 1225,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1261,
+          "count": 2
+        }
+      ],
+      "content_sha256": "3f8ee4b51dd39a464b9ca5bbda6c84fad383a50c04ee0c43c74df9a989893c04",
+      "deck_id": "060",
+      "deck_path": "assets/decks/definitions/060/deck.csv",
+      "file_sha256": "539483827e2b5e3c03e88554d57fc8be00c1dcd0a8d2aae1f00598a4791c005b",
+      "name": "Cynthia S Garchomp Ex Roserade",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Cynthia S Garchomp Ex Roserade",
+        "source_manifest": {
+          "archetype": "Cynthia's Garchomp ex / Roserade",
+          "deck_id": "cynthia_s_garchomp_ex_roserade_3f8ee4b51dd3",
+          "exact_deck_sha256": "3f8ee4b51dd39a464b9ca5bbda6c84fad383a50c04ee0c43c74df9a989893c04",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "dragapult_and_lucario_counter",
+            "source_ranks": [
+              222
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            381,
+            342
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\060_cynthia_s_garchomp_ex_roserade\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Dragapult Ex Blaziken Ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 2
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 272,
+          "count": 1
+        },
+        {
+          "card_id": 326,
+          "count": 2
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 410,
+          "count": 2
+        },
+        {
+          "card_id": 411,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 3
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 2
+        },
+        {
+          "card_id": 1250,
+          "count": 1
+        },
+        {
+          "card_id": 1256,
+          "count": 1
+        }
+      ],
+      "content_sha256": "b4ed553f1dc4a6ac4d7835eb521b78bde2f25e7c32673438c9d364652554ff73",
+      "deck_id": "061",
+      "deck_path": "assets/decks/definitions/061/deck.csv",
+      "file_sha256": "2719ebee410ea94e5c9368909d83f2f8fe3adcb33746edcea7ca36681cc45a8d",
+      "name": "Dragapult Ex Blaziken Ex",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Dragapult Ex Blaziken Ex",
+        "source_manifest": {
+          "archetype": "Dragapult ex / Blaziken ex",
+          "deck_id": "dragapult_ex_blaziken_ex_b4ed553f1dc4",
+          "exact_deck_sha256": "b4ed553f1dc4a6ac4d7835eb521b78bde2f25e7c32673438c9d364652554ff73",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "alakazam_counter",
+            "source_ranks": [
+              240
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            121,
+            326
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\061_dragapult_ex_blaziken_ex\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Starmie ex / Mega Froslass ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 3,
+          "count": 12
+        },
+        {
+          "card_id": 17,
+          "count": 4
+        },
+        {
+          "card_id": 860,
+          "count": 4
+        },
+        {
+          "card_id": 861,
+          "count": 4
+        },
+        {
+          "card_id": 1030,
+          "count": 4
+        },
+        {
+          "card_id": 1031,
+          "count": 4
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1119,
+          "count": 2
+        },
+        {
+          "card_id": 1145,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1189,
+          "count": 4
+        },
+        {
+          "card_id": 1219,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 2
+        },
+        {
+          "card_id": 1226,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1262,
+          "count": 4
+        }
+      ],
+      "content_sha256": "654f54a66c951ab2b6f4a714286552a614ecb94e84752b47bf03770c4cd7c933",
+      "deck_id": "062",
+      "deck_path": "assets/decks/definitions/062/deck.csv",
+      "file_sha256": "5807f82f5472c15f6148c66ff81ad912fb80e0cb1f94b9f896b7b7c93248b04a",
+      "name": "Mega Starmie ex / Mega Froslass ex",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": "exact-list correction: Starmie/Froslass lines; no Duskull-family card",
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Starmie Ex Dusknoir",
+        "source_manifest": {
+          "archetype": "Mega Starmie ex / Dusknoir",
+          "deck_id": "mega_starmie_ex_dusknoir_654f54a66c95",
+          "exact_deck_sha256": "654f54a66c951ab2b6f4a714286552a614ecb94e84752b47bf03770c4cd7c933",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_limitless_counter_selection",
+            "selection_purpose": "lucario_counter",
+            "source_ranks": [
+              294
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            1031,
+            861
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\062_mega_starmie_ex_dusknoir\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Lucario Ex Solrock",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 6,
+          "count": 9
+        },
+        {
+          "card_id": 20,
+          "count": 4
+        },
+        {
+          "card_id": 66,
+          "count": 2
+        },
+        {
+          "card_id": 305,
+          "count": 3
+        },
+        {
+          "card_id": 675,
+          "count": 2
+        },
+        {
+          "card_id": 676,
+          "count": 2
+        },
+        {
+          "card_id": 677,
+          "count": 4
+        },
+        {
+          "card_id": 678,
+          "count": 3
+        },
+        {
+          "card_id": 1086,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 2
+        },
+        {
+          "card_id": 1141,
+          "count": 4
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1159,
+          "count": 1
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 2
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1229,
+          "count": 2
+        },
+        {
+          "card_id": 1252,
+          "count": 2
+        }
+      ],
+      "content_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b",
+      "deck_id": "063",
+      "deck_path": "assets/decks/definitions/063/deck.csv",
+      "file_sha256": "9b51fe451fac36b6ec7fca09ff6649eedd859dcf522a9496da885a79331c32a0",
+      "name": "Mega Lucario Ex Solrock",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Lucario Ex Solrock",
+        "source_manifest": {
+          "archetype": "Mega Lucario ex / Solrock",
+          "deck_id": "mega_lucario_ex_solrock_5b1e19a2e025",
+          "exact_deck_sha256": "5b1e19a2e0256f12e1ac27701e847d0ec569cec89c15edac8316cdc2a826a32b",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_stadium_coverage",
+            "selection_purpose": "stadium_coverage_gravity_mountain",
+            "source_ranks": [
+              170
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            675,
+            1252
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\063_mega_lucario_ex_solrock\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Mega Lopunny Ex Mega Froslass Ex",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 5,
+          "count": 7
+        },
+        {
+          "card_id": 16,
+          "count": 2
+        },
+        {
+          "card_id": 18,
+          "count": 4
+        },
+        {
+          "card_id": 19,
+          "count": 4
+        },
+        {
+          "card_id": 24,
+          "count": 1
+        },
+        {
+          "card_id": 112,
+          "count": 1
+        },
+        {
+          "card_id": 117,
+          "count": 1
+        },
+        {
+          "card_id": 145,
+          "count": 3
+        },
+        {
+          "card_id": 184,
+          "count": 1
+        },
+        {
+          "card_id": 236,
+          "count": 3
+        },
+        {
+          "card_id": 343,
+          "count": 1
+        },
+        {
+          "card_id": 414,
+          "count": 2
+        },
+        {
+          "card_id": 745,
+          "count": 4
+        },
+        {
+          "card_id": 746,
+          "count": 3
+        },
+        {
+          "card_id": 747,
+          "count": 3
+        },
+        {
+          "card_id": 848,
+          "count": 1
+        },
+        {
+          "card_id": 849,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1194,
+          "count": 4
+        },
+        {
+          "card_id": 1197,
+          "count": 1
+        },
+        {
+          "card_id": 1225,
+          "count": 4
+        },
+        {
+          "card_id": 1227,
+          "count": 1
+        },
+        {
+          "card_id": 1249,
+          "count": 1
+        },
+        {
+          "card_id": 1267,
+          "count": 1
+        }
+      ],
+      "content_sha256": "236786f63c7a461f9ec384064539ada5c6d7342bef4b7f22d7833ace76bdec8c",
+      "deck_id": "064",
+      "deck_path": "assets/decks/definitions/064/deck.csv",
+      "file_sha256": "00bc829731489d1e5787d36fb256d3283977a53050517f1606d7a04e0ba94664",
+      "name": "Mega Lopunny Ex Mega Froslass Ex",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Mega Lopunny Ex Mega Froslass Ex",
+        "source_manifest": {
+          "archetype": "Mega Lopunny ex / Mega Froslass ex",
+          "deck_id": "mega_lopunny_ex_mega_froslass_ex_236786f63c7a",
+          "exact_deck_sha256": "236786f63c7a461f9ec384064539ada5c6d7342bef4b7f22d7833ace76bdec8c",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_stadium_coverage",
+            "selection_purpose": "stadium_coverage_lumiose_city",
+            "source_ranks": [
+              399
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            849,
+            1267
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\064_mega_lopunny_ex_mega_froslass_ex\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Crustle Great Tusk",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 11,
+          "count": 4
+        },
+        {
+          "card_id": 20,
+          "count": 4
+        },
+        {
+          "card_id": 58,
+          "count": 4
+        },
+        {
+          "card_id": 344,
+          "count": 4
+        },
+        {
+          "card_id": 345,
+          "count": 4
+        },
+        {
+          "card_id": 607,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 1
+        },
+        {
+          "card_id": 1122,
+          "count": 4
+        },
+        {
+          "card_id": 1123,
+          "count": 4
+        },
+        {
+          "card_id": 1142,
+          "count": 4
+        },
+        {
+          "card_id": 1147,
+          "count": 1
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 4
+        },
+        {
+          "card_id": 1185,
+          "count": 4
+        },
+        {
+          "card_id": 1194,
+          "count": 2
+        },
+        {
+          "card_id": 1197,
+          "count": 4
+        },
+        {
+          "card_id": 1204,
+          "count": 2
+        },
+        {
+          "card_id": 1247,
+          "count": 1
+        }
+      ],
+      "content_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210",
+      "deck_id": "065",
+      "deck_path": "assets/decks/definitions/065/deck.csv",
+      "file_sha256": "ff46397011bcaf0b2651950382d5777c0a36a907961ba5290a5f2441f2574343",
+      "name": "Crustle Great Tusk",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "display_name_correction": null,
+        "imported_at": "2026-08-13T00:00:00+08:00",
+        "imported_from": "FrozenPool_65_decks_2026-08-12.zip",
+        "source_display_name": "Crustle Great Tusk",
+        "source_manifest": {
+          "archetype": "Crustle / Great Tusk",
+          "deck_id": "crustle_great_tusk_5822b67f77ee",
+          "exact_deck_sha256": "5822b67f77eed1df4a4f0a2c65ff17a1e8fada4d2563b4a6aa73946b98ebd210",
+          "pool_id": "0812_top100_top500_stadiums_mill_plus_limitless_dragapult_v3",
+          "provenance": {
+            "segment": "top500_mill_coverage",
+            "selection_purpose": "great_tusk_mill_coverage",
+            "source_ranks": [
+              360
+            ],
+            "source_snapshot": "docs/environment-daily_kaggle_top100/ranked/data/2026-08-09-top500-exact.json"
+          },
+          "representative_card_ids": [
+            345,
+            58,
+            1247
+          ],
+          "schema_version": "evaluation_frozen_0812_deck_v1"
+        },
+        "source_member": "decks\\065_crustle_great_tusk\\deck.csv",
+        "source_zip_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee"
+      },
+      "tags": [
+        "bro_rogue_or_semantic_coverage",
+        "pool_append_2026_08_12"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex / Dusknoir Control",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 4
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 1
+        },
+        {
+          "card_id": 112,
+          "count": 1
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 2
+        },
+        {
+          "card_id": 133,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 791,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 3
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 1
+        },
+        {
+          "card_id": 1256,
+          "count": 2
+        }
+      ],
+      "content_sha256": "cb57ce7f37086b07abab9f60dcfcf792a02ee3035a0e87d08afcd0ba8632e0de",
+      "deck_id": "066",
+      "deck_path": "assets/decks/definitions/066/deck.csv",
+      "file_sha256": "98d92a7fefbb0511edb30b2cd2f944835b9b5ce8b9e989c939c719c2a2f40959",
+      "name": "Dragapult ex / Dusknoir Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-13T00:00:00+08:00",
+        "set_code_resolution": {
+          "ASC": "SFA engine identity",
+          "MEE": "SVE engine identity",
+          "MEG_114_boss": "PAL 172 engine identity",
+          "MEG_131_ultra_ball": "SVI 196 engine identity",
+          "POR_71_crushing_hammer": "SVI 168 engine identity",
+          "POR_76_judge": "SVI 176 engine identity",
+          "PRE": "SFA engine identity"
+        },
+        "source_list": "user-provided 2026-08-13: Dragapult/Dusknoir control exact 60",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_13",
+        "dragapult_control"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex / Munkidori Control",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 4
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 2
+        },
+        {
+          "card_id": 791,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1120,
+          "count": 4
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1256,
+          "count": 2
+        },
+        {
+          "card_id": 1260,
+          "count": 1
+        }
+      ],
+      "content_sha256": "7bdb3bb183008d9204efc68ad77b6df1039ad760c98476aa82d5809f5c446ca3",
+      "deck_id": "067",
+      "deck_path": "assets/decks/definitions/067/deck.csv",
+      "file_sha256": "de79ebd0993c6defff13128b7ab5ada903ba2a8a7638cf38dd468df87b17bdcc",
+      "name": "Dragapult ex / Munkidori Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-13T00:00:00+08:00",
+        "set_code_resolution": {
+          "ASC": "SFA engine identity",
+          "MEE": "SVE engine identity",
+          "MEG_114_boss": "PAL 172 engine identity",
+          "MEG_131_ultra_ball": "SVI 196 engine identity",
+          "POR_71_crushing_hammer": "SVI 168 engine identity",
+          "POR_76_judge": "SVI 176 engine identity",
+          "PRE": "SFA engine identity"
+        },
+        "source_list": "user-provided 2026-08-13: Dragapult/Munkidori control exact 60",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_13",
+        "dragapult_control"
+      ]
+    },
+    {
+      "archetype": "Alakazam",
+      "card_count": 60,
+      "content_sha256": "f06bd3d5964e5f6d7051339db56aff17f4b111043a2cacce1621d10f52806368",
+      "deck_id": "068",
+      "deck_path": "assets/decks/definitions/068/deck.csv",
+      "file_sha256": "262df0fed73650d1b6e9d70410fcc8a651803e786e99a2a8800bd2ea5402a1bc",
+      "name": "Alakazam / Dudunsparce Trainer Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-14T00:00:00+08:00",
+        "source_list": "user-provided 2026-08-14: exact 60-card Alakazam list",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_14",
+        "alakazam",
+        "training_pool_append_2026_08_14"
+      ]
+    },
+    {
+      "archetype": "Alakazam",
+      "card_count": 60,
+      "content_sha256": "34b55fc87379940210a7153247a3f610b361136ae954f5502233bd7db41538dc",
+      "deck_id": "069",
+      "deck_path": "assets/decks/definitions/069/deck.csv",
+      "file_sha256": "1e1f4510a4861fc583cef59f26cad94608d279d722b19712cb57701378ff741b",
+      "name": "Alakazam / Dudunsparce Boss Control",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-14T00:00:00+08:00",
+        "parent_deck_id": "068",
+        "source_list": "user-provided 2026-08-14: 068 with Night Stretcher -1 and Boss's Orders +1",
+        "source_type": "user_provided_exact_variant"
+      },
+      "tags": [
+        "user_approved_append_2026_08_14",
+        "alakazam",
+        "training_pool_append_2026_08_14",
+        "parent_068"
+      ]
+    },
+    {
+      "archetype": "Dragapult ex / Dusknoir / Munkidori",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 2,
+          "count": 3
+        },
+        {
+          "card_id": 5,
+          "count": 3
+        },
+        {
+          "card_id": 7,
+          "count": 2
+        },
+        {
+          "card_id": 112,
+          "count": 2
+        },
+        {
+          "card_id": 119,
+          "count": 4
+        },
+        {
+          "card_id": 120,
+          "count": 4
+        },
+        {
+          "card_id": 121,
+          "count": 3
+        },
+        {
+          "card_id": 131,
+          "count": 2
+        },
+        {
+          "card_id": 132,
+          "count": 1
+        },
+        {
+          "card_id": 133,
+          "count": 1
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 235,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 1
+        },
+        {
+          "card_id": 1079,
+          "count": 3
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1086,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 2
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 4
+        },
+        {
+          "card_id": 1182,
+          "count": 3
+        },
+        {
+          "card_id": 1198,
+          "count": 3
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 2
+        },
+        {
+          "card_id": 1260,
+          "count": 2
+        }
+      ],
+      "content_sha256": "2693a7b610ccdf2ed10a76a8872003dcb53456e54b006d3a3feff580520374fb",
+      "deck_id": "070",
+      "deck_path": "assets/decks/definitions/070/deck.csv",
+      "file_sha256": "f3de3c2334899df789a98fec378c8c6bfdc20c858e0ae46107dead6c0c34abdd",
+      "name": "Dragapult ex / Dusknoir / Munkidori",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-16T00:00:00+08:00",
+        "set_code_resolution": {
+          "ASC_142_fezandipiti_ex": "SFA 38 engine identity",
+          "ASC_16_budew": "PRE 4 engine identity",
+          "ASC_196_night_stretcher": "SFA 61 engine identity",
+          "MEE_basic_energy": "SVE basic Energy engine identity",
+          "MEG_114_boss": "PAL 172 engine identity",
+          "MEG_125_rare_candy": "SVI 191 engine identity",
+          "MEG_131_ultra_ball": "SVI 196 engine identity",
+          "PRE_35_duskull": "SFA 18 engine identity",
+          "PRE_36_dusclops": "SFA 19 engine identity",
+          "PRE_37_dusknoir": "SFA 20 engine identity"
+        },
+        "source_list": "user-provided 2026-08-16: Dragapult/Dusknoir/Munkidori exact 60",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_16",
+        "dragapult_dusknoir",
+        "munkidori",
+        "training_pool_append_2026_08_16"
+      ]
+    }
+  ],
+  "identity_contract": "deck_id is append-only; 001-070 are immutable",
+  "immutability": "content change requires a new deck_id",
+  "schema_version": "0043_deck_registry_v2_numeric_identity",
+  "training_pool_append": {
+    "added_deck_ids": [
+      "066",
+      "067"
+    ],
+    "base": "FrozenPool_65_decks_2026-08-12",
+    "frozen_evaluation_changed": false
+  },
+  "training_pool_append_2026_08_14": {
+    "added_deck_ids": [
+      "068",
+      "069"
+    ],
+    "benchmark_v2_historical_pool_changed": false,
+    "formal_training_opponent_pool_changed": true
+  },
+  "training_pool_append_2026_08_16": {
+    "added_deck_ids": [
+      "070"
+    ],
+    "benchmark_v2_historical_pool_changed": false,
+    "formal_training_opponent_pool_changed": true
+  },
+  "training_pool_source_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee",
+  "training_pool_version": "FrozenPool65_plus_user_decks_066_070_2026-08-16"
+}
