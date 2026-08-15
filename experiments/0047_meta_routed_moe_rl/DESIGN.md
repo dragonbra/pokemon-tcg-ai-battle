@@ -1,7 +1,7 @@
 # 0047 — Meta-Routed MoE RL
 
-Status: seven-Actor sparse V8 running; formal run
-`V8_deck070_policy0814_moe7_sparse_512lane_micro256`.
+Status: seven-Actor sparse V10 win-only restart prepared; formal run
+`V10_deck070_policy0814_moe7_win_only_two_pool`.
 
 V2 reached a complete 512-game rollout but failed before U1 when per-job
 allocation contexts retained views over entire historical compacted CUDA
@@ -16,9 +16,11 @@ pre-update effective-logprob error `5.2452e-06`. V7 restores the historical
 0045 concurrency of 512 rollout lanes and validated 6.922 games/s with max
 pre-update effective-logprob error `4.7684e-06`. V8 restores the historical
 0045 PPO forward microbatch of 256 while retaining logical minibatch 2048 and
-explicit cache/context release. The
-512-game schedules, seeds, policy, routing, PPO minibatch/objective, and update
-semantics are unchanged.
+explicit cache/context release. V8 stopped cleanly at completed U3 before the
+new experiment changed the Actor objective and fixed-evaluation schedule. V9
+completed its deterministic U0 two-pool report, then failed before training
+because the host Python lacked Matplotlib for the required Router heatmap.
+Matplotlib 3.11.1 is now installed; V10 is the clean formal restart.
 
 ## Identities
 
@@ -112,16 +114,31 @@ Actor total after Router unlock: 11,614,427. Critic total: 3,712,467. The frozen
 The inherited PPO settings remain: 512 rollout games, three epochs, clip 0.10,
 entropy coefficient 0.003, reference-KL coefficient 0.02, decoder/allocation LR
 1e-5, LoRA LR 2e-5, Value/Prize LR 2e-5. `Frozen-0047-U0` is the immutable
-same-architecture reference.
+same-architecture reference. V9 uses a strictly win-only Actor advantage:
 
-Every five updates, formal greedy evaluation uses FP16 storage followed by strict
-FP32 materialization and complete Frozen Policy-0814 opposition:
+```text
+A_actor = normalize(A_terminal_win_loss)
+Prize Advantage Actor coefficient = 0.0
+```
 
-- `old_three`: exact decks 001 / 002 / 011, CUDA 512;
-- `new_four`: exact decks 007 / 003 / 009 / 023, CUDA 512;
+Directional Prize deltas, `V_prize`, and its Critic-side auxiliary loss remain
+available for variance/diagnostic work, but Prize Advantage is never added to
+the Actor policy loss.
+
+Formal greedy evaluation runs first at U0, before any rollout or PPO update, and
+then at U5/U10/etc. It uses FP16 storage followed by strict FP32 materialization
+and complete Frozen Policy-0814 opposition. There are exactly two physical
+CUDA-512 pools:
+
+- `focus_seven`: 256 games balanced within `old_three` exact decks 001/002/011,
+  plus 256 games balanced within `new_four` exact decks 007/003/009/023;
 - `remain_meta`: every other exact deck, Meta-first/deck-balanced, CUDA 512.
 
-The evaluator's true Meta is used only for the fixed schedule and reporting.
+Reports and W&B retain separate `old_three` and `new_four` aggregates despite
+their shared physical pool, plus `focus_seven`, `remain_meta`, every evaluated
+exact deck, and every observed meta. The evaluator's true Meta is used only for
+the fixed schedule and reporting. The Router still sees only public evidence.
+`router/meta_expert_heatmap` is emitted at U0 and every later eval point.
 
 ## Training opponent schedule
 
@@ -145,5 +162,5 @@ progress lines without publishing partial strength metrics as completed updates.
 - Seven-Actor CUDA PPO smoke: PASS; six official games, 473 decisions,
   pre-update max effective-logprob error `3.4570693969726562e-06`, three PPO
   epochs, finite Router update norm, no NaN/Inf.
-- Three-pool CUDA smoke: PASS; two official games per pool, no
-  errors/unfinished, FP16-storage/FP32-runtime identity gate PASS.
+- V9 two-pool schedule contract: PASS; focus is exactly 256 old-three plus 256
+  new-four, remain-meta is exactly 512 and excludes all seven focus decks.

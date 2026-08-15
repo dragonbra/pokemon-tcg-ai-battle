@@ -1,4 +1,4 @@
-"""Fixed three-pool official CUDA evaluation for a deployable 0047 snapshot."""
+"""Fixed two-pool official CUDA evaluation for a deployable 0047 snapshot."""
 
 from __future__ import annotations
 
@@ -94,7 +94,7 @@ def evaluate_model(
     device = torch.device("cuda:0")
     candidate.to(device).eval()
     opponent_audit = materialize_policy_bundle(
-        PROJECT_ROOT, "Policy-0814", purpose="0047_three_pool_evaluation"
+        PROJECT_ROOT, "Policy-0814", purpose="0047_two_pool_evaluation"
     ).audit
     opponent = load_policy("Policy-0814", deck_id="001")
     for module in policy_modules(opponent):
@@ -132,7 +132,7 @@ def evaluate_model(
         runtime = MoEFocalRuntime(candidate, job_count=len(jobs), device=device)
         collector = CudaFullSemanticRolloutCollector(
             candidate, opponent, device=device, rules_path=RULES,
-            extension_dir=DEFAULT_BUILD_DIR, lane_count=min(64, len(jobs)),
+            extension_dir=DEFAULT_BUILD_DIR, lane_count=min(512, len(jobs)),
             mode="greedy", record_trajectory=False,
             agent_selects_first_player=True, opponent_policy_id="Policy-0814",
             opponent_identity_audit=opponent_audit,
@@ -156,6 +156,7 @@ def evaluate_model(
         router_telemetry[pool_name] = runtime.telemetry()
         all_rows.extend({
             "pool": pool_name, "meta_id": int(source["opponent_meta_archetype_id"]),
+            "focus_group": source.get("focus_group"),
             "deck_id": episode.job.opponent_id, "outcome": int(episode.reward),
             "focal_first": bool(episode.diagnostics["first_player_choice"]["focal_first"]),
         } for episode, source in zip(episodes, scheduled, strict=True))
@@ -168,13 +169,37 @@ def evaluate_model(
             "games": len(outcomes), "wins": outcomes.count(1),
             "win_rate": outcomes.count(1) / len(outcomes),
         }
+    per_deck: dict[str, dict[str, Any]] = {}
+    deck_grouped: dict[str, list[int]] = defaultdict(list)
+    for row in all_rows:
+        deck_grouped[row["deck_id"]].append(row["outcome"])
+    for deck_id, outcomes in sorted(deck_grouped.items()):
+        per_deck[deck_id] = {
+            "games": len(outcomes), "wins": outcomes.count(1),
+            "losses": outcomes.count(-1), "draws": outcomes.count(0),
+            "win_rate": outcomes.count(1) / len(outcomes),
+        }
+    focus_group_summaries: dict[str, dict[str, Any]] = {}
+    for group_name in ("old_three", "new_four"):
+        outcomes = [
+            row["outcome"] for row in all_rows
+            if row.get("focus_group") == group_name
+        ]
+        if outcomes:
+            focus_group_summaries[group_name] = {
+                "games": len(outcomes), "wins": outcomes.count(1),
+                "losses": outcomes.count(-1), "draws": outcomes.count(0),
+                "win_rate": outcomes.count(1) / len(outcomes),
+            }
     report = {
-        "schema_version": "0047_three_pool_cuda_report_v1", "status": "PASS",
+        "schema_version": "0047_two_pool_cuda_report_v1", "status": "PASS",
         "checkpoint_update": checkpoint_update, "opponent_policy_id": "Policy-0814",
         "candidate_identity": candidate_audit,
         "schedule_sha256": schedule["schedule_sha256"],
         "games_per_pool": games_per_pool, "pool_summaries": pool_summaries,
-        "per_meta": per_meta, "router_telemetry": router_telemetry,
+        "focus_group_summaries": focus_group_summaries,
+        "per_deck": per_deck, "per_meta": per_meta,
+        "router_telemetry": router_telemetry,
         "entries": all_rows,
     }
     (output_root / "report.json").write_text(
@@ -184,10 +209,18 @@ def evaluate_model(
 
 
 def wandb_metrics(report: dict[str, Any]) -> dict[str, float]:
-    metrics: dict[str, float] = {}
+    metrics: dict[str, float] = {
+        "eval/checkpoint_update": float(report["checkpoint_update"]),
+    }
     for pool, row in report["pool_summaries"].items():
         metrics[f"eval/{pool}/win_rate"] = float(row["win_rate"])
         metrics[f"eval/{pool}/n_games"] = float(row["games"])
+    for group, row in report["focus_group_summaries"].items():
+        metrics[f"eval/{group}/win_rate"] = float(row["win_rate"])
+        metrics[f"eval/{group}/n_games"] = float(row["games"])
+    for deck_id, row in report["per_deck"].items():
+        metrics[f"eval/deck_{deck_id}/win_rate"] = float(row["win_rate"])
+        metrics[f"eval/deck_{deck_id}/n_games"] = float(row["games"])
     for meta, row in report["per_meta"].items():
         metrics[f"eval/meta_{meta}/win_rate"] = float(row["win_rate"])
         metrics[f"eval/meta_{meta}/n_games"] = float(row["games"])

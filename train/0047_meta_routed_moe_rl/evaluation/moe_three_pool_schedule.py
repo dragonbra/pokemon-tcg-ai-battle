@@ -1,4 +1,4 @@
-"""Three fixed Meta-balanced Policy-0814 CUDA-512 evaluation pools."""
+"""Two fixed Policy-0814 CUDA-512 pools with a split focus sentinel."""
 
 from __future__ import annotations
 
@@ -12,9 +12,10 @@ from ..assets import AssetRegistry
 from ..own_archetype import OwnArchetypeVocabulary
 
 
-CONTRACT_ID = "0047_policy0814_exact_core_decks_three_pools_cuda512_v2"
+CONTRACT_ID = "0047_policy0814_focus256x2_remain512_v3"
 MASTER_SEED = 341_512_947
 GAMES_PER_POOL = 512
+FOCUS_GROUP_GAMES = 256
 OPPONENT_POLICY_ID = "Policy-0814"
 FIRST_PLAYER_CONTRACT = "seeded_coin_winner_then_winning_agent_selects_context_41"
 FROZEN_TAXONOMY_SHA256 = "9d9bc5cb95d253731270b064d27279448e1a099e0f548dfeb6bc8215bd891f60"
@@ -89,24 +90,33 @@ def materialize(
     deck_assets = {row.deck_id: row for row in registry.decks}
     pools: dict[str, dict[str, Any]] = {}
     all_jobs: list[dict[str, Any]] = []
-    for pool_index, pool_name in enumerate(("old_three", "new_four", "remain_meta")):
+    for pool_index, pool_name in enumerate(("focus_seven", "remain_meta")):
         pool_seed = MASTER_SEED + 10_000 * pool_index
         rows: list[dict[str, Any]] = []
-        if pool_name in POOL_DECK_IDS:
-            deck_ids = list(POOL_DECK_IDS[pool_name])
-            deck_counts = _balanced_counts(deck_ids, GAMES_PER_POOL, seed=pool_seed)
-            for deck_id in deck_ids:
-                rows.extend({
-                    "pool": pool_name,
-                    "opponent_meta_archetype_id": meta_by_deck[deck_id],
-                    "opponent_deck_id": deck_id,
-                    "opponent_exact_deck_sha256": deck_assets[deck_id].content_sha256,
-                    "class_deck_slot": class_slot,
-                } for class_slot in range(int(deck_counts[deck_id])))
+        focus_group_counts: dict[str, int] = {}
+        if pool_name == "focus_seven":
             class_counts: dict[int, int] = {}
-            for deck_id, count in deck_counts.items():
-                class_id = meta_by_deck[deck_id]
-                class_counts[class_id] = class_counts.get(class_id, 0) + int(count)
+            for group_index, (group_name, configured) in enumerate(
+                POOL_DECK_IDS.items()
+            ):
+                deck_ids = list(configured)
+                deck_counts = _balanced_counts(
+                    deck_ids, FOCUS_GROUP_GAMES,
+                    seed=pool_seed + 1_000 * group_index,
+                )
+                focus_group_counts[group_name] = sum(deck_counts.values())
+                for deck_id in deck_ids:
+                    count = int(deck_counts[deck_id])
+                    class_id = meta_by_deck[deck_id]
+                    class_counts[class_id] = class_counts.get(class_id, 0) + count
+                    rows.extend({
+                        "pool": pool_name,
+                        "focus_group": group_name,
+                        "opponent_meta_archetype_id": class_id,
+                        "opponent_deck_id": deck_id,
+                        "opponent_exact_deck_sha256": deck_assets[deck_id].content_sha256,
+                        "class_deck_slot": class_slot,
+                    } for class_slot in range(count))
             class_ids = tuple(sorted(class_counts))
         else:
             class_ids = tuple(sorted(remain_by_class))
@@ -122,6 +132,7 @@ def materialize(
                 for deck_id in deck_ids:
                     rows.extend({
                         "pool": pool_name,
+                        "focus_group": None,
                         "opponent_meta_archetype_id": class_id,
                         "opponent_deck_id": deck_id,
                         "opponent_exact_deck_sha256": deck_assets[deck_id].content_sha256,
@@ -160,11 +171,12 @@ def materialize(
             "games": GAMES_PER_POOL,
             "selected_class_ids": list(class_ids),
             "selected_exact_deck_ids": (
-                list(POOL_DECK_IDS[pool_name])
-                if pool_name in POOL_DECK_IDS else sorted(
+                sorted(focused_decks)
+                if pool_name == "focus_seven" else sorted(
                     deck_id for decks in remain_by_class.values() for deck_id in decks
                 )
             ),
+            "focus_group_counts": focus_group_counts,
             "class_counts": {str(key): value for key, value in class_counts.items()},
             "common_random_schedule_sha256": _hash(common_payload),
             "jobs": jobs,
@@ -173,7 +185,7 @@ def materialize(
         all_jobs.extend(jobs)
 
     payload = {
-        "schema_version": "0047_policy0814_three_pool_schedule_v1",
+        "schema_version": "0047_policy0814_two_pool_schedule_v1",
         "contract_id": CONTRACT_ID,
         "master_seed": MASTER_SEED,
         "games_per_pool": GAMES_PER_POOL,
@@ -191,12 +203,13 @@ def materialize(
         "pools": pools,
     }
     payload["schedule_sha256"] = _hash(payload)
-    if len(all_jobs) != 3 * GAMES_PER_POOL:
-        raise RuntimeError("three-pool schedule is not exactly 3 x CUDA-512")
+    if len(all_jobs) != 2 * GAMES_PER_POOL:
+        raise RuntimeError("two-pool schedule is not exactly 2 x CUDA-512")
     return payload
 
 
 __all__ = [
-    "CONTRACT_ID", "FIRST_PLAYER_CONTRACT", "GAMES_PER_POOL", "MASTER_SEED",
+    "CONTRACT_ID", "FIRST_PLAYER_CONTRACT", "FOCUS_GROUP_GAMES",
+    "GAMES_PER_POOL", "MASTER_SEED",
     "OPPONENT_POLICY_ID", "POOL_DECK_IDS", "materialize",
 ]

@@ -30,12 +30,14 @@ from .run_v1 import PROJECT_ROOT, ROOT, RULES, _cards, _jobs
 
 
 PROJECT = "0047_meta_routed_moe_rl"
-VERSION = "V8_deck070_policy0814_moe7_sparse_512lane_micro256"
+VERSION = "V10_deck070_policy0814_moe7_win_only_two_pool"
 VERSION_ROOT = ROOT / "rl_runs" / PROJECT / "versions" / VERSION
-RUN_ID = "0047-v8-deck070-policy0814-moe7-sparse-512lane-micro256"
+RUN_ID = "0047-v10-deck070-policy0814-moe7-win-only-two-pool"
 WARMUP_UPDATES = 5
 ROLLOUT_GAMES = 512
 EVAL_INTERVAL = 5
+EVAL_AT_U0 = True
+PRIZE_AUX_ACTOR_WEIGHT = 0.0
 CUDA_LANES = 512
 ROLLOUT_CHUNK_GAMES = 512
 PPO_FORWARD_MICROBATCH = 256
@@ -160,13 +162,17 @@ def _router_heatmap(model, update: int, path: Path) -> Path:
     import matplotlib.pyplot as plt
     probabilities = [row["probabilities"] for row in model.router_table()]
     figure, axis = plt.subplots(figsize=(8, 12))
-    image = axis.imshow(probabilities, vmin=0, vmax=1, aspect="auto", cmap="viridis")
+    image = axis.imshow(
+        probabilities, vmin=0, vmax=1, aspect="auto", cmap="viridis"
+    )
     axis.set_xticks(range(model.expert_count), model.expert_labels)
     axis.set_yticks(range(29), [f"{i:02d}" for i in range(29)])
     axis.set_title(f"0047 Router · U{update}")
     figure.colorbar(image, ax=axis)
     path.parent.mkdir(parents=True, exist_ok=True)
-    figure.tight_layout(); figure.savefig(path, dpi=140); plt.close(figure)
+    figure.tight_layout()
+    figure.savefig(path, dpi=140)
+    plt.close(figure)
     return path
 
 
@@ -192,9 +198,15 @@ def readiness() -> dict[str, Any]:
         "rollout_chunk_games": ROLLOUT_CHUNK_GAMES,
         "ppo_forward_microbatch_size": PPO_FORWARD_MICROBATCH,
         "eval_interval": EVAL_INTERVAL,
+        "eval_at_u0": EVAL_AT_U0,
+        "actor_advantage": "terminal_win_loss_only",
+        "prize_aux_actor_weight": PRIZE_AUX_ACTOR_WEIGHT,
         "eval_pools": {
-            "old_three": ["001", "002", "011"],
-            "new_four": ["007", "003", "009", "023"],
+            "focus_seven": {
+                "games": 512,
+                "old_three": {"games": 256, "decks": ["001", "002", "011"]},
+                "new_four": {"games": 256, "decks": ["007", "003", "009", "023"]},
+            },
             "remain_meta": "all_exact_decks_except_the_seven_focus_decks",
         },
         "asset_audit": asdict(audit),
@@ -218,7 +230,7 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
     deck = _cards(registry, "070")
     model, source = load_moe_actor_critic(
         deck=deck, own_archetype_id=15, device=device,
-        integrated_flags=preset("FULL_MODEL"),
+        integrated_flags=preset("WIN_ONLY_ACTOR"),
     )
     opponent_bundle = materialize_policy_bundle(
         PROJECT_ROOT, "Policy-0814", purpose="0047_formal_rollout"
@@ -233,12 +245,15 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
     }
     if focal_ptr & opponent_ptr:
         raise RuntimeError("FATAL: focal/opponent mutable storage alias")
-    config = PPOConfig(forward_microbatch_size=PPO_FORWARD_MICROBATCH)
+    config = PPOConfig(
+        forward_microbatch_size=PPO_FORWARD_MICROBATCH,
+        prize_aux_actor_weight=PRIZE_AUX_ACTOR_WEIGHT,
+    )
     trainer = PPOTrainer(model, device=device, config=config)
     os.environ.update({
         "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
         "WANDB_PROJECT": "pokemon-tcg-policy-learning", "WANDB_RUN_ID": RUN_ID,
-        "WANDB_NAME": "0047 · V8 · deck 070 · Policy0814 · MoE7 sparse 512-lane micro256",
+        "WANDB_NAME": "0047 · V10 · deck 070 · Policy0814 · MoE7 win-only · two-pool eval",
         "WANDB_RUN_GROUP": PROJECT, "WANDB_DIR": str(paths["wandb"]),
         "WANDB_JOB_TYPE": "ppo_meta_routed_moe",
     })
@@ -256,6 +271,35 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
     update = 0
     with TrainingLogger(metrics_path, paths["tensorboard"]) as logger:
         logger.initialize_wandb({"trainer/update": 0, "checkpoint/update": 0})
+        if EVAL_AT_U0:
+            eval_root = paths["artifact"] / "evaluation" / "update-000000"
+            report = evaluate_model(
+                model, checkpoint_update=0,
+                output_root=eval_root, games_per_pool=512,
+            )
+            u0_metrics = {
+                "trainer/update": 0,
+                "checkpoint/update": 0,
+                **wandb_metrics(report),
+            }
+            heatmap = _router_heatmap(
+                model, 0,
+                paths["artifact"] / "router_heatmaps" / "update-000000.png",
+            )
+            try:
+                import wandb
+                wandb.log(
+                    {"router/meta_expert_heatmap": wandb.Image(str(heatmap))},
+                    step=0,
+                )
+            except Exception as error:
+                u0_metrics["router/heatmap_wandb_error"] = str(error)
+            logger.log(0, u0_metrics)
+            _atomic_json(paths["artifact"] / "status.json", {
+                "state": "running", "checkpoint_update": 0,
+                "routing_phase": "hard_warmup", "u0_evaluation": "PASS",
+                "wandb_run_id": RUN_ID, "last_metric_time": time.time(),
+            })
         while updates is None or update < updates:
             if update == WARMUP_UPDATES:
                 model.set_soft_routing(True)

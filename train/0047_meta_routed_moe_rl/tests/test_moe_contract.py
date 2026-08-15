@@ -21,6 +21,12 @@ own_archetype = importlib.import_module(
 eval_schedule = importlib.import_module(
     "train.0047_meta_routed_moe_rl.evaluation.moe_three_pool_schedule"
 )
+moe_run = importlib.import_module(
+    "train.0047_meta_routed_moe_rl.training.run_v1_moe"
+)
+moe_ppo = importlib.import_module(
+    "train.0047_meta_routed_moe_rl.training.ppo_moe"
+)
 runtime = importlib.import_module("train.0047_meta_routed_moe_rl.runtime")
 run_v1 = importlib.import_module("train.0047_meta_routed_moe_rl.training.run_v1")
 
@@ -141,22 +147,45 @@ def test_core_deck_half_schedule_is_exact_and_reproducible():
     assert sum(row.branch == "meta_balanced_half" for row in first) == 256
 
 
-def test_eval_focus_pools_use_only_requested_exact_decks():
+def test_eval_two_physical_pools_have_exact_focus_subgroup_quotas():
     schedule = eval_schedule.materialize(
         run_v1.PROJECT_ROOT, focal_deck_id="070",
         focal_deployment_identity="0" * 64,
     )
-    assert tuple(schedule["pools"]) == ("old_three", "new_four", "remain_meta")
+    assert tuple(schedule["pools"]) == ("focus_seven", "remain_meta")
     expected = {
         "old_three": {"001", "002", "011"},
         "new_four": {"007", "003", "009", "023"},
     }
-    for pool, deck_ids in expected.items():
-        rows = schedule["pools"][pool]["jobs"]
+    focus = schedule["pools"]["focus_seven"]
+    assert focus["games"] == 512
+    assert focus["focus_group_counts"] == {"old_three": 256, "new_four": 256}
+    for group, deck_ids in expected.items():
+        rows = [row for row in focus["jobs"] if row["focus_group"] == group]
         assert {row["opponent_deck_id"] for row in rows} == deck_ids
-        assert len(rows) == 512
+        assert len(rows) == 256
+        counts = {
+            deck_id: sum(row["opponent_deck_id"] == deck_id for row in rows)
+            for deck_id in deck_ids
+        }
+        assert max(counts.values()) - min(counts.values()) <= 1
     remaining = {
         row["opponent_deck_id"]
         for row in schedule["pools"]["remain_meta"]["jobs"]
     }
     assert not remaining & set().union(*expected.values())
+    assert schedule["pools"]["remain_meta"]["games"] == 512
+    assert schedule["games"] == 1024
+
+
+def test_v9_uses_win_only_actor_advantage_and_u0_then_every_five_eval():
+    config = moe_ppo.PPOConfig()
+    assert config.prize_aux_actor_weight == 0.0
+    assert moe_run.PRIZE_AUX_ACTOR_WEIGHT == 0.0
+    assert moe_run.EVAL_AT_U0 is True
+    assert moe_run.EVAL_INTERVAL == 5
+
+
+def test_router_heatmap_generates_png(tmp_path):
+    output = moe_run._router_heatmap(_model(), 0, tmp_path / "router.png")
+    assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")

@@ -52,6 +52,7 @@ class PPOConfig:
     weight_decay: float = 0.0
     clip_ratio: float = 0.10
     value_coefficient: float = 0.5
+    prize_aux_actor_weight: float = 0.0
     entropy_coefficient: float = 0.003
     reference_kl_coefficient: float = 0.02
     target_behavior_kl: float = 0.015
@@ -72,6 +73,8 @@ class PPOConfig:
             raise ValueError("0047 behavior KL guards are invalid")
         if abs(self.router_learning_rate / self.decoder_learning_rate - 0.2) > 1e-9:
             raise ValueError("0047 Router LR must be 0.2x decoder LR")
+        if self.prize_aux_actor_weight != 0.0:
+            raise ValueError("0047 V9 Actor advantage must be terminal win/loss only")
 
 
 class PPOTrainer:
@@ -237,8 +240,8 @@ class PPOTrainer:
                     weights = batch.episode_weight[indices].to(self.device) / logical_weight
                     old = batch.rollout_log_prob[indices].to(self.device)
                     advantage = batch.advantage[indices].to(self.device)
-                    if self.model.integrated_flags.enable_prize_aux:
-                        advantage = advantage + self.model.integrated_flags.prize_aux_actor_weight * batch.prize_advantage[indices].to(self.device)
+                    if self.config.prize_aux_actor_weight:
+                        advantage = advantage + self.config.prize_aux_actor_weight * batch.prize_advantage[indices].to(self.device)
                     log_ratio = evaluated.joint_log_prob - old
                     ratio = log_ratio.exp()
                     unclipped = ratio * advantage
@@ -326,6 +329,7 @@ class PPOTrainer:
             "ppo/allocation_head_update_norm": self._group_update(before, ".allocation_head."),
             "ppo/router_update_norm": self._group_update(before, "router_logits"),
             "ppo/router_soft_phase": float(self.model.soft_routing),
+            "ppo/prize_aux_actor_weight": self.config.prize_aux_actor_weight,
             "ppo/decisions": float(batch.decisions),
         }
         result.update(training_batch_metrics(batch, include_detailed=(update <= 1 or update % 10 == 0)))
