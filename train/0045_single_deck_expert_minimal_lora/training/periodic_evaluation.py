@@ -126,7 +126,62 @@ def wandb_metrics_three_pool(
     return metrics
 
 
+def wandb_metrics_policy0814_exact_deck(
+    report: Mapping[str, Any], *, initial_baseline_update: int | None = None,
+    interval_updates: int = INTERVAL_UPDATES,
+) -> dict[str, float | int]:
+    """Extract the aggregate and exact opponent-deck V13 eval512 curves."""
+    if (
+        report.get("status") != "PASS"
+        or report.get("benchmark_id") != "V13-Policy0814-Exact-Deck-Eval512"
+    ):
+        raise RuntimeError("periodic evaluation is not the V13 Policy-0814 eval512")
+    update = report.get("focal_checkpoint_update")
+    if (
+        not isinstance(update, int)
+        or (
+            update != initial_baseline_update
+            and not is_due(update, interval_updates=interval_updates)
+        )
+    ):
+        raise RuntimeError("V13 eval512 is off the configured update boundary")
+    summary = report.get("summary")
+    per_deck = report.get("per_deck")
+    if not isinstance(summary, Mapping) or summary.get("games") != GAMES:
+        raise RuntimeError("V13 aggregate is not eval512")
+    if not isinstance(per_deck, Mapping) or set(per_deck) != {
+        "001", "002", "003", "007", "008", "009", "011", "071",
+    }:
+        raise RuntimeError("V13 eval has the wrong opponent deck inventory")
+    metrics: dict[str, float | int] = {
+        "eval/checkpoint_update": update,
+        "eval/games": GAMES,
+        "eval/wins": int(summary["wins"]),
+        "eval/losses": int(summary["losses"]),
+        "eval/draws": int(summary["draws"]),
+        "eval/win_rate": float(summary["win_rate"]),
+        "eval/games_per_second": float(summary["games_per_second"]),
+        "eval/official_engine": 1.0,
+        "eval/greedy": 1.0,
+        "eval/policy0814_exact_deck_cuda512": 1.0,
+        "eval/common_random_numbers": 1.0,
+    }
+    for deck_id, deck_summary in sorted(per_deck.items()):
+        if not isinstance(deck_summary, Mapping):
+            raise RuntimeError(f"V13 deck {deck_id} summary is malformed")
+        prefix = f"eval/opponent_deck/{deck_id}"
+        metrics.update({
+            f"{prefix}/games": int(deck_summary["games"]),
+            f"{prefix}/wins": int(deck_summary["wins"]),
+            f"{prefix}/losses": int(deck_summary["losses"]),
+            f"{prefix}/draws": int(deck_summary["draws"]),
+            f"{prefix}/win_rate": float(deck_summary["win_rate"]),
+        })
+    return metrics
+
+
 __all__ = [
     "FORMAL_EVALUATE_INTERVAL_UPDATES", "GAMES", "INTERVAL_UPDATES",
     "is_due", "wandb_metrics", "wandb_metrics_three_pool",
+    "wandb_metrics_policy0814_exact_deck",
 ]

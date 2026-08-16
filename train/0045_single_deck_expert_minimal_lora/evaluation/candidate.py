@@ -11,6 +11,7 @@ from typing import Any, Mapping, Sequence
 import torch
 
 from ..assets import sha256_file
+from ..policy import AdaptationConfig
 from ..policy.actor_critic import SemanticActorCritic, load_actor_critic
 from ..rollout.deck_routing import exact_deck_sha256
 
@@ -94,6 +95,8 @@ def _tensor_hash(payload: Mapping[str, Any], deck_hash: str) -> str:
 def materialize(
     *, checkpoint: Path, base_portable: Path, deck: Sequence[int], deck_id: str,
     own_archetype_id: int, output: Path, device: torch.device,
+    base_value_checkpoint: Path | None = None,
+    adaptation: AdaptationConfig = AdaptationConfig(),
 ) -> tuple[SemanticActorCritic, CandidateAudit]:
     cards = tuple(map(int, deck))
     if len(cards) != 60 or not 0 <= own_archetype_id < 29:
@@ -107,6 +110,7 @@ def materialize(
         raise RuntimeError("candidate checkpoint update is missing")
     base = torch.load(base_portable, map_location="cpu", weights_only=True)
     if base.get("schema_version") not in {
+        "0031_model_only_checkpoint_v1",
         "0043_focal_v1_kaggle_candidate_v1",
         "0044_policy_value_split_option_lora_meta_residual_candidate_v2",
     }:
@@ -117,6 +121,7 @@ def materialize(
     model, _ = load_actor_critic(
         checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu",
         own_archetype_id_override=own_archetype_id,
+        value_checkpoint=base_value_checkpoint, adaptation=adaptation,
     )
     incompatible = model.load_state_dict(state, strict=False)
     if incompatible.unexpected_keys:
@@ -146,9 +151,14 @@ def materialize(
         "deployment_contract": CONTRACT_ID,
         "policy_value_option_split": True,
         "policy_option_lora": {
-            "option_block": 1, "rank": 4, "alpha": 8.0,
-            "attention_targets": ["self_attn.qv", "cross_attn.qv"],
-            "parameters": 10240,
+            "option_block": 1, "rank": adaptation.rank,
+            "alpha": adaptation.alpha,
+            "attention_targets": (
+                ["self_attn.qvo", "cross_attn.qvo"]
+                if adaptation.output_projection
+                else ["self_attn.qv", "cross_attn.qv"]
+            ),
+            "shared_state_encoder": adaptation.shared_state_encoder,
         },
         "policy_strategy_adapter": "removed",
         "meta_actor_residual": "removed",
@@ -167,6 +177,7 @@ def materialize(
     model, _ = load_actor_critic(
         checkpoint=base_portable, deck=cards, deck_id=deck_id, device="cpu",
         own_archetype_id_override=own_archetype_id,
+        value_checkpoint=base_value_checkpoint, adaptation=adaptation,
     )
     modules = {
         "actor_state_dict": model.actor,

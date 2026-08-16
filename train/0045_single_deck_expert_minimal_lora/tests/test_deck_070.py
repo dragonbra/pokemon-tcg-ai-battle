@@ -18,7 +18,7 @@ def test_deck_070_is_exact_registered_training_asset() -> None:
         int(value)
         for value in (PROJECT_ROOT / deck.deck_path).read_text().splitlines()
     )
-    assert audit.deck_count == audit.training_deck_count == 70
+    assert audit.deck_count == audit.training_deck_count == 71
     assert deck.roles == ("training",)
     assert len(cards) == 60
     assert Counter(cards) == Counter({

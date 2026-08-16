@@ -28,6 +28,7 @@ from ..initial_run import balanced_focal_schedule
 from ..integrated.presets import preset
 from ..league.pfsp import Curriculum, PFSPConfig, PFSPState
 from ..league.aggressive_meta_quota import aggressive_meta_quota_schedule
+from ..league.exact_deck_quota import exact_deck_quota_schedule
 from ..league.meta_balanced import balanced_meta_deck_schedule
 from ..league.sampler import LeagueLane, _seed, build_schedule, build_uniform_schedule
 from ..own_archetype import OwnArchetypeVocabulary
@@ -210,7 +211,7 @@ def readiness() -> dict[str, Any]:
         "project": PROJECT, "version": VERSION,
         "asset_audit": asdict(audit),
         "focal_decks": [FOCAL_DECK_ID],
-        "opponent_decks": [f"{value:03d}" for value in range(1, 71)],
+        "opponent_decks": [f"{value:03d}" for value in range(1, 72)],
         "opponent_policies": list(OPPONENT_POLICY_IDS),
         "opponent_sampling": {
             "mode": "meta_balanced_training_pool", "games": 512,
@@ -237,6 +238,8 @@ def _jobs(
     rollout_games: int = 256,
     opponent_meta_weights: dict[int, float] | None = None,
     opponent_meta_quotas: dict[int, int] | None = None,
+    opponent_deck_quotas: dict[str, int] | None = None,
+    opponent_random_deck_ids: tuple[str, ...] | None = None,
 ) -> tuple[list[RolloutJob], dict[str, float], dict[str, float], str]:
     training_deck_ids = tuple(
         deck.deck_id for deck in registry.decks if "training" in deck.roles
@@ -251,6 +254,7 @@ def _jobs(
     if opponent_sampling_mode in {
         "uniform_001_067", "meta_balanced_001_067",
         "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
+        "exact_deck_quota_training_pool",
     }:
         curriculum = _uniform_curriculum(update, deck_ids, policy_ids)
     else:
@@ -267,11 +271,13 @@ def _jobs(
     if schedule_builder is None and opponent_sampling_mode not in {
         "meta_balanced_001_067", "meta_balanced_training_pool",
         "aggressive_meta_quota_training_pool",
+        "exact_deck_quota_training_pool",
     }:
         raise ValueError(f"unsupported opponent sampling mode: {opponent_sampling_mode}")
     if opponent_sampling_mode in {
         "meta_balanced_001_067", "meta_balanced_training_pool",
         "aggressive_meta_quota_training_pool",
+        "exact_deck_quota_training_pool",
     }:
         if policy_ids != (latest_champion_policy_id,):
             raise ValueError("Meta-balanced opponent schedule requires one latest champion")
@@ -282,7 +288,24 @@ def _jobs(
             row for row in own.mappings if row.deck_id in set(deck_ids)
         )
         quota_seed = 440_120_000 + update
-        if opponent_sampling_mode == "aggressive_meta_quota_training_pool":
+        if opponent_sampling_mode == "exact_deck_quota_training_pool":
+            if (
+                opponent_meta_weights is not None
+                or opponent_meta_quotas is not None
+                or opponent_deck_quotas is None
+                or opponent_random_deck_ids is None
+            ):
+                raise ValueError("exact-deck schedule requires deck quotas/random pool only")
+            opponent_slots = exact_deck_quota_schedule(
+                random_seed=quota_seed,
+                shuffle_seed=440_120_200 + update,
+                mappings=training_mappings,
+                lanes=rollout_games,
+                fixed_deck_quotas=opponent_deck_quotas,
+                random_deck_ids=opponent_random_deck_ids,
+            )
+            branch_name = "exact_deck_quota"
+        elif opponent_sampling_mode == "aggressive_meta_quota_training_pool":
             if opponent_meta_weights is not None or opponent_meta_quotas is None:
                 raise ValueError("aggressive Meta schedule requires quotas, not weights")
             opponent_slots = aggressive_meta_quota_schedule(
@@ -336,6 +359,8 @@ def _jobs(
                     "sampling_mode": opponent_sampling_mode,
                     "opponent_meta_weights": opponent_meta_weights,
                     "opponent_meta_quotas": opponent_meta_quotas,
+                    "opponent_deck_quotas": opponent_deck_quotas,
+                    "opponent_random_deck_ids": opponent_random_deck_ids,
                     "rollout_games": rollout_games,
                 }, sort_keys=True).encode()).hexdigest(),
                 "stats_snapshot": {
@@ -343,6 +368,8 @@ def _jobs(
                     "pfsp_enabled": False,
                     "opponent_meta_weights": opponent_meta_weights,
                     "opponent_meta_quotas": opponent_meta_quotas,
+                    "opponent_deck_quotas": opponent_deck_quotas,
+                    "opponent_random_deck_ids": opponent_random_deck_ids,
                 },
             }
         )
@@ -510,10 +537,21 @@ def _checkpoint(
         "adaptation": {
             "policy_only_option_lora": True,
             "option_block": 1,
-            "attention_targets": ["self_attn.qv", "cross_attn.qv"],
-            "rank": 4,
-            "alpha": 8.0,
-            "parameters": 10_240,
+            "attention_targets": (
+                ["self_attn.qvo", "cross_attn.qvo"]
+                if model.adaptation_config.output_projection
+                else ["self_attn.qv", "cross_attn.qv"]
+            ),
+            "rank": model.adaptation_config.rank,
+            "alpha": model.adaptation_config.alpha,
+            "parameters": sum(
+                value.numel() for value in model.policy_option_lora.parameters()
+            ),
+            "shared_state_encoder": model.adaptation_config.shared_state_encoder,
+            "shared_state_encoder_parameters": (
+                model.shared_encoder_lora_inventory.parameter_count
+                if model.shared_encoder_lora_inventory is not None else 0
+            ),
             "value_branch": "lora_free",
             "strategy_adapter": "removed",
             "meta_actor_residual": "removed",
@@ -599,17 +637,22 @@ def run(
     rollout_games: int = 512,
     opponent_meta_weights: dict[int, float] | None = None,
     opponent_meta_quotas: dict[int, int] | None = None,
+    opponent_deck_quotas: dict[str, int] | None = None,
+    opponent_random_deck_ids: tuple[str, ...] | None = None,
     ppo_batch_size: int = 4096,
     value_learning_rate: float | None = None,
     prize_learning_rate: float | None = None,
     entropy_coefficient: float | None = None,
     focal_base_checkpoint: Path | None = None,
+    focal_value_checkpoint: Path | None = None,
+    adaptation_config: AdaptationConfig = AdaptationConfig(),
 ) -> None:
     if not launch_formal:
         raise RuntimeError("formal 0045 PPO requires explicit --launch-formal")
     if periodic_evaluation_profile not in {
         "benchmark_tiny_v2_core16_g2",
         "policy0809_three_pool_cuda512",
+        "policy0814_exact_deck_cuda512",
     }:
         raise RuntimeError("unknown periodic evaluation profile")
     if periodic_evaluation_interval_updates <= 0:
@@ -661,6 +704,7 @@ def run(
     if opponent_sampling_mode not in {
         "pfsp_mixture", "uniform_001_067", "meta_balanced_001_067",
         "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
+        "exact_deck_quota_training_pool",
     }:
         raise RuntimeError("formal opponent sampling mode is unsupported")
     if opponent_meta_weights is not None and opponent_sampling_mode not in {
@@ -671,20 +715,37 @@ def run(
         "aggressive_meta_quota_training_pool"
     ):
         raise RuntimeError("opponent Meta quotas require the aggressive schedule")
+    if opponent_deck_quotas is not None and opponent_sampling_mode != (
+        "exact_deck_quota_training_pool"
+    ):
+        raise RuntimeError("opponent deck quotas require the exact-deck schedule")
     if opponent_sampling_mode == "aggressive_meta_quota_training_pool":
         if opponent_meta_quotas is None or opponent_meta_weights is not None:
             raise RuntimeError("aggressive schedule requires quotas and forbids weights")
+    if opponent_sampling_mode == "exact_deck_quota_training_pool":
+        if (
+            opponent_deck_quotas is None
+            or opponent_random_deck_ids is None
+            or opponent_meta_weights is not None
+            or opponent_meta_quotas is not None
+        ):
+            raise RuntimeError("exact-deck schedule requires deck quotas/random pool only")
     if opponent_meta_weights is None and opponent_sampling_mode == "meta_balanced_training_pool":
         opponent_meta_weights = {0: 3.0, 1: 3.0, 2: 3.0, 3: 3.0, 5: 3.0, 27: 3.0}
     if opponent_sampling_mode in {
         "uniform_001_067", "meta_balanced_001_067",
         "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
+        "exact_deck_quota_training_pool",
     } and parent_pfsp_state is not None:
         raise RuntimeError("uniform training must not load a PFSP state")
     opponent_deck_ids = (
         tuple(f"{value:03d}" for value in range(1, 68))
         if opponent_sampling_mode in {"uniform_001_067", "meta_balanced_001_067"}
-        else training_deck_ids
+        else (
+            tuple(sorted(set(opponent_deck_quotas or {}) | set(opponent_random_deck_ids or ())))
+            if opponent_sampling_mode == "exact_deck_quota_training_pool"
+            else training_deck_ids
+        )
     )
     paths = _paths(version)
     used = [str(path) for path in paths.values() if path.exists() and any(path.iterdir())]
@@ -708,6 +769,8 @@ def run(
     model, source = load_actor_critic(
         checkpoint=focal_base_checkpoint or DEFAULT_FOCAL_CHECKPOINT,
         deck=focal_deck, deck_id=focal_deck_id, device=device,
+        value_checkpoint=focal_value_checkpoint,
+        adaptation=adaptation_config,
         integrated_flags=preset("FULL_MODEL"),
     )
     if parent_checkpoint is not None:
@@ -743,6 +806,8 @@ def run(
         reference_model, _ = load_actor_critic(
             checkpoint=focal_base_checkpoint or DEFAULT_FOCAL_CHECKPOINT,
             deck=focal_deck, deck_id=focal_deck_id, device=device,
+            value_checkpoint=focal_value_checkpoint,
+            adaptation=adaptation_config,
             integrated_flags=preset("FULL_MODEL"),
         )
         reference_incompatible = reference_model.load_state_dict(
@@ -793,12 +858,21 @@ def run(
             if opponent_sampling_mode in {
                 "uniform_001_067", "meta_balanced_001_067",
                 "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
+                "exact_deck_quota_training_pool",
             }
             else {"pfsp": 128, "uniform": 64, "latest": 64}
         ),
         "opponent_sampling_mode": opponent_sampling_mode,
         "opponent_meta_weights": opponent_meta_weights,
         "opponent_meta_quotas": opponent_meta_quotas,
+        "opponent_deck_quotas": opponent_deck_quotas,
+        "opponent_random_deck_ids": list(opponent_random_deck_ids or ()),
+        "adaptation": {
+            "rank": adaptation_config.rank,
+            "alpha": adaptation_config.alpha,
+            "output_projection": adaptation_config.output_projection,
+            "shared_state_encoder": adaptation_config.shared_state_encoder,
+        },
         "first_player_contract": {
             "id": "seeded_toss_winner_agent_context_41_choice_v1",
             "schedule_controls": "coin_winner_seed_only",
@@ -851,6 +925,8 @@ def run(
             "contract_id": (
                 "0045_policy0809_three_meta_pools_common_seeds_cuda512_v1"
                 if periodic_evaluation_profile == "policy0809_three_pool_cuda512"
+                else "0045_v13_policy0814_exact_deck_common_seeds_cuda512_v1"
+                if periodic_evaluation_profile == "policy0814_exact_deck_cuda512"
                 else "0045_benchmark_tiny_v2_core16_meta_balanced_common_seeds_cuda512_v1"
             ),
             "interval_updates": (
@@ -871,6 +947,8 @@ def run(
             "opponent_policy_id": (
                 "Policy-0809"
                 if periodic_evaluation_profile == "policy0809_three_pool_cuda512"
+                else "Policy-0814"
+                if periodic_evaluation_profile == "policy0814_exact_deck_cuda512"
                 else "Champion-G2"
             ),
             "focal_deck_id": evaluation_focal_deck_id,
@@ -937,6 +1015,13 @@ def run(
                 from .periodic_evaluation import (
                     wandb_metrics_three_pool as periodic_metrics,
                 )
+            elif periodic_evaluation_profile == "policy0814_exact_deck_cuda512":
+                from ..evaluation.run_policy0814_exact_deck_cuda512 import (
+                    run as run_periodic_evaluation,
+                )
+                from .periodic_evaluation import (
+                    wandb_metrics_policy0814_exact_deck as periodic_metrics,
+                )
             else:
                 from ..evaluation.run_benchmark_tiny_v2 import (
                     run as run_periodic_evaluation,
@@ -958,7 +1043,9 @@ def run(
                     checkpoint_update=start_update,
                 )
             periodic_kwargs = {"initial_baseline_update": start_update}
-            if periodic_evaluation_profile == "policy0809_three_pool_cuda512":
+            if periodic_evaluation_profile in {
+                "policy0809_three_pool_cuda512", "policy0814_exact_deck_cuda512",
+            }:
                 periodic_kwargs["interval_updates"] = periodic_evaluation_interval_updates
             eval_metrics = periodic_metrics(report, **periodic_kwargs)
             logger.log(start_update, eval_metrics)
@@ -975,16 +1062,21 @@ def run(
                 rollout_games=rollout_games,
                 opponent_meta_weights=opponent_meta_weights,
                 opponent_meta_quotas=opponent_meta_quotas,
+                opponent_deck_quotas=opponent_deck_quotas,
+                opponent_random_deck_ids=opponent_random_deck_ids,
             )
             by_group = _group_jobs_by_opponent_policy(jobs)
             if opponent_sampling_mode in {
                 "meta_balanced_001_067", "meta_balanced_training_pool",
                 "aggressive_meta_quota_training_pool",
+                "exact_deck_quota_training_pool",
             }:
                 branch = {
                     int(job.game_id.rsplit("-", 1)[1]): (
                         "aggressive_meta_quota"
                         if opponent_sampling_mode == "aggressive_meta_quota_training_pool"
+                        else "exact_deck_quota"
+                        if opponent_sampling_mode == "exact_deck_quota_training_pool"
                         else "meta_balanced_uniform"
                     )
                     for job in jobs
@@ -1110,6 +1202,12 @@ def run(
                     realized_meta_counts[meta_by_deck[job.opponent_id]] += 1
                 for meta_id, games in sorted(realized_meta_counts.items()):
                     metrics[f"sampling/opponent_meta/{meta_id:02d}/games"] = games
+            if opponent_sampling_mode == "exact_deck_quota_training_pool":
+                realized_deck_counts: dict[str, int] = defaultdict(int)
+                for job in jobs:
+                    realized_deck_counts[job.opponent_id] += 1
+                for deck_id, games in sorted(realized_deck_counts.items()):
+                    metrics[f"sampling/opponent_deck/{deck_id}/games"] = games
             metrics["trainer/update"] = checkpoint_update
             metrics["env/episodes"] = checkpoint_update * rollout_games
             cumulative_decisions += sum(len(ep.policy_transitions) for ep in episodes)
@@ -1129,6 +1227,13 @@ def run(
                     from .periodic_evaluation import (
                         wandb_metrics_three_pool as periodic_metrics,
                     )
+                elif periodic_evaluation_profile == "policy0814_exact_deck_cuda512":
+                    from ..evaluation.run_policy0814_exact_deck_cuda512 import (
+                        run as run_periodic_evaluation,
+                    )
+                    from .periodic_evaluation import (
+                        wandb_metrics_policy0814_exact_deck as periodic_metrics,
+                    )
                 else:
                     from ..evaluation.run_benchmark_tiny_v2 import (
                         run as run_periodic_evaluation,
@@ -1146,7 +1251,9 @@ def run(
                     checkpoint_update=checkpoint_update,
                 )
                 periodic_kwargs = {}
-                if periodic_evaluation_profile == "policy0809_three_pool_cuda512":
+                if periodic_evaluation_profile in {
+                    "policy0809_three_pool_cuda512", "policy0814_exact_deck_cuda512",
+                }:
                     periodic_kwargs["interval_updates"] = periodic_evaluation_interval_updates
                 eval_metrics = periodic_metrics(report, **periodic_kwargs)
                 logger.log(checkpoint_update, eval_metrics)

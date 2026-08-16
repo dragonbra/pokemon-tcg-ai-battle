@@ -12,6 +12,7 @@ import torch
 
 from ..policy.action_distribution import evaluate_actions_encoded
 from ..policy.actor_critic import DecoderPolicyHead, SemanticActorCritic
+from ..policy.shared_encoder_lora import shared_encoder_lora_parameters
 from .batch_full_semantic import PreparedBatch, training_batch_metrics
 from ..policy.compound_evaluation import evaluate_parameter_actions
 from ..integrated.loss_registry import LossRegistry, LossTerm
@@ -290,6 +291,13 @@ class PPOTrainer:
                     "lr": config.option_lora_learning_rate,
                 },
             ]
+        shared_encoder_parameters = list(shared_encoder_lora_parameters(model.actor))
+        if shared_encoder_parameters:
+            groups.append({
+                "name": "shared_encoder_lora",
+                "params": shared_encoder_parameters,
+                "lr": config.option_lora_learning_rate,
+            })
         if model.prize_aux is not None:
             groups.append({"name": "value_prize", "params": model.prize_aux.parameters(), "lr": config.prize_learning_rate})
         self.optimizer = torch.optim.AdamW(
@@ -316,6 +324,7 @@ class PPOTrainer:
             "action_decoder": "PPO policy + entropy + reference KL + Prize actor advantage",
             "allocation_head": "Phantom allocation policy + entropy + Prize actor advantage",
             "policy_option_lora": "PPO policy + entropy + reference KL through the policy Option branch only",
+            "shared_encoder_lora": "shared StateEncoder gradients from PPO policy and terminal Value losses",
             "value_win": "terminal Value loss + q1 Meta anchor",
             "value_adapter": "terminal Value loss only",
             "value_prize": "directional Prize Value loss only",
@@ -337,6 +346,7 @@ class PPOTrainer:
     def parameter_partition_manifest(self) -> dict[str, dict[str, object]]:
         actor_groups = {
             "action_decoder", "allocation_head", "policy_option_lora",
+            "shared_encoder_lora",
         }
         value_groups = {"value_win", "value_adapter", "value_prize"}
         actor_ids = {

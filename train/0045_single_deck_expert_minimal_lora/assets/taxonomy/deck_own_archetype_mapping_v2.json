@@ -489,9 +489,16 @@
       "deck_id": "070",
       "old_archetype_id": 15,
       "strategic_axis": "Dragapult spread plus Dusknoir self-KO breakpoints, Munkidori damage transfer, and Risky Ruins pressure"
+    },
+    {
+      "archetype_id": 27,
+      "decision": "split",
+      "deck_id": "071",
+      "old_archetype_id": 6,
+      "strategic_axis": "Hydrapple/Meganium energy-wide scaling with Judge and additional Dawn/Poke Pad consistency"
     }
   ],
-  "mapping_provenance": "manual 001-067 audit plus user-approved exact decks 068-070 through 2026-08-16",
+  "mapping_provenance": "manual 001-067 audit plus user-approved exact decks 068-071 through 2026-08-16",
   "schema_version": "0043_exact_deck_own_archetype_mapping_v2",
   "taxonomy_version": "own_archetypes_v2"
 }

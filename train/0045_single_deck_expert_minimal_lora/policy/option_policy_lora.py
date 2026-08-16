@@ -40,15 +40,25 @@ class DualOptionEncoding:
 class PolicyOnlyOptionLoRA(nn.Module):
     """Run the same frozen block with policy-only Q/V deltas, without copying it."""
 
-    def __init__(self, width: int, *, rank: int = 4, alpha: float = 8.0) -> None:
+    def __init__(
+        self, width: int, *, rank: int = 4, alpha: float = 8.0,
+        output_projection: bool = False,
+    ) -> None:
         super().__init__()
-        if rank != 4 or float(alpha) != 8.0:
-            raise ValueError("0044 requires Last Option Q/V LoRA rank=4 alpha=8")
+        if (rank, float(alpha), output_projection) not in {
+            (4, 8.0, False), (16, 16.0, True),
+        }:
+            raise ValueError("unsupported 0045 Option LoRA contract")
         self.rank = int(rank)
         self.alpha = float(alpha)
         self.option_block = 1
+        self.output_projection = bool(output_projection)
         self.self_attention = LoRAQVDelta(width, rank, alpha)
         self.cross_attention = LoRAQVDelta(width, rank, alpha)
+        if self.output_projection:
+            from .shared_encoder_lora import LinearLoRA
+            self.self_output = LinearLoRA(width, width, rank, alpha)
+            self.cross_output = LinearLoRA(width, width, rank, alpha)
 
     def forward(self, option_encoder, batch, state, prefix: Tensor) -> Tensor:
         transformer = option_encoder.cross_attention_transformer
@@ -63,6 +73,15 @@ class PolicyOnlyOptionLoRA(nn.Module):
                 final.multihead_attn.in_proj_weight
             ),
         }
+        if self.output_projection:
+            overrides.update({
+                "self_attn.out_proj.weight": self.self_output(
+                    final.self_attn.out_proj.weight
+                ),
+                "multihead_attn.out_proj.weight": self.cross_output(
+                    final.multihead_attn.out_proj.weight
+                ),
+            })
         encoded = functional_call(
             final,
             overrides,
@@ -84,14 +103,21 @@ class PolicyOnlyOptionLoRA(nn.Module):
 
     def assert_inventory(self) -> None:
         parameters = tuple(self.named_parameters())
-        if len(parameters) != 8 or sum(value.numel() for _, value in parameters) != 10_240:
-            raise RuntimeError("0044 policy Option LoRA inventory is not 8 tensors / 10,240 parameters")
+        expected_count = 12 if self.output_projection else 8
+        expected_parameters = 61_440 if self.output_projection else 10_240
+        if len(parameters) != expected_count or sum(value.numel() for _, value in parameters) != expected_parameters:
+            raise RuntimeError("0045 policy Option LoRA inventory changed")
         expected = {
             "self_attention.q_a", "self_attention.q_b",
             "self_attention.v_a", "self_attention.v_b",
             "cross_attention.q_a", "cross_attention.q_b",
             "cross_attention.v_a", "cross_attention.v_b",
         }
+        if self.output_projection:
+            expected |= {
+                "self_output.a", "self_output.b",
+                "cross_output.a", "cross_output.b",
+            }
         if {name for name, _ in parameters} != expected:
             raise RuntimeError("0044 policy Option LoRA tensor names changed")
 

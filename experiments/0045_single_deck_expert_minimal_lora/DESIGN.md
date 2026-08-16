@@ -1,6 +1,6 @@
 # 0045 — Single-Deck Expert Minimal-LoRA
 
-Status: architecture/migration hard gates pass. V1 standard-LR control completed through U5. V2 reached a durable U45 model-only checkpoint, then hard-failed before its U45 evaluation because a packaging-time deployment-runtime edit changed the audited semantic-runtime tree. V3 continues from V2 U45 with a fresh optimizer, the same cold-start LR profile, and no automatic update limit.
+Status: V8 training stopped at durable U299. V13 is the current fresh run definition: deck 007 initialized from complete immutable Policy-0814, Policy-0814-only rollout/evaluation, one shared ActionDecoder, and expanded shared-encoder LoRA r16. Its measured trainable and deployment-materialization hard gates pass before launch.
 
 ## Goal and identity
 
@@ -66,6 +66,31 @@ Removed Actor modules are the 320,465-parameter Policy Strategy Adapter and 74,2
 
 Exact-deck/resource information remains in the frozen semantic observation. The Critic’s Own-Archetype embedding remains a training-only value feature; it is never policy-visible.
 
+## V13 current graph and measured trainable boundary
+
+V13 does not continue V8 U299 and does not instantiate seven actors or experts. It strict-loads the complete Policy-0814 Actor (`d7921f…897b`) and paired Value checkpoint (`0ad6f5…7d2d`) as a fresh deck-007 U0. Focal and opponent are independently materialized complete policies with no shared parameter storage.
+
+```text
+Policy-0814 prototype/card embeddings ------------------------ frozen
+StateEncoder board layers 0..2 ------------------------------- frozen
+StateEncoder board layer 3 self-attn Q/V/O LoRA r16 -----+
+StateEncoder event layer 0 self-attn Q/V/O LoRA r16 ------+--> shared state
+StateEncoder final family-fusion Linear 0/2 LoRA r16 ------+
+OptionEncoder prefix/block 0 --------------------------------- frozen
+OptionEncoder final block self/cross Q/V/O LoRA r16 ----------> policy options
+single full-trainable ActionDecoder ---------------------------> action logits
+existing Allocation/Value/ValueAdapter/Prize trainables ------> unchanged RL heads
+```
+
+The machine-readable audit contains every tensor name, shape, parameter count, module, and LoRA rank. It measures 115 trainable tensors and 5,515,030 trainable parameters:
+
+- StateEncoder final board Q/V/O LoRA: 30,720; final event Q/V/O LoRA: 30,720; final family-fusion MLP LoRA: 30,720; shared-State total 92,160.
+- OptionEncoder final self/cross Q/V/O LoRA: 61,440.
+- ActionDecoder: 1,027,202; AllocationHead: 621,761.
+- ValueHead: 3,397,121; ValueAdapter: 211,665; PrizeAuxHead: 103,681.
+
+Prototype/card embeddings, StateEncoder board layers 0–2, all unlisted StateEncoder tensors, and the immutable OptionEncoder base remain frozen. Unlike historical V1–V8, the requested final StateEncoder LoRA is shared by policy and value forward paths; the Critic output still has no edge into Actor logits.
+
 ## Migration and identity
 
 `migration.from_0044.migrate_0044_checkpoint` starts from the copied immutable complete semantic base, rebinds the Critic-only Own-Archetype ID to exact deck 007, and copies every shape-compatible checkpoint tensor except the two explicitly retired Actor prefixes. Unclassified tensors, missing inherited tensors, shape mismatches, or failed post-load tensor equality are fatal. The audit records copied/dropped/rebound/base-materialized/new tensors and hashes.
@@ -104,7 +129,11 @@ No optimizer/scheduler/RNG state is migrated. Checkpoints are model-only and ret
 
 The focal schedule is fixed deck 007. The first controlled opponent deck schedule stays aligned with current 0044; opponent policy identity is immutable and explicit. Focal and opponent weights, storage, routing, and caches are independent.
 
-As of 2026-08-16, the append-only live training/opponent deck registry is contiguous `001`–`070`. Deck `070` is the user-provided exact 60-card `Dragapult ex / Dusknoir / Munkidori` list with content SHA-256 `2693a7b610ccdf2ed10a76a8872003dcb53456e54b006d3a3feff580520374fb`. It is mapped to the existing 29-way Own Archetype class `15` (`dragapult_dusknoir`); no new Actor/Critic class or embedding dimension is introduced. Current `meta_balanced_training_pool` and aggressive training-pool schedules resolve the registry dynamically and therefore include `070`. Historical Benchmark V2/Core-16 schedules and already-recorded run manifests remain frozen and are not rewritten to include it.
+As of 2026-08-16, the append-only live training/opponent deck registry is contiguous `001`–`071`. Deck `070` is the user-provided exact 60-card `Dragapult ex / Dusknoir / Munkidori` list with content SHA-256 `2693a7b610ccdf2ed10a76a8872003dcb53456e54b006d3a3feff580520374fb`; deck `071` is the user-provided exact 60-card `Hydrapple ex / Meganium` list with content SHA-256 `4043c278a756aba2608d40904a99bfc74ac38085541dfa1e8b5e7c5272f9a3ef`. Deck 071 reuses deck 023's official-engine print identities for shared card names and differs by removing Celebi, Ciphermaniac's Codebreaking, and Briar while adding one Dawn, Judge, and Poké Pad. Decks 070 and 071 map to the existing 29-way Own Archetype classes `15` (`dragapult_dusknoir`) and `27` (`hydrapple_meganium`) respectively; no new Actor/Critic class, router output, or embedding dimension is introduced. Current `meta_balanced_training_pool` and aggressive training-pool schedules resolve the registry dynamically and therefore include both decks. Historical Benchmark V2/Core-16 schedules and already-recorded run manifests remain frozen and are not rewritten to include them.
+
+V13 fixes focal deck 007 and uses only complete immutable Policy-0814 for all 512 opponent lanes. Every update has base counts `001=143`, `002=68`, `003=48`, `007=64`, `071=30`, `008=14`, `009=16`, `011=7`; the remaining 122 lanes are seeded random choices only from `071/008/009/011`, followed by a reproducible shuffle. Realized per-deck counts are logged every update. The rollout uses 512 simultaneous lanes, PPO logical batch 4096, and physical/probe microbatch 256.
+
+Every five updates, V13 runs one greedy official-engine CUDA eval512 against Policy-0814. It uses the same fixed quotas and random-remainder rule, but freezes the eval master seed so all checkpoints see the exact same 512-game schedule. Evaluation materializes the full candidate under `kaggle_fp16_storage_fp32_runtime_v1`, verifies independent focal/opponent storage, and requires 512 terminal games with zero errors/unfinished games. The user-facing/W&B summary is intentionally limited to aggregate W/L/D/win rate and the W/L/D/win rate for each of the eight opponent deck IDs; per-game rows remain only as identity and reproducibility evidence.
 
 V4 is a fresh-optimizer continuation from the exact V3 U200 model-only checkpoint. Its sampled training rollout still uses immutable `Champion-G2`; changing the evaluation opponent does not silently change the behavior-policy environment. The 512-game rollout schedule is Meta-first and then exact-deck-balanced within each Meta. Meta `03` and `05` have weight `6`; Meta `00`, `01`, `02`, and `04` have weight `3`; Meta `27` explicitly returns to weight `1`; every other active Meta also has implicit weight `1`. The first U200-source schedule therefore assigns 67 lanes each to `03/05`, 34 each to `00/01/02/04`, and 11 each to all remaining active classes including `27`.
 
@@ -154,4 +183,4 @@ The resulting archive is `0045_dragapult_ex_007_public_meta_router_v3_compact_fp
 
 ## Disabled expansion ladder
 
-V1 adds no capacity. If later controlled evidence shows a ceiling, the documented order is final Option Q/V LoRA rank 4→8→16 with function-preserving zero delta; then Q/V LoRA on the previous Option block; then a small final State-block LoRA/zero residual. Full State Encoder unfreezing is not the first response to a plateau.
+This historical V1 ladder is superseded for the explicitly authorized V13 run. V13 takes the bounded rank-16 final Option/board/event/fusion expansion described above while keeping early board layers and embeddings frozen. It still does not authorize full StateEncoder unfreezing, multiple actors, or expert routing.

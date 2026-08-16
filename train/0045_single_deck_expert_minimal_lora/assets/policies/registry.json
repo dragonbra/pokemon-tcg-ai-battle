@@ -23,6 +23,27 @@
     {
       "artifacts": [
         {
+          "path": "assets/policies/definitions/policy_0814/model.pt",
+          "purpose": "complete_base_checkpoint",
+          "sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b"
+        },
+        {
+          "path": "assets/policies/definitions/policy_0814/value_head.pt",
+          "purpose": "paired_value_checkpoint",
+          "sha256": "0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d"
+        }
+      ],
+      "effective_policy_sha256": "476d57d55eb9c040fa4e75ce74ac5205af5d094a296db71cba4ecbf792902580",
+      "frozen": true,
+      "generation": null,
+      "manifest_path": "assets/policies/manifests/policy_0814.json",
+      "manifest_sha256": "ad23d9499b75a9fbba6014813809b1872a830b235f62a7b60db52438f1ab0f19",
+      "policy_id": "Policy-0814",
+      "role": "frozen_opponent"
+    },
+    {
+      "artifacts": [
+        {
           "path": "assets/policies/definitions/champion_g002/source_update_000407.pt",
           "purpose": "model_only_checkpoint",
           "sha256": "828c1791b62152667f0b87b2b668c2b16c6ab0bce9b7996558d3012628b106bb"

@@ -1,0 +1,66 @@
+{
+  "architecture_version": "0031_rule_faithful_semantic_decision_v2",
+  "artifacts": [
+    {
+      "path": "assets/policies/definitions/policy_0814/model.pt",
+      "purpose": "complete_base_checkpoint",
+      "sha256": "d7921f420c8f12155119d6caa0fef414f51c0a8368cd5ecf07cd7d71312c897b"
+    },
+    {
+      "path": "assets/policies/definitions/policy_0814/value_head.pt",
+      "purpose": "paired_value_checkpoint",
+      "sha256": "0ad6f57a32d37942cccdc78a8a9c8ef2f6f8784d08ea8ed77ca1513628c77d2d"
+    }
+  ],
+  "components": {
+    "action_decoder": {
+      "effective_sha256": "eee255a80f8e9aa5384ab2abf2e7eaded5647557dddfd64454e6fb7980ed3a38",
+      "source_policy_id": "Policy-0814"
+    },
+    "final_norm": {
+      "effective_sha256": "c0f42de3dbd044a06a19f4e4ce5ee087d3e73d643d03adbf3d158984c4aa4c92",
+      "source_policy_id": "Policy-0814"
+    },
+    "lora": {
+      "effective_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_policy_id": "Policy-0814"
+    },
+    "option_input_encoder": {
+      "effective_sha256": "0a9ca03921264f895a089f205751466ec8e53399e2c2c9c39b77ba43c6e51527",
+      "source_policy_id": "Policy-0814"
+    },
+    "option_transformer_layer_0": {
+      "effective_sha256": "449fc50ff682b1add6d7b0c88de712ef927cd22a9f514fff00a5f8ecb260369a",
+      "source_policy_id": "Policy-0814"
+    },
+    "option_transformer_layer_1": {
+      "effective_sha256": "c6b32a8a6ed8c26b479e0cc198c7b7ef54ce8d3143813d488172324c54bcdc1b",
+      "source_policy_id": "Policy-0814"
+    },
+    "prototype_encoder": {
+      "effective_sha256": "9057714b8ef6ed1640d11c93323bdeee5cac21cf26c2179b8da7be03f236e992",
+      "source_policy_id": "Policy-0814"
+    },
+    "state_encoder": {
+      "effective_sha256": "86c3604d71e46ef2d9d320bf84b90370efc9078fd8bc18a96045a23baf9d0567",
+      "source_policy_id": "Policy-0814"
+    }
+  },
+  "effective_policy_sha256": "476d57d55eb9c040fa4e75ce74ac5205af5d094a296db71cba4ecbf792902580",
+  "frozen": true,
+  "generation": null,
+  "inference_semantics": {
+    "deploy_mode": "immutable_full_policy",
+    "runtime_dtype": "fp32",
+    "storage_dtype": "fp32"
+  },
+  "parent_policy_id": null,
+  "policy_id": "Policy-0814",
+  "role": "frozen_opponent",
+  "schema_version": "0045_policy_manifest_v1",
+  "source": {
+    "imported_from": "archive/pretrained/0031_friend_0814_gsb_v6_value_v10/model.pt",
+    "value_checkpoint_is_actor_external": true,
+    "value_imported_from": "archive/pretrained/0031_friend_0814_gsb_v6_value_v10/value_head.pt"
+  }
+}

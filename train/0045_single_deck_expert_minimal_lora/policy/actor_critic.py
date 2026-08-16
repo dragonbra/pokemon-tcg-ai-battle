@@ -12,11 +12,17 @@ from torch import Tensor, nn
 from torch.nn.utils import parametrize
 
 from ..semantic_runtime.deployment.compound_inference import PortableCompoundSemanticPolicy
+from ..semantic_runtime.deployment.inference import PortableSemanticPolicy
 from .value_network import LatentQueryValueHead
 from .adaptation import AdaptationConfig, apply_focal_adaptation
 from .option_policy_lora import DualOptionEncoding
 from .allocation_head import DragapultAllocationHead
 from .strategy_adapters import ValueResidualAdapter
+from .shared_encoder_lora import (
+    install_shared_encoder_lora,
+    shared_encoder_lora_named_parameters,
+    shared_encoder_lora_parameters,
+)
 from ..integrated.config import IntegratedFlags
 from ..integrated.prize import PrizeAuxHead
 from ..own_archetype import OwnArchetypeVocabulary
@@ -30,6 +36,12 @@ DEFAULT_FOCAL_CHECKPOINT = (
 DEFAULT_G2_SOURCE_CHECKPOINT = (
     PROJECT_ROOT
     / "assets/policies/definitions/champion_g002/source_update_000407.pt"
+)
+DEFAULT_0814_ACTOR_CHECKPOINT = (
+    PROJECT_ROOT / "assets/policies/definitions/policy_0814/model.pt"
+)
+DEFAULT_0814_VALUE_CHECKPOINT = (
+    PROJECT_ROOT / "assets/policies/definitions/policy_0814/value_head.pt"
 )
 
 
@@ -116,6 +128,12 @@ class SemanticActorCritic(nn.Module):
         self.allocation_head = DragapultAllocationHead(int(actor.config.d_model))
         self.adaptation_config = adaptation
         self.policy_option_lora = apply_focal_adaptation(actor, adaptation)
+        self.shared_encoder_lora_inventory = (
+            install_shared_encoder_lora(
+                actor, rank=adaptation.rank, alpha=adaptation.alpha
+            )
+            if adaptation.shared_state_encoder else None
+        )
         integrated_flags.validate()
         self.integrated_flags = integrated_flags
         width = int(actor.config.d_model)
@@ -225,6 +243,8 @@ class SemanticActorCritic(nn.Module):
     def freeze_representation(self) -> None:
         self.actor.requires_grad_(False)
         self.actor.action_decoder.requires_grad_(True)
+        for parameter in shared_encoder_lora_parameters(self.actor):
+            parameter.requires_grad_(True)
         self.value_head.requires_grad_(False)
         self.value_head.queries.requires_grad_(True)
         self.value_head.blocks.requires_grad_(True)
@@ -260,6 +280,11 @@ class SemanticActorCritic(nn.Module):
             and not name.startswith("value_head.")
             and not name.startswith("allocation_head.")
             and not name.startswith(("prize_aux.", "value_adapter.", "policy_option_lora."))
+            and not (
+                name.startswith("actor.state_encoder.")
+                and ".parametrizations." in name
+                and not name.endswith(".original")
+            )
         ]
         if invalid or not any(name.startswith("actor.action_decoder.") for name in names):
             raise RuntimeError(f"invalid full-semantic trainable boundary: {invalid[:5]}")
@@ -273,6 +298,7 @@ class SemanticActorCritic(nn.Module):
                 self.actor.action_decoder, self.allocation_head, self.policy_option_lora
             ) for value in module.parameters()
         }
+        policy_ids.update(id(value) for value in shared_encoder_lora_parameters(self.actor))
         if critic_ids.intersection(policy_ids):
             raise RuntimeError("0045 Critic and Policy share Parameter objects")
 
@@ -291,15 +317,35 @@ def load_actor_critic(
     adaptation: AdaptationConfig = AdaptationConfig(),
     integrated_flags: IntegratedFlags = IntegratedFlags(),
     own_archetype_id_override: int | None = None,
+    value_checkpoint: Path | None = None,
 ) -> tuple[SemanticActorCritic, SourceIdentity]:
     if len(deck) != 60:
         raise ValueError("focal loader requires one exact 60-card deck")
-    portable = PortableCompoundSemanticPolicy.from_checkpoint(checkpoint, deck)
-    actor = portable.actor
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    actor_only_0814 = payload.get("schema_version") == "0031_model_only_checkpoint_v1"
+    if actor_only_0814:
+        if value_checkpoint is None:
+            raise ValueError("Policy-0814 focal initialization requires paired Value checkpoint")
+        portable_actor = PortableSemanticPolicy.from_checkpoint(checkpoint, deck)
+        actor = portable_actor.actor
+        value_payload = torch.load(value_checkpoint, map_location="cpu", weights_only=True)
+        if (
+            value_payload.get("schema_version") != "0036_value_model_only_checkpoint_v1"
+            or value_payload.get("metadata", {}).get("source_checkpoint_sha256")
+            != _sha256(checkpoint)
+        ):
+            raise RuntimeError("Policy-0814 paired Value identity mismatch")
+        value_head = LatentQueryValueHead(int(actor.config.d_model), queries=8, layers=2)
+        value_head.load_state_dict(value_payload["value_head_state_dict"], strict=True)
+        metadata = payload["metadata"]
+    else:
+        portable = PortableCompoundSemanticPolicy.from_checkpoint(checkpoint, deck)
+        actor = portable.actor
+        value_head = portable.value_head
+        metadata = portable.metadata
     parameter_count = sum(value.numel() for value in actor.parameters())
     if parameter_count != 56_352_322:
         raise ValueError(f"0045 inherited focal actor parameter count mismatch: {parameter_count}")
-    metadata = portable.metadata
     vocabulary = OwnArchetypeVocabulary.load_version(
         "own_archetypes_v2", project_root=PROJECT_ROOT
     )
@@ -311,39 +357,46 @@ def load_actor_critic(
         own_archetype_id = own_archetype_id_override
     identity = SourceIdentity(
         checkpoint_sha256=_sha256(checkpoint),
-        schema_version="0043_focal_v1_kaggle_candidate_v1",
+        schema_version=str(payload.get("schema_version")),
         project_id=str(metadata["project_id"]),
         version=str(metadata["version"]),
-        epoch=int(metadata.get("checkpoint_update", 407)),
-        global_step=int(metadata.get("checkpoint_update", 407)),
+        epoch=int(metadata.get("epoch", metadata.get("checkpoint_update", 407))),
+        global_step=int(metadata.get("global_step", metadata.get("checkpoint_update", 407))),
         actor_parameter_count=parameter_count,
         actor_tensor_count=len(actor.state_dict()),
     )
     model = SemanticActorCritic(
         actor,
-        portable.value_head,
+        value_head,
         own_archetype_id,
         29,
         adaptation,
         integrated_flags,
     )
-    model.allocation_head = portable.allocation_head
-    model.value_adapter.load_state_dict(portable.value_adapter.state_dict(), strict=True)
-    model.prize_aux = PrizeAuxHead(int(actor.config.d_model))
+    if actor_only_0814:
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(450_814_013)
+            model.allocation_head = DragapultAllocationHead(int(actor.config.d_model))
+            model.prize_aux = PrizeAuxHead(int(actor.config.d_model))
+    else:
+        model.allocation_head = portable.allocation_head
+        model.value_adapter.load_state_dict(portable.value_adapter.state_dict(), strict=True)
+        model.prize_aux = PrizeAuxHead(int(actor.config.d_model))
     # Prize prediction is training-only and absent from the promoted portable
     # policy identity. Restore only that head from the FP32 U407 source; every
     # inference-effective tensor remains the strict-loaded FP16 G2 artifact.
-    source = torch.load(
-        DEFAULT_G2_SOURCE_CHECKPOINT, map_location="cpu", weights_only=True
-    )
-    if source.get("schema_version") != "0043_focal_v1_model_only_v1" or source.get("update") != 407:
-        raise RuntimeError("0044 focal source is not the immutable Champion-G2 U407 checkpoint")
-    prize_state = {
-        name.removeprefix("prize_aux."): value
-        for name, value in source["state_dict"].items()
-        if name.startswith("prize_aux.")
-    }
-    model.prize_aux.load_state_dict(prize_state, strict=True)
+    if not actor_only_0814:
+        source = torch.load(
+            DEFAULT_G2_SOURCE_CHECKPOINT, map_location="cpu", weights_only=True
+        )
+        if source.get("schema_version") != "0043_focal_v1_model_only_v1" or source.get("update") != 407:
+            raise RuntimeError("0044 focal source is not the immutable Champion-G2 U407 checkpoint")
+        prize_state = {
+            name.removeprefix("prize_aux."): value
+            for name, value in source["state_dict"].items()
+            if name.startswith("prize_aux.")
+        }
+        model.prize_aux.load_state_dict(prize_state, strict=True)
     model.to(device).eval().freeze_representation()
     model.assert_trainable_contract()
     return model, identity
@@ -355,5 +408,7 @@ __all__ = [
     "SourceIdentity",
     "DEFAULT_FOCAL_CHECKPOINT",
     "DEFAULT_G2_SOURCE_CHECKPOINT",
+    "DEFAULT_0814_ACTOR_CHECKPOINT",
+    "DEFAULT_0814_VALUE_CHECKPOINT",
     "load_actor_critic",
 ]

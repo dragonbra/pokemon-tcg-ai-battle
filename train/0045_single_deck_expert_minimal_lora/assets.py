@@ -246,6 +246,7 @@ class AssetRegistry:
                 raise AssetIntegrityError(f"policy manifest identity mismatch: {policy.policy_id}")
             allowed_roots = {
                 "Policy-0809": ("assets/policies/definitions/policy_0809",),
+                "Policy-0814": ("assets/policies/definitions/policy_0814",),
                 "Champion-G1": (
                     "assets/policies/definitions/policy_0809",
                     "assets/policies/definitions/champion_g001",
@@ -282,6 +283,7 @@ class AssetRegistry:
             raise AssetIntegrityError("active opponent pool contains duplicate identities")
         expected_policies = {
             "Policy-0809",
+            "Policy-0814",
             *(f"Champion-G{generation}" for generation in range(2, champion.generation + 1)),
         }
         if set(policies) != expected_policies:
@@ -292,6 +294,7 @@ class AssetRegistry:
             champion.generation is None
             or champion.policy_id != f"Champion-G{champion.generation}"
             or policies["Policy-0809"].role != "historical_anchor"
+            or policies["Policy-0814"].role != "frozen_opponent"
             or any(
                 policies[f"Champion-G{generation}"].role
                 != ("latest_champion" if generation == champion.generation else "champion")
@@ -340,14 +343,14 @@ class AssetRegistry:
         evaluation_only_ids = tuple(
             deck.deck_id for deck in self.decks if deck.roles == ("evaluation",)
         )
-        expected_training_ids = tuple(f"{value:03d}" for value in range(1, 71))
+        expected_training_ids = tuple(f"{value:03d}" for value in range(1, 72))
         if (
-            len(self.decks) != 70
+            len(self.decks) != 71
             or training_ids != expected_training_ids
             or evaluation_only_ids
         ):
             raise AssetIntegrityError(
-                "0045 registry must contain the exact formal training pool 001-070"
+                "0045 registry must contain the exact formal training pool 001-071"
             )
         training_count = len(training_ids)
         return AssetAudit(

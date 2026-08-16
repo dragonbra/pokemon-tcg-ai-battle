@@ -58,11 +58,15 @@ def load_policy(policy_id: str, *, deck_id: str):
     policy = next((item for item in registry.policies if item.policy_id == policy_id), None)
     if policy is None:
         raise AssetIntegrityError(f"unregistered 0044 policy: {policy_id}")
-    if policy_id != "Policy-0809" and not (
+    if policy_id not in {"Policy-0809", "Policy-0814"} and not (
         policy_id.startswith("Champion-G") and policy.generation is not None
     ):
         raise AssetIntegrityError("0044 runtime admits only registered complete policies")
-    purpose = "complete_base_checkpoint" if policy_id == "Policy-0809" else "portable_fp16_artifact"
+    purpose = (
+        "complete_base_checkpoint"
+        if policy_id in {"Policy-0809", "Policy-0814"}
+        else "portable_fp16_artifact"
+    )
     artifact = next((item for item in policy.artifacts if item.purpose == purpose), None)
     if artifact is None:
         raise AssetIntegrityError(f"{policy_id} has no {purpose}")
@@ -70,7 +74,7 @@ def load_policy(policy_id: str, *, deck_id: str):
     if sha256_file(path) != artifact.sha256:
         raise AssetIntegrityError(f"policy artifact mismatch: {policy_id}")
     cards = _deck(deck_id)
-    if policy_id == "Policy-0809":
+    if policy_id in {"Policy-0809", "Policy-0814"}:
         return PortableSemanticPolicy.from_checkpoint(path, cards)
     if policy_id.startswith("Champion-G") and policy.generation is not None:
         loaded = PortableCompoundSemanticPolicy.from_checkpoint(path, cards)

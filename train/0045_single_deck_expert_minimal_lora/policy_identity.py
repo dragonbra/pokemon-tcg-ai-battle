@@ -150,23 +150,25 @@ def materialize_policy_bundle(
     policy = _policy(registry, policy_id)
     manifest = json.loads((project_root / policy.manifest_path).read_text())
     artifacts = {row.purpose: row.sha256 for row in policy.artifacts}
-    if policy_id == "Policy-0809":
+    if policy_id in {"Policy-0809", "Policy-0814"}:
         payload = torch.load(
             _artifact(policy, "complete_base_checkpoint", project_root),
             map_location="cpu", weights_only=True,
         )
         if payload.get("schema_version") != "0031_model_only_checkpoint_v1":
-            raise PolicyIdentityViolation("Policy-0809 checkpoint schema mismatch")
+            raise PolicyIdentityViolation(f"{policy_id} checkpoint schema mismatch")
         state = payload.get("state_dict")
         if not isinstance(state, dict) or len(state) != 293:
-            raise PolicyIdentityViolation("Policy-0809 full tensor inventory mismatch")
+            raise PolicyIdentityViolation(f"{policy_id} full tensor inventory mismatch")
         components = _0809_components(state)
         declared = {
             name: manifest["components"][name]["effective_sha256"]
             for name in EFFECTIVE_0809_COMPONENTS
         }
         if components != declared:
-            raise PolicyIdentityViolation("Policy-0809 effective component hashes mismatch")
+            raise PolicyIdentityViolation(
+                f"{policy_id} effective component hashes mismatch"
+            )
         tensors = {name: value.detach().clone() for name, value in state.items()}
         storage_dtype = "fp32"
     elif policy_id.startswith("Champion-G") and policy.generation is not None:

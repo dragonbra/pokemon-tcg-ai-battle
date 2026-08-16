@@ -163,7 +163,7 @@ class ResidentPolicyPool:
         return dict(self._loads)
 
     def own_ids(self, policy_id: str, deck_ids: Sequence[str]) -> torch.Tensor | None:
-        if policy_id == "Policy-0809":
+        if policy_id in {"Policy-0809", "Policy-0814"}:
             return None
         from ..own_archetype import OwnArchetypeVocabulary
 

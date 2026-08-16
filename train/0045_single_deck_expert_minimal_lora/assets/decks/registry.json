@@ -7622,9 +7622,143 @@
         "munkidori",
         "training_pool_append_2026_08_16"
       ]
+    },
+    {
+      "archetype": "Hydrapple ex / Meganium",
+      "card_count": 60,
+      "cards": [
+        {
+          "card_id": 1,
+          "count": 14
+        },
+        {
+          "card_id": 93,
+          "count": 2
+        },
+        {
+          "card_id": 96,
+          "count": 4
+        },
+        {
+          "card_id": 140,
+          "count": 1
+        },
+        {
+          "card_id": 149,
+          "count": 1
+        },
+        {
+          "card_id": 150,
+          "count": 2
+        },
+        {
+          "card_id": 346,
+          "count": 1
+        },
+        {
+          "card_id": 709,
+          "count": 1
+        },
+        {
+          "card_id": 710,
+          "count": 2
+        },
+        {
+          "card_id": 917,
+          "count": 2
+        },
+        {
+          "card_id": 918,
+          "count": 1
+        },
+        {
+          "card_id": 920,
+          "count": 1
+        },
+        {
+          "card_id": 1071,
+          "count": 2
+        },
+        {
+          "card_id": 1080,
+          "count": 1
+        },
+        {
+          "card_id": 1094,
+          "count": 4
+        },
+        {
+          "card_id": 1097,
+          "count": 1
+        },
+        {
+          "card_id": 1121,
+          "count": 4
+        },
+        {
+          "card_id": 1152,
+          "count": 2
+        },
+        {
+          "card_id": 1182,
+          "count": 2
+        },
+        {
+          "card_id": 1184,
+          "count": 1
+        },
+        {
+          "card_id": 1213,
+          "count": 1
+        },
+        {
+          "card_id": 1227,
+          "count": 4
+        },
+        {
+          "card_id": 1231,
+          "count": 2
+        },
+        {
+          "card_id": 1261,
+          "count": 4
+        }
+      ],
+      "content_sha256": "4043c278a756aba2608d40904a99bfc74ac38085541dfa1e8b5e7c5272f9a3ef",
+      "deck_id": "071",
+      "deck_path": "assets/decks/definitions/071/deck.csv",
+      "file_sha256": "517fc9e4bb0008811f2d6792d52d51384b5318929ca5e89a0cc03b0ee4595e35",
+      "name": "Hydrapple ex / Meganium",
+      "roles": [
+        "training"
+      ],
+      "source": {
+        "appended_at": "2026-08-16T00:00:00+08:00",
+        "exact_list_delta_from_023": {
+          "added": [
+            "Dawn x1",
+            "Judge x1",
+            "Poke Pad x1"
+          ],
+          "removed": [
+            "Celebi x1",
+            "Ciphermaniac's Codebreaking x1",
+            "Briar x1"
+          ]
+        },
+        "print_identity_resolution": "all shared names use immutable deck 023 official-engine print IDs",
+        "source_list": "user-provided 2026-08-16: Hydrapple/Meganium exact 60",
+        "source_type": "user_provided_exact_list"
+      },
+      "tags": [
+        "user_approved_append_2026_08_16",
+        "hydrapple_meganium",
+        "forest_of_vitality",
+        "training_pool_append_2026_08_16"
+      ]
     }
   ],
-  "identity_contract": "deck_id is append-only; 001-070 are immutable",
+  "identity_contract": "deck_id is append-only; 001-071 are immutable",
   "immutability": "content change requires a new deck_id",
   "schema_version": "0043_deck_registry_v2_numeric_identity",
   "training_pool_append": {
@@ -7650,6 +7784,13 @@
     "benchmark_v2_historical_pool_changed": false,
     "formal_training_opponent_pool_changed": true
   },
+  "training_pool_append_2026_08_16_deck_071": {
+    "added_deck_ids": [
+      "071"
+    ],
+    "benchmark_v2_historical_pool_changed": false,
+    "formal_training_opponent_pool_changed": true
+  },
   "training_pool_source_sha256": "2937c23a85c0e3805b40fb014f0274dbfc3f08e04ce3816c120105616ce320ee",
-  "training_pool_version": "FrozenPool65_plus_user_decks_066_070_2026-08-16"
+  "training_pool_version": "FrozenPool65_plus_user_decks_066_071_2026-08-16"
 }

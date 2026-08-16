@@ -102,6 +102,9 @@ def aggregate_rollout(
         "sampling/mode_aggressive_meta_quota": float(
             sampling_mode == "aggressive_meta_quota_training_pool"
         ),
+        "sampling/mode_exact_deck_quota": float(
+            sampling_mode == "exact_deck_quota_training_pool"
+        ),
         "sampling/deck_probability": dict(sorted(deck_weights.items())),
         "sampling/policy_probability": dict(sorted(policy_weights.items())),
     }
@@ -122,6 +125,7 @@ def aggregate_rollout(
     elif sampling_mode not in {
         "uniform_001_067", "meta_balanced_001_067",
         "meta_balanced_training_pool", "aggressive_meta_quota_training_pool",
+        "exact_deck_quota_training_pool",
     }:
         raise ValueError(f"unsupported rollout sampling mode: {sampling_mode}")
     return output
