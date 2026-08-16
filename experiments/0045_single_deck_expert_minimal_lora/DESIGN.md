@@ -2,6 +2,8 @@
 
 Status: V8 training stopped at durable U299. V13 is the current fresh run definition: deck 007 initialized from complete immutable Policy-0814, Policy-0814-only rollout/evaluation, one shared ActionDecoder, and expanded shared-encoder LoRA r16. Its measured trainable and deployment-materialization hard gates pass before launch.
 
+V13 subsequently completed its U0 rollout but failed before PPO because a downstream identity allowlist omitted Policy-0814. It remains failed at U0 with no optimizer update. V14 is the corrected fresh restart with the same model/sampling/eval contract and a new optimizer/on-policy stream.
+
 ## Goal and identity
 
 0045 trains one specialist only: exact deck `007` (Dragapult ex), 60-card content SHA-256 `07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725`. It is intentionally not a 29-deck generalist. The copied 0044 assets are project-local immutable inputs; 0045 runtime code must not import another numbered training project.

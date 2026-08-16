@@ -104,3 +104,11 @@ def test_policy0814_materializes_as_complete_independent_identity():
     assert bundle.audit.effective_policy_sha256 == (
         "476d57d55eb9c040fa4e75ce74ac5205af5d094a296db71cba4ecbf792902580"
     )
+
+
+def test_ppo_identity_gate_admits_registered_policy0814():
+    batch = importlib.import_module(f"{PKG}.training.batch_full_semantic")
+    assert batch.is_admitted_frozen_opponent_policy_id("Policy-0809")
+    assert batch.is_admitted_frozen_opponent_policy_id("Policy-0814")
+    assert batch.is_admitted_frozen_opponent_policy_id("Champion-G2")
+    assert not batch.is_admitted_frozen_opponent_policy_id("Policy-unknown")

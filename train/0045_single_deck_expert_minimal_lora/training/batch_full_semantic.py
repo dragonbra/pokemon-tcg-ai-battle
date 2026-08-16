@@ -15,6 +15,13 @@ from ..policy.batching import collate_feature_batches
 from ..rollout.deck_routing import exact_deck_sha256
 
 
+FROZEN_BASE_POLICY_IDS = frozenset({"Policy-0809", "Policy-0814"})
+
+
+def is_admitted_frozen_opponent_policy_id(policy_id: str) -> bool:
+    return policy_id in FROZEN_BASE_POLICY_IDS or policy_id.startswith("Champion-G")
+
+
 @dataclass(frozen=True)
 class PreparedBatch:
     features: dict[str, Tensor]
@@ -145,9 +152,8 @@ def prepare_episodes(
                 transition.metadata for transition in episode.policy_transitions
             ]
             if (
-                not (
-                    episode.job.opponent_policy_id == "Policy-0809"
-                    or episode.job.opponent_policy_id.startswith("Champion-G")
+                not is_admitted_frozen_opponent_policy_id(
+                    episode.job.opponent_policy_id
                 )
                 or diagnostics.get("opponent_policy_id") != episode.job.opponent_policy_id
                 or not isinstance(
