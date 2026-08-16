@@ -26,6 +26,10 @@ from ..training.moe_checkpoint import load_compact_checkpoint
 from .moe_three_pool_schedule import materialize as materialize_schedule
 
 
+ROUTER_TOPOLOGY = "public_meta29_lookup_softmax_29x7"
+ROUTER_IDENTIFIER = "0047_public_meta29_priority_rules_v1"
+
+
 def _tensor_hash(state: dict[str, torch.Tensor]) -> str:
     digest = hashlib.sha256()
     for name, value in sorted(state.items()):
@@ -67,8 +71,8 @@ def materialize_fp16_fp32(
             "runtime_dtype": "float32",
             "experts": model.expert_count,
             "expert_labels": list(model.expert_labels),
-            "router_topology": "E0_to_Em_two_way_core6",
-            "router_identifier": "0047_public_exact_deck_candidates_v1",
+            "router_topology": ROUTER_TOPOLOGY,
+            "router_identifier": ROUTER_IDENTIFIER,
         },
     }
     output.parent.mkdir(parents=True, exist_ok=True)

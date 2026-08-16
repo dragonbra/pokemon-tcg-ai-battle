@@ -15,7 +15,7 @@ from ..policy.moe_actor_critic import (
 )
 
 
-SCHEMA_VERSION = "0047_meta_routed_moe_compact_fp32_delta_v1"
+SCHEMA_VERSION = "0047_meta_routed_moe_compact_fp32_delta_v2_meta29x7"
 RETENTION_POLICY = "evaluated_nodes_only_after_successful_eval"
 FORBIDDEN_FIELDS = {
     "optimizer",

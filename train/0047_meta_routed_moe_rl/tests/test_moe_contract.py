@@ -22,6 +22,9 @@ own_archetype = importlib.import_module(
 eval_schedule = importlib.import_module(
     "train.0047_meta_routed_moe_rl.evaluation.moe_three_pool_schedule"
 )
+moe_evaluation = importlib.import_module(
+    "train.0047_meta_routed_moe_rl.evaluation.moe_three_pool"
+)
 moe_run = importlib.import_module(
     "train.0047_meta_routed_moe_rl.training.run_v1_moe"
 )
@@ -69,6 +72,7 @@ def test_u0_parity_and_expert_storage_independence():
 
 def test_hard_routes_and_soft_router_gradient():
     model = _model()
+    assert model.router_logits.shape == (29, 7)
     routing_ids = torch.tensor((-1, 0, 1, 2, 3, 5, 27, 4))
     expected = torch.tensor((0, 1, 2, 3, 4, 5, 6, 0))
     actual = model.gate_probabilities(routing_ids).argmax(1)
@@ -81,12 +85,14 @@ def test_hard_routes_and_soft_router_gradient():
             next(expert.action_decoder.parameters()).add_(1e-3)
     model.set_soft_routing(True)
     gate = model.gate_probabilities(meta)
-    assert torch.allclose(gate[:, 0], torch.full((6,), 0.2), atol=1e-6)
+    assert torch.allclose(gate.sum(dim=1), torch.ones(6), atol=1e-6)
+    assert torch.allclose(gate[:, 0], torch.full((6,), 0.1995), atol=1e-6)
     assert torch.allclose(gate.max(dim=1).values, torch.full((6,), 0.8), atol=1e-6)
-    assert torch.equal(gate.gt(0).sum(dim=1), torch.full((6,), 2))
+    assert torch.equal(gate.gt(0).sum(dim=1), torch.full((6,), 7))
     fallback = model.gate_probabilities(torch.tensor((-1, 4, 28)))
-    assert torch.equal(fallback[:, 0], torch.ones(3))
-    assert torch.equal(fallback[:, 1:], torch.zeros((3, 6)))
+    assert torch.equal(fallback[0], torch.tensor((1.0, 0, 0, 0, 0, 0, 0)))
+    assert torch.allclose(fallback[1:].sum(dim=1), torch.ones(2), atol=1e-6)
+    assert torch.allclose(fallback[1:, 0], torch.full((2,), 0.9994), atol=1e-6)
     evaluated = distribution.evaluate_moe_actions(
         model, dict(batch.items()), action.sequences, action.lengths,
         torch.zeros(6, dtype=torch.bool), meta, (None,) * 6,
@@ -124,7 +130,7 @@ def test_sparse_execution_calls_only_gate_support():
         torch.zeros(3, dtype=torch.bool), torch.tensor((5, 5, 5)),
         (None,) * 3,
     )
-    assert calls == [1, 0, 0, 0, 0, 1, 0]
+    assert calls == [1, 1, 1, 1, 1, 1, 1]
     for hook in hooks:
         hook.remove()
 
@@ -190,9 +196,26 @@ def test_v9_uses_win_only_actor_advantage_and_u0_then_every_five_eval():
     assert moe_run.EVAL_INTERVAL == 5
 
 
+def test_candidate_metadata_names_the_meta29_identifier_and_29x7_router():
+    assert moe_evaluation.ROUTER_IDENTIFIER == "0047_public_meta29_priority_rules_v1"
+    assert moe_evaluation.ROUTER_TOPOLOGY == "public_meta29_lookup_softmax_29x7"
+
+
 def test_router_heatmap_generates_png(tmp_path):
     output = moe_run._router_heatmap(_model(), 0, tmp_path / "router.png")
     assert output.read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+
+
+def test_router_audit_json_serializes_the_complete_29x7_table(tmp_path):
+    model = _model()
+    path = tmp_path / "router.json"
+    model_module.save_router_table(model, path)
+    payload = __import__("json").loads(path.read_text())
+    assert payload["schema_version"] == "0047_meta29x7_lookup_softmax_router_v1"
+    assert len(payload["logits"]) == 29
+    assert all(len(row) == 7 for row in payload["logits"])
+    assert len(payload["rows"]) == 29
+    assert "alphas" not in payload
 
 
 def test_compact_checkpoint_round_trip_is_exact_and_omits_frozen_actor():

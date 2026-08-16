@@ -35,9 +35,9 @@ from .run_v1 import PROJECT_ROOT, ROOT, RULES, _cards, _jobs
 
 
 PROJECT = "0047_meta_routed_moe_rl"
-VERSION = "V11_deck007_policy0814_moe7_compact_eval5_retention"
+VERSION = "V14_deck007_public_meta29_router29x7"
 VERSION_ROOT = ROOT / "rl_runs" / PROJECT / "versions" / VERSION
-RUN_ID = "0047-v11-deck007-policy0814-moe7-compact-eval5-retention"
+RUN_ID = "0047-v14-deck007-public-meta29-router29x7"
 FOCAL_DECK_ID = "007"
 FOCAL_OWN_ARCHETYPE_ID = 0
 WARMUP_UPDATES = 5
@@ -45,9 +45,9 @@ ROLLOUT_GAMES = 512
 EVAL_INTERVAL = 5
 EVAL_AT_U0 = True
 PRIZE_AUX_ACTOR_WEIGHT = 0.0
-CUDA_LANES = 512
-ROLLOUT_CHUNK_GAMES = 512
-PPO_FORWARD_MICROBATCH = 256
+CUDA_LANES = 64
+ROLLOUT_CHUNK_GAMES = 64
+PPO_FORWARD_MICROBATCH = 128
 CORE_OPPONENT_DECK_IDS = ("007", "003", "001", "002", "009", "011", "023")
 
 
@@ -66,11 +66,11 @@ def _checkpoint_metadata(model) -> dict[str, Any]:
         "source_policy_id": "Policy-0814",
         "experts": 7, "expert_labels": list(model.expert_labels),
         "priority_meta_ids": list(model.priority_meta_ids),
-        "router_topology": "E0_to_Em_two_way_core6",
+        "router_topology": "public_meta29_lookup_softmax_29x7",
         "warmup_updates": WARMUP_UPDATES,
         "routing_phase": "soft" if model.soft_routing else "hard_warmup",
         "router_probabilities": model.router_table(),
-        "meta_identifier_version": "0047_public_exact_deck_candidates_v1",
+        "meta_identifier_version": "0047_public_meta29_priority_rules_v1",
         "retention_authorization": "explicit_user_authorization_2026-08-16",
     }
 
@@ -102,12 +102,13 @@ def _router_metrics(model, telemetry):
         "router/unknown_decision_fraction": telemetry["unknown_decision_fraction"],
         "router/mean_identification_decision": telemetry["mean_identification_decision"],
         "router/identified_game_fraction": telemetry["identified_game_fraction"],
+        "router/classification_change_total": float(
+            sum(telemetry["classification_change_count"])
+        ),
         "router/soft_phase": float(model.soft_routing),
     }
     for label, value in zip(model.expert_labels, telemetry["effective_usage"], strict=True):
         output[f"router/effective_usage/{label}"] = value
-    for meta_id, alpha in model.router_alphas().items():
-        output[f"router/alpha_{meta_id:02d}"] = float(alpha.detach().cpu())
     probabilities = model.router_table()
     for row in probabilities:
         for expert, value in enumerate(row["probabilities"]):
@@ -121,8 +122,8 @@ def _combine_router_telemetry(chunks: list[dict[str, Any]]) -> dict[str, Any]:
     combined = {
         name: [item for chunk in chunks for item in chunk[name]]
         for name in (
-            "confirmed_meta", "first_identification_decision",
-            "decision_count", "candidate_count",
+            "current_meta", "first_identification_decision", "decision_count",
+            "classification_change_count", "seen_trigger_card_ids",
         )
     }
     total_decisions = sum(int(chunk["total_decisions"]) for chunk in chunks)
@@ -143,7 +144,7 @@ def _combine_router_telemetry(chunks: list[dict[str, Any]]) -> dict[str, Any]:
     combined.update({
         "identifier_version": chunks[0]["identifier_version"],
         "identified_game_fraction": len(identified_timings)
-        / max(1, len(combined["confirmed_meta"])),
+        / max(1, len(combined["current_meta"])),
         "mean_identification_decision": sum(identified_timings)
         / max(1, len(identified_timings)),
         "total_decisions": total_decisions,
@@ -251,7 +252,7 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
     os.environ.update({
         "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
         "WANDB_PROJECT": "pokemon-tcg-policy-learning", "WANDB_RUN_ID": RUN_ID,
-        "WANDB_NAME": "0047 · V11 · deck 007 · Policy0814 · MoE7 compact eval-5 retention",
+        "WANDB_NAME": "0047 · V14 · deck 007 · public Meta29 · Router29x7",
         "WANDB_RUN_GROUP": PROJECT, "WANDB_DIR": str(paths["wandb"]),
         "WANDB_JOB_TYPE": "ppo_meta_routed_moe",
     })

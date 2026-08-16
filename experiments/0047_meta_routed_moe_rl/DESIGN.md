@@ -1,7 +1,9 @@
 # 0047 — Meta-Routed MoE RL
 
-Status: seven-Actor sparse V11 deck-007 compact-checkpoint restart prepared;
-formal run `V11_deck007_policy0814_moe7_compact_eval5_retention`.
+Status: V11 stopped at U4 after a routing-contract defect was confirmed; V12
+failed during startup audit serialization; V13 was stopped after finding stale
+candidate metadata; corrected formal run
+`V14_deck007_public_meta29_router29x7` is prepared from Policy-0814.
 
 V2 reached a complete 512-game rollout but failed before U1 when per-job
 allocation contexts retained views over entire historical compacted CUDA
@@ -26,6 +28,22 @@ to consume about 502 MiB per update. Its weights were explicitly authorized for
 deletion and its logs/metrics remain as a non-resumable historical record. V11
 starts again from immutable Policy-0814 rather than continuing V10 U4, changes
 the exact focal deck to 007, and adopts the compact persistence contract below.
+V11 was then stopped at durable U4 because its public identifier incorrectly
+enumerated exact decks 001–070 before folding them to Meta, while its trainable
+Router was only six scalar E0-to-specialist gates. Those V11 metrics are retained
+as failure evidence but are not evidence for the intended Meta-29 Router. V12
+starts from immutable Policy-0814 again and loads no V11 delta.
+The first corrected launch was allocated V12 and wrote only its U0 compact
+checkpoint before an obsolete `router_alphas()` call in the lightweight Router
+JSON serializer terminated startup. V12 performed no evaluation, rollout, or
+optimization and remains a failed version. V13 fixes and tests the complete
+29×7 Router audit schema and again starts from immutable Policy-0814.
+V13 completed its 1,024-game U0 execution and began rollout, but a pre-commit
+audit found that the portable candidate metadata still named the obsolete
+exact-deck identifier and two-way topology. The games themselves used the new
+runtime, but the deployment evidence is invalid under the identity hard gate.
+V13 was stopped at 192/512 games of the first rollout with no PPO update. V14
+fixes and tests both candidate metadata fields and again starts from Policy-0814.
 
 ## Identities
 
@@ -61,9 +79,9 @@ public observation + exact focal resources + legal options
   each: Q/V LoRA + Decoder        Value/Prize/29-class Meta
         + Allocation
         |
-public exact-Meta memory: UNKNOWN or locked 29-class ID
+public key-Pokémon rules: UNKNOWN or current 29-class Meta ID
         |
-hard warm-up route (U0-U5) or six independent E0↔Em sigmoid gates
+hard warm-up route (U0-U5) or row-softmax(router_logits[meta_id, 0:7])
         |
 pi_eff(action|state) = sum_k gate_k * pi_k(action|state)
 ```
@@ -74,13 +92,17 @@ never interpolated. PPO stores and recomputes the joint effective log-probabilit
 
 ## Public identification and leakage boundary
 
-`0047_public_exact_deck_candidates_v1` accumulates only publicly known opponent
-Pokémon IDs from Semantic0031 (`relative_owner=opponent`, identity known). It
-eliminates incompatible exact decks from the immutable 001–070 catalog and locks
-only when every remaining candidate has the same 29-class ID. It never consumes
-the scheduled deck ID, evaluator label, hidden zone, final game label, or Critic
-Meta output. The routing ID is stored at each decision; earlier UNKNOWN rows are
-never rewritten after later identification.
+`0047_public_meta29_priority_rules_v1` accumulates only publicly known opponent
+key-Pokémon IDs from Semantic0031 (`relative_owner=opponent`, identity known).
+An explicit ordered if-else table maps those public cards directly to one of the
+29 Meta classes. It never loads or predicts an exact deck ID and never reads the
+001–070 deck registry or deck-to-Meta mapping at runtime. More-specific compound
+rules precede base rules: for example Dragapult+Blaziken→16,
+Dragapult+Dusknoir→15, otherwise Dragapult→0. As later public cards arrive, a
+base classification may upgrade to its more-specific compound class. No
+scheduled deck ID, evaluator label, hidden zone, final result, or Critic Meta
+output enters this path. The Meta ID used at each decision is stored without
+rewriting earlier decisions.
 
 ## Initialization and trainable audit
 
@@ -95,12 +117,12 @@ Actor tensor family.
 | Seven ActionDecoders | 7,190,414 | 1e-5 |
 | Seven Allocation Heads | 4,352,327 | 1e-5 |
 | Seven Q/V LoRA modules | 71,680 | 2e-5 |
-| Six routing logits | 6 | 2e-6 |
+| Meta × expert routing logits | 29 × 7 = 203 | 2e-6 |
 | Critic Value | 3,397,121 | 2e-5 |
 | Critic Value adapter | 211,665 | 2e-5 |
 | Critic Prize head | 103,681 | 2e-5 |
 
-Actor total after Router unlock: 11,614,427. Critic total: 3,712,467. The frozen
+Actor total after Router unlock: 11,614,624. Critic total: 3,712,467. The frozen
 0814 Actor module has 56,352,322 parameters and receives no gradients.
 
 ## Routing phases
@@ -108,9 +130,12 @@ Actor total after Router unlock: 11,614,427. Critic total: 3,712,467. The frozen
 - U0 through the rollout producing U5: hard routing, Router frozen. UNKNOWN and
   every non-core class use E0; 00→E00, 01→E01, 02→E02, 03→E03, 05→E05,
   and 27→E27.
-- Starting with the rollout sourced from U5, six scalar Router logits become
-  trainable. A confirmed core meta uses only E0 and its own Specialist, starting
-  at 0.20/0.80. UNKNOWN and every other confirmed meta remain exactly E0.
+- Starting with the rollout sourced from U5, the complete 29×7 Router table
+  becomes trainable. Every identified Meta reads exactly one table row and takes
+  a seven-way softmax. Core rows initialize near their hard route (E0 0.1995,
+  designated specialist 0.8, each other expert 0.0001); non-core rows initialize
+  E0 0.9994 and each specialist 0.0001. UNKNOWN has no table row and remains
+  exactly E0.
 - `old_three` and `new_four` are evaluation labels only; they do not group or
   share expert parameters.
 
@@ -119,7 +144,7 @@ Actor total after Router unlock: 11,614,427. Critic total: 3,712,467. The frozen
 The inherited PPO settings remain: 512 rollout games, three epochs, clip 0.10,
 entropy coefficient 0.003, reference-KL coefficient 0.02, decoder/allocation LR
 1e-5, LoRA LR 2e-5, Value/Prize LR 2e-5. `Frozen-0047-U0` is the immutable
-same-architecture reference. V11 uses a strictly win-only Actor advantage:
+same-architecture reference. V14 uses a strictly win-only Actor advantage:
 
 ```text
 A_actor = normalize(A_terminal_win_loss)
@@ -130,10 +155,10 @@ Directional Prize deltas, `V_prize`, and its Critic-side auxiliary loss remain
 available for variance/diagnostic work, but Prize Advantage is never added to
 the Actor policy loss.
 
-## V11 checkpoint and retention contract
+## V14 checkpoint and retention contract
 
 Training checkpoints use schema
-`0047_meta_routed_moe_compact_fp32_delta_v1`. The immutable Policy-0814 Actor
+`0047_meta_routed_moe_compact_fp32_delta_v2_meta29x7`. The immutable Policy-0814 Actor
 is never copied into an update file. Each file records the exact actor/value/
 effective base hashes and stores every non-`actor.*` effective tensor in FP32:
 all seven expert Decoders/Allocation Heads/QV LoRA modules, Router state, the
@@ -188,14 +213,18 @@ progress lines without publishing partial strength metrics as completed updates.
 - Seven-Actor initial equality and storage independence: PASS (CPU).
 - Core hard routes, strict E0 fallback, two-way 0.20/0.80 gates, and Router
   gradient: PASS (CPU).
-- Seven-Actor CUDA PPO smoke: PASS; six official games, 473 decisions,
-  pre-update max effective-logprob error `3.4570693969726562e-06`, three PPO
-  epochs, finite Router update norm, no NaN/Inf.
+- Seven-Actor V12 full-softmax CUDA PPO smoke: PASS; eight official-engine games,
+  694 decisions, 8/8 valid, lane identity audit PASS, all seven experts with
+  nonzero effective use, 100% game identification, 2.58% UNKNOWN decisions, and
+  finite Router update norm `3.9427250158041716e-06`. The trainer's pre-update
+  behavior-logprob hard gate (`1e-4`) passed before optimization.
 - V9 two-pool schedule contract: PASS; focus is exactly 256 old-three plus 256
   new-four, remain-meta is exactly 512 and excludes all seven focus decks.
-- V11 compact FP32 delta round-trip, immutable-base rejection, exact inventory,
-  and PASS-gated evaluated-node pruning: PASS (CPU, 10-test MoE suite).
+- V12 public Meta-29 rules match the frozen labels for all 70 audited deck
+  samples when their Pokémon signatures are fully public: PASS, 70/70 (CPU).
+- V12 29×7 Router gradients, compact FP32 delta round-trip, immutable-base
+  rejection, exact inventory, and PASS-gated evaluated-node pruning: PASS (CPU).
 
-The Pokémon TCG rules and official-engine action contract are unchanged by V11.
-The only observation-side identity change is exact focal deck conditioning from
-070/ID15 to 007/ID0; routing still uses only public opponent evidence.
+The Pokémon TCG rules and official-engine action contract are unchanged by V14.
+The focal exact-deck conditioning remains 007/ID0. Opponent routing uses only
+public opponent key-Pokémon evidence and produces a Meta ID, never a deck ID.

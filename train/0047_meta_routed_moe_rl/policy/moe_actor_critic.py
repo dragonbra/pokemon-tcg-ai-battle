@@ -88,9 +88,15 @@ class MetaRoutedMoEActorCritic(nn.Module):
         self.register_buffer("default_own_archetype_id", torch.tensor(own_archetype_id))
         self.register_buffer("router_temperature", torch.tensor(float(router_temperature)))
         self.register_buffer("routing_phase", torch.tensor(0, dtype=torch.long))
-        initial_alpha = torch.tensor(0.8)
-        initial_logit = torch.logit(initial_alpha) * router_temperature
-        self.router_logits = nn.Parameter(initial_logit.repeat(len(self.priority_meta_ids)))
+        initial_probabilities = torch.full((self.meta_count, self.expert_count), 1.0e-4)
+        initial_probabilities[:, 0] = 1.0 - 1.0e-4 * (self.expert_count - 1)
+        for meta_id, expert_index in self.meta_to_expert.items():
+            initial_probabilities[meta_id].fill_(1.0e-4)
+            initial_probabilities[meta_id, 0] = 0.2 - 5.0e-4
+            initial_probabilities[meta_id, expert_index] = 0.8
+        self.router_logits = nn.Parameter(
+            initial_probabilities.log() * router_temperature
+        )
         self.router_logits.requires_grad_(False)
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(470_814_001)
@@ -153,28 +159,22 @@ class MetaRoutedMoEActorCritic(nn.Module):
             raise ValueError("routing Meta IDs must be rank one")
         routes = torch.zeros((meta_ids.numel(), self.expert_count), device=self.device)
         routes[:, 0] = 1.0
-        temperature = self.router_temperature.clamp_min(1.0e-6)
-        for router_index, meta_id in enumerate(self.priority_meta_ids):
-            mask = meta_ids.eq(meta_id)
-            if not bool(mask.any()):
-                continue
-            expert_index = self.meta_to_expert[meta_id]
-            if self.soft_routing:
-                alpha = torch.sigmoid(self.router_logits[router_index] / temperature)
-                routes[mask, 0] = 1.0 - alpha
-                routes[mask, expert_index] = alpha
-            else:
+        identified = meta_ids.ge(0) & meta_ids.lt(self.meta_count)
+        if self.soft_routing:
+            if bool(identified.any()):
+                probabilities = torch.softmax(
+                    self.router_logits / self.router_temperature.clamp_min(1.0e-6),
+                    dim=1,
+                )
+                routes[identified] = probabilities.index_select(0, meta_ids[identified])
+        else:
+            for meta_id, expert_index in self.meta_to_expert.items():
+                mask = meta_ids.eq(meta_id)
+                if not bool(mask.any()):
+                    continue
                 routes[mask, 0] = 0.0
                 routes[mask, expert_index] = 1.0
         return routes
-
-    def router_alphas(self) -> dict[int, Tensor]:
-        temperature = self.router_temperature.clamp_min(1.0e-6)
-        values = torch.sigmoid(self.router_logits / temperature)
-        return {
-            meta_id: values[index]
-            for index, meta_id in enumerate(self.priority_meta_ids)
-        }
 
     def router_table(self) -> list[dict[str, object]]:
         meta = torch.arange(self.meta_count, device=self.device)
@@ -290,13 +290,10 @@ def load_moe_actor_critic(
 
 def save_router_table(model: MetaRoutedMoEActorCritic, path: Path) -> None:
     payload = {
-        "schema_version": "0047_two_way_core6_router_v2",
+        "schema_version": "0047_meta29x7_lookup_softmax_router_v1",
         "temperature": float(model.router_temperature),
         "phase": "soft" if model.soft_routing else "hard_warmup",
-        "alphas": {
-            f"{meta_id:02d}": float(alpha.detach().cpu())
-            for meta_id, alpha in model.router_alphas().items()
-        },
+        "logits": model.router_logits.detach().cpu().tolist(),
         "expert_labels": list(model.expert_labels),
         "rows": model.router_table(),
     }

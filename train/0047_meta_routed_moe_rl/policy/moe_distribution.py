@@ -51,6 +51,14 @@ def routing_groups(
     model: MetaRoutedMoEActorCritic, meta_ids: Tensor,
 ) -> list[tuple[Tensor, tuple[int, ...]]]:
     groups: list[tuple[Tensor, tuple[int, ...]]] = []
+    if model.soft_routing:
+        unknown = meta_ids.lt(0).nonzero(as_tuple=False).flatten()
+        if unknown.numel():
+            groups.append((unknown, (0,)))
+        identified = meta_ids.ge(0).nonzero(as_tuple=False).flatten()
+        if identified.numel():
+            groups.append((identified, tuple(range(model.expert_count))))
+        return groups
     core = torch.zeros_like(meta_ids, dtype=torch.bool)
     for meta_id in model.priority_meta_ids:
         core |= meta_ids.eq(meta_id)
@@ -61,8 +69,7 @@ def routing_groups(
         rows = meta_ids.eq(meta_id).nonzero(as_tuple=False).flatten()
         if rows.numel():
             specialist = model.meta_to_expert[meta_id]
-            active = (0, specialist) if model.soft_routing else (specialist,)
-            groups.append((rows, active))
+            groups.append((rows, (specialist,)))
     return groups
 
 

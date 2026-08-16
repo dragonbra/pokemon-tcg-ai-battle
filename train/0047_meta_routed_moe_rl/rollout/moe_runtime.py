@@ -13,7 +13,7 @@ from ..policy.moe_actor_critic import MetaRoutedMoEActorCritic
 from ..policy.moe_distribution import decode_moe_device, routing_groups, select_rows
 from ..semantic_runtime.action_boundary.dragapult import enumerate_allocations
 from ..semantic_runtime.action_boundary.macro_planner import MacroPlanner, PlannedMacro
-from ..semantic_runtime.deployment.exact_meta_memory import ExactPublicMetaMemory
+from ..semantic_runtime.deployment.public_meta29_memory import PublicMeta29Memory
 
 
 class MoEResidentRouter(PublicMetaResidentRouter):
@@ -31,14 +31,14 @@ class MoEFocalRuntime:
                  device: torch.device) -> None:
         self.model = model
         self.device = device
-        self.memory = ExactPublicMetaMemory(job_count, device)
+        self.memory = PublicMeta29Memory(job_count, device)
         self.contexts: dict[int, _DecisionContext] = {}
         self.usage_sum = torch.zeros(model.expert_count, dtype=torch.float64)
         self.decision_count = 0
         self.unknown_decisions = 0
 
     def reset(self, job_count: int) -> None:
-        self.memory = ExactPublicMetaMemory(job_count, self.device)
+        self.memory = PublicMeta29Memory(job_count, self.device)
         self.contexts.clear()
         self.usage_sum.zero_()
         self.decision_count = 0
