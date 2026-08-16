@@ -49,3 +49,10 @@ but the pre-commit audit found stale values in the FP16 candidate metadata:
 the actual V13 runtime used the corrected classifier and 29×7 table, canonical
 deployment evidence may not claim a different identity. V13 was stopped before
 any PPO update. V14 fixes and tests those fields and restarts from Policy-0814.
+
+V14 passed U0 and completed 512 rollout games, but its formal configuration had
+been changed without authorization to 64 CUDA lanes and PPO forward microbatch
+128. This violated the previously optimized 512-lane / microbatch-256 contract.
+V14 was stopped before PPO and produced no U1. V15 restores all three fixed
+values (`CUDA_LANES=512`, `ROLLOUT_CHUNK_GAMES=512`,
+`PPO_FORWARD_MICROBATCH=256`) and adds a regression test for them.

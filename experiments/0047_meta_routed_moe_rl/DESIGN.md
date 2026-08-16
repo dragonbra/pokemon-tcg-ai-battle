@@ -2,8 +2,9 @@
 
 Status: V11 stopped at U4 after a routing-contract defect was confirmed; V12
 failed during startup audit serialization; V13 was stopped after finding stale
-candidate metadata; corrected formal run
-`V14_deck007_public_meta29_router29x7` is prepared from Policy-0814.
+candidate metadata; V14 was stopped after an unauthorized throughput downgrade;
+corrected formal run
+`V15_deck007_public_meta29_router29x7_cuda512_micro256` is prepared from Policy-0814.
 
 V2 reached a complete 512-game rollout but failed before U1 when per-job
 allocation contexts retained views over entire historical compacted CUDA
@@ -44,6 +45,11 @@ exact-deck identifier and two-way topology. The games themselves used the new
 runtime, but the deployment evidence is invalid under the identity hard gate.
 V13 was stopped at 192/512 games of the first rollout with no PPO update. V14
 fixes and tests both candidate metadata fields and again starts from Policy-0814.
+V14 passed U0 and completed its first 512-game rollout, but it incorrectly used
+64 CUDA lanes and PPO forward microbatch 128. That silently discarded the
+previously optimized 512-lane / 256-microbatch training contract. V14 was stopped
+before PPO and produced no U1. V15 restores and test-locks CUDA lanes 512,
+rollout chunk 512, and PPO forward microbatch 256.
 
 ## Identities
 
@@ -144,7 +150,7 @@ Actor total after Router unlock: 11,614,624. Critic total: 3,712,467. The frozen
 The inherited PPO settings remain: 512 rollout games, three epochs, clip 0.10,
 entropy coefficient 0.003, reference-KL coefficient 0.02, decoder/allocation LR
 1e-5, LoRA LR 2e-5, Value/Prize LR 2e-5. `Frozen-0047-U0` is the immutable
-same-architecture reference. V14 uses a strictly win-only Actor advantage:
+same-architecture reference. V15 uses a strictly win-only Actor advantage:
 
 ```text
 A_actor = normalize(A_terminal_win_loss)
@@ -155,7 +161,7 @@ Directional Prize deltas, `V_prize`, and its Critic-side auxiliary loss remain
 available for variance/diagnostic work, but Prize Advantage is never added to
 the Actor policy loss.
 
-## V14 checkpoint and retention contract
+## V15 checkpoint and retention contract
 
 Training checkpoints use schema
 `0047_meta_routed_moe_compact_fp32_delta_v2_meta29x7`. The immutable Policy-0814 Actor
@@ -225,6 +231,6 @@ progress lines without publishing partial strength metrics as completed updates.
 - V12 29×7 Router gradients, compact FP32 delta round-trip, immutable-base
   rejection, exact inventory, and PASS-gated evaluated-node pruning: PASS (CPU).
 
-The Pokémon TCG rules and official-engine action contract are unchanged by V14.
+The Pokémon TCG rules and official-engine action contract are unchanged by V15.
 The focal exact-deck conditioning remains 007/ID0. Opponent routing uses only
 public opponent key-Pokémon evidence and produces a Meta ID, never a deck ID.

@@ -196,6 +196,12 @@ def test_v9_uses_win_only_actor_advantage_and_u0_then_every_five_eval():
     assert moe_run.EVAL_INTERVAL == 5
 
 
+def test_formal_training_keeps_optimized_cuda512_and_microbatch256_contract():
+    assert moe_run.CUDA_LANES == 512
+    assert moe_run.ROLLOUT_CHUNK_GAMES == 512
+    assert moe_run.PPO_FORWARD_MICROBATCH == 256
+
+
 def test_candidate_metadata_names_the_meta29_identifier_and_29x7_router():
     assert moe_evaluation.ROUTER_IDENTIFIER == "0047_public_meta29_priority_rules_v1"
     assert moe_evaluation.ROUTER_TOPOLOGY == "public_meta29_lookup_softmax_29x7"

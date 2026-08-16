@@ -35,9 +35,9 @@ from .run_v1 import PROJECT_ROOT, ROOT, RULES, _cards, _jobs
 
 
 PROJECT = "0047_meta_routed_moe_rl"
-VERSION = "V14_deck007_public_meta29_router29x7"
+VERSION = "V15_deck007_public_meta29_router29x7_cuda512_micro256"
 VERSION_ROOT = ROOT / "rl_runs" / PROJECT / "versions" / VERSION
-RUN_ID = "0047-v14-deck007-public-meta29-router29x7"
+RUN_ID = "0047-v15-deck007-public-meta29-router29x7-cuda512-micro256"
 FOCAL_DECK_ID = "007"
 FOCAL_OWN_ARCHETYPE_ID = 0
 WARMUP_UPDATES = 5
@@ -45,9 +45,9 @@ ROLLOUT_GAMES = 512
 EVAL_INTERVAL = 5
 EVAL_AT_U0 = True
 PRIZE_AUX_ACTOR_WEIGHT = 0.0
-CUDA_LANES = 64
-ROLLOUT_CHUNK_GAMES = 64
-PPO_FORWARD_MICROBATCH = 128
+CUDA_LANES = 512
+ROLLOUT_CHUNK_GAMES = 512
+PPO_FORWARD_MICROBATCH = 256
 CORE_OPPONENT_DECK_IDS = ("007", "003", "001", "002", "009", "011", "023")
 
 
@@ -252,7 +252,7 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
     os.environ.update({
         "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
         "WANDB_PROJECT": "pokemon-tcg-policy-learning", "WANDB_RUN_ID": RUN_ID,
-        "WANDB_NAME": "0047 · V14 · deck 007 · public Meta29 · Router29x7",
+        "WANDB_NAME": "0047 · V15 · deck 007 · Meta29 Router29x7 · CUDA512 micro256",
         "WANDB_RUN_GROUP": PROJECT, "WANDB_DIR": str(paths["wandb"]),
         "WANDB_JOB_TYPE": "ppo_meta_routed_moe",
     })
