@@ -28,6 +28,7 @@ from .batch_full_semantic import prepare_episodes
 from .moe_checkpoint import (
     RETENTION_POLICY,
     atomic_save_compact_checkpoint,
+    load_compact_checkpoint,
     prune_non_eval_checkpoints,
 )
 from .ppo_moe import PPOConfig, PPOTrainer
@@ -35,15 +36,22 @@ from .run_v1 import PROJECT_ROOT, ROOT, RULES, _cards, _jobs
 
 
 PROJECT = "0047_meta_routed_moe_rl"
-VERSION = "V15_deck007_public_meta29_router29x7_cuda512_micro256"
+VERSION = "V16_deck007_soft_moe_memory_fix_resume_u5"
 VERSION_ROOT = ROOT / "rl_runs" / PROJECT / "versions" / VERSION
-RUN_ID = "0047-v15-deck007-public-meta29-router29x7-cuda512-micro256"
+RUN_ID = "0047-v16-deck007-soft-moe-memory-fix-resume-u5"
+PARENT_VERSION = "V15_deck007_public_meta29_router29x7_cuda512_micro256"
+PARENT_UPDATE = 5
+PARENT_CHECKPOINT = (
+    ROOT / "rl_runs" / PROJECT / "versions" / PARENT_VERSION
+    / "checkpoint" / "update-000005.pt"
+)
+PARENT_CHECKPOINT_SHA256 = "e033c2cbc63f9f33e1eae582d8407493688694bcda6ea3c40097492cff930d78"
 FOCAL_DECK_ID = "007"
 FOCAL_OWN_ARCHETYPE_ID = 0
 WARMUP_UPDATES = 5
 ROLLOUT_GAMES = 512
 EVAL_INTERVAL = 5
-EVAL_AT_U0 = True
+EVAL_AT_U0 = False
 PRIZE_AUX_ACTOR_WEIGHT = 0.0
 CUDA_LANES = 512
 ROLLOUT_CHUNK_GAMES = 512
@@ -177,6 +185,7 @@ def readiness() -> dict[str, Any]:
         RULES, DEFAULT_BUILD_DIR / "_ptcg_cuda.so",
         PROJECT_ROOT / "assets/policies/definitions/policy_0814/model.pt",
         PROJECT_ROOT / "assets/policies/definitions/policy_0814/value_head.pt",
+        PARENT_CHECKPOINT,
     ]
     missing = [str(path) for path in required if not path.is_file()]
     if missing:
@@ -195,6 +204,11 @@ def readiness() -> dict[str, Any]:
         "ppo_forward_microbatch_size": PPO_FORWARD_MICROBATCH,
         "eval_interval": EVAL_INTERVAL,
         "eval_at_u0": EVAL_AT_U0,
+        "parent_version": PARENT_VERSION,
+        "parent_update": PARENT_UPDATE,
+        "parent_checkpoint": str(PARENT_CHECKPOINT),
+        "parent_checkpoint_sha256": PARENT_CHECKPOINT_SHA256,
+        "optimizer_initialization": "fresh",
         "checkpoint_contents": "fp32_effective_delta_only",
         "checkpoint_retention": RETENTION_POLICY,
         "retention_authorization": "explicit_user_authorization_2026-08-16",
@@ -231,6 +245,12 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
         deck=deck, own_archetype_id=FOCAL_OWN_ARCHETYPE_ID, device=device,
         integrated_flags=preset("WIN_ONLY_ACTOR"),
     )
+    parent_payload = torch.load(PARENT_CHECKPOINT, map_location="cpu", weights_only=True)
+    if sha256_file(PARENT_CHECKPOINT) != PARENT_CHECKPOINT_SHA256:
+        raise RuntimeError("0047 V16 parent checkpoint hash mismatch")
+    if int(parent_payload.get("update", -1)) != PARENT_UPDATE:
+        raise RuntimeError("0047 V16 parent checkpoint update mismatch")
+    load_compact_checkpoint(model, parent_payload)
     opponent_bundle = materialize_policy_bundle(
         PROJECT_ROOT, "Policy-0814", purpose="0047_formal_rollout"
     )
@@ -249,32 +269,46 @@ def run(*, updates: int | None, wandb_mode: str) -> None:
         prize_aux_actor_weight=PRIZE_AUX_ACTOR_WEIGHT,
     )
     trainer = PPOTrainer(model, device=device, config=config)
+    reference_model, _ = load_moe_actor_critic(
+        deck=deck, own_archetype_id=FOCAL_OWN_ARCHETYPE_ID, device="cpu",
+        integrated_flags=preset("WIN_ONLY_ACTOR"),
+    )
+    trainer.set_reference_model(reference_model)
+    del reference_model
     os.environ.update({
         "WANDB_MODE": wandb_mode, "WANDB_ENTITY": "dragon_bra",
         "WANDB_PROJECT": "pokemon-tcg-policy-learning", "WANDB_RUN_ID": RUN_ID,
-        "WANDB_NAME": "0047 · V15 · deck 007 · Meta29 Router29x7 · CUDA512 micro256",
+        "WANDB_NAME": "0047 · V16 · deck 007 · soft-MoE memory fix · resume U5",
         "WANDB_RUN_GROUP": PROJECT, "WANDB_DIR": str(paths["wandb"]),
         "WANDB_JOB_TYPE": "ppo_meta_routed_moe",
     })
     _atomic_json(paths["artifact"] / "training_config.json", {
         **readiness(), "ppo": asdict(config), "source_identity": asdict(source),
+        "reference_anchor": "Frozen-0047-U0",
         "checkpoint_retention": RETENTION_POLICY,
         "checkpoint_contents": "fp32_effective_delta_only",
         "retention_authorization": "explicit_user_authorization_2026-08-16",
         "configured_update_limit": updates, "wandb_mode": wandb_mode,
     })
     _atomic_json(paths["artifact"] / "status.json", {
-        "state": "running", "checkpoint_update": 0, "wandb_run_id": RUN_ID,
+        "state": "running", "checkpoint_update": PARENT_UPDATE,
+        "parent_version": PARENT_VERSION, "parent_update": PARENT_UPDATE,
+        "wandb_run_id": RUN_ID,
     })
     checkpoint_path = atomic_save_compact_checkpoint(
-        paths["checkpoint"] / "update-000000.pt", model, 0,
+        paths["checkpoint"] / f"update-{PARENT_UPDATE:06d}.pt", model, PARENT_UPDATE,
         metadata=_checkpoint_metadata(model),
     )
-    save_router_table(model, paths["checkpoint"] / "router-000000.json")
+    save_router_table(
+        model, paths["checkpoint"] / f"router-{PARENT_UPDATE:06d}.json"
+    )
     history = RolloutHistory()
-    update = 0
+    update = PARENT_UPDATE
     with TrainingLogger(metrics_path, paths["tensorboard"]) as logger:
-        logger.initialize_wandb({"trainer/update": 0, "checkpoint/update": 0})
+        logger.initialize_wandb({
+            "trainer/update": PARENT_UPDATE,
+            "checkpoint/update": PARENT_UPDATE,
+        })
         if EVAL_AT_U0:
             eval_root = paths["artifact"] / "evaluation" / "update-000000"
             report = evaluate_model(
@@ -419,7 +453,21 @@ def main() -> int:
     if not args.launch_formal:
         print(json.dumps(readiness(), indent=2, sort_keys=True))
         return 0
-    run(updates=args.updates, wandb_mode=args.wandb_mode)
+    try:
+        run(updates=args.updates, wandb_mode=args.wandb_mode)
+    except Exception as error:
+        status_path = VERSION_ROOT / "artifact" / "status.json"
+        current = {}
+        if status_path.is_file():
+            current = json.loads(status_path.read_text(encoding="utf-8"))
+        _atomic_json(status_path, {
+            **current,
+            "state": "failed",
+            "failure_type": type(error).__name__,
+            "failure": str(error),
+            "failed_at": time.time(),
+        })
+        raise
     return 0
 
 

@@ -60,6 +60,7 @@ class PPOConfig:
     max_grad_norm: float = 0.5
     behavior_logprob_mae_limit: float = 1.0e-4
     behavior_guard_samples: int = 4096
+    offload_reference_after_cache: bool = True
 
     def validate(self) -> None:
         if self.gamma != 1.0 or not 0 < self.gae_lambda <= 1:
@@ -85,10 +86,13 @@ class PPOTrainer:
         model.freeze_contract()
         model.assert_trainable_contract()
         self.initial_representation_sha256 = model.representation_sha256()
-        self.reference_model = copy.deepcopy(model).to(device).eval()
+        # The immutable reference is needed only while its log-probabilities are
+        # cached. Keeping a second seven-expert model resident leaves no room for
+        # the soft-MoE autograd graph on 16 GiB GPUs.
+        self.reference_model = copy.deepcopy(model).to("cpu").eval()
         self.reference_model.requires_grad_(False)
         self.reference_parameters = {
-            name: value.detach().clone()
+            name: value.detach().cpu().clone()
             for name, value in model.experts.named_parameters()
         }
         groups = [
@@ -103,10 +107,10 @@ class PPOTrainer:
         self.optimizer = torch.optim.AdamW(groups, weight_decay=config.weight_decay)
 
     def set_reference_model(self, reference_model: MetaRoutedMoEActorCritic) -> None:
-        self.reference_model = copy.deepcopy(reference_model).to(self.device).eval()
+        self.reference_model = copy.deepcopy(reference_model).to("cpu").eval()
         self.reference_model.requires_grad_(False)
         self.reference_parameters = {
-            name: value.detach().clone()
+            name: value.detach().cpu().clone()
             for name, value in reference_model.experts.named_parameters()
         }
 
@@ -200,6 +204,7 @@ class PPOTrainer:
 
     def update(self, batch: PreparedBatch, *, update: int = 0) -> dict[str, float]:
         started = time.perf_counter()
+        torch.cuda.reset_peak_memory_stats(self.device)
         print(
             f"[0047 PPO][update {update:04d}] precheck decisions={batch.decisions} "
             f"epochs={self.config.epochs} minibatch={self.config.batch_size} "
@@ -214,7 +219,11 @@ class PPOTrainer:
                 "0047 effective-policy old/new logprob parity failed: "
                 f"{pre['behavior_logprob_mae_max']}"
             )
+        self.reference_model.to(self.device)
         reference_logprob, _, _ = self._all_logprobs(self.reference_model, batch)
+        if self.config.offload_reference_after_cache:
+            self.reference_model.to("cpu")
+            torch.cuda.empty_cache()
         before = self._snapshot()
         behavior_parameters = {
             name: value.detach().clone()
@@ -251,10 +260,12 @@ class PPOTrainer:
                     entropy = ((evaluated.root_entropy + evaluated.allocation_entropy) * weights).sum()
                     reference_delta = evaluated.joint_log_prob - reference_logprob[indices].to(self.device)
                     reference_kl = (0.5 * reference_delta.square() * weights).sum()
-                    # Critic auxiliary heads reuse the shared Value path only.
-                    features = index_feature_batch(batch.features, indices, self.device, batch.feature_widths)
-                    validated, state, _prefix, value_options = self.model.encode_shared(features)
-                    _value, auxiliary = self.model.value_and_aux_from_encoded(validated, state, value_options)
+                    # Policy, value, Meta and prize losses share one backbone
+                    # forward. Re-encoding here doubled the largest activation
+                    # graph and exhausted VRAM when soft routing enabled all experts.
+                    auxiliary = evaluated.auxiliary
+                    if auxiliary is None:
+                        raise RuntimeError("0047 PPO evaluation omitted critic auxiliaries")
                     labels = batch.opponent_meta_label[indices].to(self.device)
                     meta_loss = (torch.nn.functional.cross_entropy(auxiliary["meta_logits"], labels, reduction="none") * weights).sum()
                     prize_loss = ((auxiliary["v_prize"] - batch.prize_return[indices].to(self.device)).square() * weights).sum()
@@ -331,6 +342,12 @@ class PPOTrainer:
             "ppo/router_soft_phase": float(self.model.soft_routing),
             "ppo/prize_aux_actor_weight": self.config.prize_aux_actor_weight,
             "ppo/decisions": float(batch.decisions),
+            "system/ppo_peak_allocated_bytes": float(
+                torch.cuda.max_memory_allocated(self.device)
+            ),
+            "system/ppo_peak_reserved_bytes": float(
+                torch.cuda.max_memory_reserved(self.device)
+            ),
         }
         result.update(training_batch_metrics(batch, include_detailed=(update <= 1 or update % 10 == 0)))
         return result

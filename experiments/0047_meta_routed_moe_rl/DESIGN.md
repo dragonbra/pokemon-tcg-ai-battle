@@ -3,8 +3,10 @@
 Status: V11 stopped at U4 after a routing-contract defect was confirmed; V12
 failed during startup audit serialization; V13 was stopped after finding stale
 candidate metadata; V14 was stopped after an unauthorized throughput downgrade;
-corrected formal run
-`V15_deck007_public_meta29_router29x7_cuda512_micro256` is prepared from Policy-0814.
+V15 reached and evaluated U5, then failed in the first soft-routing PPO update.
+The corrected continuation is
+`V16_deck007_soft_moe_memory_fix_resume_u5`, initialized from the exact V15 U5
+model-only checkpoint with a fresh optimizer.
 
 V2 reached a complete 512-game rollout but failed before U1 when per-job
 allocation contexts retained views over entire historical compacted CUDA
@@ -50,6 +52,17 @@ V14 passed U0 and completed its first 512-game rollout, but it incorrectly used
 previously optimized 512-lane / 256-microbatch training contract. V14 was stopped
 before PPO and produced no U1. V15 restores and test-locks CUDA lanes 512,
 rollout chunk 512, and PPO forward microbatch 256.
+V15 completed U5 evaluation and pruned U1-U4 as authorized. At U6, soft routing
+activated all seven experts per identified sample. PPO retained a second complete
+reference model on CUDA and redundantly ran the frozen shared backbone a second
+time for Meta/Prize auxiliaries in every microbatch. With the hard-phase peak
+already near 15.7 GiB on a 16.3 GiB GPU, WSL/DXG failed `make_resident` with
+`-12`; PyTorch then reported `CUDA driver error: device not ready`. V16 reuses
+the first policy/value forward for both auxiliary losses, holds the immutable
+reference on CPU except while caching its no-grad log probabilities, and records
+PPO peak allocated/reserved bytes. It preserves CUDA lanes 512 and physical PPO
+microbatch 256. Parent U5 SHA-256 is
+`e033c2cbc63f9f33e1eae582d8407493688694bcda6ea3c40097492cff930d78`.
 
 ## Identities
 
@@ -150,7 +163,7 @@ Actor total after Router unlock: 11,614,624. Critic total: 3,712,467. The frozen
 The inherited PPO settings remain: 512 rollout games, three epochs, clip 0.10,
 entropy coefficient 0.003, reference-KL coefficient 0.02, decoder/allocation LR
 1e-5, LoRA LR 2e-5, Value/Prize LR 2e-5. `Frozen-0047-U0` is the immutable
-same-architecture reference. V15 uses a strictly win-only Actor advantage:
+same-architecture reference. V16 continues to use a strictly win-only Actor advantage:
 
 ```text
 A_actor = normalize(A_terminal_win_loss)
@@ -161,7 +174,7 @@ Directional Prize deltas, `V_prize`, and its Critic-side auxiliary loss remain
 available for variance/diagnostic work, but Prize Advantage is never added to
 the Actor policy loss.
 
-## V15 checkpoint and retention contract
+## V16 checkpoint and retention contract
 
 Training checkpoints use schema
 `0047_meta_routed_moe_compact_fp32_delta_v2_meta29x7`. The immutable Policy-0814 Actor
@@ -184,8 +197,10 @@ evaluation deletes nothing. This `evaluated_nodes_only_after_successful_eval`
 exception was explicitly authorized by the user on 2026-08-16. Router JSON
 remains as lightweight audit metadata.
 
-Formal greedy evaluation runs first at U0, before any rollout or PPO update, and
-then at U5/U10/etc. It uses FP16 storage followed by strict FP32 materialization
+The cold-start run evaluated U0 and U5. V16 records the exact evaluated V15 U5
+checkpoint as its parent and therefore resumes the schedule at U10 rather than
+rerunning or relabeling U5 as U0. Later evaluation runs at U10/U15/etc. It uses
+FP16 storage followed by strict FP32 materialization
 from the source compact FP32 checkpoint, records all three candidate identities,
 and uses complete Frozen Policy-0814 opposition. There are exactly two physical
 CUDA-512 pools:

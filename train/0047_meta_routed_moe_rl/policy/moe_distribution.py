@@ -24,6 +24,7 @@ class MoEActionEvaluation:
     value: Tensor
     expert_root_log_prob: Tensor
     gate: Tensor
+    auxiliary: dict[str, Tensor] | None = None
 
 
 def _log_gate(gate: Tensor) -> Tensor:
@@ -176,7 +177,9 @@ def evaluate_moe_actions(
     macro_actions: tuple[dict | None, ...],
 ) -> MoEActionEvaluation:
     validated, state, prefix, value_options = model.encode_shared(features)
-    value = model.value_from_encoded(validated, state, value_options)
+    value, auxiliary = model.value_and_aux_from_encoded(
+        validated, state, value_options
+    )
     batch_size = validated.batch_size
     root_log_prob = value.new_zeros(batch_size)
     joint_log_prob = value.new_zeros(batch_size)
@@ -203,7 +206,7 @@ def evaluate_moe_actions(
         gate = gate.index_copy(0, rows, partial.gate)
     return MoEActionEvaluation(
         root_log_prob, joint_log_prob, root_entropy, allocation_entropy,
-        value, expert_logprob, gate,
+        value, expert_logprob, gate, auxiliary,
     )
 
 
