@@ -12,14 +12,21 @@ The policy compiles an official game observation and its legal actions into thre
 - dynamic state: zones, board entities, damage, attached cards, public knowledge, events, and resources;
 - legal options: action type, source, target, card/effect identity, and conditional allocation fields.
 
-A semantic Transformer produces state and option representations. Behavior cloning supplies the initial full-action policy. PPO then adapts the action decoder, allocation head, selected LoRA paths, and a separately owned critic. The deployable router uses only public opponent Pokemon evidence and never receives a hidden exact-deck label or critic output.
+A semantic Transformer produces state and option representations. The committed Policy-0814 weights supply the behavior-cloned initial policy. PPO adapts the action decoder, allocation head, final attention/FFN LoRA paths, final Option LayerNorm, and a separately owned critic. The deployable router uses only public opponent Pokemon evidence and never receives a hidden exact-deck label or critic output.
 
 See [architecture](docs/architecture.md), [model design](docs/model/DESIGN.md), and [evidence boundaries](docs/evaluation.md).
 
 ## Repository map
 
 ```text
-src/pokemon_tcg_ai/   model, semantic compiler, BC/RL policy, PPO, routing, export
+src/pokemon_tcg_ai/
+  model/              stable public model API
+  semantic_runtime/   feature schema, encoders, Transformer, deployment internals
+  policy/             Actor/Critic, decoder, LoRA, checkpoint identity
+  training/           one canonical Policy-0814 → PPO training path
+  rollout/            official-engine CUDA trajectory collection
+  inference/          stable portable/routed inference API
+  evaluation/         final routing, export, and frozen evaluation contracts
 docs/model/           authoritative final-system design and evaluation reports
 docs/writeup/         retrospective audit and GitHub write-up plan
 docs/rl/              immutable policy/deployment identity protocol
@@ -43,6 +50,15 @@ python -m pip install -e '.[rl]'
 PYTHONPATH=src:. pytest -q src/pokemon_tcg_ai/tests
 sha256sum -c archive/submission/dist/2026-09-13-final-packages.sha256
 ```
+
+Inspect the final training contract without starting a run:
+
+```bash
+ptcg-train
+```
+
+An actual PPO run requires the private competition-derived CUDA rule pack and an explicit launch
+flag; see [reproduction](docs/reproducing.md).
 
 The unit suite validates model ownership, policy identity, checkpoint reconstruction, deployment dtype, public routing, and schedule contracts. Match strength claims require real games through the official engine; unit tests and offline imitation scores are supporting evidence only.
 

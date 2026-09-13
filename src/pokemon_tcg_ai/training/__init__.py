@@ -1,4 +1,4 @@
-"""0044 training contracts; formal runner remains gated by preflight."""
+"""Canonical 0045 behavior-cloning initialization and PPO training."""
 
 from .config import TrainingRegressionAudit, audit_training_config
 

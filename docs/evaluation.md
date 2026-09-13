@@ -15,7 +15,7 @@
 
 The 0045 V12 public Meta router completed 2,048/2,048 common-seed CUDA official-engine games against complete Policy-0809 at 1,382 wins, 666 losses, and 0 draws (67.48046875%). Candidate identity, opponent identity, and CUDA runtime audits passed. The same schedule informed checkpoint routing, so this is selection-set experimental evidence rather than an independent holdout or automatic Promote decision.
 
-The detailed report is [V12 public Meta router CUDA-2048](model/evaluation/V12_dragapult_007_public_meta_router_v3_grass_fold_u200_cuda2048.html).
+The detailed report is [final public router CUDA-2048](model/evaluation/final-public-router-cuda2048.html).
 
 ## Invalid historical evidence
 

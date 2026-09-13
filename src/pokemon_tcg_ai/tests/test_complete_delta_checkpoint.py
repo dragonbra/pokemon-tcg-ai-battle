@@ -11,43 +11,24 @@ PKG = "pokemon_tcg_ai"
 
 def _model():
     contract = importlib.import_module(
-        f"{PKG}.training.run_v13_policy0814_shared_encoder"
+        f"{PKG}.training.train"
     )
     model, _, audit = contract._model_and_audit()
     return model, audit
 
 
-def test_legacy_checkpoint_filter_reproduces_exact_state_encoder_loss():
-    model, audit = _model()
-    state = model.state_dict()
-    trainable = {name for name, value in model.named_parameters() if value.requires_grad}
-    legacy = {
-        name
-        for name, value in state.items()
-        if value.requires_grad
-        or not name.startswith("actor.")
-        or name.startswith("actor.action_decoder.")
-    }
-    missing = sorted(trainable - legacy)
-    assert audit["tensor_count"] == 115
-    assert sum(value.requires_grad for value in state.values()) == 0
-    assert len(missing) == 16
-    assert all(name.startswith("actor.state_encoder.") for name in missing)
-    assert all(".parametrizations." in name for name in missing)
-
-
 def test_complete_delta_round_trip_reconstructs_full_in_memory_model():
     checkpointing = importlib.import_module(f"{PKG}.training.checkpointing")
-    run_v1 = importlib.import_module(f"{PKG}.training.run_v1")
+    runner = importlib.import_module(f"{PKG}.training.runner")
     source, audit = _model()
-    payload = run_v1._checkpoint(source, 105, version="V16_test")
+    payload = runner._checkpoint(source, 105, version="public_test")
     assert payload["schema_version"] == checkpointing.SCHEMA_VERSION
     assert payload["update"] == 105
-    assert len(payload["state_dict"]) == 115
+    assert len(payload["state_dict"]) == 125
     assert set(payload["state_dict"]) == {
         name for name, value in source.named_parameters() if value.requires_grad
     }
-    assert payload["checkpoint_integrity"]["trainable_tensor_count"] == 115
+    assert payload["checkpoint_integrity"]["trainable_tensor_count"] == 125
     assert payload["checkpoint_integrity"]["total_trainable_params"] == audit[
         "total_trainable_params"
     ]
@@ -64,9 +45,9 @@ def test_complete_delta_round_trip_reconstructs_full_in_memory_model():
 
 def test_complete_delta_rejects_missing_or_mutated_trainable_tensor():
     checkpointing = importlib.import_module(f"{PKG}.training.checkpointing")
-    run_v1 = importlib.import_module(f"{PKG}.training.run_v1")
+    runner = importlib.import_module(f"{PKG}.training.runner")
     model, _ = _model()
-    payload = run_v1._checkpoint(model, 105, version="V16_test")
+    payload = runner._checkpoint(model, 105, version="public_test")
     name = next(iter(payload["state_dict"]))
 
     missing = dict(payload)
@@ -89,9 +70,9 @@ def test_complete_delta_rejects_missing_or_mutated_trainable_tensor():
 )
 def test_complete_delta_rejects_forbidden_resume_state(forbidden: str):
     checkpointing = importlib.import_module(f"{PKG}.training.checkpointing")
-    run_v1 = importlib.import_module(f"{PKG}.training.run_v1")
+    runner = importlib.import_module(f"{PKG}.training.runner")
     model, _ = _model()
-    payload = run_v1._checkpoint(model, 105, version="V16_test")
+    payload = runner._checkpoint(model, 105, version="public_test")
     payload[forbidden] = {}
     with pytest.raises(RuntimeError, match="forbidden"):
         checkpointing.validate_complete_delta(model, payload)

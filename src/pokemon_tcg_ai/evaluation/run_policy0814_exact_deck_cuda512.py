@@ -26,7 +26,7 @@ from ..policy_identity import materialize_policy_bundle
 from ..rollout import ChunkedCudaRolloutCollector, RolloutJob
 from ..runtime import _modules as policy_modules
 from ..runtime import load_policy
-from ..training.run_v1 import RULES, _runtime_root
+from ..training.runner import RULES, _runtime_root
 from .candidate import (
     load_portable_candidate,
     materialize as materialize_candidate,

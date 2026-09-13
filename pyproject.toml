@@ -22,6 +22,9 @@ tracking = [
   "wandb>=0.28,<1",
 ]
 
+[project.scripts]
+ptcg-train = "pokemon_tcg_ai.training.train:main"
+
 [tool.ruff]
 line-length = 100
 

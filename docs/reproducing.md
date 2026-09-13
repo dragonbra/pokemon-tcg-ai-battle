@@ -30,3 +30,23 @@ Model-only checkpoints deliberately exclude optimizer, scheduler, GradScaler, RN
 ## Training outputs
 
 New local runs write beneath ignored `runs/`. Canonical scalar ordering is local JSONL flush, TensorBoard, then W&B. A W&B failure cannot erase local metrics or turn a partial run into a successful one.
+
+Inspect the complete public configuration without launching training:
+
+```bash
+ptcg-train
+```
+
+The output must report Policy-0814, 125 trainable tensors, and 5,597,590 trainable parameters. To
+launch PPO, first build CUDA Engine 2.0 and generate the competition-derived `official_rules.bin`
+according to `engine_cuda_2_0/docs/usage_guide_zh.md`. That rule pack is intentionally untracked due
+to its upstream terms. Either place it at
+`engine_cuda_2_0/generated/private/official_3aaeaa92/official_rules.bin` or set `PTCG_RULE_PACK`.
+
+```bash
+PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+ptcg-train --launch-formal --updates 10 --wandb-mode online
+```
+
+The trainer constructs its own U0 from committed BC assets; no historical `runs/V*` checkpoint is
+required.

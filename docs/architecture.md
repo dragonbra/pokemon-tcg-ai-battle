@@ -42,9 +42,12 @@ PPO starts from the BC policy and operates on official-engine trajectories. The 
 
 - an action decoder and conditional allocation head;
 - policy-side final-Option attention LoRA;
-- selected shared State attention/fusion adaptation and later bounded FFN/LayerNorm experiments;
+- rank-16 shared State attention/fusion/FFN adaptation and final Option FFN/LayerNorm adaptation;
 - a multi-task critic with win value, prize auxiliary value, and opponent-meta diagnostics;
 - model-only checkpoints with exact tensor inventories and strict reconstruction hashes.
+
+The published boundary is 125 trainable tensors and 5,597,590 trainable parameters. It is defined
+in `pokemon_tcg_ai.training.train` and checked by the public test suite.
 
 Rollout win rate is attributed to the behavior policy that generated the batch. Greedy checkpoint strength is reported only by a separate fixed-schedule evaluation.
 

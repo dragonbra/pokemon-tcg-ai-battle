@@ -45,7 +45,7 @@ def test_kaggle_runtime_never_consumes_critic_for_0045_candidate(tmp_path):
     compound = importlib.import_module(
         f"{PKG}.semantic_runtime.deployment.compound_inference"
     )
-    run_v1 = importlib.import_module(f"{PKG}.training.run_v1")
+    runner = importlib.import_module(f"{PKG}.training.runner")
     runtime = importlib.import_module(f"{PKG}.runtime")
     row = next(
         item for item in assets.AssetRegistry.load(PROJECT).decks
@@ -54,7 +54,7 @@ def test_kaggle_runtime_never_consumes_critic_for_0045_candidate(tmp_path):
     deck = tuple(map(int, (PROJECT / row.deck_path).read_text().splitlines()))
     model, _ = actor_critic.load_actor_critic(deck=deck, deck_id="007")
     checkpoint = tmp_path / "update-000040.pt"
-    torch.save(run_v1._checkpoint(model, 40), checkpoint)
+    torch.save(runner._checkpoint(model, 40), checkpoint)
     portable = tmp_path / "model.bin"
     candidate.materialize(
         checkpoint=checkpoint,
@@ -86,12 +86,12 @@ def test_portable_candidate_loader_preserves_exported_identity_and_fails_closed(
     assets = importlib.import_module(f"{PKG}.assets")
     actor_critic = importlib.import_module(f"{PKG}.policy.actor_critic")
     candidate = importlib.import_module(f"{PKG}.evaluation.candidate")
-    run_v1 = importlib.import_module(f"{PKG}.training.run_v1")
+    runner = importlib.import_module(f"{PKG}.training.runner")
     row = next(item for item in assets.AssetRegistry.load(PROJECT).decks if item.deck_id == "007")
     deck = tuple(map(int, (PROJECT / row.deck_path).read_text().splitlines()))
     model, _ = actor_critic.load_actor_critic(deck=deck, deck_id="007")
     checkpoint = tmp_path / "update-000040.pt"
-    torch.save(run_v1._checkpoint(model, 40), checkpoint)
+    torch.save(runner._checkpoint(model, 40), checkpoint)
     portable = tmp_path / "model.bin"
     _, exported = candidate.materialize(
         checkpoint=checkpoint,

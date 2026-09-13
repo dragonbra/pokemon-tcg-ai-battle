@@ -19,10 +19,9 @@ from ..semantic_runtime.action_boundary.public_card_features import card_prize_c
 from .deck_routing import audit_exact_deck_rows, exact_deck_sha256
 
 
-ROOT = Path(__file__).resolve().parents[3]
+PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 PROTOTYPES = (
-    ROOT / "train/0044_g2_dragapult_policy_option_lora/semantic_runtime/assets/"
-    "official_full_engine_prototypes_v2.json"
+    PACKAGE_ROOT / "semantic_runtime/assets/official_full_engine_prototypes_v2.json"
 )
 
 

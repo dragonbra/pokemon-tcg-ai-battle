@@ -1,226 +1,99 @@
-# 0045 — Single-Deck Expert Minimal-LoRA
+# 0045 final public model
 
-Status: V14 was explicitly stopped after U105, but its model-only checkpoint contract was subsequently proven incomplete: all V14 checkpoints omit 16 trainable StateEncoder LoRA tensors. V15 remains historical diagnostic evidence over the reconstructable subset only. V16/V17 produced complete-delta checkpoints, including U125. V19 is the current expansion from exact V17 U125: zero-delta final Option/State FFN LoRA plus final Option LayerNorm tuning, with complete storage/eval reconstruction gates.
+This document is the authoritative description of the model and training code on the public
+branch. The numbered experiment ledger is preserved only at tag
+`archive/final-competition-repo-2026-09-13`.
 
-V13 remains the failed U0 identity-gate attempt. V14 repaired that gate, trained through U105, completed the requested U105 evaluation, and then stopped with W&B synchronized. V15 uses the same fixed 512-game Policy-0814 schedule as the V14 periodic series so routed and static-U70 outcomes can be paired game by game.
+## Scope
 
-## Goal and identity
+The release trains one exact-deck specialist: deck `007` (Dragapult ex), content SHA-256
+`07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725`. Its starting point is
+the committed complete Policy-0814 Actor and Value pair. Training and evaluation opponents are
+independently materialized complete Policy-0814 policies; focal and opponent tensors may not share
+mutable storage.
 
-0045 trains one specialist only: exact deck `007` (Dragapult ex), 60-card content SHA-256 `07bedfffbfad6ecb31733acc54c8110bb1934d8b1dc98bd9c4d37f6ba5c5e725`. It is intentionally not a 29-deck generalist. The copied 0044 assets are project-local immutable inputs; 0045 runtime code must not import another numbered training project.
+## Inputs and action contract
 
-The source checkpoint is selected only after the live 0044 V24 process stops at a complete model-only checkpoint boundary. Its path and SHA-256 are therefore a pending run identity, not an architectural unknown. The 0045 specification explicitly selects the G2 generalist: immutable `Champion-G2`, effective SHA-256 `5f314275c576c1957fe011ab554ca4807cc73680fc89f443394894a7441cb082`. Active V24’s `Champion-G3` (`5d15f503...`) is recorded as a non-selected identity and is never silently substituted.
+The semantic compiler converts an official observation and its legal choices into:
 
-## Audited 0044 pre-change graph
+- static card prototypes containing identity, evolution, HP, attacks, costs, effects, targets,
+  weakness/resistance, and related mechanics;
+- dynamic card, event, resource, board, damage, attachment, zone, and public-knowledge fields;
+- structured legal-option fields containing action type, source, target, card/effect identity,
+  numeric payloads, and conditional allocation information.
 
-```text
-official observation + exact deck/resource state + legal options
-  -> frozen prototype/card/state/event/resource encoders
-  -> frozen Option prefix
-     -> base final Option block ---------------------------> Critic queries
-     -> policy final Option Q/V LoRA (r=4, alpha=8) ------> Actor options
+The policy scores only currently legal options. Its autoregressive decoder emits an ordered option
+sequence followed by STOP. Conditional effects such as damage-counter placement are handled by the
+allocation head. Declaring an attack is represented as the terminal action for that turn.
 
-Critic queries -> z_value -> ValueResidualAdapter(Own Meta) -> V_win
-               -> z_meta  -> opponent-Meta logits/probs
-               -> PrizeAuxHead -> V_prize
-
-state.hidden + side + z_meta + meta_probs + V_win + Own Meta
-  -> PolicyStrategyAdapter
-  -> 29-way MetaActorResidual
-  -> ActionDecoder -> option/STOP logits
-
-state/options/public features -> AllocationHead
-```
-
-Thus 0044 used detached Critic outputs in Actor inference. Detachment blocked gradients but did not remove the semantic dependency.
-
-## 0045 V1 post-change graph
+## Network
 
 ```text
-official observation + exact deck/resource state + legal options
-  -> frozen semantic backbone
-  -> frozen Option prefix
-     +-> policy final Option Q/V LoRA (r=4, alpha=8)
-     |    -> ActionDecoder -> option/STOP logits
-     |    -> AllocationHead when applicable
-     |
-     +-> base final Option block -> Critic latent queries
-          -> ValueResidualAdapter (Critic-only deck-007 ID) -> V_win
-          -> opponent-Meta head
-          -> PrizeAuxHead -> V_prize
+card prototypes ──> prototype/card encoders ──┐
+dynamic state ────> State Transformer ─────────┼─> shared state
+legal options ────> Option Transformer ────────┘
+                                      ├─> Actor decoder + allocation head
+                                      └─> Critic win/prize/meta heads
 ```
-
-The Actor API is `encode_policy(batch) -> (validated, state, policy_options)`. `DecoderPolicyHead.logits` accepts only batch, policy options, decoder state, and decoder-owned keyword arguments. It has no field or argument capable of carrying `V_win`, `z_meta`, Meta probabilities, or Own-Archetype IDs.
-
-The Critic API is `encode_critic(batch) -> (validated, state, value_options, value, auxiliary)`. The two paths share only frozen semantic computation. Trainable parameter objects are disjoint.
-
-## Tensor and parameter contract
 
 - Semantic width: 320.
-- State Transformer: 4 layers, 8 heads.
-- Event encoder: 1 layer.
-- Option Transformer: 2 blocks, 8 heads; only final-block self/cross attention Q/V LoRA is trainable in the policy fork.
-- Maximum legal options: 128; maximum decoder action steps: 64.
-- Actor trainables measured at runtime: Action Decoder 1,027,202; Allocation Head 621,761; Option LoRA 10,240; total 1,659,203.
-- Critic trainables measured at runtime: Value head 3,397,121; Value adapter 211,665; Prize head 103,681; total 3,712,467.
-- Total trainables: 5,371,670. Frozen plus trainable total parameters: 60,707,058.
-
-Removed Actor modules are the 320,465-parameter Policy Strategy Adapter and 74,240-parameter Meta Actor Residual. Their source tensors remain in 0044 checkpoints and are classified as dropped by migration; they do not exist in the 0045 model or optimizer.
-
-Exact-deck/resource information remains in the frozen semantic observation. The Critic’s Own-Archetype embedding remains a training-only value feature; it is never policy-visible.
-
-## V13 current graph and measured trainable boundary
-
-V13 does not continue V8 U299 and does not instantiate seven actors or experts. It strict-loads the complete Policy-0814 Actor (`d7921f…897b`) and paired Value checkpoint (`0ad6f5…7d2d`) as a fresh deck-007 U0. Focal and opponent are independently materialized complete policies with no shared parameter storage.
-
-```text
-Policy-0814 prototype/card embeddings ------------------------ frozen
-StateEncoder board layers 0..2 ------------------------------- frozen
-StateEncoder board layer 3 self-attn Q/V/O LoRA r16 -----+
-StateEncoder event layer 0 self-attn Q/V/O LoRA r16 ------+--> shared state
-StateEncoder final family-fusion Linear 0/2 LoRA r16 ------+
-OptionEncoder prefix/block 0 --------------------------------- frozen
-OptionEncoder final block self/cross Q/V/O LoRA r16 ----------> policy options
-single full-trainable ActionDecoder ---------------------------> action logits
-existing Allocation/Value/ValueAdapter/Prize trainables ------> unchanged RL heads
-```
-
-The machine-readable audit contains every tensor name, shape, parameter count, module, and LoRA rank. It measures 115 trainable tensors and 5,515,030 trainable parameters:
-
-- StateEncoder final board Q/V/O LoRA: 30,720; final event Q/V/O LoRA: 30,720; final family-fusion MLP LoRA: 30,720; shared-State total 92,160.
-- OptionEncoder final self/cross Q/V/O LoRA: 61,440.
-- ActionDecoder: 1,027,202; AllocationHead: 621,761.
-- ValueHead: 3,397,121; ValueAdapter: 211,665; PrizeAuxHead: 103,681.
-
-Prototype/card embeddings, StateEncoder board layers 0–2, all unlisted StateEncoder tensors, and the immutable OptionEncoder base remain frozen. Unlike historical V1–V8, the requested final StateEncoder LoRA is shared by policy and value forward paths; the Critic output still has no edge into Actor logits.
-
-## Migration and identity
-
-`migration.from_0044.migrate_0044_checkpoint` starts from the copied immutable complete semantic base, rebinds the Critic-only Own-Archetype ID to exact deck 007, and copies every shape-compatible checkpoint tensor except the two explicitly retired Actor prefixes. Unclassified tensors, missing inherited tensors, shape mismatches, or failed post-load tensor equality are fatal. The audit records copied/dropped/rebound/base-materialized/new tensors and hashes.
-
-The migrated U0 model is serialized as `0045_minimal_lora_model_only_v1`. An immutable same-architecture `Frozen-0045-Init` snapshot is the primary reference policy. `ppo/reference_kl` means distance to this U0 snapshot; any historical 0044/BC KL must use a separate metric name. A later version may initialize its focal model from a selected model-only parent checkpoint while loading the reference model independently from Frozen-0045-Init. This separation prevents a version boundary from silently resetting reference KL. PPO/master weights remain FP32. Evaluation first materializes a full effective candidate, stores FP16, strict-loads FP32 runtime weights, and records the source FP32 checkpoint, portable artifact, and deployment-effective hash.
-
-## PPO objective and expert learning-rate stages
-
-The architecture is the controlled variable. V1 preserves 0044 V24 settings: 512 rollout games, 3 PPO epochs, logical minibatch 4096, physical/probe batch 256, clip 0.10, entropy coefficient 0.003, reference-KL coefficient 0.02, behavior-KL target/hard guard 0.015/0.025, max grad norm 0.5, gamma 1.0, GAE lambda 0.95, win-value coefficient 0.5, Meta anchor 0.1, Prize-value weight 0.5, and Prize actor-advantage contribution 0.1.
-
-A fresh AdamW optimizer has only the intended Actor/Critic groups. V1 measured the inherited conservative/limit profile:
-
-- Action Decoder: LR `5e-6`.
-- Allocation Head: LR `5e-6`.
-- final Option Q/V LoRA: LR `1e-5`.
-- Value head/trunk: LR `2e-5`.
-- Value adapter: LR `2e-5`.
-- Prize head: LR `2e-5`.
-
-V1 stopped at its complete U5 boundary. Its fixed common-seed Tiny V2 moved from U0 `324-188-0` (63.28125%) to U5 `326-186-0` (63.671875%), while reference KL reached only the low `e-6` range. This control confirmed that the safe steps were too slow for rapid expert viability screening.
-
-For every newly initialized 0045 expert, the project default is now named `0045_expert_cold_start_lr_v1`:
-
-- Action Decoder: LR `1e-5`.
-- Allocation Head: LR `1e-5`.
-- final Option Q/V LoRA: LR `2e-5`.
-- Value head/trunk, Value adapter, and Prize head remain LR `2e-5`.
-
-Only Actor LR is doubled. Entropy, rollout size, PPO epochs, clipping, KL coefficients/guards, reward shaping, and Critic LR remain unchanged. The purpose is rapid traversal of the near-U0 region and early measurement of whether reference movement converts into fixed greedy evaluation gains. Reference KL is a distance diagnostic, never a quality target by itself.
-
-The old V1 rates are retained explicitly as `0045_limit_finetune_lr_v1`. After a high-LR cold-start run identifies a useful checkpoint/region, a new version may clone that model-only checkpoint with a fresh optimizer and use the limit profile for fine adjustment. LR stage changes never append to an existing repository version.
-
-No optimizer/scheduler/RNG state is migrated. Checkpoints are model-only and retain every update.
-
-## Rollout and evaluation
-
-The focal schedule is fixed deck 007. The first controlled opponent deck schedule stays aligned with current 0044; opponent policy identity is immutable and explicit. Focal and opponent weights, storage, routing, and caches are independent.
-
-As of 2026-08-16, the append-only live training/opponent deck registry is contiguous `001`–`071`. Deck `070` is the user-provided exact 60-card `Dragapult ex / Dusknoir / Munkidori` list with content SHA-256 `2693a7b610ccdf2ed10a76a8872003dcb53456e54b006d3a3feff580520374fb`; deck `071` is the user-provided exact 60-card `Hydrapple ex / Meganium` list with content SHA-256 `4043c278a756aba2608d40904a99bfc74ac38085541dfa1e8b5e7c5272f9a3ef`. Deck 071 reuses deck 023's official-engine print identities for shared card names and differs by removing Celebi, Ciphermaniac's Codebreaking, and Briar while adding one Dawn, Judge, and Poké Pad. Decks 070 and 071 map to the existing 29-way Own Archetype classes `15` (`dragapult_dusknoir`) and `27` (`hydrapple_meganium`) respectively; no new Actor/Critic class, router output, or embedding dimension is introduced. Current `meta_balanced_training_pool` and aggressive training-pool schedules resolve the registry dynamically and therefore include both decks. Historical Benchmark V2/Core-16 schedules and already-recorded run manifests remain frozen and are not rewritten to include them.
-
-V13 fixes focal deck 007 and uses only complete immutable Policy-0814 for all 512 opponent lanes. Every update has base counts `001=143`, `002=68`, `003=48`, `007=64`, `071=30`, `008=14`, `009=16`, `011=7`; the remaining 122 lanes are seeded random choices only from `071/008/009/011`, followed by a reproducible shuffle. Realized per-deck counts are logged every update. The rollout uses 512 simultaneous lanes, PPO logical batch 4096, and physical/probe microbatch 256.
-
-Every five updates, V13 runs one greedy official-engine CUDA eval512 against Policy-0814. It uses the same fixed quotas and random-remainder rule, but freezes the eval master seed so all checkpoints see the exact same 512-game schedule. Evaluation materializes the full candidate under `kaggle_fp16_storage_fp32_runtime_v1`, verifies independent focal/opponent storage, and requires 512 terminal games with zero errors/unfinished games. The user-facing/W&B summary is intentionally limited to aggregate W/L/D/win rate and the W/L/D/win rate for each of the eight opponent deck IDs; per-game rows remain only as identity and reproducibility evidence.
-
-V4 is a fresh-optimizer continuation from the exact V3 U200 model-only checkpoint. Its sampled training rollout still uses immutable `Champion-G2`; changing the evaluation opponent does not silently change the behavior-policy environment. The 512-game rollout schedule is Meta-first and then exact-deck-balanced within each Meta. Meta `03` and `05` have weight `6`; Meta `00`, `01`, `02`, and `04` have weight `3`; Meta `27` explicitly returns to weight `1`; every other active Meta also has implicit weight `1`. The first U200-source schedule therefore assigns 67 lanes each to `03/05`, 34 each to `00/01/02/04`, and 11 each to all remaining active classes including `27`.
-
-Starting with V4, the every-five-update longitudinal evaluation is a new three-pool contract against complete immutable `Policy-0809`. Each pool independently contains 512 greedy official-engine games and is balanced first over its selected active Meta classes, then over their exact decks:
-
-- `eval/low_score/*`: Meta `02/03/05`;
-- `eval/priority/*`: Meta `00/01/04/27`;
-- `eval/remaining/*`: every other non-empty Meta class, sampled uniformly by Meta.
-
-The three sets are disjoint and cover all 28 non-empty classes in `own_archetypes_v2`; empty class `14` produces no fabricated games. One deployment-effective candidate is materialized per checkpoint and reused for all 1,536 games. Each pool is logged as its own CUDA-512 curve. `eval/three_pool_aggregate/*` is explicitly named as a 1,536-game diagnostic and does not reuse or impersonate the historical `eval/core/*` series. Common-random schedules exclude focal deployment identity, while opponent identity is fixed to Policy-0809. Multiples of ten reuse the same five-update evaluation rather than running a duplicate.
-
-Benchmark Tiny V2 is a deterministic CUDA-512 common-random-number contract over Benchmark V2’s frozen 16 Meta classes, exactly 32 games per class. It runs every five updates: U5, U10, U15, and so on. Multiples of ten are also the requested periodic evaluate points and reuse the same 512-game report rather than launching a duplicate evaluation. Seeded toss winners invoke each Agent’s real context-41 first-player decision.
-
-Every scored evaluation requires `kaggle_fp16_storage_fp32_runtime_v1` deployment identity PASS, 512 terminal games, zero errors, and zero unfinished games. It logs total/first/second win rate, per-Meta and per-deck results, and `eval/checkpoint_update`.
-
-The formal Kaggle package uses schema `0045_single_deck_expert_kaggle_package_v1`. It materializes the same `0045_minimal_lora_candidate_v1` FP16 artifact and deployment-effective hash used by periodic evaluation. The portable runtime retains Critic tensors only because the U40 qualifying identity includes the complete training candidate payload; for 0045 schemas it does not instantiate a Policy Strategy Adapter and never evaluates or consumes Value/Meta outputs in Actor selection. Runtime regression tests strongly mutate the retained Critic and require identical greedy Actor sequences.
-
-Training logs include rollout win rate, behavior KL, specialist reference KL, optional historical KL, Value loss, explained variance, policy entropy, policy/critic grad norms, decoder/LoRA/allocation update norms, and guarded eval-win-rate improvement per reference-KL movement. Sampled rollout win rate is never reported as greedy checkpoint strength. W&B defines `eval/checkpoint_update` as the explicit step metric for every `eval/*` curve, so the separately emitted evaluation row remains horizontally aligned with the checkpoint/update it evaluates rather than W&B's internal log-row counter or `env/episodes`.
-
-## Hard gates and stage
-
-CPU hard gates cover Critic-mutation→Actor invariance, Policy-LoRA-mutation→Critic invariance, gradient ownership, migration equality, opponent immutability, optimizer ownership, Critic-free export parity, and Critic-free Kaggle runtime selection. They pass. 0044 stopped at V24 U21 (`814765…c83e`), migrated U0 is `3c13e0…91bc7`, and CUDA smoke passes. V1 is an immutable standard/limit-LR U0→U5 control. V2 restarted from the exact same Frozen-0045-Init with the cold-start profile and a fresh optimizer; U40 is the packaged candidate after a valid common-seed Tiny V2 result of `329-183-0` (64.2578125%), versus U0 `324-188-0` (63.28125%). V2's U45 PPO row and checkpoint are durable, but its synchronous U45 evaluation never ran because the runtime-integrity hard gate detected the deployment-file edit made during U40 packaging. V2 is therefore recorded as interrupted, not resumed in place. V3 started at U45 from that model-only checkpoint with a fresh optimizer and freshly collected on-policy data, kept Frozen-0045-Init as reference, and stopped cleanly at U200. V4 binds parent SHA-256 `d8a2cd…a7306` at U200 and independent Frozen-U0 SHA-256 `3c13e0…91bc7`, uses the unchanged cold-start LR/PPO objective, fresh optimizer/on-policy data, targeted rollout Meta weights, and the Policy-0809 three-pool evaluation contract. It has no automatic update limit.
-
-V4 passed its U200 baseline before its first update: low-score `241-271-0` (47.0703125%), priority `329-183-0` (64.2578125%), remaining `400-112-0` (78.125%), all 1,536 games terminal with zero errors and identity/storage-isolation PASS. Its first fresh targeted Champion-G2 sampled rollout was `275-237-0`; U201 was durably written with behavior KL `3.43e-5` (far below the `0.025` hard guard), reference KL `0.006496`, Value loss `0.4023`, and explained variance `0.4933`.
-
-V4 was explicitly stopped after its complete U275 checkpoint and three-pool evaluation. U275 passed all 1,536 games with low-score `241-271-0` (47.0703125%), priority `336-176-0` (65.625%), remaining `409-103-0` (79.8828125%), and named aggregate `986-550-0` (64.1927083%). No U276 checkpoint exists. The V4 status is `stopped`, and its U275 checkpoint SHA-256 is `ed0634…ecdb`.
-
-V6 is an intentionally aggressive sampling ablation from exact V4 U275. V5 is already occupied by the formal deck-023 U105 evaluation identity and is not reused. V6 creates a fresh optimizer, collects fresh on-policy data, keeps the cold-start LR/entropy/PPO objective/model architecture unchanged, and retains Frozen-0045-Init as reference. For this experiment only, the sampled rollout opponent is also locked to complete immutable Policy-0809. Every 512-game rollout has exact Meta quotas: `03=200`, `05=200`, `02=50`; the remaining 62 lanes are balanced uniformly over all other 25 active Meta classes (2–3 each), then balanced over exact decks within each class. Every completed V6 update synchronously runs the unchanged three disjoint Policy-0809 CUDA-512 evaluation pools before the next rollout. The existing V4 U275 PASS report is hash-bound baseline provenance and is not re-materialized or duplicated in V6.
-
-V6 exposed a telemetry-only integration defect after its first PPO update: the exact-quota Policy-0809 rollout completed `249-263-0` and U276 model-only checkpoint was durable, but the telemetry consumer rejected the new sampling-mode string before writing canonical metrics or starting eval. V6 is retained as failed with zero metric rows. A minimal regression test reproduced the independent allowlist omission; telemetry now records both `sampling/mode_meta_balanced=1` and `sampling/mode_aggressive_meta_quota=1`. V7 binds exact V6 U276 SHA-256 `a75e18…05df`, creates another fresh optimizer, reruns the missing U276 three-pool baseline, and then continues the identical aggressive experiment with every-update evaluation.
-
-V7 was explicitly stopped after durable U282. U281 is its last complete every-update three-pool evaluation; U282 then passed the formal common-seed Policy-0809 Benchmark V2 CUDA-2048 at `1343-705-0` (65.576171875%), with all 2,048 games terminal and zero errors. V8 started from exact V7 U282 SHA-256 `25f312…2d5c`, with a fresh optimizer and fresh on-policy rollout. It first ran the missing U282 three-pool baseline, then preserved the exact 512-game Policy-0809 quota schedule (`03=200`, `05=200`, `02=50`, other active Meta total 62) while changing only the synchronous three-pool evaluation cadence from every update to every two checkpoint updates. V8 was explicitly stopped after durable U299 SHA-256 `042e91…b56e`; U298 is its final complete three-pool evaluation at `990-546-0` (64.453125%), and no U300 or partial checkpoint exists. LR, entropy, PPO objective, model architecture, opponent identity, and Frozen-0045-Init reference remained unchanged. The authoritative longitudinal report covers all 31 same-contract V4/V7/V8 points from U200 through U298 and, in separately labeled tables, all 25 valid existing Deck-007 Policy-0809 Benchmark V2 CUDA-2048 points (U40, U90/U95, U100–U200 every five updates, and U282). In total it exposes 56 measured points / 98,816 terminal games under both `own_archetypes_v2` and the actual 15-way Value-loss opponent taxonomy; the contracts remain separated because their sampling distributions differ.
-
-V9 is a diagnostic, explicitly cheating `Experimental-Oracle-MetaRouter-V1`, not a trainable/deployable policy. Before each game it reads the opponent exact deck's true `own_archetypes_v2` 29-way class and uses literal routing: `06/08/10/27 -> U200`, `01/02/17 -> U40`, `03 -> U90`, and every other class (including `00/04/05`) -> U282. All four checkpoints are independently materialized through `kaggle_fp16_storage_fp32_runtime_v1`; 279 frozen Actor tensors compare exactly equal, so runtime retains one U282 semantic backbone and switches only Policy Q/V LoRA, Action Decoder, and Allocation Head. The U282 Critic remains training/evaluation scaffolding and its outputs do not enter Actor inference. Under the unchanged Policy-0809 Benchmark V2 CUDA-2048 common-seed schedule, the oracle scored `1381-667-0` (67.431640625%), with 2,048 terminal games and zero errors. This result is labeled `diagnostic_oracle_not_promote_not_kaggle` and must never be used as submission-strength or Promote evidence.
-
-V10–V12 replace the oracle input with a small monotonic memory inside the focal Agent policy layer. It consumes only opponent Pokémon identities that the official observation marks public/certain; it never reads exact opponent deck ID, hidden cards, the 29-way ground-truth label, or Critic Meta output. Frozen semantic tensors remain shared, and only Policy Q/V LoRA, Action Decoder, and Allocation Head switch at a strategic decision boundary; the decoder has no hidden state carried between official decisions. V12 `Experimental-Public-MetaRouter-V3-GrassFoldU200` routes `01/02/17 -> U40`, `03 -> U90`, and the public `06/08/27/28` grass/Festival family -> U200, with U282 as default. The U200 route fires immediately on public Grookey/Thwackey, Festival Applin/Dipplin, Teal Mask Ogerpon, or any registered 08/27/28 representative Pokémon line; ambiguous Applin/Dipplin may route before a fine Meta label can be locked. The same routing core is used by the CPU Agent wrapper and project-local CUDA evaluator; official engine source and CUDA engine routing are unchanged.
-
-On the unchanged common-seed Policy-0809 Benchmark V2 CUDA-2048 schedule, V10 scored `1373-675-0` (67.041015625%), V11's temporary `08/27/28 -> U282` fold scored `1370-678-0` (66.89453125%), and V12's early `06/08/27/28 -> U200` fold scored `1382-666-0` (67.48046875%). V12 completed 2,048/2,048 terminal games with zero errors and candidate/opponent/CUDA identity PASS. Its Core-16 results for Meta 06/08/27 were respectively `116/128`, `109/128`, and `95/128`, equal to the V9 oracle on those rows; Meta 28 is absent from the frozen Core-16 schedule and therefore has no fabricated score. Public-router evidence remains experimental and is not automatically Promote or Kaggle evidence.
-
-## Compact public-router Kaggle deployment
-
-The user explicitly selected V12 for a Kaggle-ready Deck-007 package. The deployment keeps U282 as the full default policy for every observation that does not match a public routing rule. It stores the complete U282 portable candidate once and stores only the Policy Q/V LoRA, Action Decoder, and Allocation Head tensors for U40, U90, and U200. It never stores three duplicate semantic backbones or three duplicate Critics. All floating checkpoint tensors are FP16 on disk and are strict-loaded into FP32 modules before inference under `kaggle_fp16_storage_fp32_runtime_v1`.
-
-The compact artifact hard-verifies exact equality of all shared Actor tensors, the four per-head effective hashes, the public-rule manifest, and the V12 composite identity `1c8125…dc1`. Unknown/unclassified public Pokémon remain on U282. The package entry point owns the monotonic opponent-public-card memory and routing; neither official CPU engine code nor CUDA engine code is modified. The package schema is `0045_public_meta_router_kaggle_package_v1`.
-
-The resulting archive is `0045_dragapult_ex_007_public_meta_router_v3_compact_fp16_storage_fp32_runtime.tar.gz`, 123,652,167 bytes, SHA-256 `d3c1e50bd1b30c0f279e075ded7ed7dea530cef201d6a9086d9d08dd4be2a633`. Its default portable U282 file is 125,122,571 bytes and its three compact alternate heads total 9,988,377 bytes. Independent archive extraction verified 54 declared files, the exact 60-card deck, the V12 composite hash, and FP32 runtime parameters. The full 0045 regression suite passes 44 tests. A 30-game official CPU-engine package smoke covering U40, U90, and the U282 default completed 30/30 games with zero errors/unfinished games; U200 exact tensor identity and FP32 loading are covered by the hard hash regression. The qualifying strength evidence remains the existing V12 Policy-0809 CUDA-2048 result `1382-666-0` (67.48046875%), rather than the small smoke score.
-
-## Disabled expansion ladder
-
-This historical V1 ladder is superseded for the explicitly authorized V13 run. V13 takes the bounded rank-16 final Option/board/event/fusion expansion described above while keeping early board layers and embeddings frozen. It still does not authorize full StateEncoder unfreezing, multiple actors, or expert routing.
-
-## V15 public deck router V2
-
-V15 policy identity is `Experimental-Public-DeckRouter-V2-Policy0814`. Its monotonic per-game memory consumes only opponent cards that the official observation marks public/certain. It never consumes exact opponent deck ID, hidden cards, focal candidate identity, Critic outputs, or a ground-truth archetype label. Unknown evidence and conflicting strong families fail closed to U70.
-
-The route table selected from the V14 common-seed series is: deck 001 -> U5, 002 -> U15, 003 -> U25, 007 -> U95, 008 -> U5, and 009/011/071 -> U70. Teal Mask Ogerpon alone provisionally selects U5; later public Hydrapple/Meganium-family evidence overrides it to U70. The runtime shares only content-equal effective Actor semantics and switches disjoint Policy Option LoRA, Action Decoder, and Allocation Head modules. All five candidate sources independently pass `kaggle_fp16_storage_fp32_runtime_v1`; the complete immutable Policy-0814 opponent is materialized independently with zero focal/opponent storage aliases.
-
-The V14 checkpoint writer retained 108 tensors but omitted 16 trainable StateEncoder LoRA A/B tensors from every model-only checkpoint. V15 records this as `KNOWN_OMISSION` and compares parametrized modules by their effective weights, not random raw zero-effect A/B initialization. Consequently V15 reconstructs and evaluates Decoder / Option-LoRA / Allocation candidates exactly; it does not claim to reconstruct each live V14 behavior policy in full. This historical boundary is preserved rather than silently filling missing tensors.
-
-On the unchanged Policy-0814 exact-deck common-seed CUDA-512 schedule, V15 completed 512/512 terminal games with zero errors at `295-217-0` (57.6171875%). Static U70 on the identical lanes is `279-233-0` (54.4921875%); paired flips are 40 in favor of V15 and 24 in favor of U70, for net `+16` wins / `+3.125 pp`. Final public classification is exact in 511/512 games, with zero conflicts. Because the same schedule informed checkpoint selection, this is selection-set experimental evidence rather than an independent holdout or Promote decision.
-
-## V16 complete-delta U105 continuation
-
-The V14 root cause is deterministic: `model.state_dict()` returns detached tensors whose `requires_grad` flags are all false. The V14 writer filtered those tensors by `value.requires_grad` and then admitted only non-Actor paths plus `actor.action_decoder.*`; this saved 99/115 trainable tensors and omitted exactly the 16 rank-16 StateEncoder LoRA A/B tensors. The training rollout used the complete in-memory model, while every checkpoint reconstruction and periodic eval used the incomplete saved subset. V14 therefore cannot reproduce its complete live behavior policy and is permanently labeled checkpoint-incomplete.
-
-V16 starts at logical update 105 from exact V14 U105 SHA-256 `1df883f14ee026025b98ac519d25442e9497e59fda513d55663889eaa620a5a3`. It restores all 99 preserved V14 trainable tensors and initializes the missing 16 StateEncoder LoRA tensors with recorded seed `4516105`. All LoRA B tensors begin at zero, so the new StateEncoder adapter is initially zero-effective; the V16 U105 Policy-0814 CUDA-512 baseline exactly reproduces `277-235-0` (54.1015625%). This is a fresh-optimizer continuation with newly collected on-policy data, not an exact optimizer-trajectory resume.
-
-The new checkpoint schema is `0045_complete_delta_model_only_v2`. It derives its inventory from `model.named_parameters()` before reading `state_dict`, stores all and only 115 trainable tensors, records per-tensor and aggregate delta hashes, and records the complete 403-key in-memory model hash. Every load must instantiate immutable Policy-0814, apply the complete delta, and reproduce that full-model hash exactly before training or evaluation can proceed. Optimizer, scheduler, GradScaler, RNG, DataLoader, rollout buffer, replay, and other trajectory-resume state remain forbidden. Every checkpoint is retained.
-
-V16 changes only the `shared_encoder_lora` optimizer group from V14 `2e-5` to `4e-5`. Action Decoder and Allocation remain `1e-5`; Policy Option LoRA, Value, Value Adapter, and Prize remain `2e-5`. V18 restores `shared_encoder_lora` to `2e-5`, equal to Policy Option LoRA; all other objective, rollout, and evaluation settings remain unchanged. The V18 W&B run ID is `0045-v18-policy0814-v17-u130-equal-lora-lr`.
-
-The first V16 optimizer step is durable at U106. Its checkpoint contains 115 trainable tensors including all 16 StateEncoder LoRA tensors and independently reconstructs to full-state SHA-256 `d94e1c1d2f402622f4f31e3197066b227da7a533332c5873631ee5ce295e4183`. All 16 StateEncoder LoRA tensors changed from U105 to U106 with combined L2 update norm `0.16736956`. The observed shared-encoder LR is `4e-5`; behavior KL is `1.4671e-5`, below the unchanged `0.025` hard guard. Training continues toward the next scheduled evaluation at U110.
-
-## V17 exact V16 U112 restart
-
-V16 was no longer running when inspected at durable U112; its stale status still said `running`, so this is recorded as an interrupted process rather than a clean stop. V17 binds exact V16 U112 file SHA-256 `56367c949061f4fc47cddfc6515e9f2aff106eb4701a3c8f3f4e8653febb9613`. The V16 parent and V17 initial U112 checkpoints have identical complete-delta SHA-256 `c0192c386bad7fcc63fcea79651101eafb8d30e5e5eee4db7fea10a8fd725176` and identical reconstructed full-state SHA-256 `38fc601d52facf9d5ccc6ca6010250eaf92b47f5d88562975e290afb6d2d5502`; both contain 115/115 trainable tensors and all 16 nonzero StateEncoder LoRA tensors.
-
-Because checkpoints are model-only, V17 uses a fresh optimizer and newly collected on-policy rollout; it is not an exact optimizer-trajectory resume and its training curve must retain the version boundary. Model architecture, trainable inventory, V16 learning-rate profile, Policy-0814 exact-deck rollout/eval contracts, and Policy-0814 V16 U0 reference remain unchanged. The restart-point deployment eval passed 512/512 games at `275-237-0` (53.7109375%) under `kaggle_fp16_storage_fp32_runtime_v1`. W&B run ID is `0045-v17-policy0814-v16-u112-complete-delta-restart`.
-
-## V18 U130 equal State/Option LoRA LR continuation
-
-V17 durably wrote complete model-only checkpoint U130 before the external interruption. V18 binds the exact U130 SHA-256 `70343580b660a9fc923be976fb285f4b32804fa7fdfd18444475d692f719134d`, runs the missing U130 Policy-0814 CUDA-512 baseline first, and then continues with a fresh optimizer and on-policy rollout. Its only training change is `shared_encoder_lora=2e-5`, equal to `option_lora=2e-5`; all other learning rates and PPO/evaluation contracts remain unchanged.
-
-## V19 exact U125 zero-delta FFN/LayerNorm expansion
-
-V19 binds `V17_policy0814_v16_u112_complete_delta_restart` U125, SHA-256 `cad14c2dcb9c3dffed8fa739969cfb0952f664607854dda16fdc03f1d127dc2b`. The existing shared State attention LoRA LR is `2e-5`, equal to the existing Option attention LoRA LR; all other existing groups are unchanged. Three independent zero-weight-decay groups are added: Option final-block `linear1+linear2` LoRA r16 at `3e-5` (40,960 parameters), State final board-block `linear1+linear2` LoRA r16 at `1.5e-5` (40,960), and Option final LayerNorm weight+bias at `5e-6` (640).
-
-The expanded model has 125 trainable tensors / 5,597,590 parameters. Before any optimizer or rollout starts, V19 materializes both the U125 parent and Policy-0814 reference with the expanded structure, verifies exact logits and greedy action equality against the legacy models, saves complete-delta model-only checkpoints, and independently strict-loads them to the full-model hash. Candidate export/eval metadata carries all three expansion flags; deployment installs State FFN parametrizations before strict loading. Missing any expanded tensor, metadata flag, or reconstruction hash is a hard failure.
+- State Transformer: four board layers, eight heads, plus one event layer.
+- Option Transformer: two blocks, eight heads.
+- Maximum legal options: 128; maximum decoded action steps: 64.
+- Actor outputs never consume win value, prize value, opponent-Meta predictions, or hidden exact
+  opponent-deck identity.
+
+The public trainer freezes the BC backbone and exposes the final adaptation boundary:
+
+| Trainable component | Parameters | Learning rate |
+|---|---:|---:|
+| Action Decoder | 1,027,202 | `1e-5` |
+| Allocation Head | 621,761 | `1e-5` |
+| final Option attention LoRA, rank 16 | 61,440 | `2e-5` |
+| final Option FFN LoRA, rank 16 | 40,960 | `3e-5` |
+| final Option LayerNorm | 640 | `5e-6` |
+| final State board attention LoRA | 30,720 | `2e-5` |
+| final State board FFN LoRA | 40,960 | `1.5e-5` |
+| final State event attention LoRA | 30,720 | `2e-5` |
+| final State family-fusion LoRA | 30,720 | `2e-5` |
+| Value head | 3,397,121 | `2e-5` |
+| Value adapter | 211,665 | `2e-5` |
+| Prize auxiliary head | 103,681 | `2e-5` |
+
+The runtime audit must report exactly 125 trainable tensors and 5,597,590 trainable parameters.
+
+## Training
+
+`pokemon_tcg_ai.training.train` constructs U0 directly from the committed Policy-0814 assets. No
+private historical checkpoint is required. U0 is saved as a complete model-only delta and also used
+as the immutable reference policy for KL regularization. Optimizer state, scheduler state, RNG state,
+and rollout buffers are intentionally excluded from checkpoints.
+
+Each PPO update collects 512 official-engine CUDA games. Deck quotas are fixed at
+`001=143, 002=68, 003=48, 007=64, 071=30, 008=14, 009=16, 011=7`; the remaining 122 lanes are
+seeded samples from `071/008/009/011`. PPO uses a logical batch of 4096 and physical/probe
+microbatches of 256. Every five updates, the saved checkpoint receives the same seeded greedy
+Policy-0814 exact-deck CUDA-512 evaluation.
+
+Sampled rollout results are training diagnostics for the policy that generated the batch. Only the
+separate fixed greedy evaluation is checkpoint-strength evidence.
+
+## Deployment
+
+Candidate evaluation and export follow `kaggle_fp16_storage_fp32_runtime_v1`: materialize a complete
+effective candidate, store floating tensors as FP16, strict-load FP32 runtime tensors, then verify the
+deployment-effective hash. The final public router remembers only public, certain opponent Pokémon
+identities. Unknown or conflicting evidence falls back to its declared default policy.
+
+The retained CUDA-2048 report records 1,382–666–0 against complete Policy-0809. This is
+selection-set experimental evidence, not an independent holdout or automatic promotion decision.
+
+## Code map
+
+- `src/pokemon_tcg_ai/model/`: stable public model API.
+- `src/pokemon_tcg_ai/semantic_runtime/`: features, contracts, encoders, and portable deployment.
+- `src/pokemon_tcg_ai/policy/`: Actor/Critic ownership, LoRA, decoder, and checkpoint export.
+- `src/pokemon_tcg_ai/training/`: canonical PPO runner and checkpoint contracts.
+- `src/pokemon_tcg_ai/rollout/`: CUDA official-engine trajectory collection.
+- `src/pokemon_tcg_ai/inference/`: stable public inference API.
+- `src/pokemon_tcg_ai/evaluation/`: final routing and frozen evaluation contracts.
