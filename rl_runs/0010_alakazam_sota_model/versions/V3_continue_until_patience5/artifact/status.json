@@ -1,7 +1,0 @@
-{
-  "completed_epochs": 0,
-  "failure": "CUDA map_location moved the saved CPU torch RNG state to CUDA before torch.set_rng_state",
-  "next_version": "V4_resume_rng_fix",
-  "status": "startup_failed_before_run_directory_allocation",
-  "version": "V3_continue_until_patience5"
-}

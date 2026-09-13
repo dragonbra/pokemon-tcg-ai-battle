@@ -1,2 +1,0 @@
-"""Streaming semantic dataset materialization."""
-

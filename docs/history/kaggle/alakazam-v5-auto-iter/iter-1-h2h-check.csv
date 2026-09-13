@@ -1,6 +1,0 @@
-opponent,weight,games,wins,losses,draws,errors,win_rate,avg_turns,status,contribution,elapsed_s
-romanrozen_v9,0.1,10,2,8,0,0,0.2,100.2,FAIL,0.02,0.2
-maktha_1084,0.08,10,5,5,0,0,0.5,127.6,PASS,0.04,0.3
-pilkwang_v2,0.08,10,4,6,0,0,0.4,88.6,FAIL,0.032,0.2
-kiyotah_iono,0.04,10,0,10,0,0,0.0,232.5,FAIL,0.0,0.5
-TOTAL,1.0,40,11,29,0,0,0.275,,FAIL,0.3067,1.2

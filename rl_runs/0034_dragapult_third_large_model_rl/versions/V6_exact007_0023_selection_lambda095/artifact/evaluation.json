@@ -1,8 +1,0 @@
-{
-  "champion": "update_000",
-  "report": "experiments/0034_dragapult_third_large_model_rl/evaluation/V6_exact007_0023_selection_lambda095.html",
-  "report_sha256": "f349c51866f53b4640f3ffde745a15ea6f3fd3c21992ccc6fbad7d518b162517",
-  "request_schedule_sha256": "dfaa72127e32f3ff0cb23fe963d4721dd95443b84b9f2d82aa95c4cba953d3de",
-  "schema_version": "0034_checkpoint_series_evaluation_link_v1",
-  "version": "V6_exact007_0023_selection_lambda095"
-}

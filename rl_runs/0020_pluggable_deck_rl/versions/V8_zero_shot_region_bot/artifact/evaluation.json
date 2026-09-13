@@ -1,6 +1,0 @@
-{
-  "report": "experiments/0020_pluggable_deck_rl/evaluation/V8_zero_shot_region_bot.html",
-  "report_sha256": "82e84a0eb033ccbb13d9efef1cfb9bbd02a4bd7d0a1dd17463f08542990f60cf",
-  "run_id": "run-2e7c4f4b035d40eaa5cc62e9b6bdc389",
-  "version": "V8_zero_shot_region_bot"
-}

@@ -43,4 +43,4 @@ It must not import executable code from a numbered `train/00xx_*` project. Histo
 
 ## Known archive-state test boundary
 
-At the archive tag, `train/0045_single_deck_expert_minimal_lora/tests` passes 95 tests. The separately added Top-500 report test has four failures because its generator freezes the 001–070 catalog while the referenced live 0045 registry has since become contiguous 001–071. The public branch drops that historical leaderboard generator rather than silently rewriting the published snapshot.
+At the archive tag, `src/pokemon_tcg_ai/tests` passes 95 tests. The separately added Top-500 report test has four failures because its generator freezes the 001–070 catalog while the referenced live 0045 registry has since become contiguous 001–071. The public branch drops that historical leaderboard generator rather than silently rewriting the published snapshot.

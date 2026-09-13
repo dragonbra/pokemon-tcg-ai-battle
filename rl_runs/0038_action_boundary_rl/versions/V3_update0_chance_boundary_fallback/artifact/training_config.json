@@ -1,6 +1,0 @@
-{
-  "action_change": "confusion chance boundary uses invalid legacy fallback; no weights changed",
-  "optimizer_steps": 0,
-  "schema_version": "0038_update0_contract_fix_v1",
-  "training_performed": false
-}

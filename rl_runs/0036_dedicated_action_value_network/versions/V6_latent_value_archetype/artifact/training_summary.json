@@ -1,9 +1,0 @@
-{
-  "best_epoch": 5,
-  "best_validation_dragapult_value_loss": 0.5058679615937071,
-  "best_validation_exact007_value_loss": 0.5290129420647445,
-  "completed_epochs": 9,
-  "planned_epochs": 20,
-  "status": "user_stopped_before_overfit_region",
-  "trainable_parameter_count": 3407389
-}

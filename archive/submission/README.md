@@ -1,61 +1,22 @@
-# Historical Submission Archive
+# Final competition packages
 
-This directory contains the final, project-numbered Kaggle submission payloads retained as immutable
-historical archives:
+All archives in `dist/` are stored through Git LFS. After cloning, run:
 
-- `0010_alakazam_sota_model_v4_loss_best/`
-- `0011_alakazam_sota_reward_weighted_bc_v3_loss_best/` — source metadata retained, but its ignored `strategy/model.bin` and packaged `.tar.gz` were not present during cleanup, so this package is not currently runnable.
-- `0012_alakazam_sota_feature_engineering_v9_v1_exact_best/`
-- `0013_v5_m0_epoch14_loss_best/` - M0 epoch 14 validation-loss-best self-contained payload and local official-engine evaluation candidate.
-- `0022_frozen_festival_lead_dipplin_001/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Festival Lead / Dipplin 001 deck.
-- `0022_frozen_mega_kangaskhan_ex_crustle_004/` - 0019 epoch-13 neutral zero-shot policy with the exact 0022 Mega Kangaskhan ex / Crustle 004 deck.
-- `0043_dragapult_ex_007_v2_u136_fp16_storage_fp32_runtime/` — 0043 V2 U136 with exact deck 007, materialized under `kaggle_fp16_storage_fp32_runtime_v1`; its formal Frozen Policy-0809 CUDA-2048 evidence is 1301-746-1 (63.53%).
-- `0044_alakazam_dudunsparce_069_v18_u14_fp16_storage_fp32_runtime/` — 0044 V18 U14 with exact deck 069 (Alakazam / Dudunsparce Boss Control), materialized under `kaggle_fp16_storage_fp32_runtime_v1`; its formal common-schedule Frozen Policy-0809 CUDA-2048 evidence is 1269-749-30 (61.96%). The final archive passed fresh-extraction validation, Kaggle-style raw execution without `__file__`, and a 10/10-terminal official-engine smoke with zero errors.
-
-Each package remains self-contained with `main.py`, `deck.csv`, and its own `cg/` runtime. They are
-not current training entry points. New trainable candidates belong in `evaluation/arena/candidates/`.
-All newly selected long-term payloads must be archived here under a project-numbered name; the
-repository-root `submission/` path is retired. Matching locally packaged archives, when available,
-live in `dist/`.
-
-## PyTorch package load-order contract
-
-Every newly built PyTorch package must declare the following fields in its root `manifest.json`:
-
-```json
-{
-  "runtime_framework": "pytorch",
-  "native_runtime_load_order": "torch_before_cg"
-}
+```bash
+git lfs pull
+sha256sum -c archive/submission/dist/2026-09-13-final-packages.sha256
 ```
 
-Its `main.py` startup order is normative:
+The frozen set contains five standalone `0045` submission packages and two multi-package final-dance bundles:
 
-1. Set `OMP_NUM_THREADS`, `MKL_NUM_THREADS`, `OPENBLAS_NUM_THREADS`, and
-   `NUMEXPR_NUM_THREADS` before importing numerical libraries.
-2. Resolve the package root without assuming `__file__` exists.
-3. Import `torch` eagerly.
-4. Only then import policy modules or anything that can import `cg`, call `ctypes.CDLL`, or load
-   `cg/libcg.so`.
-5. Load the model and expose `read_deck_csv()` plus `agent(observation)`.
+| Artifact | Bytes | SHA-256 |
+|---|---:|---|
+| `0045-003-FINAL_DANCE_FIN-MEGA_LOPUNNY_EX.tar.gz` | 112,734,646 | `b21a5770ac786dac2dee6f9934bc28a5bc65f5713b0ffde890a4a7e8b515f207` |
+| `0045-003-PINHAOTU_FIN-MEGA_LOPUNNY_EX.tar.gz` | 119,079,081 | `934c074738865af79ca411b6cfe214fe3180db1135d9c4bb03c609e1f8368237` |
+| `0045-007-PINHAOLONG_V2-DRAGAPULT_EX.tar.gz` | 127,229,136 | `31f577eed5d92c9e2cb9ee35265982be1302b1e58321a0fde658479e47a63688` |
+| `0045-007-PINHAOLONG_V3-DRAGAPULT_EX.tar.gz` | 138,650,926 | `5d47502359d61d5ff9073a03d1f3f4ec008f7d67d4b02de343fc539b76be1dda` |
+| `0045-007-PINHAOLONG_V4-DRAGAPULT_EX.tar.gz` | 138,650,926 | `665090421a1daf634eb6bc2047d25a713d1e11a5cc1c523d15ccd6187a670f9a` |
+| `final-dance-0816.zip` | 132,850,464 | `3b11024216541160f5850fd51fd671fecc5332669c4d3386a9d8416bb356b195` |
+| `v2-final-dance-0817.zip` | 252,209,117 | `3f5cffdc92bf7b761d29fdbfae420a0d335f5d9ea01b9899ec9c91b06bda6d49` |
 
-Do not defer the Torch import until the first non-registration action. Loading `libcg` first and
-Torch second in one process can terminate the worker with a native segmentation fault during
-`torch._ops` or quantization initialization. That crash usually appears as a step-0
-`worker_crash`; it is not a normal Python exception and cannot be treated as an inconclusive smoke.
-
-The final gate always starts from a fresh extraction of the exact archive in `dist/`. Run package
-validation without repository `PYTHONPATH`, exercise Kaggle-style raw `exec` without `__file__`,
-and run at least one official-engine opponent for 10 games. The evaluation worker must preload
-Torch from the manifest before loading `cg/libcg`; all 10 games must finish with zero errors. A
-source-directory import, one manually preloaded game, shared-inference-only run, or a crash also
-seen in an older package does not satisfy this gate. Use `PYTHONFAULTHANDLER=1` to diagnose a
-step-0 native crash, correct the load order, rebuild the archive, and repeat every extraction gate.
-
-The local runner defaults to a 30-second per-game worker timeout. Large CPU models can exceed that
-limit without crashing, especially under process contention. Inspect the retained trace error: a
-literal `worker timed out` is a timeout, while a non-zero process exit or SIGSEGV without a Python
-error is a native crash. Calibrate slow-model smoke explicitly, for example with
-`--worker-timeout-seconds 120 --workers 1 --worker-cpu-threads 1`, and record those values with the
-gate result. Increasing the timeout must never be used to hide a native crash, and the final result
-must still be 10/10 finished with zero errors.
+These names are preserved as competition provenance. They do not by themselves prove external submission or leaderboard score.

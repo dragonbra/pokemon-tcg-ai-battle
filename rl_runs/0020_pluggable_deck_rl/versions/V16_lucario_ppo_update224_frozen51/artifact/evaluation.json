@@ -1,6 +1,0 @@
-{
-  "report": "experiments/0020_pluggable_deck_rl/evaluation/V16_lucario_ppo_update224_frozen51.html",
-  "report_sha256": "b36ec8a457b14b95f834b12ebec47d47317bf63550fccec865613f7b923ad794",
-  "run_id": "run-c87b445f7a2e4168832a98c16d061ff8",
-  "version": "V16_lucario_ppo_update224_frozen51"
-}

@@ -1,9 +1,0 @@
-{
-  "candidate": "0014_v17_r7_epoch14_exact_best",
-  "checkpoint_epoch": 14,
-  "official_engine_games": 200,
-  "report": "../../../../../experiments/0014_faithful_board_causal_features/evaluation/V17_r7_regularized_option_query.html",
-  "run_id": "run-72fa9d6b490241c093a3a3c6a60ed883",
-  "win_rate": 0.79,
-  "wins": 158
-}

@@ -1,7 +1,0 @@
-{
-  "evaluation_run_id": "run-72fbcfbd54754d8b9367bc24dc76467f",
-  "note": "Evaluation-only precision comparison using pt0805 epoch 13 checkpoint.",
-  "state": "evaluated",
-  "training_performed": false,
-  "version": "V7_pt0805_lopunny_froslass_fp32_runtime"
-}

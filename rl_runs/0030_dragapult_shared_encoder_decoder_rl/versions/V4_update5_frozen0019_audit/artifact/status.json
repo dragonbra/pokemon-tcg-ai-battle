@@ -1,8 +1,0 @@
-{
-  "kind": "frozen0019_checkpoint_audit",
-  "report": "/home/cyd/repos/pokemon-tcg-ai-battle/experiments/0030_dragapult_shared_encoder_decoder_rl/evaluation/V4_update5_frozen0019_audit.html",
-  "source_training_version": "V3_lightweight_engine_workers",
-  "source_update": 5,
-  "state": "completed",
-  "version": "V4_update5_frozen0019_audit"
-}

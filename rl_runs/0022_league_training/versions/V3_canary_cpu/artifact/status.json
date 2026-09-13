@@ -1,9 +1,0 @@
-{
-  "catalog_sha256": "d16488e6bb191ddffd626bbdfdaf6b978b1d1d5184922a61c64ec179e2bab97b",
-  "foundation_verified": true,
-  "official_engine_strength_evidence": false,
-  "state": "initialized",
-  "training_started": false,
-  "version": "V3_canary_cpu",
-  "wandb_sync": "not_applicable_initialization_only"
-}

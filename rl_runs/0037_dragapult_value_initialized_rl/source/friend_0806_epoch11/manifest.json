@@ -1,9 +1,0 @@
-{
-  "checkpoint": "model.pt",
-  "checkpoint_sha256": "0ca395a5f08ca21f22417a04736d1bf42274800586729e6cc0917a0c79aa5df8",
-  "epoch": 11,
-  "global_step": 141878,
-  "project_id": "0031_rule_faithful_semantic_foundation_pretraining",
-  "schema_version": "0031_model_only_checkpoint_v1",
-  "version": "V2_full_winners_bs1024_20260616_20260803"
-}

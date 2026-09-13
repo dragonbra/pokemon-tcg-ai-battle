@@ -12,15 +12,12 @@ venv/
 *.pth
 *.ckpt
 *.safetensors
-!train/0042_full_model_design/assets/allocation_head_bc_v1.pt
-!train/0043_champion_league_rl/assets/policies/definitions/**/*.pt
-!train/0043_champion_league_rl/assets/policies/definitions/**/*.bin
-!train/0044_g2_dragapult_policy_option_lora/assets/policies/definitions/**/*.pt
-!train/0044_g2_dragapult_policy_option_lora/assets/policies/definitions/**/*.bin
-!train/0045_single_deck_expert_minimal_lora/assets/policies/definitions/**/*.pt
-!train/0045_single_deck_expert_minimal_lora/assets/policies/definitions/**/*.bin
+!src/pokemon_tcg_ai/assets/policies/definitions/**/*.pt
+!src/pokemon_tcg_ai/assets/policies/definitions/**/*.bin
 engine/build/
 data/competition/
+/data/processed/
+/data/raw/
 data/raw/episodes/archives/
 data/raw/episodes/download_logs/
 data/raw/episodes/index/
@@ -32,15 +29,11 @@ test-results/
 .superpowers/
 
 # RL artifacts: large supervised datasets and checkpoints stay local.
-# Run metadata, metrics, evaluation reports, and TensorBoard events are tracked.
-rl_runs/
-docs/evaluation/combat_mat/benchmark_v2/**/materialization/
-rl_runs/dataset/*
-!rl_runs/dataset/README.md
-rl_runs/checkpoint/*
-!rl_runs/checkpoint/README.md
+# Run metadata, metrics, evaluation reports, checkpoints, and TensorBoard events stay local.
+runs/
+/rl_runs/
+/engine_cuda/
 # W&B offline/online staging is local and can be regenerated from canonical JSONL.
-rl_runs/wandb/
 wandb/
 *.egg-info/
 
@@ -59,18 +52,21 @@ data/replays/*
 evaluation/arena/candidates/
 evaluation/arena/candidates/**/strategy/model.bin
 archive/submission/*
+!archive/submission/README.md
+!archive/submission/dist/
 archive/submission/**/strategy/model.bin
-archive/submission/dist/*.tar.gz
+archive/submission/dist/*
+!archive/submission/dist/0045-003-FINAL_DANCE_FIN-MEGA_LOPUNNY_EX.tar.gz
+!archive/submission/dist/0045-003-PINHAOTU_FIN-MEGA_LOPUNNY_EX.tar.gz
+!archive/submission/dist/0045-007-PINHAOLONG_V2-DRAGAPULT_EX.tar.gz
+!archive/submission/dist/0045-007-PINHAOLONG_V3-DRAGAPULT_EX.tar.gz
+!archive/submission/dist/0045-007-PINHAOLONG_V4-DRAGAPULT_EX.tar.gz
+!archive/submission/dist/final-dance-0816.zip
+!archive/submission/dist/v2-final-dance-0817.zip
+!archive/submission/dist/*.sha256
 
-# Nested runtime assets for 0013+ projects are local and reproducible.
-/rl_runs/*/dataset/
-/rl_runs/*/datasets/
-/rl_runs/*/versions/*/checkpoint/
-/rl_runs/*/versions/*/wandb/
-/rl_runs/*/versions/*/tensorboard/
-new-model-0809.tar.gz
-docs/evaluation/combat_mat/policy_0806/0806_kaggle_top100_plus_v1_cuda_seeded_2048_agent_choice_v3/games/*
-docs/evaluation/combat_mat/policy_0806/0809_gsb_v5_vs_0806_cuda_seeded_2048_agent_choice_v3/games/*
+# Local run products are reproducible but not part of the public source tree.
+/runs/
 
 # Per-game evaluation payloads are large, reproducible local evidence. Keep the
 # aggregate manifests and rendered HTML reports tracked, but do not upload the

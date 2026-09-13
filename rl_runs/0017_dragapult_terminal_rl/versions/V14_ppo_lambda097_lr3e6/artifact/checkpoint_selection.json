@@ -1,9 +1,0 @@
-{
-  "recommended_checkpoint": "checkpoint/update-000015.pt",
-  "recommended_reason": "Best retained seat-balanced window: 21.05% rolling-2000 with 21.3% first and 20.8% second.",
-  "strongest_retained_checkpoint": "checkpoint/update-000030.pt",
-  "strongest_retained_reason": "Highest retained rolling-2000 rate at 21.25%; keep for paired official-engine evaluation.",
-  "strongest_sampled_update": 29,
-  "strongest_sampled_update_rolling_2000": 0.22,
-  "version": "V14_ppo_lambda097_lr3e6"
-}

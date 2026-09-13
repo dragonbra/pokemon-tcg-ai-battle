@@ -1,9 +1,0 @@
-{
-  "interruption_reason": "rollout_update82_maps_to_source_checkpoint81",
-  "kind": "frozen0019_checkpoint_audit",
-  "source_training_version": "V3_lightweight_engine_workers",
-  "source_update": 82,
-  "state": "interrupted",
-  "stopped_at": "2026-08-04T02:05:17.635427+00:00",
-  "version": "V9_update82_frozen0019_audit"
-}
