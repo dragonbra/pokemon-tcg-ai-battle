@@ -15,15 +15,19 @@ class LearningRateProfile:
     decoder_learning_rate: float
     allocation_learning_rate: float
     option_lora_learning_rate: float
+    shared_encoder_learning_rate: float
     value_learning_rate: float
     prize_learning_rate: float
+    option_ffn_learning_rate: float | None = None
+    state_ffn_learning_rate: float | None = None
+    option_norm_learning_rate: float | None = None
     deck_id: None = None
 
     def rates(self) -> dict[str, float]:
         return {
             key: float(value)
             for key, value in asdict(self).items()
-            if key.endswith("_learning_rate")
+            if key.endswith("_learning_rate") and value is not None
         }
 
     def metadata(self) -> dict[str, object]:
@@ -47,6 +51,7 @@ LIMIT_FINETUNE_LR_PROFILE = LearningRateProfile(
     decoder_learning_rate=5.0e-6,
     allocation_learning_rate=5.0e-6,
     option_lora_learning_rate=1.0e-5,
+    shared_encoder_learning_rate=1.0e-5,
     value_learning_rate=2.0e-5,
     prize_learning_rate=2.0e-5,
 )
@@ -61,6 +66,7 @@ EXPERT_COLD_START_LR_PROFILE = LearningRateProfile(
     decoder_learning_rate=1.0e-5,
     allocation_learning_rate=1.0e-5,
     option_lora_learning_rate=2.0e-5,
+    shared_encoder_learning_rate=2.0e-5,
     value_learning_rate=2.0e-5,
     prize_learning_rate=2.0e-5,
 )
@@ -122,6 +128,9 @@ def resolve_learning_rate_profile(
         "decoder_learning_rate": STANDARD_LR_PROFILE.decoder_learning_rate * actor_scale,
         "allocation_learning_rate": STANDARD_LR_PROFILE.allocation_learning_rate * actor_scale,
         "option_lora_learning_rate": STANDARD_LR_PROFILE.option_lora_learning_rate * actor_scale,
+        "shared_encoder_learning_rate": (
+            STANDARD_LR_PROFILE.shared_encoder_learning_rate * actor_scale
+        ),
         "value_learning_rate": (
             STANDARD_LR_PROFILE.value_learning_rate
             if value_learning_rate is None else float(value_learning_rate)

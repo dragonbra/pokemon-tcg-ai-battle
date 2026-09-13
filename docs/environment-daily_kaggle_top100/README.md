@@ -63,6 +63,7 @@ python3 -m data.processed.environment_daily.generate_live_snapshot \
 
 当前报告：
 
+- [2026-08-16 — 当前 Top 500 双构筑、001–070 与 29 Meta 分布](ranked/2026-08-16-top500.html)
 - [2026-08-06 — Top 500 exact deck 构筑环境分布（Top 100 / Top 500、同构变种与卡池）](ranked/2026-08-06-top500.html)
 - [2026-07-30 — Top 100 实时环境快照 0730（leaderboard score + 高分 submission + 官方 Meta）](daily/2026-07-30.html)
 - [0726–0728 — Top 100 跨日环境变迁分析（构筑、排名、卡池与证据边界）](environment-transition.html)
@@ -75,7 +76,13 @@ python3 -m data.processed.environment_daily.generate_live_snapshot \
 ## 排名构筑专题
 
 - `ranked/` 保存 Top 500 等超出实时 Top 100 日报合同的专题分析，不冒充 `daily/` 日报。
-- `ranked/data/` 保存用户提供的 frozen exact-deck 审计数据，`ranked/source/` 保存原始粗报告。
+- `ranked/data/` 保存 frozen exact-deck 审计数据，`ranked/source/` 保存原始粗报告。
+- 2026-08-16 当前 Top 500 报告由
+  `python3 -m data.processed.environment_daily.generate_current_top500_report --date 2026-08-16`
+  生成。排名、分数和榜单提交时间来自 Kaggle 一次性下载的 server-generated leaderboard CSV；
+  每名选手的 1–2 套不同构筑来自 submission → `PUBLIC + COMPLETED` Episode → 自身 player index →
+  exact 60-card replay。采集 500 人期间榜单持续更新，因此 snapshot 逐行区分 strict score binding 与
+  active-submission score drift；漂移行只证明抓取窗口内的活跃构筑，不冒充产生冻结榜分的唯一 submission。
 - 2026-08-06 Top 500 报告由
   `python3 -m data.processed.environment_daily.generate_ranked_deck_report` 确定性生成；只用排名、
   exact 60-card deck 和官方卡牌元数据做构筑统计，明确排除近期 15 场 reward 作为强度依据。

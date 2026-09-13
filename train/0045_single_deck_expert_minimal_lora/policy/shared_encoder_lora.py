@@ -112,13 +112,23 @@ def install_shared_encoder_lora(
 
 def shared_encoder_lora_parameters(actor: nn.Module):
     for name, parameter in actor.state_encoder.named_parameters():
-        if ".parametrizations." in name and not name.endswith(".original"):
+        if (
+            ".parametrizations." in name
+            and ".linear1.parametrizations." not in name
+            and ".linear2.parametrizations." not in name
+            and not name.endswith(".original")
+        ):
             yield parameter
 
 
 def shared_encoder_lora_named_parameters(actor: nn.Module):
     for name, parameter in actor.state_encoder.named_parameters():
-        if ".parametrizations." in name and not name.endswith(".original"):
+        if (
+            ".parametrizations." in name
+            and ".linear1.parametrizations." not in name
+            and ".linear2.parametrizations." not in name
+            and not name.endswith(".original")
+        ):
             yield name, parameter
 
 

@@ -27,7 +27,10 @@ from ..rollout import ChunkedCudaRolloutCollector, RolloutJob
 from ..runtime import _modules as policy_modules
 from ..runtime import load_policy
 from ..training.run_v1 import RULES, _runtime_root
-from .candidate import materialize as materialize_candidate
+from .candidate import (
+    load_portable_candidate,
+    materialize as materialize_candidate,
+)
 from .policy0814_exact_deck_schedule import (
     CONTRACT_ID, GAMES, OPPONENT_POLICY_ID, materialize as materialize_schedule,
 )
@@ -101,12 +104,24 @@ def validate_report(report: dict[str, Any]) -> None:
 
 
 def run(
-    *, deck_id: str, output_root: Path, checkpoint: Path, checkpoint_update: int,
+    *, deck_id: str, output_root: Path, checkpoint_update: int,
+    checkpoint: Path | None = None, portable_candidate: Path | None = None,
+    expected_source_checkpoint_sha256: str | None = None,
+    expected_portable_checkpoint_sha256: str | None = None,
+    expected_effective_candidate_sha256: str | None = None,
 ) -> dict[str, Any]:
     if output_root.exists():
         raise FileExistsError(output_root)
     if not torch.cuda.is_available():
         raise RuntimeError("V13 eval512 requires CUDA")
+    if (checkpoint is None) == (portable_candidate is None):
+        raise ValueError("provide exactly one of checkpoint or portable_candidate")
+    if portable_candidate is not None and any(value is None for value in (
+        expected_source_checkpoint_sha256,
+        expected_portable_checkpoint_sha256,
+        expected_effective_candidate_sha256,
+    )):
+        raise ValueError("portable candidate evaluation requires all expected hashes")
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
     vocabulary = OwnArchetypeVocabulary.load_version(
@@ -125,17 +140,35 @@ def run(
     )
     opponent = load_policy(OPPONENT_POLICY_ID, deck_id="001")
     output_root.mkdir(parents=True)
-    focal, focal_audit = materialize_candidate(
-        checkpoint=checkpoint,
-        base_portable=DEFAULT_0814_ACTOR_CHECKPOINT,
-        base_value_checkpoint=DEFAULT_0814_VALUE_CHECKPOINT,
-        adaptation=V13_ADAPTATION,
-        deck=cards,
-        deck_id=deck_id,
-        own_archetype_id=own_by_deck[deck_id],
-        output=output_root / "materialization/model.pt",
-        device=device,
-    )
+    if portable_candidate is not None:
+        assert expected_source_checkpoint_sha256 is not None
+        assert expected_portable_checkpoint_sha256 is not None
+        assert expected_effective_candidate_sha256 is not None
+        focal, focal_audit = load_portable_candidate(
+            portable=portable_candidate,
+            deck=cards,
+            deck_id=deck_id,
+            own_archetype_id=own_by_deck[deck_id],
+            device=device,
+            expected_source_checkpoint_sha256=expected_source_checkpoint_sha256,
+            expected_portable_checkpoint_sha256=expected_portable_checkpoint_sha256,
+            expected_effective_candidate_sha256=expected_effective_candidate_sha256,
+        )
+    else:
+        assert checkpoint is not None
+        focal, focal_audit = materialize_candidate(
+            checkpoint=checkpoint,
+            base_portable=DEFAULT_0814_ACTOR_CHECKPOINT,
+            base_value_checkpoint=DEFAULT_0814_VALUE_CHECKPOINT,
+            adaptation=V13_ADAPTATION,
+            deck=cards,
+            deck_id=deck_id,
+            own_archetype_id=own_by_deck[deck_id],
+            output=output_root / "materialization/model.pt",
+            device=device,
+        )
+    if focal_audit.checkpoint_update != checkpoint_update:
+        raise RuntimeError("requested checkpoint update does not match candidate identity")
     opponent_modules = policy_modules(opponent)
     for module in opponent_modules:
         module.to(device).eval().requires_grad_(False)
@@ -229,12 +262,24 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--deck-id", default="007")
     parser.add_argument("--output-root", required=True, type=Path)
-    parser.add_argument("--checkpoint", required=True, type=Path)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--checkpoint", type=Path)
+    source.add_argument("--portable-candidate", type=Path)
     parser.add_argument("--checkpoint-update", required=True, type=int)
+    parser.add_argument("--expected-source-checkpoint-sha256")
+    parser.add_argument("--expected-portable-checkpoint-sha256")
+    parser.add_argument("--expected-effective-candidate-sha256")
     args = parser.parse_args()
     report = run(
         deck_id=args.deck_id, output_root=args.output_root.resolve(),
-        checkpoint=args.checkpoint.resolve(), checkpoint_update=args.checkpoint_update,
+        checkpoint=args.checkpoint.resolve() if args.checkpoint else None,
+        portable_candidate=(
+            args.portable_candidate.resolve() if args.portable_candidate else None
+        ),
+        checkpoint_update=args.checkpoint_update,
+        expected_source_checkpoint_sha256=args.expected_source_checkpoint_sha256,
+        expected_portable_checkpoint_sha256=args.expected_portable_checkpoint_sha256,
+        expected_effective_candidate_sha256=args.expected_effective_candidate_sha256,
     )
     print(json.dumps({"summary": report["summary"], "per_deck": report["per_deck"]}, indent=2))
     return 0

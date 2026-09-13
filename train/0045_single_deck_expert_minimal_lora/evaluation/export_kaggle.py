@@ -15,6 +15,8 @@ import torch
 
 from ..assets import AssetRegistry, sha256_file
 from ..own_archetype import OwnArchetypeVocabulary
+from ..policy import AdaptationConfig
+from ..policy.actor_critic import DEFAULT_0814_ACTOR_CHECKPOINT, DEFAULT_0814_VALUE_CHECKPOINT
 from .candidate import materialize
 
 
@@ -100,6 +102,39 @@ def _copy_official_runtime(output: Path) -> None:
     shutil.copytree(source, output / "cg", ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
 
 
+def _checkpoint_adaptation(checkpoint: Path) -> AdaptationConfig:
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    metadata = payload.get("adaptation")
+    if metadata is None:
+        return AdaptationConfig()
+    if not isinstance(metadata, dict):
+        raise RuntimeError("0045 checkpoint adaptation metadata is malformed")
+    targets = tuple(metadata.get("attention_targets", ()))
+    if targets not in {
+        ("self_attn.qv", "cross_attn.qv"),
+        ("self_attn.qvo", "cross_attn.qvo"),
+    }:
+        raise RuntimeError("0045 checkpoint Option LoRA targets are unsupported")
+    adaptation = AdaptationConfig(
+        rank=int(metadata["rank"]),
+        alpha=float(metadata["alpha"]),
+        output_projection=targets == ("self_attn.qvo", "cross_attn.qvo"),
+        shared_state_encoder=bool(metadata.get("shared_state_encoder", False)),
+        option_ffn_lora=bool(metadata.get("option_ffn_lora", False)),
+        state_ffn_lora=bool(metadata.get("state_ffn_lora", False)),
+        layernorm_tuning=bool(metadata.get("option_final_layernorm_tuning", False)),
+    )
+    adaptation.validate()
+    return adaptation
+
+
+def _checkpoint_bases(checkpoint: Path) -> tuple[Path, Path | None]:
+    payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    if payload.get("schema_version") == "0045_complete_delta_model_only_v2":
+        return DEFAULT_0814_ACTOR_CHECKPOINT, DEFAULT_0814_VALUE_CHECKPOINT
+    return BASE_PORTABLE, None
+
+
 def export(
     *, checkpoint: Path, deck_id: str, output: Path, archive: Path,
     selection: dict[str, Any],
@@ -114,6 +149,8 @@ def export(
         "own_archetypes_v2", project_root=PROJECT_ROOT
     )
     own_id = next(row.archetype_id for row in vocabulary.mappings if row.deck_id == deck_id)
+    adaptation = _checkpoint_adaptation(checkpoint)
+    base_portable, base_value_checkpoint = _checkpoint_bases(checkpoint)
     output.mkdir(parents=True)
     try:
         shutil.copytree(
@@ -122,9 +159,10 @@ def export(
         )
         model_path = output / "strategy/model.bin"
         _, audit = materialize(
-            checkpoint=checkpoint, base_portable=BASE_PORTABLE,
+            checkpoint=checkpoint, base_portable=base_portable,
             deck=deck, deck_id=deck_id, own_archetype_id=own_id,
-            output=model_path, device=torch.device("cpu"),
+            output=model_path, device=torch.device("cpu"), adaptation=adaptation,
+            base_value_checkpoint=base_value_checkpoint,
         )
         formal_evidence = selection.get("formal_strength_evidence")
         if formal_evidence is not None:

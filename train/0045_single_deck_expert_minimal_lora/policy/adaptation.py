@@ -20,16 +20,24 @@ class AdaptationConfig:
     option_block: int = 1
     output_projection: bool = False
     shared_state_encoder: bool = False
+    option_ffn_lora: bool = False
+    state_ffn_lora: bool = False
 
     def validate(self, layer_count: int = 2) -> None:
-        if not self.lora or self.layernorm_tuning:
-            raise ValueError("0044 requires policy-only LoRA and forbids LayerNorm tuning")
+        if not self.lora:
+            raise ValueError("0045 requires policy-only LoRA")
         if layer_count != 2 or self.option_block != 1:
             raise ValueError("0044 LoRA must target the final block of the two-block Option encoder")
-        allowed = (
-            (self.rank, float(self.alpha), self.output_projection, self.shared_state_encoder)
-            in {(4, 8.0, False, False), (16, 16.0, True, True)}
+        signature = (
+            self.rank, float(self.alpha), self.output_projection,
+            self.shared_state_encoder, self.option_ffn_lora,
+            self.state_ffn_lora, self.layernorm_tuning,
         )
+        allowed = signature in {
+            (4, 8.0, False, False, False, False, False),
+            (16, 16.0, True, True, False, False, False),
+            (16, 16.0, True, True, True, True, True),
+        }
         if not allowed:
             raise ValueError("unsupported 0045 adaptation profile")
 
@@ -39,7 +47,9 @@ def apply_focal_adaptation(actor: nn.Module, config: AdaptationConfig) -> Policy
     adapter = PolicyOnlyOptionLoRA(
         int(actor.config.d_model), rank=config.rank, alpha=config.alpha,
         output_projection=config.output_projection,
+        ffn_expansion=config.option_ffn_lora,
     )
+    adapter.layernorm_tuning = config.layernorm_tuning
     adapter.assert_inventory()
     return adapter
 
@@ -49,7 +59,7 @@ def adaptation_inventory(adapter: PolicyOnlyOptionLoRA) -> dict[str, object]:
     return {
         "lora": True,
         "policy_only": True,
-        "layernorm_tuning": False,
+        "layernorm_tuning": bool(getattr(adapter, "layernorm_tuning", False)),
         "rank": adapter.rank,
         "alpha": adapter.alpha,
         "option_block": adapter.option_block,
@@ -60,6 +70,7 @@ def adaptation_inventory(adapter: PolicyOnlyOptionLoRA) -> dict[str, object]:
         ),
         "adapter_parameter_names": [name for name, _ in adapter.named_parameters()],
         "adapter_parameters": sum(value.numel() for value in adapter.parameters()),
+        "option_ffn_lora": adapter.ffn_expansion,
         "value_branch": "immutable_lora_free_final_option_block",
         "policy_branch": "same_final_option_block_plus_qv_lora",
     }

@@ -7,14 +7,24 @@ from typing import Any
 
 
 def _module(name: str) -> tuple[str, int | None]:
+    if (
+        name.startswith("actor.state_encoder.board_encoder.layers.3")
+        and ".linear" in name and ".parametrizations." in name
+        and not name.endswith(".original")
+    ):
+        return "StateEncoder.board_transformer.final_ffn_lora", 16
     if name.startswith("actor.state_encoder.board_encoder.layers.3"):
         return "StateEncoder.board_transformer.final_layer", 16
     if name.startswith("actor.state_encoder.event_encoder.layers.0"):
         return "StateEncoder.event_transformer.final_layer", 16
     if name.startswith("actor.state_encoder.family_fusion"):
         return "StateEncoder.final_family_fusion_mlp", 16
+    if name.startswith("policy_option_lora.ffn_"):
+        return "OptionEncoder.final_ffn_lora", 16
     if name.startswith("policy_option_lora"):
         return "OptionEncoder.final_layer", 16
+    if name.startswith("actor.option_encoder.cross_attention_transformer.norm."):
+        return "OptionEncoder.final_layer_norm", None
     if name.startswith("actor.action_decoder"):
         return "ActionDecoder", None
     if name.startswith("allocation_head"):

@@ -4,6 +4,8 @@ from collections import Counter
 import importlib
 from pathlib import Path
 
+import pytest
+
 
 PKG = "train.0045_single_deck_expert_minimal_lora"
 PROJECT = Path(__file__).resolve().parents[1]
@@ -53,6 +55,20 @@ def test_v13_frozen_eval_schedule_is_reproducible_and_matches_frequency_model():
     assert set(counts) == set(schedule.FIXED_DECK_QUOTAS)
     assert all(counts[key] >= value for key, value in schedule.FIXED_DECK_QUOTAS.items())
     assert sum(counts[key] - schedule.FIXED_DECK_QUOTAS[key] for key in counts) == 122
+
+
+def test_v13_eval_portable_candidate_requires_all_bound_identities(tmp_path, monkeypatch):
+    runner = importlib.import_module(
+        f"{PKG}.evaluation.run_policy0814_exact_deck_cuda512"
+    )
+    monkeypatch.setattr(runner.torch.cuda, "is_available", lambda: True)
+    with pytest.raises(ValueError, match="all expected hashes"):
+        runner.run(
+            deck_id="003",
+            output_root=tmp_path / "report",
+            checkpoint_update=385,
+            portable_candidate=tmp_path / "model.bin",
+        )
 
 
 def test_v13_trainable_tensor_boundary_is_exact():

@@ -25,6 +25,7 @@ from ..rollout import ChunkedCudaRolloutCollector, RolloutJob
 from ..runtime import load_policy
 from ..runtime import _modules as policy_modules
 from ..training.run_v1 import RULES, _runtime_root
+from .candidate import load_portable_candidate
 from .candidate import materialize as materialize_candidate
 from .benchmark_tiny_v2_schedule import (
     CONTRACT_ID, GAMES, MASTER_SEED, SELECTED_CLASS_IDS,
@@ -117,12 +118,18 @@ def validate_report(report: dict[str, Any]) -> None:
 
 
 def run(
-    *, deck_id: str, output_root: Path, checkpoint: Path,
+    *, deck_id: str, output_root: Path, checkpoint: Path | None,
     checkpoint_update: int, deck_path: Path | None = None,
     deck_display_name: str | None = None, own_archetype_id: int | None = None,
+    portable_candidate: Path | None = None,
+    expected_source_checkpoint_sha256: str | None = None,
+    expected_portable_checkpoint_sha256: str | None = None,
+    expected_effective_candidate_sha256: str | None = None,
 ) -> dict[str, Any]:
     if output_root.exists():
         raise FileExistsError(output_root)
+    if (checkpoint is None) == (portable_candidate is None):
+        raise ValueError("exactly one checkpoint or portable candidate is required")
     registry = AssetRegistry.load(PROJECT_ROOT)
     registry.validate_all()
     vocabulary = OwnArchetypeVocabulary.load_version(
@@ -155,12 +162,34 @@ def run(
     )
     opponent = load_policy(opponent_policy_id, deck_id="001")
     output_root.mkdir(parents=True)
-    base_portable = PROJECT_ROOT / "assets/policies/definitions/champion_g002/model.bin"
-    focal, focal_audit = materialize_candidate(
-        checkpoint=checkpoint, base_portable=base_portable,
-        deck=cards, deck_id=deck_id, own_archetype_id=focal_own_archetype_id,
-        output=output_root / "materialization/model.bin", device=device,
-    )
+    if portable_candidate is None:
+        assert checkpoint is not None
+        base_portable = PROJECT_ROOT / "assets/policies/definitions/champion_g002/model.bin"
+        focal, focal_audit = materialize_candidate(
+            checkpoint=checkpoint, base_portable=base_portable,
+            deck=cards, deck_id=deck_id, own_archetype_id=focal_own_archetype_id,
+            output=output_root / "materialization/model.bin", device=device,
+        )
+    else:
+        expected = (
+            expected_source_checkpoint_sha256,
+            expected_portable_checkpoint_sha256,
+            expected_effective_candidate_sha256,
+        )
+        if any(value is None for value in expected):
+            raise ValueError("portable candidate mode requires all three expected identities")
+        focal, focal_audit = load_portable_candidate(
+            portable=portable_candidate,
+            deck=cards,
+            deck_id=deck_id,
+            own_archetype_id=focal_own_archetype_id,
+            device=device,
+            expected_source_checkpoint_sha256=expected_source_checkpoint_sha256,
+            expected_portable_checkpoint_sha256=expected_portable_checkpoint_sha256,
+            expected_effective_candidate_sha256=expected_effective_candidate_sha256,
+        )
+    if focal_audit.checkpoint_update != checkpoint_update:
+        raise RuntimeError("requested update does not match candidate deployment identity")
     opponent_modules = policy_modules(opponent)
     for module in opponent_modules:
         module.to(device).eval().requires_grad_(False)
@@ -277,15 +306,27 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--deck-id", default="007")
     parser.add_argument("--output-root", required=True, type=Path)
-    parser.add_argument("--checkpoint", required=True, type=Path)
+    inputs = parser.add_mutually_exclusive_group(required=True)
+    inputs.add_argument("--checkpoint", type=Path)
+    inputs.add_argument("--portable-candidate", type=Path)
     parser.add_argument("--checkpoint-update", required=True, type=int)
+    parser.add_argument("--expected-source-checkpoint-sha256")
+    parser.add_argument("--expected-portable-checkpoint-sha256")
+    parser.add_argument("--expected-effective-candidate-sha256")
     parser.add_argument("--deck-path", type=Path)
     parser.add_argument("--deck-display-name")
     parser.add_argument("--own-archetype-id", type=int)
     args = parser.parse_args()
     report = run(
         deck_id=args.deck_id, output_root=args.output_root.resolve(),
-        checkpoint=args.checkpoint.resolve(), checkpoint_update=args.checkpoint_update,
+        checkpoint=args.checkpoint.resolve() if args.checkpoint else None,
+        portable_candidate=(
+            args.portable_candidate.resolve() if args.portable_candidate else None
+        ),
+        checkpoint_update=args.checkpoint_update,
+        expected_source_checkpoint_sha256=args.expected_source_checkpoint_sha256,
+        expected_portable_checkpoint_sha256=args.expected_portable_checkpoint_sha256,
+        expected_effective_candidate_sha256=args.expected_effective_candidate_sha256,
         deck_path=args.deck_path.resolve() if args.deck_path else None,
         deck_display_name=args.deck_display_name,
         own_archetype_id=args.own_archetype_id,

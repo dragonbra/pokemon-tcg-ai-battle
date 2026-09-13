@@ -39,6 +39,11 @@ from ..rollout import DEFAULT_FULL_ROUND_DRAW_LIMIT, ChunkedCudaRolloutCollector
 from ..runtime import load_policy
 from ..telemetry import RolloutHistory, aggregate_training_rollout
 from .batch_full_semantic import prepare_episodes
+from .checkpointing import (
+    atomic_save_complete_delta,
+    build_complete_delta_checkpoint,
+    load_model_only_delta,
+)
 from .lr_profiles import LearningRateProfile, resolve_learning_rate_profile
 from .ppo_full_semantic import PPOConfig, PPOTrainer
 from .periodic_evaluation import is_due as periodic_evaluation_due
@@ -530,10 +535,9 @@ def _checkpoint(
     parent_policy_id: str = "Champion-G2",
     parent_policy_update: int | None = 407,
 ) -> dict[str, Any]:
-    return {
-        "schema_version": "0045_minimal_lora_model_only_v1", "update": update,
+    envelope = {
+        "update": update,
         "actor_schema": "0031_rule_faithful_semantic_decision_v2",
-        "state_dict": {name: value.detach().cpu() for name, value in model.state_dict().items() if value.requires_grad or not name.startswith("actor.") or name.startswith("actor.action_decoder.")},
         "adaptation": {
             "policy_only_option_lora": True,
             "option_block": 1,
@@ -552,6 +556,17 @@ def _checkpoint(
                 model.shared_encoder_lora_inventory.parameter_count
                 if model.shared_encoder_lora_inventory is not None else 0
             ),
+            "option_ffn_lora": model.adaptation_config.option_ffn_lora,
+            "option_ffn_lora_parameters": (
+                sum(value.numel() for value in model.policy_option_lora.ffn_parameters())
+                if model.adaptation_config.option_ffn_lora else 0
+            ),
+            "state_ffn_lora": model.adaptation_config.state_ffn_lora,
+            "state_ffn_lora_parameters": (
+                model.state_ffn_lora_inventory.parameter_count
+                if model.state_ffn_lora_inventory is not None else 0
+            ),
+            "option_final_layernorm_tuning": model.adaptation_config.layernorm_tuning,
             "value_branch": "lora_free",
             "strategy_adapter": "removed",
             "meta_actor_residual": "removed",
@@ -574,6 +589,7 @@ def _checkpoint(
             "source_parent_update": source_parent_update,
         },
     }
+    return build_complete_delta_checkpoint(model, envelope)
 
 
 def _validate_formal_deck_scope(
@@ -775,11 +791,7 @@ def run(
     )
     if parent_checkpoint is not None:
         parent = torch.load(parent_checkpoint, map_location="cpu", weights_only=True)
-        if parent.get("schema_version") != "0045_minimal_lora_model_only_v1":
-            raise RuntimeError("0045 requires an audited model-only parent checkpoint")
-        incompatible = model.load_state_dict(parent["state_dict"], strict=False)
-        if incompatible.unexpected_keys:
-            raise RuntimeError(f"0045 U0 checkpoint has unexpected tensors: {incompatible}")
+        load_model_only_delta(model, parent, allow_legacy=True)
     effective_lr_profile = resolve_learning_rate_profile(
         learning_rate_profile=learning_rate_profile,
         actor_learning_rate_scale=actor_learning_rate_scale,
@@ -801,8 +813,6 @@ def run(
         reference = torch.load(
             reference_checkpoint, map_location="cpu", weights_only=True
         )
-        if reference.get("schema_version") != "0045_minimal_lora_model_only_v1":
-            raise RuntimeError("0045 requires an audited model-only reference checkpoint")
         reference_model, _ = load_actor_critic(
             checkpoint=focal_base_checkpoint or DEFAULT_FOCAL_CHECKPOINT,
             deck=focal_deck, deck_id=focal_deck_id, device=device,
@@ -810,14 +820,7 @@ def run(
             adaptation=adaptation_config,
             integrated_flags=preset("FULL_MODEL"),
         )
-        reference_incompatible = reference_model.load_state_dict(
-            reference["state_dict"], strict=False
-        )
-        if reference_incompatible.unexpected_keys:
-            raise RuntimeError(
-                "0045 reference U0 has unexpected tensors: "
-                f"{reference_incompatible}"
-            )
+        load_model_only_delta(reference_model, reference, allow_legacy=True)
         trainer.set_reference_model(reference_model)
         del reference_model
     opponents = {
@@ -982,7 +985,7 @@ def run(
     })
     initial_checkpoint = paths["checkpoint"] / f"update-{start_update:06d}.pt"
     if not audited_u0_launch:
-        _atomic_torch(
+        atomic_save_complete_delta(
             initial_checkpoint,
             _checkpoint(
                 model, start_update, version=version, focal_deck_id=focal_deck_id,
@@ -993,6 +996,7 @@ def run(
                 parent_policy_id=latest_champion_policy_id,
                 parent_policy_update=reference_anchor_update,
             ),
+            model,
         )
     if opponent_sampling_mode == "pfsp_mixture":
         pfsp_state.save(paths["artifact"] / "pfsp_state.json")
@@ -1145,7 +1149,7 @@ def run(
             ppo = trainer.update(batch, update=update + 1)
             model.set_runtime_own_archetype_ids(None)
             checkpoint_update = update + 1
-            _atomic_torch(
+            atomic_save_complete_delta(
                 paths["checkpoint"] / f"update-{checkpoint_update:06d}.pt",
                 _checkpoint(
                     model, checkpoint_update, version=version,
@@ -1157,6 +1161,7 @@ def run(
                     parent_policy_id=latest_champion_policy_id,
                     parent_policy_update=reference_anchor_update,
                 ),
+                model,
             )
             # PFSP observations become canonical only after the corresponding
             # PPO update and checkpoint succeed. A failed PPO attempt must not

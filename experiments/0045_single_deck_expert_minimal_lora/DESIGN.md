@@ -1,8 +1,8 @@
 # 0045 — Single-Deck Expert Minimal-LoRA
 
-Status: V8 training stopped at durable U299. V13 is the current fresh run definition: deck 007 initialized from complete immutable Policy-0814, Policy-0814-only rollout/evaluation, one shared ActionDecoder, and expanded shared-encoder LoRA r16. Its measured trainable and deployment-materialization hard gates pass before launch.
+Status: V14 was explicitly stopped after U105, but its model-only checkpoint contract was subsequently proven incomplete: all V14 checkpoints omit 16 trainable StateEncoder LoRA tensors. V15 remains historical diagnostic evidence over the reconstructable subset only. V16/V17 produced complete-delta checkpoints, including U125. V19 is the current expansion from exact V17 U125: zero-delta final Option/State FFN LoRA plus final Option LayerNorm tuning, with complete storage/eval reconstruction gates.
 
-V13 subsequently completed its U0 rollout but failed before PPO because a downstream identity allowlist omitted Policy-0814. It remains failed at U0 with no optimizer update. V14 is the corrected fresh restart with the same model/sampling/eval contract and a new optimizer/on-policy stream.
+V13 remains the failed U0 identity-gate attempt. V14 repaired that gate, trained through U105, completed the requested U105 evaluation, and then stopped with W&B synchronized. V15 uses the same fixed 512-game Policy-0814 schedule as the V14 periodic series so routed and static-U70 outcomes can be paired game by game.
 
 ## Goal and identity
 
@@ -186,3 +186,41 @@ The resulting archive is `0045_dragapult_ex_007_public_meta_router_v3_compact_fp
 ## Disabled expansion ladder
 
 This historical V1 ladder is superseded for the explicitly authorized V13 run. V13 takes the bounded rank-16 final Option/board/event/fusion expansion described above while keeping early board layers and embeddings frozen. It still does not authorize full StateEncoder unfreezing, multiple actors, or expert routing.
+
+## V15 public deck router V2
+
+V15 policy identity is `Experimental-Public-DeckRouter-V2-Policy0814`. Its monotonic per-game memory consumes only opponent cards that the official observation marks public/certain. It never consumes exact opponent deck ID, hidden cards, focal candidate identity, Critic outputs, or a ground-truth archetype label. Unknown evidence and conflicting strong families fail closed to U70.
+
+The route table selected from the V14 common-seed series is: deck 001 -> U5, 002 -> U15, 003 -> U25, 007 -> U95, 008 -> U5, and 009/011/071 -> U70. Teal Mask Ogerpon alone provisionally selects U5; later public Hydrapple/Meganium-family evidence overrides it to U70. The runtime shares only content-equal effective Actor semantics and switches disjoint Policy Option LoRA, Action Decoder, and Allocation Head modules. All five candidate sources independently pass `kaggle_fp16_storage_fp32_runtime_v1`; the complete immutable Policy-0814 opponent is materialized independently with zero focal/opponent storage aliases.
+
+The V14 checkpoint writer retained 108 tensors but omitted 16 trainable StateEncoder LoRA A/B tensors from every model-only checkpoint. V15 records this as `KNOWN_OMISSION` and compares parametrized modules by their effective weights, not random raw zero-effect A/B initialization. Consequently V15 reconstructs and evaluates Decoder / Option-LoRA / Allocation candidates exactly; it does not claim to reconstruct each live V14 behavior policy in full. This historical boundary is preserved rather than silently filling missing tensors.
+
+On the unchanged Policy-0814 exact-deck common-seed CUDA-512 schedule, V15 completed 512/512 terminal games with zero errors at `295-217-0` (57.6171875%). Static U70 on the identical lanes is `279-233-0` (54.4921875%); paired flips are 40 in favor of V15 and 24 in favor of U70, for net `+16` wins / `+3.125 pp`. Final public classification is exact in 511/512 games, with zero conflicts. Because the same schedule informed checkpoint selection, this is selection-set experimental evidence rather than an independent holdout or Promote decision.
+
+## V16 complete-delta U105 continuation
+
+The V14 root cause is deterministic: `model.state_dict()` returns detached tensors whose `requires_grad` flags are all false. The V14 writer filtered those tensors by `value.requires_grad` and then admitted only non-Actor paths plus `actor.action_decoder.*`; this saved 99/115 trainable tensors and omitted exactly the 16 rank-16 StateEncoder LoRA A/B tensors. The training rollout used the complete in-memory model, while every checkpoint reconstruction and periodic eval used the incomplete saved subset. V14 therefore cannot reproduce its complete live behavior policy and is permanently labeled checkpoint-incomplete.
+
+V16 starts at logical update 105 from exact V14 U105 SHA-256 `1df883f14ee026025b98ac519d25442e9497e59fda513d55663889eaa620a5a3`. It restores all 99 preserved V14 trainable tensors and initializes the missing 16 StateEncoder LoRA tensors with recorded seed `4516105`. All LoRA B tensors begin at zero, so the new StateEncoder adapter is initially zero-effective; the V16 U105 Policy-0814 CUDA-512 baseline exactly reproduces `277-235-0` (54.1015625%). This is a fresh-optimizer continuation with newly collected on-policy data, not an exact optimizer-trajectory resume.
+
+The new checkpoint schema is `0045_complete_delta_model_only_v2`. It derives its inventory from `model.named_parameters()` before reading `state_dict`, stores all and only 115 trainable tensors, records per-tensor and aggregate delta hashes, and records the complete 403-key in-memory model hash. Every load must instantiate immutable Policy-0814, apply the complete delta, and reproduce that full-model hash exactly before training or evaluation can proceed. Optimizer, scheduler, GradScaler, RNG, DataLoader, rollout buffer, replay, and other trajectory-resume state remain forbidden. Every checkpoint is retained.
+
+V16 changes only the `shared_encoder_lora` optimizer group from V14 `2e-5` to `4e-5`. Action Decoder and Allocation remain `1e-5`; Policy Option LoRA, Value, Value Adapter, and Prize remain `2e-5`. V18 restores `shared_encoder_lora` to `2e-5`, equal to Policy Option LoRA; all other objective, rollout, and evaluation settings remain unchanged. The V18 W&B run ID is `0045-v18-policy0814-v17-u130-equal-lora-lr`.
+
+The first V16 optimizer step is durable at U106. Its checkpoint contains 115 trainable tensors including all 16 StateEncoder LoRA tensors and independently reconstructs to full-state SHA-256 `d94e1c1d2f402622f4f31e3197066b227da7a533332c5873631ee5ce295e4183`. All 16 StateEncoder LoRA tensors changed from U105 to U106 with combined L2 update norm `0.16736956`. The observed shared-encoder LR is `4e-5`; behavior KL is `1.4671e-5`, below the unchanged `0.025` hard guard. Training continues toward the next scheduled evaluation at U110.
+
+## V17 exact V16 U112 restart
+
+V16 was no longer running when inspected at durable U112; its stale status still said `running`, so this is recorded as an interrupted process rather than a clean stop. V17 binds exact V16 U112 file SHA-256 `56367c949061f4fc47cddfc6515e9f2aff106eb4701a3c8f3f4e8653febb9613`. The V16 parent and V17 initial U112 checkpoints have identical complete-delta SHA-256 `c0192c386bad7fcc63fcea79651101eafb8d30e5e5eee4db7fea10a8fd725176` and identical reconstructed full-state SHA-256 `38fc601d52facf9d5ccc6ca6010250eaf92b47f5d88562975e290afb6d2d5502`; both contain 115/115 trainable tensors and all 16 nonzero StateEncoder LoRA tensors.
+
+Because checkpoints are model-only, V17 uses a fresh optimizer and newly collected on-policy rollout; it is not an exact optimizer-trajectory resume and its training curve must retain the version boundary. Model architecture, trainable inventory, V16 learning-rate profile, Policy-0814 exact-deck rollout/eval contracts, and Policy-0814 V16 U0 reference remain unchanged. The restart-point deployment eval passed 512/512 games at `275-237-0` (53.7109375%) under `kaggle_fp16_storage_fp32_runtime_v1`. W&B run ID is `0045-v17-policy0814-v16-u112-complete-delta-restart`.
+
+## V18 U130 equal State/Option LoRA LR continuation
+
+V17 durably wrote complete model-only checkpoint U130 before the external interruption. V18 binds the exact U130 SHA-256 `70343580b660a9fc923be976fb285f4b32804fa7fdfd18444475d692f719134d`, runs the missing U130 Policy-0814 CUDA-512 baseline first, and then continues with a fresh optimizer and on-policy rollout. Its only training change is `shared_encoder_lora=2e-5`, equal to `option_lora=2e-5`; all other learning rates and PPO/evaluation contracts remain unchanged.
+
+## V19 exact U125 zero-delta FFN/LayerNorm expansion
+
+V19 binds `V17_policy0814_v16_u112_complete_delta_restart` U125, SHA-256 `cad14c2dcb9c3dffed8fa739969cfb0952f664607854dda16fdc03f1d127dc2b`. The existing shared State attention LoRA LR is `2e-5`, equal to the existing Option attention LoRA LR; all other existing groups are unchanged. Three independent zero-weight-decay groups are added: Option final-block `linear1+linear2` LoRA r16 at `3e-5` (40,960 parameters), State final board-block `linear1+linear2` LoRA r16 at `1.5e-5` (40,960), and Option final LayerNorm weight+bias at `5e-6` (640).
+
+The expanded model has 125 trainable tensors / 5,597,590 parameters. Before any optimizer or rollout starts, V19 materializes both the U125 parent and Policy-0814 reference with the expanded structure, verifies exact logits and greedy action equality against the legacy models, saves complete-delta model-only checkpoints, and independently strict-loads them to the full-model hash. Candidate export/eval metadata carries all three expansion flags; deployment installs State FFN parametrizations before strict loading. Missing any expanded tensor, metadata flag, or reconstruction hash is a hard failure.

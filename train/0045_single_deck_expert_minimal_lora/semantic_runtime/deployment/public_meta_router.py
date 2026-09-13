@@ -33,14 +33,26 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
     """One shared semantic backbone with Agent-owned per-battle public routing."""
 
     policy_id = PUBLIC_POLICY_ID
+    default_update = DEFAULT_UPDATE
+    routed_updates = ROUTED_UPDATES
+    rule_manifest = RULE_MANIFEST
+    memory_type = PublicMetaMemory
+    compact_schema = "0045_public_meta_router_compact_heads_v1"
+
+    @classmethod
+    def _shared_actor_state(cls, actor: torch.nn.Module) -> dict[str, torch.Tensor]:
+        return {
+            name: value for name, value in actor.state_dict().items()
+            if not name.startswith("action_decoder.")
+        }
 
     def __init__(
         self,
         default: _compound.PortableCompoundSemanticPolicy,
         heads: Mapping[int, CpuPolicyHead],
     ) -> None:
-        if set(heads) != set(ROUTED_UPDATES):
-            raise ValueError("CPU public router requires U40/U90/U200/U282 heads")
+        if set(heads) != set(self.routed_updates):
+            raise ValueError("CPU public router head inventory mismatch")
         super().__init__(
             default.actor, default.value_head, default.allocation_head,
             default.value_adapter, default.policy_strategy_adapter,
@@ -50,15 +62,15 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
         if self.policy_strategy_adapter is not None or self.meta_actor_residual is not None:
             raise RuntimeError("0045 public router requires Critic-free minimal Actor")
         self.heads = dict(heads)
-        self.public_memory = PublicMetaMemory(1, torch.device("cpu"))
-        self.active_update = DEFAULT_UPDATE
-        self._activate(DEFAULT_UPDATE)
+        self.public_memory = self.memory_type(1, torch.device("cpu"))
+        self.active_update = self.default_update
+        self._activate(self.default_update)
 
     @classmethod
     def from_checkpoints(
         cls, checkpoints: Mapping[int, Path], deck: Sequence[int]
     ) -> "PublicRoutedCompoundPolicy":
-        if set(checkpoints) != set(ROUTED_UPDATES):
+        if set(checkpoints) != set(cls.routed_updates):
             raise ValueError("CPU public router checkpoint inventory mismatch")
         policies = {
             update: _compound.PortableCompoundSemanticPolicy.from_checkpoint(path, deck)
@@ -73,7 +85,7 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
         }
         if any(head.policy_option_lora is None for head in heads.values()):
             raise RuntimeError("CPU public router source lacks Policy Option LoRA")
-        return cls(policies[DEFAULT_UPDATE], heads)
+        return cls(policies[cls.default_update], heads)
 
     @staticmethod
     def _tensor_digest(rows: Mapping[str, torch.Tensor]) -> str:
@@ -109,21 +121,21 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
         default = _compound.PortableCompoundSemanticPolicy.from_checkpoint(
             default_checkpoint, deck
         )
-        if int(default.metadata.get("checkpoint_update", -1)) != DEFAULT_UPDATE:
-            raise RuntimeError("compact public router default is not U282")
+        if int(default.metadata.get("checkpoint_update", -1)) != cls.default_update:
+            raise RuntimeError("compact public router default update mismatch")
         payload = torch.load(
             routed_heads_checkpoint, map_location="cpu", weights_only=True
         )
         if set(payload) != {
             "schema_version", "routed_head_state_dicts", "metadata",
-        } or payload.get("schema_version") != "0045_public_meta_router_compact_heads_v1":
+        } or payload.get("schema_version") != cls.compact_schema:
             raise RuntimeError("compact public-router head schema mismatch")
         metadata = payload.get("metadata")
         if not isinstance(metadata, Mapping) or (
-            metadata.get("policy_id") != PUBLIC_POLICY_ID
-            or metadata.get("default_checkpoint_update") != DEFAULT_UPDATE
-            or tuple(metadata.get("routed_updates", ())) != ROUTED_UPDATES
-            or metadata.get("rules") != RULE_MANIFEST
+            metadata.get("policy_id") != cls.policy_id
+            or metadata.get("default_checkpoint_update") != cls.default_update
+            or tuple(metadata.get("routed_updates", ())) != cls.routed_updates
+            or metadata.get("rules") != cls.rule_manifest
             or metadata.get("storage_dtype") != "fp16"
             or metadata.get("runtime_dtype") != "fp32"
             or metadata.get("deployment_contract")
@@ -131,22 +143,25 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
         ):
             raise RuntimeError("compact public-router metadata identity mismatch")
         rules_hash = hashlib.sha256(json.dumps(
-            RULE_MANIFEST, sort_keys=True, separators=(",", ":")
+            cls.rule_manifest, sort_keys=True, separators=(",", ":")
         ).encode("utf-8")).hexdigest()
         if metadata.get("rules_sha256") != rules_hash:
             raise RuntimeError("compact public-router rule hash mismatch")
         routed = payload.get("routed_head_state_dicts")
-        expected_delta_updates = {str(update) for update in ROUTED_UPDATES if update != DEFAULT_UPDATE}
+        expected_delta_updates = {
+            str(update) for update in cls.routed_updates
+            if update != cls.default_update
+        }
         if not isinstance(routed, Mapping) or set(routed) != expected_delta_updates:
             raise RuntimeError("compact public-router delta inventory mismatch")
 
         default_head = CpuPolicyHead(
-            DEFAULT_UPDATE, default.actor.action_decoder,
+            cls.default_update, default.actor.action_decoder,
             default.policy_option_lora, default.allocation_head,
         )
-        heads: dict[int, CpuPolicyHead] = {DEFAULT_UPDATE: default_head}
-        for update in ROUTED_UPDATES:
-            if update == DEFAULT_UPDATE:
+        heads: dict[int, CpuPolicyHead] = {cls.default_update: default_head}
+        for update in cls.routed_updates:
+            if update == cls.default_update:
                 continue
             stored = routed[str(update)]
             if not isinstance(stored, Mapping) or set(stored) != {
@@ -179,7 +194,7 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
 
         expected_heads = metadata.get("head_effective_sha256")
         if not isinstance(expected_heads, Mapping) or set(expected_heads) != {
-            str(update) for update in ROUTED_UPDATES
+            str(update) for update in cls.routed_updates
         }:
             raise RuntimeError("compact public-router head identity inventory mismatch")
         observed_heads = {
@@ -187,34 +202,47 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
         }
         if observed_heads != dict(expected_heads):
             raise RuntimeError("compact public-router effective head identity mismatch")
-        shared = {
-            name: value for name, value in default.actor.state_dict().items()
-            if not name.startswith("action_decoder.")
-        }
+        shared = cls._shared_actor_state(default.actor)
         if cls._tensor_digest(shared) != metadata.get("shared_effective_sha256"):
             raise RuntimeError("compact public-router shared Actor identity mismatch")
-        source_payload = metadata.get("source_identity_payload")
-        if not isinstance(source_payload, Mapping) or (
-            source_payload.get("shared_effective_sha256")
-            != metadata.get("shared_effective_sha256")
-            or source_payload.get("head_effective_sha256") != expected_heads
-            or source_payload.get("candidate_effective_sha256")
-            != metadata.get("candidate_effective_sha256")
-        ):
-            raise RuntimeError("compact public-router source identity payload mismatch")
-        source_composite = hashlib.sha256(json.dumps(
-            source_payload, sort_keys=True, separators=(",", ":")
-        ).encode("utf-8")).hexdigest()
-        if source_composite != metadata.get("source_composite_sha256"):
-            raise RuntimeError("compact public-router source composite mismatch")
-        identity_payload = {
-            "policy_id": PUBLIC_POLICY_ID,
-            "rules": RULE_MANIFEST,
-            "source_composite": source_composite,
-        }
-        composite = hashlib.sha256(json.dumps(
-            identity_payload, sort_keys=True, separators=(",", ":")
-        ).encode("utf-8")).hexdigest()
+        identity_payload = metadata.get("identity_payload")
+        if isinstance(identity_payload, Mapping):
+            if (
+                identity_payload.get("policy_id") != cls.policy_id
+                or identity_payload.get("rules") != cls.rule_manifest
+                or identity_payload.get("shared_effective_sha256")
+                != metadata.get("shared_effective_sha256")
+                or identity_payload.get("routed_component_sha256") != expected_heads
+                or identity_payload.get("candidate_effective_sha256")
+                != metadata.get("candidate_effective_sha256")
+            ):
+                raise RuntimeError("compact public-router identity payload mismatch")
+            composite = hashlib.sha256(json.dumps(
+                identity_payload, sort_keys=True, separators=(",", ":")
+            ).encode("utf-8")).hexdigest()
+        else:
+            source_payload = metadata.get("source_identity_payload")
+            if not isinstance(source_payload, Mapping) or (
+                source_payload.get("shared_effective_sha256")
+                != metadata.get("shared_effective_sha256")
+                or source_payload.get("head_effective_sha256") != expected_heads
+                or source_payload.get("candidate_effective_sha256")
+                != metadata.get("candidate_effective_sha256")
+            ):
+                raise RuntimeError("compact public-router source identity payload mismatch")
+            source_composite = hashlib.sha256(json.dumps(
+                source_payload, sort_keys=True, separators=(",", ":")
+            ).encode("utf-8")).hexdigest()
+            if source_composite != metadata.get("source_composite_sha256"):
+                raise RuntimeError("compact public-router source composite mismatch")
+            public_identity_payload = {
+                "policy_id": cls.policy_id,
+                "rules": cls.rule_manifest,
+                "source_composite": source_composite,
+            }
+            composite = hashlib.sha256(json.dumps(
+                public_identity_payload, sort_keys=True, separators=(",", ":")
+            ).encode("utf-8")).hexdigest()
         if composite != metadata.get("composite_effective_sha256"):
             raise RuntimeError("compact public-router deployment composite mismatch")
         policy = cls(default, heads)
@@ -241,8 +269,8 @@ class PublicRoutedCompoundPolicy(_compound.PortableCompoundSemanticPolicy):
 
     def reset(self) -> None:
         super().reset()
-        self.public_memory = PublicMetaMemory(1, torch.device("cpu"))
-        self._activate(DEFAULT_UPDATE)
+        self.public_memory = self.memory_type(1, torch.device("cpu"))
+        self._activate(self.default_update)
 
     def select(self, observation: dict[str, Any]) -> list[int]:
         current = observation.get("current") or {}

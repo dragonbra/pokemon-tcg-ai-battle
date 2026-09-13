@@ -190,26 +190,58 @@ class LoRAQVDelta(nn.Module):
 class PolicyOnlyOptionLoRA(nn.Module):
     """Portable policy-only final Option block; Value keeps the immutable block."""
 
-    def __init__(self, width: int) -> None:
+    def __init__(
+        self, width: int, *, rank: int = 4, alpha: float = 8.0,
+        output_projection: bool = False, ffn_expansion: bool = False,
+    ) -> None:
         super().__init__()
-        self.self_attention = LoRAQVDelta(width)
-        self.cross_attention = LoRAQVDelta(width)
+        if (int(rank), float(alpha), bool(output_projection)) not in {
+            (4, 8.0, False), (16, 16.0, True),
+        }:
+            raise ValueError("unsupported packaged Option LoRA contract")
+        self.output_projection = bool(output_projection)
+        self.ffn_expansion = bool(ffn_expansion)
+        self.self_attention = LoRAQVDelta(width, rank, alpha)
+        self.cross_attention = LoRAQVDelta(width, rank, alpha)
+        if self.output_projection:
+            from .shared_encoder_lora import LinearLoRA
+            self.self_output = LinearLoRA(width, width, rank, alpha)
+            self.cross_output = LinearLoRA(width, width, rank, alpha)
+        if self.ffn_expansion:
+            from .shared_encoder_lora import LinearLoRA
+            self.ffn_linear1 = LinearLoRA(3 * width, width, rank, alpha)
+            self.ffn_linear2 = LinearLoRA(width, 3 * width, rank, alpha)
 
     def forward(self, option_encoder, batch, state, prefix):
         transformer = option_encoder.cross_attention_transformer
         if len(transformer.layers) != 2:
             raise RuntimeError("0044 requires exactly two Option Transformer blocks")
         final = transformer.layers[1]
+        overrides = {
+            "self_attn.in_proj_weight": self.self_attention.merged_weight(
+                final.self_attn.in_proj_weight
+            ),
+            "multihead_attn.in_proj_weight": self.cross_attention.merged_weight(
+                final.multihead_attn.in_proj_weight
+            ),
+        }
+        if self.output_projection:
+            overrides.update({
+                "self_attn.out_proj.weight": self.self_output(
+                    final.self_attn.out_proj.weight
+                ),
+                "multihead_attn.out_proj.weight": self.cross_output(
+                    final.multihead_attn.out_proj.weight
+                ),
+            })
+        if self.ffn_expansion:
+            overrides.update({
+                "linear1.weight": self.ffn_linear1(final.linear1.weight),
+                "linear2.weight": self.ffn_linear2(final.linear2.weight),
+            })
         encoded = functional_call(
             final,
-            {
-                "self_attn.in_proj_weight": self.self_attention.merged_weight(
-                    final.self_attn.in_proj_weight
-                ),
-                "multihead_attn.in_proj_weight": self.cross_attention.merged_weight(
-                    final.multihead_attn.in_proj_weight
-                ),
-            },
+            overrides,
             (prefix, state.tokens),
             option_encoder._masks(batch, state),
             strict=False,
@@ -217,6 +249,13 @@ class PolicyOnlyOptionLoRA(nn.Module):
         if transformer.norm is not None:
             encoded = transformer.norm(encoded)
         return encoded * batch.option_mask.unsqueeze(-1)
+
+    def is_zero_delta(self) -> bool:
+        return all(
+            bool(torch.count_nonzero(parameter.detach()) == 0)
+            for name, parameter in self.named_parameters()
+            if name.endswith("_b") or name.endswith(".b")
+        )
 
 
 class PortableCompoundSemanticPolicy:
@@ -311,6 +350,22 @@ class PortableCompoundSemanticPolicy:
             ModelConfig(**dict(config_payload)),
             PrototypeIndex.load(public_path, engine_path),
         )
+        option_metadata = metadata.get("policy_option_lora")
+        if (
+            payload.get("schema_version") == "0045_minimal_lora_candidate_v1"
+            and isinstance(option_metadata, Mapping)
+            and option_metadata.get("shared_state_encoder") is True
+        ):
+            from .shared_encoder_lora import install_shared_encoder_lora, install_state_ffn_lora
+            install_shared_encoder_lora(
+                actor, rank=int(option_metadata["rank"]),
+                alpha=float(option_metadata["alpha"]),
+            )
+            if option_metadata.get("state_ffn_lora") is True:
+                install_state_ffn_lora(
+                    actor, rank=int(option_metadata["rank"]),
+                    alpha=float(option_metadata["alpha"]),
+                )
         actor_state = _expanded_portable_state_dict(payload["actor_state_dict"])
         actor.load_state_dict(actor_state, strict=True)
         width = int(actor.config.d_model)
@@ -359,7 +414,17 @@ class PortableCompoundSemanticPolicy:
             )
         policy_option_lora = None
         if has_policy_option_lora:
-            policy_option_lora = PolicyOnlyOptionLoRA(width)
+            option_metadata = metadata.get("policy_option_lora") or {}
+            targets = tuple(option_metadata.get("attention_targets", ()))
+            policy_option_lora = PolicyOnlyOptionLoRA(
+                width,
+                rank=int(option_metadata.get("rank", 4)),
+                alpha=float(option_metadata.get("alpha", 8.0)),
+                output_projection=targets == (
+                    "self_attn.qvo", "cross_attn.qvo",
+                ),
+                ffn_expansion=bool(option_metadata.get("option_ffn_lora", False)),
+            )
             policy_option_lora.load_state_dict(
                 payload["policy_option_lora_state_dict"], strict=True
             )

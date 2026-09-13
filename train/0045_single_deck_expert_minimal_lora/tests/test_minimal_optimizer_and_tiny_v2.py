@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from pathlib import Path
 import sys
 
@@ -63,6 +64,41 @@ def test_tiny_v2_is_exact_deterministic_cuda512():
     assert len({row["engine_seed"] for row in first["jobs"]}) == 512
     assert first["common_random_schedule_sha256"] == second["common_random_schedule_sha256"]
     assert first["schedule_sha256"] != second["schedule_sha256"]
+
+
+def test_tiny_v2_renderer_uses_report_deck_and_update_identity(tmp_path):
+    renderer = importlib.import_module(f"{PKG}.evaluation.render_benchmark_tiny_v2")
+    report = {
+        "status": "PASS",
+        "benchmark_id": "Benchmark-Tiny-V2",
+        "focal_deck_id": "003",
+        "focal_deck_display_name": "Mega Lopunny ex / Mega Froslass ex",
+        "focal_checkpoint_update": 385,
+        "summary": {
+            "win_rate": 0.5, "wins": 1, "losses": 1, "draws": 0,
+            "focal_first_win_rate": 1.0, "focal_first_games": 1,
+            "focal_second_win_rate": 0.0, "focal_second_games": 1,
+        },
+        "focal_policy_identity_audit": {
+            "contract_id": "kaggle_fp16_storage_fp32_runtime_v1",
+            "source_checkpoint_sha256": "a" * 64,
+            "portable_checkpoint_sha256": "b" * 64,
+            "effective_candidate_sha256": "c" * 64,
+        },
+        "entries": [
+            {"opponent_meta_archetype_id": 0, "opponent_id": "001", "outcome": 1},
+            {"opponent_meta_archetype_id": 1, "opponent_id": "002", "outcome": -1},
+        ],
+    }
+    source = tmp_path / "report.json"
+    output = tmp_path / "report.html"
+    source.write_text(json.dumps(report), encoding="utf-8")
+    renderer.render(source, output)
+    html = output.read_text(encoding="utf-8")
+    assert "Deck 003 · U385 · Benchmark Tiny V2" in html
+    assert "Mega Lopunny ex / Mega Froslass ex" in html
+    assert "001 · Marnie&#x27;s Grimmsnarl ex / Froslass" in html
+    assert "U0 baseline" not in html
 
 
 def test_three_pool_tiny_v2_is_disjoint_balanced_policy0809_cuda512():
@@ -176,6 +212,7 @@ def test_new_expert_default_and_limit_profiles_are_explicit():
         "decoder_learning_rate": 1e-5,
         "allocation_learning_rate": 1e-5,
         "option_lora_learning_rate": 2e-5,
+        "shared_encoder_learning_rate": 2e-5,
         "value_learning_rate": 2e-5,
         "prize_learning_rate": 2e-5,
     }
@@ -183,6 +220,7 @@ def test_new_expert_default_and_limit_profiles_are_explicit():
         "decoder_learning_rate": 5e-6,
         "allocation_learning_rate": 5e-6,
         "option_lora_learning_rate": 1e-5,
+        "shared_encoder_learning_rate": 1e-5,
         "value_learning_rate": 2e-5,
         "prize_learning_rate": 2e-5,
     }

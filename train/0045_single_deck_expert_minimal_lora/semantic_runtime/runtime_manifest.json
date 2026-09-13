@@ -62,7 +62,7 @@
     },
     {
       "path": "deployment/compound_inference.py",
-      "sha256": "b9a7ced446f464400b53fa99624cf551888bcb5c0c85c4b2991eed53619023cc"
+      "sha256": "fba2c4425e19589fcaea6e88266f6bd9ec42fc0bf6b0d8bcb3e610eca4d76599"
     },
     {
       "path": "deployment/inference.py",
@@ -157,6 +157,6 @@
       "sha256": "d5bec9271c4f3fbee91ff9601d65e180783c2a7668528527c88bff3beecea69d"
     }
   ],
-  "runtime_tree_sha256": "2df0765d9d8eed34265087f6ac231c0f952781adc319188354d0d63e425ffea1",
+  "runtime_tree_sha256": "345234b68f4a8ff2bfdd74ddf7f0dca208577d6edae44501c949e7ee53078347",
   "schema_version": "0044_semantic_runtime_manifest_v1"
 }

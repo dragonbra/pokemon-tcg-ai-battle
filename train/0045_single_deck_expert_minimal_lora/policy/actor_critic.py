@@ -23,6 +23,10 @@ from .shared_encoder_lora import (
     shared_encoder_lora_named_parameters,
     shared_encoder_lora_parameters,
 )
+from .ffn_lora_expansion import (
+    install_state_ffn_lora,
+    state_ffn_lora_parameters,
+)
 from ..integrated.config import IntegratedFlags
 from ..integrated.prize import PrizeAuxHead
 from ..own_archetype import OwnArchetypeVocabulary
@@ -133,6 +137,12 @@ class SemanticActorCritic(nn.Module):
                 actor, rank=adaptation.rank, alpha=adaptation.alpha
             )
             if adaptation.shared_state_encoder else None
+        )
+        self.state_ffn_lora_inventory = (
+            install_state_ffn_lora(
+                actor, rank=adaptation.rank, alpha=adaptation.alpha
+            )
+            if adaptation.state_ffn_lora else None
         )
         integrated_flags.validate()
         self.integrated_flags = integrated_flags
@@ -245,6 +255,10 @@ class SemanticActorCritic(nn.Module):
         self.actor.action_decoder.requires_grad_(True)
         for parameter in shared_encoder_lora_parameters(self.actor):
             parameter.requires_grad_(True)
+        for parameter in state_ffn_lora_parameters(self.actor):
+            parameter.requires_grad_(True)
+        if self.adaptation_config.layernorm_tuning:
+            self.actor.option_encoder.cross_attention_transformer.norm.requires_grad_(True)
         self.value_head.requires_grad_(False)
         self.value_head.queries.requires_grad_(True)
         self.value_head.blocks.requires_grad_(True)
@@ -265,9 +279,16 @@ class SemanticActorCritic(nn.Module):
             name for name, module in option.named_modules()
             if any(parametrize.is_parametrized(module, field) for field in ("in_proj_weight", "weight"))
         ]
-        if trainable or parametrized:
+        expected_trainable = (
+            {
+                "cross_attention_transformer.norm.weight",
+                "cross_attention_transformer.norm.bias",
+            }
+            if self.adaptation_config.layernorm_tuning else set()
+        )
+        if set(trainable) != expected_trainable or parametrized:
             raise RuntimeError(
-                "0045 immutable OptionEncoder base must be frozen and unparametrized; "
+                "0045 OptionEncoder trainable boundary mismatch; "
                 f"trainable={trainable[:3]}, parametrized={parametrized[:3]}"
             )
         self.policy_option_lora.assert_inventory()
@@ -280,6 +301,13 @@ class SemanticActorCritic(nn.Module):
             and not name.startswith("value_head.")
             and not name.startswith("allocation_head.")
             and not name.startswith(("prize_aux.", "value_adapter.", "policy_option_lora."))
+            and not (
+                self.adaptation_config.layernorm_tuning
+                and name in {
+                    "actor.option_encoder.cross_attention_transformer.norm.weight",
+                    "actor.option_encoder.cross_attention_transformer.norm.bias",
+                }
+            )
             and not (
                 name.startswith("actor.state_encoder.")
                 and ".parametrizations." in name
@@ -299,6 +327,12 @@ class SemanticActorCritic(nn.Module):
             ) for value in module.parameters()
         }
         policy_ids.update(id(value) for value in shared_encoder_lora_parameters(self.actor))
+        policy_ids.update(id(value) for value in state_ffn_lora_parameters(self.actor))
+        if self.adaptation_config.layernorm_tuning:
+            policy_ids.update(
+                id(value) for value in
+                self.actor.option_encoder.cross_attention_transformer.norm.parameters()
+            )
         if critic_ids.intersection(policy_ids):
             raise RuntimeError("0045 Critic and Policy share Parameter objects")
 

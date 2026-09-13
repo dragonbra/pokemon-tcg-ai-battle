@@ -13,6 +13,7 @@ import torch
 from ..policy.action_distribution import evaluate_actions_encoded
 from ..policy.actor_critic import DecoderPolicyHead, SemanticActorCritic
 from ..policy.shared_encoder_lora import shared_encoder_lora_parameters
+from ..policy.ffn_lora_expansion import state_ffn_lora_parameters
 from .batch_full_semantic import PreparedBatch, training_batch_metrics
 from ..policy.compound_evaluation import evaluate_parameter_actions
 from ..integrated.loss_registry import LossRegistry, LossTerm
@@ -163,6 +164,10 @@ class PPOConfig:
     decoder_learning_rate: float = 1.0e-5
     allocation_learning_rate: float = 1.0e-5
     option_lora_learning_rate: float = 2.0e-5
+    shared_encoder_learning_rate: float = 2.0e-5
+    option_ffn_learning_rate: float | None = None
+    state_ffn_learning_rate: float | None = None
+    option_norm_learning_rate: float | None = None
     value_learning_rate: float = 2.0e-5
     prize_learning_rate: float = 2.0e-5
     meta_anchor_coef: float = 0.10
@@ -187,11 +192,19 @@ class PPOConfig:
         return self.decoder_learning_rate
 
     def actor_group_learning_rates(self) -> dict[str, float]:
-        return {
+        rates = {
             "action_decoder": self.decoder_learning_rate,
             "allocation_head": self.allocation_learning_rate,
             "policy_option_lora": self.option_lora_learning_rate,
+            "shared_encoder_lora": self.shared_encoder_learning_rate,
         }
+        if self.option_ffn_learning_rate is not None:
+            rates["policy_option_ffn_lora"] = self.option_ffn_learning_rate
+        if self.state_ffn_learning_rate is not None:
+            rates["shared_state_ffn_lora"] = self.state_ffn_learning_rate
+        if self.option_norm_learning_rate is not None:
+            rates["option_final_norm"] = self.option_norm_learning_rate
+        return rates
 
     def validate(self) -> None:
         if self.gamma != 1.0:
@@ -227,10 +240,18 @@ class PPOConfig:
             self.decoder_learning_rate,
             self.allocation_learning_rate,
             self.option_lora_learning_rate,
+            self.shared_encoder_learning_rate,
             self.value_learning_rate,
             self.prize_learning_rate,
         ) <= 0:
             raise ValueError("all PPO optimizer learning rates must be positive")
+        optional_rates = (
+            self.option_ffn_learning_rate,
+            self.state_ffn_learning_rate,
+            self.option_norm_learning_rate,
+        )
+        if any(value is not None and value <= 0 for value in optional_rates):
+            raise ValueError("optional PPO optimizer learning rates must be positive")
 
 
 class PPOTrainer:
@@ -287,7 +308,7 @@ class PPOTrainer:
                 },
                 {
                     "name": "policy_option_lora",
-                    "params": model.policy_option_lora.parameters(),
+                    "params": model.policy_option_lora.attention_parameters(),
                     "lr": config.option_lora_learning_rate,
                 },
             ]
@@ -296,8 +317,32 @@ class PPOTrainer:
             groups.append({
                 "name": "shared_encoder_lora",
                 "params": shared_encoder_parameters,
-                "lr": config.option_lora_learning_rate,
+                "lr": config.shared_encoder_learning_rate,
             })
+        option_ffn_parameters = list(model.policy_option_lora.ffn_parameters())
+        state_ffn_parameters = list(state_ffn_lora_parameters(model.actor))
+        option_norm_parameters = list(
+            model.actor.option_encoder.cross_attention_transformer.norm.parameters()
+        ) if model.adaptation_config.layernorm_tuning else []
+        expanded = (option_ffn_parameters, state_ffn_parameters, option_norm_parameters)
+        expanded_rates = (
+            config.option_ffn_learning_rate,
+            config.state_ffn_learning_rate,
+            config.option_norm_learning_rate,
+        )
+        if any(expanded) != all(expanded):
+            raise RuntimeError("0045 expansion optimizer groups must be enabled together")
+        if any(expanded) and any(rate is None for rate in expanded_rates):
+            raise ValueError("0045 expansion optimizer learning rates are required")
+        if all(expanded):
+            groups.extend((
+                {"name": "policy_option_ffn_lora", "params": option_ffn_parameters,
+                 "lr": config.option_ffn_learning_rate, "weight_decay": 0.0},
+                {"name": "shared_state_ffn_lora", "params": state_ffn_parameters,
+                 "lr": config.state_ffn_learning_rate, "weight_decay": 0.0},
+                {"name": "option_final_norm", "params": option_norm_parameters,
+                 "lr": config.option_norm_learning_rate, "weight_decay": 0.0},
+            ))
         if model.prize_aux is not None:
             groups.append({"name": "value_prize", "params": model.prize_aux.parameters(), "lr": config.prize_learning_rate})
         self.optimizer = torch.optim.AdamW(
@@ -325,6 +370,9 @@ class PPOTrainer:
             "allocation_head": "Phantom allocation policy + entropy + Prize actor advantage",
             "policy_option_lora": "PPO policy + entropy + reference KL through the policy Option branch only",
             "shared_encoder_lora": "shared StateEncoder gradients from PPO policy and terminal Value losses",
+            "policy_option_ffn_lora": "PPO policy + entropy + reference KL through final Option FFN LoRA",
+            "shared_state_ffn_lora": "shared final State FFN LoRA gradients from policy and Value losses",
+            "option_final_norm": "PPO policy + entropy + reference KL through final Option LayerNorm",
             "value_win": "terminal Value loss + q1 Meta anchor",
             "value_adapter": "terminal Value loss only",
             "value_prize": "directional Prize Value loss only",
@@ -338,6 +386,7 @@ class PPOTrainer:
                     int(parameter.numel()) for parameter in group["params"]
                 ),
                 "tensor_count": len(group["params"]),
+                "weight_decay": float(group["weight_decay"]),
                 "gradient_source": gradient_sources[str(group["name"])],
             }
             for group in self.optimizer.param_groups
@@ -347,6 +396,7 @@ class PPOTrainer:
         actor_groups = {
             "action_decoder", "allocation_head", "policy_option_lora",
             "shared_encoder_lora",
+            "policy_option_ffn_lora", "shared_state_ffn_lora", "option_final_norm",
         }
         value_groups = {"value_win", "value_adapter", "value_prize"}
         actor_ids = {
@@ -372,10 +422,16 @@ class PPOTrainer:
         uncategorized = set(parameter_sizes) - categorized
         if uncategorized:
             raise RuntimeError("trainable parameters are missing from PPO optimizer partitions")
+        actor_rates = self.config.actor_group_learning_rates()
+        if not any(
+            str(group["name"]) == "shared_encoder_lora"
+            for group in self.optimizer.param_groups
+        ):
+            actor_rates.pop("shared_encoder_lora", None)
         return {
             "actor_only": {
                 "parameters": sum(parameter_sizes[item] for item in actor_only),
-                "learning_rates": self.config.actor_group_learning_rates(),
+                "learning_rates": actor_rates,
             },
             "value_only": {
                 "parameters": sum(parameter_sizes[item] for item in value_only),
@@ -383,7 +439,11 @@ class PPOTrainer:
             },
             "shared_trainable": {
                 "parameters": sum(parameter_sizes[item] for item in shared),
-                "learning_rate": self.config.decoder_learning_rate,
+                "learning_rate": (
+                    self.config.shared_encoder_learning_rate
+                    if "shared_encoder_lora" in actor_rates
+                    else self.config.decoder_learning_rate
+                ),
             },
         }
 
